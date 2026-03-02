@@ -1,0 +1,5 @@
+# Bash scripts altijd met LF regeleindes
+*.sh text eol=lf
+
+# .env bestanden altijd met LF regeleindes
+.env* text eol=lf

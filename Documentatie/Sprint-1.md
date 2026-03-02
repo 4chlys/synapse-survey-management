@@ -1,4 +1,4 @@
-# SPRINT 1 DOCUMENTATIE
+# SPRINT 1 DOCUMENTATIE Commando's
 
 ## Stap 1: GC Project opzetten
 
@@ -71,8 +71,34 @@
 ```
 ![alt text](image-5.png)
 
+## Stap 5: Dockerfile maken
 
-## Stap 5: Docker image bouwen en pushen
+```
+  FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+  WORKDIR /app
+  EXPOSE 8080
+
+  FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+  WORKDIR /src
+  COPY ["API/API.csproj", "API/"]
+  COPY ["BL/BL.csproj", "BL/"]
+  COPY ["DAL/DAL.csproj", "DAL/"]
+  COPY ["Domain/Domain.csproj", "Domain/"]
+  RUN dotnet restore "API/API.csproj"
+  COPY . .
+  RUN dotnet build "API/API.csproj" -c Release -o /app/build
+
+  FROM build AS publish
+  RUN dotnet publish "API/API.csproj" -c Release -o /app/publish
+
+  FROM base AS final
+  WORKDIR /app
+  COPY --from=publish /app/publish .
+  ENTRYPOINT ["dotnet", "SynapseEnqueteManagement.API.dll"]
+```
+
+
+## Stap 6: Docker image bouwen en pushen
 
 ```
     gcloud auth configure-docker
@@ -80,4 +106,95 @@
     docker build -t gcr.io/synapse-ip-j2/mvp-app:latest .
 
     docker push gcr.io/synapse-ip-j2/mvp-app:latest
+```
+
+## Stap 7: Koppeling van VM naar Cloud SQL
+**In linux**
+
+```
+    VM_IP=$(gcloud compute instances describe mvp-vm \  # Haalt alle info van vm op en slaagt deze in de var op
+    --zone=europe-west1-b \ # Zone vd VM
+    --format="value(networkInterfaces[0].accessConfigs[0].natIP)") # Pakt het eerste netwerk interface van de vm, haalt public/external IP op van die interface en toont dan alleen de waardes zonder tekst
+
+     gcloud sql instances patch mvp-postgres \ # Link de vm aan de gekozen SQL instance
+    --authorized-networks=$VM_IP # Selecteer het juiste IP van de gekozen VM
+
+```
+![alt text](image-6.png)
+
+## Stap 8: Inloggen op de VM en Docker installeren
+
+```
+    gcloud compute ssh mvp-vm --zone=europe-west1-b
+```
+![alt text](image-8.png)
+
+```
+  sudo apt-get update -y
+  sudo apt-get install -y docker.io
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  sudo usermod -aG docker $USER
+ # Hierna even uitloggen en terug inloggen zodat Docker werkt
+```
+
+## Stap 9: App starten op de VM
+
+```
+ gcloud auth configure-docker
+
+  docker pull gcr.io/synapse-ip-j2/mvp-app:latest # Pull de image van de dockerfile
+
+```
+![alt text](image-9.png)
+```
+  docker run -d \ # Run de image
+    --name mvp-app \
+    --restart always \
+    -p 80:8080 \
+    -e DB_HOST=CLOUD_SQL_IP \
+    -e DB_PORT=5432 \
+    -e DB_USER=mvp-user \
+    -e DB_PASSWORD=REDACTED \ # Eigen ww gebruiken natuurlijk
+    -e DB_NAME=mvp-db \
+    gcr.io/synapse-ip-j2/mvp-app:latest
+
+```
+![alt text](image-10.png)
+
+
+## Stap 10: URL ophalen
+
+**Verlaat de VM ("exit")**
+```
+ # Haal het externe IP op
+  gcloud compute instances describe mvp-vm \
+    --zone=europe-west1-b \
+    --format="value(networkInterfaces[0].accessConfigs[0].natIP)"
+```
+
+**De app is nu beschikbaar op het externe IP dat we hier ophaalden**
+![alt text](image-11.png)
+
+
+
+
+## Voor anderen die dit willen gebruiken:
+
+```
+ # 1. Repo clonen
+  git clone ...
+
+  # 2. .env aanmaken op basis van het voorbeeld
+  cp .env.example .env
+
+  # 3. .env invullen met de echte waarden
+  nano .env
+
+  # 4. Deployen
+  ./deploy.sh
+
+  # 5. Destroyen
+  ./destroy.sh
+
 ```
