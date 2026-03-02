@@ -1,14 +1,6 @@
-﻿using SynapseEnqueteManagement.DAL;
+﻿namespace SynapseEnqueteManagement.BL;
 
-namespace SynapseEnqueteManagement.BL;
-
-public class Manager : IManager
+public class Manager
 {
-    private readonly IRepository _repository;
-    
-    public Manager(IRepository repository)
-    {
-        _repository = repository;
-    }
     
 }
