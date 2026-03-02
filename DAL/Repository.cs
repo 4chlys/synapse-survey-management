@@ -1,0 +1,156 @@
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
+
+namespace SynapseEnqueteManagement.DAL;
+
+/// <summary>
+/// A generic repository class that provides standard CRUD (Create, Read, Update, Delete) 
+/// operations for any entity type using Entity Framework Core.
+/// </summary>
+public class Repository : IRepository
+{
+    
+    private readonly DbContext _context;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Repository"/> class.
+    /// </summary>
+    /// <param name="context">The database context to be used for data operations.</param>
+    public Repository(DbContext context)
+    {
+        _context = context;
+    }
+
+    /// <summary>
+    /// Inserts a new entity into the database, with an optional check for duplicates.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity being created.</typeparam>
+    /// <param name="entity">The entity instance to be added.</param>
+    /// <param name="duplicateCheck">
+    /// An optional expression to define what constitutes a duplicate. 
+    /// If an entity matching this expression already exists, the creation is skipped.
+    /// </param>
+    /// <returns>The created entity if successful; <c>null</c> if a duplicate was found.</returns>
+    public T Create<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class
+    {
+        // Check for duplicates
+        if (duplicateCheck != null && _context.Set<T>().Any(duplicateCheck))
+        {
+            return null;
+        }
+
+        _context.Set<T>().Add(entity);
+        _context.SaveChanges();
+        return entity;
+    }
+    
+
+    /// <summary>
+    /// Retrieves a collection of entities based on provided filters and navigation property includes.
+    /// </summary>
+    /// <typeparam name="T">The type of entities to retrieve.</typeparam>
+    /// <param name="filters">An optional array of filter expressions to apply to the query.</param>
+    /// <param name="includes">An optional array of lambda expressions for related entities to include (eager loading).</param>
+    /// <param name="includeStrings">An optional array of string paths for nested or complex related entities to include.</param>
+    /// <returns>An <see cref="IEnumerable{T}"/> containing the matching entities.</returns>
+    public IEnumerable<T> Read<T>(
+        Expression<Func<T, bool>>[] filters = null,
+        Expression<Func<T, object>>[] includes = null,
+        string[] includeStrings = null
+    ) where T : class
+    {
+        IQueryable<T> query = _context.Set<T>();
+
+        // apply expression includes
+        if (includes != null)
+        {
+            foreach (var include in includes)
+                query = query.Include(include);
+        }
+
+        // apply string includes (for nested)
+        if (includeStrings != null)
+        {
+            foreach (var include in includeStrings)
+                query = query.Include(include);
+        }
+
+        // apply filters
+        if (filters != null)
+        {
+            foreach (var filter in filters)
+                query = query.Where(filter);
+        }
+
+        return query.ToList();
+    }
+
+    /// <summary>
+    /// Finds an entity by its primary key(s).
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to find.</typeparam>
+    /// <param name="id">The primary key value(s) of the entity.</param>
+    /// <returns>The entity if found; <c>null</c> otherwise.</returns>
+    public T ReadById<T>(params object[] id) where T : class
+    {
+        return _context.Set<T>().Find(id);
+    }
+
+    /// <summary>
+    /// Updates an existing entity in the database.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity being updated.</typeparam>
+    /// <param name="entity">The entity instance with updated values.</param>
+    /// <returns><c>true</c> if the update and save operations were successful; <c>false</c> if an error occurred.</returns>
+    public bool Update<T>(T entity) where T : class
+    {
+        try
+        {
+            _context.Set<T>().Update(entity);
+            _context.SaveChanges();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Deletes the first entity that matches the specified filter.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to delete.</typeparam>
+    /// <param name="filter">The expression used to locate the entity for deletion.</param>
+    /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
+    public bool Delete<T>(Expression<Func<T, bool>> filter) where T : class
+    {
+        var entity = _context.Set<T>().FirstOrDefault(filter);
+        if (entity == null)
+        {
+            return false;
+        }
+        _context.Set<T>().Remove(entity);
+        _context.SaveChanges();
+        return true;
+    }
+
+    /// <summary>
+    /// Deletes an entity by its primary key(s).
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to delete.</typeparam>
+    /// <param name="id">The primary key value(s) of the entity.</param>
+    /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
+    public bool DeleteById<T>(params object[] id) where T : class
+    {
+        var entity = _context.Set<T>().Find(id);
+        if (entity == null)
+        {
+            return false;
+        }
+
+        _context.Set<T>().Remove(entity);
+        _context.SaveChanges();
+        return true;
+    }
+
+}

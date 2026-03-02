@@ -3,9 +3,14 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <AssemblyName>SynapseEnqueteManagement.BL.Domain</AssemblyName>
     <RootNamespace>SynapseEnqueteManagement.BL.Domain</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Platform\Entities\" />
+    <Folder Include="Platform\Enums\" />
+  </ItemGroup>
 
 </Project>
