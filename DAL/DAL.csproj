@@ -7,7 +7,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <AssemblyName>SynapseEnqueteManagement.DAL</AssemblyName>
     <RootNamespace>SynapseEnqueteManagement.DAL</RootNamespace>
   </PropertyGroup>
