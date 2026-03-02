@@ -5,6 +5,10 @@ namespace SynapseEnqueteManagement.DAL;
 
 public class SynapseEnqueteContext : IdentityDbContext
 {
+    public SynapseEnqueteContext(DbContextOptions options) : base(options)
+    {
+    }
+
     public bool CreateDatabase(bool deleteIfExists)
     {
         if (deleteIfExists)
