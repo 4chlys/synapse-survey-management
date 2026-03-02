@@ -198,3 +198,126 @@
   ./destroy.sh
 
 ```
+## BELANGRIJK VOOR DEV
+
+ ## 1. Database Connectie
+
+  Gebruik **nooit** een hardcoded connectiestring. Gebruik altijd
+  environment variables.
+
+  ```csharp
+  // FOUT
+  var connectionString =
+  "Host=localhost;Database=mvp-db;Username=mvp-user;Password=REDACTED";
+
+  // JUIST
+  var connectionString =
+  $"Host={Environment.GetEnvironmentVariable("DB_HOST")};" +
+
+  $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
+
+  $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
+
+  $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
+
+  $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
+
+  De volgende environment variables worden meegegeven bij deployment:
+
+  ┌─────────────┬────────────────────────────────────┐
+  │  Variable   │            Beschrijving            │
+  ├─────────────┼────────────────────────────────────┤
+  │ DB_HOST     │ IP-adres van de Cloud SQL database │
+  ├─────────────┼────────────────────────────────────┤
+  │ DB_PORT     │ Poort van de database (5432)       │
+  ├─────────────┼────────────────────────────────────┤
+  │ DB_NAME     │ Naam van de database               │
+  ├─────────────┼────────────────────────────────────┤
+  │ DB_USER     │ Gebruikersnaam van de database     │
+  ├─────────────┼────────────────────────────────────┤
+  │ DB_PASSWORD │ Wachtwoord van de database         │
+  └─────────────┴────────────────────────────────────┘
+
+  ---
+  2. Poort 8080
+
+  De applicatie moet luisteren op poort 8080. Voeg dit toe in Program.cs:
+
+  builder.WebHost.UseUrls("http://0.0.0.0:8080");
+
+  ---
+  3. HTTPS Redirect uitschakelen
+
+  In de container draaien we HTTP, geen HTTPS. Pas dit aan in Program.cs:
+
+  // FOUT
+  app.UseHttpsRedirection();
+
+  // JUIST
+  if (!app.Environment.IsProduction())
+  {
+      app.UseHttpsRedirection();
+  }
+
+  ---
+  4. CORS instellen
+
+  De backend moet requests van de frontend toestaan. Voeg dit toe in
+  Program.cs:
+
+  builder.Services.AddCors(options =>
+  {
+      options.AddPolicy("AllowFrontend", policy =>
+      {
+          policy.WithOrigins(
+              Environment.GetEnvironmentVariable("FRONTEND_URL") ??
+  "http://localhost:5173"
+          )
+          .AllowAnyMethod()
+          .AllowAnyHeader();
+      });
+  });
+
+  app.UseCors("AllowFrontend");
+
+  ---
+  5. Database Migraties
+
+  Migraties moeten automatisch uitgevoerd worden bij opstart. Voeg dit toe
+  in Program.cs:
+
+  using (var scope = app.Services.CreateScope())
+  {
+      var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+      db.Database.Migrate();
+  }
+
+  ---
+  6. Frontend API URL
+
+  Gebruik in de frontend nooit een hardcoded API URL:
+
+  // FOUT
+  const API_URL = "http://localhost:8080"
+
+  // JUIST
+  const API_URL = import.meta.env.VITE_API_URL
+
+  ---
+  7. Geen Secrets in Code of GitLab
+
+  Zet nooit wachtwoorden, API keys of andere secrets in je code of GitLab
+  repository.
+
+  - Gebruik environment variables
+  - Zet secrets in het .env bestand (staat in .gitignore)
+  - .env.example mag wel op GitLab met lege waarden als voorbeeld
+
+  ---
+  8. Swagger
+
+  Swagger is momenteel beschikbaar via ASPNETCORE_ENVIRONMENT=Development.
+  Wil je Swagger altijd beschikbaar maken, voeg dit toe in Program.cs:
+
+  app.MapOpenApi();
+  app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "API v1"));
