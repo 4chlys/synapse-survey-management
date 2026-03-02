@@ -1,6 +1,7 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class IconComment(Idea idea, Emoji emoji) : Comment(idea)
+public class IconComment : Comment
 {
-    public Emoji Emoji { get; set; } = emoji;
+    public int EmojiId { get; set; }
+    public Emoji Emoji { get; set; }
 }

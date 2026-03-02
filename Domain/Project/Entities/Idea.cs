@@ -2,11 +2,15 @@ using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Idea(Category category, ModerationStatus status, Participant participant)
+public class Idea
 {
-    public ModerationStatus Status { get; set; } = status;
-    
-    public Category Category { get; set; } = category;
-    public Participant Participant { get; set; } = participant;
+    public int IdeaId { get; set; }
+    public ModerationStatus Status { get; set; }
+
+    public int CategoryId { get; set; }
+    public Category Category { get; set; }
+
+    public Participant Participant { get; set; }
+
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

@@ -1,9 +1,10 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Category(string name, string description)
+public class Category
 {
-    public string Name { get; set; } = name;
-    public string Description { get; set; } = description;
+    public int CategoryId { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
 
     public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
 }

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.DAL;
 
-bool deleteIfAlreadyExists = false;
+bool deleteIfAlreadyExists = true;
 
 var optionsBuilder = new DbContextOptionsBuilder<SynapseEnqueteContext>();
 // Calculate the path to the solution root directory
@@ -40,7 +40,7 @@ catch (IOException ex)
 }
 if (dbCreated)
 {
-    DataSeeder.Seed(context);
+    DummyDataSeeder.Seed(context);
 }
 //Composition Root
 IManager manager = new Manager(repository);
