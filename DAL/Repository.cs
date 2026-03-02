@@ -7,7 +7,7 @@ namespace SynapseEnqueteManagement.DAL;
 /// A generic repository class that provides standard CRUD (Create, Read, Update, Delete) 
 /// operations for any entity type using Entity Framework Core.
 /// </summary>
-public class Repository
+public class Repository : IRepository
 {
     
     private readonly DbContext _context;

@@ -1,6 +1,9 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public abstract class Comment(Idea idea)
+public abstract class Comment
 {
-    protected Idea Idea { get; set; } = idea;
+    public int CommentId { get; set; }
+
+    public int IdeaId { get; set; }
+    public Idea Idea { get; set; }
 }

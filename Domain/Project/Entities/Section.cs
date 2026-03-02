@@ -1,9 +1,11 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Section(string name, string description)
+public class Section
 {
-    public string Name { get; set; } = name;
-    public string Description { get; set; } = description;
+    public int SectionId { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
 
     public ICollection<Question> Questions { get; set; } = new List<Question>();
+    
 }

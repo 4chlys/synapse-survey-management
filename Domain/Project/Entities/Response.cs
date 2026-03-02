@@ -1,9 +1,11 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Response(string value, Question question, Participant participant)
+public class Response
 {
-    public string Value { get; set; } = value;
-    
-    public Question Question { get; set; } = question;
-    public Participant Participant { get; set; } = participant;
+    public int ResponseId { get; set; }
+    public string Value { get; set; }
+
+    public Question Question { get; set; }
+
+    public Participant Participant { get; set; }
 }

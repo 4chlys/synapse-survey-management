@@ -1,9 +1,12 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Participant(Questionnaire questionnaire)
+public class Participant
 {
-    public  Questionnaire Questionnaire { get; set; } = questionnaire;
-    public ICollection<Idea> Ideas { get; set; } = new  List<Idea>();
-    public ICollection<Response> Responses { get; set; }
-    public ICollection<Comment> Comments { get; set; }
+    public int ParticipantId { get; set; }
+
+    public Questionnaire Questionnaire { get; set; }
+
+    public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
+    public ICollection<Response> Responses { get; set; } = new List<Response>();
+    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }
