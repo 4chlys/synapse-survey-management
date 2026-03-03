@@ -11,9 +11,9 @@ export function isSlideAnswered(slide: HTMLElement): boolean {
     case 'MultipleChoice':
       return !!slide.querySelector<HTMLInputElement>('input[type="checkbox"]:checked');
     case 'Likert':
-      return true; // range always has a value
+      return true;
     default:
-      return true; // submit slide or unknown
+      return true;
   }
 }
 
