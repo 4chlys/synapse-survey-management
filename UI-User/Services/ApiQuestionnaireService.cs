@@ -68,12 +68,12 @@ public class ApiQuestionnaireService : IQuestionnaireService
         public List<string> AnswerChoices { get; set; } = new();
     }
 
-    public void SubmitSurvey(Dictionary<int, string> answers)
+    public string SubmitSurvey(Dictionary<int, string> answers)
     {
-        SubmitSurveyAsync(answers).GetAwaiter().GetResult();
+        return SubmitSurveyAsync(answers).GetAwaiter().GetResult();
     }
 
-    private async Task SubmitSurveyAsync(Dictionary<int, string> answers)
+    private async Task<string> SubmitSurveyAsync(Dictionary<int, string> answers)
     {
         var projectId = 1;
 
@@ -96,6 +96,31 @@ public class ApiQuestionnaireService : IQuestionnaireService
             var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
         }
+
+        return participant.ParticipantToken;
+    }
+
+    public bool HasParticipantResponded(string participantToken)
+    {
+        return HasParticipantRespondedAsync(participantToken).GetAwaiter().GetResult();
+    }
+
+    private async Task<bool> HasParticipantRespondedAsync(string participantToken)
+    {
+        var projectId = 1;
+        var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
+        request.Headers.Add("X-Participant-Token", participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return false;
+
+        var result = await response.Content.ReadFromJsonAsync<ParticipantStatusDto>();
+        return result?.HasResponded ?? false;
+    }
+
+    private class ParticipantStatusDto
+    {
+        public bool HasResponded { get; set; }
     }
 
     private class ApiParticipantDto
