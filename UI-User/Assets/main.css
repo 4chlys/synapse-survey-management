@@ -2,14 +2,50 @@
 @import "tailwindcss";
 @source "../Views/**/*.cshtml";
 
+/* ── Global ────────────────────────────────────── */
 .survey-title {
-    font-family: 'Dancing Script', cursive;
+  font-family: 'Dancing Script', cursive;
 }
 
 .nav-scrollable {
-    scrollbar-width: none;
+  scrollbar-width: none;
+}
+.nav-scrollable::-webkit-scrollbar {
+  display: none;
 }
 
-.nav-scrollable::-webkit-scrollbar {
-    display: none;
+/* ── Survey reel ────────────────────────────────── */
+
+:root {
+  --header-h: 92px;
+  --slide-h: calc(100dvh - var(--header-h));
+}
+
+/* ID selector: can't be done with Tailwind utility classes */
+#survey-track {
+  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+/* ── Animations (added via JS, can't be statically scanned) ── */
+
+@keyframes shake {
+  0%,  100% { transform: translateX(0); }
+  20%        { transform: translateX(-10px); }
+  40%        { transform: translateX(10px); }
+  60%        { transform: translateX(-5px); }
+  80%        { transform: translateX(5px); }
+}
+
+.slide--shake {
+  animation: shake 0.45s ease-in-out;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.slide-error {
+  animation: fade-up 0.2s ease-out both;
 }
