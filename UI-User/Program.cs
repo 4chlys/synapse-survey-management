@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IQuestionnaireService, StubQuestionnaireService>();
+builder.Services.AddScoped<CategoryService>();
 
 
 
@@ -44,7 +45,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Survey}/{action=Index}/{id?}")
+    pattern: "{controller=Category}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 
