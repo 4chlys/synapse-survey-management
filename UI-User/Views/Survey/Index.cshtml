@@ -1,0 +1,86 @@
+@model SynapseEnqueteManagement.UI.User.Models.SurveyViewModel
+
+@{
+    ViewData["Title"] = "Enquête";
+    ViewData["SurveyTitle"] = Model.Title;
+}
+
+<form method="post" asp-controller="Survey" asp-action="Submit" class="pb-12">
+
+    @foreach (var question in Model.Questions)
+    {
+        <div class="bg-white mb-3 shadow-sm">
+
+            @* Question header *@
+            <div class="px-6 pt-5 pb-4">
+                <p class="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">
+                    VRAAG @question.QuestionNumber VAN @question.TotalQuestions
+                </p>
+                <p class="text-gray-900 text-base leading-snug">@question.Text</p>
+            </div>
+
+            @* Answer input based on question format *@
+            @if (question.Format == QuestionFormat.MultipleChoice)
+            {
+                <div class="border-t border-gray-100">
+                    @foreach (var choice in question.AnswerChoices)
+                    {
+                        <label class="flex items-center gap-4 px-6 py-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input type="checkbox"
+                                   name="q_@question.QuestionId"
+                                   value="@choice"
+                                   class="w-5 h-5 rounded border-gray-300 accent-emerald-600 cursor-pointer" />
+                            <span class="text-gray-700 text-sm">@choice</span>
+                        </label>
+                    }
+                </div>
+            }
+            else if (question.Format == QuestionFormat.SingleChoice)
+            {
+                <div class="border-t border-gray-100">
+                    @foreach (var choice in question.AnswerChoices)
+                    {
+                        <label class="flex items-center gap-4 px-6 py-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input type="radio"
+                                   name="q_@question.QuestionId"
+                                   value="@choice"
+                                   class="w-5 h-5 border-gray-300 accent-emerald-600 cursor-pointer" />
+                            <span class="text-gray-700 text-sm">@choice</span>
+                        </label>
+                    }
+                </div>
+            }
+            else if (question.Format == QuestionFormat.Likert)
+            {
+                <div class="border-t border-gray-100 px-6 py-6">
+                    <div class="flex justify-between text-xs text-gray-400 mb-3">
+                        <span>1</span>
+                        <span>10</span>
+                    </div>
+                    <input type="range"
+                           name="q_@question.QuestionId"
+                           min="1" max="10" value="5"
+                           class="w-full accent-emerald-600 cursor-pointer" />
+                </div>
+            }
+            else if (question.Format == QuestionFormat.Open)
+            {
+                <div class="border-t border-gray-100 px-6 py-5">
+                    <textarea name="q_@question.QuestionId"
+                              rows="4"
+                              placeholder="Typ hier je antwoord..."
+                              class="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none transition-shadow"></textarea>
+                </div>
+            }
+
+        </div>
+    }
+
+    <div class="px-4 pt-2">
+        <button type="submit"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-4 rounded-xl text-sm tracking-wide transition-colors">
+            Antwoorden versturen
+        </button>
+    </div>
+
+</form>

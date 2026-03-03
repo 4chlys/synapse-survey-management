@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using User.Models;
+using SynapseEnqueteManagement.UI.User.Models;
 
-namespace User.Controllers;
+namespace SynapseEnqueteManagement.UI.User.Controllers;
 
 public class HomeController : Controller
 {
