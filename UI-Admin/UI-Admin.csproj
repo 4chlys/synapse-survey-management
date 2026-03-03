@@ -5,6 +5,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SynapseEnqueteManagement.UI.Admin</AssemblyName>
+    <RootNamespace>SynapseEnqueteManagement.UI.Admin</RootNamespace>
   </PropertyGroup>
 
 </Project>

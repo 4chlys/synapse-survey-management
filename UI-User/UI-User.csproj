@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SynapseEnqueteManagement.UI.User</RootNamespace>
+    <AssemblyName>SynapseEnqueteManagement.UI.User</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

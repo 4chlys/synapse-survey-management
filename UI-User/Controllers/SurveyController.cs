@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using User.Services;
+using SynapseEnqueteManagement.UI.User.Services;
 
-namespace User.Controllers;
+namespace SynapseEnqueteManagement.UI.User.Controllers;
 
 public class SurveyController : Controller
 {

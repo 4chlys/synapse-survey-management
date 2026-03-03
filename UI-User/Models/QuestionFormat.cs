@@ -1,4 +1,4 @@
-namespace User.Models;
+namespace SynapseEnqueteManagement.UI.User.Models;
 
 public enum QuestionFormat : byte
 {

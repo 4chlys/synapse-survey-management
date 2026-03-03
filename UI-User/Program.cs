@@ -1,10 +1,11 @@
 using Vite.AspNetCore;
+using SynapseEnqueteManagement.UI.User.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<User.Services.IQuestionnaireService, User.Services.StubQuestionnaireService>();
+builder.Services.AddScoped<IQuestionnaireService, StubQuestionnaireService>();
 
 
 

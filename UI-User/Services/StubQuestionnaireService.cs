@@ -1,6 +1,6 @@
-using User.Models;
+using SynapseEnqueteManagement.UI.User.Models;
 
-namespace User.Services;
+namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class StubQuestionnaireService : IQuestionnaireService
 {
