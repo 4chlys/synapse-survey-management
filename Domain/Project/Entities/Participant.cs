@@ -3,6 +3,8 @@ namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 public class Participant
 {
     public int ParticipantId { get; set; }
+    public Guid SessionToken { get; set; } = Guid.NewGuid();
+
 
     public Questionnaire Questionnaire { get; set; }
 

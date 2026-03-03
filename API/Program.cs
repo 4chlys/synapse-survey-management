@@ -1,41 +1,53 @@
+using Microsoft.EntityFrameworkCore;
+using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.DAL;
+
+var UserUiHttpPort = 5291;
+var UserUiHttpsPort = 7163;
+bool deleteDatabaseIfExists = true;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Registering DAL
+//TODO this shouldn't be hardcoded, but change based on Environment (Factory Pattern?)
+builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseSqlite("Data Source=SynapseEnquete.db"));
+builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+builder.Services.AddScoped<IRepository, Repository>();
+
+// Registering BL
+builder.Services.AddScoped<IManager, Manager>();
+
+// CORS - UI-User must access this API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowUiUser", policy =>
+    {
+        policy.WithOrigins("http://localhost:" + UserUiHttpPort, "https://localhost:" + UserUiHttpsPort)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
+    context.CreateDatabase(deleteDatabaseIfExists);
+    DummyDataSeeder.Seed(context);
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
+app.UseCors("AllowUiUser");
+app.UseAuthorization();
+app.MapControllers();
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
