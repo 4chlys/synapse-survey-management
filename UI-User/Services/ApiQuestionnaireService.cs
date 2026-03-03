@@ -67,4 +67,39 @@ public class ApiQuestionnaireService : IQuestionnaireService
         public string QuestionFormat { get; set; }
         public List<string> AnswerChoices { get; set; } = new();
     }
+
+    public void SubmitSurvey(Dictionary<int, string> answers)
+    {
+        SubmitSurveyAsync(answers).GetAwaiter().GetResult();
+    }
+
+    private async Task SubmitSurveyAsync(Dictionary<int, string> answers)
+    {
+        var projectId = 1;
+
+        // 1. Create anonymous participant session
+        var participantResponse = await _httpClient.PostAsync($"api/projects/{projectId}/participants", null);
+        participantResponse.EnsureSuccessStatusCode();
+        var participant = await participantResponse.Content.ReadFromJsonAsync<ApiParticipantDto>();
+
+        // 2. Submit each answer with the participant token
+        foreach (var (questionId, value) in answers)
+        {
+            if (string.IsNullOrWhiteSpace(value)) continue;
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/responses")
+            {
+                Content = JsonContent.Create(new { QuestionId = questionId, Value = value })
+            };
+            request.Headers.Add("X-Participant-Token", participant.ParticipantToken);
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
+    private class ApiParticipantDto
+    {
+        public string ParticipantToken { get; set; }
+    }
 }

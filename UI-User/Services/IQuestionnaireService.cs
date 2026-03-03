@@ -5,4 +5,5 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 public interface IQuestionnaireService
 {
     SurveyViewModel GetSurvey();
+    void SubmitSurvey(Dictionary<int, string> answers);
 }
