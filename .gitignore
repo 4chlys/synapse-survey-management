@@ -489,4 +489,6 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
+# manually by Casper
 CLAUDE.md
+start.bat
