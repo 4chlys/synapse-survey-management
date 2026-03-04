@@ -5,18 +5,21 @@ namespace SynapseEnqueteManagement.UI.User.Controllers;
 
 public class SurveyController : Controller
 {
-    private const string TokenCookieName = "ParticipantToken";
+    private const int ProjectId = 1;
     private readonly IQuestionnaireService _questionnaireService;
+    private readonly ISessionService _sessionService;
 
-    public SurveyController(IQuestionnaireService questionnaireService)
+    public SurveyController(IQuestionnaireService questionnaireService, ISessionService sessionService)
     {
         _questionnaireService = questionnaireService;
+        _sessionService = sessionService;
     }
 
     public IActionResult Index()
     {
-        // Cookie is only set after a successful submit, so its presence = already responded
-        if (Request.Cookies.ContainsKey(TokenCookieName))
+        var token = _sessionService.GetToken(ProjectId);
+        if (!string.IsNullOrWhiteSpace(token)
+            && _questionnaireService.HasParticipantResponded(token))
         {
             return RedirectToAction("Index", "Ideation");
         }
@@ -44,14 +47,7 @@ public class SurveyController : Controller
 
         var participantToken = _questionnaireService.SubmitSurvey(answers);
 
-        // Store the token in a cookie so returning visitors skip the survey
-        Response.Cookies.Append(TokenCookieName, participantToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            MaxAge = TimeSpan.FromDays(365)
-        });
+        _sessionService.SetToken(ProjectId, participantToken);
 
         return RedirectToAction("Index", "Ideation");
     }
