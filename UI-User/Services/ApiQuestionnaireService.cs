@@ -67,4 +67,64 @@ public class ApiQuestionnaireService : IQuestionnaireService
         public string QuestionFormat { get; set; }
         public List<string> AnswerChoices { get; set; } = new();
     }
+
+    public string SubmitSurvey(Dictionary<int, string> answers)
+    {
+        return SubmitSurveyAsync(answers).GetAwaiter().GetResult();
+    }
+
+    private async Task<string> SubmitSurveyAsync(Dictionary<int, string> answers)
+    {
+        var projectId = 1;
+
+        // 1. Create anonymous participant session
+        var participantResponse = await _httpClient.PostAsync($"api/projects/{projectId}/participants", null);
+        participantResponse.EnsureSuccessStatusCode();
+        var participant = await participantResponse.Content.ReadFromJsonAsync<ApiParticipantDto>();
+
+        // 2. Submit each answer with the participant token
+        foreach (var (questionId, value) in answers)
+        {
+            if (string.IsNullOrWhiteSpace(value)) continue;
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/responses")
+            {
+                Content = JsonContent.Create(new { QuestionId = questionId, Value = value })
+            };
+            request.Headers.Add("X-Participant-Token", participant.ParticipantToken);
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+        }
+
+        return participant.ParticipantToken;
+    }
+
+    public bool HasParticipantResponded(string participantToken)
+    {
+        return HasParticipantRespondedAsync(participantToken).GetAwaiter().GetResult();
+    }
+
+    private async Task<bool> HasParticipantRespondedAsync(string participantToken)
+    {
+        var projectId = 1;
+        var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
+        request.Headers.Add("X-Participant-Token", participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return false;
+
+        var result = await response.Content.ReadFromJsonAsync<ParticipantStatusDto>();
+        return result?.HasResponded ?? false;
+    }
+
+    private class ParticipantStatusDto
+    {
+        public bool HasResponded { get; set; }
+    }
+
+    private class ApiParticipantDto
+    {
+        public string ParticipantToken { get; set; }
+    }
 }

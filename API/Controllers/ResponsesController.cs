@@ -69,6 +69,20 @@ public class ResponsesController : ControllerBase
     }
 
     /// <summary>
+    /// Check if a participant (by token) has already submitted responses.
+    /// Returns { hasResponded: true/false }
+    /// </summary>
+    [HttpGet("participants/me")]
+    public ActionResult GetParticipantStatus(int projectId)
+    {
+        if (!TryGetParticipantToken(out var token))
+            return Ok(new { HasResponded = false });
+
+        var hasResponded = _manager.HasParticipantResponded(token);
+        return Ok(new { HasResponded = hasResponded });
+    }
+
+    /// <summary>
     /// Extracts the participant GUID token from the X-Participant-Token header.
     /// </summary>
     private bool TryGetParticipantToken(out Guid token)

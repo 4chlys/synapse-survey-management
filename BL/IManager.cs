@@ -14,5 +14,6 @@ public interface IManager
     Question GetQuestionById(int questionId);
     Participant GetParticipantById(int participantId);
     Participant GetParticipantBySessionToken(Guid sessionToken);
+    bool HasParticipantResponded(Guid sessionToken);
 
 }

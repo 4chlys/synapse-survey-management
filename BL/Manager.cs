@@ -80,4 +80,13 @@ public class Manager : IManager
             filters: [p => p.SessionToken == sessionToken]
         );
     }
+
+    public bool HasParticipantResponded(Guid sessionToken)
+    {
+        var participant = _repository.ReadSingle<Participant>(
+            filters: [p => p.SessionToken == sessionToken],
+            includes: [p => p.Responses]
+        );
+        return participant?.Responses.Count > 0;
+    }
 }
