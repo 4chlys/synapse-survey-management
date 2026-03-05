@@ -3,28 +3,18 @@ using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-/// <summary>
-/// Implementation of IQuestionnaireService that calls the REST API via HttpClient.
-/// Replaces StubQuestionnaireService.
-/// </summary>
-public class ApiQuestionnaireService : IQuestionnaireService
+public class QuestionnaireApiService : IQuestionnaireApiService
 {
     private readonly HttpClient _httpClient;
 
-    public ApiQuestionnaireService(HttpClient httpClient)
+    public QuestionnaireApiService(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
 
-    public SurveyViewModel GetSurvey()
+    public async Task<SurveyViewModel> GetSurveyAsync()
     {
-        // Synchronous wrapper - consider making IQuestionnaireService async in the future
-        return GetSurveyAsync().GetAwaiter().GetResult();
-    }
-
-    private async Task<SurveyViewModel> GetSurveyAsync()
-    {
-        // projectId will come from route/config — hardcoded 1 for now as example
+        // projectId will come from route/config — hardcoded 1 for now
         var projectId = 1;
         var questions = await _httpClient.GetFromJsonAsync<List<ApiQuestionDto>>($"api/projects/{projectId}/questionnaire/questions");
 
@@ -57,23 +47,7 @@ public class ApiQuestionnaireService : IQuestionnaireService
         };
     }
 
-    /// <summary>
-    /// Internal DTO matching the API's QuestionDto shape.
-    /// </summary>
-    private class ApiQuestionDto
-    {
-        public int QuestionId { get; set; }
-        public string Text { get; set; }
-        public string QuestionFormat { get; set; }
-        public List<string> AnswerChoices { get; set; } = new();
-    }
-
-    public string SubmitSurvey(Dictionary<int, string> answers)
-    {
-        return SubmitSurveyAsync(answers).GetAwaiter().GetResult();
-    }
-
-    private async Task<string> SubmitSurveyAsync(Dictionary<int, string> answers)
+    public async Task<string> SubmitSurveyAsync(Dictionary<int, string> answers)
     {
         var projectId = 1;
 
@@ -88,15 +62,10 @@ public class ApiQuestionnaireService : IQuestionnaireService
         response.EnsureSuccessStatusCode();
 
         var participant = await response.Content.ReadFromJsonAsync<ApiParticipantDto>();
-        return participant.ParticipantToken;
+        return participant!.ParticipantToken;
     }
 
-    public bool HasParticipantResponded(string participantToken)
-    {
-        return HasParticipantRespondedAsync(participantToken).GetAwaiter().GetResult();
-    }
-
-    private async Task<bool> HasParticipantRespondedAsync(string participantToken)
+    public async Task<bool> HasParticipantRespondedAsync(string participantToken)
     {
         var projectId = 1;
         var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
@@ -109,6 +78,14 @@ public class ApiQuestionnaireService : IQuestionnaireService
         return result?.HasResponded ?? false;
     }
 
+    private class ApiQuestionDto
+    {
+        public int QuestionId { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public string QuestionFormat { get; set; } = string.Empty;
+        public List<string> AnswerChoices { get; set; } = new();
+    }
+
     private class ParticipantStatusDto
     {
         public bool HasResponded { get; set; }
@@ -116,6 +93,6 @@ public class ApiQuestionnaireService : IQuestionnaireService
 
     private class ApiParticipantDto
     {
-        public string ParticipantToken { get; set; }
+        public string ParticipantToken { get; set; } = string.Empty;
     }
 }
