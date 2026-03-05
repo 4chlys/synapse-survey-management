@@ -43,6 +43,35 @@ public class ResponsesController : ControllerBase
     }
 
     /// <summary>
+    /// Creates a participant and submits all answers in one request.
+    /// Returns the participant token for the session cookie.
+    /// </summary>
+    [HttpPost("submit")]
+    public ActionResult<ParticipantDto> Submit(int projectId, [FromBody] SubmitSurveyDto submitDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var questionnaire = _manager.GetQuestionnaireByProjectId(projectId);
+        if (questionnaire is null)
+            return NotFound("Questionnaire not found.");
+
+        var participant = _manager.AddParticipant(questionnaire);
+
+        foreach (var answer in submitDto.Answers)
+        {
+            if (string.IsNullOrWhiteSpace(answer.Value)) continue;
+
+            var question = _manager.GetQuestionById(answer.QuestionId);
+            if (question is null) continue;
+
+            _manager.AddResponse(answer.Value, question, participant);
+        }
+
+        return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
+    }
+
+    /// <summary>
     /// Submit a response. The participant is identified by the
     /// X-Participant-Token header (obtained from POST /participants).
     /// </summary>
