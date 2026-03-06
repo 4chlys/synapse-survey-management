@@ -157,7 +157,7 @@ public class Repository : IRepository
     /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
     public bool Delete<T>(Expression<Func<T, bool>> filter) where T : class
     {
-        var entity = _context.Set<T>().FirstOrDefault(filter);
+        var entity = _context.Set<T>().SingleOrDefault(filter);
         if (entity == null)
         {
             return false;

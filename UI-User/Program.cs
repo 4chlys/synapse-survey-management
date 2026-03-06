@@ -7,7 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(client =>
      {
-         //TODO port not hardcoded
          client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
              ?? "https://localhost:5159");
      })
@@ -21,6 +20,9 @@ builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(c
     });
 
 
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ISessionService, CookieSessionService>();
 
 // ---- Service Configuration ----
 // Add Vite services.
