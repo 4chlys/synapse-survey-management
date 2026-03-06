@@ -19,9 +19,22 @@ public class SurveyController : Controller
     }
 
     [HttpPost]
-    public IActionResult Submit()
+    public IActionResult Submit(IFormCollection form)
     {
-        // Phase 2: forward form values to API
+        var answers = new Dictionary<int, string>();
+
+        foreach (var key in form.Keys)
+        {
+            if (!key.StartsWith("q_")) continue;
+            if (!int.TryParse(key[2..], out var questionId)) continue;
+
+            // Multiple checkbox values get joined with commas
+            var value = string.Join(", ", form[key].Where(v => !string.IsNullOrWhiteSpace(v)));
+            if (!string.IsNullOrWhiteSpace(value))
+                answers[questionId] = value;
+        }
+
+        _questionnaireService.SubmitSurvey(answers);
         return RedirectToAction("ThankYou");
     }
 
