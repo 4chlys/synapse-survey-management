@@ -57,6 +57,12 @@ public class DummyDataSeeder
 
         context.Projects.Add(project);
 
+        context.Categories.AddRange(
+            new Category { Name = "Campus welzijn", Description = "Welzijn op school" },
+            new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" },
+            new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" }
+        );
+
         context.SaveChanges();
     }
 }

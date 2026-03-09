@@ -22,7 +22,7 @@ public class SurveyController : Controller
         if (!string.IsNullOrWhiteSpace(token)
             && _questionnaireService.HasParticipantResponded(token))
         {
-            return RedirectToAction("Index", "Ideation");
+            return RedirectToAction("Index", "Category");
         }
 
         var model = _questionnaireService.GetSurvey();
@@ -50,7 +50,7 @@ public class SurveyController : Controller
 
         _sessionService.SetToken(ProjectId, participantToken);
 
-        return RedirectToAction("Index", "Ideation");
+        return RedirectToAction("Index", "Category");
     }
 
     public IActionResult ThankYou()

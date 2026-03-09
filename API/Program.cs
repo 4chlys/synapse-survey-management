@@ -20,7 +20,10 @@ builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnquete
 builder.Services.AddScoped<IRepository, Repository>();
 
 // Registering BL
-builder.Services.AddScoped<IManager, Manager>();
+builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
+builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
+builder.Services.AddScoped<IResponseManager, ResponseManager>();
+builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 
 // CORS - UI-User must access this API
 builder.Services.AddCors(options =>
