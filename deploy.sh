@@ -1,4 +1,12 @@
 #!/bin/bash
+#=============================================================================================================================
+# Autheurs: Quinten Morreel, Noa Robles Levy                                                                                  |
+# IP Project Sprint 1 Startup Script                                                                                          |
+# Description: Dit script start de verschillende componenten op om ons IP project te kunnen gebruiken via de cloud,           |
+#              de verschillende componenten die worden aangemaakt/ingesteld zijn: VM, Cloud SQL, Firewall and DNS.            |
+#              De VM krijgt dan oon het startup script nodig dat hier in aangemaakt wordt.                                    |
+#=============================================================================================================================
+
 
 # ===== SECRETS LADEN UIT .env =====
 if [ ! -f .env ]; then
