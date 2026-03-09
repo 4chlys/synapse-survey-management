@@ -29,28 +29,29 @@ builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 
 // Registering AI
-builder.Services.Configure<GoogleVertexAiService.Options>(
-    builder.Configuration.GetSection(GoogleVertexAiService.Options.Section));
+var projectId = builder.Configuration["VertexAi:ProjectId"]
+    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
 
-var vertexOpts = builder.Configuration
-    .GetSection(GoogleVertexAiService.Options.Section)
-    .Get<GoogleVertexAiService.Options>() ?? new GoogleVertexAiService.Options();
+var location = builder.Configuration["VertexAi:Location"]
+    ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
+
+var model = builder.Configuration["VertexAi:Model"]
+    ?? "gemini-2.5-flash-lite";
+
+var endpoint = builder.Configuration["VertexAi:Endpoint"]
+    ?? $"{location}-aiplatform.googleapis.com";
 
 var predictionBuilder = new PredictionServiceClientBuilder
-{
-    Endpoint = vertexOpts.Endpoint
-};
+{ 
+    Endpoint = endpoint
+    };
 
 var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
-    vertexOpts.ProjectId,
-    vertexOpts.Location,
-    "google",
-    vertexOpts.Model);
+        projectId, location, "google", model);
 
 var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
 builder.Services.AddChatClient(chatClient);
-
 builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 
 // CORS - UI-User must access this API

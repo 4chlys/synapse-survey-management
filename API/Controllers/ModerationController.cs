@@ -7,7 +7,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 /// Exposes two moderation endpoints consumed by the front-end:
 ///
 /// POST /api/moderation/regex   – instant regex scan (call on every debounced keystroke)
-/// POST /api/moderation/ai      – full AI scan        (call on submit or after typing stops)
+/// POST /api/moderation/ai      – full AI scan       (call on submit or after typing stops)
 ///
 /// Both return 200 with a <see cref="ModerationResponseDto"/> body.
 /// </summary>

@@ -1,53 +1,58 @@
-// Types
-
 export interface ModerationCallbacks {
     /** Called when the current text is rejected. Show this reason to the user. */
     onBlock: (reason: string, flaggedBy: 'Regex' | 'AI') => void;
-    /** Called when the current text is acceptable (clears previous error). */
+    /** Called when the current text is acceptable (clears a previous error). */
     onClear: () => void;
 }
 
 interface ModerationResponse {
     isAcceptable: boolean;
-    reason:      string | null;
-    flaggedBy:   'Regex' | 'AI' | null;
+    reason:       string | null;
+    flaggedBy:    'Regex' | 'AI' | null;
 }
 
-// Config
+let _apiBase = '';
 
-const API_BASE             = '/api/moderation';
+export function setApiBase(url: string): void {
+    _apiBase = url.replace(/\/$/, '');
+}
+
 const REGEX_DEBOUNCE_MS    = 400;
 const AI_DEBOUNCE_MS       = 1500;
-const MIN_LENGTH_FOR_CHECK = 3; 
-
-// Internal API helpers
+const MIN_LENGTH_FOR_CHECK = 3;
 
 async function callModeration(
     endpoint: 'regex' | 'ai',
     text: string,
     signal?: AbortSignal,
 ): Promise<ModerationResponse> {
-    const res = await fetch(`${API_BASE}/${endpoint}`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text }),
-        signal,
-    });
+    const url = `${_apiBase}/api/moderation/${endpoint}`;
+
+    let res: Response;
+    try {
+        res = await fetch(url, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ text }),
+            signal,
+        });
+    } catch (err) {
+        if ((err as Error).name === 'AbortError') throw err;
+        console.warn(`Moderation API (${endpoint}) unreachable:`, err);
+        return { isAcceptable: true, reason: null, flaggedBy: null };
+    }
 
     if (!res.ok) {
-        // Fail open – don't block the user if the API is unavailable
         console.warn(`Moderation API (${endpoint}) returned ${res.status}`);
         return { isAcceptable: true, reason: null, flaggedBy: null };
     }
 
-    return res.json() as Promise<ModerationResponse>;
+    return await res.json() as Promise<ModerationResponse>;
 }
-
-// Public: attach live moderation to an input element
 
 /**
  * Attaches live moderation listeners to `element`.
- * Returns a cleanup function that removes the listeners.
+ * Returns a cleanup function that removes the listeners and cancels pending calls.
  */
 export function attachModeration(
     element: HTMLTextAreaElement | HTMLInputElement,
@@ -58,13 +63,22 @@ export function attachModeration(
     let aiAbort:    AbortController | null = null;
 
     function clearTimers() {
-        if (regexTimer !== null) clearTimeout(regexTimer);
-        if (aiTimer    !== null) clearTimeout(aiTimer);
+        if (regexTimer !== null) { clearTimeout(regexTimer); regexTimer = null; }
+        if (aiTimer    !== null) { clearTimeout(aiTimer);    aiTimer    = null; }
         aiAbort?.abort();
+        aiAbort = null;
     }
 
-    async function runRegex(text: string) {
-        const result = await callModeration('regex', text);
+    async function runRegex(snapshot: string) {
+        let result: ModerationResponse;
+        try {
+            result = await callModeration('regex', snapshot);
+        } catch {
+            return;
+        }
+
+        if (element.value !== snapshot) return;
+
         if (!result.isAcceptable && result.reason) {
             callbacks.onBlock(result.reason, 'Regex');
         } else {
@@ -72,11 +86,20 @@ export function attachModeration(
         }
     }
 
-    async function runAi(text: string) {
+    async function runAi(snapshot: string) {
         aiAbort?.abort();
         aiAbort = new AbortController();
 
-        const result = await callModeration('ai', text, aiAbort.signal);
+        let result: ModerationResponse;
+        try {
+            result = await callModeration('ai', snapshot, aiAbort.signal);
+        } catch (err) {
+            if ((err as Error).name === 'AbortError') return;
+            return;
+        }
+
+        if (element.value !== snapshot) return;
+
         if (!result.isAcceptable && result.reason) {
             callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
         } else {
@@ -92,10 +115,10 @@ export function attachModeration(
             callbacks.onClear();
             return;
         }
-        
-        regexTimer = setTimeout(() => runRegex(text), REGEX_DEBOUNCE_MS);
 
-        aiTimer = setTimeout(() => runAi(text), AI_DEBOUNCE_MS);
+        const snapshot = text;
+        regexTimer = setTimeout(() => runRegex(snapshot), REGEX_DEBOUNCE_MS);
+        aiTimer    = setTimeout(() => runAi(snapshot),    AI_DEBOUNCE_MS);
     }
 
     element.addEventListener('input', onInput);
@@ -106,11 +129,9 @@ export function attachModeration(
     };
 }
 
-// Public: validate text before submit
-
 /**
- * Runs the full moderation pipeline (regex + AI) before submitting.
- * Returns `true` if the content is acceptable, `false` if it should be blocked.
+ * Runs the full moderation pipeline (regex + AI) synchronously before submitting.
+ * Returns `true` if acceptable, `false` if blocked.
  *
  * @param text    The text to check.
  * @param onBlock Optional callback with the rejection reason.
@@ -121,7 +142,12 @@ export async function moderateBeforeSubmit(
 ): Promise<boolean> {
     if (!text || text.trim().length < MIN_LENGTH_FOR_CHECK) return true;
 
-    const result = await callModeration('ai', text);
+    let result: ModerationResponse;
+    try {
+        result = await callModeration('ai', text);
+    } catch {
+        return true;
+    }
 
     if (!result.isAcceptable && result.reason) {
         onBlock?.(result.reason, result.flaggedBy ?? 'AI');
@@ -131,22 +157,13 @@ export async function moderateBeforeSubmit(
     return true;
 }
 
-// Wiring
-
 /**
- * High-level helper that:
- *  - Attaches live moderation to `input`
- *  - Injects an error `<p>` element below `input`
- *  - Blocks form submission when content is flagged
+ * Wires live moderation to a single textarea or input.
+ * - Injects an error <p> directly after the element.
+ * - Sets `data-moderation-blocked="true"` on the input when flagged.
+ * - Returns a cleanup/detach function.
  *
- * Returns a cleanup / detach function.
- *
- * @example
- * ```ts
- * import { wireModerationField } from './moderation';
- *
- * wireModerationField(document.querySelector<HTMLTextAreaElement>('#idea-input')!);
- * ```
+ * The form submit must be intercepted separately — see wireModerationForm().
  */
 export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
@@ -154,6 +171,7 @@ export function wireModerationField(
     const errorEl = document.createElement('p');
     errorEl.className =
         'moderation-error hidden text-red-500 text-xs mt-1 font-medium animate-[fade-up_0.2s_ease-out_both]';
+
     input.insertAdjacentElement('afterend', errorEl);
 
     function showError(reason: string) {
@@ -181,4 +199,67 @@ export function wireModerationField(
     };
 }
 
+/**
+ * Wires moderation to every <textarea> inside `form` and intercepts submit.
+ *
+ * On submit:
+ *   1. Blocks submission if any field already has `data-moderation-blocked`.
+ *   2. Runs a final AI check on all open-answer fields before allowing submit.
+ *   3. Shows per-field errors and calls `onSubmitBlocked` if any field fails.
+ *
+ * Returns a cleanup function.
+ */
+export function wireModerationForm(
+    form: HTMLFormElement,
+    onSubmitBlocked?: () => void,
+): () => void {
+    const textareas = Array.from(form.querySelectorAll<HTMLTextAreaElement>('textarea'));
+    const detachers = textareas.map(ta => wireModerationField(ta));
 
+    async function onSubmit(e: SubmitEvent) {
+        e.preventDefault();
+
+        const alreadyBlocked = textareas.some(
+            ta => ta.getAttribute('data-moderation-blocked') === 'true'
+        );
+        if (alreadyBlocked) {
+            onSubmitBlocked?.();
+            return;
+        }
+
+        const checks = await Promise.all(
+            textareas
+                .filter(ta => ta.value.trim().length >= MIN_LENGTH_FOR_CHECK)
+                .map(async ta => {
+                    const acceptable = await moderateBeforeSubmit(
+                        ta.value,
+                        (reason, flaggedBy) => {
+                            ta.setAttribute('data-moderation-blocked', 'true');
+                            ta.classList.add('border-red-400');
+                            const existing = ta.nextElementSibling;
+                            if (existing?.classList.contains('moderation-error')) {
+                                existing.textContent = reason;
+                                existing.classList.remove('hidden');
+                            }
+                        }
+                    );
+                    return acceptable;
+                })
+        );
+
+        if (checks.some(ok => !ok)) {
+            onSubmitBlocked?.();
+            return;
+        }
+
+        form.removeEventListener('submit', onSubmit);
+        form.requestSubmit();
+    }
+
+    form.addEventListener('submit', onSubmit);
+
+    return () => {
+        form.removeEventListener('submit', onSubmit);
+        detachers.forEach(d => d());
+    };
+}
