@@ -1,5 +1,8 @@
+using Google.Cloud.AIPlatform.V1;
+using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
 var UserUiHttpPort = 5291;
@@ -24,6 +27,31 @@ builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
+
+// Registering AI
+builder.Services.Configure<GoogleVertexAiService.Options>(
+    builder.Configuration.GetSection(GoogleVertexAiService.Options.Section));
+
+var vertexOpts = builder.Configuration
+    .GetSection(GoogleVertexAiService.Options.Section)
+    .Get<GoogleVertexAiService.Options>() ?? new GoogleVertexAiService.Options();
+
+var predictionBuilder = new PredictionServiceClientBuilder
+{
+    Endpoint = vertexOpts.Endpoint
+};
+
+var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
+    vertexOpts.ProjectId,
+    vertexOpts.Location,
+    "google",
+    vertexOpts.Model);
+
+var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
+
+builder.Services.AddChatClient(chatClient);
+
+builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 
 // CORS - UI-User must access this API
 builder.Services.AddCors(options =>
