@@ -4,6 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SynapseIP</title>
+    
+    @if (ViewData["ShowModerationPopup"] is true)
+    {
+        @await Html.PartialAsync("_ModerationPopup")
+    }
+    
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
@@ -32,5 +38,6 @@
     </main>
 
     @await RenderSectionAsync("Scripts", required: false)
-</body>
+    
+    </body>
 </html>
