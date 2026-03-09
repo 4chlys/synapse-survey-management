@@ -1,8 +1,9 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Emoji
+public class EmojiReaction
 {
-    public int EmojiId { get; set; }
-    public string Code { get; set; }
-    public string Name { get; set; }
+    public int EmojiReactionId { get; set; }
+    public string Emoji { get; set; }
+    public Idea Idea { get; set; }
+    public Participant Participant { get; set; }
 }

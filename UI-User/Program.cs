@@ -49,6 +49,32 @@ builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(client =>
         return handler;
     });
 
+builder.Services.AddHttpClient<IdeaService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+                                     ?? "https://localhost:5159");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
+
+builder.Services.AddHttpClient<EmojiService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+                                     ?? "https://localhost:5159");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
+
 // Form strategies (OCP: register a new IFormStrategy here to add a new form type)
 builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
 builder.Services.AddSingleton<IFormStrategy, ChatFormStrategy>();
@@ -81,8 +107,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-
-app.UseStaticFiles(); // serves Vite-generated files (hashed CSS/JS) from wwwroot
+app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapStaticAssets();

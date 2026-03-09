@@ -15,7 +15,7 @@ public class SynapseEnqueteContext : IdentityDbContext
     public DbSet<Category> Categories { get; set; }
     public DbSet<Introduction> Introductions { get; set; }
     public DbSet<Section> Sections { get; set; }
-    public DbSet<Emoji> Emojis { get; set; }
+    public DbSet<EmojiReaction> Emojis { get; set; }
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
 
