@@ -27,6 +27,7 @@ builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
+builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
 // Registering AI
 var projectId = builder.Configuration["VertexAi:ProjectId"]

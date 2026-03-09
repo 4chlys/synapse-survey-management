@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(client =>
+builder.Services.AddHttpClient<IQuestionnaireApiService, QuestionnaireApiService>(client =>
      {
          client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
              ?? "https://localhost:5159");
@@ -24,6 +24,18 @@ builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(c
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ISessionService, CookieSessionService>();
 builder.Services.AddHttpClient<CategoryService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+            ?? "https://localhost:5159");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
+builder.Services.AddHttpClient<ProjectApiService>(client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
             ?? "https://localhost:5159");
@@ -69,9 +81,10 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Survey}/{action=Index}/{id?}")
+    name: "project",
+    pattern: "{projectId:int}/{controller=Survey}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapGet("/", () => Results.Redirect("/1/Survey"));
 
 app.Run();
