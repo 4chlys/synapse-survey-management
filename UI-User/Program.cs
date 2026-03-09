@@ -35,6 +35,18 @@ builder.Services.AddHttpClient<CategoryService>(client =>
             handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
+builder.Services.AddHttpClient<ProjectApiService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+            ?? "https://localhost:5159");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
 
 // ---- Service Configuration ----
 // Add Vite services.
@@ -69,9 +81,10 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Survey}/{action=Index}/{id?}")
+    name: "project",
+    pattern: "{projectId:int}/{controller=Survey}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapGet("/", () => Results.Redirect("/1/Survey"));
 
 app.Run();
