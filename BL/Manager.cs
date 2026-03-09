@@ -81,6 +81,13 @@ public class Manager : IManager
         );
     }
 
+    public IEnumerable<Category> GetCategories()
+    {
+        return _repository.Read<Category>(
+            includes: [c => c.Ideas]
+        );
+    }
+
     public bool HasParticipantResponded(Guid sessionToken)
     {
         var participant = _repository.ReadSingle<Participant>(

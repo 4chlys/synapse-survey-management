@@ -15,5 +15,5 @@ public interface IManager
     Participant GetParticipantById(int participantId);
     Participant GetParticipantBySessionToken(Guid sessionToken);
     bool HasParticipantResponded(Guid sessionToken);
-
+    IEnumerable<Category> GetCategories();
 }

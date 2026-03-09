@@ -23,6 +23,18 @@ builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(c
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ISessionService, CookieSessionService>();
+builder.Services.AddHttpClient<CategoryService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+            ?? "https://localhost:5159");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
 
 // ---- Service Configuration ----
 // Add Vite services.
@@ -58,7 +70,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Category}/{action=Index}/{id?}")
+    pattern: "{controller=Survey}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 

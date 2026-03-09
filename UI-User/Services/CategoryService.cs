@@ -1,17 +1,41 @@
-﻿using SynapseEnqueteManagement.UI.User.Models;
+using System.Net.Http.Json;
+using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class CategoryService
 {
+    private readonly HttpClient _httpClient;
+
+    public CategoryService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
     public List<Category> GetCategories()
     {
-        return new List<Category>
-            {
-                new Category { Id = 1, Name = "Campus welzijn", Description = "Welzijn op school", IdeaCount = 55 },
-                new Category { Id = 2, Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd",IdeaCount = 323 },
-                new Category { Id = 3, Name = "Online welzijn", Description = "Gezond omgaan met social media en online", IdeaCount = 19 }
-            };
-        
+        return GetCategoriesAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task<List<Category>> GetCategoriesAsync()
+    {
+        var dtos = await _httpClient.GetFromJsonAsync<List<ApiCategoryDto>>("api/categories");
+        if (dtos is null) return new List<Category>();
+
+        return dtos.Select(d => new Category
+        {
+            Id = d.CategoryId,
+            Name = d.Name,
+            Description = d.Description,
+            IdeaCount = d.IdeaCount
+        }).ToList();
+    }
+
+    private class ApiCategoryDto
+    {
+        public int CategoryId { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public int IdeaCount { get; set; }
     }
 }
