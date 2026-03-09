@@ -8,17 +8,17 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/categories")]
 public class CategoriesController : ControllerBase
 {
-    private readonly IManager _manager;
+    private readonly ICategoryManager _categoryManager;
 
-    public CategoriesController(IManager manager)
+    public CategoriesController(ICategoryManager categoryManager)
     {
-        _manager = manager;
+        _categoryManager = categoryManager;
     }
 
     [HttpGet]
     public ActionResult<IEnumerable<CategoryDto>> GetCategories()
     {
-        var categories = _manager.GetCategories();
+        var categories = _categoryManager.GetCategories();
         var dtos = categories.Select(c => new CategoryDto
         {
             CategoryId = c.CategoryId,
