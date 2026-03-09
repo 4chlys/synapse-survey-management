@@ -5,6 +5,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SynapseEnqueteManagement.API</AssemblyName>
+    <RootNamespace>SynapseEnqueteManagement.API</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
