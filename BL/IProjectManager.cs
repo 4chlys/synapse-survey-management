@@ -4,5 +4,5 @@ namespace SynapseEnqueteManagement.BL;
 
 public interface IProjectManager
 {
-    Project GetProjectById(int projectId);
+    Task<Project> GetProjectByIdAsync(int projectId);
 }

@@ -12,27 +12,27 @@ public class ParticipantManager : IParticipantManager
         _repository = repository;
     }
 
-    public Participant AddParticipant(Questionnaire questionnaire)
+    public async Task<Participant> AddParticipantAsync(Questionnaire questionnaire)
     {
         var participant = new Participant { Questionnaire = questionnaire };
-        return _repository.Create(participant);
+        return await _repository.CreateAsync(participant);
     }
 
-    public Participant GetParticipantById(int participantId)
+    public async Task<Participant> GetParticipantByIdAsync(int participantId)
     {
-        return _repository.ReadById<Participant>(participantId);
+        return await _repository.ReadByIdAsync<Participant>(participantId);
     }
 
-    public Participant GetParticipantBySessionToken(Guid sessionToken)
+    public async Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken)
     {
-        return _repository.ReadSingle<Participant>(
+        return await _repository.ReadSingleAsync<Participant>(
             filters: [p => p.SessionToken == sessionToken]
         );
     }
 
-    public bool HasParticipantResponded(Guid sessionToken)
+    public async Task<bool> HasParticipantRespondedAsync(Guid sessionToken)
     {
-        var participant = _repository.ReadSingle<Participant>(
+        var participant = await _repository.ReadSingleAsync<Participant>(
             filters: [p => p.SessionToken == sessionToken],
             includes: [p => p.Responses]
         );

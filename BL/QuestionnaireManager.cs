@@ -13,30 +13,31 @@ public class QuestionnaireManager : IQuestionnaireManager
         _repository = repository;
     }
 
-    public IEnumerable<Question> GetQuestions()
+    public async Task<IEnumerable<Question>> GetQuestionsAsync()
     {
-        return _repository.Read<Question>(
+        return await _repository.ReadAsync<Question>(
             includes: [q => q.Questionnaire]
         );
     }
 
-    public Questionnaire GetFirstQuestionnaire()
+    public async Task<Questionnaire> GetFirstQuestionnaireAsync()
     {
-        return _repository.ReadSingle<Questionnaire>();
+        return await _repository.ReadSingleAsync<Questionnaire>();
     }
 
-    public Questionnaire GetQuestionnaireByProjectId(int projectId)
+    public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
     {
-        return _repository.ReadSingle<Project>(
+        var project = await _repository.ReadSingleAsync<Project>(
             filters: [p => p.ProjectId == projectId],
             includes: [p => p.Questionnaire],
             includeStrings: ["Questionnaire.Questions"]
-        )?.Questionnaire;
+        );
+        return project?.Questionnaire;
     }
 
-    public Question GetQuestionById(int questionId)
+    public async Task<Question> GetQuestionByIdAsync(int questionId)
     {
-        return _repository.ReadById<Question>(questionId);
+        return await _repository.ReadByIdAsync<Question>(questionId);
     }
 
     public void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers)

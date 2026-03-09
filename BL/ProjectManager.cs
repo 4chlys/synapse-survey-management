@@ -12,9 +12,9 @@ public class ProjectManager : IProjectManager
         _repository = repository;
     }
 
-    public Project GetProjectById(int projectId)
+    public async Task<Project> GetProjectByIdAsync(int projectId)
     {
-        return _repository.ReadSingle<Project>(
+        return await _repository.ReadSingleAsync<Project>(
             filters: [p => p.ProjectId == projectId]
         );
     }

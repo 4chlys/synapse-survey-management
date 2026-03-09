@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.BL;
 
 public interface IResponseManager
 {
-    Response AddResponse(string value, Question question, Participant participant);
-    IEnumerable<Response> GetAllResponses();
-    IEnumerable<Response> GetResponsesByProjectId(int projectId);
+    Task<Response> AddResponseAsync(string value, Question question, Participant participant);
+    Task<IEnumerable<Response>> GetAllResponsesAsync();
+    Task<IEnumerable<Response>> GetResponsesByProjectIdAsync(int projectId);
 }

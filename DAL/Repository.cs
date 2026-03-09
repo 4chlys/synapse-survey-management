@@ -1,10 +1,10 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace SynapseEnqueteManagement.DAL;
 
 /// <summary>
-/// A generic repository class that provides standard CRUD (Create, Read, Update, Delete) 
+/// A generic repository class that provides standard CRUD (Create, Read, Update, Delete)
 /// operations for any entity type using Entity Framework Core.
 /// </summary>
 public class Repository : IRepository
@@ -27,20 +27,20 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity being created.</typeparam>
     /// <param name="entity">The entity instance to be added.</param>
     /// <param name="duplicateCheck">
-    /// An optional expression to define what constitutes a duplicate. 
+    /// An optional expression to define what constitutes a duplicate.
     /// If an entity matching this expression already exists, the creation is skipped.
     /// </param>
     /// <returns>The created entity if successful; <c>null</c> if a duplicate was found.</returns>
-    public T Create<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class
+    public async Task<T> CreateAsync<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class
     {
         // Check for duplicates
-        if (duplicateCheck != null && _context.Set<T>().Any(duplicateCheck))
+        if (duplicateCheck != null && await _context.Set<T>().AnyAsync(duplicateCheck))
         {
             return null;
         }
 
-        _context.Set<T>().Add(entity);
-        _context.SaveChanges();
+        await _context.Set<T>().AddAsync(entity);
+        await _context.SaveChangesAsync();
         return entity;
     }
 
@@ -53,7 +53,7 @@ public class Repository : IRepository
     /// <param name="includes">An optional array of lambda expressions for related entities to include (eager loading).</param>
     /// <param name="includeStrings">An optional array of string paths for nested or complex related entities to include.</param>
     /// <returns>An <see cref="IEnumerable{T}"/> containing the matching entities.</returns>
-    public IEnumerable<T> Read<T>(
+    public async Task<IEnumerable<T>> ReadAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null
@@ -82,7 +82,7 @@ public class Repository : IRepository
                 query = query.Where(filter);
         }
 
-        return query.ToList();
+        return await query.ToListAsync();
     }
 
     /// <summary>
@@ -91,16 +91,16 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to find.</typeparam>
     /// <param name="id">The primary key value(s) of the entity.</param>
     /// <returns>The entity if found; <c>null</c> otherwise.</returns>
-    public T ReadById<T>(params object[] id) where T : class
+    public async Task<T> ReadByIdAsync<T>(params object[] id) where T : class
     {
-        return _context.Set<T>().Find(id);
+        return await _context.Set<T>().FindAsync(id);
     }
 
     /// <summary>
     /// Retrieves a single entity based on provided filters and navigation property includes.
-    /// The SingleOrDefault is executed on the IQueryable, so it translates to a SQL TOP 1 query.
+    /// The SingleOrDefaultAsync is executed on the IQueryable, so it translates to a SQL TOP 1 query.
     /// </summary>
-    public T ReadSingle<T>(
+    public async Task<T> ReadSingleAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null
@@ -126,7 +126,7 @@ public class Repository : IRepository
                 query = query.Where(filter);
         }
 
-        return query.SingleOrDefault();
+        return await query.SingleOrDefaultAsync();
     }
 
     /// <summary>
@@ -135,12 +135,12 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
     /// <param name="entity">The entity instance with updated values.</param>
     /// <returns><c>true</c> if the update and save operations were successful; <c>false</c> if an error occurred.</returns>
-    public bool Update<T>(T entity) where T : class
+    public async Task<bool> UpdateAsync<T>(T entity) where T : class
     {
         try
         {
             _context.Set<T>().Update(entity);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return true;
         }
         catch
@@ -155,15 +155,15 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to delete.</typeparam>
     /// <param name="filter">The expression used to locate the entity for deletion.</param>
     /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
-    public bool Delete<T>(Expression<Func<T, bool>> filter) where T : class
+    public async Task<bool> DeleteAsync<T>(Expression<Func<T, bool>> filter) where T : class
     {
-        var entity = _context.Set<T>().SingleOrDefault(filter);
+        var entity = await _context.Set<T>().SingleOrDefaultAsync(filter);
         if (entity == null)
         {
             return false;
         }
         _context.Set<T>().Remove(entity);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return true;
     }
 
@@ -173,16 +173,16 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to delete.</typeparam>
     /// <param name="id">The primary key value(s) of the entity.</param>
     /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
-    public bool DeleteById<T>(params object[] id) where T : class
+    public async Task<bool> DeleteByIdAsync<T>(params object[] id) where T : class
     {
-        var entity = _context.Set<T>().Find(id);
+        var entity = await _context.Set<T>().FindAsync(id);
         if (entity == null)
         {
             return false;
         }
 
         _context.Set<T>().Remove(entity);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return true;
     }
 
