@@ -1,6 +1,4 @@
 using Microsoft.Extensions.AI;
-using Google.Cloud.AIPlatform.V1;
-using Google.Cloud.VertexAI.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -8,28 +6,12 @@ using System.Text.RegularExpressions;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
-/// <summary>
-/// Implements <see cref="IAiModerationService"/> using Google Vertex AI (Gemini)
-/// via the <see cref="IChatClient"/> abstraction from Microsoft.Extensions.AI.
-///
-/// Authentication uses Application Default Credentials (ADC):
-///   Local dev:   run  gcloud auth application-default login
-///   Production:  Workload Identity / service account — no secrets needed
-///
-/// Configuration (appsettings.json):
-/// "VertexAi": {
-///   "ProjectId": "your-gcp-project",
-///   "Location":  "europe-west1",
-///   "Model":     "gemini-2.5-flash-lite",
-///   "Endpoint":  "europe-west1-aiplatform.googleapis.com"
-/// }
-/// </summary>
 public sealed class GoogleVertexAiService(
     IChatClient chatClient,
     ILogger<GoogleVertexAiService> logger)
     : IAiModerationService
 {
-    private const string SystemPrompt =
+    private const string ModerationPrompt =
         "Je bent een inhoudsmoderatie-assistent voor een schoolwelzijnsplatform in Belgie. " +
         "Beoordeel of de gebruikersinvoer acceptabel is.\n\n" +
         "Afwijzen als de tekst:\n" +
@@ -42,7 +24,25 @@ public sealed class GoogleVertexAiService(
         "{ \"acceptable\": true }\n" +
         "of\n" +
         "{ \"acceptable\": false, \"reason\": \"<korte Nederlandse reden>\" }";
-    
+
+    /// <summary>
+    /// Instructs the model to rewrite flagged content constructively while
+    /// preserving the original intent. Returns the literal string "NULL" when
+    /// no meaningful rewrite is possible (pure spam, abuse, etc.).
+    /// </summary>
+    private const string RewritePrompt =
+        "Je bent een schrijfassistent voor een schoolwelzijnsplatform in Belgie. " +
+        "Een leerling heeft een bericht geschreven dat ongepaste taal of toon bevat. " +
+        "Herschrijf het bericht zodat het respectvol, constructief en geschikt is voor het platform, " +
+        "maar behoud de kern van wat de leerling wil zeggen.\n\n" +
+        "Regels:\n" +
+        "- Verwijder scheldwoorden, beledigingen en agressieve taal\n" +
+        "- Behoud de originele betekenis en intentie zo veel mogelijk\n" +
+        "- Schrijf in dezelfde taal als het originele bericht\n" +
+        "- Als het bericht absoluut niet herschreven kan worden (bv. puur spam of misbruik), " +
+        "  antwoord dan met exact: NULL\n\n" +
+        "Geef ALLEEN de herschreven tekst terug, geen uitleg, geen aanhalingstekens, geen extra tekst.";
+
     private static readonly Regex CodeFenceRe =
         new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
@@ -52,7 +52,6 @@ public sealed class GoogleVertexAiService(
         DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <inheritdoc/>
     public ModerationResult CheckWithRegex(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -75,13 +74,9 @@ public sealed class GoogleVertexAiService(
         var collapsedResult = RunRegexAndFuzzy(collapsed);
         if (!collapsedResult.IsAcceptable) return collapsedResult;
 
-        var collapsedNoSpaceResult = RunRegexAndFuzzy(collapsedNoSpace);
-        if (!collapsedNoSpaceResult.IsAcceptable) return collapsedNoSpaceResult;
-
-        return ModerationResult.Acceptable();
+        return RunRegexAndFuzzy(collapsedNoSpace);
     }
 
-    /// <inheritdoc/>
     public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -93,7 +88,7 @@ public sealed class GoogleVertexAiService(
 
         try
         {
-            return await CallAiAsync(text, ct);
+            return await CallModerationAsync(text, ct);
         }
         catch (OperationCanceledException)
         {
@@ -104,16 +99,48 @@ public sealed class GoogleVertexAiService(
             logger.LogWarning(ex,
                 "Vertex AI moderation call failed; failing open. Snippet: {Snippet}",
                 text.Length > 80 ? text[..80] + "…" : text);
-
             return ModerationResult.Acceptable();
         }
     }
 
-    /// <summary>
-    /// Runs compiled regex patterns AND fuzzy word matching against
-    /// <paramref name="candidate"/>. Extracted so every normalisation variant
-    /// can be checked without code duplication.
-    /// </summary>
+    /// <inheritdoc/>
+    public async Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        try
+        {
+            var messages = new List<ChatMessage>
+            {
+                new(ChatRole.System, RewritePrompt),
+                new(ChatRole.User,   text),
+            };
+
+            var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(suggestion) ||
+                suggestion.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return suggestion;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Vertex AI rewrite suggestion failed. Snippet: {Snippet}",
+                text.Length > 80 ? text[..80] + "…" : text);
+            return null;
+        }
+    }
+
     private static ModerationResult RunRegexAndFuzzy(string candidate)
     {
         foreach (var (pattern, reason) in RegexModerationPatterns.All)
@@ -131,22 +158,17 @@ public sealed class GoogleVertexAiService(
         return ModerationResult.Acceptable();
     }
 
-    /// <summary>
-    /// Sends the text to Gemini and parses the JSON verdict.
-    /// Only called after the regex layer has already passed.
-    /// </summary>
-    private async Task<ModerationResult> CallAiAsync(string text, CancellationToken ct)
+    private async Task<ModerationResult> CallModerationAsync(string text, CancellationToken ct)
     {
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, SystemPrompt),
+            new(ChatRole.System, ModerationPrompt),
             new(ChatRole.User,   text),
         };
-        
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
 
+        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
         string rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
-        
+
         if (string.IsNullOrWhiteSpace(rawJson))
         {
             logger.LogWarning("Vertex AI returned an empty response.");
@@ -158,7 +180,7 @@ public sealed class GoogleVertexAiService(
         ModerationVerdict verdict;
         try
         {
-            verdict = JsonSerializer.Deserialize<ModerationVerdict>(rawJson, (JsonSerializerOptions)JsonOpts)
+            verdict = JsonSerializer.Deserialize<ModerationVerdict>(rawJson, JsonOpts)
                       ?? new ModerationVerdict { Acceptable = true };
         }
         catch (JsonException ex)
@@ -182,6 +204,6 @@ public sealed class GoogleVertexAiService(
         public bool    Acceptable { get; set; }
 
         [JsonPropertyName("reason")]
-        public string? Reason     { get; set; }
+        public string Reason     { get; set; }
     }
 }
