@@ -7,31 +7,31 @@ public class SurveyController : Controller
 {
     // TODO: Replace with real projectID by routing/env
     private const int ProjectId = 1;
-    private readonly IQuestionnaireService _questionnaireService;
+    private readonly IQuestionnaireApiService _questionnaireService;
     private readonly ISessionService _sessionService;
 
-    public SurveyController(IQuestionnaireService questionnaireService, ISessionService sessionService)
+    public SurveyController(IQuestionnaireApiService questionnaireService, ISessionService sessionService)
     {
         _questionnaireService = questionnaireService;
         _sessionService = sessionService;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         var token = _sessionService.GetToken(ProjectId);
         if (!string.IsNullOrWhiteSpace(token)
-            && _questionnaireService.HasParticipantResponded(token))
+            && await _questionnaireService.HasParticipantRespondedAsync(token))
         {
             return RedirectToAction("Index", "Category");
         }
 
-        var model = _questionnaireService.GetSurvey();
+        var model = await _questionnaireService.GetSurveyAsync();
         return View(model);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Submit(IFormCollection form)
+    public async Task<IActionResult> Submit(IFormCollection form)
     {
         var answers = new Dictionary<int, string>();
 
@@ -46,7 +46,7 @@ public class SurveyController : Controller
                 answers[questionId] = value;
         }
 
-        var participantToken = _questionnaireService.SubmitSurvey(answers);
+        var participantToken = await _questionnaireService.SubmitSurveyAsync(answers);
 
         _sessionService.SetToken(ProjectId, participantToken);
 
