@@ -24,6 +24,7 @@ builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
+builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
 // CORS - UI-User must access this API
 builder.Services.AddCors(options =>

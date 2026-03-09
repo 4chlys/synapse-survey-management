@@ -12,20 +12,17 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         _httpClient = httpClient;
     }
 
-    public async Task<SurveyViewModel> GetSurveyAsync()
+    public async Task<SurveyViewModel> GetSurveyAsync(int projectId)
     {
-        // projectId will come from route/config — hardcoded 1 for now
-        var projectId = 1;
-        var questions = await _httpClient.GetFromJsonAsync<List<ApiQuestionDto>>($"api/projects/{projectId}/questionnaire/questions");
+        var response = await _httpClient.GetAsync($"api/projects/{projectId}/questionnaire/questions");
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var questions = await response.Content.ReadFromJsonAsync<List<ApiQuestionDto>>();
 
         if (questions is null || questions.Count == 0)
-        {
-            return new SurveyViewModel
-            {
-                Title = "Survey",
-                Questions = new List<QuestionViewModel>()
-            };
-        }
+            return null;
 
         int total = questions.Count;
         int number = 1;
@@ -47,10 +44,8 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         };
     }
 
-    public async Task<string> SubmitSurveyAsync(Dictionary<int, string> answers)
+    public async Task<string> SubmitSurveyAsync(int projectId, Dictionary<int, string> answers)
     {
-        var projectId = 1;
-
         var payload = new
         {
             Answers = answers
@@ -65,9 +60,8 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         return participant!.ParticipantToken;
     }
 
-    public async Task<bool> HasParticipantRespondedAsync(string participantToken)
+    public async Task<bool> HasParticipantRespondedAsync(int projectId, string participantToken)
     {
-        var projectId = 1;
         var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
         request.Headers.Add("X-Participant-Token", participantToken);
 
