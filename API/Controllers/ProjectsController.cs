@@ -16,9 +16,9 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet("{projectId}")]
-    public ActionResult<ProjectDto> GetProject(int projectId)
+    public async Task<ActionResult<ProjectDto>> GetProject(int projectId)
     {
-        var project = _projectManager.GetProjectById(projectId);
+        var project = await _projectManager.GetProjectByIdAsync(projectId);
         if (project is null)
             return NotFound();
 

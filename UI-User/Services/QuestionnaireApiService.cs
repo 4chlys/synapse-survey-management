@@ -32,6 +32,7 @@ public class QuestionnaireApiService : IQuestionnaireApiService
             Text = q.Text,
             Format = Enum.Parse<QuestionFormat>(q.QuestionFormat),
             AnswerChoices = q.AnswerChoices,
+            IsMandatory = q.IsMandatory,    
             QuestionNumber = number++,
             TotalQuestions = total
         }).ToList();
