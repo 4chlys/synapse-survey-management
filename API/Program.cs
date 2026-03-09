@@ -6,11 +6,16 @@ using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-bool deleteIfExists = true;
+var UserUiHttpPort = 5291;
+var UserUiHttpsPort = 7163;
+
+bool deleteIfExists = true; // SQLite resetten?
+
 bool useAI = false;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
