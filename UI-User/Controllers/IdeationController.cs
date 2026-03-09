@@ -8,6 +8,7 @@ public class IdeationController : Controller
     {
         ViewData["ProjectId"] = projectId;
         ViewData["CategoryId"] = id;
+        ViewData["ShowModerationPopup"] = true;
         return View();
     }
 }

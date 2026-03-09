@@ -13,12 +13,6 @@ interface SuggestResponse {
     suggestion: string | null;
 }
 
-export interface ModerationOutcome {
-    proceed:    boolean;
-    finalText:  string | null;
-    wasFlagged: boolean;
-}
-
 let _apiBase = '';
 
 export function setApiBase(url: string): void {
@@ -66,14 +60,28 @@ async function callSuggest(text: string): Promise<string | null> {
     }
 }
 
+function getPopupEls() {
+    return {
+        overlay:         document.getElementById('moderation-overlay')!,
+        reason:          document.getElementById('moderation-reason')!,
+        suggestionBlock: document.getElementById('moderation-suggestion-block')!,
+        suggestionText:  document.getElementById('moderation-suggestion-text')!,
+        blockMessage:    document.getElementById('moderation-block-message')!,
+        btnDecline:      document.getElementById('moderation-btn-decline')!,
+        btnAccept:       document.getElementById('moderation-btn-accept')!,
+        btnClose:        document.getElementById('moderation-btn-close')!,
+    };
+}
+
 /**
- * Shows a modal popup with the AI's rewrite suggestion.
- * Resolves with the user's choice:
- *   - { accepted: true,  text: rewrittenText }  → user accepted the rewrite
- *   - { accepted: false, text: originalText  }  → user declined, submit as flagged
+ * Shows the popup rendered by _ModerationPopup.cshtml.
+ * Fills in the reason and suggestion text, toggles visibility of
+ * the suggestion block vs block-only message based on whether a
+ * rewrite is available.
  *
- * If suggestion is null (model couldn't rewrite), shows a block-only message
- * and resolves with { accepted: false, text: originalText }.
+ * Resolves with:
+ *   { accepted: true,  text: rewrittenText } — user accepted the rewrite
+ *   { accepted: false, text: originalText  } — user declined or no rewrite possible
  */
 function showRewritePopup(
     originalText: string,
@@ -81,124 +89,56 @@ function showRewritePopup(
     reason: string,
 ): Promise<{ accepted: boolean; text: string }> {
     return new Promise(resolve => {
-        const overlay = document.createElement('div');
-        overlay.className = [
-            'fixed inset-0 z-50 flex items-center justify-center',
-            'bg-black/40 backdrop-blur-sm',
-            'animate-[fade-up_0.2s_ease-out_both]',
-        ].join(' ');
+        const els = getPopupEls();
 
-        const card = document.createElement('div');
-        card.className = [
-            'bg-white rounded-2xl shadow-xl mx-4 w-full max-w-md',
-            'flex flex-col gap-4 p-6',
-        ].join(' ');
-
-        const header = document.createElement('div');
-        header.className = 'flex items-start gap-3';
-
-        const icon = document.createElement('div');
-        icon.className = 'w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0';
-        icon.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600"
-                 fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0
-                         001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2
-                         2 0 00-3.42 0z" />
-            </svg>`;
-
-        const titleBlock = document.createElement('div');
-        const title = document.createElement('h3');
-        title.className = 'text-gray-900 font-semibold text-base';
-        title.textContent = 'Je bericht bevat ongepaste inhoud';
-
-        const subtitle = document.createElement('p');
-        subtitle.className = 'text-gray-500 text-sm mt-0.5';
-        subtitle.textContent = reason;
-
-        titleBlock.append(title, subtitle);
-        header.append(icon, titleBlock);
-
-        card.appendChild(header);
+        els.reason.textContent = reason;
 
         if (suggestion) {
-            const suggestLabel = document.createElement('p');
-            suggestLabel.className = 'text-xs font-semibold uppercase tracking-widest text-gray-400';
-            suggestLabel.textContent = 'Voorgestelde herschrijving';
+            els.suggestionText.textContent = suggestion;
+            els.suggestionBlock.classList.remove('hidden');
+            els.blockMessage.classList.add('hidden');
 
-            const suggestBox = document.createElement('div');
-            suggestBox.className = [
-                'rounded-xl border-2 border-emerald-200 bg-emerald-50',
-                'px-4 py-3 text-sm text-gray-800 leading-relaxed',
-            ].join(' ');
-            suggestBox.textContent = suggestion;
-
-            const hint = document.createElement('p');
-            hint.className = 'text-xs text-gray-400';
-            hint.textContent = 'Accepteer de herschrijving of dien je originele bericht in als anonieme melding.';
-
-            card.append(suggestLabel, suggestBox, hint);
-
-            const btnRow = document.createElement('div');
-            btnRow.className = 'flex gap-3 mt-1';
-
-            const btnDecline = document.createElement('button');
-            btnDecline.type = 'button';
-            btnDecline.className = [
-                'flex-1 py-2.5 rounded-xl border-2 border-gray-200',
-                'text-gray-600 text-sm font-medium',
-                'hover:bg-gray-50 active:scale-[0.98] transition-all',
-            ].join(' ');
-            btnDecline.textContent = 'Toch insturen (als melding)';
-
-            const btnAccept = document.createElement('button');
-            btnAccept.type = 'button';
-            btnAccept.className = [
-                'flex-1 py-2.5 rounded-xl bg-emerald-500',
-                'text-white text-sm font-semibold',
-                'hover:bg-emerald-600 active:scale-[0.98] transition-all shadow-sm',
-            ].join(' ');
-            btnAccept.textContent = 'Herschrijving gebruiken';
-
-            btnDecline.addEventListener('click', () => {
-                document.body.removeChild(overlay);
-                resolve({ accepted: false, text: originalText });
-            });
-
-            btnAccept.addEventListener('click', () => {
-                document.body.removeChild(overlay);
-                resolve({ accepted: true, text: suggestion });
-            });
-
-            btnRow.append(btnDecline, btnAccept);
-            card.appendChild(btnRow);
-
+            els.btnDecline.classList.remove('hidden');
+            els.btnAccept.classList.remove('hidden');
+            els.btnClose.classList.add('hidden');
         } else {
-            const blockMsg = document.createElement('p');
-            blockMsg.className = 'text-sm text-gray-600';
-            blockMsg.textContent =
-                'Je bericht kan niet worden ingediend. Pas het aan en probeer opnieuw.';
+            els.suggestionBlock.classList.add('hidden');
+            els.blockMessage.classList.remove('hidden');
 
-            const btnClose = document.createElement('button');
-            btnClose.type = 'button';
-            btnClose.className = [
-                'w-full py-2.5 rounded-xl bg-gray-100',
-                'text-gray-700 text-sm font-medium',
-                'hover:bg-gray-200 active:scale-[0.98] transition-all',
-            ].join(' ');
-            btnClose.textContent = 'Sluiten en aanpassen';
-
-            btnClose.addEventListener('click', () => {
-                document.body.removeChild(overlay);
-                resolve({ accepted: false, text: originalText });
-            });
-
-            card.append(blockMsg, btnClose);
+            els.btnDecline.classList.add('hidden');
+            els.btnAccept.classList.add('hidden');
+            els.btnClose.classList.remove('hidden');
         }
 
-        overlay.appendChild(card);
-        document.body.appendChild(overlay);
+        els.overlay.classList.remove('hidden');
+        els.overlay.classList.add('flex');
+
+        function close() {
+            els.overlay.classList.add('hidden');
+            els.overlay.classList.remove('flex');
+            els.btnAccept.removeEventListener('click', onAccept);
+            els.btnDecline.removeEventListener('click', onDecline);
+            els.btnClose.removeEventListener('click', onClose);
+        }
+
+        function onAccept() {
+            close();
+            resolve({ accepted: true, text: suggestion! });
+        }
+
+        function onDecline() {
+            close();
+            resolve({ accepted: false, text: originalText });
+        }
+
+        function onClose() {
+            close();
+            resolve({ accepted: false, text: originalText });
+        }
+
+        els.btnAccept.addEventListener('click', onAccept,  { once: true });
+        els.btnDecline.addEventListener('click', onDecline, { once: true });
+        els.btnClose.addEventListener('click', onClose,   { once: true });
     });
 }
 
@@ -220,12 +160,12 @@ export function attachModeration(
     async function runRegex(snapshot: string) {
         try {
             const result = await callModeration('regex', snapshot);
-            if (element.value !== snapshot) return; // stale
+            if (element.value !== snapshot) return;
             if (!result.isAcceptable && result.reason)
                 callbacks.onBlock(result.reason, 'Regex');
             else
                 callbacks.onClear();
-        } catch { }
+        } catch { /* AbortError or network — ignore */ }
     }
 
     async function runAi(snapshot: string) {
@@ -233,12 +173,12 @@ export function attachModeration(
         aiAbort = new AbortController();
         try {
             const result = await callModeration('ai', snapshot, aiAbort.signal);
-            if (element.value !== snapshot) return; // stale
+            if (element.value !== snapshot) return;
             if (!result.isAcceptable && result.reason)
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
             else
                 callbacks.onClear();
-        } catch { }
+        } catch { /* AbortError or network — ignore */ }
     }
 
     function onInput() {
@@ -259,12 +199,21 @@ export function attachModeration(
     return () => { element.removeEventListener('input', onInput); clearTimers(); };
 }
 
+/**
+ * Attaches live regex + AI moderation to a single textarea or input.
+ * Injects an inline error <p> directly after the element.
+ * Returns a cleanup function.
+ *
+ * Use this for standalone inputs outside a form (e.g. a future idea input).
+ * For full form handling including submit interception, use wireModerationForm.
+ */
 export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
 ): () => void {
     const errorEl = document.createElement('p');
     errorEl.className =
-        'moderation-error hidden text-red-500 text-xs mt-1 font-medium animate-[fade-up_0.2s_ease-out_both]';
+        'moderation-error hidden text-red-500 text-xs mt-1 font-medium ' +
+        'animate-[fade-up_0.2s_ease-out_both]';
     input.insertAdjacentElement('afterend', errorEl);
 
     const showError = (reason: string) => {
@@ -286,15 +235,14 @@ export function wireModerationField(
 }
 
 /**
- * Wires live moderation to every <textarea> in `form` and intercepts submit.
+ * Wires live moderation to every <textarea> in the form and intercepts submit.
  *
- * On submit for each flagged textarea:
+ * On submit, for each flagged textarea:
  *   1. Calls /api/moderation/suggest for a rewrite.
- *   2. Shows the popup — user accepts or declines.
- *   3a. Accepted  → textarea value is replaced with the clean rewrite.
- *   3b. Declined  → textarea gets data-flagged="true" so the server layer
- *                   (to be added with the Idea feature) can store it as flagged.
- *   3c. Null suggestion → popup tells user to edit manually, submit is blocked.
+ *   2. Shows the popup from _ModerationPopup.cshtml.
+ *   3a. Accepted  → textarea value replaced with the clean rewrite.
+ *   3b. Declined  → textarea gets data-flagged="true" for the server to store as flagged.
+ *   3c. No rewrite possible → user told to edit manually, submit blocked.
  *
  * Returns a cleanup function.
  */
@@ -309,20 +257,19 @@ export function wireModerationForm(
         e.preventDefault();
 
         const toCheck = textareas.filter(
-            ta => ta.value.trim().length >= MIN_LENGTH_FOR_CHECK
+            textarea => textarea.value.trim().length >= MIN_LENGTH_FOR_CHECK
         );
 
         let anyBlocked = false;
 
-        for (const ta of toCheck) {
-            const result = await callModeration('ai', ta.value);
-
+        for (const textarea of toCheck) {
+            const result = await callModeration('ai', textarea.value);
             if (result.isAcceptable) continue;
-            
-            const suggestion = await callSuggest(ta.value);
+
+            const suggestion = await callSuggest(textarea.value);
 
             const outcome = await showRewritePopup(
-                ta.value,
+                textarea.value,
                 suggestion,
                 result.reason ?? 'De inhoud is niet toegestaan op dit platform.'
             );
@@ -334,12 +281,12 @@ export function wireModerationForm(
             }
 
             if (outcome.accepted) {
-                ta.value = outcome.text;
-                ta.removeAttribute('data-moderation-blocked');
-                ta.removeAttribute('data-flagged');
+                textarea.value = outcome.text;
+                textarea.removeAttribute('data-moderation-blocked');
+                textarea.removeAttribute('data-flagged');
             } else {
-                ta.setAttribute('data-flagged', 'true');
-                ta.removeAttribute('data-moderation-blocked');
+                textarea.setAttribute('data-flagged', 'true');
+                textarea.removeAttribute('data-moderation-blocked');
             }
         }
 
