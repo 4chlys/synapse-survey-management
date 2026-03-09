@@ -16,26 +16,17 @@ public class QuestionnaireApiService : IQuestionnaireService
         _httpClient = httpClient;
     }
 
-    public SurveyViewModel GetSurvey()
+    public async Task<SurveyViewModel> GetSurveyAsync(int projectId)
     {
-        // Synchronous wrapper - consider making IQuestionnaireService async in the future
-        return GetSurveyAsync().GetAwaiter().GetResult();
-    }
+        var response = await _httpClient.GetAsync($"api/projects/{projectId}/questionnaire/questions");
 
-    private async Task<SurveyViewModel> GetSurveyAsync()
-    {
-        // projectId will come from route/config — hardcoded 1 for now as example
-        var projectId = 1;
-        var questions = await _httpClient.GetFromJsonAsync<List<ApiQuestionDto>>($"api/projects/{projectId}/questionnaire/questions");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var questions = await response.Content.ReadFromJsonAsync<List<ApiQuestionDto>>();
 
         if (questions is null || questions.Count == 0)
-        {
-            return new SurveyViewModel
-            {
-                Title = "Survey",
-                Questions = new List<QuestionViewModel>()
-            };
-        }
+            return null;
 
         int total = questions.Count;
         int number = 1;
@@ -58,10 +49,7 @@ public class QuestionnaireApiService : IQuestionnaireService
         };
     }
 
-    /// <summary>
-    /// Internal DTO matching the API's QuestionDto shape.
-    /// </summary>
-    private class ApiQuestionDto
+    public async Task<string> SubmitSurveyAsync(int projectId, Dictionary<int, string> answers)
     {
         public int QuestionId { get; set; }
         public string Text { get; set; }
@@ -90,17 +78,11 @@ public class QuestionnaireApiService : IQuestionnaireService
         response.EnsureSuccessStatusCode();
 
         var participant = await response.Content.ReadFromJsonAsync<ApiParticipantDto>();
-        return participant.ParticipantToken;
+        return participant!.ParticipantToken;
     }
 
-    public bool HasParticipantResponded(string participantToken)
+    public async Task<bool> HasParticipantRespondedAsync(int projectId, string participantToken)
     {
-        return HasParticipantRespondedAsync(participantToken).GetAwaiter().GetResult();
-    }
-
-    private async Task<bool> HasParticipantRespondedAsync(string participantToken)
-    {
-        var projectId = 1;
         var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
         request.Headers.Add("X-Participant-Token", participantToken);
 
@@ -111,6 +93,14 @@ public class QuestionnaireApiService : IQuestionnaireService
         return result?.HasResponded ?? false;
     }
 
+    private class ApiQuestionDto
+    {
+        public int QuestionId { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public string QuestionFormat { get; set; } = string.Empty;
+        public List<string> AnswerChoices { get; set; } = new();
+    }
+
     private class ParticipantStatusDto
     {
         public bool HasResponded { get; set; }
@@ -118,6 +108,6 @@ public class QuestionnaireApiService : IQuestionnaireService
 
     private class ApiParticipantDto
     {
-        public string ParticipantToken { get; set; }
+        public string ParticipantToken { get; set; } = string.Empty;
     }
 }

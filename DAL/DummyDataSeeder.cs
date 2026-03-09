@@ -52,6 +52,7 @@ public class DummyDataSeeder
 
         var project = new Project
         {
+            ProjectState = ProjectState.Active,
             Questionnaire = questionnaire
         };
 
