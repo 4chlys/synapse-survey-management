@@ -9,7 +9,8 @@ if [ ! -f .env ]; then
 fi
 source .env
 
-IMAGE="gcr.io/$PROJECT_ID/mvp-app:latest"
+IMAGE_API="gcr.io/$PROJECT_ID/mvp-app:latest"
+IMAGE_UI="gcr.io/$PROJECT_ID/mvp-ui:latest"
 
 echo "======================================"
 echo "  SYNAPSE - DESTROY SCRIPT"
@@ -39,10 +40,13 @@ gcloud compute firewall-rules delete allow-http --quiet 2>/dev/null || echo "all
 gcloud compute firewall-rules delete allow-8080 --quiet 2>/dev/null || echo "allow-8080 bestond niet"
 
 echo ""
-echo "=== Docker image verwijderen ==="
-gcloud container images delete $IMAGE \
+echo "=== Docker images verwijderen ==="
+gcloud container images delete $IMAGE_API \
   --quiet \
-  --force-delete-tags 2>/dev/null || echo "Image bestond niet"
+  --force-delete-tags 2>/dev/null || echo "API image bestond niet"
+gcloud container images delete $IMAGE_UI \
+  --quiet \
+  --force-delete-tags 2>/dev/null || echo "UI image bestond niet"
 
 echo ""
 echo "======================================"

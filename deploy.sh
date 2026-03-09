@@ -9,7 +9,8 @@ if [ ! -f .env ]; then
 fi
 source .env
 
-IMAGE="gcr.io/$PROJECT_ID/mvp-app:latest"
+IMAGE_API="gcr.io/$PROJECT_ID/mvp-app:latest"
+IMAGE_UI="gcr.io/$PROJECT_ID/mvp-ui:latest"
 
 echo "======================================"
 echo "  SYNAPSE - DEPLOY SCRIPT"
@@ -44,10 +45,16 @@ DB_IP=$(gcloud sql instances describe $DB_INSTANCE \
 echo "Cloud SQL IP: $DB_IP"
 
 echo ""
-echo "=== Stap 3: Docker image bouwen en pushen ==="
+echo "=== Stap 3: Docker images bouwen en pushen ==="
 gcloud auth configure-docker --quiet
-docker build -t $IMAGE .
-docker push $IMAGE
+
+# API image
+docker build --provenance=false -t $IMAGE_API .
+docker push $IMAGE_API
+
+# UI-User image
+docker build --provenance=false -t $IMAGE_UI -f Dockerfile.ui-user .
+docker push $IMAGE_UI
 
 echo ""
 echo "=== Stap 4: Zonal DNS instellen ==="
@@ -65,18 +72,30 @@ apt-get install -y docker.io
 systemctl start docker
 systemctl enable docker
 gcloud auth configure-docker --quiet
-docker pull $IMAGE
+
+# API container
+docker pull $IMAGE_API
 docker run -d \\
-  --name mvp-app \\
+  --name mvp-api \\
   --restart always \\
-  -p 80:8080 \\
+  -p 8080:8080 \\
   -e ASPNETCORE_ENVIRONMENT=Development \\
   -e DB_HOST=$DB_IP \\
   -e DB_PORT=5432 \\
   -e DB_USER=$DB_USER \\
   -e DB_PASSWORD=$DB_PASSWORD \\
   -e DB_NAME=$DB_NAME \\
-  $IMAGE
+  $IMAGE_API
+
+# UI-User container
+docker pull $IMAGE_UI
+docker run -d \\
+  --name mvp-ui \\
+  --restart always \\
+  -p 80:8080 \\
+  -e ASPNETCORE_ENVIRONMENT=Development \\
+  -e ApiBaseUrl=http://localhost:8080 \\
+  $IMAGE_UI
 EOF
 
 gcloud compute instances create $VM_NAME \
@@ -113,5 +132,6 @@ echo "  DEPLOY VOLTOOID!"
 echo "======================================"
 echo ""
 echo "Wacht 2-3 minuten voor de app opstart..."
-echo "Applicatie beschikbaar op: http://$VM_IP"
+echo "UI bereikbaar op:  http://$VM_IP"
+echo "API bereikbaar op: http://$VM_IP:8080"
 echo ""

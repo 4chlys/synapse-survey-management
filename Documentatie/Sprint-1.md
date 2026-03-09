@@ -71,7 +71,9 @@
 ```
 ![alt text](image-5.png)
 
-## Stap 5: Dockerfile maken
+## Stap 5: Dockerfiles maken
+
+**Dockerfile 1**
 
 ```
   FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
@@ -96,7 +98,42 @@
   COPY --from=publish /app/publish .
   ENTRYPOINT ["dotnet", "SynapseEnqueteManagement.API.dll"]
 ```
+**Dockerfile UI User**
 
+```
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Node.js en pnpm installeren voor de Vite build
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g pnpm
+
+WORKDIR /src
+COPY ["UI-User/UI-User.csproj", "UI-User/"]
+RUN dotnet restore "UI-User/UI-User.csproj"
+
+# package.json eerst kopiëren zodat pnpm install gecached wordt
+COPY ["UI-User/package.json", "UI-User/"]
+COPY ["UI-User/pnpm-lock.yaml", "UI-User/"]
+WORKDIR /src/UI-User
+RUN pnpm install
+WORKDIR /src
+
+COPY . .
+
+# dotnet publish roept automatisch pnpm run build aan (via .csproj)
+RUN dotnet publish "UI-User/UI-User.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "SynapseEnqueteManagement.UI.User.dll"]
+
+```
 
 ## Stap 6: Docker image bouwen en pushen
 
@@ -174,6 +211,8 @@
 ```
 
 **De app is nu beschikbaar op het externe IP dat we hier ophaalden**
+
+
 ![alt text](image-11.png)
 
 
@@ -198,6 +237,22 @@
   ./destroy.sh
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## BELANGRIJK VOOR DEV
 
  ## 1. Database Connectie

@@ -52,6 +52,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseStaticFiles(); // serves Vite-generated files (hashed CSS/JS) from wwwroot
 app.UseAuthorization();
 
 app.MapStaticAssets();

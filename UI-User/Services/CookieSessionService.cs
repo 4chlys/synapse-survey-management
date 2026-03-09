@@ -21,10 +21,11 @@ public class CookieSessionService : ISessionService
     public void SetToken(int projectId, string token)
     {
         var cookieName = CookiePrefix + projectId;
+        var isHttps = _httpContextAccessor.HttpContext?.Request.IsHttps ?? false;
         _httpContextAccessor.HttpContext?.Response.Cookies.Append(cookieName, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            Secure = isHttps,
             SameSite = SameSiteMode.Lax,
             MaxAge = TimeSpan.FromDays(365)
         });

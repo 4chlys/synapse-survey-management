@@ -19,7 +19,7 @@ export default defineConfig(async () => {
         root: 'Assets',
         publicDir: 'public',
         build: {
-            emptyOutDir: true,
+            emptyOutDir: false,
             manifest: true,
             outDir: '../wwwroot',
             assetsDir: '',
