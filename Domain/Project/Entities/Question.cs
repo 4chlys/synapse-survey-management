@@ -6,7 +6,7 @@ public class Question
 {
     public int QuestionId { get; set; }
     
-    public String Text { get; set; }
+    public string Text { get; set; }
     public QuestionFormat QuestionFormat { get; set; }
     public ICollection<string> AnswerChoices { get; set; } = new List<string>();
 

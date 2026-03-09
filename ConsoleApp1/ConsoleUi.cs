@@ -24,7 +24,7 @@ public class ConsoleUi
             return;
         }
 
-        var participant = _manager.CreateParticipant(questionnaire);
+        var participant = _manager.AddParticipant(questionnaire);
 
         var questions = _manager.GetQuestions()
             .Where(q => q.QuestionFormat == QuestionFormat.Open);
@@ -37,7 +37,7 @@ public class ConsoleUi
 
             if (!string.IsNullOrWhiteSpace(answer))
             {
-                _manager.SaveResponse(answer, question, participant);
+                _manager.AddResponse(answer, question, participant);
                 Console.WriteLine("Answer saved!\n");
             }
             else

@@ -5,11 +5,24 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<IQuestionnaireService, StubQuestionnaireService>();
-builder.Services.AddScoped<CategoryService>();
+builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(client =>
+     {
+         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+             ?? "https://localhost:5159");
+     })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        // Accept the dev SSL certificate for server-to-server calls
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
 
 
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ISessionService, CookieSessionService>();
 
 // ---- Service Configuration ----
 // Add Vite services.
