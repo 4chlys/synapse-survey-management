@@ -32,7 +32,7 @@
     </div>
 
     @* Form wraps the entire track so all inputs are submitted together *@
-    <form id="survey-form" method="post" asp-controller="Survey" asp-action="Submit">
+    <form id="survey-form" method="post" asp-controller="Survey" asp-action="Submit" asp-route-projectId="@Context.GetRouteValue("projectId")">
 
         <div id="survey-track" class="flex flex-col" style="transform: translateY(0)">
 
@@ -41,7 +41,8 @@
                 <section class="survey-slide flex flex-col justify-between px-6 pt-8 pb-10 bg-white"
                          style="height: var(--slide-h)"
                          data-question-id="@question.QuestionId"
-                         data-format="@question.Format.ToString()">
+                         data-format="@question.Format.ToString()"
+                         data-mandatory="@question.IsMandatory.ToString().ToLower()">
 
                     @* Question counter *@
                     <p class="text-xs font-semibold tracking-widest uppercase text-gray-400">
@@ -105,8 +106,10 @@
                             {
                                 <textarea name="q_@question.QuestionId"
                                           rows="4"
+                                          maxlength="500"
                                           placeholder="Typ hier je antwoord..."
                                           class="w-full border-2 border-gray-100 rounded-2xl p-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-emerald-400 resize-none transition-colors"></textarea>
+                                <p class="text-xs text-gray-400 text-right mt-1 textarea-counter">0 / 500</p>
                             }
 
                         </div>

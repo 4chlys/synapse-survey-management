@@ -1,0 +1,62 @@
+﻿@model IEnumerable<SynapseEnqueteManagement.UI.User.Models.Category>
+
+@{
+    ViewData["Title"] = "Kies een Categorie";   
+}
+
+<div class="min-h-screen bg-gray-50 flex flex-col items-center px-6 pt-12 pb-20">
+
+    @* Header *@
+    <div class="w-full max-w-sm mb-10">
+        <h1 class="text-2xl font-semibold text-gray-900 leading-snug">
+            Kies een categorie.
+        </h1>
+        <p class="text-sm text-gray-400 mt-2 font-normal">
+            Bekijk bestaande ideeen of voeg zelf iets toe.
+        </p>
+    </div>
+
+    @* Category cards *@
+    <div class="w-full max-w-sm flex flex-col gap-6">
+        @foreach (var category in Model)
+        {
+            <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]" asp-route-id="@category.Id"
+               class="relative flex flex-col px-5 py-5 rounded-2xl border-2 border-gray-100 bg-white
+                      cursor-pointer transition-all duration-150
+                      hover:border-emerald-300 hover:shadow-md active:scale-[0.98]
+                      group">
+
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-900 text-base font-semibold">@category.Name</span>
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-4 w-4 text-gray-300 group-hover:text-emerald-500 transition-colors duration-150"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+
+                <p class="text-xs text-gray-400 mt-1 font-normal">@category.Description</p>
+
+                @* Speech bubble badge *@
+                <div class="absolute -bottom-3.5 right-5
+                            bg-emerald-50 border border-emerald-200
+                            text-emerald-700 text-xs font-semibold
+                            px-3 py-1 rounded-full shadow-sm">
+                    <span class="absolute -top-[6px] right-4
+                                 border-l-[5px] border-l-transparent
+                                 border-r-[5px] border-r-transparent
+                                 border-b-[6px] border-b-emerald-200"></span>
+                    <span class="absolute -top-[4px] right-[17px]
+                                 border-l-[4px] border-l-transparent
+                                 border-r-[4px] border-r-transparent
+                                 border-b-[5px] border-b-emerald-50"></span>
+                    @category.IdeaCount ideeen
+                </div>
+
+            </a>
+        }
+    </div>
+
+</div>
+
