@@ -10,7 +10,7 @@ var UserUiHttpsPort = 7163;
 
 bool deleteIfExists = true; // SQLite resetten?
 
-bool useAI = false;
+bool useAI = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
