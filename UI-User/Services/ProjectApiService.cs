@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
@@ -11,7 +10,7 @@ public class ProjectApiService
         _httpClient = httpClient;
     }
 
-    public async Task<ProjectInfo?> GetProjectAsync(int projectId)
+    public async Task<ProjectInfo> GetProjectAsync(int projectId)
     {
         var response = await _httpClient.GetAsync($"api/projects/{projectId}");
         if (!response.IsSuccessStatusCode)

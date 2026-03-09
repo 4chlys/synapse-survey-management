@@ -1,13 +1,8 @@
-using System.Net.Http.Json;
 using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-/// <summary>
-/// Implementation of IQuestionnaireService that calls the REST API via HttpClient.
-/// Replaces StubQuestionnaireService.
-/// </summary>
-public class QuestionnaireApiService : IQuestionnaireService
+public class QuestionnaireApiService : IQuestionnaireApiService
 {
     private readonly HttpClient _httpClient;
 
@@ -38,8 +33,7 @@ public class QuestionnaireApiService : IQuestionnaireService
             Format = Enum.Parse<QuestionFormat>(q.QuestionFormat),
             AnswerChoices = q.AnswerChoices,
             QuestionNumber = number++,
-            TotalQuestions = total,
-            IsMandatory = q.IsMandatory
+            TotalQuestions = total
         }).ToList();
 
         return new SurveyViewModel
@@ -51,22 +45,6 @@ public class QuestionnaireApiService : IQuestionnaireService
 
     public async Task<string> SubmitSurveyAsync(int projectId, Dictionary<int, string> answers)
     {
-        public int QuestionId { get; set; }
-        public string Text { get; set; }
-        public string QuestionFormat { get; set; }
-        public List<string> AnswerChoices { get; set; } = new();
-        public bool IsMandatory { get; set; }
-    }
-
-    public string SubmitSurvey(Dictionary<int, string> answers)
-    {
-        return SubmitSurveyAsync(answers).GetAwaiter().GetResult();
-    }
-
-    private async Task<string> SubmitSurveyAsync(Dictionary<int, string> answers)
-    {
-        var projectId = 1;
-
         var payload = new
         {
             Answers = answers
@@ -96,9 +74,10 @@ public class QuestionnaireApiService : IQuestionnaireService
     private class ApiQuestionDto
     {
         public int QuestionId { get; set; }
-        public string Text { get; set; } = string.Empty;
-        public string QuestionFormat { get; set; } = string.Empty;
+        public string Text { get; set; }
+        public string QuestionFormat { get; set; }
         public List<string> AnswerChoices { get; set; } = new();
+        public bool IsMandatory { get; set; }
     }
 
     private class ParticipantStatusDto
