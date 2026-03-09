@@ -132,8 +132,17 @@ VM_IP=$(gcloud compute instances describe $VM_NAME \
   --zone=$ZONE \
   --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
 
+# Bestaande authorized networks ophalen en VM IP toevoegen (zodat Cloud Run toegang behoudt)
+EXISTING=$(gcloud sql instances describe $DB_INSTANCE \
+  --format="value(settings.ipConfiguration.authorizedNetworks[].value)" | tr ';' ',')
+if [ -z "$EXISTING" ]; then
+  NETWORKS="$VM_IP"
+else
+  NETWORKS="$EXISTING,$VM_IP"
+fi
+
 gcloud sql instances patch $DB_INSTANCE \
-  --authorized-networks=$VM_IP
+  --authorized-networks=$NETWORKS
 
 echo ""
 echo "======================================"
