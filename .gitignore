@@ -494,5 +494,8 @@ CLAUDE.md
 start.bat
 stop.bat
 
+# manually by Romeo
+start.sh
+
 # manually by Jonas
 JonasAssignment/

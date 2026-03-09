@@ -1,5 +1,8 @@
+using Google.Cloud.AIPlatform.V1;
+using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
 var UserUiHttpPort = 5291;
@@ -25,6 +28,32 @@ builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
+
+// Registering AI
+var projectId = builder.Configuration["VertexAi:ProjectId"]
+    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
+
+var location = builder.Configuration["VertexAi:Location"]
+    ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
+
+var model = builder.Configuration["VertexAi:Model"]
+    ?? "gemini-2.5-flash-lite";
+
+var endpoint = builder.Configuration["VertexAi:Endpoint"]
+    ?? $"{location}-aiplatform.googleapis.com";
+
+var predictionBuilder = new PredictionServiceClientBuilder
+{ 
+    Endpoint = endpoint
+    };
+
+var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
+        projectId, location, "google", model);
+
+var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
+
+builder.Services.AddChatClient(chatClient);
+builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 
 // CORS - UI-User must access this API
 builder.Services.AddCors(options =>
