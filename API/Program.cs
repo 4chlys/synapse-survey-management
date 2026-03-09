@@ -8,6 +8,10 @@ using SynapseEnqueteManagement.DAL;
 var UserUiHttpPort = 5291;
 var UserUiHttpsPort = 7163;
 
+bool deleteIfExists = true; // SQLite resetten?
+
+bool useAI = false;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -40,30 +44,33 @@ builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
 // Registering AI
-var projectId = builder.Configuration["VertexAi:ProjectId"]
-    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
+if (useAI)
+{
+    var projectId = builder.Configuration["VertexAi:ProjectId"]
+                    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
 
-var location = builder.Configuration["VertexAi:Location"]
-    ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
+    var location = builder.Configuration["VertexAi:Location"]
+                   ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
 
-var model = builder.Configuration["VertexAi:Model"]
-    ?? "gemini-2.5-flash-lite";
+    var model = builder.Configuration["VertexAi:Model"]
+                ?? "gemini-2.5-flash-lite";
 
-var endpoint = builder.Configuration["VertexAi:Endpoint"]
-    ?? $"{location}-aiplatform.googleapis.com";
+    var endpoint = builder.Configuration["VertexAi:Endpoint"]
+                   ?? $"{location}-aiplatform.googleapis.com";
 
-var predictionBuilder = new PredictionServiceClientBuilder
-{ 
-    Endpoint = endpoint
+    var predictionBuilder = new PredictionServiceClientBuilder
+    {
+        Endpoint = endpoint
     };
 
-var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
+    var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
         projectId, location, "google", model);
 
-var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
+    var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
-builder.Services.AddChatClient(chatClient);
-builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
+    builder.Services.AddChatClient(chatClient);
+    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
+}
 
 // CORS - UI-User must access this API
 builder.Services.AddCors(options =>
@@ -87,7 +94,6 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
-    bool deleteIfExists = string.IsNullOrEmpty(dbHost); // SQLite resetten, PostgreSQL behouden
     context.CreateDatabase(deleteIfExists);
     DummyDataSeeder.Seed(context);
     app.MapOpenApi();
