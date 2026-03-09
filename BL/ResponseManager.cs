@@ -14,6 +14,9 @@ public class ResponseManager : IResponseManager
 
     public Response AddResponse(string value, Question question, Participant participant)
     {
+        if (value?.Length > 500)
+            throw new ArgumentException("Antwoord mag maximaal 500 tekens bevatten.", nameof(value));
+
         var response = new Response { Value = value, Question = question, Participant = participant };
         return _repository.Create(response);
     }

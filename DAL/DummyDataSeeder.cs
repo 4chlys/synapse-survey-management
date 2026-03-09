@@ -16,7 +16,8 @@ public class DummyDataSeeder
             QuestionFormat = QuestionFormat.MultipleChoice,
             Questionnaire = questionnaire,
             Text = "Welke factoren zorgen bij jou de meeste stress?",
-            AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }
+            AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" },
+            IsMandatory = false
         };
 
         var question2 = new Question
@@ -24,21 +25,24 @@ public class DummyDataSeeder
             QuestionFormat = QuestionFormat.SingleChoice,
             Questionnaire = questionnaire,
             Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?",
-            AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }
+            AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" },
+            IsMandatory = true
         };
 
         var question3 = new Question
         {
             QuestionFormat = QuestionFormat.Likert,
             Questionnaire = questionnaire,
-            Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?"
+            Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?",
+            IsMandatory = true
         };
 
         var question4 = new Question
         {
             QuestionFormat = QuestionFormat.Open,
             Questionnaire = questionnaire,
-            Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?"
+            Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?",
+            IsMandatory = true
         };
 
         questionnaire.Questions.Add(question1);
