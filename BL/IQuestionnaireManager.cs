@@ -8,4 +8,5 @@ public interface IQuestionnaireManager
     Questionnaire GetFirstQuestionnaire();
     Questionnaire GetQuestionnaireByProjectId(int projectId);
     Question GetQuestionById(int questionId);
+    void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers);
 }

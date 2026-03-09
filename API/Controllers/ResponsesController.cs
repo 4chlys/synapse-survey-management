@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
@@ -62,6 +63,17 @@ public class ResponsesController : ControllerBase
         var questionnaire = _questionnaireManager.GetQuestionnaireByProjectId(projectId);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
+
+        try
+        {
+            _questionnaireManager.ValidateMandatoryAnswers(
+                questionnaire,
+                submitDto.Answers.Select(a => (a.QuestionId, a.Value)));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
 
         var participant = _participantManager.AddParticipant(questionnaire);
 
