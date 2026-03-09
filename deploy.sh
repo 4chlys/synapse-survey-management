@@ -31,6 +31,7 @@ gcloud services enable compute.googleapis.com
 gcloud services enable sqladmin.googleapis.com
 gcloud services enable containerregistry.googleapis.com
 gcloud services enable artifactregistry.googleapis.com
+gcloud services enable aiplatform.googleapis.com
 
 echo ""
 echo "=== Stap 2: Cloud SQL aanmaken ==="
