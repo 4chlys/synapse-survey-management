@@ -9,7 +9,7 @@ namespace SynapseEnqueteManagement.DAL;
 /// </summary>
 public class Repository : IRepository
 {
-    
+
     private readonly DbContext _context;
 
     /// <summary>
@@ -43,7 +43,7 @@ public class Repository : IRepository
         _context.SaveChanges();
         return entity;
     }
-    
+
 
     /// <summary>
     /// Retrieves a collection of entities based on provided filters and navigation property includes.
@@ -97,6 +97,39 @@ public class Repository : IRepository
     }
 
     /// <summary>
+    /// Retrieves a single entity based on provided filters and navigation property includes.
+    /// The SingleOrDefault is executed on the IQueryable, so it translates to a SQL TOP 1 query.
+    /// </summary>
+    public T ReadSingle<T>(
+        Expression<Func<T, bool>>[] filters = null,
+        Expression<Func<T, object>>[] includes = null,
+        string[] includeStrings = null
+    ) where T : class
+    {
+        IQueryable<T> query = _context.Set<T>();
+
+        if (includes != null)
+        {
+            foreach (var include in includes)
+                query = query.Include(include);
+        }
+
+        if (includeStrings != null)
+        {
+            foreach (var include in includeStrings)
+                query = query.Include(include);
+        }
+
+        if (filters != null)
+        {
+            foreach (var filter in filters)
+                query = query.Where(filter);
+        }
+
+        return query.SingleOrDefault();
+    }
+
+    /// <summary>
     /// Updates an existing entity in the database.
     /// </summary>
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
@@ -124,7 +157,7 @@ public class Repository : IRepository
     /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
     public bool Delete<T>(Expression<Func<T, bool>> filter) where T : class
     {
-        var entity = _context.Set<T>().FirstOrDefault(filter);
+        var entity = _context.Set<T>().SingleOrDefault(filter);
         if (entity == null)
         {
             return false;
