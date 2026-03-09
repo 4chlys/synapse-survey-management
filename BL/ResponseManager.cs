@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
@@ -16,6 +17,10 @@ public class ResponseManager : IResponseManager
     {
         if (value?.Length > 500)
             throw new ArgumentException("Antwoord mag maximaal 500 tekens bevatten.", nameof(value));
+
+        if (question.QuestionFormat == QuestionFormat.SingleChoice
+            && !question.AnswerChoices.Contains(value))
+            throw new ArgumentException("Ongeldig antwoord: keuze staat niet in de lijst.", nameof(value));
 
         var response = new Response { Value = value, Question = question, Participant = participant };
         return _repository.Create(response);
