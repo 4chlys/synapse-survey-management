@@ -17,7 +17,7 @@ public class DummyDataSeeder
             Questionnaire = questionnaire,
             Text = "Welke factoren zorgen bij jou de meeste stress?",
             AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" },
-            IsMandatory = true
+            IsMandatory = false
         };
 
         var question2 = new Question

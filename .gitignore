@@ -492,6 +492,7 @@ $RECYCLE.BIN/
 # manually by Casper
 CLAUDE.md
 start.bat
+stop.bat
 
 # manually by Jonas
 JonasAssignment/

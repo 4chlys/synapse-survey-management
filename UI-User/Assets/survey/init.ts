@@ -2,6 +2,7 @@ import type { SurveyState } from './types';
 import { navigateNext, navigatePrev } from './navigation';
 import { initGestures } from './gestures';
 import { animateTrackTo, updateProgressBar } from './animation';
+import { initCharCounter } from './validation';
 
 function syncButtons(state: SurveyState): void {
   const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
@@ -29,6 +30,8 @@ export function initSurvey(): void {
     progressBar,
     onSlideChange: syncButtons,
   };
+
+  slides.forEach(slide => initCharCounter(slide));
 
   animateTrackTo(track, 0);
   updateProgressBar(progressBar, 0, slides.length);
