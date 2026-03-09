@@ -1,5 +1,5 @@
 import type { SurveyState } from './types';
-import { isSlideAnswered, showValidationError, clearValidationError } from './validation';
+import { isSlideValid, showValidationError, clearValidationError } from './validation';
 import { animateTrackTo, shakeSlide, updateProgressBar } from './animation';
 
 const TRANSITION_MS = 580;
@@ -10,8 +10,9 @@ export function navigateNext(state: SurveyState): void {
 
   const current = state.slides[state.currentIndex];
 
-  if (!isSlideAnswered(current)) {
-    showValidationError(current);
+  const { valid, message } = isSlideValid(current);
+  if (!valid) {
+    showValidationError(current, message);
     shakeSlide(current);
     return;
   }

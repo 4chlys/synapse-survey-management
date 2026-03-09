@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -10,11 +11,18 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ResponsesController : ControllerBase
 {
     private const string SessionHeader = "X-Participant-Token";
-    private readonly IManager _manager;
+    private readonly IQuestionnaireManager _questionnaireManager;
+    private readonly IParticipantManager _participantManager;
+    private readonly IResponseManager _responseManager;
 
-    public ResponsesController(IManager manager)
+    public ResponsesController(
+        IQuestionnaireManager questionnaireManager,
+        IParticipantManager participantManager,
+        IResponseManager responseManager)
     {
-        _manager = manager;
+        _questionnaireManager = questionnaireManager;
+        _participantManager = participantManager;
+        _responseManager = responseManager;
     }
 
     /// <summary>
@@ -25,11 +33,11 @@ public class ResponsesController : ControllerBase
     [HttpPost("participants")]
     public ActionResult<ParticipantDto> StartSession(int projectId)
     {
-        var questionnaire = _manager.GetQuestionnaireByProjectId(projectId);
+        var questionnaire = _questionnaireManager.GetQuestionnaireByProjectId(projectId);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
-        var participant = _manager.AddParticipant(questionnaire);
+        var participant = _participantManager.AddParticipant(questionnaire);
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
@@ -37,7 +45,7 @@ public class ResponsesController : ControllerBase
     [HttpGet("responses")]
     public ActionResult<IEnumerable<ResponseDto>> GetAllResponses(int projectId)
     {
-        var responses = _manager.GetResponsesByProjectId(projectId);
+        var responses = _responseManager.GetResponsesByProjectId(projectId);
         var dtos = responses.Select(MapToDto).ToList();
         return Ok(dtos);
     }
@@ -52,20 +60,31 @@ public class ResponsesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var questionnaire = _manager.GetQuestionnaireByProjectId(projectId);
+        var questionnaire = _questionnaireManager.GetQuestionnaireByProjectId(projectId);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
-        var participant = _manager.AddParticipant(questionnaire);
+        try
+        {
+            _questionnaireManager.ValidateMandatoryAnswers(
+                questionnaire,
+                submitDto.Answers.Select(a => (a.QuestionId, a.Value)));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
+        var participant = _participantManager.AddParticipant(questionnaire);
 
         foreach (var answer in submitDto.Answers)
         {
             if (string.IsNullOrWhiteSpace(answer.Value)) continue;
 
-            var question = _manager.GetQuestionById(answer.QuestionId);
+            var question = _questionnaireManager.GetQuestionById(answer.QuestionId);
             if (question is null) continue;
 
-            _manager.AddResponse(answer.Value, question, participant);
+            _responseManager.AddResponse(answer.Value, question, participant);
         }
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
@@ -84,15 +103,15 @@ public class ResponsesController : ControllerBase
         if (!TryGetParticipantToken(out var token))
             return Unauthorized("Missing or invalid X-Participant-Token header. Call POST /participants first.");
 
-        var question = _manager.GetQuestionById(createDto.QuestionId);
+        var question = _questionnaireManager.GetQuestionById(createDto.QuestionId);
         if (question is null)
             return NotFound($"Question with id {createDto.QuestionId} not found.");
 
-        var participant = _manager.GetParticipantBySessionToken(token);
+        var participant = _participantManager.GetParticipantBySessionToken(token);
         if (participant is null)
             return NotFound("Participant session not found.");
 
-        var response = _manager.AddResponse(createDto.Value, question, participant);
+        var response = _responseManager.AddResponse(createDto.Value, question, participant);
         var dto = MapToDto(response);
         return CreatedAtAction(nameof(GetAllResponses), new { projectId, id = dto.ResponseId }, dto);
     }
@@ -107,7 +126,7 @@ public class ResponsesController : ControllerBase
         if (!TryGetParticipantToken(out var token))
             return Ok(new { HasResponded = false });
 
-        var hasResponded = _manager.HasParticipantResponded(token);
+        var hasResponded = _participantManager.HasParticipantResponded(token);
         return Ok(new { HasResponded = hasResponded });
     }
 
