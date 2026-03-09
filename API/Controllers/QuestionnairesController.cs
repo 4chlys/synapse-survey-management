@@ -54,7 +54,8 @@ public class QuestionnairesController : ControllerBase
             QuestionId = question.QuestionId,
             Text = question.Text,
             QuestionFormat = question.QuestionFormat.ToString(),
-            AnswerChoices = question.AnswerChoices.ToList()
+            AnswerChoices = question.AnswerChoices.ToList(),
+            IsMandatory = question.IsMandatory,
         };
     }
 }

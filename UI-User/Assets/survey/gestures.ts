@@ -2,6 +2,7 @@ import type { SurveyState } from './types';
 import { navigateNext, navigatePrev } from './navigation';
 
 export function initGestures(container: HTMLElement, state: SurveyState): void {
+  let touchStartX = 0;
   let touchStartY = 0;
   let canScroll = true;
 
@@ -17,16 +18,22 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
     setTimeout(() => { canScroll = true; }, 800);
   }, { passive: false });
 
-  // Touch swipe
+  // Touch swipe (mobile)
   container.addEventListener('touchstart', (e: TouchEvent) => {
+    touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
   }, { passive: true });
 
   container.addEventListener('touchend', (e: TouchEvent) => {
-    const delta = touchStartY - e.changedTouches[0].clientY;
-    if (Math.abs(delta) < 50) return;
-    if (delta > 0) navigateNext(state);
+    const deltaY = touchStartY - e.changedTouches[0].clientY;
+    const deltaX = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) return;
+    if (Math.abs(deltaY) < 50) return;
+    if (!canScroll) return;
+    canScroll = false;
+    if (deltaY > 0) navigateNext(state);
     else navigatePrev(state);
+    setTimeout(() => { canScroll = true; }, 800);
   }, { passive: true });
 
   // Keyboard

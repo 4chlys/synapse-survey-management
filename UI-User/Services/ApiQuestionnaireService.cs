@@ -47,7 +47,8 @@ public class ApiQuestionnaireService : IQuestionnaireService
             Format = Enum.Parse<QuestionFormat>(q.QuestionFormat),
             AnswerChoices = q.AnswerChoices,
             QuestionNumber = number++,
-            TotalQuestions = total
+            TotalQuestions = total,
+            IsMandatory = q.IsMandatory
         }).ToList();
 
         return new SurveyViewModel
@@ -66,6 +67,7 @@ public class ApiQuestionnaireService : IQuestionnaireService
         public string Text { get; set; }
         public string QuestionFormat { get; set; }
         public List<string> AnswerChoices { get; set; } = new();
+        public bool IsMandatory { get; set; }
     }
 
     public string SubmitSurvey(Dictionary<int, string> answers)
