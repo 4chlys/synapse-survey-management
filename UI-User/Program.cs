@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<IQuestionnaireService, ApiQuestionnaireService>(client =>
+builder.Services.AddHttpClient<IQuestionnaireService, QuestionnaireApiService>(client =>
      {
          client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
              ?? "https://localhost:5159");

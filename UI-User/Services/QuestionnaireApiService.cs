@@ -7,11 +7,11 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 /// Implementation of IQuestionnaireService that calls the REST API via HttpClient.
 /// Replaces StubQuestionnaireService.
 /// </summary>
-public class ApiQuestionnaireService : IQuestionnaireService
+public class QuestionnaireApiService : IQuestionnaireService
 {
     private readonly HttpClient _httpClient;
 
-    public ApiQuestionnaireService(HttpClient httpClient)
+    public QuestionnaireApiService(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
