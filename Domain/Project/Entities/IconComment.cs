@@ -1,6 +1,9 @@
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
+//TODO: klasse verwijderen?
 public class IconComment : Comment
 {
-    public EmojiReaction Emoji { get; set; }
+    public Emoji Emoji { get; set; }
+    
+    
 }

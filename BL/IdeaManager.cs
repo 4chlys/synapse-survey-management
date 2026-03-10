@@ -24,7 +24,6 @@ public class IdeaManager
         {
             Description = description,
             Category = category,
-            EmojiCount = 0,
             CommentCount = 0
         };
 

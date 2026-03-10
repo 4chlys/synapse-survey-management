@@ -23,7 +23,7 @@ public class IdeasController : ControllerBase
         {
             IdeaId = i.IdeaId,
             Description = i.Description,
-            EmojiCount = i.EmojiCount,
+            EmojiCount = i.EmojiReactions.Count,
             CommentsCount = i.Comments.Count
         });
         return Ok(dtos);
