@@ -5,7 +5,11 @@ namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 public class Project
 {
     public int ProjectId { get; set; }
-
+    
+    public string OrganisationName { get; set; }
+    public string OrganisationLogoUrl { get; set; }
+    public string OrganisationWebsiteUrl { get; set; }
+    
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
 
     public Questionnaire Questionnaire { get; set; }

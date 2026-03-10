@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Services;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
@@ -62,11 +63,19 @@ public class SurveyController : Controller
 
         _sessionService.SetToken(projectId, participantToken);
 
-        return RedirectToAction("Index", "Category", new { projectId });
+        return RedirectToAction("ThankYou", new { projectId });
     }
 
-    public IActionResult ThankYou()
+    public async Task<IActionResult> ThankYou(int projectId)
     {
-        return View();
+        var project = await _projectApiService.GetProjectAsync(projectId);
+        var vm = new ThankYouViewModel
+        {
+            ProjectId = projectId,
+            OrganisationName = project?.OrganisationName ?? string.Empty,
+            OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
+            OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
+        };
+        return View(vm);
     }
 }

@@ -25,7 +25,10 @@ public class ProjectsController : ControllerBase
         return Ok(new ProjectDto
         {
             ProjectId = project.ProjectId,
-            ProjectState = project.ProjectState.ToString()
+            ProjectState = project.ProjectState.ToString(),
+            OrganisationName = project.OrganisationName ?? string.Empty,
+            OrganisationLogoUrl = project.OrganisationLogoUrl ?? string.Empty,
+            OrganisationWebsiteUrl = project.OrganisationWebsiteUrl ?? string.Empty,
         });
     }
 }
