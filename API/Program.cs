@@ -1,80 +1,114 @@
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
 var UserUiHttpPort = 5291;
 var UserUiHttpsPort = 7163;
-bool deleteDatabaseIfExists = true;
+
+bool deleteIfExists = true; // SQLite resetten?
+
+bool useAI = false;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Registering DAL
-//TODO this shouldn't be hardcoded, but change based on Environment (Factory Pattern?)
-builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseSqlite("Data Source=SynapseEnquete.db"));
+// ── Database ────────────────────────────────────────────────────────────────
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+if (!string.IsNullOrEmpty(dbHost))
+{
+    var connStr = $"Host={dbHost};" +
+                  $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
+                  $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
+                  $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
+                  $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
+    builder.Services.AddDbContext<SynapseEnqueteContext>(o => o.UseNpgsql(connStr));
+}
+else
+{
+    builder.Services.AddDbContext<SynapseEnqueteContext>(
+        o => o.UseSqlite("Data Source=SynapseEnquete.db"));
+}
+
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
 
-// Registering BL
+// ── Business logic ──────────────────────────────────────────────────────────
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
-builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
-builder.Services.AddScoped<IResponseManager, ResponseManager>();
-builder.Services.AddScoped<ICategoryManager, CategoryManager>();
-builder.Services.AddScoped<IProjectManager, ProjectManager>();
+builder.Services.AddScoped<IParticipantManager,   ParticipantManager>();
+builder.Services.AddScoped<IResponseManager,      ResponseManager>();
+builder.Services.AddScoped<ICategoryManager,      CategoryManager>();
+builder.Services.AddScoped<IProjectManager,       ProjectManager>();
 
-// Registering AI
-var projectId = builder.Configuration["VertexAi:ProjectId"]
-    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
+// ── AI configuration (loaded from ai-config.json / ai-config.example.json) ─
+//
+// AiConfig is a singleton: it is read once at startup and shared for the
+// lifetime of the process. BannedWordList and RegexModerationPatterns are
+// also singletons because they are derived from AiConfig and are stateless
+// after construction.
+//
+// To apply changes to ai-config.json, restart the API.
+builder.Services.AddSingleton(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    return AiConfigLoader.Load(logger);
+});
+builder.Services.AddSingleton<BannedWordList>();
+builder.Services.AddSingleton<RegexModerationPatterns>();
 
-var location = builder.Configuration["VertexAi:Location"]
-    ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
+// ── Vertex AI (optional) ────────────────────────────────────────────────────
+if (useAI)
+{
+    // Prefer values from ai-config.json; fall back to appsettings.json.
+    var aiConfig = builder.Services
+        .BuildServiceProvider()           // temporary provider just to read AiConfig
+        .GetRequiredService<AiConfig>();
 
-var model = builder.Configuration["VertexAi:Model"]
-    ?? "gemini-2.5-flash-lite";
+    var projectId = !string.IsNullOrWhiteSpace(aiConfig.Platform.Name)
+                    && builder.Configuration["VertexAi:ProjectId"] is { Length: > 0 } cfgProject
+        ? cfgProject
+        : builder.Configuration["VertexAi:ProjectId"]
+          ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
 
-var endpoint = builder.Configuration["VertexAi:Endpoint"]
-    ?? $"{location}-aiplatform.googleapis.com";
+    var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
+    var model    = builder.Configuration["VertexAi:Model"]    ?? "gemini-2.5-flash-lite";
+    var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
-var predictionBuilder = new PredictionServiceClientBuilder
-{ 
-    Endpoint = endpoint
-    };
-
-var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
+    var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
+    var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
         projectId, location, "google", model);
+    var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
-var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
+    builder.Services.AddChatClient(chatClient);
+    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
+}
 
-builder.Services.AddChatClient(chatClient);
-builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
-
-// CORS - UI-User must access this API
+// ── CORS ────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowUiUser", policy =>
     {
-        policy.WithOrigins("http://localhost:" + UserUiHttpPort, "https://localhost:" + UserUiHttpsPort)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:5291",
+            "https://localhost:7163",
+            Environment.GetEnvironmentVariable("UI_URL") ?? "http://localhost:5291"
+        );
     });
 });
 
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
-    context.CreateDatabase(deleteDatabaseIfExists);
+    context.CreateDatabase(deleteIfExists);
     DummyDataSeeder.Seed(context);
     app.MapOpenApi();
 }

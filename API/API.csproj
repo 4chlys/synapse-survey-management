@@ -21,4 +21,8 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="ai-config.example.json" />
+  </ItemGroup>
+
 </Project>
