@@ -44,7 +44,11 @@ builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
 // Registering AI
-if (useAI)
+if (!useAI)
+{
+    builder.Services.AddScoped<IAiModerationService, MockModerationService>();
+}
+else
 {
     var projectId = builder.Configuration["VertexAi:ProjectId"]
                     ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");

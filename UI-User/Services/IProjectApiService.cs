@@ -4,5 +4,5 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 
 public interface IProjectApiService
 {
-    Task<ProjectInfo?> GetProjectAsync(int projectId);
+    Task<ProjectInfo> GetProjectAsync(int projectId);
 }
