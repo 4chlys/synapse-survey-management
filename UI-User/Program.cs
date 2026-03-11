@@ -1,4 +1,5 @@
 using Vite.AspNetCore;
+using SynapseEnqueteManagement.UI.User.FormStrategies;
 using SynapseEnqueteManagement.UI.User.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,7 +36,7 @@ builder.Services.AddHttpClient<CategoryService>(client =>
             handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
-builder.Services.AddHttpClient<ProjectApiService>(client =>
+builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
             ?? "https://localhost:5159");
@@ -47,6 +48,11 @@ builder.Services.AddHttpClient<ProjectApiService>(client =>
             handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
+
+// Form strategies (OCP: register a new IFormStrategy here to add a new form type)
+builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
+builder.Services.AddSingleton<IFormStrategy, ChatFormStrategy>();
+builder.Services.AddSingleton<IFormStrategyFactory, FormStrategyFactory>();
 
 // ---- Service Configuration ----
 // Add Vite services.
