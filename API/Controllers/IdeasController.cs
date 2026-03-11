@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -43,5 +44,42 @@ public class IdeasController : ControllerBase
         };
         
         return CreatedAtAction(nameof(GetIdeasByCategory), new { categoryId }, ideaDto);
+    }
+    
+    [HttpPost("{ideaId}/comments")]
+    public async Task<ActionResult> AddComment(int ideaId, [FromBody] CreateCommentDto dto)
+    {
+        var comment = await _manager.AddCommentAsync(ideaId, dto.Text);
+        return Ok(new { comment.CommentId, comment.Text });
+    }
+    
+    [HttpGet("{ideaId}")]
+    public async Task<ActionResult<IdeaDto>> GetIdeaById(int categoryId, int ideaId)
+    {
+        var idea = await _manager.GetIdeaByIdAsync(ideaId);
+        if (idea == null) return NotFound();
+
+        return Ok(new IdeaDto
+        {
+            IdeaId = idea.IdeaId,
+            Description = idea.Description,
+            EmojiCount = idea.EmojiReactions.Count,
+            CommentsCount = idea.Comments.Count
+        });
+    }
+    
+    [HttpGet("{ideaId}/comments")]
+    public async Task<ActionResult<IEnumerable<CommentDto>>> GetCommentsByIdea(int ideaId)
+    {
+        var idea = await _manager.GetIdeaByIdAsync(ideaId);
+        if (idea == null) return NotFound();
+
+        var comments = idea.Comments.OfType<TextComment>().Select(c => new CommentDto
+        {
+            CommentId = c.CommentId,
+            Text = c.Text
+        });
+
+        return Ok(comments);
     }
 }

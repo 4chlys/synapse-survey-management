@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
@@ -28,6 +29,28 @@ public class IdeaManager
         };
 
         return _repository.Create(idea);
+    }
+    
+    public async Task<TextComment> AddCommentAsync(int ideaId, string text)
+    {
+        var idea = await _repository.ReadByIdAsync<Idea>(ideaId);
+        if (idea == null) throw new Exception("Idea not found");
+
+        var comment = new TextComment
+        {
+            IdeaId = ideaId,
+            Text = text
+        };
+
+        return await _repository.CreateAsync(comment);
+    }
+    
+    public async Task<Idea> GetIdeaByIdAsync(int ideaId)
+    {
+        return await _repository.ReadSingleAsync<Idea>(
+            filters: [i => i.IdeaId == ideaId],
+            includes: [i => i.Comments, i => i.EmojiReactions]
+        );
     }
 
 }

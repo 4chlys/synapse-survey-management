@@ -1,9 +1,11 @@
 export function initIdeation(): void {
-    // Make functions globally available for onclick handlers
     (window as any).showCreateForm = showCreateForm;
     (window as any).hideCreateForm = hideCreateForm;
     (window as any).showEmojiPicker = showEmojiPicker;
     (window as any).addEmoji = addEmoji;
+    (window as any).toggleComment = toggleComment;
+    (window as any).showCommentForm = showCommentForm;
+    (window as any).hideCommentForm = hideCommentForm;
 }
 
 function showCreateForm(): void {
@@ -65,4 +67,22 @@ function addEmoji(ideaId: number, emoji: string): void {
     if (picker) {
         picker.classList.add('hidden');
     }
+    
+}
+
+function toggleComment(ideaId: number, event: Event): void {
+    const form = document.getElementById(`comment-${ideaId}`);
+    if (form) {
+        form.classList.toggle('hidden');
+    }
+}
+
+function showCommentForm(): void {
+    const form = document.getElementById('commentForm');
+    if (form) form.classList.remove('hidden');
+}
+
+function hideCommentForm(): void {
+    const form = document.getElementById('commentForm');
+    if (form) form.classList.add('hidden');
 }

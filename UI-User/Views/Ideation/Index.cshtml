@@ -1,6 +1,7 @@
 @model List<SynapseEnqueteManagement.UI.User.Models.Idea>
 @{
     var category = ViewBag.Category as SynapseEnqueteManagement.UI.User.Models.Category;
+    var projectId = ViewBag.ProjectId ?? 1;
     ViewData["Title"] = category.Name;
 }
 
@@ -16,28 +17,28 @@
         </p>
     </div>
 
-    @* Create form (hidden) *@
+    @* Create form (hidden by default, shown when plus button is clicked) *@
     <div id="createForm" class="w-full max-w-sm mb-6 hidden">
-        <form asp-action="CreateIdea" method="post" 
+        <form asp-route-projectId="@projectId" asp-action="CreateIdea" method="post"
               class="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <input type="hidden" name="categoryId" value="@category.Id" />
             <div class="mb-4">
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">Beschrijving</label>
+                <label class="text-sm font-semibold text-gray-700 mb-2 block">Description</label>
                 <textarea name="description" required rows="4"
                           class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl 
                                  focus:border-emerald-300 focus:outline-none resize-none"
-                          placeholder="Beschrijf je idee..."></textarea>
+                          placeholder="Leg jouw idee uit..."></textarea>
             </div>
             <div class="flex gap-3">
-                <button type="submit" 
+                <button type="submit"
                         class="flex-1 py-2.5 bg-emerald-500 text-white font-semibold rounded-xl
                                hover:bg-emerald-600 transition-colors">
-                    Plaats
+                    Plaatsen
                 </button>
                 <button type="button" onclick="hideCreateForm()"
                         class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl
                                hover:bg-gray-200 transition-colors">
-                    Annuleer
+                    Annuleren
                 </button>
             </div>
         </form>
@@ -48,31 +49,37 @@
         @if (!Model.Any())
         {
             <div class="text-center py-12">
-                <p class="text-gray-400">Nog geen ideeën. Wees de eerste! 💡</p>
+                <p class="text-gray-400">Nog geen ideeen, wees de eerste! 💡</p>
             </div>
         }
         else
         {
             @foreach (var idea in Model)
             {
-                <div class="relative bg-white rounded-2xl border-2 border-gray-100 p-5">
-                    @* Comment count badge (rechts boven) *@
-                    <div class="absolute -top-3 -right-3 bg-white border-2 border-gray-100 
-                                rounded-full w-10 h-10 flex items-center justify-center
-                                shadow-sm">
+                @* Clicking the card navigates to the detail page *@
+                <a asp-controller="Ideation" asp-action="Detail"
+                   asp-route-projectId="@projectId"
+                   asp-route-categoryId="@category.Id"
+                   asp-route-ideaId="@idea.IdeaId"
+                   class="block relative bg-white rounded-2xl border-2 border-gray-100 p-5 
+                          cursor-pointer hover:border-emerald-200 transition-colors">
+
+                    @* Comment count badge (top right) *@
+                    <div class="absolute -top-3 -right-3 bg-white border-2 border-gray-100
+                                rounded-full w-10 h-10 flex items-center justify-center shadow-sm">
                         <span class="text-sm font-semibold text-gray-700">@idea.CommentsCount</span>
                     </div>
 
                     <p class="text-gray-900 text-sm leading-relaxed pr-8">@idea.Description</p>
-                    
-                    @* Emoji reactions (links onder) *@
-                    <div class="flex gap-2 mt-4 items-center">
+
+                    @* Emoji reactions row (stop propagation so clicks don't navigate) *@
+                    <div class="flex gap-2 mt-4 items-center" onclick="event.stopPropagation()">
                         <div id="emojis-@idea.IdeaId" class="flex gap-2"></div>
-                        
-                        @* Plus button voor emoji toevoegen *@
-                        <button onclick="showEmojiPicker(@idea.IdeaId)" 
-                                class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 
-                                       flex items-center justify-center text-gray-400 
+
+                        @* Plus button to open emoji picker *@
+                        <button onclick="showEmojiPicker(@idea.IdeaId); event.preventDefault();"
+                                class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300
+                                       flex items-center justify-center text-gray-400
                                        hover:border-emerald-400 hover:text-emerald-600 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -80,20 +87,18 @@
                         </button>
                     </div>
 
-                    @* Emoji picker (hidden) *@
-                    <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    @* Emoji picker (hidden by default) *@
+                    <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200"
+                         onclick="event.stopPropagation()">
                         <div class="flex gap-2 flex-wrap">
-                            <button onclick="addEmoji(@idea.IdeaId, '❤️')" class="text-2xl hover:scale-125 transition-transform">❤️</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '👍')" class="text-2xl hover:scale-125 transition-transform">👍</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '😊')" class="text-2xl hover:scale-125 transition-transform">😊</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '🎉')" class="text-2xl hover:scale-125 transition-transform">🎉</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '💡')" class="text-2xl hover:scale-125 transition-transform">💡</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '🔥')" class="text-2xl hover:scale-125 transition-transform">🔥</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '✅')" class="text-2xl hover:scale-125 transition-transform">✅</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '➕')" class="text-2xl hover:scale-125 transition-transform">➕</button>
+                            <button onclick="addEmoji(@idea.IdeaId, '❤️'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">❤️</button>
+                            <button onclick="addEmoji(@idea.IdeaId, '👍'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">👍</button>
+                            <button onclick="addEmoji(@idea.IdeaId, '🔥'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">🔥</button>
+                            <button onclick="addEmoji(@idea.IdeaId, '✅'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">✅</button>
                         </div>
                     </div>
-                </div>
+
+                </a>
             }
         }
     </div>
@@ -101,23 +106,24 @@
     @* Bottom Navigation *@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe">
         <div class="max-w-sm mx-auto px-6 py-4 flex justify-around items-center">
-            @* Terug naar categorieën *@
-            <a asp-controller="Category" asp-action="Index" 
+
+            @* Back to categories *@
+            <a asp-route-projectId="@projectId" asp-controller="Category" asp-action="Index"
                class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                 </svg>
             </a>
 
-            @* Nieuw idee (Plus) *@
-            <button onclick="showCreateForm()" 
+            @* New idea button *@
+            <button onclick="showCreateForm()"
                     class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
             </button>
 
-            @* Profiel (optioneel) *@
+            @* Profile *@
             <button class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -127,54 +133,3 @@
     </div>
 
 </div>
-
-<script>
-    function showCreateForm() {
-        document.getElementById('createForm').classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    
-    function hideCreateForm() {
-        document.getElementById('createForm').classList.add('hidden');
-    }
-
-    function showEmojiPicker(ideaId) {
-        const picker = document.getElementById('picker-' + ideaId);
-        picker.classList.toggle('hidden');
-    }
-
-    function addEmoji(ideaId, emoji) {
-        const emojisContainer = document.getElementById('emojis-' + ideaId);
-        
-        // Check of emoji al bestaat
-        const existingEmojis = emojisContainer.querySelectorAll('.emoji-item');
-        let found = false;
-        
-        existingEmojis.forEach(item => {
-            if (item.querySelector('.emoji-symbol').textContent === emoji) {
-                // Verhoog count
-                const countSpan = item.querySelector('.emoji-count');
-                const currentCount = parseInt(countSpan.textContent);
-                countSpan.textContent = currentCount + 1;
-                found = true;
-            }
-        });
-        
-        // Als emoji nog niet bestaat, voeg toe
-        if (!found) {
-            const emojiElement = document.createElement('div');
-            emojiElement.className = 'emoji-item flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs';
-            emojiElement.innerHTML = `
-                <span class="emoji-symbol">${emoji}</span>
-                <span class="emoji-count font-semibold text-gray-700">1</span>
-            `;
-            emojisContainer.appendChild(emojiElement);
-        }
-        
-        // Sluit picker
-        document.getElementById('picker-' + ideaId).classList.add('hidden');
-        
-        // TODO: Hier kun je een API call toevoegen om de emoji op te slaan
-        // bijvoorbeeld: saveEmojiToIdea(ideaId, emoji);
-    }
-</script>
