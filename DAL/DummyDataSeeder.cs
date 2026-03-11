@@ -60,13 +60,11 @@ public class DummyDataSeeder
             OrganisationWebsiteUrl = "https://www.synapse.com"
         };
 
-        context.Projects.Add(project);
+        project.Categories.Add(new Category { Name = "Campus welzijn", Description = "Welzijn op school" });
+        project.Categories.Add(new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" });
+        project.Categories.Add(new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" });
 
-        context.Categories.AddRange(
-            new Category { Name = "Campus welzijn", Description = "Welzijn op school" },
-            new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" },
-            new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" }
-        );
+        context.Projects.Add(project);
 
         context.SaveChanges();
     }

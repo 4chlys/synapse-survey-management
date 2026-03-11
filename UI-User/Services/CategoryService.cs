@@ -12,30 +12,9 @@ public class CategoryService
         _httpClient = httpClient;
     }
 
-    public List<Category> GetCategories()
+    public async Task<List<Category>> GetCategoriesAsync(int projectId)
     {
-        return GetCategoriesAsync().GetAwaiter().GetResult();
-    }
-
-    private async Task<List<Category>> GetCategoriesAsync()
-    {
-        var dtos = await _httpClient.GetFromJsonAsync<List<ApiCategoryDto>>("api/categories");
-        if (dtos is null) return new List<Category>();
-
-        return dtos.Select(d => new Category
-        {
-            Id = d.CategoryId,
-            Name = d.Name,
-            Description = d.Description,
-            IdeaCount = d.IdeaCount
-        }).ToList();
-    }
-
-    private class ApiCategoryDto
-    {
-        public int CategoryId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public int IdeaCount { get; set; }
+        return await _httpClient.GetFromJsonAsync<List<Category>>(
+            $"api/projects/{projectId}/categories") ?? new List<Category>();
     }
 }
