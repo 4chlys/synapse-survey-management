@@ -6,4 +6,5 @@ public class Idea
     public string Description { get; set; }
     public int EmojiCount { get; set; }
     public int CommentsCount { get; set; }
+    public List<IdeaEmoji> Emojis { get; set; } = new();
 }

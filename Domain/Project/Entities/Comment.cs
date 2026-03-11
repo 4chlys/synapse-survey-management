@@ -5,4 +5,6 @@ public abstract class Comment
     public int CommentId { get; set; }
     public int IdeaId { get; set; }
     public Idea Idea { get; set; }
+    public ICollection<CommentEmoji> EmojiReactions { get; set; } = new List<CommentEmoji>();
+
 }

@@ -21,11 +21,20 @@ public class IdeaService
     {
         return CreateIdeaAsync(categoryId, description).GetAwaiter().GetResult();
     }
-    
-      
+
     public bool AddComment(int ideaId, string text)
     {
         return AddCommentAsync(ideaId, text).GetAwaiter().GetResult();
+    }
+
+    public Idea GetIdeaById(int categoryId, int ideaId)
+    {
+        return GetIdeaByIdAsync(categoryId, ideaId).GetAwaiter().GetResult();
+    }
+
+    public List<Comment> GetCommentsByIdea(int categoryId, int ideaId)
+    {
+        return GetCommentsByIdeaAsync(categoryId, ideaId).GetAwaiter().GetResult();
     }
 
     private async Task<List<Idea>> GetIdeasByCategoryAsync(int categoryId)
@@ -37,8 +46,13 @@ public class IdeaService
         {
             IdeaId = d.IdeaId,
             Description = d.Description,
-            EmojiCount = d.EmojiCount,
-            CommentsCount = d.CommentsCount
+            CommentsCount = d.CommentsCount,
+            Emojis = d.Emojis.Select(e => new IdeaEmoji
+            {
+                EmojiId = e.EmojiId,
+                Symbol = e.Symbol,
+                Count = e.Count
+            }).ToList()
         }).ToList();
     }
 
@@ -54,28 +68,10 @@ public class IdeaService
     private async Task<bool> AddCommentAsync(int ideaId, string text)
     {
         var response = await _httpClient.PostAsJsonAsync(
-            $"api/categories/0/ideas/{ideaId}/comments", 
+            $"api/categories/0/ideas/{ideaId}/comments",
             new { Text = text }
         );
         return response.IsSuccessStatusCode;
-    }
-
-    private class ApiIdeaDto
-    {
-        public int IdeaId { get; set; }
-        public string Description { get; set; }
-        public int EmojiCount { get; set; }
-        public int CommentsCount { get; set; }
-    }
-    
-    public Idea GetIdeaById(int categoryId, int ideaId)
-    {
-        return GetIdeaByIdAsync(categoryId, ideaId).GetAwaiter().GetResult();
-    }
-
-    public List<Comment> GetCommentsByIdea(int categoryId, int ideaId)
-    {
-        return GetCommentsByIdeaAsync(categoryId, ideaId).GetAwaiter().GetResult();
     }
 
     private async Task<Idea> GetIdeaByIdAsync(int categoryId, int ideaId)
@@ -88,8 +84,13 @@ public class IdeaService
         {
             IdeaId = dto.IdeaId,
             Description = dto.Description,
-            EmojiCount = dto.EmojiCount,
-            CommentsCount = dto.CommentsCount
+            CommentsCount = dto.CommentsCount,
+            Emojis = dto.Emojis.Select(e => new IdeaEmoji
+            {
+                EmojiId = e.EmojiId,
+                Symbol = e.Symbol,
+                Count = e.Count
+            }).ToList()
         };
     }
 
@@ -102,7 +103,13 @@ public class IdeaService
         return dtos.Select(d => new Comment
         {
             CommentId = d.CommentId,
-            Text = d.Text
+            Text = d.Text,
+            Emojis = d.Emojis.Select(e => new CommentEmojiModel
+            {
+                EmojiId = e.EmojiId,
+                Symbol = e.Symbol,
+                Count = e.Count
+            }).ToList()
         }).ToList();
     }
 
@@ -110,5 +117,28 @@ public class IdeaService
     {
         public int CommentId { get; set; }
         public string Text { get; set; }
+        public List<ApiCommentEmojiDto> Emojis { get; set; } = new();
+    }
+
+    private class ApiIdeaEmojiDto
+    {
+        public int EmojiId { get; set; }
+        public string Symbol { get; set; }
+        public int Count { get; set; }
+    }
+
+    private class ApiIdeaDto
+    {
+        public int IdeaId { get; set; }
+        public string Description { get; set; }
+        public int CommentsCount { get; set; }
+        public List<ApiIdeaEmojiDto> Emojis { get; set; } = new();
+    }
+    
+    private class ApiCommentEmojiDto
+    {
+        public int EmojiId { get; set; }
+        public string Symbol { get; set; }
+        public int Count { get; set; }
     }
 }

@@ -24,8 +24,15 @@ public class IdeasController : ControllerBase
         {
             IdeaId = i.IdeaId,
             Description = i.Description,
-            EmojiCount = i.EmojiReactions.Count,
-            CommentsCount = i.Comments.Count
+            CommentsCount = i.Comments.OfType<TextComment>().Count(),
+            Emojis = i.Comments.OfType<IconComment>()
+                .GroupBy(ic => ic.Emoji.Symbol)
+                .Select(g => new IdeaEmojiDto
+                {
+                    EmojiId = g.First().EmojiId,
+                    Symbol = g.Key,
+                    Count = g.Count()
+                }).ToList()
         });
         return Ok(dtos);
     }
@@ -39,7 +46,6 @@ public class IdeasController : ControllerBase
         {
             IdeaId = idea.IdeaId,
             Description = idea.Description,
-            EmojiCount = 0,
             CommentsCount = 0
         };
         
@@ -63,8 +69,15 @@ public class IdeasController : ControllerBase
         {
             IdeaId = idea.IdeaId,
             Description = idea.Description,
-            EmojiCount = idea.EmojiReactions.Count,
-            CommentsCount = idea.Comments.Count
+            CommentsCount = idea.Comments.OfType<TextComment>().Count(),
+            Emojis = idea.Comments.OfType<IconComment>()
+                .GroupBy(ic => ic.Emoji.Symbol)
+                .Select(g => new IdeaEmojiDto
+                {
+                    EmojiId = g.First().EmojiId,
+                    Symbol = g.Key,
+                    Count = g.Count()
+                }).ToList()
         });
     }
     
@@ -77,9 +90,31 @@ public class IdeasController : ControllerBase
         var comments = idea.Comments.OfType<TextComment>().Select(c => new CommentDto
         {
             CommentId = c.CommentId,
-            Text = c.Text
+            Text = c.Text,
+            Emojis = c.EmojiReactions
+                .GroupBy(e => e.Emoji.Symbol)
+                .Select(g => new CommentEmojiDto
+                {
+                    EmojiId = g.First().EmojiId,
+                    Symbol = g.Key,
+                    Count = g.Count()
+                }).ToList()
         });
 
         return Ok(comments);
+    }
+    
+    [HttpPost("{ideaId}/iconcomments")]
+    public async Task<ActionResult> AddIconComment(int ideaId, [FromBody] AddIconCommentDto dto)
+    {
+        var iconComment = await _manager.AddIconCommentAsync(ideaId, dto.EmojiId);
+        return Ok(new { iconComment.CommentId, iconComment.EmojiId });
+    }
+    
+    [HttpPost("{ideaId}/comments/{commentId}/emoji")]
+    public async Task<ActionResult> AddCommentEmoji(int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
+    {
+        var commentEmoji = await _manager.AddCommentEmojiAsync(commentId, dto.EmojiId);
+        return Ok(new { commentEmoji.CommentEmojiId, commentEmoji.EmojiId });
     }
 }

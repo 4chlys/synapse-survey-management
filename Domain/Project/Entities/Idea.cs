@@ -15,6 +15,5 @@ public class Idea
     public int? ParticipantId { get; set; }
     
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
-    public ICollection<EmojiReaction> EmojiReactions { get; set; } = new List<EmojiReaction>();
 
 }

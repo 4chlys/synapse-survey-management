@@ -2,6 +2,8 @@
 @{
     var category = ViewBag.Category as SynapseEnqueteManagement.UI.User.Models.Category;
     var projectId = ViewBag.ProjectId ?? 1;
+    var emojis = ViewBag.Emojis as List<SynapseEnqueteManagement.UI.User.Models.Emoji>
+                 ?? new List<SynapseEnqueteManagement.UI.User.Models.Emoji>();
     ViewData["Title"] = category.Name;
 }
 
@@ -25,7 +27,7 @@
             <div class="mb-4">
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Description</label>
                 <textarea name="description" required rows="4"
-                          class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl 
+                          class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl
                                  focus:border-emerald-300 focus:outline-none resize-none"
                           placeholder="Leg jouw idee uit..."></textarea>
             </div>
@@ -49,7 +51,7 @@
         @if (!Model.Any())
         {
             <div class="text-center py-12">
-                <p class="text-gray-400">Nog geen ideeen, wees de eerste! 💡</p>
+                <p class="text-gray-400">Nog geen ideeën, wees de eerste! 💡</p>
             </div>
         }
         else
@@ -61,7 +63,7 @@
                    asp-route-projectId="@projectId"
                    asp-route-categoryId="@category.Id"
                    asp-route-ideaId="@idea.IdeaId"
-                   class="block relative bg-white rounded-2xl border-2 border-gray-100 p-5 
+                   class="block relative bg-white rounded-2xl border-2 border-gray-100 p-5
                           cursor-pointer hover:border-emerald-200 transition-colors">
 
                     @* Comment count badge (top right) *@
@@ -72,12 +74,21 @@
 
                     <p class="text-gray-900 text-sm leading-relaxed pr-8">@idea.Description</p>
 
-                    @* Emoji reactions row (stop propagation so clicks don't navigate) *@
-                    <div class="flex gap-2 mt-4 items-center" onclick="event.stopPropagation()">
-                        <div id="emojis-@idea.IdeaId" class="flex gap-2"></div>
+                    @* Emoji reactions row — shows existing emojis from DB *@
+                    <div class="flex gap-2 mt-4 items-center flex-wrap" onclick="event.stopPropagation()">
+
+                        @* Show existing emoji reactions *@
+                        @foreach (var emoji in idea.Emojis)
+                        {
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100
+                                         border border-gray-200 rounded-full text-xs min-w-[3rem] leading-none">
+                                <span class="text-lg leading-none">@emoji.Symbol</span>
+                                <span class="font-semibold text-gray-700 text-sm leading-none">@emoji.Count</span>
+                            </span>
+                        }
 
                         @* Plus button to open emoji picker *@
-                        <button onclick="showEmojiPicker(@idea.IdeaId); event.preventDefault();"
+                        <button onclick="showEmojiPicker('@idea.IdeaId'); event.preventDefault();"
                                 class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300
                                        flex items-center justify-center text-gray-400
                                        hover:border-emerald-400 hover:text-emerald-600 transition-colors">
@@ -87,15 +98,24 @@
                         </button>
                     </div>
 
-                    @* Emoji picker (hidden by default) *@
+                    @* Emoji picker (hidden by default, emojis loaded from DB) *@
                     <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200"
                          onclick="event.stopPropagation()">
-                        <div class="flex gap-2 flex-wrap">
-                            <button onclick="addEmoji(@idea.IdeaId, '❤️'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">❤️</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '👍'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">👍</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '🔥'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">🔥</button>
-                            <button onclick="addEmoji(@idea.IdeaId, '✅'); event.preventDefault();" class="text-2xl hover:scale-125 transition-transform">✅</button>
-                        </div>
+                        <form asp-action="AddIconComment" method="post">
+                            <input type="hidden" name="projectId" value="@projectId" />
+                            <input type="hidden" name="categoryId" value="@category.Id" />
+                            <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                            <input type="hidden" name="returnPage" value="Index" />
+                            <div class="flex gap-2 flex-wrap">
+                                @foreach (var emoji in emojis)
+                                {
+                                    <button type="submit" name="emojiId" value="@emoji.EmojiId"
+                                            class="text-2xl hover:scale-125 transition-transform">
+                                        @emoji.Symbol
+                                    </button>
+                                }
+                            </div>
+                        </form>
                     </div>
 
                 </a>

@@ -12,7 +12,8 @@ public class IdeaManager
     {
         return _repository.Read<Idea>(
             filters: [i => i.Category.CategoryId == categoryId],
-            includes: [i => i.Comments]
+            includes: [i => i.Comments],
+            includeStrings: ["Comments.Emoji"]
         );
     }
 
@@ -49,8 +50,49 @@ public class IdeaManager
     {
         return await _repository.ReadSingleAsync<Idea>(
             filters: [i => i.IdeaId == ideaId],
-            includes: [i => i.Comments, i => i.EmojiReactions]
+            includes: [i => i.Comments],
+            includeStrings: ["Comments.Emoji", "Comments.EmojiReactions.Emoji"]
         );
     }
 
+    public async Task<IEnumerable<Emoji>> GetEmojisAsync()
+    {
+        return await _repository.ReadAsync<Emoji>(
+            filters: [e => e.IsActive]
+        );
+    }
+
+    public async Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId)
+    {
+        var idea = await _repository.ReadByIdAsync<Idea>(ideaId);
+        if (idea == null) throw new Exception("Idea not found");
+
+        var emoji = await _repository.ReadByIdAsync<Emoji>(emojiId);
+        if (emoji == null) throw new Exception("Emoji not found");
+
+        var iconComment = new IconComment
+        {
+            IdeaId = ideaId,
+            EmojiId = emojiId
+        };
+
+        return await _repository.CreateAsync(iconComment);
+    }
+    
+    public async Task<CommentEmoji> AddCommentEmojiAsync(int commentId, int emojiId)
+    {
+        var comment = await _repository.ReadByIdAsync<Comment>(commentId);
+        if (comment == null) throw new Exception("Comment not found");
+
+        var emoji = await _repository.ReadByIdAsync<Emoji>(emojiId);
+        if (emoji == null) throw new Exception("Emoji not found");
+
+        var commentEmoji = new CommentEmoji
+        {
+            CommentId = commentId,
+            EmojiId = emojiId
+        };
+
+        return await _repository.CreateAsync(commentEmoji);
+    }
 }
