@@ -99,7 +99,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
 app.UseCors("AllowUiUser");
 app.UseAuthorization();
 app.MapControllers();
