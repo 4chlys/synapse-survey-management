@@ -23,5 +23,8 @@ public class ProjectApiService
     {
         public int ProjectId { get; set; }
         public string ProjectState { get; set; } = string.Empty;
+        public string OrganisationName { get; set; } = string.Empty;
+        public string OrganisationLogoUrl { get; set; } = string.Empty;
+        public string OrganisationWebsiteUrl { get; set; } = string.Empty;
     }
 }
