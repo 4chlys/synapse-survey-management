@@ -4,33 +4,9 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class IdeaManager
+public class IdeaManager : IIdeaManager
 {
     private readonly IRepository _repository;
-    
-    public IEnumerable<Idea> GetIdeasByCategory(int categoryId)
-    {
-        return _repository.Read<Idea>(
-            filters: [i => i.Category.CategoryId == categoryId],
-            includes: [i => i.Comments],
-            includeStrings: ["Comments.Emoji"]
-        );
-    }
-
-    public Idea AddIdea(int categoryId, string description)
-    {
-        var category = _repository.ReadById<Category>(categoryId);
-        if (category == null) throw new Exception("Category not found");
-
-        var idea = new Idea
-        {
-            Description = description,
-            Category = category,
-            CommentCount = 0
-        };
-
-        return _repository.Create(idea);
-    }
     
     public async Task<TextComment> AddCommentAsync(int ideaId, string text)
     {
@@ -94,5 +70,34 @@ public class IdeaManager
         };
 
         return await _repository.CreateAsync(commentEmoji);
+    }
+    
+    public IdeaManager(IRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<IEnumerable<Idea>> GetIdeasByCategoryAsync(int categoryId)
+    {
+        return await _repository.ReadAsync<Idea>(
+            filters: [i => i.Category.CategoryId == categoryId],
+            includes: [i => i.Comments],
+            includeStrings: ["Comments.Emoji"]
+        );
+    }
+
+    public async Task<Idea> AddIdeaAsync(int categoryId, string description)
+    {
+        var category = await _repository.ReadByIdAsync<Category>(categoryId);
+        if (category == null) throw new Exception("Category not found");
+
+        var idea = new Idea
+        {
+            Description = description,
+            Category = category,
+            CommentCount = 0
+        };
+
+        return await _repository.CreateAsync(idea);
     }
 }

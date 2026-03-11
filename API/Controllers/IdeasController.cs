@@ -9,17 +9,17 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/categories/{categoryId}/ideas")]
 public class IdeasController : ControllerBase
 {
-    private readonly IManager _manager;
+    private readonly IIdeaManager _manager;
 
-    public IdeasController(IManager manager)
+    public IdeasController(IIdeaManager manager)
     {
         _manager = manager;
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<IdeaDto>> GetIdeasByCategory(int categoryId)
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> GetIdeasByCategory(int categoryId)
     {
-        var ideas = _manager.GetIdeasByCategory(categoryId);
+        var ideas = await _manager.GetIdeasByCategoryAsync(categoryId);
         var dtos = ideas.Select(i => new IdeaDto
         {
             IdeaId = i.IdeaId,
@@ -38,17 +38,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<IdeaDto> CreateIdea(int categoryId, [FromBody] CreateIdeaDto dto)
+    public async Task<ActionResult<IdeaDto>> CreateIdea(int categoryId, [FromBody] CreateIdeaDto dto)
     {
-        var idea = _manager.AddIdea(categoryId, dto.Description);
-        
+        var idea = await _manager.AddIdeaAsync(categoryId, dto.Description); // ← async
         var ideaDto = new IdeaDto
         {
             IdeaId = idea.IdeaId,
             Description = idea.Description,
             CommentsCount = 0
         };
-        
         return CreatedAtAction(nameof(GetIdeasByCategory), new { categoryId }, ideaDto);
     }
     

@@ -42,6 +42,7 @@ builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
+builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 
 // Registering AI
 if (useAI)

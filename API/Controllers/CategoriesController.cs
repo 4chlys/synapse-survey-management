@@ -30,9 +30,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public ActionResult<CategoryDto> GetCategoryById(int id)
+    public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
     {
-        var category = _manager.GetCategoryById(id);
+        var category = await _categoryManager.GetCategoryByIdAsync(id); // ← async
         if (category == null) return NotFound();
 
         var dto = new CategoryDto
