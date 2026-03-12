@@ -47,6 +47,13 @@ builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
 // ── AI configuration (loaded from ai-config.json / ai-config.example.json) ─
+//
+// AiConfig is a singleton: it is read once at startup and shared for the
+// lifetime of the process. BannedWordList and RegexModerationPatterns are
+// also singletons because they are derived from AiConfig and are stateless
+// after construction.
+//
+// To apply changes to ai-config.json, restart the API.
 builder.Services.AddSingleton(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<Program>>();
