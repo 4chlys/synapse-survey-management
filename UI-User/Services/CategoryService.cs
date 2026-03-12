@@ -18,8 +18,8 @@ public class CategoryService
             $"api/projects/{projectId}/categories") ?? new List<Category>();
     }
 
-    public async Task<Category> GetCategoryByIdAsync(int id, int projectId)
+    public async Task<Category> GetCategoryByIdAsync(int categoryId, int projectId)
     {
-        return await _httpClient.GetFromJsonAsync<Category>($"api/projects/{projectId}/categories/{id}");
+        return await _httpClient.GetFromJsonAsync<Category>($"api/projects/{projectId}/categories/{categoryId}");
     }
 }
