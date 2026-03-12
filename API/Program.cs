@@ -1,16 +1,17 @@
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-var UserUiHttpPort = 5291;
-var UserUiHttpsPort = 7163;
+bool deleteIfExists = true;
 
-bool deleteIfExists = true; // SQLite resetten?
-
-bool useAI = false;
+// Load AI config early so we can read use_ai before building the container
+var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
+var aiConfig = AiConfigLoader.Load(tempLogger);
+bool useAi = aiConfig.Moderation.UseAi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Registering DAL — PostgreSQL in de cloud, SQLite lokaal
+// Database
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
 if (!string.IsNullOrEmpty(dbHost))
 {
@@ -33,6 +34,7 @@ else
 {
     builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseSqlite("Data Source=SynapseEnquete.db"));
 }
+
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
 
@@ -44,36 +46,36 @@ builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 
-// Registering AI
-if (useAI)
+// AI configuration
+//
+// Register the already-loaded AiConfig instance directly so we don't parse
+// the file a second time. BannedWordList and RegexModerationPatterns are
+// derived from AiConfig and are stateless after construction.
+//
+// To apply changes to ai-config.json, restart the API.
+builder.Services.AddSingleton(aiConfig);
+builder.Services.AddSingleton<BannedWordList>();
+builder.Services.AddSingleton<RegexModerationPatterns>();
+
+// Vertex AI (optional — controlled by use_ai in ai-config.json)
+if (useAi)
 {
     var projectId = builder.Configuration["VertexAi:ProjectId"]
-                    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
+                    ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
+    var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
+    var model = builder.Configuration["VertexAi:Model"] ?? "gemini-2.5-flash-lite";
+    var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
-    var location = builder.Configuration["VertexAi:Location"]
-                   ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
-
-    var model = builder.Configuration["VertexAi:Model"]
-                ?? "gemini-2.5-flash-lite";
-
-    var endpoint = builder.Configuration["VertexAi:Endpoint"]
-                   ?? $"{location}-aiplatform.googleapis.com";
-
-    var predictionBuilder = new PredictionServiceClientBuilder
-    {
-        Endpoint = endpoint
-    };
-
+    var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
     var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
         projectId, location, "google", model);
-
     var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
     builder.Services.AddChatClient(chatClient);
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
-}
+} else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
 
-// CORS - UI-User must access this API
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowUiUser", policy =>
@@ -100,7 +102,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
 app.UseCors("AllowUiUser");
 app.UseAuthorization();
 app.MapControllers();
