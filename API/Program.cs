@@ -9,7 +9,7 @@ using SynapseEnqueteManagement.DAL;
 var UserUiHttpPort = 5291;
 var UserUiHttpsPort = 7163;
 
-bool deleteIfExists = true; // SQLite resetten?
+bool deleteIfExists = true;
 
 bool useAI = true;
 
