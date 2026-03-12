@@ -22,9 +22,6 @@ public class CategoryManager : ICategoryManager
     
     public async Task<Category> GetCategoryByIdAsync(int id)
     {
-        return await _repository.ReadSingleAsync<Category>(
-            filters: [c => c.CategoryId == id],
-            includes: [c => c.Ideas]
-        );
+        return await _repository.ReadByIdAsync<Category>(id, includes: [c => c.Ideas]);
     }
 }

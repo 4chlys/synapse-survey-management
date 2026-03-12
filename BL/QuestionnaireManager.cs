@@ -12,23 +12,11 @@ public class QuestionnaireManager : IQuestionnaireManager
     {
         _repository = repository;
     }
-
-    public async Task<IEnumerable<Question>> GetQuestionsAsync()
-    {
-        return await _repository.ReadAsync<Question>(
-            includes: [q => q.Questionnaire]
-        );
-    }
-
-    public async Task<Questionnaire> GetFirstQuestionnaireAsync()
-    {
-        return await _repository.ReadSingleAsync<Questionnaire>();
-    }
-
+    
     public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
     {
-        var project = await _repository.ReadSingleAsync<Project>(
-            filters: [p => p.ProjectId == projectId],
+        var project = await _repository.ReadByIdAsync<Project>(
+            projectId,
             includes: [p => p.Questionnaire],
             includeStrings: ["Questionnaire.Questions"]
         );

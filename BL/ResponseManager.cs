@@ -33,8 +33,8 @@ public class ResponseManager : IResponseManager
 
     public async Task<IEnumerable<Response>> GetResponsesByProjectIdAsync(int projectId)
     {
-        var project = await _repository.ReadSingleAsync<Project>(
-            filters: [p => p.ProjectId == projectId],
+        var project = await _repository.ReadByIdAsync<Project>(
+            projectId,
             includes: [p => p.Questionnaire],
             includeStrings: ["Questionnaire.Questions"]
         );
