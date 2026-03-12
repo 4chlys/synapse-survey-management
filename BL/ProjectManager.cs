@@ -14,8 +14,6 @@ public class ProjectManager : IProjectManager
 
     public async Task<Project> GetProjectByIdAsync(int projectId)
     {
-        return await _repository.ReadSingleAsync<Project>(
-            filters: [p => p.ProjectId == projectId]
-        );
+        return await _repository.ReadByIdAsync<Project>(projectId);
     }
 }
