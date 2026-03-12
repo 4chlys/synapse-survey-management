@@ -28,4 +28,20 @@ public class CategoriesController : ControllerBase
         });
         return Ok(dtos);
     }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
+    {
+        var category = await _categoryManager.GetCategoryByIdAsync(id); // ← async
+        if (category == null) return NotFound();
+
+        var dto = new CategoryDto
+        {
+            CategoryId = category.CategoryId,
+            Name = category.Name,
+            Description = category.Description,
+            IdeaCount = category.Ideas.Count
+        };
+        return Ok(dto);
+    }
 }

@@ -1,6 +1,7 @@
 import './main.css';
 import { setApiBase } from './ideation/moderation';
 import { initSurvey } from './survey/init';
+import { initIdeation } from "./ideation/ideaHub";
 
 const apiBase = document.querySelector<HTMLMetaElement>('meta[name="api-base"]')?.content ?? '';
 if (!apiBase) {
@@ -9,3 +10,4 @@ if (!apiBase) {
 setApiBase(apiBase);
 
 initSurvey();
+initIdeation();

@@ -10,7 +10,7 @@
         @await Html.PartialAsync("_ModerationPopup")
     }
     
-    <script type="module" vite-src="~/main.ts"></script>
+    
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
     </environment>
@@ -39,5 +39,6 @@
 
     @await RenderSectionAsync("Scripts", required: false)
     
+    <script type="module" vite-src="~/main.ts" defer></script>
     </body>
 </html>

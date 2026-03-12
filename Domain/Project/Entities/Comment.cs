@@ -4,4 +4,6 @@ public abstract class Comment
 {
     public int CommentId { get; set; }
     public Idea Idea { get; set; }
+    
+
 }

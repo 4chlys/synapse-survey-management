@@ -1,4 +1,4 @@
-﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -66,6 +66,20 @@ public class DummyDataSeeder
 
         context.Projects.Add(project);
 
+        context.Categories.AddRange(
+            new Category { Name = "Campus welzijn", Description = "Welzijn op school" },
+            new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" },
+            new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" }
+        );
+        
+        context.Emojis.AddRange(
+            new Emoji { Symbol = "❤️", Name = "heart" },
+            new Emoji { Symbol = "👍", Name = "thumbsup" },
+            new Emoji { Symbol = "🔥", Name = "fire" },
+            new Emoji { Symbol = "✅", Name = "check" }
+        );
+        
         context.SaveChanges();
     }
+    
 }
