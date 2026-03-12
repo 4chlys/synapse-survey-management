@@ -24,8 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="ai-config.example.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="ai-config.example.json" />
   </ItemGroup>
 </Project>
