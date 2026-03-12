@@ -65,12 +65,6 @@ public class DummyDataSeeder
         project.Categories.Add(new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" });
 
         context.Projects.Add(project);
-
-        context.Categories.AddRange(
-            new Category { Name = "Campus welzijn", Description = "Welzijn op school" },
-            new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" },
-            new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" }
-        );
         
         context.Emojis.AddRange(
             new Emoji { Symbol = "❤️", Name = "heart" },
