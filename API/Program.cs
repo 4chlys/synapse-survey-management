@@ -11,7 +11,7 @@ var UserUiHttpsPort = 7163;
 
 bool deleteIfExists = true;
 
-bool useAI = false;
+bool useAI = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Registering DAL — PostgreSQL in de cloud, SQLite lokaal
+// ── Database ────────────────────────────────────────────────────────────────
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
 if (!string.IsNullOrEmpty(dbHost))
 {
@@ -28,16 +28,18 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseNpgsql(connStr));
+    builder.Services.AddDbContext<SynapseEnqueteContext>(o => o.UseNpgsql(connStr));
 }
 else
 {
-    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseSqlite("Data Source=SynapseEnquete.db"));
+    builder.Services.AddDbContext<SynapseEnqueteContext>(
+        o => o.UseSqlite("Data Source=SynapseEnquete.db"));
 }
+
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
 
-// Registering BL
+// ── Business logic ──────────────────────────────────────────────────────────
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -78,7 +80,7 @@ if (useAI)
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 }
 
-// CORS - UI-User must access this API
+// ── CORS ────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowUiUser", policy =>
