@@ -10,5 +10,5 @@ public interface IIdeaManager
     Task<Idea> GetIdeaByIdAsync(int ideaId);
     Task<IEnumerable<Emoji>> GetEmojisAsync();
     Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId);
-    Task<CommentEmoji> AddCommentEmojiAsync(int commentId, int emojiId);
+    Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId);
 }

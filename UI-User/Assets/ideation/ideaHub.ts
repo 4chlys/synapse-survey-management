@@ -1,9 +1,9 @@
 export function initIdeation(): void {
-    (window as any).showCreateForm = showCreateForm;
-    (window as any).hideCreateForm = hideCreateForm;
-    (window as any).showCommentForm = showCommentForm;
-    (window as any).hideCommentForm = hideCommentForm;
-    (window as any).showEmojiPicker = showEmojiPicker;
+    window.showCreateForm = showCreateForm;
+    window.hideCreateForm = hideCreateForm;
+    window.showCommentForm = showCommentForm;
+    window.hideCommentForm = hideCommentForm;
+    window.showEmojiPicker = showEmojiPicker;
 }
 
 function showCreateForm(): void {
@@ -30,7 +30,6 @@ function hideCommentForm(): void {
 }
 
 function showEmojiPicker(targetId: string): void {
-    // Close all other open pickers first
     document.querySelectorAll('[id^="picker-"]').forEach(el => {
         if (el.id !== `picker-${targetId}`) {
             el.classList.add('hidden');
@@ -38,4 +37,27 @@ function showEmojiPicker(targetId: string): void {
     });
     const picker = document.getElementById(`picker-${targetId}`);
     if (picker) picker.classList.toggle('hidden');
+}
+
+function showReplyForm(commentId: number): void {
+    document.querySelectorAll('[id^="replyForm-"]').forEach(el => {
+        el.classList.add('hidden');
+    });
+    const form = document.getElementById(`replyForm-${commentId}`);
+    if (form) form.classList.remove('hidden');
+}
+
+function hideReplyForm(commentId: number): void {
+    const form = document.getElementById(`replyForm-${commentId}`);
+    if (form) form.classList.add('hidden');
+}
+
+declare global {
+    interface Window {
+        showCreateForm: () => void;
+        hideCreateForm: () => void;
+        showCommentForm: () => void;
+        hideCommentForm: () => void;
+        showEmojiPicker: (targetId: string) => void;
+    }
 }

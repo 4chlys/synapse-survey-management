@@ -12,17 +12,7 @@ public class CategoryService
         _httpClient = httpClient;
     }
 
-    public List<Category> GetCategories()
-    {
-        return GetCategoriesAsync().GetAwaiter().GetResult();
-    }
-
-    public Category GetCategoryById(int id)
-    {
-        return GetCategoryByIdAsync(id).GetAwaiter().GetResult();
-    }
-
-    private async Task<List<Category>> GetCategoriesAsync()
+    public async Task<List<Category>> GetCategoriesAsync()
     {
         var dtos = await _httpClient.GetFromJsonAsync<List<ApiCategoryDto>>("api/categories");
         if (dtos is null) return new List<Category>();
@@ -36,7 +26,7 @@ public class CategoryService
         }).ToList();
     }
 
-    private async Task<Category> GetCategoryByIdAsync(int id)
+    public async Task<Category> GetCategoryByIdAsync(int id)
     {
         var dto = await _httpClient.GetFromJsonAsync<ApiCategoryDto>($"api/categories/{id}");
         if (dto is null) return null;

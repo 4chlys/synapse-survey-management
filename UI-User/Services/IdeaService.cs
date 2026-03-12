@@ -12,32 +12,7 @@ public class IdeaService
         _httpClient = httpClient;
     }
 
-    public List<Idea> GetIdeasByCategory(int categoryId)
-    {
-        return GetIdeasByCategoryAsync(categoryId).GetAwaiter().GetResult();
-    }
-
-    public bool CreateIdea(int categoryId, string description)
-    {
-        return CreateIdeaAsync(categoryId, description).GetAwaiter().GetResult();
-    }
-
-    public bool AddComment(int ideaId, string text)
-    {
-        return AddCommentAsync(ideaId, text).GetAwaiter().GetResult();
-    }
-
-    public Idea GetIdeaById(int categoryId, int ideaId)
-    {
-        return GetIdeaByIdAsync(categoryId, ideaId).GetAwaiter().GetResult();
-    }
-
-    public List<Comment> GetCommentsByIdea(int categoryId, int ideaId)
-    {
-        return GetCommentsByIdeaAsync(categoryId, ideaId).GetAwaiter().GetResult();
-    }
-
-    private async Task<List<Idea>> GetIdeasByCategoryAsync(int categoryId)
+    public async Task<List<Idea>> GetIdeasByCategoryAsync(int categoryId)
     {
         var dtos = await _httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/categories/{categoryId}/ideas");
         if (dtos is null) return new List<Idea>();
@@ -56,7 +31,7 @@ public class IdeaService
         }).ToList();
     }
 
-    private async Task<bool> CreateIdeaAsync(int categoryId, string description)
+    public async Task<bool> CreateIdeaAsync(int categoryId, string description)
     {
         var response = await _httpClient.PostAsJsonAsync($"api/categories/{categoryId}/ideas", new
         {
@@ -65,16 +40,16 @@ public class IdeaService
         return response.IsSuccessStatusCode;
     }
 
-    private async Task<bool> AddCommentAsync(int ideaId, string text)
+    public async Task<bool> AddCommentAsync(int categoryId, int ideaId, string text)
     {
         var response = await _httpClient.PostAsJsonAsync(
-            $"api/categories/0/ideas/{ideaId}/comments",
+            $"api/categories/{categoryId}/ideas/{ideaId}/comments",
             new { Text = text }
         );
         return response.IsSuccessStatusCode;
     }
 
-    private async Task<Idea> GetIdeaByIdAsync(int categoryId, int ideaId)
+    public async Task<Idea> GetIdeaByIdAsync(int categoryId, int ideaId)
     {
         var dto = await _httpClient.GetFromJsonAsync<ApiIdeaDto>(
             $"api/categories/{categoryId}/ideas/{ideaId}");
@@ -94,7 +69,7 @@ public class IdeaService
         };
     }
 
-    private async Task<List<Comment>> GetCommentsByIdeaAsync(int categoryId, int ideaId)
+    public async Task<List<Comment>> GetCommentsByIdeaAsync(int categoryId, int ideaId)
     {
         var dtos = await _httpClient.GetFromJsonAsync<List<ApiCommentDto>>(
             $"api/categories/{categoryId}/ideas/{ideaId}/comments");
@@ -109,7 +84,7 @@ public class IdeaService
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
                 Count = e.Count
-            }).ToList()
+            }).ToList(),
         }).ToList();
     }
 
@@ -118,6 +93,7 @@ public class IdeaService
         public int CommentId { get; set; }
         public string Text { get; set; }
         public List<ApiCommentEmojiDto> Emojis { get; set; } = new();
+        
     }
 
     private class ApiIdeaEmojiDto
@@ -134,7 +110,7 @@ public class IdeaService
         public int CommentsCount { get; set; }
         public List<ApiIdeaEmojiDto> Emojis { get; set; } = new();
     }
-    
+
     private class ApiCommentEmojiDto
     {
         public int EmojiId { get; set; }

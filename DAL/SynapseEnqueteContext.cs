@@ -18,7 +18,7 @@ public class SynapseEnqueteContext : IdentityDbContext
     public DbSet<Emoji> Emojis { get; set; }
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
-    public DbSet<CommentEmoji> CommentEmojis { get; set; }
+    public DbSet<Comment> Comments { get; set; }
 
 
     public SynapseEnqueteContext(DbContextOptions options) : base(options)
