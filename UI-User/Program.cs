@@ -1,5 +1,6 @@
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Services;
+using SynapseEnqueteManagement.UI.User.FormStrategies;
 
 var builder = WebApplication.CreateBuilder(args);
 
