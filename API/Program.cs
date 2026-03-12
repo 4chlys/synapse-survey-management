@@ -8,7 +8,7 @@ using SynapseEnqueteManagement.DAL;
 
 bool deleteIfExists = true;
 
-// ── Load AI config early so we can read use_ai before building the container ─
+// Load AI config early so we can read use_ai before building the container
 var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
 var aiConfig = AiConfigLoader.Load(tempLogger);
 bool useAi = aiConfig.Moderation.UseAi;
@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// ── Database ────────────────────────────────────────────────────────────────
+// Database
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
 if (!string.IsNullOrEmpty(dbHost))
 {
@@ -45,7 +45,7 @@ builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
-// ── AI configuration ────────────────────────────────────────────────────────
+// AI configuration
 //
 // Register the already-loaded AiConfig instance directly so we don't parse
 // the file a second time. BannedWordList and RegexModerationPatterns are
@@ -56,7 +56,7 @@ builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 
-// ── Vertex AI (optional — controlled by use_ai in ai-config.json) ───────────
+// Vertex AI (optional — controlled by use_ai in ai-config.json)
 if (useAi)
 {
     var projectId = builder.Configuration["VertexAi:ProjectId"]
@@ -74,7 +74,7 @@ if (useAi)
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 } else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
 
-// ── CORS ────────────────────────────────────────────────────────────────────
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowUiUser", policy =>
