@@ -12,9 +12,9 @@ public class CategoryManager : ICategoryManager
         _repository = repository;
     }
 
-    public IEnumerable<Category> GetCategories()
+    public async Task<IEnumerable<Category>> GetCategoriesAsync()
     {
-        return _repository.Read<Category>(
+        return await _repository.ReadAsync<Category>(
             includes: [c => c.Ideas]
         );
     }

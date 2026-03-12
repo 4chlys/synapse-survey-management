@@ -4,5 +4,5 @@ namespace SynapseEnqueteManagement.BL;
 
 public interface ICategoryManager
 {
-    IEnumerable<Category> GetCategories();
+    Task<IEnumerable<Category>> GetCategoriesAsync();
 }

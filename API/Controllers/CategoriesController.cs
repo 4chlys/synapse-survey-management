@@ -16,9 +16,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<CategoryDto>> GetCategories()
+    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
     {
-        var categories = _categoryManager.GetCategories();
+        var categories = await _categoryManager.GetCategoriesAsync();
         var dtos = categories.Select(c => new CategoryDto
         {
             CategoryId = c.CategoryId,

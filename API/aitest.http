@@ -1,0 +1,37 @@
+@API_HostAddress = http://localhost:5159
+
+### Regex check — clean text (expect: acceptable = true)
+POST {{API_HostAddress}}/api/moderation/regex
+Content-Type: application/json
+
+{ "text": "Ik vind dat de school meer pauzes zou moeten geven." }
+
+### Regex check — banned word (expect: acceptable = false, flaggedBy = "Regex")
+POST {{API_HostAddress}}/api/moderation/regex
+Content-Type: application/json
+
+{ "text": "Die leraar is echt een k*nker idioot" }
+
+### AI check — clean text (expect: acceptable = true)
+POST {{API_HostAddress}}/api/moderation/ai
+Content-Type: application/json
+
+{ "text": "Meer groen op de speelplaats zou fijn zijn." }
+
+### AI check — threat (expect: acceptable = false)
+POST {{API_HostAddress}}/api/moderation/ai
+Content-Type: application/json
+
+{ "text": "Ik ga die directeur vermoorden als hij me nog eens straft." }
+
+### Suggest rewrite — flagged content (expect: suggestion string or null)
+POST {{API_HostAddress}}/api/moderation/suggest
+Content-Type: application/json
+
+{ "text": "Die school is echt kut, alles hier is waardeloos." }
+
+### Edge case — empty text (expect: acceptable = true)
+POST {{API_HostAddress}}/api/moderation/regex
+Content-Type: application/json
+
+{ "text": "" }

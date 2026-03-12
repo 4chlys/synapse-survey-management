@@ -17,9 +17,9 @@ public class QuestionnairesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<QuestionnaireDto> GetQuestionnaire(int projectId)
+    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
     {
-        var questionnaire = _questionnaireManager.GetQuestionnaireByProjectId(projectId);
+        var questionnaire = await _questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
@@ -28,9 +28,9 @@ public class QuestionnairesController : ControllerBase
     }
 
     [HttpGet("questions")]
-    public ActionResult<IEnumerable<QuestionDto>> GetQuestions(int projectId)
+    public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int projectId)
     {
-        var questionnaire = _questionnaireManager.GetQuestionnaireByProjectId(projectId);
+        var questionnaire = await _questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 

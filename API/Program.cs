@@ -6,11 +6,16 @@ using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-bool deleteIfExists = true;
-bool useAI = false;
+var UserUiHttpPort = 5291;
+var UserUiHttpsPort = 7163;
+
+bool deleteIfExists = true; // SQLite resetten?
+
+bool useAI = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
@@ -36,10 +41,10 @@ builder.Services.AddScoped<IRepository, Repository>();
 
 // ── Business logic ──────────────────────────────────────────────────────────
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
-builder.Services.AddScoped<IParticipantManager,   ParticipantManager>();
-builder.Services.AddScoped<IResponseManager,      ResponseManager>();
-builder.Services.AddScoped<ICategoryManager,      CategoryManager>();
-builder.Services.AddScoped<IProjectManager,       ProjectManager>();
+builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
+builder.Services.AddScoped<IResponseManager, ResponseManager>();
+builder.Services.AddScoped<ICategoryManager, CategoryManager>();
+builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
 // ── AI configuration (loaded from ai-config.json / ai-config.example.json) ─
 //
@@ -92,13 +97,16 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:5291",
             "https://localhost:7163",
-            Environment.GetEnvironmentVariable("UI_URL") ?? "http://localhost:5291"
+            Environment.GetEnvironmentVariable("UI_URL") ??
+            "http://localhost:5291"
         );
     });
 });
 
 var app = builder.Build();
 
+
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
@@ -108,7 +116,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
 app.UseCors("AllowUiUser");
 app.UseAuthorization();
 app.MapControllers();

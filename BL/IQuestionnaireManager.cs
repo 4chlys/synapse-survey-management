@@ -4,9 +4,9 @@ namespace SynapseEnqueteManagement.BL;
 
 public interface IQuestionnaireManager
 {
-    IEnumerable<Question> GetQuestions();
-    Questionnaire GetFirstQuestionnaire();
-    Questionnaire GetQuestionnaireByProjectId(int projectId);
-    Question GetQuestionById(int questionId);
+    Task<IEnumerable<Question>> GetQuestionsAsync();
+    Task<Questionnaire> GetFirstQuestionnaireAsync();
+    Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId);
+    Task<Question> GetQuestionByIdAsync(int questionId);
     void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers);
 }
