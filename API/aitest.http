@@ -35,3 +35,9 @@ POST {{API_HostAddress}}/api/moderation/regex
 Content-Type: application/json
 
 { "text": "" }
+
+### Suggest rewrite — type errors
+POST {{API_HostAddress}}/api/moderation/suggest
+Content-Type: application/json
+
+{ "text": "Ifk ben echt niet blij op de schoil, alles is hier zo saai!!" }
