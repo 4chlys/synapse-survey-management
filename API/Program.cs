@@ -28,18 +28,17 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<SynapseEnqueteContext>(o => o.UseNpgsql(connStr));
+    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseNpgsql(connStr));
 }
 else
 {
-    builder.Services.AddDbContext<SynapseEnqueteContext>(
-        o => o.UseSqlite("Data Source=SynapseEnquete.db"));
+    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseSqlite("Data Source=SynapseEnquete.db"));
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
 
-// ── Business logic ──────────────────────────────────────────────────────────
+// Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -90,6 +89,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

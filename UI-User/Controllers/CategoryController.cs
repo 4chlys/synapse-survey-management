@@ -12,10 +12,10 @@ public class CategoryController : Controller
         _categoryService = categoryService;
     }
 
-    public IActionResult Index(int projectId)
+    public async Task<IActionResult> Index(int projectId)
     {
         ViewData["ProjectId"] = projectId;
-        var categories = _categoryService.GetCategories();
+        var categories = await _categoryService.GetCategoriesAsync(projectId);
         return View(categories);
     }
 }

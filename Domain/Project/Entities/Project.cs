@@ -17,6 +17,7 @@ public class Project
 
     public Introduction Introduction { get; set; }
 
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
     public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
     public ICollection<Participant> Participants { get; set; } = new List<Participant>();
 }

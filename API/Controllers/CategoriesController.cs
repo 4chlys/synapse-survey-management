@@ -5,7 +5,7 @@ using SynapseEnqueteManagement.BL;
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
-[Route("api/categories")]
+[Route("api/projects/{projectId}/categories")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryManager _categoryManager;
@@ -16,9 +16,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
+    public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
-        var categories = await _categoryManager.GetCategoriesAsync();
+        var categories = await _categoryManager.GetCategoriesAsync(projectId);
         var dtos = categories.Select(c => new CategoryDto
         {
             CategoryId = c.CategoryId,
