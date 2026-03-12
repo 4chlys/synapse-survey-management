@@ -1,15 +1,155 @@
+@model List<SynapseEnqueteManagement.UI.User.Models.Idea>
 @{
-    ViewData["Title"] = "Ideation";
+    var category = ViewBag.Category as SynapseEnqueteManagement.UI.User.Models.Category;
+    var projectId = ViewBag.ProjectId ?? 1;
+    var emojis = ViewBag.Emojis as List<SynapseEnqueteManagement.UI.User.Models.Emoji>
+                 ?? new List<SynapseEnqueteManagement.UI.User.Models.Emoji>();
+    ViewData["Title"] = category.Name;
 }
 
-<div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
+<div class="min-h-screen bg-gray-50 flex flex-col items-center px-6 pt-12 pb-20">
+
+    @* Header *@
+    <div class="w-full max-w-sm mb-10">
+        <h1 class="text-2xl font-semibold text-gray-900 leading-snug">
+            @category.Name
+        </h1>
+        <p class="text-sm text-gray-400 mt-2 font-normal">
+            @category.Description
+        </p>
     </div>
-    <h2 class="text-2xl font-semibold text-gray-900 mb-3">You landed on Ideation 💡</h2>
-    <p class="text-gray-500 text-sm max-w-sm">
-        This is where participants will share and vote on ideas.
-    </p>
+
+    @* Create form (hidden by default, shown when plus button is clicked) *@
+    <div id="createForm" class="w-full max-w-sm mb-6 hidden">
+        <form asp-route-projectId="@projectId" asp-action="CreateIdea" method="post"
+              class="bg-white rounded-2xl border-2 border-gray-100 p-5">
+            <input type="hidden" name="categoryId" value="@category.Id" />
+            <div class="mb-4">
+                <label class="text-sm font-semibold text-gray-700 mb-2 block">Description</label>
+                <textarea name="description" required rows="4"
+                          class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl
+                                 focus:border-emerald-300 focus:outline-none resize-none"
+                          placeholder="Leg jouw idee uit..."></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="flex-1 py-2.5 bg-emerald-500 text-white font-semibold rounded-xl
+                               hover:bg-emerald-600 transition-colors">
+                    Plaatsen
+                </button>
+                <button type="button" onclick="hideCreateForm()"
+                        class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl
+                               hover:bg-gray-200 transition-colors">
+                    Annuleren
+                </button>
+            </div>
+        </form>
+    </div>
+
+    @* Ideas list *@
+    <div class="w-full max-w-sm flex flex-col gap-4 mb-24">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-12">
+                <p class="text-gray-400">Nog geen ideeën, wees de eerste! 💡</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var idea in Model)
+            {
+                @* Clicking the card navigates to the detail page *@
+                <a asp-controller="Ideation" asp-action="Detail"
+                   asp-route-projectId="@projectId"
+                   asp-route-categoryId="@category.Id"
+                   asp-route-ideaId="@idea.IdeaId"
+                   class="block relative bg-white rounded-2xl border-2 border-gray-100 p-5
+                          cursor-pointer hover:border-emerald-200 transition-colors">
+
+                    @* Comment count badge (top right) *@
+                    <div class="absolute -top-3 -right-3 bg-white border-2 border-gray-100
+                                rounded-full w-10 h-10 flex items-center justify-center shadow-sm">
+                        <span class="text-sm font-semibold text-gray-700">@idea.CommentsCount</span>
+                    </div>
+
+                    <p class="text-gray-900 text-sm leading-relaxed pr-8">@idea.Description</p>
+
+                    @* Emoji reactions row — shows existing emojis from DB *@
+                    <div class="flex gap-2 mt-4 items-center flex-wrap" onclick="event.stopPropagation()">
+
+                        @* Show existing emoji reactions *@
+                        @foreach (var emoji in idea.Emojis)
+                        {
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100
+                                         border border-gray-200 rounded-full text-xs min-w-[3rem] leading-none">
+                                <span class="text-lg leading-none">@emoji.Symbol</span>
+                                <span class="font-semibold text-gray-700 text-sm leading-none">@emoji.Count</span>
+                            </span>
+                        }
+
+                        @* Plus button to open emoji picker *@
+                        <button onclick="showEmojiPicker('@idea.IdeaId'); event.preventDefault();"
+                                class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300
+                                       flex items-center justify-center text-gray-400
+                                       hover:border-emerald-400 hover:text-emerald-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    @* Emoji picker (hidden by default, emojis loaded from DB) *@
+                    <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200"
+                         onclick="event.stopPropagation()">
+                        <form asp-action="AddIconComment" method="post">
+                            <input type="hidden" name="projectId" value="@projectId" />
+                            <input type="hidden" name="categoryId" value="@category.Id" />
+                            <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                            <input type="hidden" name="returnPage" value="Index" />
+                            <div class="flex gap-2 flex-wrap">
+                                @foreach (var emoji in emojis)
+                                {
+                                    <button type="submit" name="emojiId" value="@emoji.EmojiId"
+                                            class="text-2xl hover:scale-125 transition-transform">
+                                        @emoji.Symbol
+                                    </button>
+                                }
+                            </div>
+                        </form>
+                    </div>
+
+                </a>
+            }
+        }
+    </div>
+
+    @* Bottom Navigation *@
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe">
+        <div class="max-w-sm mx-auto px-6 py-4 flex justify-around items-center">
+
+            @* Back to categories *@
+            <a asp-route-projectId="@projectId" asp-controller="Category" asp-action="Index"
+               class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+            </a>
+
+            @* New idea button *@
+            <button onclick="showCreateForm()"
+                    class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+
+            @* Profile *@
+            <button class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
 </div>

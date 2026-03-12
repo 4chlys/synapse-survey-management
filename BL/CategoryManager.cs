@@ -18,4 +18,12 @@ public class CategoryManager : ICategoryManager
             includes: [c => c.Ideas]
         );
     }
+    
+    public async Task<Category> GetCategoryByIdAsync(int id)
+    {
+        return await _repository.ReadSingleAsync<Category>(
+            filters: [c => c.CategoryId == id],
+            includes: [c => c.Ideas]
+        );
+    }
 }
