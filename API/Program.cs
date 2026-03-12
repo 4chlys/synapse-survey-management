@@ -61,9 +61,9 @@ if (useAi)
 {
     var projectId = builder.Configuration["VertexAi:ProjectId"]
                     ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
-    var location  = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
-    var model     = builder.Configuration["VertexAi:Model"]    ?? "gemini-2.5-flash-lite";
-    var endpoint  = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
+    var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
+    var model = builder.Configuration["VertexAi:Model"] ?? "gemini-2.5-flash-lite";
+    var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
     var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
     var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(

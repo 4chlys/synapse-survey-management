@@ -63,13 +63,13 @@ public static class AiConfigLoader
             yield return envPath;
 
         var assemblyDir = AppContext.BaseDirectory;
-        var workDir     = Directory.GetCurrentDirectory();
+        var workDir = Directory.GetCurrentDirectory();
 
         yield return Path.Combine(assemblyDir, "ai-config.json");
-        yield return Path.Combine(workDir,     "ai-config.json");
+        yield return Path.Combine(workDir, "ai-config.json");
 
         yield return Path.Combine(assemblyDir, "ai-config.example.json");
-        yield return Path.Combine(workDir,     "ai-config.example.json");
+        yield return Path.Combine(workDir, "ai-config.example.json");
     }
 
     /// <summary>
@@ -81,25 +81,25 @@ public static class AiConfigLoader
         var p = config.Platform;
 
         string Sub(string s) => s
-            .Replace("{platform_name}", p.Name,     StringComparison.OrdinalIgnoreCase)
-            .Replace("{language}",      p.Language, StringComparison.OrdinalIgnoreCase)
-            .Replace("{country}",       p.Country,  StringComparison.OrdinalIgnoreCase);
+            .Replace("{platform_name}", p.Name, StringComparison.OrdinalIgnoreCase)
+            .Replace("{language}", p.Language, StringComparison.OrdinalIgnoreCase)
+            .Replace("{country}", p.Country, StringComparison.OrdinalIgnoreCase);
 
         var m = config.Moderation;
         var substitutedModeration = new ModerationConfig
         {
-            UseAi             = m.UseAi,
-            ModerationPrompt  = Sub(m.ModerationPrompt),
-            RewritePrompt     = Sub(m.RewritePrompt),
-            BannedWords       = m.BannedWords,
-            RegexPatterns     = m.RegexPatterns,
+            UseAi = m.UseAi,
+            ModerationPrompt = Sub(m.ModerationPrompt),
+            RewritePrompt = Sub(m.RewritePrompt),
+            BannedWords = m.BannedWords,
+            RegexPatterns = m.RegexPatterns,
         };
 
         return new AiConfig
         {
-            Platform   = config.Platform,
+            Platform = config.Platform,
             Moderation = substitutedModeration,
-            Fuzzy      = config.Fuzzy,
+            Fuzzy = config.Fuzzy,
         };
     }
 }

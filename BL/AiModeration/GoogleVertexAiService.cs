@@ -15,11 +15,11 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 /// </summary>
 public sealed class GoogleVertexAiService : IAiModerationService
 {
-    private readonly IChatClient              _chatClient;
+    private readonly IChatClient _chatClient;
     private readonly ILogger<GoogleVertexAiService> _logger;
-    private readonly AiConfig                 _config;
-    private readonly BannedWordList           _bannedWords;
-    private readonly RegexModerationPatterns  _patterns;
+    private readonly AiConfig _config;
+    private readonly BannedWordList _bannedWords;
+    private readonly RegexModerationPatterns _patterns;
 
     private readonly int _minSkeletonLength;
     private readonly int _t0, _t1, _t2;
@@ -30,7 +30,7 @@ public sealed class GoogleVertexAiService : IAiModerationService
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     public GoogleVertexAiService(
@@ -40,11 +40,11 @@ public sealed class GoogleVertexAiService : IAiModerationService
         BannedWordList bannedWords,
         RegexModerationPatterns patterns)
     {
-        _chatClient  = chatClient;
-        _logger      = logger;
-        _config      = config;
+        _chatClient = chatClient;
+        _logger = logger;
+        _config = config;
         _bannedWords = bannedWords;
-        _patterns    = patterns;
+        _patterns = patterns;
 
         var f = config.Fuzzy;
         _minSkeletonLength = f.MinSkeletonLength;
@@ -61,15 +61,15 @@ public sealed class GoogleVertexAiService : IAiModerationService
         var raw = RunRegexAndFuzzy(text);
         if (!raw.IsAcceptable) return raw;
 
-        string norm        = ModerationUtility.NormalizeForModeration(text);
+        string norm = ModerationUtility.NormalizeForModeration(text);
         string normNoSpace = ModerationUtility.NormalizeForModeration(text, stripWhitespace: true);
-        string collapsed   = ModerationUtility.CollapseRepeats(norm);
+        string collapsed = ModerationUtility.CollapseRepeats(norm);
         string collapsedNS = ModerationUtility.CollapseRepeats(normNoSpace);
 
-        return RunRegexAndFuzzy(norm)        is { IsAcceptable: false } r1 ? r1
-             : RunRegexAndFuzzy(normNoSpace) is { IsAcceptable: false } r2 ? r2
-             : RunRegexAndFuzzy(collapsed)   is { IsAcceptable: false } r3 ? r3
-             :                                                                RunRegexAndFuzzy(collapsedNS);
+        return RunRegexAndFuzzy(norm) is { IsAcceptable: false } r1 ? r1
+            : RunRegexAndFuzzy(normNoSpace) is { IsAcceptable: false } r2 ? r2
+            : RunRegexAndFuzzy(collapsed) is { IsAcceptable: false } r3 ? r3
+            : RunRegexAndFuzzy(collapsedNS);
     }
 
     public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default)
@@ -86,7 +86,10 @@ public sealed class GoogleVertexAiService : IAiModerationService
         {
             return await CallModerationAsync(text, ct);
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
@@ -105,10 +108,10 @@ public sealed class GoogleVertexAiService : IAiModerationService
             var messages = new List<ChatMessage>
             {
                 new(ChatRole.System, _config.Moderation.RewritePrompt),
-                new(ChatRole.User,   text),
+                new(ChatRole.User, text),
             };
 
-            var response   = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -116,7 +119,10 @@ public sealed class GoogleVertexAiService : IAiModerationService
                 ? null
                 : suggestion;
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
@@ -146,7 +152,7 @@ public sealed class GoogleVertexAiService : IAiModerationService
         var messages = new List<ChatMessage>
         {
             new(ChatRole.System, _config.Moderation.ModerationPrompt),
-            new(ChatRole.User,   text),
+            new(ChatRole.User, text),
         };
 
         var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
@@ -183,10 +189,8 @@ public sealed class GoogleVertexAiService : IAiModerationService
 
     private sealed class ModerationVerdict
     {
-        [JsonPropertyName("acceptable")]
-        public bool Acceptable { get; set; }
+        [JsonPropertyName("acceptable")] public bool Acceptable { get; set; }
 
-        [JsonPropertyName("reason")]
-        public string Reason { get; set; }
+        [JsonPropertyName("reason")] public string Reason { get; set; }
     }
 }

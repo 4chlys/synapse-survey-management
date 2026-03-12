@@ -28,7 +28,7 @@ public static class ModerationUtility
 
     private static readonly Regex RepeatRe =
         new(@"(.)\1{2,}", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-    
+
     public static string NormalizeForModeration(string input, bool stripWhitespace = false)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
@@ -44,7 +44,7 @@ public static class ModerationUtility
             char ch = LeetMap.GetValueOrDefault(c, c);
 
             if (char.IsLetterOrDigit(ch)) sb.Append(ch);
-            else                          sb.Append(' ');
+            else sb.Append(' ');
         }
 
         string result = sb.ToString();
@@ -58,7 +58,7 @@ public static class ModerationUtility
         if (string.IsNullOrEmpty(input)) return input;
 
         string twoMax = RepeatRe.Replace(input, "$1$1");
-        var sb   = new StringBuilder(twoMax.Length);
+        var sb = new StringBuilder(twoMax.Length);
         char prev = '\0';
 
         foreach (char c in twoMax)
@@ -77,7 +77,8 @@ public static class ModerationUtility
 
         var sb = new StringBuilder(word.Length);
         foreach (char c in word)
-            if (!Vowels.Contains(c)) sb.Append(c);
+            if (!Vowels.Contains(c))
+                sb.Append(c);
         return sb.ToString();
     }
 
@@ -101,7 +102,7 @@ public static class ModerationUtility
             {
                 int cost = a[i - 1] == b[j - 1] ? 0 : 1;
                 curr[j] = Math.Min(Math.Min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
-                rowMin  = Math.Min(rowMin, curr[j]);
+                rowMin = Math.Min(rowMin, curr[j]);
             }
 
             if (rowMin > maxDistance) return rowMin;
@@ -121,16 +122,16 @@ public static class ModerationUtility
     public static bool FuzzyContainsBannedWord(
         string normalizedText,
         string bannedWord,
-        int    minSkeletonLength,
-        int    maxLengthFor0Edits,
-        int    maxLengthFor1Edit,
-        int    maxLengthFor2Edits)
+        int minSkeletonLength,
+        int maxLengthFor0Edits,
+        int maxLengthFor1Edit,
+        int maxLengthFor2Edits)
     {
         if (string.IsNullOrEmpty(normalizedText) || string.IsNullOrEmpty(bannedWord))
             return false;
 
         string bannedSkeleton = ToConsonantSkeleton(bannedWord);
-        int    maxEdits       = AllowedEdits(bannedWord.Length, maxLengthFor0Edits, maxLengthFor1Edit, maxLengthFor2Edits);
+        int maxEdits = AllowedEdits(bannedWord.Length, maxLengthFor0Edits, maxLengthFor1Edit, maxLengthFor2Edits);
 
         foreach (string token in normalizedText.Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {

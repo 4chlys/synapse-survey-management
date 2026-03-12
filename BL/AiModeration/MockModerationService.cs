@@ -1,3 +1,7 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
 /// <summary>
@@ -8,6 +12,22 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 /// </summary>
 public sealed class MockModerationService : IAiModerationService
 {
+    private readonly AiConfig _config;
+    private readonly BannedWordList _bannedWords;
+    private readonly RegexModerationPatterns _patterns;
+
+    private readonly int _minSkeletonLength;
+    private readonly int _t0, _t1, _t2;
+
+    private static readonly Regex CodeFenceRe =
+        new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
+
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+    
     public ModerationResult CheckWithRegex(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -47,19 +67,17 @@ public sealed class MockModerationService : IAiModerationService
     public Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
         => Task.FromResult<string>(null);
 
-    private static ModerationResult RunRegexAndFuzzy(string candidate)
+    private ModerationResult RunRegexAndFuzzy(string candidate)
     {
-        foreach (var (pattern, reason) in RegexModerationPatterns.All)
-        {
+        foreach (var (pattern, reason) in _patterns.All)
             if (pattern.IsMatch(candidate))
                 return ModerationResult.RejectedByRegex(reason);
-        }
 
-        foreach (var (word, reason) in BannedWordList.All)
-        {
-            if (ModerationUtility.FuzzyContainsBannedWord(candidate, word))
+        foreach (var (word, reason) in _bannedWords.All)
+            if (ModerationUtility.FuzzyContainsBannedWord(
+                    candidate, word,
+                    _minSkeletonLength, _t0, _t1, _t2))
                 return ModerationResult.RejectedByRegex(reason);
-        }
 
         return ModerationResult.Acceptable();
     }

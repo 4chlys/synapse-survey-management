@@ -28,6 +28,7 @@ public sealed class RegexModerationPatterns
             var alternation = string.Join("|", group.Select(e => Regex.Escape(e.Word)));
             list.Add((new Regex($@"\b({alternation})\b", Opts), group.Key));
         }
+
         foreach (var entry in config.Moderation.RegexPatterns)
         {
             if (string.IsNullOrWhiteSpace(entry.Pattern)) continue;
