@@ -77,15 +77,7 @@ public class ResponsesController : ControllerBase
 
         var participant = await _participantManager.AddParticipantAsync(questionnaire);
 
-        foreach (var answer in submitDto.Answers)
-        {
-            if (string.IsNullOrWhiteSpace(answer.Value)) continue;
-
-            var question = await _questionnaireManager.GetQuestionByIdAsync(answer.QuestionId);
-            if (question is null) continue;
-
-            await _responseManager.AddResponseAsync(answer.Value, question, participant);
-        }
+        await _responseManager.AddResponsesAsync(participant, submitDto.Answers.Select(a => (a.QuestionId, a.Value)));
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }

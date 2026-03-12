@@ -19,7 +19,7 @@ public class CategoryManager : ICategoryManager
             includes: [c => c.Ideas]
         );
     }
-    
+
     public async Task<Category> GetCategoryByIdAsync(int id)
     {
         return await _repository.ReadByIdAsync<Category>(id, includes: [c => c.Ideas]);

@@ -15,12 +15,10 @@ public class QuestionnaireManager : IQuestionnaireManager
     
     public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
     {
-        var project = await _repository.ReadByIdAsync<Project>(
-            projectId,
-            includes: [p => p.Questionnaire],
-            includeStrings: ["Questionnaire.Questions"]
+        return await _repository.ReadSingleAsync<Questionnaire>(
+            filters: [q => q.Project.ProjectId == projectId],
+            includeStrings: ["Questions"]
         );
-        return project?.Questionnaire;
     }
 
     public async Task<Question> GetQuestionByIdAsync(int questionId)
