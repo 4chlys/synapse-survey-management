@@ -27,6 +27,19 @@ public sealed class MockModerationService : IAiModerationService
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    public MockModerationService(AiConfig config, BannedWordList bannedWords, RegexModerationPatterns patterns)
+    {
+        _config = config;
+        _bannedWords = bannedWords;
+        _patterns = patterns;
+
+        var f = config.Fuzzy;
+        _minSkeletonLength = f.MinSkeletonLength;
+        _t0 = f.LevenshteinThresholds.MaxLengthFor0Edits;
+        _t1 = f.LevenshteinThresholds.MaxLengthFor0Edits;
+        _t2 = f.LevenshteinThresholds.MaxLengthFor0Edits;
+    }
     
     public ModerationResult CheckWithRegex(string text)
     {

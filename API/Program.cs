@@ -72,7 +72,7 @@ if (useAi)
 
     builder.Services.AddChatClient(chatClient);
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
-}
+} else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
 
 // ── CORS ────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
