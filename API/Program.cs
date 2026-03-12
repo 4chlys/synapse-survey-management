@@ -6,12 +6,12 @@ using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-var UserUiHttpPort = 5291;
-var UserUiHttpsPort = 7163;
-
 bool deleteIfExists = true;
 
-bool useAI = true;
+// ── Load AI config early so we can read use_ai before building the container ─
+var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
+var aiConfig = AiConfigLoader.Load(tempLogger);
+bool useAi = aiConfig.Moderation.UseAi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,24 +46,19 @@ builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
-// ── AI configuration (loaded from ai-config.json / ai-config.example.json) ─
+// ── AI configuration ────────────────────────────────────────────────────────
 //
-// AiConfig is a singleton: it is read once at startup and shared for the
-// lifetime of the process. BannedWordList and RegexModerationPatterns are
-// also singletons because they are derived from AiConfig and are stateless
-// after construction.
+// Register the already-loaded AiConfig instance directly so we don't parse
+// the file a second time. BannedWordList and RegexModerationPatterns are
+// derived from AiConfig and are stateless after construction.
 //
 // To apply changes to ai-config.json, restart the API.
-builder.Services.AddSingleton(sp =>
-{
-    var logger = sp.GetRequiredService<ILogger<Program>>();
-    return AiConfigLoader.Load(logger);
-});
+builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 
-// ── Vertex AI (optional) ────────────────────────────────────────────────────
-if (useAI)
+// ── Vertex AI (optional — controlled by use_ai in ai-config.json) ───────────
+if (useAi)
 {
     var projectId = builder.Configuration["VertexAi:ProjectId"]
                     ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
@@ -95,7 +90,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

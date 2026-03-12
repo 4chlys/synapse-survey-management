@@ -40,4 +40,4 @@ Content-Type: application/json
 POST {{API_HostAddress}}/api/moderation/suggest
 Content-Type: application/json
 
-{ "text": "Ifk ben echt niet blij op de schoil, alles is hier zo saai!!" }
+{ "text": "Ik ben echt niet blij op de schoil, alles is hier zo saai!!" }
