@@ -1,6 +1,7 @@
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
@@ -43,29 +44,43 @@ builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 
-// Registering AI
+// ── AI configuration (loaded from ai-config.json / ai-config.example.json) ─
+//
+// AiConfig is a singleton: it is read once at startup and shared for the
+// lifetime of the process. BannedWordList and RegexModerationPatterns are
+// also singletons because they are derived from AiConfig and are stateless
+// after construction.
+//
+// To apply changes to ai-config.json, restart the API.
+builder.Services.AddSingleton(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    return AiConfigLoader.Load(logger);
+});
+builder.Services.AddSingleton<BannedWordList>();
+builder.Services.AddSingleton<RegexModerationPatterns>();
+
+// ── Vertex AI (optional) ────────────────────────────────────────────────────
 if (useAI)
 {
-    var projectId = builder.Configuration["VertexAi:ProjectId"]
-                    ?? throw new InvalidOperationException("Missing configuration: VertexAi:ProjectId");
+    // Prefer values from ai-config.json; fall back to appsettings.json.
+    var aiConfig = builder.Services
+        .BuildServiceProvider()           // temporary provider just to read AiConfig
+        .GetRequiredService<AiConfig>();
 
-    var location = builder.Configuration["VertexAi:Location"]
-                   ?? throw new InvalidOperationException("Missing configuration: VertexAi:Location");
+    var projectId = !string.IsNullOrWhiteSpace(aiConfig.Platform.Name)
+                    && builder.Configuration["VertexAi:ProjectId"] is { Length: > 0 } cfgProject
+        ? cfgProject
+        : builder.Configuration["VertexAi:ProjectId"]
+          ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
 
-    var model = builder.Configuration["VertexAi:Model"]
-                ?? "gemini-2.5-flash-lite";
+    var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
+    var model    = builder.Configuration["VertexAi:Model"]    ?? "gemini-2.5-flash-lite";
+    var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
-    var endpoint = builder.Configuration["VertexAi:Endpoint"]
-                   ?? $"{location}-aiplatform.googleapis.com";
-
-    var predictionBuilder = new PredictionServiceClientBuilder
-    {
-        Endpoint = endpoint
-    };
-
+    var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
     var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
         projectId, location, "google", model);
-
     var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
     builder.Services.AddChatClient(chatClient);

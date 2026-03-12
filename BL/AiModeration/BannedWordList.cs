@@ -1,48 +1,26 @@
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
 /// <summary>
-/// Single source of truth for banned words that are checked by both the
-/// exact-regex layer (<see cref="RegexModerationPatterns"/>) and the fuzzy
-/// layer inside <see cref="GoogleVertexAiService.CheckWithRegex"/>.
+/// Provides the list of banned words sourced from the loaded <see cref="AiConfig"/>.
 ///
-/// Each entry pairs a canonical lowercase word with the Dutch rejection reason
-/// shown to the user.  Multi-word phrases (threats, self-harm) are intentionally
-/// kept in <see cref="RegexModerationPatterns"/> only because fuzzy word-level
-/// matching does not apply to them.
-///
-/// <b>How to add a new word:</b>
-/// Add it here.  The regex pattern (<see cref="RegexModerationPatterns"/>) and
-/// the fuzzy scan both read from this list automatically.
+/// Previously this was a static list of hardcoded strings. It is now a thin adapter
+/// so the rest of the moderation pipeline (<see cref="GoogleVertexAiService"/>,
+/// <see cref="RegexModerationPatterns"/>) can continue to call the same shape
+/// while the data comes from ai-config.json.
 /// </summary>
-internal static class BannedWordList
+public sealed class BannedWordList
 {
-    /// <summary>
-    /// (canonicalWord, rejectionReason) pairs.
-    /// Words must be lowercase, single tokens, already ASCII-normalised
-    /// (no diacritics, no leet).
-    /// </summary>
-    public static readonly IReadOnlyList<(string Word, string Reason)> All =
-        new List<(string, string)>
+    private readonly IReadOnlyList<(string Word, string Reason)> _entries;
+
+    public BannedWordList(AiConfig config)
     {
-        ("kanker",      "Tekst bevat grof taalgebruik."),
-        ("kankerd",     "Tekst bevat grof taalgebruik."),
-        ("tering",      "Tekst bevat grof taalgebruik."),
-        ("tyfus",       "Tekst bevat grof taalgebruik."),
-        ("godver",      "Tekst bevat grof taalgebruik."),
-        ("godverdomme", "Tekst bevat grof taalgebruik."),
-        ("klootzak",    "Tekst bevat grof taalgebruik."),
-        ("kutwijf",     "Tekst bevat grof taalgebruik."),
-        ("hoerenzoon",  "Tekst bevat grof taalgebruik."),
-        
-        ("nigger",   "Tekst bevat discriminerende taal."),
-        ("nigga",    "Tekst bevat discriminerende taal."),
-        ("faggot",   "Tekst bevat discriminerende taal."),
-        ("retard",   "Tekst bevat discriminerende taal."),
-        ("spastic",  "Tekst bevat discriminerende taal."),
-        ("fuck",     "Tekst bevat grof taalgebruik."),
-        ("shit",     "Tekst bevat grof taalgebruik."),
-        ("bitch",    "Tekst bevat grof taalgebruik."),
-        ("asshole",  "Tekst bevat grof taalgebruik."),
-        ("bastard",  "Tekst bevat grof taalgebruik."),
-    }.AsReadOnly();
+        _entries = config.Moderation.BannedWords
+            .Where(e => !string.IsNullOrWhiteSpace(e.Word))
+            .Select(e => (e.Word.ToLowerInvariant().Trim(), e.Reason))
+            .ToList()
+            .AsReadOnly();
+    }
+
+    /// <summary>(canonicalWord, rejectionReason) pairs — lowercase, single tokens.</summary>
+    public IReadOnlyList<(string Word, string Reason)> All => _entries;
 }

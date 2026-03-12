@@ -1,0 +1,59 @@
+{
+  "_comment": "Copy this file to ai-config.json and adjust for your platform. ai-config.json is gitignored.",
+
+  "platform": {
+    "name": "Synapse",
+    "language": "nl",
+    "country": "België"
+  },
+
+  "moderation": {
+    "use_ai": true,
+
+    "moderation_prompt": "Je bent een inhoudsmoderatie-assistent voor {platform_name} in {country}. Beoordeel of de gebruikersinvoer acceptabel is voor het {platform_name}-platform.\n\nAfwijzen als de tekst:\n- Haatdragende taal, scheldwoorden of discriminatie bevat\n- Bedreigingen of oproepen tot geweld bevat\n- Zelfbeschading of zelfmoord bespreekt op een directe of gevaarlijke manier\n- Persoonlijke gegevens deelt (namen, telefoonnummers, e-mailadressen)\n- Duidelijke spam of reclame is\n\nReageer ALLEEN met een geldig JSON-object, geen extra tekst:\n{ \"acceptable\": true }\nof\n{ \"acceptable\": false, \"reason\": \"<korte reden in {language}>\" }",
+
+    "rewrite_prompt": "Je bent een schrijfassistent voor het {platform_name}-platform in {country}. Een leerling heeft een bericht geschreven dat ongepaste taal of toon bevat. Herschrijf het bericht zodat het respectvol, constructief en geschikt is voor het platform, maar behoud de kern van wat de leerling wil zeggen.\n\nRegels:\n- Verwijder scheldwoorden, beledigingen en agressieve taal\n- Behoud de originele betekenis en intentie zo veel mogelijk\n- Schrijf in dezelfde taal als het originele bericht (standaard: {language})\n- Als het bericht absoluut niet herschreven kan worden (bv. puur spam of misbruik), antwoord dan met exact: NULL\n\nGeef ALLEEN de herschreven tekst terug, geen uitleg, geen aanhalingstekens, geen extra tekst.",
+
+    "banned_words": [
+      { "word": "kanker",      "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "kankerd",     "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "tering",      "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "tyfus",       "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "godver",      "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "godverdomme", "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "klootzak",    "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "kutwijf",     "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "hoerenzoon",  "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "nigger",      "reason": "Tekst bevat discriminerende taal." },
+      { "word": "nigga",       "reason": "Tekst bevat discriminerende taal." },
+      { "word": "faggot",      "reason": "Tekst bevat discriminerende taal." },
+      { "word": "retard",      "reason": "Tekst bevat discriminerende taal." },
+      { "word": "spastic",     "reason": "Tekst bevat discriminerende taal." },
+      { "word": "fuck",        "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "shit",        "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "bitch",       "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "asshole",     "reason": "Tekst bevat grof taalgebruik." },
+      { "word": "bastard",     "reason": "Tekst bevat grof taalgebruik." }
+    ],
+
+    "regex_patterns": [
+      { "pattern": "\\b(ik\\s+ga\\s+je\\s+(vermoorden|doodmaken|slaan|neerslaan))\\b", "reason": "Tekst bevat een bedreiging." },
+      { "pattern": "\\b(kill\\s+you|murder|gonna\\s+hurt)\\b",                          "reason": "Tekst bevat een bedreiging." },
+      { "pattern": "\\b(zelfmoord\\s+plegen|mezelf\\s+(snijden|pijnigen|beschadigen))\\b", "reason": "Tekst bevat verwijzingen naar zelfbeschadiging. Vraag hulp als je het moeilijk hebt." },
+      { "pattern": "\\b(cut\\s+myself|end\\s+my\\s+life|suicide\\s+method)\\b",         "reason": "Tekst bevat verwijzingen naar zelfbeschadiging. Vraag hulp als je het moeilijk hebt." },
+      { "pattern": "\\b(0[1-9]\\d{7,8}|\\+32\\s?\\d[\\s\\d]{7,10})\\b",                "reason": "Vermijd het delen van persoonlijke contactgegevens." },
+      { "pattern": "\\b[A-Z0-9._%+\\-]+@[A-Z0-9.\\-]+\\.[A-Z]{2,}\\b",                 "reason": "Vermijd het delen van persoonlijke contactgegevens." },
+      { "pattern": "\\b(koop\\s+nu|bestel\\s+nu|gratis\\s+geld|bitcoin|crypto\\s+invest)\\b", "reason": "Tekst lijkt op spam of reclame." },
+      { "pattern": "https?://\\S+",                                                      "reason": "Externe links zijn niet toegestaan in reacties." }
+    ]
+  },
+
+  "fuzzy": {
+    "min_skeleton_length": 3,
+    "levenshtein_thresholds": {
+      "max_length_for_0_edits": 4,
+      "max_length_for_1_edit":  6,
+      "max_length_for_2_edits": 9
+    }
+  }
+}
