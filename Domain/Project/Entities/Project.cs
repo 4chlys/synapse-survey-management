@@ -11,6 +11,7 @@ public class Project
     public string OrganisationWebsiteUrl { get; set; }
     
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
+    public FormType FormType { get; set; } = FormType.VerticalScroll;
 
     public Questionnaire Questionnaire { get; set; }
 

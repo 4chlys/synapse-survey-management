@@ -1,7 +1,8 @@
+using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-public class ProjectApiService
+public class ProjectApiService : IProjectApiService
 {
     private readonly HttpClient _httpClient;
 
@@ -17,14 +18,5 @@ public class ProjectApiService
             return null;
 
         return await response.Content.ReadFromJsonAsync<ProjectInfo>();
-    }
-
-    public class ProjectInfo
-    {
-        public int ProjectId { get; set; }
-        public string ProjectState { get; set; } = string.Empty;
-        public string OrganisationName { get; set; } = string.Empty;
-        public string OrganisationLogoUrl { get; set; } = string.Empty;
-        public string OrganisationWebsiteUrl { get; set; } = string.Empty;
     }
 }

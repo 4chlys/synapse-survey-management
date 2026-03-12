@@ -26,6 +26,7 @@ public class ProjectsController : ControllerBase
         {
             ProjectId = project.ProjectId,
             ProjectState = project.ProjectState.ToString(),
+            FormType = project.FormType.ToString(),
             OrganisationName = project.OrganisationName ?? string.Empty,
             OrganisationLogoUrl = project.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project.OrganisationWebsiteUrl ?? string.Empty,

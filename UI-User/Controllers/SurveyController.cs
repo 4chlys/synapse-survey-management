@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.FormStrategies;
 using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Services;
 
@@ -8,16 +9,19 @@ public class SurveyController : Controller
 {
     private readonly IQuestionnaireApiService _questionnaireService;
     private readonly ISessionService _sessionService;
-    private readonly ProjectApiService _projectApiService;
+    private readonly IProjectApiService _projectApiService;
+    private readonly IFormStrategyFactory _formStrategyFactory;
 
     public SurveyController(
         IQuestionnaireApiService questionnaireService,
         ISessionService sessionService,
-        ProjectApiService projectApiService)
+        IProjectApiService projectApiService,
+        IFormStrategyFactory formStrategyFactory)
     {
         _questionnaireService = questionnaireService;
         _sessionService = sessionService;
         _projectApiService = projectApiService;
+        _formStrategyFactory = formStrategyFactory;
     }
 
     public async Task<IActionResult> Index(int projectId)
@@ -40,7 +44,9 @@ public class SurveyController : Controller
         if (model is null)
             return View("NotFound");
 
-        return View(model);
+        var strategy = _formStrategyFactory.Create(project.FormType);
+        ViewData["FormLayout"] = strategy.GetLayoutData();
+        return View(strategy.GetViewName(), model);
     }
 
     [HttpPost]
