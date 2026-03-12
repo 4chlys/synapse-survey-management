@@ -6,5 +6,7 @@ public class Category
     public string Name { get; set; }
     public string Description { get; set; }
 
+    public Project Project { get; set; }
+
     public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
 }

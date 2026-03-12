@@ -12,39 +12,14 @@ public class CategoryService
         _httpClient = httpClient;
     }
 
-    public async Task<List<Category>> GetCategoriesAsync()
+    public async Task<List<Category>> GetCategoriesAsync(int projectId)
     {
-        var dtos = await _httpClient.GetFromJsonAsync<List<ApiCategoryDto>>("api/categories");
-        if (dtos is null) return new List<Category>();
-
-        return dtos.Select(d => new Category
-        {
-            Id = d.CategoryId,
-            Name = d.Name,
-            Description = d.Description,
-            IdeaCount = d.IdeaCount
-        }).ToList();
+        return await _httpClient.GetFromJsonAsync<List<Category>>(
+            $"api/projects/{projectId}/categories") ?? new List<Category>();
     }
 
-    public async Task<Category> GetCategoryByIdAsync(int id)
+    public async Task<Category> GetCategoryByIdAsync(int categoryId, int projectId)
     {
-        var dto = await _httpClient.GetFromJsonAsync<ApiCategoryDto>($"api/categories/{id}");
-        if (dto is null) return null;
-
-        return new Category
-        {
-            Id = dto.CategoryId,
-            Name = dto.Name,
-            Description = dto.Description,
-            IdeaCount = dto.IdeaCount
-        };
-    }
-
-    private class ApiCategoryDto
-    {
-        public int CategoryId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public int IdeaCount { get; set; }
+        return await _httpClient.GetFromJsonAsync<Category>($"api/projects/{projectId}/categories/{categoryId}");
     }
 }

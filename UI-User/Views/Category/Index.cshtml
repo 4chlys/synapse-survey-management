@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SynapseEnqueteManagement.UI.User.Models.Category>
+@model IEnumerable<SynapseEnqueteManagement.UI.User.Models.Category>
 
 @{
     ViewData["Title"] = "Kies een Categorie";   
@@ -20,9 +20,7 @@
     <div class="w-full max-w-sm flex flex-col gap-6">
         @foreach (var category in Model)
         {
-            <a asp-controller="Ideation" asp-action="Index"
-               asp-route-projectId="@ViewData["ProjectId"]"
-               asp-route-categoryId="@category.Id"
+            <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]" asp-route-categoryId="@category.CategoryId"
                class="relative flex flex-col px-5 py-5 rounded-2xl border-2 border-gray-100 bg-white
                       cursor-pointer transition-all duration-150
                       hover:border-emerald-300 hover:shadow-md active:scale-[0.98]

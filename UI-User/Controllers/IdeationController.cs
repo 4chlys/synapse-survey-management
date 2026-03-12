@@ -23,7 +23,7 @@ public class IdeationController : Controller
         ViewData["ShowModerationPopup"] = true;
         ViewBag.Emojis = await _emojiService.GetEmojisAsync();
 
-        var category = await _categoryService.GetCategoryByIdAsync(categoryId);
+        var category = await _categoryService.GetCategoryByIdAsync(categoryId, projectId);
         if (category == null) return NotFound();
 
         var ideas = await _ideaService.GetIdeasByCategoryAsync(categoryId);
@@ -37,7 +37,7 @@ public class IdeationController : Controller
         if (idea == null) return NotFound();
 
         var comments = await _ideaService.GetCommentsByIdeaAsync(categoryId, ideaId);
-        var category = await _categoryService.GetCategoryByIdAsync(categoryId);
+        var category = await _categoryService.GetCategoryByIdAsync(categoryId, projectId);
 
         ViewBag.Category = category;
         ViewBag.ProjectId = projectId;

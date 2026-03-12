@@ -15,7 +15,7 @@ public class CategoryController : Controller
     public async Task<IActionResult> Index(int projectId)
     {
         ViewData["ProjectId"] = projectId;
-        var categories = await _categoryService.GetCategoriesAsync();
+        var categories = await _categoryService.GetCategoriesAsync(projectId);
         return View(categories);
     }
 }
