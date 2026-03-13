@@ -2,11 +2,15 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class CommentService(HttpClient httpClient)
 {
-    public async Task<bool> AddCommentAsync(int projectId, int categoryId, int ideaId, string text)
+    public async Task<bool> AddCommentAsync(
+        int categoryId,
+        int ideaId,
+        string text,
+        string moderationStatus = "Unflagged")
     {
         var response = await httpClient.PostAsJsonAsync(
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments",
-            new { Text = text }
+            new { Text = text, ModerationStatus = moderationStatus }
         );
         return response.IsSuccessStatusCode;
     }

@@ -75,9 +75,6 @@ function getPopupEls() {
 
 /**
  * Shows the popup rendered by _ModerationPopup.cshtml.
- * Fills in the reason and suggestion text, toggles visibility of
- * the suggestion block vs block-only message based on whether a
- * rewrite is available.
  *
  * Resolves with:
  *   { accepted: true,  text: rewrittenText } — user accepted the rewrite
@@ -203,9 +200,6 @@ export function attachModeration(
  * Attaches live regex + AI moderation to a single textarea or input.
  * Injects an inline error <p> directly after the element.
  * Returns a cleanup function.
- *
- * Use this for standalone inputs outside a form (e.g. a future idea input).
- * For full form handling including submit interception, use wireModerationForm.
  */
 export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
@@ -243,6 +237,9 @@ export function wireModerationField(
  *   3a. Accepted  → textarea value replaced with the clean rewrite.
  *   3b. Declined  → textarea gets data-flagged="true" for the server to store as flagged.
  *   3c. No rewrite possible → user told to edit manually, submit blocked.
+ *
+ * Before the final requestSubmit(), stamps any hidden input[name="moderationStatus"]
+ * with "Flagged" if any textarea was declined, otherwise "Unflagged".
  *
  * Returns a cleanup function.
  */
@@ -291,6 +288,12 @@ export function wireModerationForm(
         }
 
         if (anyBlocked) return;
+
+        const statusInput = form.querySelector<HTMLInputElement>('input[name="moderationStatus"]');
+        if (statusInput) {
+            const anyFlagged = textareas.some(ta => ta.dataset.flagged === 'true');
+            statusInput.value = anyFlagged ? 'Flagged' : 'Unflagged';
+        }
 
         form.removeEventListener('submit', onSubmit);
         form.requestSubmit();

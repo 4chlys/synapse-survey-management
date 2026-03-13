@@ -1,6 +1,5 @@
 ﻿using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
-
 namespace SynapseEnqueteManagement.API.DTOs;
 
 public class CreateCommentDto

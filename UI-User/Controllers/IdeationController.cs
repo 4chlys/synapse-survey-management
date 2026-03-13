@@ -23,6 +23,9 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
 
     public async Task<IActionResult> Detail(int projectId, int categoryId, int ideaId)
     {
+
+        ViewData["ShowModerationPopup"] = true;
+
         var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
         if (idea == null) return NotFound();
 
@@ -39,17 +42,29 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateIdea(int projectId, int categoryId, string description)
+    public async Task<IActionResult> CreateIdea(
+        int projectId,
+        int categoryId,
+        string description,
+        string moderationStatus = "Unflagged")
     {
-        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description);
+        // moderationStatus is a plain string ("Unflagged" or "Flagged") stamped by
+        // the frontend JS. The UI layer passes it as-is to the service, which
+        // forwards it to the API. The API/BL is responsible for parsing it to the enum.
+        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationStatus);
         if (!success) return BadRequest("Failed to create idea");
         return RedirectToAction("Index", new { projectId, categoryId });
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddComment(int projectId, int categoryId, int ideaId, string text)
+    public async Task<IActionResult> AddComment(
+        int projectId,
+        int categoryId,
+        int ideaId,
+        string text,
+        string moderationStatus = "Unflagged")
     {
-        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationStatus);
         if (!success) return BadRequest("Failed to add comment");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }

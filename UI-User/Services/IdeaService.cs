@@ -5,17 +5,16 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class IdeaService(HttpClient httpClient)
 {
-    public async Task<List<Idea>> GetIdeasByCategoryAsync(int projectId, int categoryId)
+    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId)
     {
         var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/projects/{projectId}/categories/{categoryId}/ideas");
-        if (dtos is null) return new List<Idea>();
-
-        return dtos.Select(d => new Idea
+        if (dtos is null) return new List<IdeaViewModel>();
+        return dtos.Select(d => new IdeaViewModel
         {
             IdeaId = d.IdeaId,
             Description = d.Description,
             CommentsCount = d.CommentsCount,
-            Emojis = d.Emojis.Select(e => new IdeaEmoji
+            Emojis = d.Emojis.Select(e => new IdeaEmojiViewModel
             {
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
@@ -24,11 +23,16 @@ public class IdeaService(HttpClient httpClient)
         }).ToList();
     }
 
-    public async Task<bool> CreateIdeaAsync(int projectId, int categoryId, string description)
+    public async Task<bool> CreateIdeaAsync(
+        int ProjectId,
+        int categoryId,
+        string description,
+        string moderationStatus = "Unflagged")
     {
         var response = await httpClient.PostAsJsonAsync($"api/projects/{projectId}/categories/{categoryId}/ideas", new
         {
-            Description = description
+            Description = description,
+            ModerationStatus = moderationStatus
         });
         return response.IsSuccessStatusCode;
     }
@@ -39,12 +43,12 @@ public class IdeaService(HttpClient httpClient)
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
         if (dto is null) return null;
 
-        return new Idea
+        return new IdeaViewModel
         {
             IdeaId = dto.IdeaId,
             Description = dto.Description,
             CommentsCount = dto.CommentsCount,
-            Emojis = dto.Emojis.Select(e => new IdeaEmoji
+            Emojis = dto.Emojis.Select(e => new IdeaEmojiViewModel
             {
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
@@ -53,13 +57,12 @@ public class IdeaService(HttpClient httpClient)
         };
     }
 
-    public async Task<List<Comment>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
+    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
     {
         var dtos = await httpClient.GetFromJsonAsync<List<ApiTextCommentDto>>(
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        if (dtos is null) return new List<Comment>();
-
-        return dtos.Select(d => new Comment
+        if (dtos is null) return new List<CommentViewModel>();
+        return dtos.Select(d => new CommentViewModel
         {
             CommentId = d.CommentId,
             Text = d.Text,
@@ -77,7 +80,6 @@ public class IdeaService(HttpClient httpClient)
         public int CommentId { get; set; }
         public string Text { get; set; }
         public List<ApiIconCommentDto> Emojis { get; set; } = new();
-
     }
 
     private class ApiIconCommentDto

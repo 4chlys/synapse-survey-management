@@ -5,9 +5,9 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class EmojiService(HttpClient httpClient)
 {
-    public async Task<List<Emoji>> GetEmojisAsync()
+    public async Task<List<EmojiViewModel>> GetEmojisAsync()
     {
-        var emojis = await httpClient.GetFromJsonAsync<List<Emoji>>("api/emojis");
-        return emojis ?? new List<Emoji>();
+        var emojis = await httpClient.GetFromJsonAsync<List<EmojiViewModel>>("api/emojis");
+        return emojis ?? new List<EmojiViewModel>();
     }
 }
