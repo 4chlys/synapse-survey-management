@@ -13,7 +13,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 /// All return 200 with their respective response body.
 /// </summary>
 [ApiController]
-[Route("api/moderation")]
+[Route("api/projects/{projectId}/moderation")]
 public class ModerationController(IAiModerationService moderation) : ControllerBase
 {
     [HttpPost("regex")]
