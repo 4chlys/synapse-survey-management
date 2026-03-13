@@ -16,13 +16,13 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : 
         );
     }
 
-    public async Task<Idea> AddIdeaAsync(int categoryId, string description, ModerationStatus status,
+    public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant)
     {
-        var category = await repository.ReadByIdAsync<Category>(categoryId);
-        if (category == null)
+        var category = await repository.ReadByIdAsync<Category>(categoryId, includes: [c => c.Project]);
+        if (category == null || category.Project?.ProjectId != projectId)
         {
-            logger.LogWarning("Category {CategoryId} not found", categoryId);
+            logger.LogWarning("Category {CategoryId} not found in project {ProjectId}", categoryId, projectId);
             throw new KeyNotFoundException($"Category {categoryId} not found");
         }
 

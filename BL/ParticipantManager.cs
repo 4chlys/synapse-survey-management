@@ -5,9 +5,9 @@ namespace SynapseEnqueteManagement.BL;
 
 public class ParticipantManager(IRepository repository) : IParticipantManager
 {
-    public async Task<Participant> AddParticipantAsync(Questionnaire questionnaire)
+    public async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId)
     {
-        var participant = new Participant { Questionnaire = questionnaire };
+        var participant = new Participant { Questionnaire = questionnaire, ProjectId = projectId };
         return await repository.CreateAsync(participant);
     }
 
@@ -19,7 +19,8 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
     public async Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken)
     {
         return await repository.ReadSingleAsync<Participant>(
-            filters: [p => p.SessionToken == sessionToken]
+            filters: [p => p.SessionToken == sessionToken],
+            includes: [p => p.Project]
         );
     }
 

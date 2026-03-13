@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-public class ModerationService(HttpClient httpClient)
+public class ModerationService(HttpClient httpClient, ISessionService sessionService)
 {
     public async Task<ModerationResponse> CheckRegexAsync(int projectId, string text)
     {
@@ -15,8 +15,10 @@ public class ModerationService(HttpClient httpClient)
 
     public async Task<ModerationResponse> CheckAiAsync(int projectId, string text)
     {
-        var response = await httpClient.PostAsJsonAsync(
-            $"api/projects/{projectId}/moderation/ai", new { text });
+        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation/ai");
+        request.Content = JsonContent.Create(new { text });
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ModerationResponse>()
                ?? new ModerationResponse();
@@ -24,11 +26,22 @@ public class ModerationService(HttpClient httpClient)
 
     public async Task<SuggestResponse> SuggestAsync(int projectId, string text)
     {
-        var response = await httpClient.PostAsJsonAsync(
-            $"api/projects/{projectId}/moderation/suggest", new { text });
+        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation/suggest");
+        request.Content = JsonContent.Create(new { text });
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SuggestResponse>()
                ?? new SuggestResponse();
+    }
+
+    private const string TokenHeader = "X-Participant-Token";
+
+    private void AddTokenHeader(HttpRequestMessage request, int projectId)
+    {
+        var token = sessionService.GetToken(projectId);
+        if (!string.IsNullOrWhiteSpace(token))
+            request.Headers.Add(TokenHeader, token);
     }
 }
 

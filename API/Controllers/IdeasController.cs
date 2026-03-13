@@ -46,15 +46,15 @@ public class IdeasController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<IdeaDto>> CreateIdea(int categoryId, [FromBody] CreateIdeaDto dto)
+    public async Task<ActionResult<IdeaDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var status = await ResolveModerationStatusAsync(dto.Description, dto.ModerationToken);
-            var idea = await manager.AddIdeaAsync(categoryId, dto.Description, status, participant);
+            var status = await ResolveModerationStatusAsync(dto.Description, dto.ModerationToken, projectId);
+            var idea = await manager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
             var ideaDto = new IdeaDto
             {
                 IdeaId = idea.IdeaId,
@@ -138,11 +138,11 @@ public class IdeasController(
     /// uses the encoded status (no AI call). Otherwise falls back to a full
     /// server-side moderation check.
     /// </summary>
-    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token)
+    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token, int projectId)
     {
         if (!string.IsNullOrEmpty(token))
         {
-            var cached = tokenService.ValidateToken(text, token);
+            var cached = tokenService.ValidateToken(text, token, projectId);
             if (cached.HasValue) return cached.Value;
         }
 

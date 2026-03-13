@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.BL;
 
 public interface ICommentManager
 {
-    Task<TextComment> AddTextCommentAsync(int ideaId, string text, ModerationStatus status, Participant participant);
+    Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant);
     Task<IEnumerable<Emoji>> GetEmojisAsync();
     Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId, Participant participant);
     Task<bool> RemoveIconCommentAsync(int ideaId, int emojiId, Participant participant);

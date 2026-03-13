@@ -20,9 +20,20 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return (participant, null);
     }
 
-    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire)
+    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId)
     {
-        return await participantManager.AddParticipantAsync(questionnaire);
+        return await participantManager.AddParticipantAsync(questionnaire, projectId);
+    }
+
+    protected async Task<(Participant participant, ActionResult error)> GetParticipantAsync(int projectId)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return (null, error);
+
+        if (participant.ProjectId != projectId)
+            return (null, Forbid());
+
+        return (participant, null);
     }
 
     protected async Task<Participant> GetParticipantByTokenAsync(Guid token)

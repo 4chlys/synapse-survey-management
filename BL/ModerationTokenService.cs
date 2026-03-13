@@ -14,8 +14,8 @@ namespace SynapseEnqueteManagement.BL;
 /// </summary>
 public interface IModerationTokenService
 {
-    string GenerateToken(string text, ModerationStatus status);
-    ModerationStatus? ValidateToken(string text, string token, TimeSpan? maxAge = null);
+    string GenerateToken(string text, ModerationStatus status, int projectId);
+    ModerationStatus? ValidateToken(string text, string token, int projectId, TimeSpan? maxAge = null);
 }
 
 public class ModerationTokenService : IModerationTokenService
@@ -30,30 +30,34 @@ public class ModerationTokenService : IModerationTokenService
         _key = Encoding.UTF8.GetBytes(secret);
     }
 
-    public string GenerateToken(string text, ModerationStatus status)
+    public string GenerateToken(string text, ModerationStatus status, int projectId)
     {
         var textHash = ComputeTextHash(text);
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var payload = $"{textHash}|{(byte)status}|{timestamp}";
+        var payload = $"{projectId}|{textHash}|{(byte)status}|{timestamp}";
         var hmac = ComputeHmac(payload);
         return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{payload}|{hmac}"));
     }
 
-    public ModerationStatus? ValidateToken(string text, string token, TimeSpan? maxAge = null)
+    public ModerationStatus? ValidateToken(string text, string token, int projectId, TimeSpan? maxAge = null)
     {
         try
         {
             var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var parts = decoded.Split('|');
-            if (parts.Length != 4) return null;
+            if (parts.Length != 5) return null;
 
-            var textHash = parts[0];
-            if (!byte.TryParse(parts[1], out var statusByte)) return null;
-            if (!long.TryParse(parts[2], out var timestamp)) return null;
-            var hmac = parts[3];
+            if (!int.TryParse(parts[0], out var tokenProjectId)) return null;
+            var textHash = parts[1];
+            if (!byte.TryParse(parts[2], out var statusByte)) return null;
+            if (!long.TryParse(parts[3], out var timestamp)) return null;
+            var hmac = parts[4];
 
             // Verify HMAC
-            var payload = $"{textHash}|{statusByte}|{timestamp}";
+            var payload = $"{tokenProjectId}|{textHash}|{statusByte}|{timestamp}";
+
+            // Verify projectId matches
+            if (tokenProjectId != projectId) return null;
             if (!CryptographicOperations.FixedTimeEquals(
                     Encoding.UTF8.GetBytes(ComputeHmac(payload)),
                     Encoding.UTF8.GetBytes(hmac)))

@@ -16,15 +16,15 @@ public class CommentsController(
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("comments")]
-    public async Task<ActionResult> AddComment(int ideaId, [FromBody] CreateCommentDto dto)
+    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var status = await ResolveModerationStatusAsync(dto.Text, dto.ModerationToken);
-            var comment = await manager.AddTextCommentAsync(ideaId, dto.Text, status, participant);
+            var status = await ResolveModerationStatusAsync(dto.Text, dto.ModerationToken, projectId);
+            var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
             return Ok(new { comment.CommentId, comment.Text });
         }
         catch (KeyNotFoundException e)
@@ -34,9 +34,9 @@ public class CommentsController(
     }
 
     [HttpPost("iconcomments")]
-    public async Task<ActionResult> AddIconComment(int ideaId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
@@ -52,9 +52,9 @@ public class CommentsController(
     }
 
     [HttpDelete("iconcomments")]
-    public async Task<ActionResult> RemoveIconComment(int ideaId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> RemoveIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         var removed = await manager.RemoveIconCommentAsync(ideaId, dto.EmojiId, participant);
@@ -63,9 +63,9 @@ public class CommentsController(
     }
 
     [HttpPost("comments/{commentId}/emoji")]
-    public async Task<ActionResult> AddCommentEmoji(int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> AddCommentEmoji(int projectId, int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
@@ -81,9 +81,9 @@ public class CommentsController(
     }
 
     [HttpDelete("comments/{commentId}/emoji")]
-    public async Task<ActionResult> RemoveCommentEmoji(int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> RemoveCommentEmoji(int projectId, int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         var removed = await manager.RemoveCommentReactionAsync(commentId, dto.EmojiId, participant);
@@ -91,11 +91,11 @@ public class CommentsController(
         return NoContent();
     }
 
-    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token)
+    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token, int projectId)
     {
         if (!string.IsNullOrEmpty(token))
         {
-            var cached = tokenService.ValidateToken(text, token);
+            var cached = tokenService.ValidateToken(text, token, projectId);
             if (cached.HasValue) return cached.Value;
         }
 

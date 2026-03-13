@@ -18,36 +18,42 @@ namespace SynapseEnqueteManagement.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/projects/{projectId}/moderation")]
-public class ModerationController(IAiModerationService moderation, IModerationTokenService tokenService)
-    : ControllerBase
+public class ModerationController(IAiModerationService moderation, IModerationTokenService tokenService, IParticipantManager participantManager)
+    : ParticipantControllerBase(participantManager)
 {
     [HttpPost("regex")]
-    public ActionResult<ModerationResponseDto> CheckRegex([FromBody] ModerationRequestDto dto)
+    public ActionResult<ModerationResponseDto> CheckRegex(int projectId,[FromBody] ModerationRequestDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
         var result = moderation.CheckWithRegex(dto.Text);
-        return Ok(MapToDto(result, dto.Text));
+        return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("ai")]
-    public async Task<ActionResult<ModerationResponseDto>> CheckAi(
+    public async Task<ActionResult<ModerationResponseDto>> CheckAi(int projectId,
         [FromBody] ModerationRequestDto dto,
         CancellationToken ct)
     {
+        if (!TryGetParticipantToken(out _))
+            return Unauthorized("Participant token required.");
+
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
         var result = await moderation.CheckWithAiAsync(dto.Text, ct);
-        return Ok(MapToDto(result, dto.Text));
+        return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("suggest")]
-    public async Task<ActionResult<SuggestResponseDto>> Suggest(
+    public async Task<ActionResult<SuggestResponseDto>> Suggest(int projectId,
         [FromBody] ModerationRequestDto dto,
         CancellationToken ct)
     {
+        if (!TryGetParticipantToken(out _))
+            return Unauthorized("Participant token required.");
+
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
@@ -56,15 +62,15 @@ public class ModerationController(IAiModerationService moderation, IModerationTo
         // Generate a token for the rewritten text (Unflagged since it was AI-cleaned)
         string suggestionToken = null;
         if (suggestion != null)
-            suggestionToken = tokenService.GenerateToken(suggestion, ModerationStatus.Unflagged);
+            suggestionToken = tokenService.GenerateToken(suggestion, ModerationStatus.Unflagged, projectId);
 
         return Ok(new SuggestResponseDto { Suggestion = suggestion, ModerationToken = suggestionToken });
     }
 
-    private ModerationResponseDto MapToDto(ModerationResult result, string text)
+    private ModerationResponseDto MapToDto(ModerationResult result, string text, int projectId)
     {
         var status = result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
-        var token = tokenService.GenerateToken(text, status);
+        var token = tokenService.GenerateToken(text, status, projectId);
 
         return new ModerationResponseDto
         {

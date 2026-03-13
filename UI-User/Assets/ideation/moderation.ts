@@ -17,6 +17,12 @@ interface SuggestResponse {
     moderationToken: string | null;
 }
 
+// ─── CSRF ─────────────────────────────────────────────────────────────────────
+
+function getCsrfToken(): string {
+    return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const REGEX_DEBOUNCE_MS    = 400;
@@ -34,7 +40,7 @@ async function callModeration(
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/${endpoint}`, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
             body:    JSON.stringify({ text }),
             signal,
         });
@@ -63,7 +69,7 @@ export async function callSuggest(
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/suggest`, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
             body:    JSON.stringify({ text }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

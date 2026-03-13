@@ -1,10 +1,14 @@
+using System.Threading.RateLimiting;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Services;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+});
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5159";
 var apiKey = builder.Configuration["ApiKey"]
@@ -45,6 +49,21 @@ builder.Services.AddHttpClient<EmojiService>(ConfigureApiClient)
 builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
+// Rate limiting — per real client IP, applied only to expensive AI moderation endpoints
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("ai-moderation", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 // Form strategies (OCP: register a new IFormStrategy here to add a new form type)
 builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
 builder.Services.AddSingleton<IFormStrategy, ChatFormStrategy>();
@@ -69,6 +88,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseStaticFiles();
 app.UseAuthorization();
 

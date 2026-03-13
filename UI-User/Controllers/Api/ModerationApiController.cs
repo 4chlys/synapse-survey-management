@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.User.Services;
 
@@ -21,6 +22,7 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     }
 
     [HttpPost("ai")]
+    [EnableRateLimiting("ai-moderation")]
     public async Task<ActionResult<ModerationResponse>> Ai(int projectId, [FromBody] ModerationRequest request)
     {
         var result = await moderationService.CheckAiAsync(projectId, request.Text);
@@ -34,6 +36,7 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     }
 
     [HttpPost("suggest")]
+    [EnableRateLimiting("ai-moderation")]
     public async Task<ActionResult<SuggestResponse>> Suggest(int projectId, [FromBody] ModerationRequest request)
     {
         var result = await moderationService.SuggestAsync(projectId, request.Text);

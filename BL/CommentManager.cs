@@ -7,12 +7,12 @@ namespace SynapseEnqueteManagement.BL;
 
 public class CommentManager(IRepository repository, ILogger<CommentManager> logger) : ICommentManager
 {
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, string text, ModerationStatus status, Participant participant)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId);
-        if (idea == null)
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        if (idea == null || idea.Category?.Project?.ProjectId != projectId)
         {
-            logger.LogWarning("Idea {IdeaId} not found", ideaId);
+            logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
             throw new KeyNotFoundException($"Idea {ideaId} not found");
         }
 
