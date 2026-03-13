@@ -35,6 +35,7 @@ public class CommentController(ICommentManager manager, IParticipantManager part
         try
         {
             var iconComment = await manager.AddIconCommentAsync(ideaId, dto.EmojiId, participant);
+            if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new { iconComment.CommentId, iconComment.EmojiId });
         }
         catch (KeyNotFoundException e)
@@ -52,6 +53,7 @@ public class CommentController(ICommentManager manager, IParticipantManager part
         try
         {
             var reaction = await manager.AddCommentReactionAsync(commentId, dto.EmojiId, participant);
+            if (reaction == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new { reaction.CommentId, reaction.EmojiId });
         }
         catch (KeyNotFoundException e)

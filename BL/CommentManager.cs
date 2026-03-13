@@ -57,7 +57,11 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
             Participant = participant
         };
 
-        return await repository.CreateAsync(iconComment);
+        return await repository.CreateAsync(iconComment,
+            duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
+                                  && ic.EmojiId == emojiId
+                                  && ic.Idea.IdeaId == ideaId
+                                  && ic.TextComment == null);
     }
 
     public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId, Participant participant)
@@ -84,6 +88,9 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
             Participant = participant
         };
 
-        return await repository.CreateAsync(reaction);
+        return await repository.CreateAsync(reaction,
+            duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
+                                  && ic.EmojiId == emojiId
+                                  && ic.TextComment.CommentId == commentId);
     }
 }

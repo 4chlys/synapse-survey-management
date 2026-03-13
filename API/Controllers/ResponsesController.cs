@@ -27,7 +27,7 @@ public class ResponsesController(
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
-        var participant = await participantManager.AddParticipantAsync(questionnaire);
+        var participant = await AddParticipantAsync(questionnaire);
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
@@ -65,7 +65,7 @@ public class ResponsesController(
             return BadRequest(ex.Message);
         }
 
-        var participant = await participantManager.AddParticipantAsync(questionnaire);
+        var participant = await AddParticipantAsync(questionnaire);
 
         foreach (var answer in submitDto.Answers)
         {
@@ -112,7 +112,7 @@ public class ResponsesController(
         if (!TryGetParticipantToken(out var token))
             return Ok(new { HasResponded = false });
 
-        var hasResponded = await participantManager.HasParticipantRespondedAsync(token);
+        var hasResponded = await HasParticipantRespondedAsync(token);
         return Ok(new { HasResponded = hasResponded });
     }
 

@@ -72,8 +72,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddIconComment(int projectId, int categoryId, int ideaId, int emojiId, string returnPage)
     {
-        var success = await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
-        if (!success) return BadRequest("Failed to add emoji");
+        await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
 
         if (returnPage == "Index")
             return RedirectToAction("Index", new { projectId, categoryId });
@@ -84,8 +83,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddCommentEmoji(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
     {
-        var success = await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
-        if (!success) return BadRequest("Failed to add emoji to comment");
+        await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 }

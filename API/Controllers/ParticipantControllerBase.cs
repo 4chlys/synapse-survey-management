@@ -20,6 +20,16 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return (participant, null);
     }
 
+    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire)
+    {
+        return await participantManager.AddParticipantAsync(questionnaire);
+    }
+
+    protected async Task<bool> HasParticipantRespondedAsync(Guid token)
+    {
+        return await participantManager.HasParticipantRespondedAsync(token);
+    }
+
     protected bool TryGetParticipantToken(out Guid token)
     {
         token = Guid.Empty;

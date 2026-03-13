@@ -11,7 +11,6 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class IdeasController(IIdeaManager manager, IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager)
 {
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<IdeaDto>>> GetIdeasByCategory(int categoryId)
     {
