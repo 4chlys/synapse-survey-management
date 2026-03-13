@@ -1,9 +1,11 @@
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export interface ModerationCallbacks {
     onBlock: (reason: string, flaggedBy: 'Regex' | 'AI') => void;
     onClear: () => void;
 }
 
-interface ModerationResponse {
+export interface ModerationResponse {
     isAcceptable: boolean;
     reason:       string | null;
     flaggedBy:    'Regex' | 'AI' | null;
@@ -13,23 +15,32 @@ interface SuggestResponse {
     suggestion: string | null;
 }
 
+// ─── Config ───────────────────────────────────────────────────────────────────
+
 let _apiBase = '';
 
 export function setApiBase(url: string): void {
     _apiBase = url.replace(/\/$/, '');
 }
 
+export function getApiBase(): string {
+    return _apiBase;
+}
+
 const REGEX_DEBOUNCE_MS    = 400;
 const AI_DEBOUNCE_MS       = 1500;
 const MIN_LENGTH_FOR_CHECK = 3;
 
+// ─── Low-level API calls ──────────────────────────────────────────────────────
+
 async function callModeration(
     endpoint: 'regex' | 'ai',
     text: string,
+    projectId: number,
     signal?: AbortSignal,
 ): Promise<ModerationResponse> {
     try {
-        const res = await fetch(`${_apiBase}/api/moderation/${endpoint}`, {
+        const res = await fetch(`${_apiBase}/api/projects/${projectId}/moderation/${endpoint}`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ text }),
@@ -44,9 +55,18 @@ async function callModeration(
     }
 }
 
-async function callSuggest(text: string): Promise<string | null> {
+/** Called by ideationForm.ts on submit */
+export async function callModerationAi(
+    text: string,
+    projectId: number,
+): Promise<ModerationResponse> {
+    return callModeration('ai', text, projectId);
+}
+
+/** Called by ideationForm.ts on submit */
+export async function callSuggest(text: string, projectId: number): Promise<string | null> {
     try {
-        const res = await fetch(`${_apiBase}/api/moderation/suggest`, {
+        const res = await fetch(`${_apiBase}/api/projects/${projectId}/moderation/suggest`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ text }),
@@ -60,6 +80,8 @@ async function callSuggest(text: string): Promise<string | null> {
     }
 }
 
+// ─── Popup ────────────────────────────────────────────────────────────────────
+
 function getPopupEls() {
     return {
         overlay:         document.getElementById('moderation-overlay')!,
@@ -70,17 +92,22 @@ function getPopupEls() {
         btnDecline:      document.getElementById('moderation-btn-decline')!,
         btnAccept:       document.getElementById('moderation-btn-accept')!,
         btnClose:        document.getElementById('moderation-btn-close')!,
+        btnX:            document.getElementById('moderation-btn-x'),
     };
 }
 
 /**
- * Shows the popup rendered by _ModerationPopup.cshtml.
+ * Shows the moderation popup (rendered by _ModerationPopup.cshtml) as a
+ * true overlay — never navigates away from the current page.
  *
  * Resolves with:
- *   { accepted: true,  text: rewrittenText } — user accepted the rewrite
- *   { accepted: false, text: originalText  } — user declined or no rewrite possible
+ *   { accepted: true,  text: rewrittenText } — user accepted the AI rewrite
+ *   { accepted: false, text: originalText  } — user declined (submit flagged)
+ *
+ * When suggestion === null the "edit and retry" variant is shown.
+ * The caller should block submission in that case.
  */
-function showRewritePopup(
+export function showRewritePopup(
     originalText: string,
     suggestion: string | null,
     reason: string,
@@ -88,60 +115,55 @@ function showRewritePopup(
     return new Promise(resolve => {
         const els = getPopupEls();
 
+        // Populate reason
         els.reason.textContent = reason;
 
+        // Configure which variant to show
         if (suggestion) {
             els.suggestionText.textContent = suggestion;
             els.suggestionBlock.classList.remove('hidden');
             els.blockMessage.classList.add('hidden');
-
             els.btnDecline.classList.remove('hidden');
             els.btnAccept.classList.remove('hidden');
             els.btnClose.classList.add('hidden');
         } else {
             els.suggestionBlock.classList.add('hidden');
             els.blockMessage.classList.remove('hidden');
-
             els.btnDecline.classList.add('hidden');
             els.btnAccept.classList.add('hidden');
             els.btnClose.classList.remove('hidden');
         }
 
+        // Show overlay
         els.overlay.classList.remove('hidden');
         els.overlay.classList.add('flex');
 
         function close() {
             els.overlay.classList.add('hidden');
             els.overlay.classList.remove('flex');
-            els.btnAccept.removeEventListener('click', onAccept);
+            els.btnAccept.removeEventListener('click',  onAccept);
             els.btnDecline.removeEventListener('click', onDecline);
-            els.btnClose.removeEventListener('click', onClose);
+            els.btnClose.removeEventListener('click',   onClose);
+            els.btnX?.removeEventListener('click',      onClose);
         }
 
-        function onAccept() {
-            close();
-            resolve({ accepted: true, text: suggestion! });
-        }
+        function onAccept()  { close(); resolve({ accepted: true,  text: suggestion! }); }
+        function onDecline() { close(); resolve({ accepted: false, text: originalText }); }
+        function onClose()   { close(); resolve({ accepted: false, text: originalText }); }
 
-        function onDecline() {
-            close();
-            resolve({ accepted: false, text: originalText });
-        }
-
-        function onClose() {
-            close();
-            resolve({ accepted: false, text: originalText });
-        }
-
-        els.btnAccept.addEventListener('click', onAccept,  { once: true });
+        els.btnAccept.addEventListener('click',  onAccept,  { once: true });
         els.btnDecline.addEventListener('click', onDecline, { once: true });
-        els.btnClose.addEventListener('click', onClose,   { once: true });
+        els.btnClose.addEventListener('click',   onClose,   { once: true });
+        els.btnX?.addEventListener('click',      onClose,   { once: true });
     });
 }
+
+// ─── Live inline field moderation (typing feedback) ──────────────────────────
 
 export function attachModeration(
     element: HTMLTextAreaElement | HTMLInputElement,
     callbacks: ModerationCallbacks,
+    projectId: number,
 ): () => void {
     let regexTimer: ReturnType<typeof setTimeout> | null = null;
     let aiTimer:    ReturnType<typeof setTimeout> | null = null;
@@ -156,37 +178,32 @@ export function attachModeration(
 
     async function runRegex(snapshot: string) {
         try {
-            const result = await callModeration('regex', snapshot);
+            const result = await callModeration('regex', snapshot, projectId);
             if (element.value !== snapshot) return;
             if (!result.isAcceptable && result.reason)
                 callbacks.onBlock(result.reason, 'Regex');
             else
                 callbacks.onClear();
-        } catch { /* AbortError or network — ignore */ }
+        } catch { /* ignore */ }
     }
 
     async function runAi(snapshot: string) {
         aiAbort?.abort();
         aiAbort = new AbortController();
         try {
-            const result = await callModeration('ai', snapshot, aiAbort.signal);
+            const result = await callModeration('ai', snapshot, projectId, aiAbort.signal);
             if (element.value !== snapshot) return;
             if (!result.isAcceptable && result.reason)
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
             else
                 callbacks.onClear();
-        } catch { /* AbortError or network — ignore */ }
+        } catch { /* ignore */ }
     }
 
     function onInput() {
         const text = element.value;
         clearTimers();
-
-        if (text.length < MIN_LENGTH_FOR_CHECK) {
-            callbacks.onClear();
-            return;
-        }
-
+        if (text.length < MIN_LENGTH_FOR_CHECK) { callbacks.onClear(); return; }
         const snapshot = text;
         regexTimer = setTimeout(() => runRegex(snapshot), REGEX_DEBOUNCE_MS);
         aiTimer    = setTimeout(() => runAi(snapshot),    AI_DEBOUNCE_MS);
@@ -196,13 +213,9 @@ export function attachModeration(
     return () => { element.removeEventListener('input', onInput); clearTimers(); };
 }
 
-/**
- * Attaches live regex + AI moderation to a single textarea or input.
- * Injects an inline error <p> directly after the element.
- * Returns a cleanup function.
- */
 export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
+    projectId: number,
 ): () => void {
     const errorEl = document.createElement('p');
     errorEl.className =
@@ -224,51 +237,35 @@ export function wireModerationField(
         input.classList.remove('border-red-400');
     };
 
-    const detach = attachModeration(input, { onBlock: showError, onClear: clearError });
+    const detach = attachModeration(input, { onBlock: showError, onClear: clearError }, projectId);
     return () => { detach(); errorEl.remove(); };
 }
 
-/**
- * Wires live moderation to every <textarea> in the form and intercepts submit.
- *
- * On submit, for each flagged textarea:
- *   1. Calls /api/moderation/suggest for a rewrite.
- *   2. Shows the popup from _ModerationPopup.cshtml.
- *   3a. Accepted  → textarea value replaced with the clean rewrite.
- *   3b. Declined  → textarea gets data-flagged="true" for the server to store as flagged.
- *   3c. No rewrite possible → user told to edit manually, submit blocked.
- *
- * Before the final requestSubmit(), stamps any hidden input[name="moderationStatus"]
- * with "Flagged" if any textarea was declined, otherwise "Unflagged".
- *
- * Returns a cleanup function.
- */
+// ─── Survey form wiring ───────────────────────────────────────────────────────
+
 export function wireModerationForm(
     form: HTMLFormElement,
     onSubmitBlocked?: () => void,
-): () => void {
+): void {
+    const projectId = getProjectIdFromContext(form);
     const textareas = Array.from(form.querySelectorAll<HTMLTextAreaElement>('textarea'));
-    const detachers = textareas.map(ta => wireModerationField(ta));
+    textareas.forEach(ta => wireModerationField(ta, projectId));
 
     async function onSubmit(e: SubmitEvent) {
         e.preventDefault();
 
-        const toCheck = textareas.filter(
-            textarea => textarea.value.trim().length >= MIN_LENGTH_FOR_CHECK
-        );
-
+        const toCheck = textareas.filter(ta => ta.value.trim().length >= MIN_LENGTH_FOR_CHECK);
         let anyBlocked = false;
 
         for (const textarea of toCheck) {
-            const result = await callModeration('ai', textarea.value);
+            const result = await callModeration('ai', textarea.value, projectId);
             if (result.isAcceptable) continue;
 
-            const suggestion = await callSuggest(textarea.value);
-
-            const outcome = await showRewritePopup(
+            const suggestion = await callSuggest(textarea.value, projectId);
+            const outcome    = await showRewritePopup(
                 textarea.value,
                 suggestion,
-                result.reason ?? 'De inhoud is niet toegestaan op dit platform.'
+                result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
             );
 
             if (suggestion === null) {
@@ -300,9 +297,19 @@ export function wireModerationForm(
     }
 
     form.addEventListener('submit', onSubmit);
+}
 
-    return () => {
-        form.removeEventListener('submit', onSubmit);
-        detachers.forEach(d => d());
-    };
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getProjectIdFromContext(form: HTMLFormElement): number {
+    // 1. data-project-id attribute on the form itself
+    const attr = form.dataset.projectId;
+    if (attr) return parseInt(attr, 10);
+    // 2. <meta name="project-id"> set by the Razor layout
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="project-id"]');
+    if (meta?.content) return parseInt(meta.content, 10);
+    // 3. Parse from URL: /1/Survey/...
+    const match = window.location.pathname.match(/^\/(\d+)\//);
+    if (match) return parseInt(match[1], 10);
+    return 1; // safe fallback
 }

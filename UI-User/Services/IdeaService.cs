@@ -30,23 +30,12 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
     public async Task<bool> CreateIdeaAsync(
         int projectId,
         int categoryId,
-        string description)
+        string description,
+        string moderationStatus = "Unflagged")
     {
-        var moderationRequest = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation");
-        moderationRequest.Content = JsonContent.Create(new { Text = description });
-
-        var moderationResponse = await httpClient.SendAsync(moderationRequest);
-        if (!moderationResponse.IsSuccessStatusCode) return false;
-
-        var json = await moderationResponse.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<JsonElement>(json);
-
-        bool isAcceptable = result.GetProperty("isAcceptable").GetBoolean();
-        if (!isAcceptable) return false;
-
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas");
-        request.Content = JsonContent.Create(new { Description = description, ModerationStatus = "Flagged" });
+        request.Content = JsonContent.Create(new { Description = description, ModerationStatus = moderationStatus });
 
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
