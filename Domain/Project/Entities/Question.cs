@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -5,7 +6,9 @@ namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 public class Question
 {
     public int QuestionId { get; set; }
-    
+
+    [Required]
+    [MaxLength(500)]
     public string Text { get; set; }
     public QuestionFormat QuestionFormat { get; set; }
     public bool IsMandatory { get; set; }

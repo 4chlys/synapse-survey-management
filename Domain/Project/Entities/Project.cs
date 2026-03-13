@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -5,9 +6,15 @@ namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 public class Project
 {
     public int ProjectId { get; set; }
-    
+
+    [Required]
+    [MaxLength(50)]
     public string OrganisationName { get; set; }
+
+    [MaxLength(100)]
     public string OrganisationLogoUrl { get; set; }
+
+    [MaxLength(50)]
     public string OrganisationWebsiteUrl { get; set; }
     
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;

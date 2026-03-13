@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
 
-public class SynapseEnqueteContext : IdentityDbContext
+public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext(options)
 {
     public DbSet<Project> Projects { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -21,13 +22,154 @@ public class SynapseEnqueteContext : IdentityDbContext
     public DbSet<Comment> Comments { get; set; }
 
 
-    public SynapseEnqueteContext(DbContextOptions options) : base(options)
-    {
-    }
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // Project
+        builder.Entity<Project>(e =>
+        {
+            e.HasOne(p => p.Questionnaire)
+                .WithOne(q => q.Project)
+                .HasForeignKey<Questionnaire>("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(p => p.Introduction)
+                .WithOne(i => i.Project)
+                .HasForeignKey<Introduction>("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(p => p.Categories)
+                .WithOne(c => c.Project)
+                .HasForeignKey("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Participants are also reachable via Questionnaire; ProjectId FK
+            // lets us query all project participants directly.
+            e.HasMany(p => p.Participants)
+                .WithOne()
+                .HasForeignKey("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Questionnaire
+        builder.Entity<Questionnaire>(e =>
+        {
+            e.HasMany(q => q.Questions)
+                .WithOne(q => q.Questionnaire)
+                .HasForeignKey("QuestionnaireId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict so that Project → Participant cascade is the sole owner.
+            e.HasMany(q => q.Participants)
+                .WithOne(p => p.Questionnaire)
+                .HasForeignKey("QuestionnaireId")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Question
+        builder.Entity<Question>(e =>
+        {
+            // Serialize the list of answer choices as a JSON array in a TEXT column.
+            e.Property(q => q.AnswerChoices)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)
+                         ?? new List<string>()
+                )
+                .HasColumnType("TEXT");
+
+            e.HasIndex("QuestionnaireId");
+
+            e.HasOne(q => q.Section)
+                .WithMany(s => s.Questions)
+                .HasForeignKey("SectionId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Response
+        builder.Entity<Response>(e =>
+        {
+            e.HasOne(r => r.Question)
+                .WithMany(q => q.Responses)
+                .HasForeignKey("QuestionId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.Participant)
+                .WithMany(p => p.Responses)
+                .HasForeignKey("ParticipantId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Supports "which participants answered this question?" queries.
+            e.HasIndex("QuestionId", "ParticipantId");
+        });
+
+        // Participant
+        builder.Entity<Participant>(e =>
+        {
+            // SessionToken is the lookup key for every user request.
+            e.HasIndex(p => p.SessionToken).IsUnique();
+
+            e.HasMany(p => p.Comments)
+                .WithOne()
+                .HasForeignKey("ParticipantId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Category
+        builder.Entity<Category>(e =>
+        {
+            e.HasMany(c => c.Ideas)
+                .WithOne(i => i.Category)
+                .HasForeignKey("CategoryId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Idea
+        builder.Entity<Idea>(e =>
+        {
+
+            // Supports filtering by category and moderation status.
+            e.HasIndex("CategoryId");
+            e.HasIndex(i => i.Status);
+
+            e.HasOne(i => i.Participant)
+                .WithMany(p => p.Ideas)
+                .HasForeignKey("IdeaParticipantId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(i => i.Comments)
+                .WithOne(c => c.Idea)
+                .HasForeignKey("IdeaId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Comment
+        builder.Entity<Comment>(e =>
+        {
+            e.HasDiscriminator<string>("CommentType")
+                .HasValue<TextComment>("TextComment")
+                .HasValue<IconComment>("IconComment");
+        });
+
+        // IconComment
+        builder.Entity<IconComment>(e =>
+        {
+            e.HasOne(ic => ic.Emoji)
+                .WithMany()
+                .HasForeignKey(ic => ic.EmojiId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Optional: an IconComment can be a reaction on a TextComment.
+            e.HasOne(ic => ic.TextComment)
+                .WithMany(tc => tc.Reactions)
+                .HasForeignKey("TextCommentId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+
     }
 
     public bool CreateDatabase(bool deleteIfExists)

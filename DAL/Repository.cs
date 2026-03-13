@@ -91,9 +91,31 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to find.</typeparam>
     /// <param name="id">The primary key value(s) of the entity.</param>
     /// <returns>The entity if found; <c>null</c> otherwise.</returns>
-    public async Task<T> ReadByIdAsync<T>(params object[] id) where T : class
+    public async Task<T> ReadByIdAsync<T>(
+        object id,
+        Expression<Func<T, object>>[] includes = null,
+        string[] includeStrings = null
+    ) where T : class
     {
-        return await _context.Set<T>().FindAsync(id);
+        IQueryable<T> query = _context.Set<T>();
+
+        if (includes != null)
+            foreach (var include in includes)
+                query = query.Include(include);
+
+        if (includeStrings != null)
+            foreach (var include in includeStrings)
+                query = query.Include(include);
+
+        var keyName = _context.Model.FindEntityType(typeof(T))!
+            .FindPrimaryKey()!.Properties[0].Name;
+
+        var parameter = Expression.Parameter(typeof(T));
+        var property = Expression.Property(parameter, keyName);
+        var constant = Expression.Constant(Convert.ChangeType(id, property.Type));
+        var lambda = Expression.Lambda<Func<T, bool>>(Expression.Equal(property, constant), parameter);
+
+        return await query.SingleOrDefaultAsync(lambda);
     }
 
     /// <summary>
@@ -127,6 +149,11 @@ public class Repository : IRepository
         }
 
         return await query.SingleOrDefaultAsync();
+    }
+
+    public async Task<bool> ExistsAsync<T>(Expression<Func<T, bool>> filter) where T : class
+    {
+        return await _context.Set<T>().AnyAsync(filter);
     }
 
     /// <summary>

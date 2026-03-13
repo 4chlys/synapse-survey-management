@@ -7,8 +7,6 @@ public class ProjectManager(IRepository repository) : IProjectManager
 {
     public async Task<Project> GetProjectByIdAsync(int projectId)
     {
-        return await repository.ReadSingleAsync<Project>(
-            filters: [p => p.ProjectId == projectId]
-        );
+        return await repository.ReadByIdAsync<Project>(projectId);
     }
 }

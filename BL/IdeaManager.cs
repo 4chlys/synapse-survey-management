@@ -39,8 +39,8 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : 
 
     public async Task<Idea> GetIdeaByIdAsync(int ideaId)
     {
-        return await repository.ReadSingleAsync<Idea>(
-            filters: [i => i.IdeaId == ideaId],
+        return await repository.ReadByIdAsync<Idea>(
+            ideaId,
             includes: [i => i.Comments],
             includeStrings:
             [

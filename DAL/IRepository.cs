@@ -13,13 +13,19 @@ public interface IRepository
         string[] includeStrings = null
     ) where T : class;
 
-    Task<T> ReadByIdAsync<T>(params object[] id) where T : class;
+    Task<T> ReadByIdAsync<T>(
+        object id,
+        Expression<Func<T, object>>[] includes = null,
+        string[] includeStrings = null
+    ) where T : class;
 
     Task<T> ReadSingleAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null
     ) where T : class;
+
+    Task<bool> ExistsAsync<T>(Expression<Func<T, bool>> filter) where T : class;
 
     Task<bool> UpdateAsync<T>(T entity) where T : class;
 
