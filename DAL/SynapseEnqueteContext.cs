@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -73,11 +74,16 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
             // Serialize the list of answer choices as a JSON array in a TEXT column.
             e.Property(q => q.AnswerChoices)
                 .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
                          ?? new List<string>()
                 )
-                .HasColumnType("TEXT");
+                .HasColumnType("TEXT")
+                .Metadata.SetValueComparer(new ValueComparer<ICollection<string>>(
+                    (c1, c2) => c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()
+                ));
 
             e.HasIndex("QuestionnaireId");
 
@@ -112,7 +118,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
             e.HasIndex(p => p.SessionToken).IsUnique();
 
             e.HasMany(p => p.Comments)
-                .WithOne()
+                .WithOne(c => c.Participant)
                 .HasForeignKey("ParticipantId")
                 .OnDelete(DeleteBehavior.Cascade);
         });
@@ -163,7 +169,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
 
             // Optional: an IconComment can be a reaction on a TextComment.
             e.HasOne(ic => ic.TextComment)
-                .WithMany(tc => tc.Reactions)
+                .WithMany(tc => tc.EmojiReactions)
                 .HasForeignKey("TextCommentId")
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
