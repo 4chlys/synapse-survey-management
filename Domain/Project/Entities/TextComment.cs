@@ -6,6 +6,6 @@ public class TextComment : Comment
 {
     public string Text { get; set; }
     public ModerationStatus ModerationStatus { get; set; }
-    public ICollection<IconComment> Reactions { get; set; } = new List<IconComment>();
+    public ICollection<IconComment> EmojiReactions { get; set; } = new List<IconComment>();
     
 }

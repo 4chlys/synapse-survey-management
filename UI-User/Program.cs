@@ -6,15 +6,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient<IQuestionnaireApiService, QuestionnaireApiService>(client =>
-     {
-         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-             ?? "https://localhost:5159");
-     })
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+                                     ?? "https://localhost:5159");
+    })
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         var handler = new HttpClientHandler();
         if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
 
@@ -24,25 +25,27 @@ builder.Services.AddScoped<ISessionService, CookieSessionService>();
 builder.Services.AddHttpClient<CategoryService>(client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-            ?? "https://localhost:5159");
+                                     ?? "https://localhost:5159");
     })
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         var handler = new HttpClientHandler();
         if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
 builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-            ?? "https://localhost:5159");
+                                     ?? "https://localhost:5159");
     })
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         var handler = new HttpClientHandler();
         if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
 
@@ -55,7 +58,21 @@ builder.Services.AddHttpClient<IdeaService>(client =>
     {
         var handler = new HttpClientHandler();
         if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return handler;
+    });
+builder.Services.AddHttpClient<CommentService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+                                     ?? "https://localhost:5159");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        if (builder.Environment.IsDevelopment())
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
 
@@ -68,7 +85,8 @@ builder.Services.AddHttpClient<EmojiService>(client =>
     {
         var handler = new HttpClientHandler();
         if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
         return handler;
     });
 
@@ -102,8 +120,8 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
-    name: "project",
-    pattern: "{projectId:int}/{controller=Survey}/{action=Index}/{id?}")
+        name: "project",
+        pattern: "{projectId:int}/{controller=Survey}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.MapGet("/", () => Results.Redirect("/1/Survey"));

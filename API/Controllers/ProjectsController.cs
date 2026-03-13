@@ -6,19 +6,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects")]
-public class ProjectsController : ControllerBase
+public class ProjectsController(IProjectManager projectManager) : ControllerBase
 {
-    private readonly IProjectManager _projectManager;
-
-    public ProjectsController(IProjectManager projectManager)
-    {
-        _projectManager = projectManager;
-    }
-
     [HttpGet("{projectId}")]
     public async Task<ActionResult<ProjectDto>> GetProject(int projectId)
     {
-        var project = await _projectManager.GetProjectByIdAsync(projectId);
+        var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project is null)
             return NotFound();
 

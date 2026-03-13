@@ -5,46 +5,34 @@ using SynapseEnqueteManagement.UI.User.Services;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
-public class SurveyController : Controller
+public class SurveyController(
+    IQuestionnaireApiService questionnaireService,
+    ISessionService sessionService,
+    IProjectApiService projectApiService,
+    IFormStrategyFactory formStrategyFactory)
+    : Controller
 {
-    private readonly IQuestionnaireApiService _questionnaireService;
-    private readonly ISessionService _sessionService;
-    private readonly IProjectApiService _projectApiService;
-    private readonly IFormStrategyFactory _formStrategyFactory;
-
-    public SurveyController(
-        IQuestionnaireApiService questionnaireService,
-        ISessionService sessionService,
-        IProjectApiService projectApiService,
-        IFormStrategyFactory formStrategyFactory)
-    {
-        _questionnaireService = questionnaireService;
-        _sessionService = sessionService;
-        _projectApiService = projectApiService;
-        _formStrategyFactory = formStrategyFactory;
-    }
-
     public async Task<IActionResult> Index(int projectId)
     {
-        var project = await _projectApiService.GetProjectAsync(projectId);
+        var project = await projectApiService.GetProjectAsync(projectId);
         if (project is null)
             return View("NotFound");
 
         if (project.ProjectState != "Active")
             return View("Inactive");
 
-        var token = _sessionService.GetToken(projectId);
+        var token = sessionService.GetToken(projectId);
         if (!string.IsNullOrWhiteSpace(token)
-            && await _questionnaireService.HasParticipantRespondedAsync(projectId, token))
+            && await questionnaireService.HasParticipantRespondedAsync(projectId, token))
         {
             return RedirectToAction("Index", "Category", new { projectId });
         }
 
-        var model = await _questionnaireService.GetSurveyAsync(projectId);
+        var model = await questionnaireService.GetSurveyAsync(projectId);
         if (model is null)
             return View("NotFound");
 
-        var strategy = _formStrategyFactory.Create(project.FormType);
+        var strategy = formStrategyFactory.Create(project.FormType);
         ViewData["FormLayout"] = strategy.GetLayoutData();
         return View(strategy.GetViewName(), model);
     }
@@ -65,16 +53,16 @@ public class SurveyController : Controller
                 answers[questionId] = value;
         }
 
-        var participantToken = await _questionnaireService.SubmitSurveyAsync(projectId, answers);
+        var participantToken = await questionnaireService.SubmitSurveyAsync(projectId, answers);
 
-        _sessionService.SetToken(projectId, participantToken);
+        sessionService.SetToken(projectId, participantToken);
 
         return RedirectToAction("ThankYou", new { projectId });
     }
 
     public async Task<IActionResult> ThankYou(int projectId)
     {
-        var project = await _projectApiService.GetProjectAsync(projectId);
+        var project = await projectApiService.GetProjectAsync(projectId);
         var vm = new ThankYouViewModel
         {
             ProjectId = projectId,

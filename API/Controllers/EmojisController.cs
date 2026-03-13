@@ -5,19 +5,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/emojis")]
-public class EmojisController : ControllerBase
+public class EmojisController(ICommentManager manager) : ControllerBase
 {
-    private readonly IIdeaManager _manager;
-
-    public EmojisController(IIdeaManager manager)
-    {
-        _manager = manager;
-    }
-
     [HttpGet]
     public async Task<ActionResult> GetEmojis()
     {
-        var emojis = await _manager.GetEmojisAsync();
+        var emojis = await manager.GetEmojisAsync();
         var result = emojis.Select(e => new
         {
             e.EmojiId,

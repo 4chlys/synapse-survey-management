@@ -3,18 +3,11 @@ using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-public class IdeaService
+public class IdeaService(HttpClient httpClient)
 {
-    private readonly HttpClient _httpClient;
-
-    public IdeaService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
     public async Task<List<Idea>> GetIdeasByCategoryAsync(int categoryId)
     {
-        var dtos = await _httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/categories/{categoryId}/ideas");
+        var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/categories/{categoryId}/ideas");
         if (dtos is null) return new List<Idea>();
 
         return dtos.Select(d => new Idea
@@ -33,25 +26,16 @@ public class IdeaService
 
     public async Task<bool> CreateIdeaAsync(int categoryId, string description)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/categories/{categoryId}/ideas", new
+        var response = await httpClient.PostAsJsonAsync($"api/categories/{categoryId}/ideas", new
         {
             Description = description
         });
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> AddCommentAsync(int categoryId, int ideaId, string text)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            $"api/categories/{categoryId}/ideas/{ideaId}/comments",
-            new { Text = text }
-        );
-        return response.IsSuccessStatusCode;
-    }
-
     public async Task<Idea> GetIdeaByIdAsync(int categoryId, int ideaId)
     {
-        var dto = await _httpClient.GetFromJsonAsync<ApiIdeaDto>(
+        var dto = await httpClient.GetFromJsonAsync<ApiIdeaDto>(
             $"api/categories/{categoryId}/ideas/{ideaId}");
         if (dto is null) return null;
 
@@ -71,7 +55,7 @@ public class IdeaService
 
     public async Task<List<Comment>> GetCommentsByIdeaAsync(int categoryId, int ideaId)
     {
-        var dtos = await _httpClient.GetFromJsonAsync<List<ApiCommentDto>>(
+        var dtos = await httpClient.GetFromJsonAsync<List<ApiTextCommentDto>>(
             $"api/categories/{categoryId}/ideas/{ideaId}/comments");
         if (dtos is null) return new List<Comment>();
 
@@ -88,15 +72,15 @@ public class IdeaService
         }).ToList();
     }
 
-    private class ApiCommentDto
+    private class ApiTextCommentDto
     {
         public int CommentId { get; set; }
         public string Text { get; set; }
-        public List<ApiCommentEmojiDto> Emojis { get; set; } = new();
+        public List<ApiIconCommentDto> Emojis { get; set; } = new();
         
     }
 
-    private class ApiIdeaEmojiDto
+    private class ApiIconCommentDto
     {
         public int EmojiId { get; set; }
         public string Symbol { get; set; }
@@ -108,13 +92,6 @@ public class IdeaService
         public int IdeaId { get; set; }
         public string Description { get; set; }
         public int CommentsCount { get; set; }
-        public List<ApiIdeaEmojiDto> Emojis { get; set; } = new();
-    }
-
-    private class ApiCommentEmojiDto
-    {
-        public int EmojiId { get; set; }
-        public string Symbol { get; set; }
-        public int Count { get; set; }
+        public List<ApiIconCommentDto> Emojis { get; set; } = new();
     }
 }

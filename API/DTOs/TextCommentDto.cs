@@ -1,9 +1,9 @@
 ﻿namespace SynapseEnqueteManagement.API.DTOs;
 
-public class CommentDto
+public class TextCommentDto
 {
     public int CommentId { get; set; }
     public string Text { get; set; }
-    public List<CommentEmojiDto> Emojis { get; set; } = new();
+    public List<IconCommentDto> Emojis { get; set; } = new();
    
 }

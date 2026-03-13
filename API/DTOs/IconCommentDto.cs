@@ -1,6 +1,6 @@
 ﻿namespace SynapseEnqueteManagement.API.DTOs;
 
-public class CommentEmojiDto
+public class IconCommentDto
 {
     public int EmojiId { get; set; }
     public string Symbol { get; set; }

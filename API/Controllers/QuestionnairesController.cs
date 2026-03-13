@@ -7,19 +7,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/questionnaire")]
-public class QuestionnairesController : ControllerBase
+public class QuestionnairesController(IQuestionnaireManager questionnaireManager) : ControllerBase
 {
-    private readonly IQuestionnaireManager _questionnaireManager;
-
-    public QuestionnairesController(IQuestionnaireManager questionnaireManager)
-    {
-        _questionnaireManager = questionnaireManager;
-    }
-
     [HttpGet]
     public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
     {
-        var questionnaire = await _questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
@@ -30,7 +23,7 @@ public class QuestionnairesController : ControllerBase
     [HttpGet("questions")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int projectId)
     {
-        var questionnaire = await _questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
