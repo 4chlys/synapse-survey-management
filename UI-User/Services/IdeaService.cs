@@ -36,18 +36,18 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         moderationRequest.Content = JsonContent.Create(new { Text = description });
 
         var moderationResponse = await httpClient.SendAsync(moderationRequest);
-        moderationResponse.EnsureSuccessStatusCode();
+        if (!moderationResponse.IsSuccessStatusCode) return false;
 
         var json = await moderationResponse.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<JsonElement>(json);
 
-        bool moderationStatus = result.GetProperty("isAcceptable").GetBoolean();
+        bool isAcceptable = result.GetProperty("isAcceptable").GetBoolean();
+        if (!isAcceptable) return false;
 
-        if (!moderationStatus) return false;
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas");
-        request.Content =
-            JsonContent.Create(new { Description = description, ModerationStatus = moderationStatus });
+        request.Content = JsonContent.Create(new { Description = description, ModerationStatus = "Flagged" });
+
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
         return response.IsSuccessStatusCode;

@@ -3,7 +3,11 @@ using SynapseEnqueteManagement.UI.User.Services;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
-public class IdeationController(CategoryService categoryService, IdeaService ideaService, CommentService commentService, EmojiService emojiService)
+public class IdeationController(
+    CategoryService categoryService,
+    IdeaService ideaService,
+    CommentService commentService,
+    EmojiService emojiService)
     : Controller
 {
     public async Task<IActionResult> Index(int projectId, int categoryId)
@@ -23,7 +27,6 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
 
     public async Task<IActionResult> Detail(int projectId, int categoryId, int ideaId)
     {
-
         ViewData["ShowModerationPopup"] = true;
 
         var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
@@ -45,8 +48,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     public async Task<IActionResult> CreateIdea(
         int projectId,
         int categoryId,
-        string description,
-        string moderationStatus = "Unflagged")
+        string description)
     {
         // moderationStatus is a plain string ("Unflagged" or "Flagged") stamped by
         // the frontend JS. The UI layer passes it as-is to the service, which
@@ -55,23 +57,22 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Index", new { projectId, categoryId });
     }
+    
+    [HttpPost]
+    public async Task<IActionResult> AddComment(
+        int projectId,
+        int categoryId,
+        int ideaId,
+        string text)
+    {
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text);
+        if (!success) return PartialView("_ModerationPopup");
+        return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
+    }
 
     [HttpPost]
-    [HttpPost]
-public async Task<IActionResult> AddComment(
-    int projectId,
-    int categoryId,
-    int ideaId,
-    string text,
-    string moderationStatus = "Unflagged")
-{
-    var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text);
-    if (!success) return PartialView("_ModerationPopup");
-    return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
-}
-
-    [HttpPost]
-    public async Task<IActionResult> AddIconComment(int projectId, int categoryId, int ideaId, int emojiId, string returnPage)
+    public async Task<IActionResult> AddIconComment(int projectId, int categoryId, int ideaId, int emojiId,
+        string returnPage)
     {
         var success = await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
         if (!success) return BadRequest("Failed to add emoji");
@@ -83,7 +84,8 @@ public async Task<IActionResult> AddComment(
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddCommentEmoji(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
+    public async Task<IActionResult> AddCommentEmoji(int projectId, int categoryId, int ideaId, int commentId,
+        int emojiId)
     {
         var success = await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
         if (!success) return BadRequest("Failed to add emoji to comment");

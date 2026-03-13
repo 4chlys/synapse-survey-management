@@ -16,17 +16,17 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         moderationRequest.Content = JsonContent.Create(new { Text = text });
 
         var moderationResponse = await httpClient.SendAsync(moderationRequest);
-        moderationResponse.EnsureSuccessStatusCode();
+        if (!moderationResponse.IsSuccessStatusCode) return false;
 
         var json = await moderationResponse.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<JsonElement>(json);
 
-        bool moderationStatus = result.GetProperty("isAcceptable").GetBoolean();
+        bool isAcceptable = result.GetProperty("isAcceptable").GetBoolean();
+        if (!isAcceptable) return false;
 
-        if (!moderationStatus) return false;
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = moderationStatus });
+        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = "Flagged" });
 
         AddTokenHeader(request, projectId);
 
