@@ -25,7 +25,7 @@ public class ResponseManager(IRepository repository) : IResponseManager
         {
             if (string.IsNullOrWhiteSpace(answer.Value)) continue;
 
-            var question = await _repository.ReadByIdAsync<Question>(answer.QuestionId);
+            var question = await repository.ReadByIdAsync<Question>(answer.QuestionId);
             if (question is null) continue;
 
             await AddResponseAsync(answer.Value, question, participant);
@@ -34,7 +34,7 @@ public class ResponseManager(IRepository repository) : IResponseManager
 
     public async Task<IEnumerable<Response>> GetResponsesByProjectIdAsync(int projectId)
     {
-        return await _repository.ReadAsync<Response>(
+        return await repository.ReadAsync<Response>(
             filters: [r => r.Question.Questionnaire.Project.ProjectId == projectId],
             includes: [r => r.Question, r => r.Participant]
         );

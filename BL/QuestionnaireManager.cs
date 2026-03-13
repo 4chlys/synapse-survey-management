@@ -6,16 +6,9 @@ namespace SynapseEnqueteManagement.BL;
 
 public class QuestionnaireManager(IRepository repository) : IQuestionnaireManager
 {
-    private readonly IRepository _repository;
-
-    public QuestionnaireManager(IRepository repository)
-    {
-        _repository = repository;
-    }
-    
     public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
     {
-        return await _repository.ReadSingleAsync<Questionnaire>(
+        return await repository.ReadSingleAsync<Questionnaire>(
             filters: [q => q.Project.ProjectId == projectId],
             includeStrings: ["Questions"]
         );

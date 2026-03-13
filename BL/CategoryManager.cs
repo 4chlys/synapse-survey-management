@@ -15,6 +15,6 @@ public class CategoryManager(IRepository repository) : ICategoryManager
 
     public async Task<Category> GetCategoryByIdAsync(int id)
     {
-        return await _repository.ReadByIdAsync<Category>(id, includes: [c => c.Ideas]);
+        return await repository.ReadByIdAsync<Category>(id, includes: [c => c.Ideas]);
     }
 }
