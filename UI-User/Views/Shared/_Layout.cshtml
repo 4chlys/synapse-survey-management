@@ -1,4 +1,3 @@
-@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -6,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SynapseIP</title>
 
-    @* Read by main.ts → setApiBase() and by ideaHub.ts → getProjectId() *@
-    <meta name="api-base"    content="@(Configuration["ApiBaseUrl"] ?? "http://localhost:5159")"/>
+    @* Read by ideaHub.ts → getProjectId() *@
     <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)"/>
 
     <script type="module" vite-src="~/main.ts"></script>

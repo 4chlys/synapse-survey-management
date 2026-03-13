@@ -1,24 +1,52 @@
 const MAX_LENGTH = 500;
 
+interface QuestionValidator {
+  canValidate(format: string): boolean;
+  isAnswered(slide: HTMLElement): boolean;
+}
+
+class OpenQuestionValidator implements QuestionValidator {
+  canValidate(format: string) { return format === 'Open'; }
+  isAnswered(slide: HTMLElement) {
+    const ta = slide.querySelector<HTMLTextAreaElement>('textarea');
+    return !!ta && ta.value.trim().length > 0;
+  }
+}
+
+class SingleChoiceValidator implements QuestionValidator {
+  canValidate(format: string) { return format === 'SingleChoice'; }
+  isAnswered(slide: HTMLElement) {
+    return !!slide.querySelector<HTMLInputElement>('input[type="radio"]:checked');
+  }
+}
+
+class MultipleChoiceValidator implements QuestionValidator {
+  canValidate(format: string) { return format === 'MultipleChoice'; }
+  isAnswered(slide: HTMLElement) {
+    return !!slide.querySelector<HTMLInputElement>('input[type="checkbox"]:checked');
+  }
+}
+
+class LikertValidator implements QuestionValidator {
+  canValidate(format: string) { return format === 'Likert'; }
+  isAnswered(_slide: HTMLElement) {
+    return true;
+  }
+}
+
+const validators: QuestionValidator[] = [
+  new OpenQuestionValidator(),
+  new SingleChoiceValidator(),
+  new MultipleChoiceValidator(),
+  new LikertValidator(),
+];
+
 export function isSlideAnswered(slide: HTMLElement): boolean {
   if (slide.dataset.mandatory !== 'true') return true;
 
-  const format = slide.dataset.format;
-
-  switch (format) {
-    case 'Open': {
-      const ta = slide.querySelector<HTMLTextAreaElement>('textarea');
-      return !!ta && ta.value.trim().length > 0;
-    }
-    case 'SingleChoice':
-      return !!slide.querySelector<HTMLInputElement>('input[type="radio"]:checked');
-    case 'MultipleChoice':
-      return !!slide.querySelector<HTMLInputElement>('input[type="checkbox"]:checked');
-    case 'Likert':
-      return true;
-    default:
-      return true;
-  }
+  const format = slide.dataset.format ?? '';
+  const validator = validators.find(v => v.canValidate(format));
+  return validator?.isAnswered(slide) ?? true;
 }
 
 export function isSlideValid(slide: HTMLElement): { valid: boolean; message: string } {

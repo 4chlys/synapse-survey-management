@@ -32,14 +32,6 @@ public class ResponsesController(
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 
-    [HttpGet("responses")]
-    public async Task<ActionResult<IEnumerable<ResponseDto>>> GetAllResponses(int projectId)
-    {
-        var responses = await responseManager.GetResponsesByProjectIdAsync(projectId);
-        var dtos = responses.Select(MapToDto).ToList();
-        return Ok(dtos);
-    }
-
     /// <summary>
     /// Creates a participant and submits all answers in one request.
     /// Returns the participant token for the session cookie.
@@ -99,7 +91,7 @@ public class ResponsesController(
 
         var response = await responseManager.AddResponseAsync(createDto.Value, question, participant);
         var dto = MapToDto(response);
-        return CreatedAtAction(nameof(GetAllResponses), new { projectId, id = dto.ResponseId }, dto);
+        return Created(string.Empty, dto);
     }
 
     /// <summary>

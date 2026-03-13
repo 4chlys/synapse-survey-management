@@ -37,8 +37,8 @@ public sealed class MockModerationService : IAiModerationService
         var f = config.Fuzzy;
         _minSkeletonLength = f.MinSkeletonLength;
         _t0 = f.LevenshteinThresholds.MaxLengthFor0Edits;
-        _t1 = f.LevenshteinThresholds.MaxLengthFor0Edits;
-        _t2 = f.LevenshteinThresholds.MaxLengthFor0Edits;
+        _t1 = f.LevenshteinThresholds.MaxLengthFor1Edit;
+        _t2 = f.LevenshteinThresholds.MaxLengthFor2Edits;
     }
     
     public ModerationResult CheckWithRegex(string text)

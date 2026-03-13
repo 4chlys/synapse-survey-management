@@ -8,7 +8,6 @@ public class EmojiService(HttpClient httpClient)
     public async Task<List<EmojiViewModel>> GetEmojisAsync()
     {
         var emojis = await httpClient.GetFromJsonAsync<List<EmojiViewModel>>("api/emojis");
-        Console.WriteLine(emojis);
         return emojis ?? new List<EmojiViewModel>();
     }
 }

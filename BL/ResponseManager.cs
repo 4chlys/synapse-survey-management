@@ -9,11 +9,11 @@ public class ResponseManager(IRepository repository) : IResponseManager
     public async Task<Response> AddResponseAsync(string value, Question question, Participant participant)
     {
         if (value?.Length > 500)
-            throw new ArgumentException("Antwoord mag maximaal 500 tekens bevatten.", nameof(value));
+            throw new ArgumentException("Response must not exceed 500 characters.", nameof(value));
 
         if (question.QuestionFormat == QuestionFormat.SingleChoice
             && !question.AnswerChoices.Contains(value))
-            throw new ArgumentException("Ongeldig antwoord: keuze staat niet in de lijst.", nameof(value));
+            throw new ArgumentException("Invalid answer: choice is not in the list.", nameof(value));
 
         var response = new Response { Value = value, Question = question, Participant = participant };
         return await repository.CreateAsync(response);

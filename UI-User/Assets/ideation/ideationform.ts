@@ -1,4 +1,4 @@
-import { callModerationAi, callSuggest, showRewritePopup, getApiBase } from './moderation';
+import { callModerationAi, callSuggest, showRewritePopup } from './moderation';
 
 const MIN_LENGTH = 3;
 
@@ -7,7 +7,7 @@ export function wireIdeationForm(
     textareaName: string,
     projectId: number,
 ): void {
-    console.log('[moderation] wireIdeationForm called', { textareaName, projectId, apiBase: getApiBase() });
+    console.log('[moderation] wireIdeationForm called', { textareaName, projectId });
 
     form.addEventListener('submit', async (e: SubmitEvent) => {
         e.preventDefault();
@@ -28,17 +28,6 @@ export function wireIdeationForm(
         if (text.length < MIN_LENGTH) {
             statusInput.value = 'Unflagged';
             await submitFormViaFetch(form);
-            return;
-        }
-
-        const apiBase = getApiBase();
-        if (!apiBase) {
-            console.error(
-                '[moderation] api-base meta tag is missing or empty in _Layout.cshtml. ' +
-                'Add: <meta name="api-base" content="@(Configuration["ApiBaseUrl"])"/> ' +
-                'Blocking submission until fixed.'
-            );
-            alert('Configuratiefout: moderation API niet bereikbaar. Neem contact op met de beheerder.');
             return;
         }
 

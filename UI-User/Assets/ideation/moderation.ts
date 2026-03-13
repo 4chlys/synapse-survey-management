@@ -17,21 +17,11 @@ interface SuggestResponse {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-let _apiBase = '';
-
-export function setApiBase(url: string): void {
-    _apiBase = url.replace(/\/$/, '');
-}
-
-export function getApiBase(): string {
-    return _apiBase;
-}
-
 const REGEX_DEBOUNCE_MS    = 400;
 const AI_DEBOUNCE_MS       = 1500;
 const MIN_LENGTH_FOR_CHECK = 3;
 
-// ─── Low-level API calls ──────────────────────────────────────────────────────
+// ─── Low-level API calls (routed through UI-User ModerationApiController) ────
 
 async function callModeration(
     endpoint: 'regex' | 'ai',
@@ -40,7 +30,7 @@ async function callModeration(
     signal?: AbortSignal,
 ): Promise<ModerationResponse> {
     try {
-        const res = await fetch(`${_apiBase}/api/projects/${projectId}/moderation/${endpoint}`, {
+        const res = await fetch(`/${projectId}/api/ModerationApi/${endpoint}`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ text }),
@@ -50,7 +40,7 @@ async function callModeration(
         return res.json();
     } catch (err) {
         if ((err as Error).name === 'AbortError') throw err;
-        console.warn(`Moderation API (${endpoint}) unreachable:`, err);
+        console.warn(`Moderation (${endpoint}) unreachable:`, err);
         return { isAcceptable: true, reason: null, flaggedBy: null };
     }
 }
@@ -66,7 +56,7 @@ export async function callModerationAi(
 /** Called by ideationForm.ts on submit */
 export async function callSuggest(text: string, projectId: number): Promise<string | null> {
     try {
-        const res = await fetch(`${_apiBase}/api/projects/${projectId}/moderation/suggest`, {
+        const res = await fetch(`/${projectId}/api/ModerationApi/suggest`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ text }),
@@ -75,7 +65,7 @@ export async function callSuggest(text: string, projectId: number): Promise<stri
         const data: SuggestResponse = await res.json();
         return data.suggestion ?? null;
     } catch (err) {
-        console.warn('Moderation suggest API unreachable:', err);
+        console.warn('Moderation suggest unreachable:', err);
         return null;
     }
 }

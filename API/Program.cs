@@ -76,21 +76,8 @@ if (useAi)
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 } else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
 
-// CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowUiUser", policy =>
-    {
-        policy
-            .WithOrigins(
-                "http://localhost:5291",
-                "https://localhost:7163",
-                Environment.GetEnvironmentVariable("UI_URL") ?? "http://localhost:5291"
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
+// CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
+// Re-enable if a browser-based client ever needs direct API access.
 
 var app = builder.Build();
 
@@ -108,7 +95,6 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
-app.UseCors("AllowUiUser");
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

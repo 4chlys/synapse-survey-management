@@ -17,7 +17,7 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
         {
-            var p = await participantManager.GetParticipantBySessionTokenAsync(token);
+            var p = await GetParticipantByTokenAsync(token);
             participantId = p?.ParticipantId;
         }
 
@@ -70,7 +70,7 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
         {
-            var p = await participantManager.GetParticipantBySessionTokenAsync(token);
+            var p = await GetParticipantByTokenAsync(token);
             participantId = p?.ParticipantId;
         }
 
@@ -100,7 +100,7 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
         {
-            var p = await participantManager.GetParticipantBySessionTokenAsync(token);
+            var p = await GetParticipantByTokenAsync(token);
             participantId = p?.ParticipantId;
         }
 

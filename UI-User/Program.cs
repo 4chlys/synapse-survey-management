@@ -5,90 +5,40 @@ using SynapseEnqueteManagement.UI.User.FormStrategies;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<IQuestionnaireApiService, QuestionnaireApiService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
+
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+var isDev = builder.Environment.IsDevelopment();
+
+void ConfigureApiClient(HttpClient client) =>
+    client.BaseAddress = new Uri(apiBaseUrl);
+
+HttpClientHandler CreateHandler()
+{
+    var handler = new HttpClientHandler();
+    if (isDev)
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    return handler;
+}
+
+builder.Services.AddHttpClient<IQuestionnaireApiService, QuestionnaireApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ISessionService, CookieSessionService>();
 
-builder.Services.AddHttpClient<CategoryService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
-builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
-
-builder.Services.AddHttpClient<IdeaService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
-builder.Services.AddHttpClient<CommentService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
-
-builder.Services.AddHttpClient<EmojiService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
+builder.Services.AddHttpClient<CategoryService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IdeaService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<CommentService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<EmojiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 // Form strategies (OCP: register a new IFormStrategy here to add a new form type)
 builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();

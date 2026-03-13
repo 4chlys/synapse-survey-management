@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.DAL;
 
@@ -11,14 +12,17 @@ public class Repository : IRepository
 {
 
     private readonly DbContext _context;
+    private readonly ILogger<Repository> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Repository"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for data operations.</param>
-    public Repository(DbContext context)
+    /// <param name="logger">The logger instance for diagnostics.</param>
+    public Repository(DbContext context, ILogger<Repository> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     /// <summary>
@@ -161,7 +165,7 @@ public class Repository : IRepository
     /// </summary>
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
     /// <param name="entity">The entity instance with updated values.</param>
-    /// <returns><c>true</c> if the update and save operations were successful; <c>false</c> if an error occurred.</returns>
+    /// <returns><c>true</c> if the update was successful; <c>false</c> if an error occurred (logged).</returns>
     public async Task<bool> UpdateAsync<T>(T entity) where T : class
     {
         try
@@ -170,8 +174,9 @@ public class Repository : IRepository
             await _context.SaveChangesAsync();
             return true;
         }
-        catch
+        catch (DbUpdateException ex)
         {
+            _logger.LogError(ex, "Failed to update entity of type {EntityType}", typeof(T).Name);
             return false;
         }
     }
