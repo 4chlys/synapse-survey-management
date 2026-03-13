@@ -49,7 +49,7 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
                 Description = idea.Description,
                 CommentsCount = 0
             };
-            return CreatedAtAction(nameof(GetIdeasByCategory), new { categoryId }, ideaDto);
+            return Created(string.Empty, ideaDto);
         }
         catch (KeyNotFoundException e)
         {

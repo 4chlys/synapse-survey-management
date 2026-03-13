@@ -5,14 +5,16 @@ export function initIdeation(): void {
     window.hideCreateForm = hideCreateForm;
     window.showCommentForm = showCommentForm;
     window.hideCommentForm = hideCommentForm;
+    window.showCommentViewModelForm = showCommentForm;
+    window.hideCommentViewModelForm = hideCommentForm;
     window.showEmojiPicker = showEmojiPicker;
     
-    const createForm = document.getElementById('createForm') as HTMLFormElement | null;
+    const createForm = document.getElementById('createForm')?.querySelector<HTMLFormElement>('form') ?? null;
     if (createForm) {
         wireModerationForm(createForm);
     }
 
-    const commentForm = document.getElementById('commentForm') as HTMLFormElement | null;
+    const commentForm = document.getElementById('commentForm')?.querySelector<HTMLFormElement>('form') ?? null;
     if (commentForm) {
         wireModerationForm(commentForm);
     }
@@ -76,6 +78,8 @@ declare global {
         hideCreateForm: () => void;
         showCommentForm: () => void;
         hideCommentForm: () => void;
+        showCommentViewModelForm: () => void;
+        hideCommentViewModelForm: () => void;
         showEmojiPicker: (targetId: string) => void;
     }
 }

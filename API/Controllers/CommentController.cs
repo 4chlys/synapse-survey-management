@@ -17,7 +17,7 @@ public class CommentController(ICommentManager manager, IParticipantManager part
 
         try
         {
-            var comment = await manager.AddTextCommentAsync(ideaId, dto.Text, TODO, participant);
+            var comment = await manager.AddTextCommentAsync(ideaId, dto.Text, dto.ParsedModerationStatus, participant);
             return Ok(new { comment.CommentId, comment.Text });
         }
         catch (KeyNotFoundException e)

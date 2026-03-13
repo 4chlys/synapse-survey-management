@@ -3,8 +3,10 @@ using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-public class IdeaService(HttpClient httpClient)
+public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 {
+    private const string TokenHeader = "X-Participant-Token";
+
     public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId)
     {
         var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/projects/{projectId}/categories/{categoryId}/ideas");
@@ -24,20 +26,19 @@ public class IdeaService(HttpClient httpClient)
     }
 
     public async Task<bool> CreateIdeaAsync(
-        int ProjectId,
+        int projectId,
         int categoryId,
         string description,
         string moderationStatus = "Unflagged")
     {
-        var response = await httpClient.PostAsJsonAsync($"api/projects/{projectId}/categories/{categoryId}/ideas", new
-        {
-            Description = description,
-            ModerationStatus = moderationStatus
-        });
+        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/categories/{categoryId}/ideas");
+        request.Content = JsonContent.Create(new { Description = description, ModerationStatus = moderationStatus });
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<Idea> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)
+    public async Task<IdeaViewModel> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)
     {
         var dto = await httpClient.GetFromJsonAsync<ApiIdeaDto>(
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
@@ -73,6 +74,13 @@ public class IdeaService(HttpClient httpClient)
                 Count = e.Count
             }).ToList(),
         }).ToList();
+    }
+
+    private void AddTokenHeader(HttpRequestMessage request, int projectId)
+    {
+        var token = sessionService.GetToken(projectId);
+        if (!string.IsNullOrWhiteSpace(token))
+            request.Headers.Add(TokenHeader, token);
     }
 
     private class ApiTextCommentDto
