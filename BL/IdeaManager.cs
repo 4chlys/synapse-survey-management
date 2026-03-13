@@ -4,20 +4,11 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class IdeaManager : IIdeaManager
+public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : IIdeaManager
 {
-    private readonly IRepository _repository;
-    private readonly ILogger<IdeaManager> _logger;
-
-    public IdeaManager(IRepository repository, ILogger<IdeaManager> logger)
-    {
-        _repository = repository;
-        _logger = logger;
-    }
-
     public async Task<IEnumerable<Idea>> GetIdeasByCategoryAsync(int categoryId)
     {
-        return await _repository.ReadAsync<Idea>(
+        return await repository.ReadAsync<Idea>(
             filters: [i => i.Category.CategoryId == categoryId],
             includes: [i => i.Comments],
             includeStrings: ["Comments.Emoji"]
@@ -26,10 +17,10 @@ public class IdeaManager : IIdeaManager
 
     public async Task<Idea> AddIdeaAsync(int categoryId, string description)
     {
-        var category = await _repository.ReadByIdAsync<Category>(categoryId);
+        var category = await repository.ReadByIdAsync<Category>(categoryId);
         if (category == null)
         {
-            _logger.LogWarning("Category {CategoryId} not found", categoryId);
+            logger.LogWarning("Category {CategoryId} not found", categoryId);
             throw new KeyNotFoundException($"Category {categoryId} not found");
         }
 
@@ -39,15 +30,15 @@ public class IdeaManager : IIdeaManager
             Category = category
         };
 
-        return await _repository.CreateAsync(idea);
+        return await repository.CreateAsync(idea);
     }
 
     public async Task<TextComment> AddCommentAsync(int ideaId, string text)
     {
-        var idea = await _repository.ReadByIdAsync<Idea>(ideaId);
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId);
         if (idea == null)
         {
-            _logger.LogWarning("Idea {IdeaId} not found", ideaId);
+            logger.LogWarning("Idea {IdeaId} not found", ideaId);
             throw new KeyNotFoundException($"Idea {ideaId} not found");
         }
 
@@ -57,12 +48,12 @@ public class IdeaManager : IIdeaManager
             Text = text
         };
 
-        return await _repository.CreateAsync(comment);
+        return await repository.CreateAsync(comment);
     }
 
     public async Task<Idea> GetIdeaByIdAsync(int ideaId)
     {
-        return await _repository.ReadSingleAsync<Idea>(
+        return await repository.ReadSingleAsync<Idea>(
             filters: [i => i.IdeaId == ideaId],
             includes: [i => i.Comments],
             includeStrings: [
@@ -75,24 +66,24 @@ public class IdeaManager : IIdeaManager
 
     public async Task<IEnumerable<Emoji>> GetEmojisAsync()
     {
-        return await _repository.ReadAsync<Emoji>(
+        return await repository.ReadAsync<Emoji>(
             filters: [e => e.IsActive]
         );
     }
 
     public async Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId)
     {
-        var idea = await _repository.ReadByIdAsync<Idea>(ideaId);
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId);
         if (idea == null)
         {
-            _logger.LogWarning("Idea {IdeaId} not found", ideaId);
+            logger.LogWarning("Idea {IdeaId} not found", ideaId);
             throw new KeyNotFoundException($"Idea {ideaId} not found");
         }
 
-        var emoji = await _repository.ReadByIdAsync<Emoji>(emojiId);
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
         if (emoji == null)
         {
-            _logger.LogWarning("Emoji {EmojiId} not found", emojiId);
+            logger.LogWarning("Emoji {EmojiId} not found", emojiId);
             throw new KeyNotFoundException($"Emoji {emojiId} not found");
         }
 
@@ -102,22 +93,22 @@ public class IdeaManager : IIdeaManager
             EmojiId = emojiId
         };
 
-        return await _repository.CreateAsync(iconComment);
+        return await repository.CreateAsync(iconComment);
     }
 
     public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId)
     {
-        var comment = await _repository.ReadByIdAsync<TextComment>(commentId);
+        var comment = await repository.ReadByIdAsync<TextComment>(commentId);
         if (comment == null)
         {
-            _logger.LogWarning("TextComment {CommentId} not found", commentId);
+            logger.LogWarning("TextComment {CommentId} not found", commentId);
             throw new KeyNotFoundException($"TextComment {commentId} not found");
         }
 
-        var emoji = await _repository.ReadByIdAsync<Emoji>(emojiId);
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
         if (emoji == null)
         {
-            _logger.LogWarning("Emoji {EmojiId} not found", emojiId);
+            logger.LogWarning("Emoji {EmojiId} not found", emojiId);
             throw new KeyNotFoundException($"Emoji {emojiId} not found");
         }
 
@@ -128,6 +119,6 @@ public class IdeaManager : IIdeaManager
             TextComment = comment
         };
 
-        return await _repository.CreateAsync(reaction);
+        return await repository.CreateAsync(reaction);
     }
 }

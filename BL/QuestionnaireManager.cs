@@ -4,30 +4,23 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class QuestionnaireManager : IQuestionnaireManager
+public class QuestionnaireManager(IRepository repository) : IQuestionnaireManager
 {
-    private readonly IRepository _repository;
-
-    public QuestionnaireManager(IRepository repository)
-    {
-        _repository = repository;
-    }
-
     public async Task<IEnumerable<Question>> GetQuestionsAsync()
     {
-        return await _repository.ReadAsync<Question>(
+        return await repository.ReadAsync<Question>(
             includes: [q => q.Questionnaire]
         );
     }
 
     public async Task<Questionnaire> GetFirstQuestionnaireAsync()
     {
-        return await _repository.ReadSingleAsync<Questionnaire>();
+        return await repository.ReadSingleAsync<Questionnaire>();
     }
 
     public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
     {
-        var project = await _repository.ReadSingleAsync<Project>(
+        var project = await repository.ReadSingleAsync<Project>(
             filters: [p => p.ProjectId == projectId],
             includes: [p => p.Questionnaire],
             includeStrings: ["Questionnaire.Questions"]
@@ -37,7 +30,7 @@ public class QuestionnaireManager : IQuestionnaireManager
 
     public async Task<Question> GetQuestionByIdAsync(int questionId)
     {
-        return await _repository.ReadByIdAsync<Question>(questionId);
+        return await repository.ReadByIdAsync<Question>(questionId);
     }
 
     public void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers)
