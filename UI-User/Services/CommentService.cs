@@ -10,23 +10,12 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         int projectId,
         int categoryId,
         int ideaId,
-        string text)
+        string text,
+        string moderationStatus = "Unflagged")
     {
-        var moderationRequest = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation");
-        moderationRequest.Content = JsonContent.Create(new { Text = text });
-
-        var moderationResponse = await httpClient.SendAsync(moderationRequest);
-        if (!moderationResponse.IsSuccessStatusCode) return false;
-
-        var json = await moderationResponse.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<JsonElement>(json);
-
-        bool isAcceptable = result.GetProperty("isAcceptable").GetBoolean();
-        if (!isAcceptable) return false;
-
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = "Flagged" });
+        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = moderationStatus });
 
         AddTokenHeader(request, projectId);
 
@@ -77,19 +66,5 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         var token = sessionService.GetToken(projectId);
         if (!string.IsNullOrWhiteSpace(token))
             request.Headers.Add(TokenHeader, token);
-    }
-
-    private class ApiTextCommentDto
-    {
-        public int CommentId { get; set; }
-        public string Text { get; set; }
-        public List<ApiIconCommentDto> Emojis { get; set; } = new();
-    }
-
-    private class ApiIconCommentDto
-    {
-        public int EmojiId { get; set; }
-        public string Symbol { get; set; }
-        public int Count { get; set; }
     }
 }

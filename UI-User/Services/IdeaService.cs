@@ -35,8 +35,10 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         string description,
         string moderationStatus = "Unflagged")
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/categories/{categoryId}/ideas");
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"api/projects/{projectId}/categories/{categoryId}/ideas");
         request.Content = JsonContent.Create(new { Description = description, ModerationStatus = moderationStatus });
+
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
         return response.IsSuccessStatusCode;

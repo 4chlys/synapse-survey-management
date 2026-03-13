@@ -48,24 +48,23 @@ public class IdeationController(
     public async Task<IActionResult> CreateIdea(
         int projectId,
         int categoryId,
-        string description)
+        string description,
+        string moderationStatus = "Unflagged")
     {
-        // moderationStatus is a plain string ("Unflagged" or "Flagged") stamped by
-        // the frontend JS. The UI layer passes it as-is to the service, which
-        // forwards it to the API. The API/BL is responsible for parsing it to the enum.
-        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description);
+        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationStatus);
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Index", new { projectId, categoryId });
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> AddComment(
         int projectId,
         int categoryId,
         int ideaId,
-        string text)
+        string text,
+        string moderationStatus = "Unflagged")
     {
-        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationStatus);
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }

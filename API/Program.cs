@@ -81,12 +81,14 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowUiUser", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:5291",
-            "https://localhost:7163",
-            Environment.GetEnvironmentVariable("UI_URL") ??
-            "http://localhost:5291"
-        );
+        policy
+            .WithOrigins(
+                "http://localhost:5291",
+                "https://localhost:7163",
+                Environment.GetEnvironmentVariable("UI_URL") ?? "http://localhost:5291"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 

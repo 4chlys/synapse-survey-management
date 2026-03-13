@@ -24,6 +24,7 @@
         <form asp-route-projectId="@projectId" asp-action="CreateIdea" method="post"
               class="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <input type="hidden" name="categoryId" value="@category.CategoryId"/>
+            <input type="hidden" name="moderationStatus" value="Unflagged"/>
             <div class="mb-4">
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Description</label>
                 <textarea name="description" required rows="4"
@@ -74,10 +75,9 @@
 
                     <p class="text-gray-900 text-sm leading-relaxed pr-8">@idea.Description</p>
 
-                    @* EmojiViewModel reactions row — shows existing emojis from DB *@
+                    @* EmojiViewModel reactions row *@
                     <div class="flex gap-2 mt-4 items-center flex-wrap" onclick="event.stopPropagation()">
 
-                        @* Show existing emoji reactions *@
                         @foreach (var emoji in idea.Emojis)
                         {
                             <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")" method="post"
@@ -98,7 +98,6 @@
                             </form>
                         }
 
-                        @* Plus button to open emoji picker *@
                         <button onclick="showEmojiPicker('@idea.IdeaId'); event.preventDefault();"
                                 class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300
                                        flex items-center justify-center text-gray-400
@@ -110,7 +109,7 @@
                         </button>
                     </div>
 
-                    @* EmojiViewModel picker (hidden by default, emojis loaded from DB) *@
+                    @* EmojiViewModel picker *@
                     <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200"
                          onclick="event.stopPropagation()">
                         <form asp-action="AddIconComment" method="post">
@@ -139,7 +138,6 @@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe">
         <div class="max-w-sm mx-auto px-6 py-4 flex justify-around items-center">
 
-            @* Back to categories *@
             <a asp-route-projectId="@projectId" asp-controller="Category" asp-action="Index"
                class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -148,7 +146,6 @@
                 </svg>
             </a>
 
-            @* New idea button *@
             <button onclick="showCreateForm()"
                     class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
@@ -157,7 +154,6 @@
                 </svg>
             </button>
 
-            @* End process *@
             <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@projectId"
                class="flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
