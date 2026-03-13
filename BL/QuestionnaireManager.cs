@@ -4,7 +4,7 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class QuestionnaireManager : IQuestionnaireManager
+public class QuestionnaireManager(IRepository repository) : IQuestionnaireManager
 {
     private readonly IRepository _repository;
 
@@ -23,7 +23,7 @@ public class QuestionnaireManager : IQuestionnaireManager
 
     public async Task<Question> GetQuestionByIdAsync(int questionId)
     {
-        return await _repository.ReadByIdAsync<Question>(questionId);
+        return await repository.ReadByIdAsync<Question>(questionId);
     }
 
     public void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers)

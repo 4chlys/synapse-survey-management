@@ -4,15 +4,8 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class ResponseManager : IResponseManager
+public class ResponseManager(IRepository repository) : IResponseManager
 {
-    private readonly IRepository _repository;
-
-    public ResponseManager(IRepository repository)
-    {
-        _repository = repository;
-    }
-
     public async Task<Response> AddResponseAsync(string value, Question question, Participant participant)
     {
         if (value?.Length > 500)
@@ -23,7 +16,7 @@ public class ResponseManager : IResponseManager
             throw new ArgumentException("Ongeldig antwoord: keuze staat niet in de lijst.", nameof(value));
 
         var response = new Response { Value = value, Question = question, Participant = participant };
-        return await _repository.CreateAsync(response);
+        return await repository.CreateAsync(response);
     }
 
     public async Task AddResponsesAsync(Participant participant, IEnumerable<(int QuestionId, string Value)> answers)
