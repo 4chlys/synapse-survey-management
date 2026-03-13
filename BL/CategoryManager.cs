@@ -3,18 +3,11 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class CategoryManager : ICategoryManager
+public class CategoryManager(IRepository repository) : ICategoryManager
 {
-    private readonly IRepository _repository;
-
-    public CategoryManager(IRepository repository)
-    {
-        _repository = repository;
-    }
-
     public async Task<IEnumerable<Category>> GetCategoriesAsync(int projectId)
     {
-        return await _repository.ReadAsync<Category>(
+        return await repository.ReadAsync<Category>(
             filters: [c => c.Project.ProjectId == projectId],
             includes: [c => c.Ideas]
         );
@@ -22,7 +15,7 @@ public class CategoryManager : ICategoryManager
     
     public async Task<Category> GetCategoryByIdAsync(int id)
     {
-        return await _repository.ReadSingleAsync<Category>(
+        return await repository.ReadSingleAsync<Category>(
             filters: [c => c.CategoryId == id],
             includes: [c => c.Ideas]
         );
