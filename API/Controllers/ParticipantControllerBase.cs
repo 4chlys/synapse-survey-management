@@ -30,7 +30,7 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return (null, error);
 
-        if (participant.ProjectId != projectId)
+        if (participant.Project.ProjectId != projectId)
             return (null, Forbid());
 
         return (participant, null);

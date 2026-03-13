@@ -7,17 +7,11 @@ namespace SynapseEnqueteManagement.BL;
 /// <summary>
 /// Generates and validates HMAC-signed moderation tokens.
 /// A token encodes the SHA-256 hash of the moderated text, the resulting
-/// <see cref="ModerationStatus"/>, and a UTC timestamp. Because the token
-/// is signed with a shared secret, the API can verify that the moderation
+/// <see cref="ModerationStatus"/>, the projectId (to prevent CPMF (Cross Project Moderation Forging)
+/// and a UTC timestamp. Because the token  is signed with a shared secret, the API can verify that the moderation
 /// result was produced server-side and that the submitted text has not been
 /// altered since the check — without needing shared state between instances.
 /// </summary>
-public interface IModerationTokenService
-{
-    string GenerateToken(string text, ModerationStatus status, int projectId);
-    ModerationStatus? ValidateToken(string text, string token, int projectId, TimeSpan? maxAge = null);
-}
-
 public class ModerationTokenService : IModerationTokenService
 {
     private readonly byte[] _key;

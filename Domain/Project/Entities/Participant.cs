@@ -4,8 +4,6 @@ public class Participant
 {
     public int ParticipantId { get; set; }
     public Guid SessionToken { get; set; } = Guid.NewGuid();
-
-    public int ProjectId { get; set; }
     public Project Project { get; set; }
 
     public Questionnaire Questionnaire { get; set; }
