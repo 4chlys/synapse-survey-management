@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.UI.User.Models;
 
-public class ProjectInfo
+public class ProjectViewModel
 {
     public int ProjectId { get; set; }
     public string ProjectState { get; set; } = string.Empty;

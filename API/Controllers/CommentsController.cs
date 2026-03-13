@@ -6,7 +6,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}")]
-public class CommentController(ICommentManager manager, IParticipantManager participantManager)
+public class CommentsController(ICommentManager manager, IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("comments")]
