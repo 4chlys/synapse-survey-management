@@ -7,9 +7,11 @@ using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
-[Route("api/categories/{categoryId}/ideas")]
-public class IdeasController(IIdeaManager manager) : ControllerBase
+[Route("api/projects/{projectId}/categories/{categoryId}/ideas")]
+public class IdeasController(IIdeaManager manager, IParticipantManager participantManager)
+    : ParticipantControllerBase(participantManager)
 {
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<IdeaDto>>> GetIdeasByCategory(int categoryId)
     {
@@ -34,17 +36,20 @@ public class IdeasController(IIdeaManager manager) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<IdeaDto>> CreateIdea(int categoryId, [FromBody] CreateIdeaDto dto)
     {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
         try
         {
             var status = dto.ParsedModerationStatus;
-            var idea = await manager.AddIdeaAsync(categoryId, dto.Description, status, TODO);
+            var idea = await manager.AddIdeaAsync(categoryId, dto.Description, status, participant);
             var ideaDto = new IdeaDto
             {
                 IdeaId = idea.IdeaId,
                 Description = idea.Description,
                 CommentsCount = 0
             };
-            return CreatedAtAction(nameof(GetIdeasByCategory), new { categoryId }, ideaDto);
+            return Created(string.Empty, ideaDto);
         }
         catch (KeyNotFoundException e)
         {

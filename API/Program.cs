@@ -45,6 +45,7 @@ builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
+builder.Services.AddScoped<ICommentManager, CommentManager>();
 
 // AI configuration
 //

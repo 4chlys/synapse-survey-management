@@ -16,19 +16,20 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
         var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
         if (category == null) return NotFound();
 
-        var ideas = await ideaService.GetIdeasByCategoryAsync(categoryId);
+        var ideas = await ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
         ViewBag.Category = category;
         return View(ideas);
     }
 
     public async Task<IActionResult> Detail(int projectId, int categoryId, int ideaId)
     {
+
         ViewData["ShowModerationPopup"] = true;
 
-        var idea = await ideaService.GetIdeaByIdAsync(categoryId, ideaId);
+        var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
         if (idea == null) return NotFound();
 
-        var comments = await ideaService.GetCommentsByIdeaAsync(categoryId, ideaId);
+        var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
         var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
 
         ViewBag.Category = category;
@@ -50,7 +51,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
         // moderationStatus is a plain string ("Unflagged" or "Flagged") stamped by
         // the frontend JS. The UI layer passes it as-is to the service, which
         // forwards it to the API. The API/BL is responsible for parsing it to the enum.
-        var success = await ideaService.CreateIdeaAsync(categoryId, description, moderationStatus);
+        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationStatus);
         if (!success) return BadRequest("Failed to create idea");
         return RedirectToAction("Index", new { projectId, categoryId });
     }
@@ -63,7 +64,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
         string text,
         string moderationStatus = "Unflagged")
     {
-        var success = await commentService.AddCommentAsync(categoryId, ideaId, text, moderationStatus);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationStatus);
         if (!success) return BadRequest("Failed to add comment");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
@@ -71,7 +72,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddIconComment(int projectId, int categoryId, int ideaId, int emojiId, string returnPage)
     {
-        var success = await commentService.AddIconCommentAsync(categoryId, ideaId, emojiId);
+        var success = await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
         if (!success) return BadRequest("Failed to add emoji");
 
         if (returnPage == "Index")
@@ -83,7 +84,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddCommentEmoji(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
     {
-        var success = await commentService.AddCommentEmojiAsync(categoryId, ideaId, commentId, emojiId);
+        var success = await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
         if (!success) return BadRequest("Failed to add emoji to comment");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }

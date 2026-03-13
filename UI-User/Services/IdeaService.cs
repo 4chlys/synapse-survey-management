@@ -3,13 +3,14 @@ using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-public class IdeaService(HttpClient httpClient)
+public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 {
-    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int categoryId)
-    {
-        var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/categories/{categoryId}/ideas");
-        if (dtos is null) return new List<IdeaViewModel>();
+    private const string TokenHeader = "X-Participant-Token";
 
+    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId)
+    {
+        var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/projects/{projectId}/categories/{categoryId}/ideas");
+        if (dtos is null) return new List<IdeaViewModel>();
         return dtos.Select(d => new IdeaViewModel
         {
             IdeaId = d.IdeaId,
@@ -25,22 +26,22 @@ public class IdeaService(HttpClient httpClient)
     }
 
     public async Task<bool> CreateIdeaAsync(
+        int projectId,
         int categoryId,
         string description,
         string moderationStatus = "Unflagged")
     {
-        var response = await httpClient.PostAsJsonAsync($"api/categories/{categoryId}/ideas", new
-        {
-            Description = description,
-            ModerationStatus = moderationStatus
-        });
+        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/categories/{categoryId}/ideas");
+        request.Content = JsonContent.Create(new { Description = description, ModerationStatus = moderationStatus });
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<IdeaViewModel> GetIdeaByIdAsync(int categoryId, int ideaId)
+    public async Task<IdeaViewModel> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)
     {
         var dto = await httpClient.GetFromJsonAsync<ApiIdeaDto>(
-            $"api/categories/{categoryId}/ideas/{ideaId}");
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
         if (dto is null) return null;
 
         return new IdeaViewModel
@@ -57,12 +58,11 @@ public class IdeaService(HttpClient httpClient)
         };
     }
 
-    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int categoryId, int ideaId)
+    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
     {
         var dtos = await httpClient.GetFromJsonAsync<List<ApiTextCommentDto>>(
-            $"api/categories/{categoryId}/ideas/{ideaId}/comments");
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
         if (dtos is null) return new List<CommentViewModel>();
-
         return dtos.Select(d => new CommentViewModel
         {
             CommentId = d.CommentId,
@@ -74,6 +74,13 @@ public class IdeaService(HttpClient httpClient)
                 Count = e.Count
             }).ToList(),
         }).ToList();
+    }
+
+    private void AddTokenHeader(HttpRequestMessage request, int projectId)
+    {
+        var token = sessionService.GetToken(projectId);
+        if (!string.IsNullOrWhiteSpace(token))
+            request.Headers.Add(TokenHeader, token);
     }
 
     private class ApiTextCommentDto
