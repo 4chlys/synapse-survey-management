@@ -1,12 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}")]
-public class CommentsController(ICommentManager manager, IParticipantManager participantManager)
+public class CommentsController(
+    ICommentManager manager,
+    IParticipantManager participantManager,
+    IModerationTokenService tokenService,
+    IAiModerationService moderationService)
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("comments")]
@@ -17,7 +23,8 @@ public class CommentsController(ICommentManager manager, IParticipantManager par
 
         try
         {
-            var comment = await manager.AddTextCommentAsync(ideaId, dto.Text, dto.ParsedModerationStatus, participant);
+            var status = await ResolveModerationStatusAsync(dto.Text, dto.ModerationToken);
+            var comment = await manager.AddTextCommentAsync(ideaId, dto.Text, status, participant);
             return Ok(new { comment.CommentId, comment.Text });
         }
         catch (KeyNotFoundException e)
@@ -82,5 +89,17 @@ public class CommentsController(ICommentManager manager, IParticipantManager par
         var removed = await manager.RemoveCommentReactionAsync(commentId, dto.EmojiId, participant);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
+    }
+
+    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token)
+    {
+        if (!string.IsNullOrEmpty(token))
+        {
+            var cached = tokenService.ValidateToken(text, token);
+            if (cached.HasValue) return cached.Value;
+        }
+
+        var result = await moderationService.CheckWithAiAsync(text);
+        return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

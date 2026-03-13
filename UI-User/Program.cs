@@ -7,10 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+var apiKey = builder.Configuration["ApiKey"]
+             ?? throw new InvalidOperationException("ApiKey is not configured. Set it in appsettings.json.");
 var isDev = builder.Environment.IsDevelopment();
 
-void ConfigureApiClient(HttpClient client) =>
+void ConfigureApiClient(HttpClient client)
+{
     client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+}
 
 HttpClientHandler CreateHandler()
 {

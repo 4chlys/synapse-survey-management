@@ -1,0 +1,88 @@
+using System.Security.Cryptography;
+using System.Text;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+
+namespace SynapseEnqueteManagement.BL;
+
+/// <summary>
+/// Generates and validates HMAC-signed moderation tokens.
+/// A token encodes the SHA-256 hash of the moderated text, the resulting
+/// <see cref="ModerationStatus"/>, and a UTC timestamp. Because the token
+/// is signed with a shared secret, the API can verify that the moderation
+/// result was produced server-side and that the submitted text has not been
+/// altered since the check — without needing shared state between instances.
+/// </summary>
+public interface IModerationTokenService
+{
+    string GenerateToken(string text, ModerationStatus status);
+    ModerationStatus? ValidateToken(string text, string token, TimeSpan? maxAge = null);
+}
+
+public class ModerationTokenService : IModerationTokenService
+{
+    private readonly byte[] _key;
+    private static readonly TimeSpan DefaultMaxAge = TimeSpan.FromMinutes(10);
+
+    public ModerationTokenService(string secret)
+    {
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new ArgumentException("Moderation token secret must not be empty.", nameof(secret));
+        _key = Encoding.UTF8.GetBytes(secret);
+    }
+
+    public string GenerateToken(string text, ModerationStatus status)
+    {
+        var textHash = ComputeTextHash(text);
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var payload = $"{textHash}|{(byte)status}|{timestamp}";
+        var hmac = ComputeHmac(payload);
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{payload}|{hmac}"));
+    }
+
+    public ModerationStatus? ValidateToken(string text, string token, TimeSpan? maxAge = null)
+    {
+        try
+        {
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
+            var parts = decoded.Split('|');
+            if (parts.Length != 4) return null;
+
+            var textHash = parts[0];
+            if (!byte.TryParse(parts[1], out var statusByte)) return null;
+            if (!long.TryParse(parts[2], out var timestamp)) return null;
+            var hmac = parts[3];
+
+            // Verify HMAC
+            var payload = $"{textHash}|{statusByte}|{timestamp}";
+            if (!CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(ComputeHmac(payload)),
+                    Encoding.UTF8.GetBytes(hmac)))
+                return null;
+
+            // Verify text hash matches submitted text
+            if (ComputeTextHash(text) != textHash) return null;
+
+            // Verify not expired
+            var age = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - timestamp;
+            if (age > (maxAge ?? DefaultMaxAge).TotalSeconds || age < 0) return null;
+
+            return (ModerationStatus)statusByte;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string ComputeTextHash(string text)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(text));
+        return Convert.ToBase64String(hash);
+    }
+
+    private string ComputeHmac(string payload)
+    {
+        var hash = HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes(payload));
+        return Convert.ToBase64String(hash);
+    }
+}

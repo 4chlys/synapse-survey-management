@@ -11,11 +11,11 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         int categoryId,
         int ideaId,
         string text,
-        string moderationStatus = "Unflagged")
+        string moderationToken = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = moderationStatus });
+        request.Content = JsonContent.Create(new { Text = text, ModerationToken = moderationToken });
 
         AddTokenHeader(request, projectId);
 

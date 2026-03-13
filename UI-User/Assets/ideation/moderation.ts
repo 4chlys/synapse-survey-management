@@ -6,13 +6,15 @@ export interface ModerationCallbacks {
 }
 
 export interface ModerationResponse {
-    isAcceptable: boolean;
-    reason:       string | null;
-    flaggedBy:    'Regex' | 'AI' | null;
+    isAcceptable:    boolean;
+    reason:          string | null;
+    flaggedBy:       'Regex' | 'AI' | null;
+    moderationToken: string | null;
 }
 
 interface SuggestResponse {
-    suggestion: string | null;
+    suggestion:      string | null;
+    moderationToken: string | null;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -53,8 +55,11 @@ export async function callModerationAi(
     return callModeration('ai', text, projectId);
 }
 
-/** Called by ideationForm.ts on submit */
-export async function callSuggest(text: string, projectId: number): Promise<string | null> {
+/** Called by ideationForm.ts on submit. Returns suggestion text + its pre-approved token. */
+export async function callSuggest(
+    text: string,
+    projectId: number,
+): Promise<{ suggestion: string | null; moderationToken: string | null }> {
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/suggest`, {
             method:  'POST',
@@ -63,10 +68,10 @@ export async function callSuggest(text: string, projectId: number): Promise<stri
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: SuggestResponse = await res.json();
-        return data.suggestion ?? null;
+        return { suggestion: data.suggestion ?? null, moderationToken: data.moderationToken ?? null };
     } catch (err) {
         console.warn('Moderation suggest unreachable:', err);
-        return null;
+        return { suggestion: null, moderationToken: null };
     }
 }
 
@@ -251,14 +256,14 @@ export function wireModerationForm(
             const result = await callModeration('ai', textarea.value, projectId);
             if (result.isAcceptable) continue;
 
-            const suggestion = await callSuggest(textarea.value, projectId);
+            const suggestResult = await callSuggest(textarea.value, projectId);
             const outcome    = await showRewritePopup(
                 textarea.value,
-                suggestion,
+                suggestResult.suggestion,
                 result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
             );
 
-            if (suggestion === null) {
+            if (suggestResult.suggestion === null) {
                 anyBlocked = true;
                 onSubmitBlocked?.();
                 break;
@@ -276,10 +281,10 @@ export function wireModerationForm(
 
         if (anyBlocked) return;
 
-        const statusInput = form.querySelector<HTMLInputElement>('input[name="moderationStatus"]');
-        if (statusInput) {
-            const anyFlagged = textareas.some(ta => ta.dataset.flagged === 'true');
-            statusInput.value = anyFlagged ? 'Flagged' : 'Unflagged';
+        const tokenInput = form.querySelector<HTMLInputElement>('input[name="moderationToken"]');
+        if (tokenInput) {
+            // For survey forms the token from the last moderation check is used
+            tokenInput.value = '';
         }
 
         form.removeEventListener('submit', onSubmit);

@@ -33,11 +33,11 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         int projectId,
         int categoryId,
         string description,
-        string moderationStatus = "Unflagged")
+        string moderationToken = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas");
-        request.Content = JsonContent.Create(new { Description = description, ModerationStatus = moderationStatus });
+        request.Content = JsonContent.Create(new { Description = description, ModerationToken = moderationToken });
 
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);

@@ -13,20 +13,20 @@ export function wireIdeationForm(
         e.preventDefault();
         console.log('[moderation] submit intercepted');
 
-        const textarea    = form.querySelector<HTMLTextAreaElement>(`textarea[name="${textareaName}"]`);
-        const statusInput = form.querySelector<HTMLInputElement>('input[name="moderationStatus"]');
-        const submitBtn   = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const textarea   = form.querySelector<HTMLTextAreaElement>(`textarea[name="${textareaName}"]`);
+        const tokenInput = form.querySelector<HTMLInputElement>('input[name="moderationToken"]');
+        const submitBtn  = form.querySelector<HTMLButtonElement>('button[type="submit"]');
 
-        if (!textarea || !statusInput) {
-            console.error('[moderation] textarea or moderationStatus input not found — wired incorrectly');
-            return; // Block, don't submit without moderation
+        if (!textarea || !tokenInput) {
+            console.error('[moderation] textarea or moderationToken input not found — wired incorrectly');
+            return;
         }
 
         const text = textarea.value.trim();
         console.log('[moderation] checking text:', text.substring(0, 40));
 
         if (text.length < MIN_LENGTH) {
-            statusInput.value = 'Unflagged';
+            tokenInput.value = '';
             await submitFormViaFetch(form);
             return;
         }
@@ -43,36 +43,38 @@ export function wireIdeationForm(
             console.log('[moderation] result:', result);
 
             if (result.isAcceptable) {
-                statusInput.value = 'Unflagged';
+                tokenInput.value = result.moderationToken ?? '';
                 await submitFormViaFetch(form);
                 return;
             }
 
-            const suggestion = await callSuggest(text, projectId);
+            // Content flagged — get AI suggestion
+            const suggestResult = await callSuggest(text, projectId);
 
             const outcome = await showRewritePopup(
                 text,
-                suggestion,
+                suggestResult.suggestion,
                 result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
             );
 
-            if (suggestion === null) {
+            if (suggestResult.suggestion === null) {
                 // Pure spam — no rewrite possible, stay on page
                 return;
             }
 
             if (outcome.accepted) {
-                textarea.value    = outcome.text;
-                statusInput.value = 'Unflagged';
+                // User accepted rewrite — use suggestion text + its pre-approved token
+                textarea.value   = outcome.text;
+                tokenInput.value = suggestResult.moderationToken ?? '';
             } else {
-                statusInput.value = 'Flagged';
+                // User declined — submit original as flagged with the flagged token
+                tokenInput.value = result.moderationToken ?? '';
             }
 
             await submitFormViaFetch(form);
 
         } catch (err) {
             console.error('[moderation] error during check:', err);
-            // Block on unexpected errors
         } finally {
             if (submitBtn) {
                 submitBtn.disabled    = false;

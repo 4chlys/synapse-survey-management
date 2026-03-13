@@ -49,9 +49,9 @@ public class IdeationController(
         int projectId,
         int categoryId,
         string description,
-        string moderationStatus = "Unflagged")
+        string moderationToken = null)
     {
-        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationStatus);
+        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Index", new { projectId, categoryId });
     }
@@ -62,9 +62,9 @@ public class IdeationController(
         int categoryId,
         int ideaId,
         string text,
-        string moderationStatus = "Unflagged")
+        string moderationToken = null)
     {
-        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationStatus);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationToken);
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }

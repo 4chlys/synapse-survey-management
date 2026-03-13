@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -8,7 +9,11 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/categories/{categoryId}/ideas")]
-public class IdeasController(IIdeaManager manager, IParticipantManager participantManager)
+public class IdeasController(
+    IIdeaManager manager,
+    IParticipantManager participantManager,
+    IModerationTokenService tokenService,
+    IAiModerationService moderationService)
     : ParticipantControllerBase(participantManager)
 {
     [HttpGet]
@@ -48,7 +53,7 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
 
         try
         {
-            var status = dto.ParsedModerationStatus;
+            var status = await ResolveModerationStatusAsync(dto.Description, dto.ModerationToken);
             var idea = await manager.AddIdeaAsync(categoryId, dto.Description, status, participant);
             var ideaDto = new IdeaDto
             {
@@ -126,5 +131,23 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
             });
 
         return Ok(comments);
+    }
+
+    /// <summary>
+    /// Verifies the signed moderation token. If valid and the text matches,
+    /// uses the encoded status (no AI call). Otherwise falls back to a full
+    /// server-side moderation check.
+    /// </summary>
+    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token)
+    {
+        if (!string.IsNullOrEmpty(token))
+        {
+            var cached = tokenService.ValidateToken(text, token);
+            if (cached.HasValue) return cached.Value;
+        }
+
+        // Fallback: run moderation server-side
+        var result = await moderationService.CheckWithAiAsync(text);
+        return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

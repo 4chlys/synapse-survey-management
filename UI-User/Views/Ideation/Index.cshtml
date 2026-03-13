@@ -24,7 +24,7 @@
         <form asp-route-projectId="@projectId" asp-action="CreateIdea" method="post"
               class="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <input type="hidden" name="categoryId" value="@category.CategoryId"/>
-            <input type="hidden" name="moderationStatus" value="Unflagged"/>
+            <input type="hidden" name="moderationToken" value=""/>
             <div class="mb-4">
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Description</label>
                 <textarea name="description" required rows="4"

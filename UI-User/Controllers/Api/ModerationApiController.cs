@@ -11,21 +11,37 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     public async Task<ActionResult<ModerationResponse>> Regex(int projectId, [FromBody] ModerationRequest request)
     {
         var result = await moderationService.CheckRegexAsync(projectId, request.Text);
-        return Ok(result);
+        return Ok(new
+        {
+            result.IsAcceptable,
+            result.Reason,
+            result.FlaggedBy,
+            result.ModerationToken,
+        });
     }
 
     [HttpPost("ai")]
     public async Task<ActionResult<ModerationResponse>> Ai(int projectId, [FromBody] ModerationRequest request)
     {
         var result = await moderationService.CheckAiAsync(projectId, request.Text);
-        return Ok(result);
+        return Ok(new
+        {
+            result.IsAcceptable,
+            result.Reason,
+            result.FlaggedBy,
+            result.ModerationToken,
+        });
     }
 
     [HttpPost("suggest")]
     public async Task<ActionResult<SuggestResponse>> Suggest(int projectId, [FromBody] ModerationRequest request)
     {
         var result = await moderationService.SuggestAsync(projectId, request.Text);
-        return Ok(result);
+        return Ok(new
+        {
+            result.Suggestion,
+            result.ModerationToken,
+        });
     }
 }
 

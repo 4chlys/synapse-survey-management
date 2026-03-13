@@ -37,9 +37,11 @@ public class ModerationResponse
     public bool IsAcceptable { get; set; } = true;
     public string Reason { get; set; }
     public string FlaggedBy { get; set; }
+    public string ModerationToken { get; set; }
 }
 
 public class SuggestResponse
 {
     public string Suggestion { get; set; }
+    public string ModerationToken { get; set; }
 }

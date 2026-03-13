@@ -2,6 +2,7 @@ using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
@@ -58,6 +59,10 @@ builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 
+// Moderation token service (signed nonce — stateless across instances)
+var tokenSecret = builder.Configuration["ApiKey"] ?? "dev-api-key-synapse-2026";
+builder.Services.AddSingleton<IModerationTokenService>(new ModerationTokenService(tokenSecret));
+
 // Vertex AI (optional — controlled by use_ai in ai-config.json)
 if (useAi)
 {
@@ -95,6 +100,7 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

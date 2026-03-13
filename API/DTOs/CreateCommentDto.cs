@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs;
 
@@ -9,10 +8,10 @@ public class CreateCommentDto
     [StringLength(500, MinimumLength = 1)]
     public string Text { get; set; }
 
-    public string ModerationStatus { get; set; } = "Unflagged";
-
-    public ModerationStatus ParsedModerationStatus =>
-        Enum.TryParse<ModerationStatus>(ModerationStatus, ignoreCase: true, out var status)
-            ? status
-            : BL.Domain.Project.Enums.ModerationStatus.Unflagged;
+    /// <summary>
+    /// Signed token from the moderation endpoint. If valid and the text
+    /// matches, the server uses the encoded status. If missing/invalid/expired,
+    /// the server runs moderation again.
+    /// </summary>
+    public string ModerationToken { get; set; }
 }
