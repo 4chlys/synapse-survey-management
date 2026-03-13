@@ -12,7 +12,7 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : 
         return await repository.ReadAsync<Idea>(
             filters: [i => i.Category.CategoryId == categoryId],
             includes: [i => i.Comments],
-            includeStrings: ["Comments.Emoji"]
+            includeStrings: ["Comments.Emoji", "Comments.Participant"]
         );
     }
 
@@ -45,8 +45,10 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : 
             includeStrings:
             [
                 "Comments.Emoji",
+                "Comments.Participant",
                 "Comments.EmojiReactions",
-                "Comments.EmojiReactions.Emoji"
+                "Comments.EmojiReactions.Emoji",
+                "Comments.EmojiReactions.Participant"
             ]
         );
     }

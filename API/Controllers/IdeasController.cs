@@ -14,6 +14,13 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
     [HttpGet]
     public async Task<ActionResult<IEnumerable<IdeaDto>>> GetIdeasByCategory(int categoryId)
     {
+        int? participantId = null;
+        if (TryGetParticipantToken(out var token))
+        {
+            var p = await participantManager.GetParticipantBySessionTokenAsync(token);
+            participantId = p?.ParticipantId;
+        }
+
         var ideas = await manager.GetIdeasByCategoryAsync(categoryId);
         var dtos = ideas.Select(i => new IdeaDto
         {
@@ -26,7 +33,8 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
                 {
                     EmojiId = g.First().EmojiId,
                     Symbol = g.Key,
-                    Count = g.Count()
+                    Count = g.Count(),
+                    PostedByCurrentUser = participantId.HasValue && g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
                 }).ToList()
         });
         return Ok(dtos);
@@ -59,6 +67,13 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
     [HttpGet("{ideaId}")]
     public async Task<ActionResult<IdeaDto>> GetIdeaById(int categoryId, int ideaId)
     {
+        int? participantId = null;
+        if (TryGetParticipantToken(out var token))
+        {
+            var p = await participantManager.GetParticipantBySessionTokenAsync(token);
+            participantId = p?.ParticipantId;
+        }
+
         var idea = await manager.GetIdeaByIdAsync(ideaId);
         if (idea == null) return NotFound();
 
@@ -73,7 +88,8 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
                 {
                     EmojiId = g.First().EmojiId,
                     Symbol = g.Key,
-                    Count = g.Count()
+                    Count = g.Count(),
+                    PostedByCurrentUser = participantId.HasValue && g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
                 }).ToList()
         });
     }
@@ -81,6 +97,13 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
     [HttpGet("{ideaId}/comments")]
     public async Task<ActionResult<IEnumerable<TextCommentDto>>> GetCommentsByIdea(int ideaId)
     {
+        int? participantId = null;
+        if (TryGetParticipantToken(out var token))
+        {
+            var p = await participantManager.GetParticipantBySessionTokenAsync(token);
+            participantId = p?.ParticipantId;
+        }
+
         var idea = await manager.GetIdeaByIdAsync(ideaId);
         if (idea == null) return NotFound();
 
@@ -97,7 +120,8 @@ public class IdeasController(IIdeaManager manager, IParticipantManager participa
                     {
                         EmojiId = g.First().EmojiId,
                         Symbol = g.Key,
-                        Count = g.Count()
+                        Count = g.Count(),
+                        PostedByCurrentUser = participantId.HasValue && g.Any(r => r.Participant.ParticipantId == participantId.Value)
                     }).ToList()
             });
 

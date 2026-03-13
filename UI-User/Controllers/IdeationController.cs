@@ -86,4 +86,22 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
         await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveIconComment(int projectId, int categoryId, int ideaId, int emojiId, string returnPage)
+    {
+        await commentService.RemoveIconCommentAsync(projectId, categoryId, ideaId, emojiId);
+
+        if (returnPage == "Index")
+            return RedirectToAction("Index", new { projectId, categoryId });
+
+        return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveCommentEmoji(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
+    {
+        await commentService.RemoveCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+        return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
+    }
 }

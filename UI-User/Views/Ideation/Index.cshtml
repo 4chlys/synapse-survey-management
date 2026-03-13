@@ -80,11 +80,22 @@
                         @* Show existing emoji reactions *@
                         @foreach (var emoji in idea.Emojis)
                         {
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100
-                                         border border-gray-200 rounded-full text-xs min-w-[3rem] leading-none">
-                                <span class="text-lg leading-none">@emoji.Symbol</span>
-                                <span class="font-semibold text-gray-700 text-sm leading-none">@emoji.Count</span>
-                            </span>
+                            <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")" method="post"
+                                  onclick="event.stopPropagation()">
+                                <input type="hidden" name="projectId" value="@projectId" />
+                                <input type="hidden" name="categoryId" value="@category.CategoryId" />
+                                <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                                <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
+                                <input type="hidden" name="returnPage" value="Index" />
+                                <button type="submit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors
+                                               @(emoji.PostedByCurrentUser
+                                                   ? "bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200"
+                                                   : "bg-gray-100 border border-gray-200 hover:bg-gray-200")">
+                                    <span class="text-lg leading-none">@emoji.Symbol</span>
+                                    <span class="font-semibold @(emoji.PostedByCurrentUser ? "text-emerald-700" : "text-gray-700") text-sm leading-none">@emoji.Count</span>
+                                </button>
+                            </form>
                         }
 
                         @* Plus button to open emoji picker *@

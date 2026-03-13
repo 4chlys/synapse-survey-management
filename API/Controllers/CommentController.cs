@@ -44,6 +44,17 @@ public class CommentController(ICommentManager manager, IParticipantManager part
         }
     }
 
+    [HttpDelete("iconcomments")]
+    public async Task<ActionResult> RemoveIconComment(int ideaId, [FromBody] AddIconCommentDto dto)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
+        var removed = await manager.RemoveIconCommentAsync(ideaId, dto.EmojiId, participant);
+        if (!removed) return NotFound("Reaction not found.");
+        return NoContent();
+    }
+
     [HttpPost("comments/{commentId}/emoji")]
     public async Task<ActionResult> AddCommentEmoji(int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
     {
@@ -60,5 +71,16 @@ public class CommentController(ICommentManager manager, IParticipantManager part
         {
             return NotFound(e.Message);
         }
+    }
+
+    [HttpDelete("comments/{commentId}/emoji")]
+    public async Task<ActionResult> RemoveCommentEmoji(int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
+        var removed = await manager.RemoveCommentReactionAsync(commentId, dto.EmojiId, participant);
+        if (!removed) return NotFound("Reaction not found.");
+        return NoContent();
     }
 }

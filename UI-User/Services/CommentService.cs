@@ -36,6 +36,24 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> RemoveIconCommentAsync(int projectId, int categoryId, int ideaId, int emojiId)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments");
+        request.Content = JsonContent.Create(new { EmojiId = emojiId });
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> RemoveCommentEmojiAsync(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji");
+        request.Content = JsonContent.Create(new { EmojiId = emojiId });
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
+        return response.IsSuccessStatusCode;
+    }
+
     private void AddTokenHeader(HttpRequestMessage request, int projectId)
     {
         var token = sessionService.GetToken(projectId);

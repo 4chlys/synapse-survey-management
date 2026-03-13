@@ -9,7 +9,10 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 
     public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId)
     {
-        var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/projects/{projectId}/categories/{categoryId}/ideas");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/categories/{categoryId}/ideas");
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
+        var dtos = await response.Content.ReadFromJsonAsync<List<ApiIdeaDto>>();
         if (dtos is null) return new List<IdeaViewModel>();
         return dtos.Select(d => new IdeaViewModel
         {
@@ -20,7 +23,8 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
             {
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
-                Count = e.Count
+                Count = e.Count,
+                PostedByCurrentUser = e.PostedByCurrentUser
             }).ToList()
         }).ToList();
     }
@@ -40,8 +44,11 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 
     public async Task<IdeaViewModel> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)
     {
-        var dto = await httpClient.GetFromJsonAsync<ApiIdeaDto>(
+        var request = new HttpRequestMessage(HttpMethod.Get,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
+        var dto = await response.Content.ReadFromJsonAsync<ApiIdeaDto>();
         if (dto is null) return null;
 
         return new IdeaViewModel
@@ -53,15 +60,19 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
             {
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
-                Count = e.Count
+                Count = e.Count,
+                PostedByCurrentUser = e.PostedByCurrentUser
             }).ToList()
         };
     }
 
     public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
     {
-        var dtos = await httpClient.GetFromJsonAsync<List<ApiTextCommentDto>>(
+        var request = new HttpRequestMessage(HttpMethod.Get,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
+        var dtos = await response.Content.ReadFromJsonAsync<List<ApiTextCommentDto>>();
         if (dtos is null) return new List<CommentViewModel>();
         return dtos.Select(d => new CommentViewModel
         {
@@ -71,7 +82,8 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
             {
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
-                Count = e.Count
+                Count = e.Count,
+                PostedByCurrentUser = e.PostedByCurrentUser
             }).ToList(),
         }).ToList();
     }
@@ -95,6 +107,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         public int EmojiId { get; set; }
         public string Symbol { get; set; }
         public int Count { get; set; }
+        public bool PostedByCurrentUser { get; set; }
     }
 
     private class ApiIdeaDto

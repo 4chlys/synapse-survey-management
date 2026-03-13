@@ -64,6 +64,15 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
                                   && ic.TextComment == null);
     }
 
+    public async Task<bool> RemoveIconCommentAsync(int ideaId, int emojiId, Participant participant)
+    {
+        return await repository.DeleteAsync<IconComment>(
+            ic => ic.Participant.ParticipantId == participant.ParticipantId
+                  && ic.EmojiId == emojiId
+                  && ic.Idea.IdeaId == ideaId
+                  && ic.TextComment == null);
+    }
+
     public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId, Participant participant)
     {
         var comment = await repository.ReadByIdAsync<TextComment>(commentId);
@@ -92,5 +101,13 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
             duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
                                   && ic.EmojiId == emojiId
                                   && ic.TextComment.CommentId == commentId);
+    }
+
+    public async Task<bool> RemoveCommentReactionAsync(int commentId, int emojiId, Participant participant)
+    {
+        return await repository.DeleteAsync<IconComment>(
+            ic => ic.Participant.ParticipantId == participant.ParticipantId
+                  && ic.EmojiId == emojiId
+                  && ic.TextComment.CommentId == commentId);
     }
 }
