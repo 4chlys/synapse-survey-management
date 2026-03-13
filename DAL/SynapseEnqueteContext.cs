@@ -30,12 +30,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
         builder.Entity<Project>(e =>
         {
             e.HasOne(p => p.Questionnaire)
-                .WithOne()
+                .WithOne(q => q.Project)
                 .HasForeignKey<Questionnaire>("ProjectId")
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasOne(p => p.Introduction)
-                .WithOne()
+                .WithOne(i => i.Project)
                 .HasForeignKey<Introduction>("ProjectId")
                 .OnDelete(DeleteBehavior.Cascade);
 
