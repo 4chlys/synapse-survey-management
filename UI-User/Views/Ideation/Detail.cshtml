@@ -1,6 +1,6 @@
 ﻿@model SynapseEnqueteManagement.UI.User.Models.IdeaViewModel
 @{
-    var category = ViewBag.Category as SynapseEnqueteManagement.UI.User.Models.Category;
+    var category = ViewBag.Category as SynapseEnqueteManagement.UI.User.Models.CategoryViewModel;
     var projectId = ViewBag.ProjectId ?? 1;
     var categoryId = ViewBag.CategoryId ?? 1;
     var comments = ViewBag.Comments as List<SynapseEnqueteManagement.UI.User.Models.CommentViewModel>

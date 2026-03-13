@@ -1,6 +1,6 @@
 ﻿namespace SynapseEnqueteManagement.UI.User.Models;
 
-public class CommentEmojiModel
+public class CommentEmojiViewModel
 {
     public int EmojiId { get; set; }
     public string Symbol { get; set; }

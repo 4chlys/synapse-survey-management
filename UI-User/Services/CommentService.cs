@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class CommentService(HttpClient httpClient, ISessionService sessionService)
@@ -8,19 +10,34 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         int projectId,
         int categoryId,
         int ideaId,
-        string text,
-        string moderationStatus = "Unflagged")
+        string text)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = moderationStatus });
+        var moderationRequest = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation");
+        moderationRequest.Content = JsonContent.Create(new { Text = text });
+
+        var moderationResponse = await httpClient.SendAsync(moderationRequest);
+        if (!moderationResponse.IsSuccessStatusCode) return false;
+
+        var json = await moderationResponse.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(json);
+
+        bool isAcceptable = result.GetProperty("isAcceptable").GetBoolean();
+        if (!isAcceptable) return false;
+
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
+        request.Content = JsonContent.Create(new { Text = text, ModerationStatus = "Flagged" });
+
         AddTokenHeader(request, projectId);
+
         var response = await httpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
     public async Task<bool> AddIconCommentAsync(int projectId, int categoryId, int ideaId, int emojiId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments");
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments");
         request.Content = JsonContent.Create(new { EmojiId = emojiId });
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
@@ -29,7 +46,8 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
 
     public async Task<bool> AddCommentEmojiAsync(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji");
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji");
         request.Content = JsonContent.Create(new { EmojiId = emojiId });
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
@@ -66,7 +84,6 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         public int CommentId { get; set; }
         public string Text { get; set; }
         public List<ApiIconCommentDto> Emojis { get; set; } = new();
-
     }
 
     private class ApiIconCommentDto
