@@ -17,4 +17,9 @@ public class CategoryService
         return await _httpClient.GetFromJsonAsync<List<Category>>(
             $"api/projects/{projectId}/categories") ?? new List<Category>();
     }
+
+    public async Task<Category> GetCategoryByIdAsync(int categoryId, int projectId)
+    {
+        return await _httpClient.GetFromJsonAsync<Category>($"api/projects/{projectId}/categories/{categoryId}");
+    }
 }

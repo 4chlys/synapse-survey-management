@@ -62,7 +62,7 @@ public class QuestionnaireApiService : IQuestionnaireApiService
 
     public async Task<bool> HasParticipantRespondedAsync(int projectId, string participantToken)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
         request.Headers.Add("X-Participant-Token", participantToken);
 
         var response = await _httpClient.SendAsync(request);

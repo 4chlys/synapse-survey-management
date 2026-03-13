@@ -21,7 +21,7 @@ string dbPath = Path.Combine(solutionRoot, "SynapseEnqueteManagement.db");
 // Configure SQLite to use the database file in the solution root
 optionsBuilder.UseSqlite($"Data Source={dbPath}");
 
-var context = new SynapseEnqueteContext(optionsBuilder.Options);
+using var context = new SynapseEnqueteContext(optionsBuilder.Options);
 
 IRepository repository = new Repository(context);
 

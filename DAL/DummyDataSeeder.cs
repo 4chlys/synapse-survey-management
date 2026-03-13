@@ -1,4 +1,4 @@
-﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -65,7 +65,15 @@ public class DummyDataSeeder
         project.Categories.Add(new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" });
 
         context.Projects.Add(project);
-
+        
+        context.Emojis.AddRange(
+            new Emoji { Symbol = "❤️", Name = "heart" },
+            new Emoji { Symbol = "👍", Name = "thumbsup" },
+            new Emoji { Symbol = "🔥", Name = "fire" },
+            new Emoji { Symbol = "✅", Name = "check" }
+        );
+        
         context.SaveChanges();
     }
+    
 }
