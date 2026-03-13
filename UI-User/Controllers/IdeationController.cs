@@ -16,17 +16,17 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
         var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
         if (category == null) return NotFound();
 
-        var ideas = await ideaService.GetIdeasByCategoryAsync(categoryId);
+        var ideas = await ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
         ViewBag.Category = category;
         return View(ideas);
     }
 
     public async Task<IActionResult> Detail(int projectId, int categoryId, int ideaId)
     {
-        var idea = await ideaService.GetIdeaByIdAsync(categoryId, ideaId);
+        var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
         if (idea == null) return NotFound();
 
-        var comments = await ideaService.GetCommentsByIdeaAsync(categoryId, ideaId);
+        var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
         var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
 
         ViewBag.Category = category;
@@ -41,7 +41,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> CreateIdea(int projectId, int categoryId, string description)
     {
-        var success = await ideaService.CreateIdeaAsync(categoryId, description);
+        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description);
         if (!success) return BadRequest("Failed to create idea");
         return RedirectToAction("Index", new { projectId, categoryId });
     }
@@ -49,7 +49,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddComment(int projectId, int categoryId, int ideaId, string text)
     {
-        var success = await commentService.AddCommentAsync(categoryId, ideaId, text);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text);
         if (!success) return BadRequest("Failed to add comment");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
@@ -57,7 +57,7 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddIconComment(int projectId, int categoryId, int ideaId, int emojiId, string returnPage)
     {
-        var success = await commentService.AddIconCommentAsync(categoryId, ideaId, emojiId);
+        var success = await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
         if (!success) return BadRequest("Failed to add emoji");
 
         if (returnPage == "Index")
@@ -69,9 +69,8 @@ public class IdeationController(CategoryService categoryService, IdeaService ide
     [HttpPost]
     public async Task<IActionResult> AddCommentEmoji(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
     {
-        var success = await commentService.AddCommentEmojiAsync(categoryId, ideaId, commentId, emojiId);
+        var success = await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
         if (!success) return BadRequest("Failed to add emoji to comment");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
-    
 }

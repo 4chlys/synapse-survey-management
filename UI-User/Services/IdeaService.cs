@@ -5,9 +5,9 @@ namespace SynapseEnqueteManagement.UI.User.Services;
 
 public class IdeaService(HttpClient httpClient)
 {
-    public async Task<List<Idea>> GetIdeasByCategoryAsync(int categoryId)
+    public async Task<List<Idea>> GetIdeasByCategoryAsync(int projectId, int categoryId)
     {
-        var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/categories/{categoryId}/ideas");
+        var dtos = await httpClient.GetFromJsonAsync<List<ApiIdeaDto>>($"api/projects/{projectId}/categories/{categoryId}/ideas");
         if (dtos is null) return new List<Idea>();
 
         return dtos.Select(d => new Idea
@@ -24,19 +24,19 @@ public class IdeaService(HttpClient httpClient)
         }).ToList();
     }
 
-    public async Task<bool> CreateIdeaAsync(int categoryId, string description)
+    public async Task<bool> CreateIdeaAsync(int projectId, int categoryId, string description)
     {
-        var response = await httpClient.PostAsJsonAsync($"api/categories/{categoryId}/ideas", new
+        var response = await httpClient.PostAsJsonAsync($"api/projects/{projectId}/categories/{categoryId}/ideas", new
         {
             Description = description
         });
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<Idea> GetIdeaByIdAsync(int categoryId, int ideaId)
+    public async Task<Idea> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)
     {
         var dto = await httpClient.GetFromJsonAsync<ApiIdeaDto>(
-            $"api/categories/{categoryId}/ideas/{ideaId}");
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
         if (dto is null) return null;
 
         return new Idea
@@ -53,10 +53,10 @@ public class IdeaService(HttpClient httpClient)
         };
     }
 
-    public async Task<List<Comment>> GetCommentsByIdeaAsync(int categoryId, int ideaId)
+    public async Task<List<Comment>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
     {
         var dtos = await httpClient.GetFromJsonAsync<List<ApiTextCommentDto>>(
-            $"api/categories/{categoryId}/ideas/{ideaId}/comments");
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
         if (dtos is null) return new List<Comment>();
 
         return dtos.Select(d => new Comment
@@ -77,7 +77,7 @@ public class IdeaService(HttpClient httpClient)
         public int CommentId { get; set; }
         public string Text { get; set; }
         public List<ApiIconCommentDto> Emojis { get; set; } = new();
-        
+
     }
 
     private class ApiIconCommentDto

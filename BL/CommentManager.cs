@@ -7,7 +7,7 @@ namespace SynapseEnqueteManagement.BL;
 
 public class CommentManager(IRepository repository, ILogger<CommentManager> logger) : ICommentManager
 {
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, string text, ModerationStatus status)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, string text, ModerationStatus status, Participant participant)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId);
         if (idea == null)
@@ -20,7 +20,8 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
         {
             Idea = idea,
             ModerationStatus = status,
-            Text = text
+            Text = text,
+            Participant = participant
         };
 
         return await repository.CreateAsync(comment);
@@ -33,7 +34,7 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
         );
     }
 
-    public async Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId)
+    public async Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId, Participant participant)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId);
         if (idea == null)
@@ -52,13 +53,14 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
         var iconComment = new IconComment
         {
             Idea = idea,
-            EmojiId = emojiId
+            EmojiId = emojiId,
+            Participant = participant
         };
 
         return await repository.CreateAsync(iconComment);
     }
 
-    public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId)
+    public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId, Participant participant)
     {
         var comment = await repository.ReadByIdAsync<TextComment>(commentId);
         if (comment == null)
@@ -78,7 +80,8 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
         {
             Idea = comment.Idea,
             EmojiId = emojiId,
-            TextComment = comment
+            TextComment = comment,
+            Participant = participant
         };
 
         return await repository.CreateAsync(reaction);

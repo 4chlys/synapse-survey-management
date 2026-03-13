@@ -12,9 +12,8 @@ public class ResponsesController(
     IQuestionnaireManager questionnaireManager,
     IParticipantManager participantManager,
     IResponseManager responseManager)
-    : ControllerBase
+    : ParticipantControllerBase(participantManager)
 {
-    private const string SessionHeader = "X-Participant-Token";
 
     /// <summary>
     /// Creates an anonymous participant and returns a session token.
@@ -91,16 +90,12 @@ public class ResponsesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!TryGetParticipantToken(out var token))
-            return Unauthorized("Missing or invalid X-Participant-Token header. Call POST /participants first.");
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
 
         var question = await questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
         if (question is null)
             return NotFound($"Question with id {createDto.QuestionId} not found.");
-
-        var participant = await participantManager.GetParticipantBySessionTokenAsync(token);
-        if (participant is null)
-            return NotFound("Participant session not found.");
 
         var response = await responseManager.AddResponseAsync(createDto.Value, question, participant);
         var dto = MapToDto(response);
@@ -119,18 +114,6 @@ public class ResponsesController(
 
         var hasResponded = await participantManager.HasParticipantRespondedAsync(token);
         return Ok(new { HasResponded = hasResponded });
-    }
-
-    /// <summary>
-    /// Extracts the participant GUID token from the X-Participant-Token header.
-    /// </summary>
-    private bool TryGetParticipantToken(out Guid token)
-    {
-        token = Guid.Empty;
-        if (!Request.Headers.TryGetValue(SessionHeader, out var headerValue))
-            return false;
-
-        return Guid.TryParse(headerValue.ToString(), out token);
     }
 
     private static ResponseDto MapToDto(Response response)
