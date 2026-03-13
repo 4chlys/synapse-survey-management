@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -35,7 +36,8 @@ public class IdeasController(IIdeaManager manager) : ControllerBase
     {
         try
         {
-            var idea = await manager.AddIdeaAsync(categoryId, dto.Description, TODO, TODO);
+            var status = dto.ParsedModerationStatus;
+            var idea = await manager.AddIdeaAsync(categoryId, dto.Description, status, TODO);
             var ideaDto = new IdeaDto
             {
                 IdeaId = idea.IdeaId,
