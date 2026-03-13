@@ -6,26 +6,12 @@ namespace SynapseEnqueteManagement.BL;
 
 public class QuestionnaireManager(IRepository repository) : IQuestionnaireManager
 {
-    public async Task<IEnumerable<Question>> GetQuestionsAsync()
-    {
-        return await repository.ReadAsync<Question>(
-            includes: [q => q.Questionnaire]
-        );
-    }
-
-    public async Task<Questionnaire> GetFirstQuestionnaireAsync()
-    {
-        return await repository.ReadSingleAsync<Questionnaire>();
-    }
-
     public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
     {
-        var project = await repository.ReadSingleAsync<Project>(
-            filters: [p => p.ProjectId == projectId],
-            includes: [p => p.Questionnaire],
-            includeStrings: ["Questionnaire.Questions"]
+        return await repository.ReadSingleAsync<Questionnaire>(
+            filters: [q => q.Project.ProjectId == projectId],
+            includeStrings: ["Questions"]
         );
-        return project?.Questionnaire;
     }
 
     public async Task<Question> GetQuestionByIdAsync(int questionId)

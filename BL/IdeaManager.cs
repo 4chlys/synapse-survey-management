@@ -53,8 +53,8 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : 
 
     public async Task<Idea> GetIdeaByIdAsync(int ideaId)
     {
-        return await repository.ReadSingleAsync<Idea>(
-            filters: [i => i.IdeaId == ideaId],
+        return await repository.ReadByIdAsync<Idea>(
+            ideaId,
             includes: [i => i.Comments],
             includeStrings: [
                 "Comments.Emoji",
@@ -98,7 +98,7 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger) : 
 
     public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId)
     {
-        var comment = await repository.ReadByIdAsync<TextComment>(commentId);
+        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includes: [c => c.Idea]);
         if (comment == null)
         {
             logger.LogWarning("TextComment {CommentId} not found", commentId);

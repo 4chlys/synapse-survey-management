@@ -25,10 +25,6 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
 
     public async Task<bool> HasParticipantRespondedAsync(Guid sessionToken)
     {
-        var participant = await repository.ReadSingleAsync<Participant>(
-            filters: [p => p.SessionToken == sessionToken],
-            includes: [p => p.Responses]
-        );
-        return participant?.Responses.Count > 0;
+        return await repository.ExistsAsync<Response>(r => r.Participant.SessionToken == sessionToken);
     }
 }
