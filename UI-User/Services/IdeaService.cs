@@ -80,7 +80,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         {
             CommentId = d.CommentId,
             Text = d.Text,
-            Emojis = d.Emojis.Select(e => new CommentEmojiModel
+            Emojis = d.Emojis.Select(e => new CommentEmojiViewModel
             {
                 EmojiId = e.EmojiId,
                 Symbol = e.Symbol,
