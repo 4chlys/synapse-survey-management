@@ -23,7 +23,7 @@ public class RequiresSurveyCompletionFilter(
 
         if (!hasResponded)
         {
-            context.Result = new RedirectToActionResult("Index", "Survey", new { projectId });
+            context.Result = new RedirectToActionResult("Index", "ProjectLandingPage", new { projectId });
             return;
         }
 

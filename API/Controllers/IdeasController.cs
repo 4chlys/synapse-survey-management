@@ -103,7 +103,7 @@ public class IdeasController(
         Description = i.Description,
         CreatedAt = i.CreatedAt,
         CommentsCount = i.Comments.OfType<TextComment>().Count(),
-        IsOwnedByCurrentUser = participantId.HasValue && i.Participant.ParticipantId == participantId.Value,
+        IsOwnedByCurrentUser = participantId.HasValue && i.Participant?.ParticipantId == participantId.Value,
         IsFlagged = i.Status == ModerationStatus.Flagged,
         Emojis = GroupEmojiReactions(i.Comments.OfType<IconComment>(), participantId)
     };
@@ -113,7 +113,7 @@ public class IdeasController(
         CommentId = c.CommentId,
         Text = c.Text,
         CreatedAt = c.CreatedAt,
-        IsOwnedByCurrentUser = participantId.HasValue && c.Participant.ParticipantId == participantId.Value,
+        IsOwnedByCurrentUser = participantId.HasValue && c.Participant?.ParticipantId == participantId.Value,
         IsFlagged = c.ModerationStatus == ModerationStatus.Flagged,
         Emojis = GroupEmojiReactions(c.EmojiReactions.Where(r => r.Emoji != null), participantId)
     };
