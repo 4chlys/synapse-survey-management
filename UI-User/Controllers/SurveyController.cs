@@ -7,18 +7,18 @@ namespace SynapseEnqueteManagement.UI.User.Controllers;
 
 public class SurveyController : Controller
 {
-    private readonly IQuestionnaireApiService _questionnaireService;
+    private readonly IQuestionnaireApiService _questionnaireApiService;
     private readonly ISessionService _sessionService;
     private readonly IProjectApiService _projectApiService;
     private readonly IFormStrategyFactory _formStrategyFactory;
 
     public SurveyController(
-        IQuestionnaireApiService questionnaireService,
+        IQuestionnaireApiService questionnaireApiService,
         ISessionService sessionService,
         IProjectApiService projectApiService,
         IFormStrategyFactory formStrategyFactory)
     {
-        _questionnaireService = questionnaireService;
+        _questionnaireApiService = questionnaireApiService;
         _sessionService = sessionService;
         _projectApiService = projectApiService;
         _formStrategyFactory = formStrategyFactory;
@@ -33,14 +33,14 @@ public class SurveyController : Controller
         if (project.ProjectState != "Active")
             return View("Inactive");
 
-        var token = _sessionService.GetToken(projectId);
-        if (!string.IsNullOrWhiteSpace(token)
-            && await _questionnaireService.HasParticipantRespondedAsync(projectId, token))
-        {
-            return RedirectToAction("Index", "Category", new { projectId });
-        }
+        // var token = _sessionService.GetToken(projectId);
+        // if (!string.IsNullOrWhiteSpace(token)
+        //     && await _questionnaireApiService.HasParticipantRespondedAsync(projectId, token))
+        // {
+        //     return RedirectToAction("Index", "Category", new { projectId });
+        // }
 
-        var model = await _questionnaireService.GetSurveyAsync(projectId);
+        var model = await _questionnaireApiService.GetSurveyAsync(projectId);
         if (model is null)
             return View("NotFound");
 
@@ -65,7 +65,7 @@ public class SurveyController : Controller
                 answers[questionId] = value;
         }
 
-        var participantToken = await _questionnaireService.SubmitSurveyAsync(projectId, answers);
+        var participantToken = await _questionnaireApiService.SubmitSurveyAsync(projectId, answers);
 
         _sessionService.SetToken(projectId, participantToken);
 

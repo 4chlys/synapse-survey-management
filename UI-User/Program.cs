@@ -103,9 +103,9 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "project",
-    pattern: "{projectId:int}/{controller=Survey}/{action=Index}/{id?}")
+    pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapGet("/", () => Results.Redirect("/1/Survey"));
+app.MapGet("/", () => Results.Redirect("/1"));
 
 app.Run();
