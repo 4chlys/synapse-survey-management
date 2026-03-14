@@ -8,23 +8,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}")]
-public class ResponsesController : ControllerBase
+public class ResponsesController(
+    IQuestionnaireManager questionnaireManager,
+    IParticipantManager participantManager,
+    IResponseManager responseManager)
+    : ParticipantControllerBase(participantManager)
 {
-    private const string SessionHeader = "X-Participant-Token";
-    private readonly IQuestionnaireManager _questionnaireManager;
-    private readonly IParticipantManager _participantManager;
-    private readonly IResponseManager _responseManager;
-
-    public ResponsesController(
-        IQuestionnaireManager questionnaireManager,
-        IParticipantManager participantManager,
-        IResponseManager responseManager)
-    {
-        _questionnaireManager = questionnaireManager;
-        _participantManager = participantManager;
-        _responseManager = responseManager;
-    }
-
     /// <summary>
     /// Creates an anonymous participant and returns a session token.
     /// The client stores this token in localStorage and sends it as
@@ -33,21 +22,13 @@ public class ResponsesController : ControllerBase
     [HttpPost("participants")]
     public async Task<ActionResult<ParticipantDto>> StartSession(int projectId)
     {
-        var questionnaire = await _questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
-        var participant = await _participantManager.AddParticipantAsync(questionnaire);
+        var participant = await AddParticipantAsync(questionnaire, projectId);
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
-    }
-
-    [HttpGet("responses")]
-    public async Task<ActionResult<IEnumerable<ResponseDto>>> GetAllResponses(int projectId)
-    {
-        var responses = await _responseManager.GetResponsesByProjectIdAsync(projectId);
-        var dtos = responses.Select(MapToDto).ToList();
-        return Ok(dtos);
     }
 
     /// <summary>
@@ -60,13 +41,13 @@ public class ResponsesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var questionnaire = await _questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
         try
         {
-            _questionnaireManager.ValidateMandatoryAnswers(
+            questionnaireManager.ValidateMandatoryAnswers(
                 questionnaire,
                 submitDto.Answers.Select(a => (a.QuestionId, a.Value)));
         }
@@ -75,9 +56,17 @@ public class ResponsesController : ControllerBase
             return BadRequest(ex.Message);
         }
 
-        var participant = await _participantManager.AddParticipantAsync(questionnaire);
+        var participant = await AddParticipantAsync(questionnaire, projectId);
 
-        await _responseManager.AddResponsesAsync(participant, submitDto.Answers.Select(a => (a.QuestionId, a.Value)));
+        foreach (var answer in submitDto.Answers)
+        {
+            if (string.IsNullOrWhiteSpace(answer.Value)) continue;
+
+            var question = await questionnaireManager.GetQuestionByIdAsync(answer.QuestionId);
+            if (question is null) continue;
+
+            await responseManager.AddResponseAsync(answer.Value, question, participant);
+        }
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
@@ -92,20 +81,16 @@ public class ResponsesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!TryGetParticipantToken(out var token))
-            return Unauthorized("Missing or invalid X-Participant-Token header. Call POST /participants first.");
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
 
-        var question = await _questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
+        var question = await questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
         if (question is null)
             return NotFound($"Question with id {createDto.QuestionId} not found.");
 
-        var participant = await _participantManager.GetParticipantBySessionTokenAsync(token);
-        if (participant is null)
-            return NotFound("Participant session not found.");
-
-        var response = await _responseManager.AddResponseAsync(createDto.Value, question, participant);
+        var response = await responseManager.AddResponseAsync(createDto.Value, question, participant);
         var dto = MapToDto(response);
-        return CreatedAtAction(nameof(GetAllResponses), new { projectId, id = dto.ResponseId }, dto);
+        return Created(string.Empty, dto);
     }
 
     /// <summary>
@@ -118,20 +103,8 @@ public class ResponsesController : ControllerBase
         if (!TryGetParticipantToken(out var token))
             return Ok(new { HasResponded = false });
 
-        var hasResponded = await _participantManager.HasParticipantRespondedAsync(token);
+        var hasResponded = await HasParticipantRespondedAsync(token);
         return Ok(new { HasResponded = hasResponded });
-    }
-
-    /// <summary>
-    /// Extracts the participant GUID token from the X-Participant-Token header.
-    /// </summary>
-    private bool TryGetParticipantToken(out Guid token)
-    {
-        token = Guid.Empty;
-        if (!Request.Headers.TryGetValue(SessionHeader, out var headerValue))
-            return false;
-
-        return Guid.TryParse(headerValue.ToString(), out token);
     }
 
     private static ResponseDto MapToDto(Response response)

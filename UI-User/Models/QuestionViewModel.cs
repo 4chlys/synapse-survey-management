@@ -8,5 +8,5 @@ public class QuestionViewModel
     public List<string> AnswerChoices { get; set; }
     public int QuestionNumber { get; set; }
     public int TotalQuestions { get; set; }
-    public bool IsMandatory {get; set;}
+    public bool IsMandatory { get; set; }
 }

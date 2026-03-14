@@ -1,76 +1,71 @@
+using System.Threading.RateLimiting;
 using Vite.AspNetCore;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Services;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<IQuestionnaireApiService, QuestionnaireApiService>(client =>
-     {
-         client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-             ?? "https://localhost:5159");
-     })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+});
+
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+var apiKey = builder.Configuration["ApiKey"]
+             ?? throw new InvalidOperationException("ApiKey is not configured. Set it in appsettings.json.");
+var isDev = builder.Environment.IsDevelopment();
+
+void ConfigureApiClient(HttpClient client)
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+}
+
+HttpClientHandler CreateHandler()
+{
+    var handler = new HttpClientHandler();
+    if (isDev)
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    return handler;
+}
+
+builder.Services.AddHttpClient<IQuestionnaireApiService, QuestionnaireApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ISessionService, CookieSessionService>();
 
-builder.Services.AddHttpClient<CategoryService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-            ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
-builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-            ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
+builder.Services.AddHttpClient<CategoryService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IdeaService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<CommentService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<EmojiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
-builder.Services.AddHttpClient<IdeaService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
+// Rate limiting — per real client IP, applied only to expensive AI moderation endpoints
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("ai-moderation", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
-builder.Services.AddHttpClient<EmojiService>(client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
-                                     ?? "https://localhost:5159");
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        if (builder.Environment.IsDevelopment())
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
+builder.Services.AddScoped<RequiresSurveyCompletionFilter>();
 
 // Form strategies (OCP: register a new IFormStrategy here to add a new form type)
 builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
@@ -96,6 +91,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseStaticFiles();
 app.UseAuthorization();
 

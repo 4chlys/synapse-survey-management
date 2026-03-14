@@ -1,7 +1,10 @@
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Sorting;
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
@@ -38,6 +41,15 @@ else
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
 
+// Sort strategies (singleton — stateless)
+builder.Services.AddSingleton<ISortStrategy<Idea>, RandomSortStrategy<Idea>>();
+builder.Services.AddSingleton<ISortStrategyFactory<Idea>>(sp =>
+    new SortStrategyFactory<Idea>(sp.GetServices<ISortStrategy<Idea>>(), defaultKey: "random"));
+
+builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrategy<TextComment>>();
+builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
+    new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
+
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
@@ -45,6 +57,7 @@ builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
+builder.Services.AddScoped<ICommentManager, CommentManager>();
 
 // AI configuration
 //
@@ -56,6 +69,10 @@ builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
+
+// Moderation token service (signed nonce — stateless across instances)
+var tokenSecret = builder.Configuration["ApiKey"] ?? "dev-api-key-synapse-2026";
+builder.Services.AddSingleton<IModerationTokenService>(new ModerationTokenService(tokenSecret));
 
 // Vertex AI (optional — controlled by use_ai in ai-config.json)
 if (useAi)
@@ -75,19 +92,8 @@ if (useAi)
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
 } else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
 
-// CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowUiUser", policy =>
-    {
-        policy.WithOrigins(
-            "http://localhost:5291",
-            "https://localhost:7163",
-            Environment.GetEnvironmentVariable("UI_URL") ??
-            "http://localhost:5291"
-        );
-    });
-});
+// CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
+// Re-enable if a browser-based client ever needs direct API access.
 
 var app = builder.Build();
 
@@ -105,7 +111,7 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
-app.UseCors("AllowUiUser");
+app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

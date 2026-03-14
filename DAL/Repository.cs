@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.DAL;
 
@@ -9,16 +10,18 @@ namespace SynapseEnqueteManagement.DAL;
 /// </summary>
 public class Repository : IRepository
 {
-
     private readonly DbContext _context;
+    private readonly ILogger<Repository> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Repository"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for data operations.</param>
-    public Repository(DbContext context)
+    /// <param name="logger">The logger instance for diagnostics.</param>
+    public Repository(DbContext context, ILogger<Repository> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     /// <summary>
@@ -56,33 +59,49 @@ public class Repository : IRepository
     public async Task<IEnumerable<T>> ReadAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
-        string[] includeStrings = null
+        string[] includeStrings = null,
+        Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+        bool randomize = false,
+        int? skip = null,
+        int? take = null
     ) where T : class
     {
         IQueryable<T> query = _context.Set<T>();
 
-        // apply expression includes
         if (includes != null)
-        {
             foreach (var include in includes)
                 query = query.Include(include);
-        }
 
-        // apply string includes (for nested)
         if (includeStrings != null)
-        {
             foreach (var include in includeStrings)
                 query = query.Include(include);
-        }
 
-        // apply filters
         if (filters != null)
-        {
             foreach (var filter in filters)
                 query = query.Where(filter);
-        }
 
-        return await query.ToListAsync();
+        IQueryable<T> ordered = randomize
+            ? query.OrderBy(_ => EF.Functions.Random())
+            : orderBy != null ? orderBy(query) : query;
+
+        if (skip.HasValue)
+            ordered = ordered.Skip(skip.Value);
+
+        if (take.HasValue)
+            ordered = ordered.Take(take.Value);
+
+        return await ordered.ToListAsync();
+    }
+
+    public async Task<int> CountAsync<T>(Expression<Func<T, bool>>[] filters = null) where T : class
+    {
+        IQueryable<T> query = _context.Set<T>();
+
+        if (filters != null)
+            foreach (var filter in filters)
+                query = query.Where(filter);
+
+        return await query.CountAsync();
     }
 
     /// <summary>
@@ -161,7 +180,7 @@ public class Repository : IRepository
     /// </summary>
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
     /// <param name="entity">The entity instance with updated values.</param>
-    /// <returns><c>true</c> if the update and save operations were successful; <c>false</c> if an error occurred.</returns>
+    /// <returns><c>true</c> if the update was successful; <c>false</c> if an error occurred (logged).</returns>
     public async Task<bool> UpdateAsync<T>(T entity) where T : class
     {
         try
@@ -170,8 +189,9 @@ public class Repository : IRepository
             await _context.SaveChangesAsync();
             return true;
         }
-        catch
+        catch (DbUpdateException ex)
         {
+            _logger.LogError(ex, "Failed to update entity of type {EntityType}", typeof(T).Name);
             return false;
         }
     }
@@ -189,6 +209,7 @@ public class Repository : IRepository
         {
             return false;
         }
+
         _context.Set<T>().Remove(entity);
         await _context.SaveChangesAsync();
         return true;
@@ -212,5 +233,4 @@ public class Repository : IRepository
         await _context.SaveChangesAsync();
         return true;
     }
-
 }

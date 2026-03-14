@@ -6,19 +6,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/categories")]
-public class CategoriesController : ControllerBase
+public class CategoriesController(ICategoryManager categoryManager) : ControllerBase
 {
-    private readonly ICategoryManager _categoryManager;
-
-    public CategoriesController(ICategoryManager categoryManager)
-    {
-        _categoryManager = categoryManager;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
-        var categories = await _categoryManager.GetCategoriesAsync(projectId);
+        var categories = await categoryManager.GetCategoriesAsync(projectId);
         var dtos = categories.Select(c => new CategoryDto
         {
             CategoryId = c.CategoryId,
@@ -32,7 +25,7 @@ public class CategoriesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
     {
-        var category = await _categoryManager.GetCategoryByIdAsync(id); // ← async
+        var category = await categoryManager.GetCategoryByIdAsync(id); // ← async
         if (category == null) return NotFound();
 
         var dto = new CategoryDto

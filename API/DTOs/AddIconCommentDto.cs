@@ -1,6 +1,8 @@
-﻿namespace SynapseEnqueteManagement.API.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SynapseEnqueteManagement.API.DTOs;
 
 public class AddIconCommentDto
 {
-    public int EmojiId { get; set; }
+    [Range(1, int.MaxValue)] public int EmojiId { get; set; }
 }

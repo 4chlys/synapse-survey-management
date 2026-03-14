@@ -19,7 +19,8 @@ public class QuestionnaireManager(IRepository repository) : IQuestionnaireManage
         return await repository.ReadByIdAsync<Question>(questionId);
     }
 
-    public void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers)
+    public void ValidateMandatoryAnswers(Questionnaire questionnaire,
+        IEnumerable<(int QuestionId, string Value)> answers)
     {
         var answeredIds = answers
             .Where(a => !string.IsNullOrWhiteSpace(a.Value))

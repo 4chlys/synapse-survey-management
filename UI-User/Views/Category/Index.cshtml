@@ -1,7 +1,7 @@
-@model IEnumerable<SynapseEnqueteManagement.UI.User.Models.Category>
+﻿@model IEnumerable<SynapseEnqueteManagement.UI.User.Models.CategoryViewModel>
 
 @{
-    ViewData["Title"] = "Kies een Categorie";   
+    ViewData["Title"] = "Kies een Categorie";
 }
 
 <div class="min-h-screen bg-gray-50 flex flex-col items-center px-6 pt-12 pb-20">
@@ -30,11 +30,12 @@
         </a>
     </div>
 
-    @* Category cards *@
+    @* CategoryViewModel cards *@
     <div class="w-full max-w-sm flex flex-col gap-6">
         @foreach (var category in Model)
         {
-            <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]" asp-route-categoryId="@category.CategoryId"
+            <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]"
+               asp-route-categoryId="@category.CategoryId"
                class="relative flex flex-col px-5 py-5 rounded-2xl border-2 border-gray-100 bg-white
                       cursor-pointer transition-all duration-150
                       hover:border-emerald-300 hover:shadow-md active:scale-[0.98]
@@ -46,7 +47,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg"
                          class="h-4 w-4 text-gray-300 group-hover:text-emerald-500 transition-colors duration-150"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                     </svg>
                 </div>
 
