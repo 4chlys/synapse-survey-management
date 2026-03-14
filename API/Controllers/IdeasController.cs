@@ -10,7 +10,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}/categories/{categoryId}/ideas")]
 public class IdeasController(
-    IIdeaManager manager,
+    IIdeaManager ideaManager,
     ICommentManager commentManager,
     IProjectManager projectManager,
     IParticipantManager participantManager,
@@ -35,11 +35,11 @@ public class IdeasController(
         var ownItems = new List<IdeaDto>();
         if (participantId.HasValue)
         {
-            var ownIdeas = await manager.GetOwnIdeasByCategoryAsync(categoryId, participantId.Value);
+            var ownIdeas = await ideaManager.GetOwnIdeasByCategoryAsync(categoryId, participantId.Value);
             ownItems = ownIdeas.Select(i => MapIdeaToDto(i, participantId, isOwn: true)).ToList();
         }
 
-        var paged = await manager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort, excludeParticipantId: participantId);
+        var paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort, excludeParticipantId: participantId);
         var otherItems = paged.Items.Select(i => MapIdeaToDto(i, participantId, isOwn: false)).ToList();
 
         return Ok(new PagedResult<IdeaDto>
@@ -98,7 +98,7 @@ public class IdeasController(
         try
         {
             var status = await ResolveModerationStatusAsync(dto.Description, dto.ModerationToken, projectId);
-            var idea = await manager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
+            var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
             var ideaDto = new IdeaDto
             {
                 IdeaId = idea.IdeaId,
@@ -123,7 +123,7 @@ public class IdeasController(
             participantId = p?.ParticipantId;
         }
 
-        var idea = await manager.GetIdeaByIdAsync(ideaId);
+        var idea = await ideaManager.GetIdeaByIdAsync(ideaId);
         if (idea == null) return NotFound();
 
         return Ok(new IdeaDto
