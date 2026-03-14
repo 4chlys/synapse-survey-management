@@ -7,26 +7,15 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 {
     private const string TokenHeader = "X-Participant-Token";
 
-    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId)
+    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId, int page = 1, string sort = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/categories/{categoryId}/ideas");
+        var url = $"api/projects/{projectId}/categories/{categoryId}/ideas?page={page}";
+        if (sort is not null) url += $"&sort={sort}";
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
-        var dtos = await response.Content.ReadFromJsonAsync<List<ApiIdeaDto>>();
-        if (dtos is null) return new List<IdeaViewModel>();
-        return dtos.Select(d => new IdeaViewModel
-        {
-            IdeaId = d.IdeaId,
-            Description = d.Description,
-            CommentsCount = d.CommentsCount,
-            Emojis = d.Emojis.Select(e => new IdeaEmojiViewModel
-            {
-                EmojiId = e.EmojiId,
-                Symbol = e.Symbol,
-                Count = e.Count,
-                PostedByCurrentUser = e.PostedByCurrentUser
-            }).ToList()
-        }).ToList();
+        var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<IdeaViewModel>>();
+        return paged?.Items ?? new List<IdeaViewModel>();
     }
 
     public async Task<bool> CreateIdeaAsync(
@@ -50,44 +39,18 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
-        var dto = await response.Content.ReadFromJsonAsync<ApiIdeaDto>();
-        if (dto is null) return null;
-
-        return new IdeaViewModel
-        {
-            IdeaId = dto.IdeaId,
-            Description = dto.Description,
-            CommentsCount = dto.CommentsCount,
-            Emojis = dto.Emojis.Select(e => new IdeaEmojiViewModel
-            {
-                EmojiId = e.EmojiId,
-                Symbol = e.Symbol,
-                Count = e.Count,
-                PostedByCurrentUser = e.PostedByCurrentUser
-            }).ToList()
-        };
+        return await response.Content.ReadFromJsonAsync<IdeaViewModel>();
     }
 
-    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
+    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId, int page = 1, string sort = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get,
-            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
+        var url = $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments?page={page}";
+        if (sort is not null) url += $"&sort={sort}";
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
-        var dtos = await response.Content.ReadFromJsonAsync<List<ApiTextCommentDto>>();
-        if (dtos is null) return new List<CommentViewModel>();
-        return dtos.Select(d => new CommentViewModel
-        {
-            CommentId = d.CommentId,
-            Text = d.Text,
-            Emojis = d.Emojis.Select(e => new CommentEmojiViewModel
-            {
-                EmojiId = e.EmojiId,
-                Symbol = e.Symbol,
-                Count = e.Count,
-                PostedByCurrentUser = e.PostedByCurrentUser
-            }).ToList(),
-        }).ToList();
+        var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<CommentViewModel>>();
+        return paged?.Items ?? new List<CommentViewModel>();
     }
 
     private void AddTokenHeader(HttpRequestMessage request, int projectId)
@@ -97,26 +60,13 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
             request.Headers.Add(TokenHeader, token);
     }
 
-    private class ApiTextCommentDto
+    private class ApiPagedResult<T>
     {
-        public int CommentId { get; set; }
-        public string Text { get; set; }
-        public List<ApiIconCommentDto> Emojis { get; set; } = new();
+        public List<T> Items { get; set; } = new();
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
     }
 
-    private class ApiIconCommentDto
-    {
-        public int EmojiId { get; set; }
-        public string Symbol { get; set; }
-        public int Count { get; set; }
-        public bool PostedByCurrentUser { get; set; }
-    }
-
-    private class ApiIdeaDto
-    {
-        public int IdeaId { get; set; }
-        public string Description { get; set; }
-        public int CommentsCount { get; set; }
-        public List<ApiIconCommentDto> Emojis { get; set; } = new();
-    }
 }

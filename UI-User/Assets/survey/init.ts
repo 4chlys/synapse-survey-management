@@ -1,7 +1,7 @@
 import type {SurveyState} from './types';
 import {navigateNext, navigatePrev} from './navigation';
 import {initGestures} from './gestures';
-import {animateTrackTo, shakeSlide, updateProgressBar} from './animation';
+import {animateTrackTo, updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
 
 function syncButtons(state: SurveyState): void {
@@ -21,7 +21,6 @@ export function initSurvey(): void {
     const progressBar = document.getElementById('survey-progress-bar');
     const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
     const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
-    const form = document.getElementById('survey-form') as HTMLFormElement | null;
 
     const state: SurveyState = {
         currentIndex: 0,

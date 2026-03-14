@@ -63,14 +63,31 @@
                    asp-route-projectId="@projectId"
                    asp-route-categoryId="@category.CategoryId"
                    asp-route-ideaId="@idea.IdeaId"
-                   class="block relative bg-white rounded-2xl border-2 border-gray-100 p-5
-                          cursor-pointer hover:border-emerald-200 transition-colors">
+                   class="block relative rounded-2xl border-2 p-5 cursor-pointer transition-colors
+                          @(idea.IsFlagged
+                              ? "bg-amber-50 border-amber-200 hover:border-amber-300"
+                              : idea.IsOwnedByCurrentUser
+                                  ? "bg-white border-emerald-100 hover:border-emerald-300"
+                                  : "bg-white border-gray-100 hover:border-emerald-200")">
 
                     @* Comment count badge (top right) *@
                     <div class="absolute -top-3 -right-3 bg-white border-2 border-gray-100
                                 rounded-full w-10 h-10 flex items-center justify-center shadow-sm">
                         <span class="text-sm font-semibold text-gray-700">@idea.CommentsCount</span>
                     </div>
+
+                    @if (idea.IsFlagged)
+                    {
+                        <span class="inline-block text-xs text-amber-600 font-medium mb-2">
+                            In behandeling
+                        </span>
+                    }
+                    else if (idea.IsOwnedByCurrentUser)
+                    {
+                        <span class="inline-block text-xs text-emerald-500 font-medium mb-2">
+                            Jouw idee
+                        </span>
+                    }
 
                     <p class="text-gray-900 text-sm leading-relaxed pr-8">@idea.Description</p>
 

@@ -10,14 +10,17 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}/categories/{categoryId}/ideas")]
 public class IdeasController(
-    IIdeaManager manager,
+    IIdeaManager ideaManager,
+    ICommentManager commentManager,
+    IProjectManager projectManager,
     IParticipantManager participantManager,
     IModerationTokenService tokenService,
     IAiModerationService moderationService)
     : ParticipantControllerBase(participantManager)
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<IdeaDto>>> GetIdeasByCategory(int categoryId)
+    public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
+        int projectId, int categoryId, [FromQuery] int page = 1, [FromQuery] string sort = null)
     {
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
@@ -26,25 +29,65 @@ public class IdeasController(
             participantId = p?.ParticipantId;
         }
 
-        var ideas = await manager.GetIdeasByCategoryAsync(categoryId);
-        var dtos = ideas.Select(i => new IdeaDto
+        var project = await projectManager.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
+
+        var ownItems = new List<IdeaDto>();
+        if (participantId.HasValue)
         {
-            IdeaId = i.IdeaId,
-            Description = i.Description,
-            CommentsCount = i.Comments.OfType<TextComment>().Count(),
-            Emojis = i.Comments.OfType<IconComment>()
-                .GroupBy((IconComment ic) => ic.Emoji.Symbol)
-                .Select(g => new IdeaEmojiDto
-                {
-                    EmojiId = g.First().EmojiId,
-                    Symbol = g.Key,
-                    Count = g.Count(),
-                    PostedByCurrentUser = participantId.HasValue &&
-                                          g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
-                }).ToList()
+            var ownIdeas = await ideaManager.GetOwnIdeasByCategoryAsync(categoryId, participantId.Value);
+            ownItems = ownIdeas.Select(i => MapIdeaToDto(i, participantId, isOwn: true)).ToList();
+        }
+
+        var paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort, excludeParticipantId: participantId);
+        var otherItems = paged.Items.Select(i => MapIdeaToDto(i, participantId, isOwn: false)).ToList();
+
+        return Ok(new PagedResult<IdeaDto>
+        {
+            Items = ownItems.Concat(otherItems).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
         });
-        return Ok(dtos);
     }
+
+    private TextCommentDto MapCommentToDto(TextComment c, int? participantId, bool isOwn) => new TextCommentDto
+    {
+        CommentId = c.CommentId,
+        Text = c.Text,
+        CreatedAt = c.CreatedAt,
+        IsOwnedByCurrentUser = isOwn,
+        IsFlagged = c.ModerationStatus == ModerationStatus.Flagged,
+        Emojis = c.EmojiReactions
+            .Where(r => r.Emoji != null)
+            .GroupBy((IconComment r) => r.Emoji.Symbol)
+            .Select(g => new IconCommentDto
+            {
+                EmojiId = g.First().EmojiId,
+                Symbol = g.Key,
+                Count = g.Count(),
+                PostedByCurrentUser = participantId.HasValue && g.Any(r => r.Participant.ParticipantId == participantId.Value)
+            }).ToList()
+    };
+
+    private IdeaDto MapIdeaToDto(Idea i, int? participantId, bool isOwn) => new IdeaDto
+    {
+        IdeaId = i.IdeaId,
+        Description = i.Description,
+        CreatedAt = i.CreatedAt,
+        CommentsCount = i.Comments.OfType<TextComment>().Count(),
+        IsOwnedByCurrentUser = isOwn,
+        IsFlagged = i.Status == ModerationStatus.Flagged,
+        Emojis = i.Comments.OfType<IconComment>()
+            .GroupBy((IconComment ic) => ic.Emoji.Symbol)
+            .Select(g => new IconCommentDto
+            {
+                EmojiId = g.First().EmojiId,
+                Symbol = g.Key,
+                Count = g.Count(),
+                PostedByCurrentUser = participantId.HasValue && g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
+            }).ToList()
+    };
 
     [HttpPost]
     public async Task<ActionResult<IdeaDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto)
@@ -55,7 +98,7 @@ public class IdeasController(
         try
         {
             var status = await ResolveModerationStatusAsync(dto.Description, dto.ModerationToken, projectId);
-            var idea = await manager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
+            var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
             var ideaDto = new IdeaDto
             {
                 IdeaId = idea.IdeaId,
@@ -80,7 +123,7 @@ public class IdeasController(
             participantId = p?.ParticipantId;
         }
 
-        var idea = await manager.GetIdeaByIdAsync(ideaId);
+        var idea = await ideaManager.GetIdeaByIdAsync(ideaId);
         if (idea == null) return NotFound();
 
         return Ok(new IdeaDto
@@ -90,7 +133,7 @@ public class IdeasController(
             CommentsCount = idea.Comments.OfType<TextComment>().Count(),
             Emojis = idea.Comments.OfType<IconComment>()
                 .GroupBy((IconComment ic) => ic.Emoji.Symbol)
-                .Select(g => new IdeaEmojiDto
+                .Select(g => new IconCommentDto
                 {
                     EmojiId = g.First().EmojiId,
                     Symbol = g.Key,
@@ -102,7 +145,8 @@ public class IdeasController(
     }
 
     [HttpGet("{ideaId}/comments")]
-    public async Task<ActionResult<IEnumerable<TextCommentDto>>> GetCommentsByIdea(int ideaId)
+    public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
+        int projectId, int ideaId, [FromQuery] int page = 1, [FromQuery] string sort = null)
     {
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
@@ -111,29 +155,26 @@ public class IdeasController(
             participantId = p?.ParticipantId;
         }
 
-        var idea = await manager.GetIdeaByIdAsync(ideaId);
-        if (idea == null) return NotFound();
+        var project = await projectManager.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
 
-        var comments = idea.Comments
-            .OfType<TextComment>()
-            .Select(c => new TextCommentDto
-            {
-                CommentId = c.CommentId,
-                Text = c.Text,
-                Emojis = c.EmojiReactions
-                    .Where(r => r.Emoji != null)
-                    .GroupBy((IconComment r) => r.Emoji.Symbol)
-                    .Select(g => new IconCommentDto
-                    {
-                        EmojiId = g.First().EmojiId,
-                        Symbol = g.Key,
-                        Count = g.Count(),
-                        PostedByCurrentUser = participantId.HasValue &&
-                                              g.Any(r => r.Participant.ParticipantId == participantId.Value)
-                    }).ToList()
-            });
+        var ownCommentItems = new List<TextCommentDto>();
+        if (participantId.HasValue)
+        {
+            var ownComments = await commentManager.GetOwnCommentsByIdeaAsync(ideaId, participantId.Value);
+            ownCommentItems = ownComments.Select(c => MapCommentToDto(c, participantId, isOwn: true)).ToList();
+        }
 
-        return Ok(comments);
+        var paged = await commentManager.GetOkCommentsByIdeaAsync(ideaId, page, project.CommentPageSize, sort, excludeParticipantId: participantId);
+        var otherCommentItems = paged.Items.Select(c => MapCommentToDto(c, participantId, isOwn: false)).ToList();
+
+        return Ok(new PagedResult<TextCommentDto>
+        {
+            Items = ownCommentItems.Concat(otherCommentItems).ToList(),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        });
     }
 
     /// <summary>

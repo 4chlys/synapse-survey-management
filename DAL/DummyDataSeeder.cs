@@ -54,6 +54,7 @@ public class DummyDataSeeder
 
         var project = new Project
         {
+            CreatedAt = DateTime.UtcNow,
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire,

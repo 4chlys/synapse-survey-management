@@ -1,3 +1,5 @@
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Sorting;
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +40,15 @@ else
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
+
+// Sort strategies (singleton — stateless)
+builder.Services.AddSingleton<ISortStrategy<Idea>, RandomSortStrategy<Idea>>();
+builder.Services.AddSingleton<ISortStrategyFactory<Idea>>(sp =>
+    new SortStrategyFactory<Idea>(sp.GetServices<ISortStrategy<Idea>>(), defaultKey: "random"));
+
+builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrategy<TextComment>>();
+builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
+    new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
 
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();

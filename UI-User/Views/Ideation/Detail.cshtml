@@ -93,7 +93,20 @@
             <div class="flex flex-col gap-3">
                 @foreach (var comment in comments)
                 {
-                    <div class="bg-white rounded-2xl border-2 border-gray-100 p-4">
+                    <div class="rounded-2xl border-2 p-4
+                               @(comment.IsFlagged
+                                   ? "bg-amber-50 border-amber-200"
+                                   : comment.IsOwnedByCurrentUser
+                                       ? "bg-white border-emerald-100"
+                                       : "bg-white border-gray-100")">
+                        @if (comment.IsFlagged)
+                        {
+                            <span class="inline-block text-xs text-amber-600 font-medium mb-1">In behandeling</span>
+                        }
+                        else if (comment.IsOwnedByCurrentUser)
+                        {
+                            <span class="inline-block text-xs text-emerald-500 font-medium mb-1">Jouw reactie</span>
+                        }
                         <p class="text-gray-900 text-sm leading-relaxed">@comment.Text</p>
 
                         <div class="flex gap-2 mt-3 items-center flex-wrap">

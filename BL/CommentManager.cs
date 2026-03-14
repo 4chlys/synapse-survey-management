@@ -1,14 +1,58 @@
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL;
 
-public class CommentManager(IRepository repository, ILogger<CommentManager> logger) : ICommentManager
+public class CommentManager(
+    IRepository repository,
+    ILogger<CommentManager> logger,
+    ISortStrategyFactory<TextComment> sortStrategyFactory) : ICommentManager
 {
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status,
-        Participant participant)
+    public async Task<PagedResult<TextComment>> GetOkCommentsByIdeaAsync(int ideaId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
+    {
+        var strategy = sortStrategyFactory.Get(sortKey);
+        var filterList = new List<System.Linq.Expressions.Expression<Func<TextComment, bool>>>
+        {
+            c => c.Idea.IdeaId == ideaId,
+            c => c.ModerationStatus != ModerationStatus.Flagged && c.ModerationStatus != ModerationStatus.Declined
+        };
+        if (excludeParticipantId.HasValue)
+            filterList.Add(c => c.Participant.ParticipantId != excludeParticipantId.Value);
+        var filters = filterList.ToArray();
+
+        var total = await repository.CountAsync<TextComment>(filters);
+        var items = await repository.ReadAsync<TextComment>(
+            filters: filters,
+            includes: [c => c.EmojiReactions],
+            includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
+            orderBy: strategy.DbOrderBy,
+            randomize: strategy.Randomize,
+            skip: (page - 1) * pageSize,
+            take: pageSize
+        );
+
+        return new PagedResult<TextComment> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+    }
+
+    public async Task<IEnumerable<TextComment>> GetOwnCommentsByIdeaAsync(int ideaId, int participantId)
+    {
+        return await repository.ReadAsync<TextComment>(
+            filters:
+            [
+                c => c.Idea.IdeaId == ideaId,
+                c => c.Participant.ParticipantId == participantId,
+                c => c.ModerationStatus != ModerationStatus.Declined
+            ],
+            includes: [c => c.EmojiReactions],
+            includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
+            orderBy: q => q.OrderByDescending(c => c.CreatedAt)
+        );
+    }
+
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
@@ -22,7 +66,8 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
             Idea = idea,
             ModerationStatus = status,
             Text = text,
-            Participant = participant
+            Participant = participant,
+            CreatedAt = DateTime.UtcNow
         };
 
         return await repository.CreateAsync(comment);
@@ -55,7 +100,8 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
         {
             Idea = idea,
             EmojiId = emojiId,
-            Participant = participant
+            Participant = participant,
+            CreatedAt = DateTime.UtcNow
         };
 
         return await repository.CreateAsync(iconComment,
@@ -94,7 +140,8 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
             Idea = comment.Idea,
             EmojiId = emojiId,
             TextComment = comment,
-            Participant = participant
+            Participant = participant,
+            CreatedAt = DateTime.UtcNow
         };
 
         return await repository.CreateAsync(reaction,
