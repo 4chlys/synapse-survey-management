@@ -33,6 +33,8 @@ public class ProjectLandingPageController : Controller
             return RedirectToAction("Index", "Category", new { projectId });
         }
         
+        ViewData["OrganisationLogoUrl"] = project.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = project.OrganisationWebsiteUrl;
         return View(project);
     }
 }
