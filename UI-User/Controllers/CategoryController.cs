@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Services;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
+[ServiceFilter(typeof(RequiresSurveyCompletionFilter))]
 public class CategoryController(CategoryService categoryService, IProjectApiService projectApiService)
     : Controller
 {

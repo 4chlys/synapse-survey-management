@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Vite.AspNetCore;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Services;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
 
@@ -63,6 +64,8 @@ builder.Services.AddRateLimiter(options =>
             }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
+
+builder.Services.AddScoped<RequiresSurveyCompletionFilter>();
 
 // Form strategies (OCP: register a new IFormStrategy here to add a new form type)
 builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
