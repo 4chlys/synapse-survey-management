@@ -2,7 +2,6 @@ import type {SurveyState} from './types';
 import {navigateNext, navigatePrev} from './navigation';
 import {initGestures} from './gestures';
 import {animateTrackTo, shakeSlide, updateProgressBar} from './animation';
-import {wireModerationForm} from "../ideation/moderation";
 import {initCharCounter} from './validation';
 
 function syncButtons(state: SurveyState): void {
@@ -43,11 +42,4 @@ export function initSurvey(): void {
     btnPrev?.addEventListener('click', () => navigatePrev(state));
 
     if (container) initGestures(container, state);
-
-    if (form) {
-        wireModerationForm(form, () => {
-            const currentSlide = state.slides[state.currentIndex];
-            if (currentSlide) shakeSlide(currentSlide);
-        });
-    }
 }
