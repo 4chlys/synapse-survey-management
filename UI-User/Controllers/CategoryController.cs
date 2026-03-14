@@ -12,6 +12,9 @@ public class CategoryController(CategoryService categoryService, IProjectApiServ
     public async Task<IActionResult> Index(int projectId)
     {
         ViewData["ProjectId"] = projectId;
+        var project = await projectApiService.GetProjectAsync(projectId);
+        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
         var categories = await categoryService.GetCategoriesAsync(projectId);
         return View(categories);
     }
@@ -26,6 +29,8 @@ public class CategoryController(CategoryService categoryService, IProjectApiServ
             OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
         };
+        ViewData["OrganisationLogoUrl"] = vm.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = vm.OrganisationWebsiteUrl;
         return View(vm);
     }
 }

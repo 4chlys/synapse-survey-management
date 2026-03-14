@@ -90,16 +90,16 @@ export async function callSuggest(
 
 function getPopupEls() {
     return {
-        overlay:           document.getElementById('moderation-overlay')!,
-        reason:            document.getElementById('moderation-reason')!,
-        suggestionBlock:   document.getElementById('moderation-suggestion-block')!,
-        suggestionText:    document.getElementById('moderation-suggestion-text')!,
-        blockMessage:      document.getElementById('moderation-block-message')!,
-        btnAccept:         document.getElementById('moderation-btn-accept')!,
-        btnRewrite:        document.getElementById('moderation-btn-rewrite')!,
-        btnClose:          document.getElementById('moderation-btn-close')!,
-        btnSubmitFlagged:  document.getElementById('moderation-btn-submit-flagged')!,
-        btnX:              document.getElementById('moderation-btn-x'),
+        overlay: document.getElementById('moderation-overlay')!,
+        reason: document.getElementById('moderation-reason')!,
+        suggestionBlock: document.getElementById('moderation-suggestion-block')!,
+        suggestionText: document.getElementById('moderation-suggestion-text')!,
+        blockMessage: document.getElementById('moderation-block-message')!,
+        btnAccept: document.getElementById('moderation-btn-accept')!,
+        btnRewrite: document.getElementById('moderation-btn-rewrite')!,
+        btnClose: document.getElementById('moderation-btn-close')!,
+        btnSubmitFlagged: document.getElementById('moderation-btn-submit-flagged')!,
+        btnX: document.getElementById('moderation-btn-x'),
     };
 }
 
@@ -112,8 +112,6 @@ function getPopupEls() {
  *   { action: 'submitFlagged', text: originalText  } — user insists on original (stored as Flagged)
  *
  * When suggestion === null the block-only variant is shown with a single close button.
- * The "Toch insturen" escape hatch is always visible but visually de-emphasised so it
- * is only reached when the user believes the AI moderation made a mistake.
  */
 export function showRewritePopup(
     originalText: string,
@@ -139,11 +137,9 @@ export function showRewritePopup(
             els.btnAccept.classList.add('hidden');
             els.btnRewrite.classList.add('hidden');
             els.btnClose.classList.remove('hidden');
-            // Still allow flagged submit even when no suggestion was produced
             els.btnSubmitFlagged.classList.remove('hidden');
         }
 
-        // Show overlay
         els.overlay.classList.remove('hidden');
         els.overlay.classList.add('flex');
 
@@ -217,7 +213,8 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, 'Regex');
             else
                 callbacks.onClear();
-        } catch { /* ignore */ }
+        } catch { /* ignore */
+        }
     }
 
     async function runAi(snapshot: string) {
@@ -230,7 +227,8 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
             else
                 callbacks.onClear();
-        } catch { /* ignore */ }
+        } catch { /* ignore */
+        }
     }
 
     function onInput() {
@@ -242,7 +240,7 @@ export function attachModeration(
         }
         const snapshot = text;
         regexTimer = setTimeout(() => runRegex(snapshot), REGEX_DEBOUNCE_MS);
-        aiTimer    = setTimeout(() => runAi(snapshot),    AI_DEBOUNCE_MS);
+        aiTimer = setTimeout(() => runAi(snapshot), AI_DEBOUNCE_MS);
     }
 
     element.addEventListener('input', onInput);
@@ -256,11 +254,16 @@ export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
     projectId: number,
 ): () => void {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex flex-col flex-1 min-w-0';
+    input.parentNode!.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
     const errorEl = document.createElement('p');
     errorEl.className =
         'moderation-error hidden text-red-500 text-xs mt-1 font-medium ' +
         'animate-[fade-up_0.2s_ease-out_both]';
-    input.insertAdjacentElement('afterend', errorEl);
+    wrapper.appendChild(errorEl);
 
     const showError = (reason: string) => {
         errorEl.textContent = reason;
@@ -279,7 +282,9 @@ export function wireModerationField(
     const detach = attachModeration(input, {onBlock: showError, onClear: clearError}, projectId);
     return () => {
         detach();
-        errorEl.remove();
+        // Unwrap: move input back to its original position and remove wrapper
+        wrapper.parentNode?.insertBefore(input, wrapper);
+        wrapper.remove();
     };
 }
 
@@ -319,7 +324,7 @@ export function wireModerationForm(
                 onSubmitBlocked?.();
                 break;
             }
-            // submitFlagged: continue loop, will submit as-is
+            // submitFlagged: continue, submit as-is
         }
 
         if (anyBlocked) return;
