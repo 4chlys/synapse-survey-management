@@ -58,12 +58,11 @@ public class ResponsesController(
 
         var participant = await AddParticipantAsync(questionnaire, projectId);
 
+        var questionsById = questionnaire.Questions.ToDictionary(q => q.QuestionId);
         foreach (var answer in submitDto.Answers)
         {
             if (string.IsNullOrWhiteSpace(answer.Value)) continue;
-
-            var question = await questionnaireManager.GetQuestionByIdAsync(answer.QuestionId);
-            if (question is null) continue;
+            if (!questionsById.TryGetValue(answer.QuestionId, out var question)) continue;
 
             await responseManager.AddResponseAsync(answer.Value, question, participant);
         }

@@ -48,7 +48,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
             // Participants are also reachable via Questionnaire; ProjectId FK
             // lets us query all project participants directly.
             e.HasMany(p => p.Participants)
-                .WithOne()
+                .WithOne(p => p.Project)
                 .HasForeignKey("ProjectId")
                 .OnDelete(DeleteBehavior.Cascade);
         });
