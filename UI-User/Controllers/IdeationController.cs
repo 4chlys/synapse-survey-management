@@ -8,12 +8,14 @@ public class IdeationController : Controller
     private readonly CategoryService _categoryService;
     private readonly IdeaService _ideaService;
     private readonly EmojiService _emojiService;
+    private readonly IProjectApiService _projectApiService;
 
-    public IdeationController(CategoryService categoryService, IdeaService ideaService, EmojiService emojiService)
+    public IdeationController(CategoryService categoryService, IdeaService ideaService, EmojiService emojiService, IProjectApiService projectApiService)
     {
         _categoryService = categoryService;
         _ideaService = ideaService;
         _emojiService = emojiService;
+        _projectApiService = projectApiService;
     }
 
     public async Task<IActionResult> Index(int projectId, int categoryId)
@@ -21,6 +23,9 @@ public class IdeationController : Controller
         ViewData["ProjectId"] = projectId;
         ViewData["CategoryId"] = categoryId;
         ViewData["ShowModerationPopup"] = true;
+        var project = await _projectApiService.GetProjectAsync(projectId);
+        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
         ViewBag.Emojis = await _emojiService.GetEmojisAsync();
 
         var category = await _categoryService.GetCategoryByIdAsync(categoryId, projectId);
@@ -33,6 +38,10 @@ public class IdeationController : Controller
 
     public async Task<IActionResult> Detail(int projectId, int categoryId, int ideaId)
     {
+        var project = await _projectApiService.GetProjectAsync(projectId);
+        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
+
         var idea = await _ideaService.GetIdeaByIdAsync(categoryId, ideaId);
         if (idea == null) return NotFound();
 

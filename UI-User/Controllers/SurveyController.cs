@@ -44,6 +44,8 @@ public class SurveyController : Controller
         if (model is null)
             return View("NotFound");
 
+        ViewData["OrganisationLogoUrl"] = project.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = project.OrganisationWebsiteUrl;
         var strategy = _formStrategyFactory.Create(project.FormType);
         ViewData["FormLayout"] = strategy.GetLayoutData();
         return View(strategy.GetViewName(), model);
@@ -82,6 +84,8 @@ public class SurveyController : Controller
             OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
         };
+        ViewData["OrganisationLogoUrl"] = vm.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = vm.OrganisationWebsiteUrl;
         return View(vm);
     }
 }
