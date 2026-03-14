@@ -1,4 +1,4 @@
-import { callModerationAi, callSuggest, showRewritePopup } from './moderation';
+import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
 
 const MIN_LENGTH = 3;
 
@@ -7,15 +7,15 @@ export function wireIdeationForm(
     textareaName: string,
     projectId: number,
 ): void {
-    console.log('[moderation] wireIdeationForm called', { textareaName, projectId });
+    console.log('[moderation] wireIdeationForm called', {textareaName, projectId});
 
     form.addEventListener('submit', async (e: SubmitEvent) => {
         e.preventDefault();
         console.log('[moderation] submit intercepted');
 
-        const textarea   = form.querySelector<HTMLTextAreaElement>(`textarea[name="${textareaName}"]`);
+        const textarea = form.querySelector<HTMLTextAreaElement>(`textarea[name="${textareaName}"]`);
         const tokenInput = form.querySelector<HTMLInputElement>('input[name="moderationToken"]');
-        const submitBtn  = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
 
         if (!textarea || !tokenInput) {
             console.error('[moderation] textarea or moderationToken input not found — wired incorrectly');
@@ -33,7 +33,7 @@ export function wireIdeationForm(
 
         const originalLabel = submitBtn?.textContent ?? 'Plaatsen';
         if (submitBtn) {
-            submitBtn.disabled    = true;
+            submitBtn.disabled = true;
             submitBtn.textContent = 'Controleren...';
         }
 
@@ -48,7 +48,6 @@ export function wireIdeationForm(
                 return;
             }
 
-            // Content flagged — get AI suggestion
             const suggestResult = await callSuggest(text, projectId);
 
             const outcome = await showRewritePopup(
@@ -58,26 +57,25 @@ export function wireIdeationForm(
             );
 
             if (suggestResult.suggestion === null) {
-                // Pure spam — no rewrite possible, stay on page
                 return;
             }
 
-            if (outcome.accepted) {
-                // User accepted rewrite — use suggestion text + its pre-approved token
-                textarea.value   = outcome.text;
+            if (outcome.action === 'accepted') {
+                textarea.value = outcome.text;
                 tokenInput.value = suggestResult.moderationToken ?? '';
+                await submitFormViaFetch(form);
+            } else if (outcome.action === 'rewrite') {
+                return;
             } else {
-                // User declined — submit original as flagged with the flagged token
                 tokenInput.value = result.moderationToken ?? '';
+                await submitFormViaFetch(form);
             }
-
-            await submitFormViaFetch(form);
 
         } catch (err) {
             console.error('[moderation] error during check:', err);
         } finally {
             if (submitBtn) {
-                submitBtn.disabled    = false;
+                submitBtn.disabled = false;
                 submitBtn.textContent = originalLabel;
             }
         }
@@ -87,8 +85,8 @@ export function wireIdeationForm(
 async function submitFormViaFetch(form: HTMLFormElement): Promise<void> {
     const data = new FormData(form);
     const response = await fetch(form.action, {
-        method:   'POST',
-        body:     data,
+        method: 'POST',
+        body: data,
         redirect: 'follow',
     });
 

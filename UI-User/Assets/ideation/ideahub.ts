@@ -1,8 +1,9 @@
-import { wireIdeationForm } from './ideationForm';
+import {wireIdeationForm} from './ideationForm';
+import {wireModerationField} from './moderation';
 
 export function initIdeation(): void {
-    window.showCreateForm  = showCreateForm;
-    window.hideCreateForm  = hideCreateForm;
+    window.showCreateForm = showCreateForm;
+    window.hideCreateForm = hideCreateForm;
     window.showCommentForm = showCommentForm;
     window.hideCommentForm = hideCommentForm;
     window.showCommentViewModelForm = showCommentForm;
@@ -12,27 +13,32 @@ export function initIdeation(): void {
     // Read the projectId that the Razor layout embeds as a meta tag
     const projectId = getProjectId();
 
-    // ── Create-idea form ──────────────────────────────────────────────────────
+    // Create-idea form
     const createFormEl = document.getElementById('createForm');
-    const createForm   = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
+    const createForm = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (createForm && projectId != null) {
         wireIdeationForm(createForm, 'description', projectId);
+        const descriptionTextarea = createForm.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
+        if (descriptionTextarea) {
+            wireModerationField(descriptionTextarea, projectId);
+        }
     }
 
-    // ── Add-comment form ──────────────────────────────────────────────────────
+    // Add-comment form
     const commentFormEl = document.getElementById('commentForm');
-    const commentForm   = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
+    const commentForm = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (commentForm && projectId != null) {
         wireIdeationForm(commentForm, 'text', projectId);
+        const commentTextarea = commentForm.querySelector<HTMLTextAreaElement>('textarea[name="text"]');
+        if (commentTextarea) {
+            wireModerationField(commentTextarea, projectId);
+        }
     }
 }
 
 function getProjectId(): number | null {
-    // The layout already sets <meta name="api-base"> — we piggyback a
-    // <meta name="project-id"> added to the ideation views.
     const meta = document.querySelector<HTMLMetaElement>('meta[name="project-id"]');
     if (meta?.content) return parseInt(meta.content, 10);
-    // Fallback: parse from the URL path  /1/Ideation/...
     const match = window.location.pathname.match(/^\/(\d+)\//);
     return match ? parseInt(match[1], 10) : null;
 }
@@ -41,7 +47,7 @@ function showCreateForm(): void {
     const form = document.getElementById('createForm');
     if (form) {
         form.classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 }
 
@@ -66,12 +72,12 @@ function showEmojiPicker(targetId: string): void {
 
 declare global {
     interface Window {
-        showCreateForm:           () => void;
-        hideCreateForm:           () => void;
-        showCommentForm:          () => void;
-        hideCommentForm:          () => void;
+        showCreateForm: () => void;
+        hideCreateForm: () => void;
+        showCommentForm: () => void;
+        hideCommentForm: () => void;
         showCommentViewModelForm: () => void;
         hideCommentViewModelForm: () => void;
-        showEmojiPicker:          (targetId: string) => void;
+        showEmojiPicker: (targetId: string) => void;
     }
 }

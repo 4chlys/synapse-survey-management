@@ -17,6 +17,11 @@ interface SuggestResponse {
     moderationToken: string | null;
 }
 
+export interface RewritePopupOutcome {
+    action: 'accepted' | 'rewrite' | 'submitFlagged';
+    text: string;
+}
+
 // CSRF
 
 function getCsrfToken(): string {
@@ -85,53 +90,57 @@ export async function callSuggest(
 
 function getPopupEls() {
     return {
-        overlay: document.getElementById('moderation-overlay')!,
-        reason: document.getElementById('moderation-reason')!,
-        suggestionBlock: document.getElementById('moderation-suggestion-block')!,
-        suggestionText: document.getElementById('moderation-suggestion-text')!,
-        blockMessage: document.getElementById('moderation-block-message')!,
-        btnDecline: document.getElementById('moderation-btn-decline')!,
-        btnAccept: document.getElementById('moderation-btn-accept')!,
-        btnClose: document.getElementById('moderation-btn-close')!,
-        btnX: document.getElementById('moderation-btn-x'),
+        overlay:           document.getElementById('moderation-overlay')!,
+        reason:            document.getElementById('moderation-reason')!,
+        suggestionBlock:   document.getElementById('moderation-suggestion-block')!,
+        suggestionText:    document.getElementById('moderation-suggestion-text')!,
+        blockMessage:      document.getElementById('moderation-block-message')!,
+        btnAccept:         document.getElementById('moderation-btn-accept')!,
+        btnRewrite:        document.getElementById('moderation-btn-rewrite')!,
+        btnClose:          document.getElementById('moderation-btn-close')!,
+        btnSubmitFlagged:  document.getElementById('moderation-btn-submit-flagged')!,
+        btnX:              document.getElementById('moderation-btn-x'),
     };
 }
 
 /**
- * Shows the moderation popup (rendered by _ModerationPopup.cshtml) as a
- * true overlay — never navigates away from the current page.
+ * Shows the moderation popup.
  *
- * Resolves with:
- *   { accepted: true,  text: rewrittenText } — user accepted the AI rewrite
- *   { accepted: false, text: originalText  } — user declined (submit flagged)
+ * When a suggestion is available, three outcomes are possible:
+ *   { action: 'accepted',      text: rewrittenText } — user accepted the AI rewrite
+ *   { action: 'rewrite',       text: originalText  } — user wants to edit themselves
+ *   { action: 'submitFlagged', text: originalText  } — user insists on original (stored as Flagged)
  *
- * When suggestion === null the "edit and retry" variant is shown.
- * The caller should block submission in that case.
+ * When suggestion === null the block-only variant is shown with a single close button.
+ * The "Toch insturen" escape hatch is always visible but visually de-emphasised so it
+ * is only reached when the user believes the AI moderation made a mistake.
  */
 export function showRewritePopup(
     originalText: string,
     suggestion: string | null,
     reason: string,
-): Promise<{ accepted: boolean; text: string }> {
+): Promise<RewritePopupOutcome> {
     return new Promise(resolve => {
         const els = getPopupEls();
 
         els.reason.textContent = reason;
 
-        // Configure which variant to show
         if (suggestion) {
             els.suggestionText.textContent = suggestion;
             els.suggestionBlock.classList.remove('hidden');
             els.blockMessage.classList.add('hidden');
-            els.btnDecline.classList.remove('hidden');
             els.btnAccept.classList.remove('hidden');
+            els.btnRewrite.classList.remove('hidden');
             els.btnClose.classList.add('hidden');
+            els.btnSubmitFlagged.classList.remove('hidden');
         } else {
             els.suggestionBlock.classList.add('hidden');
             els.blockMessage.classList.remove('hidden');
-            els.btnDecline.classList.add('hidden');
             els.btnAccept.classList.add('hidden');
+            els.btnRewrite.classList.add('hidden');
             els.btnClose.classList.remove('hidden');
+            // Still allow flagged submit even when no suggestion was produced
+            els.btnSubmitFlagged.classList.remove('hidden');
         }
 
         // Show overlay
@@ -142,29 +151,36 @@ export function showRewritePopup(
             els.overlay.classList.add('hidden');
             els.overlay.classList.remove('flex');
             els.btnAccept.removeEventListener('click', onAccept);
-            els.btnDecline.removeEventListener('click', onDecline);
+            els.btnRewrite.removeEventListener('click', onRewrite);
             els.btnClose.removeEventListener('click', onClose);
+            els.btnSubmitFlagged.removeEventListener('click', onSubmitFlagged);
             els.btnX?.removeEventListener('click', onClose);
         }
 
         function onAccept() {
             close();
-            resolve({accepted: true, text: suggestion!});
+            resolve({action: 'accepted', text: suggestion!});
         }
 
-        function onDecline() {
+        function onRewrite() {
             close();
-            resolve({accepted: false, text: originalText});
+            resolve({action: 'rewrite', text: originalText});
         }
 
         function onClose() {
             close();
-            resolve({accepted: false, text: originalText});
+            resolve({action: 'rewrite', text: originalText});
+        }
+
+        function onSubmitFlagged() {
+            close();
+            resolve({action: 'submitFlagged', text: originalText});
         }
 
         els.btnAccept.addEventListener('click', onAccept, {once: true});
-        els.btnDecline.addEventListener('click', onDecline, {once: true});
+        els.btnRewrite.addEventListener('click', onRewrite, {once: true});
         els.btnClose.addEventListener('click', onClose, {once: true});
+        els.btnSubmitFlagged.addEventListener('click', onSubmitFlagged, {once: true});
         els.btnX?.addEventListener('click', onClose, {once: true});
     });
 }
@@ -201,8 +217,7 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, 'Regex');
             else
                 callbacks.onClear();
-        } catch { /* ignore */
-        }
+        } catch { /* ignore */ }
     }
 
     async function runAi(snapshot: string) {
@@ -215,8 +230,7 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
             else
                 callbacks.onClear();
-        } catch { /* ignore */
-        }
+        } catch { /* ignore */ }
     }
 
     function onInput() {
@@ -228,7 +242,7 @@ export function attachModeration(
         }
         const snapshot = text;
         regexTimer = setTimeout(() => runRegex(snapshot), REGEX_DEBOUNCE_MS);
-        aiTimer = setTimeout(() => runAi(snapshot), AI_DEBOUNCE_MS);
+        aiTimer    = setTimeout(() => runAi(snapshot),    AI_DEBOUNCE_MS);
     }
 
     element.addEventListener('input', onInput);
@@ -296,28 +310,22 @@ export function wireModerationForm(
                 result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
             );
 
-            if (suggestResult.suggestion === null) {
+            if (outcome.action === 'accepted') {
+                textarea.value = outcome.text;
+                textarea.removeAttribute('data-moderation-blocked');
+                textarea.removeAttribute('data-flagged');
+            } else if (outcome.action === 'rewrite') {
                 anyBlocked = true;
                 onSubmitBlocked?.();
                 break;
             }
-
-            if (outcome.accepted) {
-                textarea.value = outcome.text;
-                textarea.removeAttribute('data-moderation-blocked');
-                textarea.removeAttribute('data-flagged');
-            } else {
-                textarea.setAttribute('data-flagged', 'true');
-                textarea.removeAttribute('data-moderation-blocked');
-            }
+            // submitFlagged: continue loop, will submit as-is
         }
 
         if (anyBlocked) return;
 
         const tokenInput = form.querySelector<HTMLInputElement>('input[name="moderationToken"]');
-        if (tokenInput) {
-            tokenInput.value = '';
-        }
+        if (tokenInput) tokenInput.value = '';
 
         form.removeEventListener('submit', onSubmit);
         form.requestSubmit();
@@ -329,14 +337,11 @@ export function wireModerationForm(
 // Helpers
 
 function getProjectIdFromContext(form: HTMLFormElement): number {
-    // 1. data-project-id attribute on the form itself
     const attr = form.dataset.projectId;
     if (attr) return parseInt(attr, 10);
-    // 2. <meta name="project-id"> set by the Razor layout
     const meta = document.querySelector<HTMLMetaElement>('meta[name="project-id"]');
     if (meta?.content) return parseInt(meta.content, 10);
-    // 3. Parse from URL: /1/Survey/...
     const match = window.location.pathname.match(/^\/(\d+)\//);
     if (match) return parseInt(match[1], 10);
-    return 1; // safe fallback
+    return 1;
 }

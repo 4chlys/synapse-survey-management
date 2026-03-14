@@ -4,7 +4,7 @@
     <div id="moderation-card"
          class="relative bg-white rounded-2xl shadow-2xl mx-4 w-full max-w-md flex flex-col gap-5 p-6">
 
-        @* Close button *@
+        @* Close button — returns to input for rewriting *@
         <button id="moderation-btn-x"
                 type="button"
                 aria-label="Sluiten"
@@ -30,7 +30,7 @@
             </div>
             <div>
                 <h3 class="text-gray-900 font-semibold text-base leading-snug">
-                    Je bericht bevat ongepaste inhoud
+                    Je bericht bevat mogelijk ongepaste inhoud
                 </h3>
                 <p id="moderation-reason" class="text-gray-500 text-sm mt-0.5 leading-relaxed"></p>
             </div>
@@ -45,9 +45,6 @@
                         text-sm text-gray-800 leading-relaxed">
                 <p id="moderation-suggestion-text"></p>
             </div>
-            <p class="text-xs text-gray-400 leading-relaxed">
-                Accepteer de herschrijving of dien je originele bericht in als anonieme melding.
-            </p>
         </div>
 
         @* Block message — shown when no rewrite is possible *@
@@ -57,24 +54,30 @@
             Je bericht kan niet worden ingediend. Pas de inhoud aan en probeer opnieuw.
         </p>
 
-        @* Action buttons *@
-        <div id="moderation-btn-row" class="flex gap-3">
-            <button id="moderation-btn-decline"
-                    type="button"
-                    class="flex-1 py-3 rounded-xl border-2 border-gray-200
-                           text-gray-600 text-sm font-medium
-                           hover:border-gray-300 hover:bg-gray-50 active:scale-95
-                           transition-all cursor-pointer">
-                Toch insturen
-            </button>
+        @* Primary action buttons *@
+        <div class="flex flex-col gap-2">
+
+            @* Accept suggestion (primary) *@
             <button id="moderation-btn-accept"
                     type="button"
-                    class="flex-1 py-3 rounded-xl bg-emerald-500 shadow-sm
+                    class="w-full py-3 rounded-xl bg-emerald-500 shadow-sm
                            text-white text-sm font-semibold
                            hover:bg-emerald-600 active:scale-95
                            transition-all cursor-pointer">
                 Herschrijving gebruiken
             </button>
+
+            @* Decline and rewrite yourself *@
+            <button id="moderation-btn-rewrite"
+                    type="button"
+                    class="w-full py-3 rounded-xl border-2 border-gray-200
+                           text-gray-600 text-sm font-medium
+                           hover:border-gray-300 hover:bg-gray-50 active:scale-95
+                           transition-all cursor-pointer">
+                Zelf aanpassen
+            </button>
+
+            @* Close button for block-only variant (no suggestion) *@
             <button id="moderation-btn-close"
                     type="button"
                     class="hidden w-full py-3 rounded-xl border-2 border-gray-200
@@ -83,7 +86,16 @@
                            transition-all cursor-pointer">
                 Sluiten en aanpassen
             </button>
+
         </div>
+
+        @* Escape hatch — visually de-emphasised, only for when AI moderation is wrong *@
+        <button id="moderation-btn-submit-flagged"
+                type="button"
+                class="w-full text-center text-xs text-gray-300 hover:text-gray-400
+                       transition-colors cursor-pointer py-1">
+            Toch insturen
+        </button>
 
     </div>
 </div>
