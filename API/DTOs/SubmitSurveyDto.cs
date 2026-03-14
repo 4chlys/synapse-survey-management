@@ -4,6 +4,5 @@ namespace SynapseEnqueteManagement.API.DTOs;
 
 public class SubmitSurveyDto
 {
-    [Required]
-    public IEnumerable<CreateResponseDto> Answers { get; set; }
+    [Required] public IEnumerable<CreateResponseDto> Answers { get; set; }
 }

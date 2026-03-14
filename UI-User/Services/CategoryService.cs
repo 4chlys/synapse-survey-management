@@ -12,14 +12,15 @@ public class CategoryService
         _httpClient = httpClient;
     }
 
-    public async Task<List<Category>> GetCategoriesAsync(int projectId)
+    public async Task<List<CategoryViewModel>> GetCategoriesAsync(int projectId)
     {
-        return await _httpClient.GetFromJsonAsync<List<Category>>(
-            $"api/projects/{projectId}/categories") ?? new List<Category>();
+        return await _httpClient.GetFromJsonAsync<List<CategoryViewModel>>(
+            $"api/projects/{projectId}/categories") ?? new List<CategoryViewModel>();
     }
 
-    public async Task<Category> GetCategoryByIdAsync(int categoryId, int projectId)
+    public async Task<CategoryViewModel> GetCategoryByIdAsync(int categoryId, int projectId)
     {
-        return await _httpClient.GetFromJsonAsync<Category>($"api/projects/{projectId}/categories/{categoryId}");
+        return await _httpClient.GetFromJsonAsync<CategoryViewModel>(
+            $"api/projects/{projectId}/categories/{categoryId}");
     }
 }

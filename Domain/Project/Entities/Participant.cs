@@ -1,10 +1,13 @@
+using SynapseEnqueteManagement.BL.Domain;
+
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class Participant
+public class Participant : IHasCreatedAt
 {
     public int ParticipantId { get; set; }
+    public DateTime CreatedAt { get; set; }
     public Guid SessionToken { get; set; } = Guid.NewGuid();
-
+    public Project Project { get; set; }
 
     public Questionnaire Questionnaire { get; set; }
 

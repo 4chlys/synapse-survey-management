@@ -3,36 +3,11 @@ using SynapseEnqueteManagement.UI.User.Models;
 
 namespace SynapseEnqueteManagement.UI.User.Services;
 
-public class EmojiService
+public class EmojiService(HttpClient httpClient)
 {
-    private readonly HttpClient _httpClient;
-
-    public EmojiService(HttpClient httpClient)
+    public async Task<List<EmojiViewModel>> GetEmojisAsync()
     {
-        _httpClient = httpClient;
-    }
-
-    public async Task<List<Emoji>> GetEmojisAsync()
-    {
-        var emojis = await _httpClient.GetFromJsonAsync<List<Emoji>>("api/emojis");
-        return emojis ?? new List<Emoji>();
-    }
-
-    public async Task<bool> AddIconCommentAsync(int categoryId,int ideaId, int emojiId)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            $"api/categories/{categoryId}/ideas/{ideaId}/iconcomments",
-            new { EmojiId = emojiId }
-        );
-        return response.IsSuccessStatusCode;
-    }
-
-    public async Task<bool> AddCommentEmojiAsync(int categoryId,int ideaId, int commentId, int emojiId)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            $"api/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji",
-            new { EmojiId = emojiId }
-        );
-        return response.IsSuccessStatusCode;
+        var emojis = await httpClient.GetFromJsonAsync<List<EmojiViewModel>>("api/emojis");
+        return emojis ?? new List<EmojiViewModel>();
     }
 }

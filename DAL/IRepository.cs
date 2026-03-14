@@ -2,7 +2,6 @@ using System.Linq.Expressions;
 
 namespace SynapseEnqueteManagement.DAL;
 
-
 public interface IRepository
 {
     Task<T> CreateAsync<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class;
@@ -10,8 +9,14 @@ public interface IRepository
     Task<IEnumerable<T>> ReadAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
-        string[] includeStrings = null
+        string[] includeStrings = null,
+        Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+        bool randomize = false,
+        int? skip = null,
+        int? take = null
     ) where T : class;
+
+    Task<int> CountAsync<T>(Expression<Func<T, bool>>[] filters = null) where T : class;
 
     Task<T> ReadByIdAsync<T>(
         object id,

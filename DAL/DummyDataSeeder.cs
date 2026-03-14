@@ -1,4 +1,4 @@
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -21,7 +21,7 @@ public class DummyDataSeeder
     {
         var emojis = new[] { _heart, _thumbsup, _fire, _check };
         for (int i = 0; i < count; i++)
-            comment.Reactions.Add(new IconComment { Emoji = emojis[i % emojis.Length], Idea = idea, TextComment = comment });
+            comment.EmojiReactions.Add(new IconComment { Emoji = emojis[i % emojis.Length], Idea = idea, TextComment = comment });
     }
 
     private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts)
