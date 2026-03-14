@@ -1,4 +1,4 @@
-﻿namespace SynapseEnqueteManagement.API.DTOs;
+namespace SynapseEnqueteManagement.API.DTOs;
 
 public class IconCommentDto
 {
