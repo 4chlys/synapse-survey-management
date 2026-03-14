@@ -8,14 +8,17 @@ namespace SynapseEnqueteManagement.BL;
 
 public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
-    public async Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey)
+    public async Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
-        System.Linq.Expressions.Expression<Func<Idea, bool>>[] filters =
-        [
+        var filterList = new List<System.Linq.Expressions.Expression<Func<Idea, bool>>>
+        {
             i => i.Category.CategoryId == categoryId,
             i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined
-        ];
+        };
+        if (excludeParticipantId.HasValue)
+            filterList.Add(i => i.Participant.ParticipantId != excludeParticipantId.Value);
+        var filters = filterList.ToArray();
 
         var total = await repository.CountAsync<Idea>(filters);
         var items = await repository.ReadAsync<Idea>(
@@ -29,6 +32,21 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
         );
 
         return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+    }
+
+    public async Task<IEnumerable<Idea>> GetOwnIdeasByCategoryAsync(int categoryId, int participantId)
+    {
+        return await repository.ReadAsync<Idea>(
+            filters:
+            [
+                i => i.Category.CategoryId == categoryId,
+                i => i.Participant.ParticipantId == participantId,
+                i => i.Status != ModerationStatus.Declined
+            ],
+            includes: [i => i.Comments],
+            includeStrings: ["Comments.Emoji", "Comments.Participant"],
+            orderBy: q => q.OrderByDescending(i => i.CreatedAt)
+        );
     }
 
     public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
