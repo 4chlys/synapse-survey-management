@@ -57,7 +57,8 @@ public class DummyDataSeeder
             Questionnaire = questionnaire,
             OrganisationName = "Synapse",
             OrganisationLogoUrl = "https://placehold.co/120x40?text=Synapse",
-            OrganisationWebsiteUrl = "https://www.synapse.com"
+            OrganisationWebsiteUrl = "https://www.synapse.com",
+            Introduction = new Introduction { Text="Dit is het voorbeeldproject" }
         };
 
         project.Categories.Add(new Category { Name = "Campus welzijn", Description = "Welzijn op school" });

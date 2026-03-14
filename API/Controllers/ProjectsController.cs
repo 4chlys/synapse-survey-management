@@ -30,6 +30,7 @@ public class ProjectsController : ControllerBase
             OrganisationName = project.OrganisationName ?? string.Empty,
             OrganisationLogoUrl = project.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project.OrganisationWebsiteUrl ?? string.Empty,
+            Introduction = project.Introduction?.Text ?? string.Empty
         });
     }
 }
