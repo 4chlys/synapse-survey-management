@@ -1,4 +1,4 @@
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -16,7 +16,8 @@ public class DummyDataSeeder
             QuestionFormat = QuestionFormat.MultipleChoice,
             Questionnaire = questionnaire,
             Text = "Welke factoren zorgen bij jou de meeste stress?",
-            AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" },
+            AnswerChoices = new List<string>
+                { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" },
             IsMandatory = false
         };
 
@@ -41,7 +42,8 @@ public class DummyDataSeeder
         {
             QuestionFormat = QuestionFormat.Open,
             Questionnaire = questionnaire,
-            Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?",
+            Text =
+                "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?",
             IsMandatory = true
         };
 
@@ -61,19 +63,20 @@ public class DummyDataSeeder
         };
 
         project.Categories.Add(new Category { Name = "Campus welzijn", Description = "Welzijn op school" });
-        project.Categories.Add(new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" });
-        project.Categories.Add(new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" });
+        project.Categories.Add(new Category
+            { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" });
+        project.Categories.Add(new Category
+            { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" });
 
         context.Projects.Add(project);
-        
+
         context.Emojis.AddRange(
             new Emoji { Symbol = "❤️", Name = "heart" },
             new Emoji { Symbol = "👍", Name = "thumbsup" },
             new Emoji { Symbol = "🔥", Name = "fire" },
             new Emoji { Symbol = "✅", Name = "check" }
         );
-        
+
         context.SaveChanges();
     }
-    
 }

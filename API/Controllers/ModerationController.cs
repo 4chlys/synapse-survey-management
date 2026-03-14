@@ -18,7 +18,10 @@ namespace SynapseEnqueteManagement.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/projects/{projectId}/moderation")]
-public class ModerationController(IAiModerationService moderation, IModerationTokenService tokenService, IParticipantManager participantManager)
+public class ModerationController(
+    IAiModerationService moderation,
+    IModerationTokenService tokenService,
+    IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("regex")]

@@ -90,7 +90,8 @@ public class IdeationController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> RemoveIconComment(int projectId, int categoryId, int ideaId, int emojiId, string returnPage)
+    public async Task<IActionResult> RemoveIconComment(int projectId, int categoryId, int ideaId, int emojiId,
+        string returnPage)
     {
         await commentService.RemoveIconCommentAsync(projectId, categoryId, ideaId, emojiId);
 
@@ -101,7 +102,8 @@ public class IdeationController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> RemoveCommentEmoji(int projectId, int categoryId, int ideaId, int commentId, int emojiId)
+    public async Task<IActionResult> RemoveCommentEmoji(int projectId, int categoryId, int ideaId, int commentId,
+        int emojiId)
     {
         await commentService.RemoveCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });

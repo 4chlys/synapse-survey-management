@@ -34,7 +34,7 @@ export function initSurvey(): void {
     };
 
     slides.forEach(slide => initCharCounter(slide));
-  
+
     animateTrackTo(track, 0);
     updateProgressBar(progressBar, 0, slides.length);
     syncButtons(state);

@@ -135,7 +135,6 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
         // Idea
         builder.Entity<Idea>(e =>
         {
-
             // Supports filtering by category and moderation status.
             e.HasIndex("CategoryId");
             e.HasIndex(i => i.Status);
@@ -174,8 +173,6 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         });
-
-
     }
 
     public bool CreateDatabase(bool deleteIfExists)

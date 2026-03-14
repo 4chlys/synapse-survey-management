@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - SynapseIP</title>
 
     @* Read by ideaHub.ts → getProjectId() *@
@@ -13,19 +13,19 @@
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
-        <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
+        <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true"/>
     </environment>
     <environment include="Production">
-        <link rel="stylesheet" vite-href="~/main.ts" asp-append-version="true" />
+        <link rel="stylesheet" vite-href="~/main.ts" asp-append-version="true"/>
     </environment>
 
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    @if (ViewData["ShowModerationPopup"] is true)
-    {
-        @await Html.PartialAsync("_ModerationPopup")
-    }
+@if (ViewData["ShowModerationPopup"] is true)
+{
+    @await Html.PartialAsync("_ModerationPopup")
+}
 
 @* Header *@
 <header class="fixed left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center px-4 py-3">
@@ -41,9 +41,9 @@
     <div class="w-9"></div>
 </header>
 
-    <main class="pt-[92px]">
-        @RenderBody()
-    </main>
+<main class="pt-[92px]">
+    @RenderBody()
+</main>
 
 @await RenderSectionAsync("Scripts", required: false)
 </body>

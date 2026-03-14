@@ -14,7 +14,6 @@ public class ResponsesController(
     IResponseManager responseManager)
     : ParticipantControllerBase(participantManager)
 {
-
     /// <summary>
     /// Creates an anonymous participant and returns a session token.
     /// The client stores this token in localStorage and sends it as

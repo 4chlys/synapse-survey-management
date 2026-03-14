@@ -63,7 +63,8 @@ public class CommentsController(
     }
 
     [HttpPost("comments/{commentId}/emoji")]
-    public async Task<ActionResult> AddCommentEmoji(int projectId, int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> AddCommentEmoji(int projectId, int ideaId, int commentId,
+        [FromBody] AddIconCommentDto dto)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -81,7 +82,8 @@ public class CommentsController(
     }
 
     [HttpDelete("comments/{commentId}/emoji")]
-    public async Task<ActionResult> RemoveCommentEmoji(int projectId, int ideaId, int commentId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> RemoveCommentEmoji(int projectId, int ideaId, int commentId,
+        [FromBody] AddIconCommentDto dto)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;

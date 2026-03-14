@@ -10,7 +10,6 @@ namespace SynapseEnqueteManagement.DAL;
 /// </summary>
 public class Repository : IRepository
 {
-
     private readonly DbContext _context;
     private readonly ILogger<Repository> _logger;
 
@@ -194,6 +193,7 @@ public class Repository : IRepository
         {
             return false;
         }
+
         _context.Set<T>().Remove(entity);
         await _context.SaveChangesAsync();
         return true;
@@ -217,5 +217,4 @@ public class Repository : IRepository
         await _context.SaveChangesAsync();
         return true;
     }
-
 }

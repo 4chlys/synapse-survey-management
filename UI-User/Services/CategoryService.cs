@@ -20,6 +20,7 @@ public class CategoryService
 
     public async Task<CategoryViewModel> GetCategoryByIdAsync(int categoryId, int projectId)
     {
-        return await _httpClient.GetFromJsonAsync<CategoryViewModel>($"api/projects/{projectId}/categories/{categoryId}");
+        return await _httpClient.GetFromJsonAsync<CategoryViewModel>(
+            $"api/projects/{projectId}/categories/{categoryId}");
     }
 }

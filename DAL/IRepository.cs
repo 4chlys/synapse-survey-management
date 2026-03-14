@@ -2,7 +2,6 @@ using System.Linq.Expressions;
 
 namespace SynapseEnqueteManagement.DAL;
 
-
 public interface IRepository
 {
     Task<T> CreateAsync<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class;

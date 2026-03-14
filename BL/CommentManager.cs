@@ -7,7 +7,8 @@ namespace SynapseEnqueteManagement.BL;
 
 public class CommentManager(IRepository repository, ILogger<CommentManager> logger) : ICommentManager
 {
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status,
+        Participant participant)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
@@ -66,11 +67,10 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
 
     public async Task<bool> RemoveIconCommentAsync(int ideaId, int emojiId, Participant participant)
     {
-        return await repository.DeleteAsync<IconComment>(
-            ic => ic.Participant.ParticipantId == participant.ParticipantId
-                  && ic.EmojiId == emojiId
-                  && ic.Idea.IdeaId == ideaId
-                  && ic.TextComment == null);
+        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
+                                                               && ic.EmojiId == emojiId
+                                                               && ic.Idea.IdeaId == ideaId
+                                                               && ic.TextComment == null);
     }
 
     public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId, Participant participant)
@@ -105,9 +105,8 @@ public class CommentManager(IRepository repository, ILogger<CommentManager> logg
 
     public async Task<bool> RemoveCommentReactionAsync(int commentId, int emojiId, Participant participant)
     {
-        return await repository.DeleteAsync<IconComment>(
-            ic => ic.Participant.ParticipantId == participant.ParticipantId
-                  && ic.EmojiId == emojiId
-                  && ic.TextComment.CommentId == commentId);
+        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
+                                                               && ic.EmojiId == emojiId
+                                                               && ic.TextComment.CommentId == commentId);
     }
 }

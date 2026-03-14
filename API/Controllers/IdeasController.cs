@@ -39,7 +39,8 @@ public class IdeasController(
                     EmojiId = g.First().EmojiId,
                     Symbol = g.Key,
                     Count = g.Count(),
-                    PostedByCurrentUser = participantId.HasValue && g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
+                    PostedByCurrentUser = participantId.HasValue &&
+                                          g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
                 }).ToList()
         });
         return Ok(dtos);
@@ -94,7 +95,8 @@ public class IdeasController(
                     EmojiId = g.First().EmojiId,
                     Symbol = g.Key,
                     Count = g.Count(),
-                    PostedByCurrentUser = participantId.HasValue && g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
+                    PostedByCurrentUser = participantId.HasValue &&
+                                          g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
                 }).ToList()
         });
     }
@@ -126,7 +128,8 @@ public class IdeasController(
                         EmojiId = g.First().EmojiId,
                         Symbol = g.Key,
                         Count = g.Count(),
-                        PostedByCurrentUser = participantId.HasValue && g.Any(r => r.Participant.ParticipantId == participantId.Value)
+                        PostedByCurrentUser = participantId.HasValue &&
+                                              g.Any(r => r.Participant.ParticipantId == participantId.Value)
                     }).ToList()
             });
 
