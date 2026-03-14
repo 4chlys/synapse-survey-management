@@ -71,7 +71,8 @@ builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 
 // Moderation token service (signed nonce — stateless across instances)
-var tokenSecret = builder.Configuration["ApiKey"] ?? "dev-api-key-synapse-2026";
+var tokenSecret = builder.Configuration["ApiKey"]
+    ?? throw new InvalidOperationException("ApiKey is not configured. Set it in .env or as an environment variable.");
 builder.Services.AddSingleton<IModerationTokenService>(new ModerationTokenService(tokenSecret));
 
 // Vertex AI (optional — controlled by use_ai in ai-config.json)
