@@ -56,19 +56,15 @@ export function wireIdeationForm(
                 result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
             );
 
-            if (suggestResult.suggestion === null) {
-                return;
-            }
-
             if (outcome.action === 'accepted') {
                 textarea.value = outcome.text;
                 tokenInput.value = suggestResult.moderationToken ?? '';
                 await submitFormViaFetch(form);
-            } else if (outcome.action === 'rewrite') {
-                return;
-            } else {
+            } else if (outcome.action === 'submitFlagged') {
                 tokenInput.value = result.moderationToken ?? '';
                 await submitFormViaFetch(form);
+            } else {
+                return;
             }
 
         } catch (err) {

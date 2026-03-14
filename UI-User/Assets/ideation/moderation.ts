@@ -90,16 +90,16 @@ export async function callSuggest(
 
 function getPopupEls() {
     return {
-        overlay:          document.getElementById('moderation-overlay')!,
-        reason:           document.getElementById('moderation-reason')!,
-        suggestionBlock:  document.getElementById('moderation-suggestion-block')!,
-        suggestionText:   document.getElementById('moderation-suggestion-text')!,
-        blockMessage:     document.getElementById('moderation-block-message')!,
-        btnAccept:        document.getElementById('moderation-btn-accept')!,
-        btnRewrite:       document.getElementById('moderation-btn-rewrite')!,
-        btnClose:         document.getElementById('moderation-btn-close')!,
+        overlay: document.getElementById('moderation-overlay')!,
+        reason: document.getElementById('moderation-reason')!,
+        suggestionBlock: document.getElementById('moderation-suggestion-block')!,
+        suggestionText: document.getElementById('moderation-suggestion-text')!,
+        blockMessage: document.getElementById('moderation-block-message')!,
+        btnAccept: document.getElementById('moderation-btn-accept')!,
+        btnRewrite: document.getElementById('moderation-btn-rewrite')!,
+        btnClose: document.getElementById('moderation-btn-close')!,
         btnSubmitFlagged: document.getElementById('moderation-btn-submit-flagged')!,
-        btnX:             document.getElementById('moderation-btn-x'),
+        btnX: document.getElementById('moderation-btn-x'),
     };
 }
 
@@ -213,7 +213,8 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, 'Regex');
             else
                 callbacks.onClear();
-        } catch { /* ignore */ }
+        } catch { /* ignore */
+        }
     }
 
     async function runAi(snapshot: string) {
@@ -226,7 +227,8 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
             else
                 callbacks.onClear();
-        } catch { /* ignore */ }
+        } catch { /* ignore */
+        }
     }
 
     function onInput() {
@@ -238,7 +240,7 @@ export function attachModeration(
         }
         const snapshot = text;
         regexTimer = setTimeout(() => runRegex(snapshot), REGEX_DEBOUNCE_MS);
-        aiTimer    = setTimeout(() => runAi(snapshot),    AI_DEBOUNCE_MS);
+        aiTimer = setTimeout(() => runAi(snapshot), AI_DEBOUNCE_MS);
     }
 
     element.addEventListener('input', onInput);

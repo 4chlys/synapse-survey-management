@@ -1,12 +1,12 @@
-import { wireIdeationForm } from './ideationForm';
-import { wireModerationField } from './moderation';
+import {wireIdeationForm} from './ideationForm';
+import {wireModerationField} from './moderation';
 
 export function initIdeation(): void {
     const projectId = getProjectId();
 
     // Create-idea form
     const createFormEl = document.getElementById('createForm');
-    const createForm   = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
+    const createForm = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (createForm && projectId != null) {
         wireIdeationForm(createForm, 'description', projectId);
         const descriptionTextarea = createForm.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
@@ -17,7 +17,7 @@ export function initIdeation(): void {
 
     // Add-comment form
     const commentFormEl = document.getElementById('commentForm');
-    const commentForm   = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
+    const commentForm = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (commentForm && projectId != null) {
         wireIdeationForm(commentForm, 'text', projectId);
         const commentTextarea = commentForm.querySelector<HTMLTextAreaElement>('textarea[name="text"]');
@@ -37,7 +37,7 @@ export function initIdeation(): void {
             case 'show-create-form':
                 e.preventDefault();
                 createFormEl?.classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({top: 0, behavior: 'smooth'});
                 break;
 
             case 'hide-create-form':
