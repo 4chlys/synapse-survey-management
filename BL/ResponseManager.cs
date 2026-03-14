@@ -15,7 +15,7 @@ public class ResponseManager(IRepository repository) : IResponseManager
             && !question.AnswerChoices.Contains(value))
             throw new ArgumentException("Invalid answer: choice is not in the list.", nameof(value));
 
-        var response = new Response { Value = value, Question = question, Participant = participant };
+        var response = new Response { Value = value, Question = question, Participant = participant, CreatedAt = DateTime.UtcNow };
         return await repository.CreateAsync(response);
     }
 

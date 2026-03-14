@@ -49,7 +49,7 @@ async function callModeration(
     } catch (err) {
         if ((err as Error).name === 'AbortError') throw err;
         console.warn(`Moderation (${endpoint}) unreachable:`, err);
-        return { isAcceptable: true, reason: null, flaggedBy: null };
+        return { isAcceptable: true, reason: null, flaggedBy: null, moderationToken: null };
     }
 }
 
