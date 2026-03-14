@@ -11,15 +11,17 @@ public class CommentManager(
     ILogger<CommentManager> logger,
     ISortStrategyFactory<TextComment> sortStrategyFactory) : ICommentManager
 {
-    public async Task<PagedResult<TextComment>> GetOkCommentsByIdeaAsync(int ideaId, int page, int pageSize,
-        string sortKey)
+    public async Task<PagedResult<TextComment>> GetOkCommentsByIdeaAsync(int ideaId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
-        System.Linq.Expressions.Expression<Func<TextComment, bool>>[] filters =
-        [
+        var filterList = new List<System.Linq.Expressions.Expression<Func<TextComment, bool>>>
+        {
             c => c.Idea.IdeaId == ideaId,
             c => c.ModerationStatus != ModerationStatus.Flagged && c.ModerationStatus != ModerationStatus.Declined
-        ];
+        };
+        if (excludeParticipantId.HasValue)
+            filterList.Add(c => c.Participant.ParticipantId != excludeParticipantId.Value);
+        var filters = filterList.ToArray();
 
         var total = await repository.CountAsync<TextComment>(filters);
         var items = await repository.ReadAsync<TextComment>(
@@ -35,8 +37,22 @@ public class CommentManager(
         return new PagedResult<TextComment> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
     }
 
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status,
-        Participant participant)
+    public async Task<IEnumerable<TextComment>> GetOwnCommentsByIdeaAsync(int ideaId, int participantId)
+    {
+        return await repository.ReadAsync<TextComment>(
+            filters:
+            [
+                c => c.Idea.IdeaId == ideaId,
+                c => c.Participant.ParticipantId == participantId,
+                c => c.ModerationStatus != ModerationStatus.Declined
+            ],
+            includes: [c => c.EmojiReactions],
+            includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
+            orderBy: q => q.OrderByDescending(c => c.CreatedAt)
+        );
+    }
+
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
