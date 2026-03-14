@@ -1,4 +1,4 @@
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export interface ModerationCallbacks {
     onBlock: (reason: string, flaggedBy: 'Regex' | 'AI') => void;
@@ -6,30 +6,30 @@ export interface ModerationCallbacks {
 }
 
 export interface ModerationResponse {
-    isAcceptable:    boolean;
-    reason:          string | null;
-    flaggedBy:       'Regex' | 'AI' | null;
+    isAcceptable: boolean;
+    reason: string | null;
+    flaggedBy: 'Regex' | 'AI' | null;
     moderationToken: string | null;
 }
 
 interface SuggestResponse {
-    suggestion:      string | null;
+    suggestion: string | null;
     moderationToken: string | null;
 }
 
-// ─── CSRF ─────────────────────────────────────────────────────────────────────
+// CSRF
 
 function getCsrfToken(): string {
     return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
 }
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// Config
 
-const REGEX_DEBOUNCE_MS    = 400;
-const AI_DEBOUNCE_MS       = 1500;
+const REGEX_DEBOUNCE_MS = 400;
+const AI_DEBOUNCE_MS = 1500;
 const MIN_LENGTH_FOR_CHECK = 3;
 
-// ─── Low-level API calls (routed through UI-User ModerationApiController) ────
+// Low-level API calls (routed through UI-User ModerationApiController)
 
 async function callModeration(
     endpoint: 'regex' | 'ai',
@@ -39,9 +39,9 @@ async function callModeration(
 ): Promise<ModerationResponse> {
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/${endpoint}`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
-            body:    JSON.stringify({ text }),
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken()},
+            body: JSON.stringify({text}),
             signal,
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -49,7 +49,7 @@ async function callModeration(
     } catch (err) {
         if ((err as Error).name === 'AbortError') throw err;
         console.warn(`Moderation (${endpoint}) unreachable:`, err);
-        return { isAcceptable: true, reason: null, flaggedBy: null };
+        return {moderationToken: "", isAcceptable: true, reason: null, flaggedBy: null};
     }
 }
 
@@ -68,32 +68,32 @@ export async function callSuggest(
 ): Promise<{ suggestion: string | null; moderationToken: string | null }> {
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/suggest`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
-            body:    JSON.stringify({ text }),
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken()},
+            body: JSON.stringify({text}),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: SuggestResponse = await res.json();
-        return { suggestion: data.suggestion ?? null, moderationToken: data.moderationToken ?? null };
+        return {suggestion: data.suggestion ?? null, moderationToken: data.moderationToken ?? null};
     } catch (err) {
         console.warn('Moderation suggest unreachable:', err);
-        return { suggestion: null, moderationToken: null };
+        return {suggestion: null, moderationToken: null};
     }
 }
 
-// ─── Popup ────────────────────────────────────────────────────────────────────
+// Popup
 
 function getPopupEls() {
     return {
-        overlay:         document.getElementById('moderation-overlay')!,
-        reason:          document.getElementById('moderation-reason')!,
+        overlay: document.getElementById('moderation-overlay')!,
+        reason: document.getElementById('moderation-reason')!,
         suggestionBlock: document.getElementById('moderation-suggestion-block')!,
-        suggestionText:  document.getElementById('moderation-suggestion-text')!,
-        blockMessage:    document.getElementById('moderation-block-message')!,
-        btnDecline:      document.getElementById('moderation-btn-decline')!,
-        btnAccept:       document.getElementById('moderation-btn-accept')!,
-        btnClose:        document.getElementById('moderation-btn-close')!,
-        btnX:            document.getElementById('moderation-btn-x'),
+        suggestionText: document.getElementById('moderation-suggestion-text')!,
+        blockMessage: document.getElementById('moderation-block-message')!,
+        btnDecline: document.getElementById('moderation-btn-decline')!,
+        btnAccept: document.getElementById('moderation-btn-accept')!,
+        btnClose: document.getElementById('moderation-btn-close')!,
+        btnX: document.getElementById('moderation-btn-x'),
     };
 }
 
@@ -116,7 +116,6 @@ export function showRewritePopup(
     return new Promise(resolve => {
         const els = getPopupEls();
 
-        // Populate reason
         els.reason.textContent = reason;
 
         // Configure which variant to show
@@ -142,24 +141,35 @@ export function showRewritePopup(
         function close() {
             els.overlay.classList.add('hidden');
             els.overlay.classList.remove('flex');
-            els.btnAccept.removeEventListener('click',  onAccept);
+            els.btnAccept.removeEventListener('click', onAccept);
             els.btnDecline.removeEventListener('click', onDecline);
-            els.btnClose.removeEventListener('click',   onClose);
-            els.btnX?.removeEventListener('click',      onClose);
+            els.btnClose.removeEventListener('click', onClose);
+            els.btnX?.removeEventListener('click', onClose);
         }
 
-        function onAccept()  { close(); resolve({ accepted: true,  text: suggestion! }); }
-        function onDecline() { close(); resolve({ accepted: false, text: originalText }); }
-        function onClose()   { close(); resolve({ accepted: false, text: originalText }); }
+        function onAccept() {
+            close();
+            resolve({accepted: true, text: suggestion!});
+        }
 
-        els.btnAccept.addEventListener('click',  onAccept,  { once: true });
-        els.btnDecline.addEventListener('click', onDecline, { once: true });
-        els.btnClose.addEventListener('click',   onClose,   { once: true });
-        els.btnX?.addEventListener('click',      onClose,   { once: true });
+        function onDecline() {
+            close();
+            resolve({accepted: false, text: originalText});
+        }
+
+        function onClose() {
+            close();
+            resolve({accepted: false, text: originalText});
+        }
+
+        els.btnAccept.addEventListener('click', onAccept, {once: true});
+        els.btnDecline.addEventListener('click', onDecline, {once: true});
+        els.btnClose.addEventListener('click', onClose, {once: true});
+        els.btnX?.addEventListener('click', onClose, {once: true});
     });
 }
 
-// ─── Live inline field moderation (typing feedback) ──────────────────────────
+// Live inline field moderation (typing feedback)
 
 export function attachModeration(
     element: HTMLTextAreaElement | HTMLInputElement,
@@ -167,12 +177,18 @@ export function attachModeration(
     projectId: number,
 ): () => void {
     let regexTimer: ReturnType<typeof setTimeout> | null = null;
-    let aiTimer:    ReturnType<typeof setTimeout> | null = null;
-    let aiAbort:    AbortController | null = null;
+    let aiTimer: ReturnType<typeof setTimeout> | null = null;
+    let aiAbort: AbortController | null = null;
 
     function clearTimers() {
-        if (regexTimer !== null) { clearTimeout(regexTimer); regexTimer = null; }
-        if (aiTimer    !== null) { clearTimeout(aiTimer);    aiTimer    = null; }
+        if (regexTimer !== null) {
+            clearTimeout(regexTimer);
+            regexTimer = null;
+        }
+        if (aiTimer !== null) {
+            clearTimeout(aiTimer);
+            aiTimer = null;
+        }
         aiAbort?.abort();
         aiAbort = null;
     }
@@ -185,7 +201,8 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, 'Regex');
             else
                 callbacks.onClear();
-        } catch { /* ignore */ }
+        } catch { /* ignore */
+        }
     }
 
     async function runAi(snapshot: string) {
@@ -198,20 +215,27 @@ export function attachModeration(
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
             else
                 callbacks.onClear();
-        } catch { /* ignore */ }
+        } catch { /* ignore */
+        }
     }
 
     function onInput() {
         const text = element.value;
         clearTimers();
-        if (text.length < MIN_LENGTH_FOR_CHECK) { callbacks.onClear(); return; }
+        if (text.length < MIN_LENGTH_FOR_CHECK) {
+            callbacks.onClear();
+            return;
+        }
         const snapshot = text;
         regexTimer = setTimeout(() => runRegex(snapshot), REGEX_DEBOUNCE_MS);
-        aiTimer    = setTimeout(() => runAi(snapshot),    AI_DEBOUNCE_MS);
+        aiTimer = setTimeout(() => runAi(snapshot), AI_DEBOUNCE_MS);
     }
 
     element.addEventListener('input', onInput);
-    return () => { element.removeEventListener('input', onInput); clearTimers(); };
+    return () => {
+        element.removeEventListener('input', onInput);
+        clearTimers();
+    };
 }
 
 export function wireModerationField(
@@ -238,11 +262,14 @@ export function wireModerationField(
         input.classList.remove('border-red-400');
     };
 
-    const detach = attachModeration(input, { onBlock: showError, onClear: clearError }, projectId);
-    return () => { detach(); errorEl.remove(); };
+    const detach = attachModeration(input, {onBlock: showError, onClear: clearError}, projectId);
+    return () => {
+        detach();
+        errorEl.remove();
+    };
 }
 
-// ─── Survey form wiring ───────────────────────────────────────────────────────
+// Survey form wiring
 
 export function wireModerationForm(
     form: HTMLFormElement,
@@ -263,7 +290,7 @@ export function wireModerationForm(
             if (result.isAcceptable) continue;
 
             const suggestResult = await callSuggest(textarea.value, projectId);
-            const outcome    = await showRewritePopup(
+            const outcome = await showRewritePopup(
                 textarea.value,
                 suggestResult.suggestion,
                 result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
@@ -289,7 +316,6 @@ export function wireModerationForm(
 
         const tokenInput = form.querySelector<HTMLInputElement>('input[name="moderationToken"]');
         if (tokenInput) {
-            // For survey forms the token from the last moderation check is used
             tokenInput.value = '';
         }
 
@@ -300,7 +326,7 @@ export function wireModerationForm(
     form.addEventListener('submit', onSubmit);
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 function getProjectIdFromContext(form: HTMLFormElement): number {
     // 1. data-project-id attribute on the form itself
