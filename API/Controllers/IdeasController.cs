@@ -11,13 +11,16 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/categories/{categoryId}/ideas")]
 public class IdeasController(
     IIdeaManager manager,
+    ICommentManager commentManager,
+    IProjectManager projectManager,
     IParticipantManager participantManager,
     IModerationTokenService tokenService,
     IAiModerationService moderationService)
     : ParticipantControllerBase(participantManager)
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<IdeaDto>>> GetIdeasByCategory(int categoryId)
+    public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
+        int projectId, int categoryId, [FromQuery] int page = 1, [FromQuery] string sort = null)
     {
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
@@ -26,11 +29,15 @@ public class IdeasController(
             participantId = p?.ParticipantId;
         }
 
-        var ideas = await manager.GetIdeasByCategoryAsync(categoryId);
-        var dtos = ideas.Select(i => new IdeaDto
+        var project = await projectManager.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
+
+        var paged = await manager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort);
+        var items = paged.Items.Select(i => new IdeaDto
         {
             IdeaId = i.IdeaId,
             Description = i.Description,
+            CreatedAt = i.CreatedAt,
             CommentsCount = i.Comments.OfType<TextComment>().Count(),
             Emojis = i.Comments.OfType<IconComment>()
                 .GroupBy((IconComment ic) => ic.Emoji.Symbol)
@@ -39,11 +46,17 @@ public class IdeasController(
                     EmojiId = g.First().EmojiId,
                     Symbol = g.Key,
                     Count = g.Count(),
-                    PostedByCurrentUser = participantId.HasValue &&
-                                          g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
+                    PostedByCurrentUser = participantId.HasValue && g.Any(ic => ic.Participant.ParticipantId == participantId.Value)
                 }).ToList()
+        }).ToList();
+
+        return Ok(new PagedResult<IdeaDto>
+        {
+            Items = items,
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
         });
-        return Ok(dtos);
     }
 
     [HttpPost]
@@ -102,7 +115,8 @@ public class IdeasController(
     }
 
     [HttpGet("{ideaId}/comments")]
-    public async Task<ActionResult<IEnumerable<TextCommentDto>>> GetCommentsByIdea(int ideaId)
+    public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
+        int projectId, int ideaId, [FromQuery] int page = 1, [FromQuery] string sort = null)
     {
         int? participantId = null;
         if (TryGetParticipantToken(out var token))
@@ -111,29 +125,34 @@ public class IdeasController(
             participantId = p?.ParticipantId;
         }
 
-        var idea = await manager.GetIdeaByIdAsync(ideaId);
-        if (idea == null) return NotFound();
+        var project = await projectManager.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
 
-        var comments = idea.Comments
-            .OfType<TextComment>()
-            .Select(c => new TextCommentDto
-            {
-                CommentId = c.CommentId,
-                Text = c.Text,
-                Emojis = c.EmojiReactions
-                    .Where(r => r.Emoji != null)
-                    .GroupBy((IconComment r) => r.Emoji.Symbol)
-                    .Select(g => new IconCommentDto
-                    {
-                        EmojiId = g.First().EmojiId,
-                        Symbol = g.Key,
-                        Count = g.Count(),
-                        PostedByCurrentUser = participantId.HasValue &&
-                                              g.Any(r => r.Participant.ParticipantId == participantId.Value)
-                    }).ToList()
-            });
+        var paged = await commentManager.GetOkCommentsByIdeaAsync(ideaId, page, project.CommentPageSize, sort);
+        var items = paged.Items.Select(c => new TextCommentDto
+        {
+            CommentId = c.CommentId,
+            Text = c.Text,
+            CreatedAt = c.CreatedAt,
+            Emojis = c.EmojiReactions
+                .Where(r => r.Emoji != null)
+                .GroupBy((IconComment r) => r.Emoji.Symbol)
+                .Select(g => new IconCommentDto
+                {
+                    EmojiId = g.First().EmojiId,
+                    Symbol = g.Key,
+                    Count = g.Count(),
+                    PostedByCurrentUser = participantId.HasValue && g.Any(r => r.Participant.ParticipantId == participantId.Value)
+                }).ToList()
+        }).ToList();
 
-        return Ok(comments);
+        return Ok(new PagedResult<TextCommentDto>
+        {
+            Items = items,
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        });
     }
 
     /// <summary>

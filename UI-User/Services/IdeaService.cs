@@ -7,14 +7,16 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 {
     private const string TokenHeader = "X-Participant-Token";
 
-    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId)
+    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId, int page = 1, string sort = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/categories/{categoryId}/ideas");
+        var url = $"api/projects/{projectId}/categories/{categoryId}/ideas?page={page}";
+        if (sort is not null) url += $"&sort={sort}";
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
-        var dtos = await response.Content.ReadFromJsonAsync<List<ApiIdeaDto>>();
-        if (dtos is null) return new List<IdeaViewModel>();
-        return dtos.Select(d => new IdeaViewModel
+        var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<ApiIdeaDto>>();
+        if (paged is null) return new List<IdeaViewModel>();
+        return paged.Items.Select(d => new IdeaViewModel
         {
             IdeaId = d.IdeaId,
             Description = d.Description,
@@ -68,15 +70,16 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         };
     }
 
-    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId)
+    public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId, int page = 1, string sort = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get,
-            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
+        var url = $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments?page={page}";
+        if (sort is not null) url += $"&sort={sort}";
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
-        var dtos = await response.Content.ReadFromJsonAsync<List<ApiTextCommentDto>>();
-        if (dtos is null) return new List<CommentViewModel>();
-        return dtos.Select(d => new CommentViewModel
+        var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<ApiTextCommentDto>>();
+        if (paged is null) return new List<CommentViewModel>();
+        return paged.Items.Select(d => new CommentViewModel
         {
             CommentId = d.CommentId,
             Text = d.Text,
@@ -95,6 +98,15 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         var token = sessionService.GetToken(projectId);
         if (!string.IsNullOrWhiteSpace(token))
             request.Headers.Add(TokenHeader, token);
+    }
+
+    private class ApiPagedResult<T>
+    {
+        public List<T> Items { get; set; } = new();
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
     }
 
     private class ApiTextCommentDto

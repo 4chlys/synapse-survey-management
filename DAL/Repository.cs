@@ -59,33 +59,49 @@ public class Repository : IRepository
     public async Task<IEnumerable<T>> ReadAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
-        string[] includeStrings = null
+        string[] includeStrings = null,
+        Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+        bool randomize = false,
+        int? skip = null,
+        int? take = null
     ) where T : class
     {
         IQueryable<T> query = _context.Set<T>();
 
-        // apply expression includes
         if (includes != null)
-        {
             foreach (var include in includes)
                 query = query.Include(include);
-        }
 
-        // apply string includes (for nested)
         if (includeStrings != null)
-        {
             foreach (var include in includeStrings)
                 query = query.Include(include);
-        }
 
-        // apply filters
         if (filters != null)
-        {
             foreach (var filter in filters)
                 query = query.Where(filter);
-        }
 
-        return await query.ToListAsync();
+        IQueryable<T> ordered = randomize
+            ? query.OrderBy(_ => EF.Functions.Random())
+            : orderBy != null ? orderBy(query) : query;
+
+        if (skip.HasValue)
+            ordered = ordered.Skip(skip.Value);
+
+        if (take.HasValue)
+            ordered = ordered.Take(take.Value);
+
+        return await ordered.ToListAsync();
+    }
+
+    public async Task<int> CountAsync<T>(Expression<Func<T, bool>>[] filters = null) where T : class
+    {
+        IQueryable<T> query = _context.Set<T>();
+
+        if (filters != null)
+            foreach (var filter in filters)
+                query = query.Where(filter);
+
+        return await query.CountAsync();
     }
 
     /// <summary>
