@@ -116,6 +116,9 @@ public class Repository : IRepository
         string[] includeStrings = null
     ) where T : class
     {
+        if (includes == null && includeStrings == null)
+            return await _context.Set<T>().FindAsync(id);
+
         IQueryable<T> query = _context.Set<T>();
 
         if (includes != null)

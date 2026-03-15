@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace SynapseEnqueteManagement.API.Middleware;
 
 /// <summary>
@@ -8,22 +11,25 @@ public class ApiKeyMiddleware
 {
     private const string ApiKeyHeaderName = "X-Api-Key";
     private readonly RequestDelegate _next;
-    private readonly string _apiKey;
+    private readonly byte[] _apiKeyBytes;
     private readonly ILogger<ApiKeyMiddleware> _logger;
 
     public ApiKeyMiddleware(RequestDelegate next, IConfiguration configuration, ILogger<ApiKeyMiddleware> logger)
     {
         _next = next;
         _logger = logger;
-        _apiKey = configuration["ApiKey"]
-                  ?? throw new InvalidOperationException(
-                      "ApiKey is not configured. Set it in appsettings.json or as an environment variable.");
+        var apiKey = configuration["ApiKey"]
+                     ?? throw new InvalidOperationException(
+                         "ApiKey is not configured. Set it in appsettings.json or as an environment variable.");
+        _apiKeyBytes = Encoding.UTF8.GetBytes(apiKey);
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
         if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var extractedApiKey)
-            || extractedApiKey != _apiKey)
+            || !CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(extractedApiKey.ToString()),
+                _apiKeyBytes))
         {
             _logger.LogWarning("Rejected request with invalid or missing API key from {IP} to {Path}",
                 context.Connection.RemoteIpAddress, context.Request.Path);

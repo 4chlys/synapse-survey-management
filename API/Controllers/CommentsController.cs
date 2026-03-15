@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.BL;
-using SynapseEnqueteManagement.BL.AiModeration;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -11,8 +9,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class CommentsController(
     ICommentManager manager,
     IParticipantManager participantManager,
-    IModerationTokenService tokenService,
-    IAiModerationService moderationService)
+    IModerationResolver moderationResolver)
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("comments")]
@@ -23,7 +20,7 @@ public class CommentsController(
 
         try
         {
-            var status = await ResolveModerationStatusAsync(dto.Text, dto.ModerationToken, projectId);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId);
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
             return Ok(new { comment.CommentId, comment.Text });
         }
@@ -93,15 +90,4 @@ public class CommentsController(
         return NoContent();
     }
 
-    private async Task<ModerationStatus> ResolveModerationStatusAsync(string text, string token, int projectId)
-    {
-        if (!string.IsNullOrEmpty(token))
-        {
-            var cached = tokenService.ValidateToken(text, token, projectId);
-            if (cached.HasValue) return cached.Value;
-        }
-
-        var result = await moderationService.CheckWithAiAsync(text);
-        return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
-    }
 }

@@ -23,7 +23,7 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
         var total = await repository.CountAsync<Idea>(filters);
         var items = await repository.ReadAsync<Idea>(
             filters: filters,
-            includes: [i => i.Comments],
+            includes: [i => i.Comments, i => i.Participant],
             includeStrings: ["Comments.Emoji", "Comments.Participant"],
             orderBy: strategy.DbOrderBy,
             randomize: strategy.Randomize,
@@ -43,10 +43,27 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
                 i => i.Participant.ParticipantId == participantId,
                 i => i.Status != ModerationStatus.Declined
             ],
-            includes: [i => i.Comments],
+            includes: [i => i.Comments, i => i.Participant],
             includeStrings: ["Comments.Emoji", "Comments.Participant"],
             orderBy: q => q.OrderByDescending(i => i.CreatedAt)
         );
+    }
+
+    public async Task<PagedResult<Idea>> GetIdeasWithOwnFirstAsync(int categoryId, int page, int pageSize, string sortKey, int? participantId)
+    {
+        var ownIdeas = participantId.HasValue
+            ? (await GetOwnIdeasByCategoryAsync(categoryId, participantId.Value)).ToList()
+            : new List<Idea>();
+
+        var paged = await GetOkIdeasByCategoryAsync(categoryId, page, pageSize, sortKey, excludeParticipantId: participantId);
+
+        return new PagedResult<Idea>
+        {
+            Items = ownIdeas.Concat(paged.Items),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
@@ -75,14 +92,11 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
     {
         return await repository.ReadByIdAsync<Idea>(
             ideaId,
-            includes: [i => i.Comments],
+            includes: [i => i.Comments, i => i.Participant],
             includeStrings:
             [
                 "Comments.Emoji",
-                "Comments.Participant",
-                "Comments.EmojiReactions",
-                "Comments.EmojiReactions.Emoji",
-                "Comments.EmojiReactions.Participant"
+                "Comments.Participant"
             ]
         );
     }

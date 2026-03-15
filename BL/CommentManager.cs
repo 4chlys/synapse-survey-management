@@ -26,7 +26,7 @@ public class CommentManager(
         var total = await repository.CountAsync<TextComment>(filters);
         var items = await repository.ReadAsync<TextComment>(
             filters: filters,
-            includes: [c => c.EmojiReactions],
+            includes: [c => c.EmojiReactions, c => c.Participant],
             includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
             orderBy: strategy.DbOrderBy,
             randomize: strategy.Randomize,
@@ -46,10 +46,27 @@ public class CommentManager(
                 c => c.Participant.ParticipantId == participantId,
                 c => c.ModerationStatus != ModerationStatus.Declined
             ],
-            includes: [c => c.EmojiReactions],
+            includes: [c => c.EmojiReactions, c => c.Participant],
             includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
             orderBy: q => q.OrderByDescending(c => c.CreatedAt)
         );
+    }
+
+    public async Task<PagedResult<TextComment>> GetCommentsWithOwnFirstAsync(int ideaId, int page, int pageSize, string sortKey, int? participantId)
+    {
+        var ownComments = participantId.HasValue
+            ? (await GetOwnCommentsByIdeaAsync(ideaId, participantId.Value)).ToList()
+            : new List<TextComment>();
+
+        var paged = await GetOkCommentsByIdeaAsync(ideaId, page, pageSize, sortKey, excludeParticipantId: participantId);
+
+        return new PagedResult<TextComment>
+        {
+            Items = ownComments.Concat(paged.Items),
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
     }
 
     public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)

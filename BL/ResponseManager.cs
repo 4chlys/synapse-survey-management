@@ -19,24 +19,5 @@ public class ResponseManager(IRepository repository) : IResponseManager
         return await repository.CreateAsync(response);
     }
 
-    public async Task AddResponsesAsync(Participant participant, IEnumerable<(int QuestionId, string Value)> answers)
-    {
-        foreach (var answer in answers)
-        {
-            if (string.IsNullOrWhiteSpace(answer.Value)) continue;
 
-            var question = await repository.ReadByIdAsync<Question>(answer.QuestionId);
-            if (question is null) continue;
-
-            await AddResponseAsync(answer.Value, question, participant);
-        }
-    }
-
-    public async Task<IEnumerable<Response>> GetResponsesByProjectIdAsync(int projectId)
-    {
-        return await repository.ReadAsync<Response>(
-            filters: [r => r.Question.Questionnaire.Project.ProjectId == projectId],
-            includes: [r => r.Question, r => r.Participant]
-        );
-    }
 }

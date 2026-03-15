@@ -58,6 +58,7 @@ builder.Services.AddScoped<ICategoryManager, CategoryManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<ICommentManager, CommentManager>();
+builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 
 // AI configuration
 //
@@ -73,7 +74,9 @@ builder.Services.AddSingleton<RegexModerationPatterns>();
 // Moderation token service (signed nonce — stateless across instances)
 var tokenSecret = builder.Configuration["ApiKey"]
     ?? throw new InvalidOperationException("ApiKey is not configured. Set it in .env or as an environment variable.");
-builder.Services.AddSingleton<IModerationTokenService>(new ModerationTokenService(tokenSecret));
+
+builder.Services.AddSingleton<IModerationTokenService>(sp =>
+    new ModerationTokenService(tokenSecret, sp.GetRequiredService<ILogger<ModerationTokenService>>()));
 
 // Vertex AI (optional — controlled by use_ai in ai-config.json)
 if (useAi)

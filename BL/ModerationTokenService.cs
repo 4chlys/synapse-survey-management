@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.BL;
@@ -12,17 +13,12 @@ namespace SynapseEnqueteManagement.BL;
 /// result was produced server-side and that the submitted text has not been
 /// altered since the check — without needing shared state between instances.
 /// </summary>
-public class ModerationTokenService : IModerationTokenService
+public class ModerationTokenService(string secret, ILogger<ModerationTokenService> logger) : IModerationTokenService
 {
-    private readonly byte[] _key;
+    private readonly byte[] _key = !string.IsNullOrWhiteSpace(secret)
+        ? Encoding.UTF8.GetBytes(secret)
+        : throw new ArgumentException("Moderation token secret must not be empty.", nameof(secret));
     private static readonly TimeSpan DefaultMaxAge = TimeSpan.FromMinutes(10);
-
-    public ModerationTokenService(string secret)
-    {
-        if (string.IsNullOrWhiteSpace(secret))
-            throw new ArgumentException("Moderation token secret must not be empty.", nameof(secret));
-        _key = Encoding.UTF8.GetBytes(secret);
-    }
 
     public string GenerateToken(string text, ModerationStatus status, int projectId)
     {
@@ -66,8 +62,9 @@ public class ModerationTokenService : IModerationTokenService
 
             return (ModerationStatus)statusByte;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Failed to validate moderation token");
             return null;
         }
     }
