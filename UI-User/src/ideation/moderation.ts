@@ -40,13 +40,14 @@ async function callModeration(
     endpoint: 'regex' | 'ai',
     text: string,
     projectId: number,
+    contentType: 'idea' | 'comment' = 'idea',
     signal?: AbortSignal,
 ): Promise<ModerationResponse> {
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/${endpoint}`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken()},
-            body: JSON.stringify({text}),
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
+            body: JSON.stringify({ text, contentType }),
             signal,
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -54,7 +55,7 @@ async function callModeration(
     } catch (err) {
         if ((err as Error).name === 'AbortError') throw err;
         console.warn(`Moderation (${endpoint}) unreachable:`, err);
-        return {moderationToken: "", isAcceptable: true, reason: null, flaggedBy: null};
+        return { moderationToken: '', isAcceptable: true, reason: null, flaggedBy: null };
     }
 }
 
@@ -62,8 +63,9 @@ async function callModeration(
 export async function callModerationAi(
     text: string,
     projectId: number,
+    contentType: 'idea' | 'comment' = 'idea',
 ): Promise<ModerationResponse> {
-    return callModeration('ai', text, projectId);
+    return callModeration('ai', text, projectId, contentType);
 }
 
 /** Called by ideationForm.ts on submit. Returns suggestion text + its pre-approved token. */
@@ -187,6 +189,7 @@ export function attachModeration(
     element: HTMLTextAreaElement | HTMLInputElement,
     callbacks: ModerationCallbacks,
     projectId: number,
+    contentType: 'idea' | 'comment' = 'idea',
 ): () => void {
     let regexTimer: ReturnType<typeof setTimeout> | null = null;
     let aiTimer: ReturnType<typeof setTimeout> | null = null;
@@ -221,7 +224,7 @@ export function attachModeration(
         aiAbort?.abort();
         aiAbort = new AbortController();
         try {
-            const result = await callModeration('ai', snapshot, projectId, aiAbort.signal);
+            const result = await callModeration('ai', snapshot, projectId, contentType, aiAbort.signal);
             if (element.value !== snapshot) return;
             if (!result.isAcceptable && result.reason)
                 callbacks.onBlock(result.reason, result.flaggedBy ?? 'AI');
@@ -253,6 +256,7 @@ export function attachModeration(
 export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
     projectId: number,
+    contentType: 'idea' | 'comment' = 'idea',
 ): () => void {
     const wrapper = document.createElement('div');
     wrapper.className = 'flex flex-col flex-1 min-w-0';

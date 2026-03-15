@@ -17,25 +17,32 @@ public sealed class RegexModerationPatterns
     private static readonly RegexOptions Opts =
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled;
 
-    private readonly IReadOnlyList<(Regex Pattern, string Reason)> _patterns;
+    private readonly IReadOnlyList<(Regex Pattern, string Reason)> _sharedPatterns;
+    private readonly IReadOnlyList<(Regex Pattern, string Reason)> _ideaOnlyPatterns;
 
     public RegexModerationPatterns(AiConfig config, BannedWordList bannedWordList)
     {
-        var list = new List<(Regex, string)>();
+        var shared = new List<(Regex, string)>();
+        var ideaOnly = new List<(Regex, string)>();
 
+        // Banned words apply to everything
         foreach (var group in bannedWordList.All.GroupBy(e => e.Reason))
         {
             var alternation = string.Join("|", group.Select(e => Regex.Escape(e.Word)));
-            list.Add((new Regex($@"\b({alternation})\b", Opts), group.Key));
+            shared.Add((new Regex($@"\b({alternation})\b", Opts), group.Key));
         }
 
+        // Structural patterns from config — tag idea-only ones via a naming convention
         foreach (var entry in config.Moderation.RegexPatterns)
         {
             if (string.IsNullOrWhiteSpace(entry.Pattern)) continue;
-
             try
             {
-                list.Add((new Regex(entry.Pattern, Opts), entry.Reason));
+                var compiled = new Regex(entry.Pattern, Opts);
+                if (entry.IdeaOnly)
+                    ideaOnly.Add((compiled, entry.Reason));
+                else
+                    shared.Add((compiled, entry.Reason));
             }
             catch (ArgumentException ex)
             {
@@ -44,9 +51,12 @@ public sealed class RegexModerationPatterns
             }
         }
 
-        _patterns = list.AsReadOnly();
+        _sharedPatterns = shared.AsReadOnly();
+        _ideaOnlyPatterns = ideaOnly.AsReadOnly();
     }
 
-    /// <summary>Each entry: (compiled pattern, human-readable rejection reason).</summary>
-    public IReadOnlyList<(Regex Pattern, string Reason)> All => _patterns;
+    public IReadOnlyList<(Regex Pattern, string Reason)> GetPatterns(string contentType) =>
+        contentType == "comment"
+            ? _sharedPatterns
+            : _sharedPatterns.Concat(_ideaOnlyPatterns).ToList().AsReadOnly();
 }

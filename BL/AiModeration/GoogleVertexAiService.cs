@@ -53,12 +53,11 @@ public sealed class GoogleVertexAiService : IAiModerationService
         _t2 = f.LevenshteinThresholds.MaxLengthFor2Edits;
     }
 
-    public ModerationResult CheckWithRegex(string text)
+    public ModerationResult CheckWithRegex(string text, string contentType = "idea")
     {
-        if (string.IsNullOrWhiteSpace(text))
-            return ModerationResult.Acceptable();
+        if (string.IsNullOrWhiteSpace(text)) return ModerationResult.Acceptable();
 
-        var raw = RunRegexAndFuzzy(text);
+        var raw = RunRegexAndFuzzy(text, contentType);
         if (!raw.IsAcceptable) return raw;
 
         string norm = ModerationUtility.NormalizeForModeration(text);
@@ -66,25 +65,25 @@ public sealed class GoogleVertexAiService : IAiModerationService
         string collapsed = ModerationUtility.CollapseRepeats(norm);
         string collapsedNS = ModerationUtility.CollapseRepeats(normNoSpace);
 
-        return RunRegexAndFuzzy(norm) is { IsAcceptable: false } r1 ? r1
-            : RunRegexAndFuzzy(normNoSpace) is { IsAcceptable: false } r2 ? r2
-            : RunRegexAndFuzzy(collapsed) is { IsAcceptable: false } r3 ? r3
-            : RunRegexAndFuzzy(collapsedNS);
+        return RunRegexAndFuzzy(norm, contentType) is { IsAcceptable: false } r1 ? r1
+            : RunRegexAndFuzzy(normNoSpace, contentType) is { IsAcceptable: false } r2 ? r2
+            : RunRegexAndFuzzy(collapsed, contentType) is { IsAcceptable: false } r3 ? r3
+            : RunRegexAndFuzzy(collapsedNS, contentType);
     }
 
-    public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default)
+    public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default, string contentType = "idea")
     {
         if (string.IsNullOrWhiteSpace(text))
             return ModerationResult.Acceptable();
 
-        var regexResult = CheckWithRegex(text);
+        var regexResult = CheckWithRegex(text, contentType);
         if (!regexResult.IsAcceptable) return regexResult;
 
         if (!_config.Moderation.UseAi) return ModerationResult.Acceptable();
 
         try
         {
-            return await CallModerationAsync(text, ct);
+            return await CallModerationAsync(text, contentType, ct);
         }
         catch (OperationCanceledException)
         {
@@ -132,26 +131,28 @@ public sealed class GoogleVertexAiService : IAiModerationService
         }
     }
 
-    private ModerationResult RunRegexAndFuzzy(string candidate)
+    private ModerationResult RunRegexAndFuzzy(string candidate, string contentType)
     {
-        foreach (var (pattern, reason) in _patterns.All)
+        foreach (var (pattern, reason) in _patterns.GetPatterns(contentType))
             if (pattern.IsMatch(candidate))
                 return ModerationResult.RejectedByRegex(reason);
 
         foreach (var (word, reason) in _bannedWords.All)
-            if (ModerationUtility.FuzzyContainsBannedWord(
-                    candidate, word,
-                    _minSkeletonLength, _t0, _t1, _t2))
+            if (ModerationUtility.FuzzyContainsBannedWord(candidate, word, _minSkeletonLength, _t0, _t1, _t2))
                 return ModerationResult.RejectedByRegex(reason);
 
         return ModerationResult.Acceptable();
     }
 
-    private async Task<ModerationResult> CallModerationAsync(string text, CancellationToken ct)
+    private async Task<ModerationResult> CallModerationAsync(string text, string contentType, CancellationToken ct)
     {
+        var prompt = contentType == "comment"
+            ? _config.Moderation.CommentModerationPrompt
+            : _config.Moderation.ModerationPrompt;
+
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, _config.Moderation.ModerationPrompt),
+            new(ChatRole.System, prompt),
             new(ChatRole.User, text),
         };
 
