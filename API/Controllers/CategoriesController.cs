@@ -12,17 +12,16 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
         var categories = await categoryManager.GetCategoriesAsync(projectId);
-        var dtos = new List<CategoryDto>();
-        foreach (var c in categories)
+        var tasks = categories.Select(async c => new CategoryDto
         {
-            dtos.Add(new CategoryDto
-            {
-                CategoryId = c.CategoryId,
-                Name = c.Name,
-                Description = c.Description,
-                IdeaCount = await categoryManager.GetIdeaCountAsync(c.CategoryId)
-            });
-        }
+            CategoryId = c.CategoryId,
+            Name = c.Name,
+            Description = c.Description,
+            IdeaCount = await categoryManager.GetIdeaCountAsync(c.CategoryId)
+        });
+
+        var dtos = await Task.WhenAll(tasks);
+
         return Ok(dtos);
     }
 

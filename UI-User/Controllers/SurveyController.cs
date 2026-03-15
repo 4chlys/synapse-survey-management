@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
 using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Models.Survey;
@@ -36,8 +37,7 @@ public class SurveyController(
         if (model is null)
             return View("NotFound");
 
-        ViewData["OrganisationLogoUrl"] = project.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = project.OrganisationWebsiteUrl;
+        this.SetLayoutData(project, projectId);
         var strategy = formStrategyFactory.Create(project.FormType);
         ViewData["FormLayout"] = strategy.GetLayoutData();
         return View(strategy.GetViewName(), model);
@@ -70,15 +70,15 @@ public class SurveyController(
     public async Task<IActionResult> ThankYou(int projectId)
     {
         var project = await projectApiService.GetProjectAsync(projectId);
-        var vm = new ThankYouViewModel
+
+        this.SetLayoutData(project, projectId);
+
+        return View(new ThankYouViewModel
         {
             ProjectId = projectId,
             OrganisationName = project?.OrganisationName ?? string.Empty,
             OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
-        };
-        ViewData["OrganisationLogoUrl"] = vm.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = vm.OrganisationWebsiteUrl;
-        return View(vm);
+        });
     }
 }

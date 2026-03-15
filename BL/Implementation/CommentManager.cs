@@ -55,11 +55,14 @@ public class CommentManager(
 
     public async Task<PagedResult<TextComment>> GetCommentsWithOwnFirstAsync(int ideaId, int page, int pageSize, string sortKey, int? participantId)
     {
-        var ownComments = participantId.HasValue
-            ? (await GetOwnCommentsByIdeaAsync(ideaId, participantId.Value)).ToList()
-            : new List<TextComment>();
+        var ownCommentsTask = participantId.HasValue
+            ? ( GetOwnCommentsByIdeaAsync(ideaId, participantId.Value))
+            : Task.FromResult(Enumerable.Empty<TextComment>());
 
-        var paged = await GetOkCommentsByIdeaAsync(ideaId, page, pageSize, sortKey, excludeParticipantId: participantId);
+        var pagedTask = GetOkCommentsByIdeaAsync(ideaId, page, pageSize, sortKey, excludeParticipantId: participantId);
+        await Task.WhenAll(ownCommentsTask, pagedTask);
+        var ownComments = ownCommentsTask.Result;
+        var paged = pagedTask.Result;
 
         return new PagedResult<TextComment>
         {

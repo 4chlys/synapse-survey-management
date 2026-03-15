@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.Filters;
-using SynapseEnqueteManagement.UI.User.Models;
+using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Models.Survey;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Project;
@@ -13,26 +14,32 @@ public class CategoryController(CategoryService categoryService, IProjectApiServ
 {
     public async Task<IActionResult> Index(int projectId)
     {
-        ViewData["ProjectId"] = projectId;
-        var project = await projectApiService.GetProjectAsync(projectId);
-        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
-        var categories = await categoryService.GetCategoriesAsync(projectId);
-        return View(categories);
+        var projectTask = projectApiService.GetProjectAsync(projectId);
+        var categoriesTask = categoryService.GetCategoriesAsync(projectId);
+
+        await Task.WhenAll(projectTask, categoriesTask);
+
+        this.SetLayoutData(projectTask.Result, projectId);
+
+        return View(new CategoryIndexViewModel
+        {
+            ProjectId = projectId,
+            Categories = categoriesTask.Result
+        });
     }
 
     public async Task<IActionResult> FinalThankYou(int projectId)
     {
         var project = await projectApiService.GetProjectAsync(projectId);
-        var vm = new ThankYouViewModel
+
+        this.SetLayoutData(project, projectId);
+
+        return View(new ThankYouViewModel
         {
             ProjectId = projectId,
             OrganisationName = project?.OrganisationName ?? string.Empty,
             OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
-        };
-        ViewData["OrganisationLogoUrl"] = vm.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = vm.OrganisationWebsiteUrl;
-        return View(vm);
+        });
     }
 }
