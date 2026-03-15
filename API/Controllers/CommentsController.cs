@@ -13,14 +13,14 @@ public class CommentsController(
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("comments")]
-    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto)
+    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct);
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
             return Ok(new { comment.CommentId, comment.Text });
         }

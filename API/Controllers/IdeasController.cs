@@ -38,14 +38,14 @@ public class IdeasController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto)
+    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
             var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
 
             var ideaCount = await ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
