@@ -22,6 +22,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
+});
 
 // Database
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
@@ -116,6 +123,7 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseHttpLogging();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.MapControllers();

@@ -11,8 +11,8 @@ public interface ICommentManager
     Task<PagedResult<TextComment>> GetOkCommentsByIdeaAsync(int ideaId, int page, int pageSize, string sortKey, int? excludeParticipantId = null);
     Task<IEnumerable<TextComment>> GetOwnCommentsByIdeaAsync(int ideaId, int participantId);
     Task<IEnumerable<Emoji>> GetEmojisAsync();
-    Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId, Participant participant);
-    Task<bool> RemoveIconCommentAsync(int ideaId, int emojiId, Participant participant);
-    Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId, Participant participant);
-    Task<bool> RemoveCommentReactionAsync(int commentId, int emojiId, Participant participant);
+    Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant);
+    Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant);
+    Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant);
+    Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant);
 }

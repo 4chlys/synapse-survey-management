@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
 using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Models.Survey;
@@ -44,6 +45,7 @@ public class SurveyController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("participant-creation")]
     public async Task<IActionResult> Submit(int projectId, IFormCollection form)
     {
         var answers = new Dictionary<int, string>();

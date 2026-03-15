@@ -92,10 +92,10 @@ public sealed class GoogleVertexAiService : IAiModerationService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
-                "Vertex AI moderation call failed; failing open. Snippet: {Snippet}",
+            _logger.LogError(ex,
+                "Vertex AI moderation call failed; failing closed. Snippet: {Snippet}",
                 text.Length > 80 ? text[..80] + "…" : text);
-            return ModerationResult.Acceptable();
+            return ModerationResult.ServiceUnavailable();
         }
     }
 
