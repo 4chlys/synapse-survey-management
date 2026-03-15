@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -44,6 +44,11 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
     protected async Task<bool> HasParticipantRespondedAsync(Guid token)
     {
         return await participantManager.HasParticipantRespondedAsync(token);
+    }
+
+    protected async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
+    {
+        await participantManager.SaveContactInfoAsync(participantId, email, phoneNumber);
     }
 
     protected bool TryGetParticipantToken(out Guid token)

@@ -5,7 +5,8 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Implementation;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 

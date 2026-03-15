@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.API.DTOs;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.API.DTOs.Project;
+using SynapseEnqueteManagement.API.DTOs.Survey;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -14,6 +16,19 @@ public class ResponsesController(
     IResponseManager responseManager)
     : ParticipantControllerBase(participantManager)
 {
+    /// <summary>
+    /// Saves optional contact info (email / phone) for the current participant.
+    /// </summary>
+    [HttpPatch("participants/me/contact")]
+    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
+        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, dto.PhoneNumber);
+        return NoContent();
+    }
+
     /// <summary>
     /// Creates an anonymous participant and returns a session token.
     /// The client stores this token in localStorage and sends it as

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.API.DTOs;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.API.DTOs.Ideation;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 

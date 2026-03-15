@@ -23,6 +23,7 @@ public class Project : IHasCreatedAt
     public FormType FormType { get; set; } = FormType.VerticalScroll;
     public int IdeaPageSize { get; set; } = 5;
     public int CommentPageSize { get; set; } = 20;
+    public bool RequestContactInfo { get; set; } = false;
 
     public Questionnaire Questionnaire { get; set; }
 

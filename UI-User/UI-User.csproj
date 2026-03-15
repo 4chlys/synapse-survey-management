@@ -22,11 +22,11 @@
     <None Include="tsconfig.json" />
 
     <!-- Don't remove this line or your manifest.json won't be copied on publish -->
-    <Content Include="wwwroot\.vite\**" />
+    <Content Include="wwwroot\dist\.vite\**" />
 
-    <Content Remove="Assets\favicon.ico" />
+    <Content Remove="src\favicon.ico" />
 
-    <None Update="Assets\favicon.ico">
+    <None Update="src\favicon.ico">
       <Link>wwwroot\favicon.ico</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -35,6 +35,8 @@
 
   <ItemGroup>
     <_ContentIncludedByDefault Remove="wwwroot\css\site.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-BsU-Yf4M.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-Dr7MkUkP.css" />
   </ItemGroup>
 
   <!-- Ensure Node environment on Build -->
