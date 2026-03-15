@@ -7,6 +7,11 @@
 #              De VM krijgt dan oon het startup script nodig dat hier in aangemaakt wordt.                                    |
 #=============================================================================================================================
 
+# if [ "$(id -u)" != "0" ];
+# then 
+# echo "Use as sudo"
+# exit 1
+# fi
 
 # ===== SECRETS LADEN UIT .env =====
 if [ ! -f .env ]; then
@@ -34,19 +39,19 @@ gcloud services enable artifactregistry.googleapis.com
 gcloud services enable aiplatform.googleapis.com
 
 echo ""
-echo "=== Stap 2: Cloud SQL aanmaken ==="
-gcloud sql instances create $DB_INSTANCE \
-  --database-version=POSTGRES_15 \
-  --tier=db-f1-micro \
-  --region=$REGION \
-  --root-password=$DB_PASSWORD
+# echo "=== Stap 2: Cloud SQL aanmaken ==="
+# gcloud sql instances create $DB_INSTANCE \
+#   --database-version=POSTGRES_15 \
+#   --tier=db-f1-micro \
+#   --region=$REGION \
+#   --root-password=$DB_PASSWORD
 
-gcloud sql databases create $DB_NAME \
-  --instance=$DB_INSTANCE
+# gcloud sql databases create $DB_NAME \
+#   --instance=$DB_INSTANCE
 
-gcloud sql users create $DB_USER \
-  --instance=$DB_INSTANCE \
-  --password=$DB_PASSWORD
+# gcloud sql users create $DB_USER \
+#   --instance=$DB_INSTANCE \
+#   --password=$DB_PASSWORD
 
 # Cloud SQL IP ophalen
 DB_IP=$(gcloud sql instances describe $DB_INSTANCE \
@@ -88,12 +93,13 @@ docker run -d \\
   --name mvp-api \\
   --restart always \\
   -p 8080:8080 \\
-  -e ASPNETCORE_ENVIRONMENT=Development \\
+  -e ASPNETCORE_ENVIRONMENT=Production \\
   -e DB_HOST=$DB_IP \\
   -e DB_PORT=5432 \\
   -e DB_USER=$DB_USER \\
   -e DB_PASSWORD=$DB_PASSWORD \\
   -e DB_NAME=$DB_NAME \\
+  -e ApiKey=REDACTED" \\
   $IMAGE_API
 
 # UI-User container
@@ -102,8 +108,9 @@ docker run -d \\
   --name mvp-ui \\
   --restart always \\
   -p 80:8080 \\
-  -e ASPNETCORE_ENVIRONMENT=Development \\
+  -e ASPNETCORE_ENVIRONMENT=Production \\
   -e ApiBaseUrl=http://localhost:8080 \\
+    -e ApiKey=REDACTED" \\
   $IMAGE_UI
 EOF
 
