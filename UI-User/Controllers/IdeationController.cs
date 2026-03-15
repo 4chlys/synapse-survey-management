@@ -102,6 +102,12 @@ public class IdeationController(
     {
         await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
 
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
+            return Json(idea?.Emojis ?? []);
+        }
+
         if (returnPage == "Index")
             return RedirectToAction("Index", new { projectId, categoryId });
 
@@ -121,6 +127,12 @@ public class IdeationController(
         string returnPage)
     {
         await commentService.RemoveIconCommentAsync(projectId, categoryId, ideaId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
+            return Json(idea?.Emojis ?? []);
+        }
 
         if (returnPage == "Index")
             return RedirectToAction("Index", new { projectId, categoryId });
