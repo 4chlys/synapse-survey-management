@@ -26,8 +26,8 @@ COPY . .
 RUN dotnet publish "UI-User/UI-User.csproj" -c Release -o /app/publish
 
 # Vite manifest manueel kopiëren (wordt uitgesloten door .NET SDK omdat map begint met punt)
-RUN mkdir -p /app/publish/wwwroot/.vite && \
-    cp /src/UI-User/wwwroot/.vite/manifest.json /app/publish/wwwroot/.vite/manifest.json
+RUN mkdir -p /app/publish/wwwroot/dist/.vite && \
+    cp /src/UI-User/wwwroot/dist/.vite/manifest.json /app/publish/wwwroot/dist/.vite/manifest.json
 
 FROM base AS final
 WORKDIR /app
