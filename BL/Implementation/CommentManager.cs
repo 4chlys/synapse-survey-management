@@ -158,7 +158,6 @@ public class CommentManager(
 
         var reaction = new IconComment
         {
-            Idea = comment.Idea,
             EmojiId = emojiId,
             TextComment = comment,
             Participant = participant,
