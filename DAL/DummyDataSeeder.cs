@@ -62,6 +62,7 @@ public class DummyDataSeeder
         {
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
+            RequestContactInfo = true,
             Questionnaire = questionnaire1,
             OrganisationName = "Synapse",
             OrganisationLogoUrl = "https://placehold.co/120x40?text=Synapse",

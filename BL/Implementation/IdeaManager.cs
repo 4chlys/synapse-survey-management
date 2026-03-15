@@ -89,6 +89,11 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
         return await repository.CreateAsync(idea);
     }
 
+    public async Task<int> GetIdeaCountByParticipantAsync(int participantId)
+    {
+        return await repository.CountAsync<Idea>([i => i.Participant.ParticipantId == participantId]);
+    }
+
     public async Task<Idea> GetIdeaByIdAsync(int ideaId)
     {
         return await repository.ReadByIdAsync<Idea>(

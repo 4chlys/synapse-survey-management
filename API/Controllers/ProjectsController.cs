@@ -23,7 +23,8 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             OrganisationName = project.OrganisationName ?? string.Empty,
             OrganisationLogoUrl = project.OrganisationLogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = project.OrganisationWebsiteUrl ?? string.Empty,
-            Introduction = project.Introduction?.Text ?? string.Empty
+            Introduction = project.Introduction?.Text ?? string.Empty,
+            RequestContactInfo = project.RequestContactInfo
         });
     }
 }

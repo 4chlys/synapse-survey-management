@@ -9,4 +9,5 @@ public class ProjectDto
     public string OrganisationLogoUrl { get; set; } = string.Empty;
     public string OrganisationWebsiteUrl { get; set; } = string.Empty;
     public string Introduction { get; set; } = string.Empty;
+    public bool RequestContactInfo { get; set; }
 }

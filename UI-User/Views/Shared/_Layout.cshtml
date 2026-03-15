@@ -10,10 +10,9 @@
     <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)"/>
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@
     <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken"/>
-
-    <link rel="stylesheet" vite-href="~/main.css" />
+    
     <script type="module" vite-src="~/main.ts"></script>
-
+    <link rel="stylesheet" vite-href="~/main.css" />
 </head>
 <body class="bg-gray-100 min-h-screen">
 

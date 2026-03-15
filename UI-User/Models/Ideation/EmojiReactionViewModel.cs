@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public class CommentEmojiViewModel
+public class EmojiReactionViewModel
 {
     public int EmojiId { get; set; }
     public string Symbol { get; set; }
