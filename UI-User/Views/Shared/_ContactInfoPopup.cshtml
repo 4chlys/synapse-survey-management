@@ -1,7 +1,8 @@
+@model IdeaIndexViewModel
 @{
-    var projectId = ViewData["ProjectId"];
-    var categoryId = ViewData["CategoryId"];
-    var requestContactInfo = ViewData["RequestContactInfo"] is true;
+    var projectId = Model.ProjectId;
+    var categoryId = Model.CategoryId;
+    var requestContactInfo = Model.RequestContactInfo;
 }
 
 <div id="contactInfoPopup"

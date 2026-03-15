@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
@@ -35,8 +36,7 @@ public class ProjectLandingPageController : Controller
             return RedirectToAction("Index", "Category", new { projectId });
         }
         
-        ViewData["OrganisationLogoUrl"] = project.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = project.OrganisationWebsiteUrl;
+        this.SetLayoutData(project, projectId);
         return View(project);
     }
 }

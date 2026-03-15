@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.Filters;
+using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 
@@ -17,64 +19,77 @@ public class IdeationController(
 {
     public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
     {
-        ViewData["ProjectId"] = projectId;
-        ViewData["CategoryId"] = categoryId;
-        ViewData["ShowModerationPopup"] = true;
-        var project = await projectApiService.GetProjectAsync(projectId);
-        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
-        if (contactInfo)
-        {
-            ViewData["ShowContactInfoPopup"] = true;
-            ViewData["RequestContactInfo"] = project?.RequestContactInfo ?? false;
-        }
-        ViewBag.Emojis = await emojiService.GetEmojisAsync();
+        var projectTask = projectApiService.GetProjectAsync(projectId);
+        var emojisTask = emojiService.GetEmojisAsync();
+        var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        var ideasTask = ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
 
-        var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        await Task.WhenAll(projectTask, emojisTask, categoryTask, ideasTask);
+
+        var project = projectTask.Result;
+        var category = categoryTask.Result;
         if (category == null) return NotFound();
 
-        var ideas = await ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
-        ViewBag.Category = category;
-        return View(ideas);
+        this.SetLayoutData(project, projectId, showModerationPopup: true);
+
+        return View(new IdeaIndexViewModel
+        {
+            ProjectId = projectId,
+            CategoryId = categoryId,
+            Category = category,
+            Ideas = ideasTask.Result,
+            Emojis = emojisTask.Result,
+            ShowContactInfoPopup = contactInfo,
+            RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false)
+        });
     }
 
     public async Task<IActionResult> Detail(int projectId, int categoryId, int ideaId)
     {
-        var project = await projectApiService.GetProjectAsync(projectId);
-        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
-        ViewData["ShowModerationPopup"] = true;
+        var projectTask = projectApiService.GetProjectAsync(projectId);
+        var ideaTask = ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
+        var commentsTask = ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+        var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        var emojisTask = emojiService.GetEmojisAsync();
 
-        var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
+        await Task.WhenAll(projectTask, ideaTask, commentsTask, categoryTask, emojisTask);
+
+        var idea = ideaTask.Result;
         if (idea == null) return NotFound();
 
-        var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
-        var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        this.SetLayoutData(projectTask.Result, projectId, showModerationPopup: true);
 
-        ViewBag.Category = category;
-        ViewBag.ProjectId = projectId;
-        ViewBag.CategoryId = categoryId;
-        ViewBag.Comments = comments;
-        ViewBag.Emojis = await emojiService.GetEmojisAsync();
-
-        return View(idea);
+        return View(new IdeaDetailViewModel
+        {
+            ProjectId = projectId,
+            CategoryId = categoryId,
+            Category = categoryTask.Result!,
+            Idea = idea,
+            Comments = commentsTask.Result,
+            Emojis = emojisTask.Result
+        });
     }
 
     public async Task<IActionResult> MyIdeas(int projectId, int categoryId)
     {
-        var project = await projectApiService.GetProjectAsync(projectId);
-        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
-        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
+        var projectTask = projectApiService.GetProjectAsync(projectId);
+        var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        var ideasTask = ideaService.GetMyIdeasAsync(projectId, categoryId);
 
-        var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        await Task.WhenAll(projectTask, categoryTask, ideasTask);
+
+        var category = categoryTask.Result;
         if (category == null) return NotFound();
 
-        ViewBag.Category = category;
-        ViewData["ProjectId"] = projectId;
-        ViewData["CategoryId"] = categoryId;
+        this.SetLayoutData(projectTask.Result, projectId);
 
-        var ideas = await ideaService.GetMyIdeasAsync(projectId, categoryId);
-        return View(ideas);
+        return View(new MyIdeasViewModel
+        {
+            ProjectId = projectId,
+            CategoryId = categoryId,
+            Category = category,
+            Ideas = ideasTask.Result
+        });
     }
 
     [HttpPost]

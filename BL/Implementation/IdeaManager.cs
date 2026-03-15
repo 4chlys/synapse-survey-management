@@ -50,23 +50,6 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
         );
     }
 
-    public async Task<PagedResult<Idea>> GetIdeasWithOwnFirstAsync(int categoryId, int page, int pageSize, string sortKey, int? participantId)
-    {
-        var ownIdeas = participantId.HasValue
-            ? (await GetOwnIdeasByCategoryAsync(categoryId, participantId.Value)).ToList()
-            : new List<Idea>();
-
-        var paged = await GetOkIdeasByCategoryAsync(categoryId, page, pageSize, sortKey, excludeParticipantId: participantId);
-
-        return new PagedResult<Idea>
-        {
-            Items = ownIdeas.Concat(paged.Items),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
-        };
-    }
-
     public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant)
     {
