@@ -1,6 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.BL;
 
 namespace SynapseEnqueteManagement.BL.Interfaces;
 
