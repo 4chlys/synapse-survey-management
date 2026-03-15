@@ -1,6 +1,6 @@
 import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
 
-const MIN_LENGTH = 3;
+const MIN_LENGTH = 2;
 
 export function wireIdeationForm(
     form: HTMLFormElement,
