@@ -283,7 +283,7 @@ export function wireModerationField(
         input.classList.remove('border-red-400');
     };
 
-    const detach = attachModeration(input, {onBlock: showError, onClear: clearError}, projectId);
+    const detach = attachModeration(input, {onBlock: showError, onClear: clearError}, projectId, contentType);
     return () => {
         detach();
         // Unwrap: move input back to its original position and remove wrapper
