@@ -19,7 +19,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         return paged?.Items ?? new List<IdeaViewModel>();
     }
 
-    public async Task<bool> CreateIdeaAsync(
+    public async Task<CreateIdeaResultViewModel> CreateIdeaAsync(
         int projectId,
         int categoryId,
         string description,
@@ -31,7 +31,15 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
 
         AddTokenHeader(request, projectId);
         var response = await httpClient.SendAsync(request);
-        return response.IsSuccessStatusCode;
+
+        if (!response.IsSuccessStatusCode)
+            return new CreateIdeaResultViewModel { Success = false };
+
+        var result = await response.Content.ReadFromJsonAsync<CreateIdeaResultViewModel>();
+        if (result is null) return new CreateIdeaResultViewModel { Success = false };
+
+        result.Success = true;
+        return result;
     }
 
     public async Task<IdeaViewModel> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)

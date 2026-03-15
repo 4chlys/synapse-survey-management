@@ -150,6 +150,12 @@
         }
     </div>
 
+    @* Contact info popup — shown after posting first idea when project requests contact info *@
+    @if (ViewData["ShowContactInfoPopup"] is true)
+    {
+        await Html.RenderPartialAsync("_ContactInfoPopup");
+    }
+
     @* Bottom Navigation *@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe">
         <div class="max-w-sm mx-auto px-6 py-4 flex justify-around items-center">

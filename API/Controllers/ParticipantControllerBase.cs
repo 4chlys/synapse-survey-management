@@ -46,6 +46,11 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return await participantManager.HasParticipantRespondedAsync(token);
     }
 
+    protected async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
+    {
+        await participantManager.SaveContactInfoAsync(participantId, email, phoneNumber);
+    }
+
     protected bool TryGetParticipantToken(out Guid token)
     {
         token = Guid.Empty;

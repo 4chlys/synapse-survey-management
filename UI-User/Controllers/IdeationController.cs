@@ -11,10 +11,11 @@ public class IdeationController(
     IdeaService ideaService,
     CommentService commentService,
     EmojiService emojiService,
-    IProjectApiService projectApiService)
+    IProjectApiService projectApiService,
+    ParticipantService participantService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId, int categoryId)
+    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
     {
         ViewData["ProjectId"] = projectId;
         ViewData["CategoryId"] = categoryId;
@@ -22,6 +23,11 @@ public class IdeationController(
         var project = await projectApiService.GetProjectAsync(projectId);
         ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
         ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
+        if (contactInfo)
+        {
+            ViewData["ShowContactInfoPopup"] = true;
+            ViewData["RequestContactInfo"] = project?.RequestContactInfo ?? false;
+        }
         ViewBag.Emojis = await emojiService.GetEmojisAsync();
 
         var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
@@ -61,8 +67,19 @@ public class IdeationController(
         string description,
         string moderationToken = null)
     {
-        var success = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
-        if (!success) return PartialView("_ModerationPopup");
+        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
+        if (!result.Success) return PartialView("_ModerationPopup");
+
+        if (result.IsFirstIdea)
+            return RedirectToAction("Index", new { projectId, categoryId, contactInfo = true });
+
+        return RedirectToAction("Index", new { projectId, categoryId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email, string phoneNumber)
+    {
+        await participantService.SaveContactInfoAsync(projectId, email, phoneNumber);
         return RedirectToAction("Index", new { projectId, categoryId });
     }
 

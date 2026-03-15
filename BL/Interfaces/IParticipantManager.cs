@@ -8,4 +8,5 @@ public interface IParticipantManager
     Task<Participant> GetParticipantByIdAsync(int participantId);
     Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken);
     Task<bool> HasParticipantRespondedAsync(Guid sessionToken);
+    Task SaveContactInfoAsync(int participantId, string email, string phoneNumber);
 }

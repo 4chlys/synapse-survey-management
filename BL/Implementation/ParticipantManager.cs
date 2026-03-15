@@ -34,4 +34,13 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
     {
         return await repository.ExistsAsync<Response>(r => r.Participant.SessionToken == sessionToken);
     }
+
+    public async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
+    {
+        var participant = await repository.ReadByIdAsync<Participant>(participantId);
+        if (participant is null) return;
+        participant.Email = email;
+        participant.PhoneNumber = phoneNumber;
+        await repository.UpdateAsync(participant);
+    }
 }

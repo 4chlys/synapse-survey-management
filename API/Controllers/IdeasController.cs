@@ -38,7 +38,7 @@ public class IdeasController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<IdeaDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto)
+    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -47,11 +47,15 @@ public class IdeasController(
         {
             var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId);
             var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
-            return Created(string.Empty, new IdeaDto
+
+            var ideaCount = await ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
+            var project = await projectManager.GetProjectByIdAsync(projectId);
+
+            return Created(string.Empty, new CreateIdeaResultDto
             {
                 IdeaId = idea.IdeaId,
-                Description = idea.Description,
-                CommentsCount = 0
+                IsFirstIdea = ideaCount == 1,
+                RequestContactInfo = project?.RequestContactInfo ?? false
             });
         }
         catch (KeyNotFoundException e)

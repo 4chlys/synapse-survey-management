@@ -9,5 +9,5 @@ public class IdeaViewModel
     public int CommentsCount { get; set; }
     public bool IsOwnedByCurrentUser { get; set; }
     public bool IsFlagged { get; set; }
-    public List<IdeaEmojiViewModel> Emojis { get; set; } = new();
+    public List<EmojiReactionViewModel> Emojis { get; set; } = new();
 }
