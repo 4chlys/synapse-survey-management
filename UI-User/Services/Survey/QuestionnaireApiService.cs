@@ -30,7 +30,7 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         {
             QuestionId = q.QuestionId,
             Text = q.Text,
-            Format = Enum.Parse<QuestionFormat>(q.QuestionFormat),
+            Format = Enum.TryParse<QuestionFormat>(q.QuestionFormat, out var fmt) ? fmt : QuestionFormat.Open,
             AnswerChoices = q.AnswerChoices,
             IsMandatory = q.IsMandatory,
             QuestionNumber = number++,
