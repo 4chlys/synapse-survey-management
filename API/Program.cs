@@ -5,6 +5,7 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
+using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
@@ -110,13 +111,16 @@ if (useAi)
 var app = builder.Build();
 
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Database initialisation & seeding
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
     context.CreateDatabase(deleteIfExists);
     DummyDataSeeder.Seed(context);
+}
+
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
 }
 
@@ -124,6 +128,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
 app.UseHttpLogging();
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.MapControllers();

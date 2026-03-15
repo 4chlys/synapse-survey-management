@@ -5,16 +5,15 @@ using SynapseEnqueteManagement.UI.User.Services.Session;
 namespace SynapseEnqueteManagement.UI.User.Services.Ideation;
 
 public class IdeaService(HttpClient httpClient, ISessionService sessionService)
+    : AuthenticatedApiService(httpClient, sessionService)
 {
-    private const string TokenHeader = "X-Participant-Token";
-
     public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId, int page = 1, string sort = null)
     {
         var url = $"api/projects/{projectId}/categories/{categoryId}/ideas?page={page}";
         if (sort is not null) url += $"&sort={sort}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<IdeaViewModel>>();
         return paged?.Items ?? new List<IdeaViewModel>();
     }
@@ -30,7 +29,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         request.Content = JsonContent.Create(new { Description = description, ModerationToken = moderationToken });
 
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
             return new CreateIdeaResultViewModel { Success = false };
@@ -47,7 +46,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         var request = new HttpRequestMessage(HttpMethod.Get,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/mine");
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode) return new List<IdeaViewModel>();
         return await response.Content.ReadFromJsonAsync<List<IdeaViewModel>>() ?? new List<IdeaViewModel>();
     }
@@ -57,7 +56,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         var request = new HttpRequestMessage(HttpMethod.Get,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}");
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return await response.Content.ReadFromJsonAsync<IdeaViewModel>();
     }
 
@@ -67,16 +66,9 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         if (sort is not null) url += $"&sort={sort}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<CommentViewModel>>();
         return paged?.Items ?? new List<CommentViewModel>();
-    }
-
-    private void AddTokenHeader(HttpRequestMessage request, int projectId)
-    {
-        var token = sessionService.GetToken(projectId);
-        if (!string.IsNullOrWhiteSpace(token))
-            request.Headers.Add(TokenHeader, token);
     }
 
     private class ApiPagedResult<T>

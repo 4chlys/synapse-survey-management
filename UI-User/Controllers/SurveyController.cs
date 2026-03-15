@@ -26,12 +26,12 @@ public class SurveyController(
         if (project.ProjectState != "Active")
             return View("Inactive");
 
-        // var token = _sessionService.GetToken(projectId);
-        // if (!string.IsNullOrWhiteSpace(token)
-        //     && await _questionnaireApiService.HasParticipantRespondedAsync(projectId, token))
-        // {
-        //     return RedirectToAction("Index", "Category", new { projectId });
-        // }
+        var token = sessionService.GetToken(projectId);
+        if (!string.IsNullOrWhiteSpace(token)
+            && await questionnaireService.HasParticipantRespondedAsync(projectId, token))
+        {
+            return RedirectToAction("Index", "Category", new { projectId });
+        }
 
         var model = await questionnaireService.GetSurveyAsync(projectId);
         if (model is null)

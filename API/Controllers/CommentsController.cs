@@ -22,7 +22,7 @@ public class CommentsController(
         {
             var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct);
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
-            return Ok(new { comment.CommentId, comment.Text });
+            return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }
         catch (KeyNotFoundException e)
         {
@@ -40,7 +40,7 @@ public class CommentsController(
         {
             var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
             if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
-            return Ok(new { iconComment.CommentId, iconComment.EmojiId });
+            return Ok(new CreatedIconCommentDto { CommentId = iconComment.CommentId, EmojiId = iconComment.EmojiId });
         }
         catch (KeyNotFoundException e)
         {
@@ -70,7 +70,7 @@ public class CommentsController(
         {
             var reaction = await manager.AddCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
             if (reaction == null) return Conflict("Participant already reacted with this emoji.");
-            return Ok(new { reaction.CommentId, reaction.EmojiId });
+            return Ok(new CreatedIconCommentDto { CommentId = reaction.CommentId, EmojiId = reaction.EmojiId });
         }
         catch (KeyNotFoundException e)
         {

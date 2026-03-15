@@ -1,4 +1,4 @@
-namespace SynapseEnqueteManagement.BL.Implementation;
+namespace SynapseEnqueteManagement.BL;
 
 public class PagedResult<T>
 {

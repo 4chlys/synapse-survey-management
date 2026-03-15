@@ -4,9 +4,8 @@ using SynapseEnqueteManagement.UI.User.Services.Session;
 namespace SynapseEnqueteManagement.UI.User.Services.Ideation;
 
 public class CommentService(HttpClient httpClient, ISessionService sessionService)
+    : AuthenticatedApiService(httpClient, sessionService)
 {
-    private const string TokenHeader = "X-Participant-Token";
-
     public async Task<bool> AddCommentAsync(
         int projectId,
         int categoryId,
@@ -20,7 +19,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
 
         AddTokenHeader(request, projectId);
 
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
@@ -30,7 +29,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments");
         request.Content = JsonContent.Create(new { EmojiId = emojiId });
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
@@ -40,7 +39,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji");
         request.Content = JsonContent.Create(new { EmojiId = emojiId });
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
@@ -50,7 +49,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments");
         request.Content = JsonContent.Create(new { EmojiId = emojiId });
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
     }
 
@@ -61,14 +60,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji");
         request.Content = JsonContent.Create(new { EmojiId = emojiId });
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
-    }
-
-    private void AddTokenHeader(HttpRequestMessage request, int projectId)
-    {
-        var token = sessionService.GetToken(projectId);
-        if (!string.IsNullOrWhiteSpace(token))
-            request.Headers.Add(TokenHeader, token);
     }
 }

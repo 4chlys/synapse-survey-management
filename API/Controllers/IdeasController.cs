@@ -1,7 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.Implementation;
+using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -19,7 +20,7 @@ public class IdeasController(
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
-        int projectId, int categoryId, [FromQuery] int page = 1, [FromQuery] string sort = null)
+        int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
         var project = await projectManager.GetProjectByIdAsync(projectId);
@@ -87,7 +88,7 @@ public class IdeasController(
 
     [HttpGet("{ideaId}/comments")]
     public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
-        int projectId, int ideaId, [FromQuery] int page = 1, [FromQuery] string sort = null)
+        int projectId, int ideaId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
         var project = await projectManager.GetProjectByIdAsync(projectId);
