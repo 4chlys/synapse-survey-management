@@ -42,6 +42,16 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         return result;
     }
 
+    public async Task<List<IdeaViewModel>> GetMyIdeasAsync(int projectId, int categoryId)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/mine");
+        AddTokenHeader(request, projectId);
+        var response = await httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return new List<IdeaViewModel>();
+        return await response.Content.ReadFromJsonAsync<List<IdeaViewModel>>() ?? new List<IdeaViewModel>();
+    }
+
     public async Task<IdeaViewModel> GetIdeaByIdAsync(int projectId, int categoryId, int ideaId)
     {
         var request = new HttpRequestMessage(HttpMethod.Get,

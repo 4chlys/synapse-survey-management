@@ -60,6 +60,23 @@ public class IdeationController(
         return View(idea);
     }
 
+    public async Task<IActionResult> MyIdeas(int projectId, int categoryId)
+    {
+        var project = await projectApiService.GetProjectAsync(projectId);
+        ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
+        ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
+
+        var category = await categoryService.GetCategoryByIdAsync(categoryId, projectId);
+        if (category == null) return NotFound();
+
+        ViewBag.Category = category;
+        ViewData["ProjectId"] = projectId;
+        ViewData["CategoryId"] = categoryId;
+
+        var ideas = await ideaService.GetMyIdeasAsync(projectId, categoryId);
+        return View(ideas);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateIdea(
         int projectId,
@@ -102,6 +119,12 @@ public class IdeationController(
     {
         await commentService.AddIconCommentAsync(projectId, categoryId, ideaId, emojiId);
 
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
+            return Json(idea?.Emojis ?? []);
+        }
+
         if (returnPage == "Index")
             return RedirectToAction("Index", new { projectId, categoryId });
 
@@ -121,6 +144,12 @@ public class IdeationController(
         string returnPage)
     {
         await commentService.RemoveIconCommentAsync(projectId, categoryId, ideaId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var idea = await ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
+            return Json(idea?.Emojis ?? []);
+        }
 
         if (returnPage == "Index")
             return RedirectToAction("Index", new { projectId, categoryId });
