@@ -1,9 +1,9 @@
-@model List<SynapseEnqueteManagement.UI.User.Models.IdeaViewModel>
+@model List<IdeaViewModel>
 @{
-    var category = ViewBag.Category as SynapseEnqueteManagement.UI.User.Models.CategoryViewModel;
+    var category = ViewBag.Category as CategoryViewModel;
     var projectId = ViewBag.ProjectId ?? 1;
-    var emojis = ViewBag.Emojis as List<SynapseEnqueteManagement.UI.User.Models.EmojiViewModel>
-                 ?? new List<SynapseEnqueteManagement.UI.User.Models.EmojiViewModel>();
+    var emojis = ViewBag.Emojis as List<EmojiViewModel>
+                 ?? new List<EmojiViewModel>();
     ViewData["Title"] = category.Name;
 }
 

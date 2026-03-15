@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.UI.User.Services;
+using SynapseEnqueteManagement.UI.User.Services.Project;
+using SynapseEnqueteManagement.UI.User.Services.Session;
+using SynapseEnqueteManagement.UI.User.Services.Survey;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 

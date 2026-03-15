@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.User.Filters;
-using SynapseEnqueteManagement.UI.User.Services;
+using SynapseEnqueteManagement.UI.User.Services.Ideation;
+using SynapseEnqueteManagement.UI.User.Services.Project;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 

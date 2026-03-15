@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.API.DTOs;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.API.DTOs.Project;
+using SynapseEnqueteManagement.API.DTOs.Survey;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.API.Controllers;
