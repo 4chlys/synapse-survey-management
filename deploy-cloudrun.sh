@@ -79,7 +79,7 @@ gcloud run deploy mvp-api \
   --region=$REGION \
   --allow-unauthenticated \
   --port=8080 \
-  --set-env-vars="ASPNETCORE_ENVIRONMENT=Development,ASPNETCORE_URLS=http://+:8080,DB_HOST=$DB_IP,DB_PORT=5432,DB_USER=$DB_USER,DB_PASSWORD=$DB_PASSWORD,DB_NAME=$DB_NAME"
+  --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,DB_HOST=$DB_IP,DB_PORT=5432,DB_USER=$DB_USER,DB_PASSWORD=$DB_PASSWORD,DB_NAME=$DB_NAME,ApiKey=$ApiKey"
 
 # API URL ophalen
 API_URL=$(gcloud run services describe mvp-api \
@@ -96,7 +96,7 @@ gcloud run deploy mvp-ui \
   --region=$REGION \
   --allow-unauthenticated \
   --port=8080 \
-  --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=$API_URL"
+  --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiKey=$ApiKey,ApiBaseUrl=$API_URL"
 
 # UI URL ophalen
 UI_URL=$(gcloud run services describe mvp-ui \

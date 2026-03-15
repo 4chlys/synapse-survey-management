@@ -102,7 +102,7 @@ docker run -d \\
   -e DB_USER=$DB_USER \\
   -e DB_PASSWORD=$DB_PASSWORD \\
   -e DB_NAME=$DB_NAME \\
-  -e ApiKey=REDACTED" \\
+  -e ApiKey=$ApiKey \\
   $IMAGE_API
 
 # UI-User container
@@ -114,7 +114,7 @@ docker run -d \\
   -p 80:8080 \\
   -e ASPNETCORE_ENVIRONMENT=Production \\
   -e ApiBaseUrl=http://mvp-api:8080 \\
-  -e ApiKey=REDACTED" \\
+  -e ApiKey=$ApiKey \\
   $IMAGE_UI
 EOF
 
@@ -125,6 +125,7 @@ gcloud compute instances create $VM_NAME \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=20GB \
   --tags=http-server,https-server \
+  --scopes=cloud-platform \
   --metadata-from-file startup-script=/tmp/startup.sh
 
 echo ""
