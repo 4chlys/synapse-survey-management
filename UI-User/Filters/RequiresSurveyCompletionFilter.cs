@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using SynapseEnqueteManagement.UI.User.Services;
+using SynapseEnqueteManagement.UI.User.Services.Session;
+using SynapseEnqueteManagement.UI.User.Services.Survey;
 
 namespace SynapseEnqueteManagement.UI.User.Filters;
 

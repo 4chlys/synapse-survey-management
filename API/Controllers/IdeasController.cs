@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.API.DTOs;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.API.DTOs.Ideation;
+using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 

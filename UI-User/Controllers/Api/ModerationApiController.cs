@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.UI.User.Services;
+using SynapseEnqueteManagement.UI.User.Services.Moderation;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 

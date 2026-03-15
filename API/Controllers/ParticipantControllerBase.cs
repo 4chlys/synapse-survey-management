@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.API.Controllers;
