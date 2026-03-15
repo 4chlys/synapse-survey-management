@@ -21,12 +21,8 @@ public class IdeasController(
     public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
         int projectId, int categoryId, [FromQuery] int page = 1, [FromQuery] string sort = null)
     {
-        var participantIdTask = ResolveParticipantIdAsync();
-
-        var projectTask = projectManager.GetProjectByIdAsync(projectId);
-        await Task.WhenAll(participantIdTask, projectTask);
-        var participantId = participantIdTask.Result;
-        var project = projectTask.Result;
+        var participantId = await ResolveParticipantIdAsync();
+        var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project == null) return NotFound();
 
         var paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort);
@@ -52,11 +48,8 @@ public class IdeasController(
             var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId);
             var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
 
-            var ideaCountTask = ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
-            var projectTask = projectManager.GetProjectByIdAsync(projectId);
-            await Task.WhenAll(ideaCountTask, projectTask);
-            var ideaCount = ideaCountTask.Result;
-            var project = projectTask.Result;
+            var ideaCount = await ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
+            var project = await projectManager.GetProjectByIdAsync(projectId);
             
             return Created(string.Empty, new CreateIdeaResultDto
             {
@@ -96,12 +89,8 @@ public class IdeasController(
     public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
         int projectId, int ideaId, [FromQuery] int page = 1, [FromQuery] string sort = null)
     {
-        var participantIdTask = ResolveParticipantIdAsync();
-
-        var projectTask = projectManager.GetProjectByIdAsync(projectId);
-        await Task.WhenAll(participantIdTask, projectTask);
-        var participantId = participantIdTask.Result;
-        var project = projectTask.Result;
+        var participantId = await ResolveParticipantIdAsync();
+        var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project == null) return NotFound();
 
         var paged = await commentManager.GetCommentsWithOwnFirstAsync(ideaId, page, project.CommentPageSize, sort, participantId);

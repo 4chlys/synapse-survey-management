@@ -74,16 +74,13 @@ public class ResponsesController(
         var participant = await AddParticipantAsync(questionnaire, projectId);
 
         var questionsById = questionnaire.Questions.ToDictionary(q => q.QuestionId);
-        var tasks = submitDto.Answers
-            .Where(a => !string.IsNullOrWhiteSpace(a.Value))
-            .Where(a => questionsById.ContainsKey(a.QuestionId))
-            .Select(a =>
-            {
-                var question = questionsById[a.QuestionId];
-                return responseManager.AddResponseAsync(a.Value, question, participant);
-            });
+        foreach (var answer in submitDto.Answers)
+        {
+            if (string.IsNullOrWhiteSpace(answer.Value)) continue;
+            if (!questionsById.TryGetValue(answer.QuestionId, out var question)) continue;
 
-        await Task.WhenAll(tasks);
+            await responseManager.AddResponseAsync(answer.Value, question, participant);
+        }
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
