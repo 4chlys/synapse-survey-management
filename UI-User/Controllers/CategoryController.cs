@@ -19,12 +19,12 @@ public class CategoryController(CategoryService categoryService, IProjectApiServ
 
         await Task.WhenAll(projectTask, categoriesTask);
 
-        this.SetLayoutData(projectTask.Result, projectId);
+        this.SetLayoutData(await projectTask, projectId);
 
         return View(new CategoryIndexViewModel
         {
             ProjectId = projectId,
-            Categories = categoriesTask.Result
+            Categories = await categoriesTask
         });
     }
 

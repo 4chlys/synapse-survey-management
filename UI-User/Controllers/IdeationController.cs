@@ -26,8 +26,8 @@ public class IdeationController(
 
         await Task.WhenAll(projectTask, emojisTask, categoryTask, ideasTask);
 
-        var project = projectTask.Result;
-        var category = categoryTask.Result;
+        var project = await projectTask;
+        var category = await categoryTask;
         if (category == null) return NotFound();
 
         this.SetLayoutData(project, projectId, showModerationPopup: true);
@@ -37,8 +37,8 @@ public class IdeationController(
             ProjectId = projectId,
             CategoryId = categoryId,
             Category = category,
-            Ideas = ideasTask.Result,
-            Emojis = emojisTask.Result,
+            Ideas = await ideasTask,
+            Emojis = await emojisTask,
             ShowContactInfoPopup = contactInfo,
             RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false)
         });
@@ -54,19 +54,19 @@ public class IdeationController(
 
         await Task.WhenAll(projectTask, ideaTask, commentsTask, categoryTask, emojisTask);
 
-        var idea = ideaTask.Result;
+        var idea = await ideaTask;
         if (idea == null) return NotFound();
 
-        this.SetLayoutData(projectTask.Result, projectId, showModerationPopup: true);
+        this.SetLayoutData(await projectTask, projectId, showModerationPopup: true);
 
         return View(new IdeaDetailViewModel
         {
             ProjectId = projectId,
             CategoryId = categoryId,
-            Category = categoryTask.Result!,
+            Category = (await categoryTask)!,
             Idea = idea,
-            Comments = commentsTask.Result,
-            Emojis = emojisTask.Result
+            Comments = await commentsTask,
+            Emojis = await emojisTask
         });
     }
 
@@ -78,17 +78,17 @@ public class IdeationController(
 
         await Task.WhenAll(projectTask, categoryTask, ideasTask);
 
-        var category = categoryTask.Result;
+        var category = await categoryTask;
         if (category == null) return NotFound();
 
-        this.SetLayoutData(projectTask.Result, projectId);
+        this.SetLayoutData(await projectTask, projectId);
 
         return View(new MyIdeasViewModel
         {
             ProjectId = projectId,
             CategoryId = categoryId,
             Category = category,
-            Ideas = ideasTask.Result
+            Ideas = await ideasTask
         });
     }
 
