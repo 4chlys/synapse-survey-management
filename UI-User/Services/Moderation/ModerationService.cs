@@ -9,7 +9,7 @@ public class ModerationService(HttpClient httpClient, ISessionService sessionSer
 
     public async Task<ModerationResponse> CheckRegexAsync(int projectId, string text, string contentType = "idea")
     {
-        var response = await httpClient.PostAsJsonAsync(
+        var response = await HttpClient.PostAsJsonAsync(
             $"api/projects/{projectId}/moderation/regex", new { text, contentType });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ModerationResponse>()
