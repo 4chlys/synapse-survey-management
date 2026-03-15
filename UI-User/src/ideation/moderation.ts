@@ -46,8 +46,8 @@ async function callModeration(
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/${endpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
-            body: JSON.stringify({ text, contentType }),
+            headers: {'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken()},
+            body: JSON.stringify({text: text, contentType: contentType}),
             signal,
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -55,7 +55,7 @@ async function callModeration(
     } catch (err) {
         if ((err as Error).name === 'AbortError') throw err;
         console.warn(`Moderation (${endpoint}) unreachable:`, err);
-        return { moderationToken: '', isAcceptable: true, reason: null, flaggedBy: null };
+        return {moderationToken: '', isAcceptable: true, reason: null, flaggedBy: null};
     }
 }
 
@@ -210,7 +210,7 @@ export function attachModeration(
 
     async function runRegex(snapshot: string) {
         try {
-            const result = await callModeration('regex', snapshot, projectId);
+            const result = await callModeration('regex', snapshot, projectId, contentType);
             if (element.value !== snapshot) return;
             if (!result.isAcceptable && result.reason)
                 callbacks.onBlock(result.reason, 'Regex');
