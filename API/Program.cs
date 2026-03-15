@@ -10,7 +10,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-bool deleteIfExists = true;
+bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
 // Load AI config early so we can read use_ai before building the container
 var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
@@ -102,10 +102,13 @@ if (useAi)
 
 var app = builder.Build();
 
-using var scope = app.Services.CreateScope();
-var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
-context.CreateDatabase(deleteIfExists);
-DummyDataSeeder.Seed(context);
+// Database initialisation & seeding
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
+    context.CreateDatabase(deleteIfExists);
+    DummyDataSeeder.Seed(context);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
