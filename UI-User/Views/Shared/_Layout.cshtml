@@ -13,10 +13,10 @@
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
-        <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true"/>
+        <link rel="stylesheet" vite-href="~/main.css"/>
     </environment>
-    <environment include="Production">
-        <link rel="stylesheet" vite-href="~/main.ts" asp-append-version="true"/>
+    <environment exclude="Development">
+        <link rel="stylesheet" vite-href="~/main.ts"/>
     </environment>
 
 </head>
