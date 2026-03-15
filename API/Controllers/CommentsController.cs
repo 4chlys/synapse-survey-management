@@ -38,7 +38,7 @@ public class CommentsController(
 
         try
         {
-            var iconComment = await manager.AddIconCommentAsync(ideaId, dto.EmojiId, participant);
+            var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
             if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new { iconComment.CommentId, iconComment.EmojiId });
         }
@@ -54,7 +54,7 @@ public class CommentsController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveIconCommentAsync(ideaId, dto.EmojiId, participant);
+        var removed = await manager.RemoveIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }
@@ -68,7 +68,7 @@ public class CommentsController(
 
         try
         {
-            var reaction = await manager.AddCommentReactionAsync(commentId, dto.EmojiId, participant);
+            var reaction = await manager.AddCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
             if (reaction == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new { reaction.CommentId, reaction.EmojiId });
         }
@@ -85,7 +85,7 @@ public class CommentsController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveCommentReactionAsync(commentId, dto.EmojiId, participant);
+        var removed = await manager.RemoveCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }

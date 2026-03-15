@@ -97,13 +97,13 @@ public class CommentManager(
         );
     }
 
-    public async Task<IconComment> AddIconCommentAsync(int ideaId, int emojiId, Participant participant)
+    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId);
-        if (idea == null)
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        if (idea?.Category?.Project?.ProjectId != projectId)
         {
-            logger.LogWarning("Idea {IdeaId} not found", ideaId);
-            throw new KeyNotFoundException($"Idea {ideaId} not found");
+            logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
+            throw new KeyNotFoundException($"Idea {ideaId} not found in project {projectId}");
         }
 
         var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
@@ -128,7 +128,7 @@ public class CommentManager(
                                   && ic.TextComment == null);
     }
 
-    public async Task<bool> RemoveIconCommentAsync(int ideaId, int emojiId, Participant participant)
+    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
     {
         return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
                                                                && ic.EmojiId == emojiId
@@ -136,13 +136,13 @@ public class CommentManager(
                                                                && ic.TextComment == null);
     }
 
-    public async Task<IconComment> AddCommentReactionAsync(int commentId, int emojiId, Participant participant)
+    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
     {
-        var comment = await repository.ReadByIdAsync<TextComment>(commentId);
-        if (comment == null)
+        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project"]);
+        if (comment?.Idea?.Category?.Project?.ProjectId != projectId)
         {
-            logger.LogWarning("TextComment {CommentId} not found", commentId);
-            throw new KeyNotFoundException($"TextComment {commentId} not found");
+            logger.LogWarning("TextComment {CommentId} not found in project {ProjectId}", commentId, projectId);
+            throw new KeyNotFoundException($"TextComment {commentId} not found in project {projectId}");
         }
 
         var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
@@ -167,7 +167,7 @@ public class CommentManager(
                                   && ic.TextComment.CommentId == commentId);
     }
 
-    public async Task<bool> RemoveCommentReactionAsync(int commentId, int emojiId, Participant participant)
+    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
     {
         return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
                                                                && ic.EmojiId == emojiId

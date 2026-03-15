@@ -19,4 +19,7 @@ public class ModerationResult
 
     public static ModerationResult RejectedByAi(string reason) =>
         new() { IsAcceptable = false, Reason = reason, FlaggedBy = "AI" };
+
+    public static ModerationResult ServiceUnavailable() =>
+        new() { IsAcceptable = false, Reason = "AI moderation service unavailable", FlaggedBy = "Service" };
 }
