@@ -64,6 +64,16 @@ public class IdeasController(
         }
     }
 
+    [HttpGet("mine")]
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> GetMyIdeas(int projectId, int categoryId)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        var ideas = await ideaManager.GetOwnIdeasByCategoryAsync(categoryId, participant.ParticipantId);
+        return Ok(ideas.Select(i => MapIdeaToDto(i, participant.ParticipantId)));
+    }
+
     [HttpGet("{ideaId}")]
     public async Task<ActionResult<IdeaDto>> GetIdeaById(int categoryId, int ideaId)
     {
