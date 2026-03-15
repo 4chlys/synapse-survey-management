@@ -41,37 +41,37 @@ public sealed class MockModerationService : IAiModerationService
         _t2 = f.LevenshteinThresholds.MaxLengthFor2Edits;
     }
 
-    public ModerationResult CheckWithRegex(string text)
+    public ModerationResult CheckWithRegex(string text, string contentType = "idea")
     {
         if (string.IsNullOrWhiteSpace(text))
             return ModerationResult.Acceptable();
 
-        var raw = RunRegexAndFuzzy(text);
+        var raw = RunRegexAndFuzzy(text, contentType);
         if (!raw.IsAcceptable) return raw;
 
         string normalized = ModerationUtility.NormalizeForModeration(text);
-        var norm = RunRegexAndFuzzy(normalized);
+        var norm = RunRegexAndFuzzy(normalized, contentType);
         if (!norm.IsAcceptable) return norm;
 
         string normalizedNoSpace = ModerationUtility.NormalizeForModeration(text, stripWhitespace: true);
-        var normNoSpace = RunRegexAndFuzzy(normalizedNoSpace);
+        var normNoSpace = RunRegexAndFuzzy(normalizedNoSpace, contentType);
         if (!normNoSpace.IsAcceptable) return normNoSpace;
 
         string collapsed = ModerationUtility.CollapseRepeats(normalized);
         string collapsedNoSpace = ModerationUtility.CollapseRepeats(normalizedNoSpace);
 
-        var collapsedResult = RunRegexAndFuzzy(collapsed);
+        var collapsedResult = RunRegexAndFuzzy(collapsed, contentType);
         if (!collapsedResult.IsAcceptable) return collapsedResult;
 
-        return RunRegexAndFuzzy(collapsedNoSpace);
+        return RunRegexAndFuzzy(collapsedNoSpace, contentType);
     }
 
     /// <summary>
     /// Runs the same regex pipeline as <see cref="CheckWithRegex"/>.
     /// No AI call is made; the "FlaggedBy" value will always be "Regex".
     /// </summary>
-    public Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default)
-        => Task.FromResult(CheckWithRegex(text));
+    public Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default, string contentType = "idea")
+        => Task.FromResult(CheckWithRegex(text, contentType));
 
     /// <summary>
     /// Rewrite suggestions require an AI model and are not available in mock mode.
@@ -80,9 +80,9 @@ public sealed class MockModerationService : IAiModerationService
     public Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
         => Task.FromResult<string>(null);
 
-    private ModerationResult RunRegexAndFuzzy(string candidate)
+    private ModerationResult RunRegexAndFuzzy(string candidate, string contentType)
     {
-        foreach (var (pattern, reason) in _patterns.All)
+        foreach (var (pattern, reason) in _patterns.GetPatterns(contentType))
             if (pattern.IsMatch(candidate))
                 return ModerationResult.RejectedByRegex(reason);
 

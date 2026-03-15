@@ -15,10 +15,10 @@ export function initIdeation(): void {
     const createFormEl = document.getElementById('createForm');
     const createForm = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (createForm && projectId != null) {
-        wireIdeationForm(createForm, 'description', projectId);
+        wireIdeationForm(createForm, 'description', projectId, 'idea');
         const descriptionTextarea = createForm.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
         if (descriptionTextarea) {
-            wireModerationField(descriptionTextarea, projectId);
+            wireModerationField(descriptionTextarea, projectId, 'idea');
         }
     }
 
@@ -26,10 +26,10 @@ export function initIdeation(): void {
     const commentFormEl = document.getElementById('commentForm');
     const commentForm = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (commentForm && projectId != null) {
-        wireIdeationForm(commentForm, 'text', projectId);
+        wireIdeationForm(commentForm, 'text', projectId, 'comment');
         const commentTextarea = commentForm.querySelector<HTMLTextAreaElement>('textarea[name="text"]');
         if (commentTextarea) {
-            wireModerationField(commentTextarea, projectId);
+            wireModerationField(commentTextarea, projectId, 'comment');
         }
     }
 

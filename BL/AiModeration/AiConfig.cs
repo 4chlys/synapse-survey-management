@@ -30,6 +30,9 @@ public sealed class ModerationConfig
 
     [JsonPropertyName("moderation_prompt")]
     public string ModerationPrompt { get; init; } = string.Empty;
+    
+    [JsonPropertyName("comment_moderation_prompt")]
+    public string CommentModerationPrompt { get; init; } = string.Empty;
 
     [JsonPropertyName("rewrite_prompt")] public string RewritePrompt { get; init; } = string.Empty;
 
@@ -50,6 +53,8 @@ public sealed class RegexPatternEntry
     [JsonPropertyName("pattern")] public string Pattern { get; init; } = string.Empty;
 
     [JsonPropertyName("reason")] public string Reason { get; init; } = string.Empty;
+
+    [JsonPropertyName("idea_only")] public bool IdeaOnly { get; init; } = false;
 }
 
 public sealed class FuzzyConfig

@@ -26,27 +26,24 @@ public class ModerationController(
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("regex")]
-    public ActionResult<ModerationResponseDto> CheckRegex(int projectId,[FromBody] ModerationRequestDto dto)
+    public ActionResult<ModerationResponseDto> CheckRegex(int projectId, [FromBody] ModerationRequestDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = moderation.CheckWithRegex(dto.Text);
+        var result = moderation.CheckWithRegex(dto.Text, dto.ContentType ?? "idea");
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("ai")]
     public async Task<ActionResult<ModerationResponseDto>> CheckAi(int projectId,
-        [FromBody] ModerationRequestDto dto,
-        CancellationToken ct)
+        [FromBody] ModerationRequestDto dto, CancellationToken ct)
     {
-        if (!TryGetParticipantToken(out _))
-            return Unauthorized("Participant token required.");
-
+        if (!TryGetParticipantToken(out _)) return Unauthorized("Participant token required.");
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = await moderation.CheckWithAiAsync(dto.Text, ct);
+        var result = await moderation.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea");
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 

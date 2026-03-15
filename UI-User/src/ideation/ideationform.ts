@@ -6,6 +6,7 @@ export function wireIdeationForm(
     form: HTMLFormElement,
     textareaName: string,
     projectId: number,
+    contentType: 'idea' | 'comment' = 'idea',
 ): void {
     form.addEventListener('submit', async (e: SubmitEvent) => {
         e.preventDefault();
@@ -33,7 +34,7 @@ export function wireIdeationForm(
         }
 
         try {
-            const result = await callModerationAi(text, projectId);
+            const result = await callModerationAi(text, projectId, contentType);
 
             if (result.isAcceptable) {
                 tokenInput.value = result.moderationToken ?? '';

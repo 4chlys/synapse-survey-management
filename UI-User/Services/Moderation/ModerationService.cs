@@ -6,19 +6,20 @@ namespace SynapseEnqueteManagement.UI.User.Services.Moderation;
 public class ModerationService(HttpClient httpClient, ISessionService sessionService)
     : AuthenticatedApiService(httpClient, sessionService)
 {
-    public async Task<ModerationResponse> CheckRegexAsync(int projectId, string text)
+
+    public async Task<ModerationResponse> CheckRegexAsync(int projectId, string text, string contentType = "idea")
     {
-        var response = await HttpClient.PostAsJsonAsync(
-            $"api/projects/{projectId}/moderation/regex", new { text });
+        var response = await httpClient.PostAsJsonAsync(
+            $"api/projects/{projectId}/moderation/regex", new { text, contentType });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ModerationResponse>()
                ?? new ModerationResponse();
     }
 
-    public async Task<ModerationResponse> CheckAiAsync(int projectId, string text)
+    public async Task<ModerationResponse> CheckAiAsync(int projectId, string text, string contentType = "idea")
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation/ai");
-        request.Content = JsonContent.Create(new { text });
+        request.Content = JsonContent.Create(new { text, contentType });
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
