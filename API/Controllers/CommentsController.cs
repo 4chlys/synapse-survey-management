@@ -24,9 +24,9 @@ public class CommentsController(
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
             return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 
@@ -42,9 +42,9 @@ public class CommentsController(
             if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new CreatedIconCommentDto { CommentId = iconComment.CommentId, EmojiId = iconComment.EmojiId });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 
@@ -72,9 +72,9 @@ public class CommentsController(
             if (reaction == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new CreatedIconCommentDto { CommentId = reaction.CommentId, EmojiId = reaction.EmojiId });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 

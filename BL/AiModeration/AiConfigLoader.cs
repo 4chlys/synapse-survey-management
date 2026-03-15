@@ -90,6 +90,7 @@ public static class AiConfigLoader
         {
             UseAi = m.UseAi,
             ModerationPrompt = Sub(m.ModerationPrompt),
+            CommentModerationPrompt = Sub(m.CommentModerationPrompt),
             RewritePrompt = Sub(m.RewritePrompt),
             BannedWords = m.BannedWords,
             RegexPatterns = m.RegexPatterns,

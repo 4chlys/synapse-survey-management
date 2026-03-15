@@ -59,9 +59,9 @@ public class IdeasController(
                 RequestContactInfo = project?.RequestContactInfo ?? false
             });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 

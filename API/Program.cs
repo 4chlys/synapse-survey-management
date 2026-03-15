@@ -59,6 +59,13 @@ builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrateg
 builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
     new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
 
+// Response validators (OCP: add new formats by registering a new IResponseValidator)
+builder.Services.AddSingleton<IResponseValidator, OpenResponseValidator>();
+builder.Services.AddSingleton<IResponseValidator, SingleChoiceResponseValidator>();
+builder.Services.AddSingleton<IResponseValidator, MultipleChoiceResponseValidator>();
+builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
+builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
+
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();

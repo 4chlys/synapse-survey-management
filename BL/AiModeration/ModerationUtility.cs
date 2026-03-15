@@ -23,6 +23,12 @@ public static class ModerationUtility
 
     private static readonly HashSet<char> Vowels = ['a', 'e', 'i', 'o', 'u'];
 
+    private static readonly Regex EmailRe =
+        new(@"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", RegexOptions.Compiled);
+
+    private static readonly Regex PhoneRe =
+        new(@"(\+?\d[\d\s\-()]{6,}\d)", RegexOptions.Compiled);
+
     private static readonly Regex MultiSpaceRe =
         new(@"\s+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 

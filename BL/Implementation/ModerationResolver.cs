@@ -13,7 +13,11 @@ public class ModerationResolver(
         if (!string.IsNullOrEmpty(token))
         {
             var cached = tokenService.ValidateToken(text, token, projectId);
-            if (cached.HasValue) return cached.Value;
+            if (cached.HasValue)
+            {
+                tokenService.ConsumeToken(token);
+                return cached.Value;
+            }
         }
 
         var result = await moderationService.CheckWithAiAsync(text, ct);
