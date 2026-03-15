@@ -20,25 +20,37 @@
             </p>
             <p class="text-gray-900 text-base leading-relaxed">@Model.Description</p>
 
-            <div class="flex gap-2 mt-4 items-center flex-wrap">
-                @foreach (var emoji in Model.Emojis)
-                {
-                    <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")" method="post">
-                        <input type="hidden" name="projectId" value="@projectId" />
-                        <input type="hidden" name="categoryId" value="@categoryId" />
-                        <input type="hidden" name="ideaId" value="@Model.IdeaId" />
-                        <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
-                        <input type="hidden" name="returnPage" value="Detail" />
-                        <button type="submit"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors
-                                       @(emoji.PostedByCurrentUser
-                                           ? "bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200"
-                                           : "bg-gray-100 border border-gray-200 hover:bg-gray-200")">
-                            <span class="text-lg leading-none">@emoji.Symbol</span>
-                            <span class="font-semibold @(emoji.PostedByCurrentUser ? "text-emerald-700" : "text-gray-700") text-sm leading-none">@emoji.Count</span>
-                        </button>
-                    </form>
-                }
+            <div class="flex gap-2 mt-4 items-center flex-wrap"
+                 data-emoji-container
+                 data-project-id="@projectId"
+                 data-category-id="@categoryId"
+                 data-idea-id="@Model.IdeaId"
+                 data-return-page="Detail"
+                 data-picker-id="picker-idea-@Model.IdeaId"
+                 data-add-url="/@projectId/Ideation/AddIconComment"
+                 data-remove-url="/@projectId/Ideation/RemoveIconComment">
+
+                <div id="emoji-reactions-@Model.IdeaId" class="contents">
+                    @foreach (var emoji in Model.Emojis)
+                    {
+                        <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")" method="post" data-emoji-form>
+                            <input type="hidden" name="projectId" value="@projectId" />
+                            <input type="hidden" name="categoryId" value="@categoryId" />
+                            <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+                            <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
+                            <input type="hidden" name="returnPage" value="Detail" />
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors
+                                           @(emoji.PostedByCurrentUser
+                                               ? "bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200"
+                                               : "bg-gray-100 border border-gray-200 hover:bg-gray-200")">
+                                <span class="text-lg leading-none">@emoji.Symbol</span>
+                                <span class="font-semibold @(emoji.PostedByCurrentUser ? "text-emerald-700" : "text-gray-700") text-sm leading-none">@emoji.Count</span>
+                            </button>
+                        </form>
+                    }
+                </div>
+
                 <button type="button"
                         data-action="toggle-emoji-picker"
                         data-target="picker-idea-@Model.IdeaId"
@@ -53,7 +65,7 @@
 
             @* Emoji picker for idea *@
             <div id="picker-idea-@Model.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                <form asp-action="AddIconComment" method="post">
+                <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@Model.IdeaId">
                     <input type="hidden" name="projectId" value="@projectId" />
                     <input type="hidden" name="categoryId" value="@categoryId" />
                     <input type="hidden" name="ideaId" value="@Model.IdeaId" />
