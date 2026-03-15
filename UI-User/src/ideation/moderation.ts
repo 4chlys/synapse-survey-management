@@ -256,7 +256,6 @@ export function attachModeration(
 export function wireModerationField(
     input: HTMLTextAreaElement | HTMLInputElement,
     projectId: number,
-    contentType: 'idea' | 'comment' = 'idea',
 ): () => void {
     const wrapper = document.createElement('div');
     wrapper.className = 'flex flex-col flex-1 min-w-0';
