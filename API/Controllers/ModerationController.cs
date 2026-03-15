@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.API.DTOs.Moderation;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -83,34 +84,4 @@ public class ModerationController(
             ModerationToken = token,
         };
     }
-}
-
-public sealed class ModerationRequestDto
-{
-    public string Text { get; set; }
-}
-
-public sealed class ModerationResponseDto
-{
-    public bool   IsAcceptable    { get; set; }
-    public string Reason          { get; set; }
-    public string FlaggedBy       { get; set; }
-
-    /// <summary>
-    /// Signed token encoding the moderation result for the checked text.
-    /// Pass this token when submitting the idea/comment so the API can
-    /// verify the result without re-running the AI check.
-    /// </summary>
-    public string ModerationToken { get; set; }
-}
-
-public sealed class SuggestResponseDto
-{
-    public string Suggestion { get; set; }
-
-    /// <summary>
-    /// Token for the suggested (rewritten) text — pre-approved as Unflagged.
-    /// Only present when Suggestion is not null.
-    /// </summary>
-    public string ModerationToken { get; set; }
 }

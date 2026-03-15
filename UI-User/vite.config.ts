@@ -4,24 +4,25 @@ import fs from 'fs';
 import path from 'path';
 
 export default defineConfig(async () => {
-    const files = fs.readdirSync('./Assets');
+    const files = fs.readdirSync('./src');
     const inputEntries = files
         .filter(file => file.endsWith('.ts'))
         .reduce((acc, file) => {
             const fileName = path.parse(file).name;
-            acc[fileName] = path.join('./Assets', file);
+            acc[fileName] = path.join('./src', file);
             return acc;
         }, {} as Record<string, string>);
 
     const config: UserConfig = {
         plugins: [tailwindcss()],
         appType: 'custom',
-        root: 'Assets',
+        base: '/dist/',
+        root: 'src',
         publicDir: 'public',
         build: {
-            emptyOutDir: false,
+            emptyOutDir: true,
             manifest: true,
-            outDir: '../wwwroot',
+            outDir: '../wwwroot/dist',
             assetsDir: '',
             rollupOptions: {
                 input: inputEntries
@@ -29,10 +30,6 @@ export default defineConfig(async () => {
         },
         server: {
             strictPort: true,
-        },
-        optimizeDeps: {
-            include: [],
-            exclude: ['@tailwindcss/vite']
         },
         css: {
             preprocessorOptions: {

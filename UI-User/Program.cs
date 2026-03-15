@@ -1,8 +1,12 @@
 using System.Threading.RateLimiting;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
-using SynapseEnqueteManagement.UI.User.Services;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
+using SynapseEnqueteManagement.UI.User.Services.Ideation;
+using SynapseEnqueteManagement.UI.User.Services.Moderation;
+using SynapseEnqueteManagement.UI.User.Services.Project;
+using SynapseEnqueteManagement.UI.User.Services.Session;
+using SynapseEnqueteManagement.UI.User.Services.Survey;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +44,8 @@ builder.Services.AddScoped<ISessionService, CookieSessionService>();
 builder.Services.AddHttpClient<CategoryService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IProjectApiService, ProjectApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<ParticipantService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IdeaService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
