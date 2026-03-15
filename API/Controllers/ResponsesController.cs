@@ -37,7 +37,7 @@ public class ResponsesController(
     [HttpPost("participants")]
     public async Task<ActionResult<ParticipantDto>> StartSession(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 

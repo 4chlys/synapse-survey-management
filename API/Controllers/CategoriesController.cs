@@ -12,20 +12,24 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
         var categories = await categoryManager.GetCategoriesAsync(projectId);
-        var dtos = categories.Select(c => new CategoryDto
+        var dtos = new List<CategoryDto>();
+        foreach (var c in categories)
         {
-            CategoryId = c.CategoryId,
-            Name = c.Name,
-            Description = c.Description,
-            IdeaCount = c.Ideas.Count
-        });
+            dtos.Add(new CategoryDto
+            {
+                CategoryId = c.CategoryId,
+                Name = c.Name,
+                Description = c.Description,
+                IdeaCount = await categoryManager.GetIdeaCountAsync(c.CategoryId)
+            });
+        }
         return Ok(dtos);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
     {
-        var category = await categoryManager.GetCategoryByIdAsync(id); // ← async
+        var category = await categoryManager.GetCategoryByIdAsync(id);
         if (category == null) return NotFound();
 
         var dto = new CategoryDto
@@ -33,7 +37,7 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
             CategoryId = category.CategoryId,
             Name = category.Name,
             Description = category.Description,
-            IdeaCount = category.Ideas.Count
+            IdeaCount = await categoryManager.GetIdeaCountAsync(id)
         };
         return Ok(dto);
     }
