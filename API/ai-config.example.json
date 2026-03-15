@@ -1,58 +1,155 @@
 {
   "_comment": "Copy this file to ai-config.json and adjust for your platform. ai-config.json is gitignored.",
-
   "platform": {
     "name": "Synapse",
     "language": "nl",
     "country": "België"
   },
-
   "moderation": {
     "use_ai": true,
-
-    "moderation_prompt": "Je bent een inhoudsmoderatie-assistent voor {platform_name} in {country}. Beoordeel of de gebruikersinvoer acceptabel is voor het {platform_name}-platform.\n\nBelangrijk: beoordeel de inhoud in ELKE taal. Ongepaste inhoud in het Engels, Frans, Duits, Spaans of welke andere taal dan ook moet op dezelfde manier worden afgewezen als ongepaste inhoud in het {language}.\n\nAfwijzen als de tekst (in welke taal dan ook):\n- Haatdragende taal, scheldwoorden of discriminatie bevat\n- Bedreigingen of oproepen tot geweld bevat\n- Zelfbeschading of zelfmoord bespreekt op een directe of gevaarlijke manier\n- Persoonlijke gegevens deelt (namen, telefoonnummers, e-mailadressen)\n- Duidelijke spam of reclame is\n\nReageer ALLEEN met een geldig JSON-object, geen extra tekst:\n{ \"acceptable\": true }\nof\n{ \"acceptable\": false, \"reason\": \"<korte reden in {language}>\" }",
-
+    "moderation_prompt": "Je bent een inhoudsmoderatie-assistent voor {platform_name} in {country}. Beoordeel of de gebruikersinvoer acceptabel is voor het {platform_name}-platform.\n\nBelangrijk: beoordeel de inhoud in ELKE taal. Ongepaste inhoud in het Engels, Frans, Duits, Spaans of welke andere taal dan ook moet op dezelfde manier worden afgewezen als ongepaste inhoud in het {language}.\n\nAfwijzen als de tekst (in welke taal dan ook):\n- Haatdragende taal, scheldwoorden of discriminatie bevat\n- Bedreigingen of oproepen tot geweld bevat\n- Zelfbeschading of zelfmoord bespreekt op een directe of gevaarlijke manier\n- Persoonlijke gegevens deelt (namen, telefoonnummers, e-mailadressen)\n- Duidelijke spam of reclame is\n- Te kort, betekenisloos of van onvoldoende kwaliteit is om nuttig te zijn (zoals 'test', 'hallo', 'ok', willekeurige tekens, toetsenbordsmashing of zinnen zonder enige inhoudelijke waarde)\n\nReageer ALLEEN met een geldig JSON-object, geen extra tekst:\n{ \"acceptable\": true }\nof\n{ \"acceptable\": false, \"reason\": \"<korte reden in {language}>\" }",
+    "comment_moderation_prompt": "Je bent een inhoudsmoderatie-assistent voor {platform_name} in {country}. Beoordeel of de reactie op een idee acceptabel is.\n\nBelangrijk: korte reacties zoals 'Inderdaad!', 'Goed idee!', 'Helemaal mee eens' of vergelijkbare beknopte instemmingen zijn volkomen geldig als reactie op een idee en mogen NOOIT worden afgekeurd wegens lengte of beknoptheid.\n\nAfwijzen als de tekst (in welke taal dan ook):\n- Haatdragende taal, scheldwoorden of discriminatie bevat\n- Bedreigingen of oproepen tot geweld bevat\n- Zelfbeschading of zelfmoord bespreekt op een directe of gevaarlijke manier\n- Persoonlijke gegevens deelt\n- Duidelijke spam of reclame is\n- Volledig betekenisloos is (willekeurige tekens, toetsenbordsmashing)\n\nReageer ALLEEN met een geldig JSON-object:\n{ \"acceptable\": true }\nof\n{ \"acceptable\": false, \"reason\": \"<korte reden in {language}>\" }",
     "rewrite_prompt": "Je bent een schrijf- en taalassistent voor het {platform_name}-platform in {country}. Herschrijf het volgende bericht zodat het:\n1. Vrij is van ongepaste taal, beledigingen of agressieve toon — in welke taal de invoer ook is geschreven\n2. Correct gespeld is (verbeter typfouten)\n3. Grammaticaal correct is in het {language}\n4. De kern van wat de schrijver wil zeggen behoudt — maar vertaal het NIET letterlijk als de inhoud zelf ongepast is\n\nRegels:\n- Verwijder scheldwoorden, beledigingen en agressieve taal, ook als ze in een andere taal staan (bv. Engels, Frans, Duits)\n- Schrijf de uitvoer ALTIJD in het {language}, ongeacht de taal van de invoer\n- Verbeter spel- en grammaticafouten zonder de betekenis te veranderen\n- Als de kern van het bericht zelf ongepast is (bv. een bedreiging, pure belediging zonder constructieve inhoud of heel duidelijke reclame/spam), antwoord dan met exact: NULL\n- Als het bericht absoluut niet herschreven kan worden (bv. puur spam of misbruik), antwoord dan met exact: NULL\n\nGeef ALLEEN de herschreven tekst terug in het {language}, geen uitleg, geen aanhalingstekens, geen extra tekst.",
-
     "banned_words": [
-      { "word": "kanker",      "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "kankerd",     "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "tering",      "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "tyfus",       "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "godver",      "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "godverdomme", "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "klootzak",    "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "kutwijf",     "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "hoerenzoon",  "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "nigger",      "reason": "Tekst bevat discriminerende taal." },
-      { "word": "nigga",       "reason": "Tekst bevat discriminerende taal." },
-      { "word": "faggot",      "reason": "Tekst bevat discriminerende taal." },
-      { "word": "retard",      "reason": "Tekst bevat discriminerende taal." },
-      { "word": "spastic",     "reason": "Tekst bevat discriminerende taal." },
-      { "word": "fuck",        "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "shit",        "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "bitch",       "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "asshole",     "reason": "Tekst bevat grof taalgebruik." },
-      { "word": "bastard",     "reason": "Tekst bevat grof taalgebruik." }
+      {
+        "word": "kanker",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "kankerd",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "tering",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "tyfus",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "godver",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "godverdomme",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "klootzak",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "kutwijf",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "hoerenzoon",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "nigger",
+        "reason": "Tekst bevat discriminerende taal."
+      },
+      {
+        "word": "nigga",
+        "reason": "Tekst bevat discriminerende taal."
+      },
+      {
+        "word": "faggot",
+        "reason": "Tekst bevat discriminerende taal."
+      },
+      {
+        "word": "retard",
+        "reason": "Tekst bevat discriminerende taal."
+      },
+      {
+        "word": "spastic",
+        "reason": "Tekst bevat discriminerende taal."
+      },
+      {
+        "word": "fuck",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "shit",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "bitch",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "asshole",
+        "reason": "Tekst bevat grof taalgebruik."
+      },
+      {
+        "word": "bastard",
+        "reason": "Tekst bevat grof taalgebruik."
+      }
     ],
-
     "regex_patterns": [
-      { "pattern": "\\b(ik\\s+ga\\s+je\\s+(vermoorden|doodmaken|slaan|neerslaan))\\b", "reason": "Tekst bevat een bedreiging." },
-      { "pattern": "\\b(kill\\s+you|murder|gonna\\s+hurt)\\b",                          "reason": "Tekst bevat een bedreiging." },
-      { "pattern": "\\b(zelfmoord\\s+plegen|mezelf\\s+(snijden|pijnigen|beschadigen))\\b", "reason": "Tekst bevat verwijzingen naar zelfbeschadiging. Vraag hulp als je het moeilijk hebt." },
-      { "pattern": "\\b(cut\\s+myself|end\\s+my\\s+life|suicide\\s+method)\\b",         "reason": "Tekst bevat verwijzingen naar zelfbeschadiging. Vraag hulp als je het moeilijk hebt." },
-      { "pattern": "\\b(0[1-9]\\d{7,8}|\\+32\\s?\\d[\\s\\d]{7,10})\\b",                "reason": "Vermijd het delen van persoonlijke contactgegevens." },
-      { "pattern": "\\b[A-Z0-9._%+\\-]+@[A-Z0-9.\\-]+\\.[A-Z]{2,}\\b",                 "reason": "Vermijd het delen van persoonlijke contactgegevens." },
-      { "pattern": "\\b(koop\\s+nu|bestel\\s+nu|gratis\\s+geld|bitcoin|crypto\\s+invest)\\b", "reason": "Tekst lijkt op spam of reclame." },
-      { "pattern": "https?://\\S+",                                                      "reason": "Externe links zijn niet toegestaan in reacties." }
+      {
+        "pattern": "\\b(ik\\s+ga\\s+je\\s+(vermoorden|doodmaken|slaan|neerslaan))\\b",
+        "reason": "Tekst bevat een bedreiging."
+      },
+      {
+        "pattern": "\\b(kill\\s+you|murder|gonna\\s+hurt)\\b",
+        "reason": "Tekst bevat een bedreiging."
+      },
+      {
+        "pattern": "\\b(zelfmoord\\s+plegen|mezelf\\s+(snijden|pijnigen|beschadigen))\\b",
+        "reason": "Tekst bevat verwijzingen naar zelfbeschadiging. Vraag hulp als je het moeilijk hebt."
+      },
+      {
+        "pattern": "\\b(cut\\s+myself|end\\s+my\\s+life|suicide\\s+method)\\b",
+        "reason": "Tekst bevat verwijzingen naar zelfbeschadiging. Vraag hulp als je het moeilijk hebt."
+      },
+      {
+        "pattern": "\\b(0[1-9]\\d{7,8}|\\+32\\s?\\d[\\s\\d]{7,10})\\b",
+        "reason": "Vermijd het delen van persoonlijke contactgegevens."
+      },
+      {
+        "pattern": "\\b[A-Z0-9._%+\\-]+@[A-Z0-9.\\-]+\\.[A-Z]{2,}\\b",
+        "reason": "Vermijd het delen van persoonlijke contactgegevens."
+      },
+      {
+        "pattern": "\\b(koop\\s+nu|bestel\\s+nu|gratis\\s+geld|bitcoin|crypto\\s+invest)\\b",
+        "reason": "Tekst lijkt op spam of reclame."
+      },
+      {
+        "pattern": "https?://\\S+",
+        "reason": "Externe links zijn niet toegestaan in reacties."
+      },
+      {
+        "pattern": "^\\s*[a-z]{1,4}\\s*$",
+        "reason": "Je bericht is te kort of bevat te weinig inhoud om nuttig te zijn.",
+        "idea_only": true
+      },
+      {
+        "pattern": "^\\s*(test|hallo|hoi|hey|hi|ok|oke|ja|nee|yes|no|lol|wtf|meh|hmm|ugh)\\s*$",
+        "reason": "Je bericht bevat geen bruikbare inhoud. Probeer je idee verder uit te leggen.",
+        "idea_only": true
+      },
+      {
+        "pattern": "([a-zA-Z])\\1{4,}",
+        "reason": "Je bericht lijkt willekeurige tekens te bevatten."
+      },
+      {
+        "pattern": "^[^a-zA-Z0-9\\s]{3,}$",
+        "reason": "Je bericht bevat onvoldoende leesbare inhoud."
+      },
+      {
+        "pattern": "^(.)\\1+$",
+        "reason": "Je bericht bevat geen bruikbare inhoud."
+      }
     ]
   },
-
   "fuzzy": {
     "min_skeleton_length": 3,
     "levenshtein_thresholds": {
       "max_length_for_0_edits": 4,
-      "max_length_for_1_edit":  6,
+      "max_length_for_1_edit": 6,
       "max_length_for_2_edits": 9
     }
   }

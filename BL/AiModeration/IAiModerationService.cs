@@ -12,14 +12,14 @@ public interface IAiModerationService
     /// Runs the cheap regex layer only.
     /// Safe to call on every keystroke (no network I/O).
     /// </summary>
-    ModerationResult CheckWithRegex(string text);
+    ModerationResult CheckWithRegex(string text, string contentType = "idea");
 
     /// <summary>
     /// Runs the full AI moderation pipeline:
     ///   - Regex first (fast rejection without spending an API call).
     ///   - Then Vertex AI Gemini if regex passes.
     /// </summary>
-    Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default);
+    Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default, string contentType = "idea");
 
     /// <summary>
     /// When content is flagged, asks the AI to rewrite it constructively.

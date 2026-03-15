@@ -11,13 +11,13 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     [HttpPost("regex")]
     public async Task<ActionResult<ModerationResponse>> Regex(int projectId, [FromBody] ModerationRequest request)
     {
-        var result = await moderationService.CheckRegexAsync(projectId, request.Text);
+        var result = await moderationService.CheckRegexAsync(projectId, request.Text, request.ContentType);
         return Ok(new
         {
             result.IsAcceptable,
             result.Reason,
             result.FlaggedBy,
-            result.ModerationToken,
+            result.ModerationToken
         });
     }
 
@@ -25,13 +25,13 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     [EnableRateLimiting("ai-moderation")]
     public async Task<ActionResult<ModerationResponse>> Ai(int projectId, [FromBody] ModerationRequest request)
     {
-        var result = await moderationService.CheckAiAsync(projectId, request.Text);
+        var result = await moderationService.CheckAiAsync(projectId, request.Text, request.ContentType);
         return Ok(new
         {
             result.IsAcceptable,
             result.Reason,
             result.FlaggedBy,
-            result.ModerationToken,
+            result.ModerationToken
         });
     }
 
@@ -51,4 +51,5 @@ public class ModerationApiController(ModerationService moderationService) : Cont
 public class ModerationRequest
 {
     public string Text { get; set; }
+    public string ContentType { get; set; } = "idea";
 }
