@@ -29,10 +29,10 @@ gcloud compute instances delete $VM_NAME \
   --zone=$ZONE \
   --quiet
 
-# echo ""
-# echo "=== Cloud SQL verwijderen ==="
-# gcloud sql instances delete $DB_INSTANCE \
-#   --quiet
+echo ""
+echo "=== Cloud SQL verwijderen ==="
+gcloud sql instances delete $DB_INSTANCE \
+  --quiet
 
 echo ""
 echo "=== Firewall regels verwijderen ==="

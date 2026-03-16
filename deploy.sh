@@ -39,19 +39,19 @@ gcloud services enable artifactregistry.googleapis.com
 gcloud services enable aiplatform.googleapis.com
 
 echo ""
-# echo "=== Stap 2: Cloud SQL aanmaken ==="
-# gcloud sql instances create $DB_INSTANCE \
-#   --database-version=POSTGRES_15 \
-#   --tier=db-f1-micro \
-#   --region=$REGION \
-#   --root-password=$DB_PASSWORD
+echo "=== Stap 2: Cloud SQL aanmaken ==="
+gcloud sql instances create $DB_INSTANCE \
+  --database-version=POSTGRES_15 \
+  --tier=db-f1-micro \
+  --region=$REGION \
+  --root-password=$DB_PASSWORD
 
-# gcloud sql databases create $DB_NAME \
-#   --instance=$DB_INSTANCE
+gcloud sql databases create $DB_NAME \
+  --instance=$DB_INSTANCE
 
-# gcloud sql users create $DB_USER \
-#   --instance=$DB_INSTANCE \
-#   --password=$DB_PASSWORD
+gcloud sql users create $DB_USER \
+  --instance=$DB_INSTANCE \
+  --password=$DB_PASSWORD
 
 # Getting Cloud SQL IP 
 DB_IP=$(gcloud sql instances describe $DB_INSTANCE \
@@ -110,7 +110,7 @@ docker pull $IMAGE_UI
 docker run -d \\
   --name mvp-ui \\
   --restart always \\
-  --network mvp-net\\
+  --network mvp-net \\
   -p 80:8080 \\
   -e ASPNETCORE_ENVIRONMENT=Production \\
   -e ApiBaseUrl=http://mvp-api:8080 \\
