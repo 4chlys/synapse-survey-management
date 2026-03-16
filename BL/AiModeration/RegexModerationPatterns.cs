@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
@@ -20,8 +21,11 @@ public sealed class RegexModerationPatterns
     private readonly IReadOnlyList<(Regex Pattern, string Reason)> _sharedPatterns;
     private readonly IReadOnlyList<(Regex Pattern, string Reason)> _ideaOnlyPatterns;
 
-    public RegexModerationPatterns(AiConfig config, BannedWordList bannedWordList)
+    private readonly ILogger<RegexModerationPatterns> _logger;
+
+    public RegexModerationPatterns(AiConfig config, BannedWordList bannedWordList, ILogger<RegexModerationPatterns> logger)
     {
+        _logger = logger;
         var shared = new List<(Regex, string)>();
         var ideaOnly = new List<(Regex, string)>();
 
@@ -46,8 +50,7 @@ public sealed class RegexModerationPatterns
             }
             catch (ArgumentException ex)
             {
-                Console.Error.WriteLine(
-                    $"[RegexModerationPatterns] Invalid pattern skipped: {entry.Pattern} — {ex.Message}");
+                _logger.LogWarning(ex, "Invalid regex pattern skipped: {Pattern}", entry.Pattern);
             }
         }
 

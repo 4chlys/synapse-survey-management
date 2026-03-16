@@ -14,6 +14,13 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
 });
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
+});
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5159";
 var apiKey = builder.Configuration["ApiKey"]
@@ -68,6 +75,15 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = 20,
                 QueueLimit  = 0,
             }));
+    options.AddPolicy("participant-creation", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 5,
+                QueueLimit  = 0,
+            }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
@@ -96,6 +112,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseHttpLogging();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseStaticFiles();

@@ -38,7 +38,8 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
     public async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
     {
         var participant = await repository.ReadByIdAsync<Participant>(participantId);
-        if (participant is null) return;
+        if (participant is null)
+            throw new KeyNotFoundException($"Participant with id {participantId} not found.");
         participant.Email = email;
         participant.PhoneNumber = phoneNumber;
         await repository.UpdateAsync(participant);

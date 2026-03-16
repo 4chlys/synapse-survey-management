@@ -13,20 +13,20 @@ public class CommentsController(
     : ParticipantControllerBase(participantManager)
 {
     [HttpPost("comments")]
-    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto)
+    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct);
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
-            return Ok(new { comment.CommentId, comment.Text });
+            return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 
@@ -38,13 +38,13 @@ public class CommentsController(
 
         try
         {
-            var iconComment = await manager.AddIconCommentAsync(ideaId, dto.EmojiId, participant);
+            var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
             if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
-            return Ok(new { iconComment.CommentId, iconComment.EmojiId });
+            return Ok(new CreatedIconCommentDto { CommentId = iconComment.CommentId, EmojiId = iconComment.EmojiId });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 
@@ -54,7 +54,7 @@ public class CommentsController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveIconCommentAsync(ideaId, dto.EmojiId, participant);
+        var removed = await manager.RemoveIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }
@@ -68,13 +68,13 @@ public class CommentsController(
 
         try
         {
-            var reaction = await manager.AddCommentReactionAsync(commentId, dto.EmojiId, participant);
+            var reaction = await manager.AddCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
             if (reaction == null) return Conflict("Participant already reacted with this emoji.");
-            return Ok(new { reaction.CommentId, reaction.EmojiId });
+            return Ok(new CreatedIconCommentDto { CommentId = reaction.CommentId, EmojiId = reaction.EmojiId });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 
@@ -85,7 +85,7 @@ public class CommentsController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveCommentReactionAsync(commentId, dto.EmojiId, participant);
+        var removed = await manager.RemoveCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }

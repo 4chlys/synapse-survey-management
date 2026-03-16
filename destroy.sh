@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ===== SECRETS LADEN UIT .env =====
+# ===== LOADING SECRETS FROM .env =====
 if [ ! -f .env ]; then
   echo "FOUT: .env bestand niet gevonden!"
   echo "Kopieer .env.example naar .env en vul de waarden in:"

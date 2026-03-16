@@ -8,15 +8,19 @@ public class ModerationResolver(
     IModerationTokenService tokenService,
     IAiModerationService moderationService) : IModerationResolver
 {
-    public async Task<ModerationStatus> ResolveStatusAsync(string text, string token, int projectId)
+    public async Task<ModerationStatus> ResolveStatusAsync(string text, string token, int projectId, CancellationToken ct = default)
     {
         if (!string.IsNullOrEmpty(token))
         {
             var cached = tokenService.ValidateToken(text, token, projectId);
-            if (cached.HasValue) return cached.Value;
+            if (cached.HasValue)
+            {
+                tokenService.ConsumeToken(token);
+                return cached.Value;
+            }
         }
 
-        var result = await moderationService.CheckWithAiAsync(text);
+        var result = await moderationService.CheckWithAiAsync(text, ct);
         return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

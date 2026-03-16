@@ -1,12 +1,5 @@
-﻿@model IdeaViewModel
+﻿@model IdeaDetailViewModel
 @{
-    var category = ViewBag.Category as CategoryViewModel;
-    var projectId = ViewBag.ProjectId ?? 1;
-    var categoryId = ViewBag.CategoryId ?? 1;
-    var comments = ViewBag.Comments as List<CommentViewModel>
-                   ?? new List<CommentViewModel>();
-    var emojis = ViewBag.Emojis as List<EmojiViewModel>
-                 ?? new List<EmojiViewModel>();
     ViewData["Title"] = "Idee";
 }
 
@@ -16,27 +9,27 @@
     <div class="w-full max-w-sm mb-8">
         <div class="bg-white rounded-2xl border-2 border-gray-100 p-5">
             <p class="text-xs font-semibold text-emerald-500 uppercase tracking-wide mb-2">
-                @category?.Name
+                @Model.Category?.Name
             </p>
-            <p class="text-gray-900 text-base leading-relaxed">@Model.Description</p>
+            <p class="text-gray-900 text-base leading-relaxed">@Model.Idea.Description</p>
 
             <div class="flex gap-2 mt-4 items-center flex-wrap"
                  data-emoji-container
-                 data-project-id="@projectId"
-                 data-category-id="@categoryId"
-                 data-idea-id="@Model.IdeaId"
+                 data-project-id="@Model.ProjectId"
+                 data-category-id="@Model.CategoryId"
+                 data-idea-id="@Model.Idea.IdeaId"
                  data-return-page="Detail"
-                 data-picker-id="picker-idea-@Model.IdeaId"
-                 data-add-url="/@projectId/Ideation/AddIconComment"
-                 data-remove-url="/@projectId/Ideation/RemoveIconComment">
+                 data-picker-id="picker-idea-@Model.Idea.IdeaId"
+                 data-add-url="/@Model.ProjectId/Ideation/AddIconComment"
+                 data-remove-url="/@Model.ProjectId/Ideation/RemoveIconComment">
 
-                <div id="emoji-reactions-@Model.IdeaId" class="contents">
-                    @foreach (var emoji in Model.Emojis)
+                <div id="emoji-reactions-@Model.Idea.IdeaId" class="contents">
+                    @foreach (var emoji in Model.Idea.Emojis)
                     {
                         <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")" method="post" data-emoji-form>
-                            <input type="hidden" name="projectId" value="@projectId" />
-                            <input type="hidden" name="categoryId" value="@categoryId" />
-                            <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                            <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                            <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
                             <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
                             <input type="hidden" name="returnPage" value="Detail" />
                             <button type="submit"
@@ -53,7 +46,7 @@
 
                 <button type="button"
                         data-action="toggle-emoji-picker"
-                        data-target="picker-idea-@Model.IdeaId"
+                        data-target="picker-idea-@Model.Idea.IdeaId"
                         class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300
                                flex items-center justify-center text-gray-400
                                hover:border-emerald-400 hover:text-emerald-600 transition-colors">
@@ -64,14 +57,14 @@
             </div>
 
             @* Emoji picker for idea *@
-            <div id="picker-idea-@Model.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@Model.IdeaId">
-                    <input type="hidden" name="projectId" value="@projectId" />
-                    <input type="hidden" name="categoryId" value="@categoryId" />
-                    <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+            <div id="picker-idea-@Model.Idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@Model.Idea.IdeaId">
+                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                    <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                    <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
                     <input type="hidden" name="returnPage" value="Detail" />
                     <div class="flex gap-2 flex-wrap">
-                        @foreach (var emoji in emojis)
+                        @foreach (var emoji in Model.Emojis)
                         {
                             <button type="submit" name="emojiId" value="@emoji.EmojiId"
                                     class="text-2xl hover:scale-125 transition-transform">
@@ -83,7 +76,7 @@
             </div>
 
             <div class="flex gap-4 mt-4 text-sm text-gray-400">
-                <span>💬 @Model.CommentsCount reacties</span>
+                <span>💬 @Model.Idea.CommentsCount reacties</span>
             </div>
         </div>
     </div>
@@ -91,10 +84,10 @@
     @* Comments section *@
     <div class="w-full max-w-sm">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-            Reacties (@comments.Count)
+            Reacties (@Model.Comments.Count)
         </h2>
 
-        @if (!comments.Any())
+        @if (!Model.Comments.Any())
         {
             <div class="text-center py-8">
                 <p class="text-gray-400 text-sm">Nog geen reacties. Wees de eerste!</p>
@@ -103,7 +96,7 @@
         else
         {
             <div class="flex flex-col gap-3">
-                @foreach (var comment in comments)
+                @foreach (var comment in Model.Comments)
                 {
                     <div class="rounded-2xl border-2 p-4
                                @(comment.IsFlagged
@@ -125,9 +118,9 @@
                             @foreach (var commentEmoji in comment.Emojis)
                             {
                                 <form asp-action="@(commentEmoji.PostedByCurrentUser ? "RemoveCommentEmoji" : "AddCommentEmoji")" method="post">
-                                    <input type="hidden" name="projectId" value="@projectId" />
-                                    <input type="hidden" name="categoryId" value="@categoryId" />
-                                    <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+                                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                    <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                                    <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
                                     <input type="hidden" name="commentId" value="@comment.CommentId" />
                                     <input type="hidden" name="emojiId" value="@commentEmoji.EmojiId" />
                                     <button type="submit"
@@ -154,12 +147,12 @@
 
                         <div id="picker-comment-@comment.CommentId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                             <form asp-action="AddCommentEmoji" method="post">
-                                <input type="hidden" name="projectId" value="@projectId" />
-                                <input type="hidden" name="categoryId" value="@categoryId" />
-                                <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                                <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
                                 <input type="hidden" name="commentId" value="@comment.CommentId" />
                                 <div class="flex gap-2 flex-wrap">
-                                    @foreach (var emoji in emojis)
+                                    @foreach (var emoji in Model.Emojis)
                                     {
                                         <button type="submit" name="emojiId" value="@emoji.EmojiId"
                                                 class="text-2xl hover:scale-125 transition-transform">
@@ -182,7 +175,7 @@
     <div class="max-w-sm mx-auto px-6 py-4 flex justify-around items-center">
 
         <a asp-controller="Ideation" asp-action="Index"
-           asp-route-projectId="@projectId" asp-route-categoryId="@categoryId"
+           asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
            class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
@@ -205,9 +198,9 @@
 <div id="commentForm" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
     <div class="max-w-sm mx-auto px-6 py-4">
         <form asp-action="AddComment" method="post">
-            <input type="hidden" name="projectId" value="@projectId" />
-            <input type="hidden" name="categoryId" value="@categoryId" />
-            <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+            <input type="hidden" name="projectId" value="@Model.ProjectId" />
+            <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+            <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
             <input type="hidden" name="moderationToken" value="" />
             <div class="flex gap-3 items-end">
                 <textarea name="text" rows="2" required

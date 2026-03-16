@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - SynapseIP</title>
 
-    @* Read by ideaHub.ts → getProjectId() *@
+    @* Read by ideahub.ts → getProjectId() *@
     <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)"/>
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@
     <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken"/>

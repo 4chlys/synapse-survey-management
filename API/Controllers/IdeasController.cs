@@ -1,7 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.Implementation;
+using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -19,14 +20,14 @@ public class IdeasController(
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
-        int projectId, int categoryId, [FromQuery] int page = 1, [FromQuery] string sort = null)
+        int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
-
         var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project == null) return NotFound();
 
-        var paged = await ideaManager.GetIdeasWithOwnFirstAsync(categoryId, page, project.IdeaPageSize, sort, participantId);
+        var paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort);
+
 
         return Ok(new PagedResult<IdeaDto>
         {
@@ -38,19 +39,19 @@ public class IdeasController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto)
+    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
             var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
 
             var ideaCount = await ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
             var project = await projectManager.GetProjectByIdAsync(projectId);
-
+            
             return Created(string.Empty, new CreateIdeaResultDto
             {
                 IdeaId = idea.IdeaId,
@@ -58,9 +59,9 @@ public class IdeasController(
                 RequestContactInfo = project?.RequestContactInfo ?? false
             });
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            return NotFound(e.Message);
+            return NotFound("The requested resource was not found.");
         }
     }
 
@@ -87,10 +88,9 @@ public class IdeasController(
 
     [HttpGet("{ideaId}/comments")]
     public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
-        int projectId, int ideaId, [FromQuery] int page = 1, [FromQuery] string sort = null)
+        int projectId, int ideaId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
-
         var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project == null) return NotFound();
 

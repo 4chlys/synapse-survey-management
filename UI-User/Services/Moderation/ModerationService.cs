@@ -4,12 +4,12 @@ using SynapseEnqueteManagement.UI.User.Services.Session;
 namespace SynapseEnqueteManagement.UI.User.Services.Moderation;
 
 public class ModerationService(HttpClient httpClient, ISessionService sessionService)
+    : AuthenticatedApiService(httpClient, sessionService)
 {
-    private const string TokenHeader = "X-Participant-Token";
 
     public async Task<ModerationResponse> CheckRegexAsync(int projectId, string text, string contentType = "idea")
     {
-        var response = await httpClient.PostAsJsonAsync(
+        var response = await HttpClient.PostAsJsonAsync(
             $"api/projects/{projectId}/moderation/regex", new { text, contentType });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ModerationResponse>()
@@ -21,7 +21,7 @@ public class ModerationService(HttpClient httpClient, ISessionService sessionSer
         var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation/ai");
         request.Content = JsonContent.Create(new { text, contentType });
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ModerationResponse>()
                ?? new ModerationResponse();
@@ -32,17 +32,10 @@ public class ModerationService(HttpClient httpClient, ISessionService sessionSer
         var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation/suggest");
         request.Content = JsonContent.Create(new { text });
         AddTokenHeader(request, projectId);
-        var response = await httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SuggestResponse>()
                ?? new SuggestResponse();
-    }
-
-    private void AddTokenHeader(HttpRequestMessage request, int projectId)
-    {
-        var token = sessionService.GetToken(projectId);
-        if (!string.IsNullOrWhiteSpace(token))
-            request.Headers.Add(TokenHeader, token);
     }
 }
 

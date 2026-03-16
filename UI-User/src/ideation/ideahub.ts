@@ -18,7 +18,7 @@ export function initIdeation(): void {
         wireIdeationForm(createForm, 'description', projectId, 'idea');
         const descriptionTextarea = createForm.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
         if (descriptionTextarea) {
-            wireModerationField(descriptionTextarea, projectId, 'idea');
+            wireModerationField(descriptionTextarea, projectId);
         }
     }
 
@@ -29,7 +29,7 @@ export function initIdeation(): void {
         wireIdeationForm(commentForm, 'text', projectId, 'comment');
         const commentTextarea = commentForm.querySelector<HTMLTextAreaElement>('textarea[name="text"]');
         if (commentTextarea) {
-            wireModerationField(commentTextarea, projectId, 'comment');
+            wireModerationField(commentTextarea, projectId);
         }
     }
 

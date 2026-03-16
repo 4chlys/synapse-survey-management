@@ -37,7 +37,7 @@ public class ResponsesController(
     [HttpPost("participants")]
     public async Task<ActionResult<ParticipantDto>> StartSession(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
@@ -115,10 +115,10 @@ public class ResponsesController(
     public async Task<ActionResult> GetParticipantStatus(int projectId)
     {
         if (!TryGetParticipantToken(out var token))
-            return Ok(new { HasResponded = false });
+            return Ok(new ParticipantStatusDto { HasResponded = false });
 
         var hasResponded = await HasParticipantRespondedAsync(token);
-        return Ok(new { HasResponded = hasResponded });
+        return Ok(new ParticipantStatusDto { HasResponded = hasResponded });
     }
 
     private static ResponseDto MapToDto(Response response)

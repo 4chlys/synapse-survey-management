@@ -5,12 +5,13 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
+using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-bool deleteIfExists = true;
+bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
 // Load AI config early so we can read use_ai before building the container
 var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
@@ -22,6 +23,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
+                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
+});
 
 // Database
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
@@ -50,6 +58,13 @@ builder.Services.AddSingleton<ISortStrategyFactory<Idea>>(sp =>
 builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrategy<TextComment>>();
 builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
     new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
+
+// Response validators (OCP: add new formats by registering a new IResponseValidator)
+builder.Services.AddSingleton<IResponseValidator, OpenResponseValidator>();
+builder.Services.AddSingleton<IResponseValidator, SingleChoiceResponseValidator>();
+builder.Services.AddSingleton<IResponseValidator, MultipleChoiceResponseValidator>();
+builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
+builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
 
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
@@ -102,20 +117,25 @@ if (useAi)
 
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Database initialisation & seeding
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
     context.CreateDatabase(deleteIfExists);
     DummyDataSeeder.Seed(context);
+}
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
 }
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseHttpLogging();
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 app.MapControllers();

@@ -1,14 +1,19 @@
 #!/bin/bash
 #=============================================================================================================================
-# Autheurs: Quinten Morreel, Noa Robles Levy                                                                                  |
-# IP Project Sprint 1 Startup Script                                                                                          |
-# Description: Dit script start de verschillende componenten op om ons IP project te kunnen gebruiken via de cloud,           |
-#              de verschillende componenten die worden aangemaakt/ingesteld zijn: VM, Cloud SQL, Firewall and DNS.            |
-#              De VM krijgt dan oon het startup script nodig dat hier in aangemaakt wordt.                                    |
+# Authors: Quinten Morreel, Noa Robles Levy                                                                                  |
+# IP Project Sprint 1 Startup Script                                                                                         |
+# Description: This script starts the various components needed to use our IP project via                                    |
+#   the cloud. The components that are created/configured are: VM, Cloud SQL, Firewall and DNS.                              |
+#  The VM then receives the startup script that is created here.                                                             |
 #=============================================================================================================================
 
+# if [ "$(id -u)" != "0" ];
+# then 
+# echo "Use as sudo"
+# exit 1
+# fi
 
-# ===== SECRETS LADEN UIT .env =====
+# ===== LOADING SECRETS FROM .env =====
 if [ ! -f .env ]; then
   echo "FOUT: .env bestand niet gevonden!"
   echo "Kopieer .env.example naar .env en vul de waarden in:"
@@ -48,7 +53,7 @@ gcloud sql users create $DB_USER \
   --instance=$DB_INSTANCE \
   --password=$DB_PASSWORD
 
-# Cloud SQL IP ophalen
+# Getting Cloud SQL IP 
 DB_IP=$(gcloud sql instances describe $DB_INSTANCE \
   --format="value(ipAddresses[0].ipAddress)")
 echo "Cloud SQL IP: $DB_IP"
@@ -71,9 +76,16 @@ gcloud compute project-info add-metadata \
   --metadata=VmDnsSetting=ZonalOnly
 
 echo ""
-echo "=== Stap 5: VM aanmaken ==="
+echo "=== Stap 5: Static IP reserveren ==="
+gcloud compute addresses create mvp-static-ip --region=$REGION 2>/dev/null || echo "Static IP bestaat al"
+STATIC_IP=$(gcloud compute addresses describe mvp-static-ip \
+  --region=$REGION --format="value(address)")
+echo "Static IP: $STATIC_IP"
 
-# Startup script aanmaken met de juiste variabelen
+echo ""
+echo "=== Stap 6: VM aanmaken ==="
+
+# Create startup script with correct variables
 cat > /tmp/startup.sh << EOF
 #!/bin/bash
 apt-get update -y
@@ -82,18 +94,22 @@ systemctl start docker
 systemctl enable docker
 gcloud auth configure-docker --quiet
 
+docker network create mvp-net
+
 # API container
 docker pull $IMAGE_API
 docker run -d \\
   --name mvp-api \\
   --restart always \\
+  --network mvp-net \\
   -p 8080:8080 \\
-  -e ASPNETCORE_ENVIRONMENT=Development \\
+  -e ASPNETCORE_ENVIRONMENT=Production \\
   -e DB_HOST=$DB_IP \\
   -e DB_PORT=5432 \\
   -e DB_USER=$DB_USER \\
   -e DB_PASSWORD=$DB_PASSWORD \\
   -e DB_NAME=$DB_NAME \\
+  -e ApiKey=$ApiKey \\
   $IMAGE_API
 
 # UI-User container
@@ -101,9 +117,11 @@ docker pull $IMAGE_UI
 docker run -d \\
   --name mvp-ui \\
   --restart always \\
+  --network mvp-net \\
   -p 80:8080 \\
-  -e ASPNETCORE_ENVIRONMENT=Development \\
-  -e ApiBaseUrl=http://localhost:8080 \\
+  -e ASPNETCORE_ENVIRONMENT=Production \\
+  -e ApiBaseUrl=http://mvp-api:8080 \\
+  -e ApiKey=$ApiKey \\
   $IMAGE_UI
 EOF
 
@@ -114,10 +132,12 @@ gcloud compute instances create $VM_NAME \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=20GB \
   --tags=http-server,https-server \
+  --scopes=cloud-platform \
+  --address=$STATIC_IP \
   --metadata-from-file startup-script=/tmp/startup.sh
 
 echo ""
-echo "=== Stap 6: Firewall instellen ==="
+echo "=== Stap 7: Firewall instellen ==="
 gcloud compute firewall-rules create allow-http \
   --allow=tcp:80 \
   --target-tags=http-server 2>/dev/null || echo "Firewall regel allow-http bestaat al"
@@ -127,12 +147,10 @@ gcloud compute firewall-rules create allow-8080 \
   --target-tags=http-server 2>/dev/null || echo "Firewall regel allow-8080 bestaat al"
 
 echo ""
-echo "=== Stap 7: VM IP toevoegen aan Cloud SQL ==="
-VM_IP=$(gcloud compute instances describe $VM_NAME \
-  --zone=$ZONE \
-  --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+echo "=== Stap 8: VM IP toevoegen aan Cloud SQL ==="
+VM_IP=$STATIC_IP
 
-# Bestaande authorized networks ophalen en VM IP toevoegen (zodat Cloud Run toegang behoudt)
+# Getting existing authorized networks and VM IP toevoegen (so Cloud Run keeps access)
 EXISTING=$(gcloud sql instances describe $DB_INSTANCE \
   --format="value(settings.ipConfiguration.authorizedNetworks[].value)" | tr ';' ',')
 if [ -z "$EXISTING" ]; then
@@ -150,6 +168,6 @@ echo "  DEPLOY VOLTOOID!"
 echo "======================================"
 echo ""
 echo "Wacht 2-3 minuten voor de app opstart..."
-echo "UI bereikbaar op:  http://$VM_IP"
-echo "API bereikbaar op: http://$VM_IP:8080"
+echo "UI bereikbaar op:  http://$STATIC_IP"
+echo "API bereikbaar op: http://$STATIC_IP:8080"
 echo ""

@@ -4,7 +4,7 @@ EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
-# Node.js en pnpm installeren voor de Vite build
+# installing Node.js en pnpm for the Vite build
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g pnpm
@@ -13,7 +13,7 @@ WORKDIR /src
 COPY ["UI-User/UI-User.csproj", "UI-User/"]
 RUN dotnet restore "UI-User/UI-User.csproj"
 
-# package.json eerst kopiëren zodat pnpm install gecached wordt
+# copy package.json so it is cached
 COPY ["UI-User/package.json", "UI-User/"]
 COPY ["UI-User/pnpm-lock.yaml", "UI-User/"]
 WORKDIR /src/UI-User
@@ -22,12 +22,12 @@ WORKDIR /src
 
 COPY . .
 
-# dotnet publish roept automatisch pnpm run build aan (via .csproj)
+# dotnet publish automatically calls pnpm run build (via .csproj)
 RUN dotnet publish "UI-User/UI-User.csproj" -c Release -o /app/publish
 
-# Vite manifest manueel kopiëren (wordt uitgesloten door .NET SDK omdat map begint met punt)
-RUN mkdir -p /app/publish/wwwroot/.vite && \
-    cp /src/UI-User/wwwroot/.vite/manifest.json /app/publish/wwwroot/.vite/manifest.json
+# Manually copy Vite manifest (excluded by .NET SDK because the folder starts with a dot)
+RUN mkdir -p /app/publish/wwwroot/dist/.vite && \
+    cp /src/UI-User/wwwroot/dist/.vite/manifest.json /app/publish/wwwroot/dist/.vite/manifest.json
 
 FROM base AS final
 WORKDIR /app

@@ -35,6 +35,12 @@
 
   <ItemGroup>
     <_ContentIncludedByDefault Remove="wwwroot\css\site.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-BsU-Yf4M.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-Dr7MkUkP.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Views\Shared\NotFound.cshtml" />
   </ItemGroup>
 
   <!-- Ensure Node environment on Build -->

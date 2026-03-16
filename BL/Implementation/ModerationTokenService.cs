@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,9 @@ public class ModerationTokenService(string secret, ILogger<ModerationTokenServic
         : throw new ArgumentException("Moderation token secret must not be empty.", nameof(secret));
     private static readonly TimeSpan DefaultMaxAge = TimeSpan.FromMinutes(10);
 
+    // Tracks consumed tokens (value = expiry timestamp for cleanup)
+    private readonly ConcurrentDictionary<string, long> _consumedTokens = new();
+
     public string GenerateToken(string text, ModerationStatus status, int projectId)
     {
         var textHash = ComputeTextHash(text);
@@ -34,6 +38,9 @@ public class ModerationTokenService(string secret, ILogger<ModerationTokenServic
     {
         try
         {
+            // Reject already-consumed tokens
+            if (_consumedTokens.ContainsKey(token)) return null;
+
             var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var parts = decoded.Split('|');
             if (parts.Length != 5) return null;
@@ -67,6 +74,23 @@ public class ModerationTokenService(string secret, ILogger<ModerationTokenServic
         {
             logger.LogWarning(ex, "Failed to validate moderation token");
             return null;
+        }
+    }
+
+    public void ConsumeToken(string token)
+    {
+        var expiry = DateTimeOffset.UtcNow.Add(DefaultMaxAge).ToUnixTimeSeconds();
+        _consumedTokens.TryAdd(token, expiry);
+        PurgeExpiredTokens();
+    }
+
+    private void PurgeExpiredTokens()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        foreach (var kvp in _consumedTokens)
+        {
+            if (kvp.Value < now)
+                _consumedTokens.TryRemove(kvp.Key, out _);
         }
     }
 

@@ -7,11 +7,11 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class QuestionnaireManager(IRepository repository) : IQuestionnaireManager
 {
-    public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId)
+    public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId, bool includeQuestions = true)
     {
         return await repository.ReadSingleAsync<Questionnaire>(
             filters: [q => q.Project.ProjectId == projectId],
-            includeStrings: ["Questions"]
+            includeStrings: includeQuestions ? ["Questions"] : null
         );
     }
 

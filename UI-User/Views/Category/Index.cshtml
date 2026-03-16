@@ -1,4 +1,4 @@
-﻿@model IEnumerable<CategoryViewModel>
+﻿@model CategoryIndexViewModel
 
 @{
     ViewData["Title"] = "Kies een Categorie";
@@ -18,7 +18,7 @@
 
     @* End process button *@
     <div class="w-full max-w-sm mb-8 flex justify-end">
-        <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@ViewData["ProjectId"]"
+        <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white
                   text-sm text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -32,9 +32,9 @@
 
     @* CategoryViewModel cards *@
     <div class="w-full max-w-sm flex flex-col gap-6">
-        @foreach (var category in Model)
+        @foreach (var category in Model.Categories)
         {
-            <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]"
+            <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@Model.ProjectId"
                asp-route-categoryId="@category.CategoryId"
                class="relative flex flex-col px-5 py-5 rounded-2xl border-2 border-gray-100 bg-white
                       cursor-pointer transition-all duration-150
