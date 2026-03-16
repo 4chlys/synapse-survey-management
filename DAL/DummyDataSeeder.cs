@@ -66,7 +66,7 @@ public class DummyDataSeeder
             Questionnaire = questionnaire1,
             OrganisationName = "Synapse",
             OrganisationLogoUrl = "https://placehold.co/120x40?text=Synapse",
-            OrganisationWebsiteUrl = "https://www.synapse.com",
+            OrganisationWebsiteUrl = "http://synapse-ip.xyz/1",
             Introduction = new Introduction
             {
                 Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
