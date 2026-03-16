@@ -127,7 +127,7 @@ EOF
 
 gcloud compute instances create $VM_NAME \
   --zone=$ZONE \
-  --machine-type=e2-micro \
+  --machine-type=e2-small \
   --image-family=ubuntu-2204-lts \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=20GB \
