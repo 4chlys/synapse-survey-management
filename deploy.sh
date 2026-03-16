@@ -76,7 +76,14 @@ gcloud compute project-info add-metadata \
   --metadata=VmDnsSetting=ZonalOnly
 
 echo ""
-echo "=== Stap 5: VM aanmaken ==="
+echo "=== Stap 5: Static IP reserveren ==="
+gcloud compute addresses create mvp-static-ip --region=$REGION 2>/dev/null || echo "Static IP bestaat al"
+STATIC_IP=$(gcloud compute addresses describe mvp-static-ip \
+  --region=$REGION --format="value(address)")
+echo "Static IP: $STATIC_IP"
+
+echo ""
+echo "=== Stap 6: VM aanmaken ==="
 
 # Create startup script with correct variables
 cat > /tmp/startup.sh << EOF
@@ -126,10 +133,11 @@ gcloud compute instances create $VM_NAME \
   --boot-disk-size=20GB \
   --tags=http-server,https-server \
   --scopes=cloud-platform \
+  --address=$STATIC_IP \
   --metadata-from-file startup-script=/tmp/startup.sh
 
 echo ""
-echo "=== Stap 6: Firewall instellen ==="
+echo "=== Stap 7: Firewall instellen ==="
 gcloud compute firewall-rules create allow-http \
   --allow=tcp:80 \
   --target-tags=http-server 2>/dev/null || echo "Firewall regel allow-http bestaat al"
@@ -139,10 +147,8 @@ gcloud compute firewall-rules create allow-8080 \
   --target-tags=http-server 2>/dev/null || echo "Firewall regel allow-8080 bestaat al"
 
 echo ""
-echo "=== Stap 7: VM IP toevoegen aan Cloud SQL ==="
-VM_IP=$(gcloud compute instances describe $VM_NAME \
-  --zone=$ZONE \
-  --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+echo "=== Stap 8: VM IP toevoegen aan Cloud SQL ==="
+VM_IP=$STATIC_IP
 
 # Getting existing authorized networks and VM IP toevoegen (so Cloud Run keeps access)
 EXISTING=$(gcloud sql instances describe $DB_INSTANCE \
@@ -162,6 +168,6 @@ echo "  DEPLOY VOLTOOID!"
 echo "======================================"
 echo ""
 echo "Wacht 2-3 minuten voor de app opstart..."
-echo "UI bereikbaar op:  http://$VM_IP"
-echo "API bereikbaar op: http://$VM_IP:8080"
+echo "UI bereikbaar op:  http://$STATIC_IP"
+echo "API bereikbaar op: http://$STATIC_IP:8080"
 echo ""
