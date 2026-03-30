@@ -1,6 +1,6 @@
 import type {SurveyState} from './types';
 import {isSlideValid, showValidationError, clearValidationError} from './validation';
-import {animateTrackTo, shakeSlide, updateProgressBar} from './animation';
+import {activateSlide, shakeSlide, updateProgressBar} from './animation';
 
 const TRANSITION_MS = 580;
 
@@ -9,7 +9,6 @@ export function navigateNext(state: SurveyState): void {
     if (state.currentIndex >= state.slides.length - 1) return;
 
     const current = state.slides[state.currentIndex];
-
     const {valid, message} = isSlideValid(current);
     if (!valid) {
         showValidationError(current, message);
@@ -19,14 +18,13 @@ export function navigateNext(state: SurveyState): void {
 
     clearValidationError(current);
     state.isAnimating = true;
+    const prevIndex = state.currentIndex;
     state.currentIndex++;
-    animateTrackTo(state.track, state.currentIndex);
+    activateSlide(state.slides, prevIndex, state.currentIndex);
     updateProgressBar(state.progressBar, state.currentIndex, state.slides.length);
     state.onSlideChange?.(state);
 
-    setTimeout(() => {
-        state.isAnimating = false;
-    }, TRANSITION_MS);
+    setTimeout(() => { state.isAnimating = false; }, TRANSITION_MS);
 }
 
 export function navigatePrev(state: SurveyState): void {
@@ -37,12 +35,11 @@ export function navigatePrev(state: SurveyState): void {
     clearValidationError(current);
 
     state.isAnimating = true;
+    const prevIndex = state.currentIndex;
     state.currentIndex--;
-    animateTrackTo(state.track, state.currentIndex);
+    activateSlide(state.slides, prevIndex, state.currentIndex);
     updateProgressBar(state.progressBar, state.currentIndex, state.slides.length);
     state.onSlideChange?.(state);
 
-    setTimeout(() => {
-        state.isAnimating = false;
-    }, TRANSITION_MS);
+    setTimeout(() => { state.isAnimating = false; }, TRANSITION_MS);
 }

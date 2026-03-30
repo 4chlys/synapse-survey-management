@@ -1,31 +1,30 @@
 import type {SurveyState} from './types';
 import {navigateNext, navigatePrev} from './navigation';
 import {initGestures} from './gestures';
-import {animateTrackTo, updateProgressBar} from './animation';
+import {updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
 
 function syncButtons(state: SurveyState): void {
-    const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
-    const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
+    const allPrev = document.querySelectorAll<HTMLButtonElement>('.btn-prev');
+    const allNext = document.querySelectorAll<HTMLButtonElement>('.btn-next');
 
-    if (btnPrev) btnPrev.disabled = state.currentIndex === 0;
-    if (btnNext) btnNext.style.visibility = state.currentIndex >= state.slides.length - 1 ? 'hidden' : 'visible';
+    allPrev.forEach(btn => btn.disabled = state.currentIndex === 0);
+    allNext.forEach(btn => btn.style.visibility =
+        state.currentIndex >= state.slides.length - 1 ? 'hidden' : 'visible');
 }
 
 export function initSurvey(): void {
-    const track = document.getElementById('survey-track') as HTMLElement | null;
-    if (!track) return;
+    const container = document.getElementById('survey-container') as HTMLElement | null;
+    if (!container) return;
 
-    const container = document.getElementById('survey-container') as HTMLElement;
-    const slides = Array.from(track.querySelectorAll<HTMLElement>('.survey-slide'));
+    const slides = Array.from(container.querySelectorAll<HTMLElement>('.survey-slide'));
+    if (!slides.length) return;
+
     const progressBar = document.getElementById('survey-progress-bar');
-    const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
-    const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
 
     const state: SurveyState = {
         currentIndex: 0,
         slides,
-        track,
         isAnimating: false,
         progressBar,
         onSlideChange: syncButtons,
@@ -33,12 +32,15 @@ export function initSurvey(): void {
 
     slides.forEach(slide => initCharCounter(slide));
 
-    animateTrackTo(track, 0);
+    // Activate first slide — skip transition by adding class directly
+    slides[0].classList.add('is-active');
     updateProgressBar(progressBar, 0, slides.length);
     syncButtons(state);
 
-    btnNext?.addEventListener('click', () => navigateNext(state));
-    btnPrev?.addEventListener('click', () => navigatePrev(state));
+    container.querySelectorAll<HTMLButtonElement>('.btn-next')
+        .forEach(btn => btn.addEventListener('click', () => navigateNext(state)));
+    container.querySelectorAll<HTMLButtonElement>('.btn-prev')
+        .forEach(btn => btn.addEventListener('click', () => navigatePrev(state)));
 
-    if (container) initGestures(container, state);
+    initGestures(container, state);
 }

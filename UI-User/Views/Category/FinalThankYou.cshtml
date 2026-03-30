@@ -3,42 +3,61 @@
     ViewData["Title"] = "Bedankt";
 }
 
-<div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
+<div class="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] page-enter px-6 py-12">
+    <div class="w-full max-w-xs">
 
-    @* Checkmark icon *@
-    <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-8">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-emerald-600" fill="none"
-             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
+        @* Card grounds the content — removes the "floating in void" feel *@
+        <div class="bg-base-100 rounded-2xl border border-base-300 shadow-sm overflow-hidden">
+
+            @* Accent strip at top *@
+            <div class="h-1 accent-strip w-full"></div>
+
+            <div class="px-8 pt-10 pb-8 flex flex-col items-center text-center gap-6">
+
+                @* Success icon — teal fill, high enough opacity to read instantly *@
+                <div class="w-20 h-20 rounded-2xl bg-secondary/25 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-11 w-11 text-secondary" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+
+                @* Copy — emotional payoff of the entire flow *@
+                <div>
+                    <h1 class="font-heading text-[28px] font-bold text-base-content mb-3 leading-tight">
+                        Bedankt voor je deelname!
+                    </h1>
+                    <p class="text-[15px] text-base-content/80 leading-relaxed max-w-[240px] mx-auto">
+                        Jouw ideeën en reacties zijn waardevol. We nemen ze mee in het verdere proces.
+                        Je kan dit venster nu sluiten.
+                    </p>
+                </div>
+
+                @* Logo — demoted to small muted detail *@
+                @if (!string.IsNullOrEmpty(Model.OrganisationLogoUrl))
+                {
+                    <img src="@Model.OrganisationLogoUrl" alt="@Model.OrganisationName"
+                         class="h-7 object-contain opacity-40" />
+                }
+
+            </div>
+        </div>
+
+        @* Website link — outside the card, smallest possible presence *@
+        @if (!string.IsNullOrEmpty(Model.OrganisationWebsiteUrl))
+        {
+            <div class="text-center mt-5">
+                <a href="@Model.OrganisationWebsiteUrl" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 text-xs text-neutral/60 hover:text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    @(string.IsNullOrEmpty(Model.OrganisationName) ? Model.OrganisationWebsiteUrl : Model.OrganisationName)
+                </a>
+            </div>
+        }
+
     </div>
-
-    @* Thank you message *@
-    <h1 class="text-2xl font-semibold text-gray-900 mb-3">Bedankt voor je deelname!</h1>
-    <p class="text-gray-500 text-sm max-w-xs mb-10 leading-relaxed">
-        Jouw ideeën en reacties zijn waardevol. We nemen ze mee in het verdere proces.
-        Je kan dit venster nu sluiten.
-    </p>
-
-    @* Organisation logo *@
-    @if (!string.IsNullOrEmpty(Model.OrganisationLogoUrl))
-    {
-        <img src="@Model.OrganisationLogoUrl" alt="@Model.OrganisationName"
-             class="h-12 object-contain mb-5"/>
-    }
-
-    @* Organisation website link *@
-    @if (!string.IsNullOrEmpty(Model.OrganisationWebsiteUrl))
-    {
-        <a href="@Model.OrganisationWebsiteUrl" target="_blank" rel="noopener noreferrer"
-           class="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:underline">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-            @(string.IsNullOrEmpty(Model.OrganisationName) ? Model.OrganisationWebsiteUrl : Model.OrganisationName)
-        </a>
-    }
-
 </div>
