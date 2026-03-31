@@ -1,6 +1,17 @@
 /** Translates the track so slide at `index` is visible. */
-export function animateTrackTo(track: HTMLElement, index: number): void {
-    track.style.transform = `translateY(calc(${index} * -1 * var(--slide-h)))`;
+export function animateTrackTo(track: HTMLElement, index: number, visibleIndices : number[]): void {
+    const visiblePosition = visibleIndices.indexOf(index);
+    track.style.transform = `translateY(calc(${visiblePosition} * -1 * var(--slide-h)))`;
+}
+
+export function syncTrackToVisibleSlides(track: HTMLElement, slides: HTMLElement[], visibleIndices: number[]):void{
+    // Remove all slides from track
+    while (track.firstChild) track.removeChild(track.firstChild);
+    
+    // Re-insert only visible slides in order
+    for (const index of visibleIndices) {
+        track.appendChild(slides[index]);
+    }
 }
 
 /** Shakes the answer area to indicate a blocked action. */

@@ -30,9 +30,21 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
         );
     }
 
-    public async Task<bool> HasParticipantRespondedAsync(Guid sessionToken)
+    public async Task<bool> HasParticipantSubmittedAsync(Guid sessionToken)
     {
-        return await repository.ExistsAsync<Response>(r => r.Participant.SessionToken == sessionToken);
+        var participant = await repository.ReadSingleAsync<Participant>(
+            filters: [p => p.SessionToken == sessionToken]);
+        return participant?.HasSubmitted ?? false;
+    }
+
+    public async Task MarkAsSubmittedAsync(Guid sessionToken)
+    {
+        var participant = await repository.ReadSingleAsync<Participant>(
+            filters: [p => p.SessionToken == sessionToken]);
+        if (participant is null)
+            throw new KeyNotFoundException("Participant not found.");
+        participant.HasSubmitted = true;
+        await repository.UpdateAsync(participant);
     }
 
     public async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)

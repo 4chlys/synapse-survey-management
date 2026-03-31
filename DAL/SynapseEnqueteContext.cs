@@ -21,6 +21,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
     public DbSet<Comment> Comments { get; set; }
+    public DbSet<BranchRule> BranchRules { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -93,6 +94,19 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+        // BranchRule — two FKs to Question
+        builder.Entity<BranchRule>()
+            .HasOne(br => br.SourceQuestion)
+            .WithMany(q => q.BranchRules)
+            .HasForeignKey("SourceQuestionId")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<BranchRule>()
+            .HasOne(br => br.TargetQuestion)
+            .WithMany(q => q.IncomingBranches)
+            .HasForeignKey("TargetQuestionId")
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Response
         builder.Entity<Response>(e =>

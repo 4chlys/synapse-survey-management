@@ -9,6 +9,7 @@ public class Response : IHasCreatedAt
     public DateTime CreatedAt { get; set; }
 
     [MaxLength(500)] public string Value { get; set; }
+    public bool IsCommitted { get; set; }
 
     public Question Question { get; set; }
 

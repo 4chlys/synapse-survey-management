@@ -53,10 +53,17 @@ public class DummyDataSeeder
 
         // ── Project 1: Synapse ──
         var questionnaire1 = new Questionnaire();
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false });
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true });
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?", IsMandatory = true });
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?", IsMandatory = true });
+        var q1Stress = new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false, Position = 1 };
+        var q1Welzijn = new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true, Position = 2 };
+        var q1Likert = new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?", IsMandatory = true, Position = 3 };
+        var q1Open = new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?", IsMandatory = true, Position = 4 };
+        questionnaire1.Questions.Add(q1Stress);
+        questionnaire1.Questions.Add(q1Welzijn);
+        questionnaire1.Questions.Add(q1Likert);
+        questionnaire1.Questions.Add(q1Open);
+
+        // Branch: if welzijn = "Goed", skip the stress likert and go straight to the open question
+        q1Welzijn.BranchRules.Add(new BranchRule { SourceQuestion = q1Welzijn, TriggerValue = "Goed", TargetQuestion = q1Open });
 
         var projectActive = new Project
         {
@@ -118,10 +125,10 @@ public class DummyDataSeeder
 
         // ── Project 2: FitLife Gym ──
         var questionnaire2 = new Questionnaire();
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?", IsMandatory = true });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?", IsMandatory = false });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false, Position = 1 });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true, Position = 2 });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?", IsMandatory = true, Position = 3 });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?", IsMandatory = false, Position = 4 });
 
         var projectActive2 = new Project
         {
@@ -182,10 +189,10 @@ public class DummyDataSeeder
 
         // ── Project 3: FC Eendracht ──
         var questionnaire3 = new Questionnaire();
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?", IsMandatory = true });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3, Text = "Wat zou jij veranderen aan de club als je de kans had?", IsMandatory = false });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false, Position = 1 });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true, Position = 2 });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?", IsMandatory = true, Position = 3 });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3, Text = "Wat zou jij veranderen aan de club als je de kans had?", IsMandatory = false, Position = 4 });
 
         var projectActive3 = new Project
         {
