@@ -1,86 +1,88 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 <!DOCTYPE html>
 <html lang="nl" data-theme="synapse-light">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SynapseIP</title>
+    <link rel="icon" type="image/png" href="~/favicon.png" />
 
     @* Read by ideahub.ts → getProjectId() *@
-    <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)"/>
+    <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)" />
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@
-    <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken"/>
+    <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
-        <link rel="stylesheet" vite-href="~/main.css"/>
+        <link rel="stylesheet" vite-href="~/main.css" />
     </environment>
     <environment exclude="Development">
-        <link rel="stylesheet" vite-href="~/main.ts"/>
+        <link rel="stylesheet" vite-href="~/main.ts" />
     </environment>
 </head>
+
 <body class="bg-base-200 min-h-screen">
 
-@if (ViewData["ShowModerationPopup"] is true)
-{
-    @await Html.PartialAsync("_ModerationPopup")
-}
+    @if (ViewData["ShowModerationPopup"] is true)
+    {
+        @await Html.PartialAsync("_ModerationPopup")
+    }
 
-<header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300"
-        style="height: var(--header-h)">
-    <div class="h-full max-w-2xl mx-auto px-4 flex items-center justify-between gap-4">
+    <header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300" style="height: var(--header-h)">
+        <div class="h-full max-w-2xl mx-auto px-4 flex items-center justify-between gap-4">
 
-        @{
-            var logoUrl = ViewData["OrganisationLogoUrl"]?.ToString();
-            var websiteUrl = ViewData["OrganisationWebsiteUrl"]?.ToString();
-        }
-
-        @* Left: logo or fixed-width spacer *@
-        <div class="w-20 flex items-center shrink-0">
-            @if (!string.IsNullOrEmpty(logoUrl))
-            {
-                <img src="@logoUrl" alt="Organisation logo" class="h-7 w-auto object-contain" />
-            }
-        </div>
-
-        @* Center: project title *@
-        <h1 class="font-heading font-semibold text-base-content text-lg tracking-tight truncate text-center flex-1">
-            @(ViewData["SurveyTitle"] ?? "SynapseIP")
-        </h1>
-
-        @* Right: website link + theme toggle *@
-        <div class="w-20 flex items-center justify-end gap-2 shrink-0">
-            @if (!string.IsNullOrEmpty(websiteUrl))
-            {
-                <a href="@websiteUrl" target="_blank" rel="noopener noreferrer"
-                   class="hidden sm:block text-xs text-neutral hover:text-primary transition-colors">
-                    website
-                </a>
+            @{
+                var logoUrl = ViewData["OrganisationLogoUrl"]?.ToString();
+                var websiteUrl = ViewData["OrganisationWebsiteUrl"]?.ToString();
             }
 
-            <button id="theme-toggle"
-                    aria-label="Toggle dark mode"
-                    class="w-8 h-8 rounded-full flex items-center justify-center text-neutral hover:text-primary hover:bg-base-200 transition-colors cursor-pointer">
-                <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none"
-                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                </svg>
-                <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                </svg>
-            </button>
+            @* Left: logo or fixed-width spacer *@
+            <div class="w-20 flex items-center shrink-0">
+                @if (!string.IsNullOrEmpty(logoUrl))
+                {
+                    <img src="@logoUrl" alt="Organisation logo" class="h-7 w-auto object-contain" />
+                }
+            </div>
+
+            @* Center: project title *@
+            <h1 class="font-heading font-semibold text-base-content text-lg tracking-tight truncate text-center flex-1">
+                @(ViewData["SurveyTitle"] ?? "SynapseIP")
+            </h1>
+
+            @* Right: website link + theme toggle *@
+            <div class="w-20 flex items-center justify-end gap-2 shrink-0">
+                @if (!string.IsNullOrEmpty(websiteUrl))
+                {
+                    <a href="@websiteUrl" target="_blank" rel="noopener noreferrer"
+                           class="hidden sm:block text-xs text-neutral hover:text-primary transition-colors">
+                        website
+                    </a>
+                }
+
+                <button id="theme-toggle" aria-label="Toggle dark mode"
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-neutral hover:text-primary hover:bg-base-200 transition-colors cursor-pointer">
+                    <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+            </div>
+
         </div>
+    </header>
 
-    </div>
-</header>
+    <main class="pt-16">
+        @RenderBody()
+    </main>
 
-<main class="pt-[64px]">
-    @RenderBody()
-</main>
-
-@await RenderSectionAsync("Scripts", required: false)
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>
