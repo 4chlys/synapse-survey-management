@@ -118,8 +118,8 @@ if (useAi)
 var app = builder.Build();
 
 // Database initialisation & seeding
-// Retry loop: nodig voor Cloud Run cold starts waarbij de postgres sidecar
-// nog niet klaar is als de API opstart (race condition).
+// Retry loop: needed for Cloud Run cold starts where the postgres sidecar
+// is not yet ready when the API boots (race condition).
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
