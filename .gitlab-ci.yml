@@ -88,6 +88,9 @@ deploy-test:
     - gcloud auth activate-service-account --key-file=/tmp/key.json
     - gcloud config set project "${PROJECT_ID}"
   script:
+    # Substitute the real image into the YAML before deploying
+    - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
+
     # Deploy API + postgres sidecar as a multi-container Cloud Run service
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
     - gcloud run services add-iam-policy-binding mvp-api-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
@@ -109,7 +112,7 @@ deploy-test:
         --min-instances=0 \
         --max-instances=3 \
         --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
-      
+
     # Print UI URL in pipeline log
     - |
       UI_URL=$(gcloud run services describe mvp-ui-test \
