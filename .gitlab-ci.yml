@@ -107,7 +107,7 @@ deploy-test:
         --port=8080 \
         --min-instances=0 \
         --max-instances=3 \
-        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
+        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED" \
         --no-cache
       
     # Print UI URL in pipeline log
