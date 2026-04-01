@@ -12,7 +12,8 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   IMAGE_API: "gcr.io/${PROJECT_ID}/mvp-app"
   IMAGE_UI:  "gcr.io/${PROJECT_ID}/mvp-ui"
-
+  IMAGE_TAG: "${CI_COMMIT_SHA}"
+  
 stages:
   - build
   - push
@@ -31,8 +32,8 @@ build-api:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_API}:development" .
-    - docker save "${IMAGE_API}:development" | gzip > api-image.tar.gz
+    - docker build --provenance=false -t "${IMAGE_API}:${IMAGE_TAG}" .
+    - docker save "${IMAGE_API}:${IMAGE_TAG}" | gzip > api-image.tar.gz
   artifacts:
     paths:
       - api-image.tar.gz
@@ -44,8 +45,8 @@ build-ui:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_UI}:development" -f Dockerfile.ui-user .
-    - docker save "${IMAGE_UI}:development" | gzip > ui-image.tar.gz
+    - docker build --provenance=false -t "${IMAGE_UI}:${IMAGE_TAG}" -f Dockerfile.ui-user .
+    - docker save "${IMAGE_UI}:${IMAGE_TAG}" | gzip > ui-image.tar.gz
   artifacts:
     paths:
       - ui-image.tar.gz
@@ -63,8 +64,8 @@ push-dev:
   script:
     - docker load < api-image.tar.gz
     - docker load < ui-image.tar.gz
-    - docker push "${IMAGE_API}:development"
-    - docker push "${IMAGE_UI}:development"
+    - docker push "${IMAGE_API}:${IMAGE_TAG}"
+    - docker push "${IMAGE_UI}:${IMAGE_TAG}"
   only:
     - development
 
@@ -101,14 +102,13 @@ deploy-test:
     # Deploy UI as a separate Cloud Run service
     - |
       gcloud run deploy mvp-ui-test \
-        --image="${IMAGE_UI}:development" \
+        --image="${IMAGE_UI}:${IMAGE_TAG}" \
         --region="${REGION}" \
         --allow-unauthenticated \
         --port=8080 \
         --min-instances=0 \
         --max-instances=3 \
-        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED" \
-        --no-cache
+        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
       
     # Print UI URL in pipeline log
     - |
