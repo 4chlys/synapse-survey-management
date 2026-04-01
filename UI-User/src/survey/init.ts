@@ -18,6 +18,7 @@ function syncButtons(state: SurveyState): void {
 }
 
 export function initSurvey(): void {
+    console.log('I loaded the newest version');
     const track = document.getElementById('survey-track') as HTMLElement | null;
     if (!track) return;
 
