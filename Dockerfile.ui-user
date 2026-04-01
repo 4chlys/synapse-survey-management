@@ -25,9 +25,9 @@ COPY . .
 # dotnet publish automatically calls pnpm run build (via .csproj)
 RUN dotnet publish "UI-User/UI-User.csproj" -c Release -o /app/publish
 
-# Manually copy Vite manifest (excluded by .NET SDK because the folder starts with a dot)
-RUN mkdir -p /app/publish/wwwroot/dist/.vite && \
-    cp /src/UI-User/wwwroot/dist/.vite/manifest.json /app/publish/wwwroot/dist/.vite/manifest.json
+# Manually copy all Vite build output — MSBuild evaluates items before pnpm build runs,
+# so dynamically generated files in wwwroot/dist/ are not picked up automatically.
+RUN cp -r /src/UI-User/wwwroot/dist/. /app/publish/wwwroot/dist/
 
 FROM base AS final
 WORKDIR /app
