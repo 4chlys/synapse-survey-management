@@ -60,7 +60,7 @@ public class Repository : IRepository
         bool randomize = false,
         int? skip = null,
         int? take = null,
-        bool tracked = false
+        bool tracked = true
     ) where T : class
     {
         IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
@@ -111,7 +111,7 @@ public class Repository : IRepository
         object id,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
-        bool tracked = false
+        bool tracked = true
     ) where T : class
     {
         if (includes == null && includeStrings == null)
@@ -146,7 +146,7 @@ public class Repository : IRepository
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
-        bool tracked = false
+        bool tracked = true
     ) where T : class
     {
         IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
