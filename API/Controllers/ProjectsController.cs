@@ -28,7 +28,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         });
     }
 
-    [HttpPost]
+    [HttpGet]
     public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects()
     {
         var projects = await projectManager.GetAllProjectsAsync();
@@ -46,7 +46,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProjectDto>> Createproject([FromBody] 
+    public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] 
         CreateProjectDto dto)
     { var project = await projectManager.CreateProjectAsync(dto.Name,
             dto.ImageUrl);

@@ -21,7 +21,8 @@ public class ProjectManager(IRepository repository) : IProjectManager
             OrganisationLogoUrl = imageUrl,
             ProjectState = ProjectState.Draft,
             FormType = FormType.VerticalScroll,
-            Questionnaire = new Questionnaire()
+            Questionnaire = new Questionnaire(),
+            CreatedAt = DateTime.UtcNow
         };
         return await repository.CreateAsync(project);
     }
