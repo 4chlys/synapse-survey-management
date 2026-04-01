@@ -118,11 +118,31 @@ if (useAi)
 var app = builder.Build();
 
 // Database initialisation & seeding
+// Retry loop: nodig voor Cloud Run cold starts waarbij de postgres sidecar
+// nog niet klaar is als de API opstart (race condition).
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
-    context.CreateDatabase(deleteIfExists);
-    DummyDataSeeder.Seed(context);
+    var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    const int maxRetries = 10;
+    const int delayMs = 3000;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
+    {
+        try
+        {
+            context.CreateDatabase(deleteIfExists);
+            DummyDataSeeder.Seed(context);
+            break;
+        }
+        catch (Exception ex) when (attempt < maxRetries)
+        {
+            dbLogger.LogWarning("Database not ready (attempt {Attempt}/{Max}): {Message}. Retrying in {Delay}ms...",
+                attempt, maxRetries, ex.Message, delayMs);
+            await Task.Delay(delayMs);
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -138,5 +158,19 @@ app.UseHttpLogging();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
+
+app.MapGet("/health", async (SynapseEnqueteContext db) =>
+{
+    try
+    {
+        await db.Database.CanConnectAsync();
+        return Results.Ok(new { status = "healthy" });
+    }
+    catch
+    {
+        return Results.StatusCode(503);
+    }
+});
+
 app.MapControllers();
 app.Run();

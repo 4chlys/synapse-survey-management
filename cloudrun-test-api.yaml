@@ -1,0 +1,76 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mvp-api-test
+  annotations:
+    run.googleapis.com/launch-stage: BETA   # vereist voor multi-container
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"   # scale-to-zero
+        autoscaling.knative.dev/maxScale: "3"
+    spec:
+      containers:
+
+        # ── Ingress container: de .NET API ──────────────────────────────────
+        # Dit is de container die HTTP-verkeer ontvangt van Cloud Run.
+        # Verbindt met postgres via 127.0.0.1 (gedeeld netwerk-namespace).
+        - name: mvp-api
+          image: gcr.io/PROJECT_ID/mvp-app:development   # vervangen door CI/CD
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development         # deleteIfExists=true → DB opnieuw aangemaakt bij cold start
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: DB_HOST
+              value: "127.0.0.1"         # localhost = sidecar postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: synapse-test
+            - name: DB_USER
+              value: synapse-user
+            - name: DB_PASSWORD
+              value: synapse-test-pw     # geen Secret Manager nodig voor test
+            - name: ApiKey
+              value: dev-api-key-synapse-2026
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10      # geef postgres tijd om op te starten
+            periodSeconds: 5
+            failureThreshold: 10
+
+        # ── Sidecar container: PostgreSQL ───────────────────────────────────
+        # Draait naast de API in dezelfde instance.
+        # PGDATA op /tmp: enige schrijfbare map in Cloud Run.
+        # Data is ephemeral — verdwijnt bij scale-to-zero (gewenst gedrag).
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_DB
+              value: synapse-test
+            - name: POSTGRES_USER
+              value: synapse-user
+            - name: POSTGRES_PASSWORD
+              value: synapse-test-pw
+            - name: PGDATA
+              value: /tmp/pgdata          # /tmp is de enige schrijfbare map in Cloud Run
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.5"
+          startupProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            failureThreshold: 10
