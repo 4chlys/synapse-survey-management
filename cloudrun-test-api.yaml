@@ -1,0 +1,76 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mvp-api-test
+  annotations:
+    run.googleapis.com/launch-stage: BETA   # required for multi-container
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"   # scale-to-zero
+        autoscaling.knative.dev/maxScale: "3"
+    spec:
+      containers:
+
+        # -- Ingress container: the .NET API ------------------------------------
+        # This container receives HTTP traffic from Cloud Run.
+        # Connects to postgres via 127.0.0.1 (shared network namespace).
+        - name: mvp-api
+          image: gcr.io/synapse-ip-j2/mvp-app:development
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development         # deleteIfExists=true -> DB recreated on cold start
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: DB_HOST
+              value: "127.0.0.1"         # localhost = sidecar postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: synapse-test
+            - name: DB_USER
+              value: synapse-user
+            - name: DB_PASSWORD
+              value: synapse-test-pw     # no Secret Manager needed for test
+            - name: ApiKey
+              value: dev-api-key-synapse-2026
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10      # give postgres time to start
+            periodSeconds: 5
+            failureThreshold: 10
+
+        # -- Sidecar container: PostgreSQL --------------------------------------
+        # Runs alongside the API in the same instance.
+        # PGDATA on /tmp: the only writable path in Cloud Run.
+        # Data is ephemeral -- lost on scale-to-zero (intended behaviour).
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_DB
+              value: synapse-test
+            - name: POSTGRES_USER
+              value: synapse-user
+            - name: POSTGRES_PASSWORD
+              value: synapse-test-pw
+            - name: PGDATA
+              value: /tmp/pgdata          # /tmp is the only writable path in Cloud Run
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.5"
+          startupProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            failureThreshold: 10
