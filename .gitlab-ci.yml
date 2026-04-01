@@ -1,8 +1,6 @@
-
 # ════════════════════════════════════════════════════════════════════════════
 #  Synapse CI/CD Pipeline
-#  - development branch → test environment (automatisch)
-#  - main branch        → production       (automatisch)
+#  - development branch → test environment op Cloud Run (automatisch)
 # ════════════════════════════════════════════════════════════════════════════
 
 image: docker:27
@@ -20,43 +18,40 @@ stages:
   - push
   - deploy
 
-# ── Gedeelde login stap (herbruikbaar via extends) ────────────────────────
+# ── Gedeelde login stap ───────────────────────────────────────────────────
 .gcr_login: &gcr_login
   before_script:
-    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | docker login -u _json_key --password-stdin https://gcr.io
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
 
 # ════════════════════════════════════════════════════════════════════════════
 #  STAGE 1 – BUILD
-#  Bouwt Docker images en tagt ze met branch-naam + commit SHA
 # ════════════════════════════════════════════════════════════════════════════
 
 build-api:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_API}:${CI_COMMIT_REF_SLUG}" .
-    - docker save "${IMAGE_API}:${CI_COMMIT_REF_SLUG}" | gzip > api-image.tar.gz
+    - docker build --provenance=false -t "${IMAGE_API}:development" .
+    - docker save "${IMAGE_API}:development" | gzip > api-image.tar.gz
   artifacts:
     paths:
       - api-image.tar.gz
     expire_in: 1 hour
   only:
     - development
-    - main
 
 build-ui:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_UI}:${CI_COMMIT_REF_SLUG}" -f Dockerfile.ui-user .
-    - docker save "${IMAGE_UI}:${CI_COMMIT_REF_SLUG}" | gzip > ui-image.tar.gz
+    - docker build --provenance=false -t "${IMAGE_UI}:development" -f Dockerfile.ui-user .
+    - docker save "${IMAGE_UI}:development" | gzip > ui-image.tar.gz
   artifacts:
     paths:
       - ui-image.tar.gz
     expire_in: 1 hour
   only:
     - development
-    - main
 
 # ════════════════════════════════════════════════════════════════════════════
 #  STAGE 2 – PUSH naar Google Container Registry
@@ -73,23 +68,12 @@ push-dev:
   only:
     - development
 
-push-prod:
-  stage: push
-  <<: *gcr_login
-  script:
-    - docker load < api-image.tar.gz
-    - docker load < ui-image.tar.gz
-    - docker push "${IMAGE_API}:latest"
-    - docker push "${IMAGE_UI}:latest"
-  only:
-    - main
-
 # ════════════════════════════════════════════════════════════════════════════
-#  STAGE 3 – DEPLOY naar Cloud Run (development branch → test environment)
+#  STAGE 3 – DEPLOY naar Cloud Run (test environment)
 #
 #  Architectuur:
 #    mvp-api-test  → Cloud Run multi-container (API ingress + postgres sidecar)
-#    mvp-ui-test   → Cloud Run service (schaal naar 0 met API)
+#    mvp-ui-test   → Cloud Run service
 #
 #  Scale-to-zero: beide services schalen automatisch naar 0 bij inactiviteit.
 #  Bij een nieuwe request starten beide op, postgres initialiseert, seeder draait.
@@ -99,7 +83,8 @@ deploy-test:
   stage: deploy
   image: google/cloud-sdk:latest
   before_script:
-    - echo "${GCP_SERVICE_ACCOUNT_KEY}" | gcloud auth activate-service-account --key-file=-
+    - echo "${GCP_SERVICE_ACCOUNT_KEY}" | base64 -d > /tmp/key.json
+    - gcloud auth activate-service-account --key-file=/tmp/key.json
     - gcloud config set project "${PROJECT_ID}"
     - gcloud services enable run.googleapis.com
   script:
@@ -108,9 +93,9 @@ deploy-test:
 
     # API + postgres sidecar deployen als multi-container Cloud Run service
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
-    - gcloud run services add-iam-policy-binding mvp-api-test
-        --region="${REGION}"
-        --member="allUsers"
+    - gcloud run services add-iam-policy-binding mvp-api-test \
+        --region="${REGION}" \
+        --member="allUsers" \
         --role="roles/run.invoker"
 
     # API URL ophalen zodat UI ernaar kan verwijzen
@@ -141,58 +126,3 @@ deploy-test:
     - development
   environment:
     name: test
-
-# ════════════════════════════════════════════════════════════════════════════
-#  STAGE 3 – DEPLOY naar Productie (main branch)
-#  Productie gebruikt aparte VMs (mvp-api-vm + mvp-ui-vm) zonder Compose
-# ════════════════════════════════════════════════════════════════════════════
-
-deploy-production:
-  stage: deploy
-  image: google/cloud-sdk:latest
-  before_script:
-    - echo "${GCP_SERVICE_ACCOUNT_KEY}" | gcloud auth activate-service-account --key-file=-
-    - gcloud config set project "${PROJECT_ID}"
-  script:
-    # API VM updaten
-    - |
-      gcloud compute ssh mvp-api-vm --zone="${ZONE}" \
-        --ssh-flag="-o StrictHostKeyChecking=no" \
-        --command="
-          gcloud auth configure-docker --quiet &&
-          docker pull ${IMAGE_API}:latest &&
-          docker stop mvp-api || true &&
-          docker rm   mvp-api || true &&
-          DB_PASSWORD=\$(gcloud secrets versions access latest --secret=db-password) &&
-          API_KEY=\$(gcloud secrets versions access latest --secret=api-key) &&
-          docker run -d --name mvp-api --restart always -p 8080:8080 \
-            -e ASPNETCORE_ENVIRONMENT=Production \
-            -e DB_HOST=${PROD_DB_IP} \
-            -e DB_PORT=5432 \
-            -e DB_NAME=${DB_NAME} \
-            -e DB_USER=${DB_USER} \
-            -e DB_PASSWORD=\"\$DB_PASSWORD\" \
-            -e ApiKey=\"\$API_KEY\" \
-            ${IMAGE_API}:latest
-        "
-    # UI VM updaten
-    - |
-      gcloud compute ssh mvp-ui-vm --zone="${ZONE}" \
-        --ssh-flag="-o StrictHostKeyChecking=no" \
-        --command="
-          gcloud auth configure-docker --quiet &&
-          docker pull ${IMAGE_UI}:latest &&
-          docker stop mvp-ui || true &&
-          docker rm   mvp-ui || true &&
-          API_KEY=\$(gcloud secrets versions access latest --secret=api-key) &&
-          docker run -d --name mvp-ui --restart always -p 80:8080 \
-            -e ASPNETCORE_ENVIRONMENT=Production \
-            -e ApiBaseUrl=http://mvp-api-vm.${ZONE}.c.${PROJECT_ID}.internal:8080 \
-            -e ApiKey=\"\$API_KEY\" \
-            ${IMAGE_UI}:latest
-        "
-  only:
-    - main
-  environment:
-    name: production
-    url: https://synapse-platform.be
