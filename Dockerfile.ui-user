@@ -4,7 +4,7 @@ EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
-# installing Node.js en pnpm for the Vite build
+# installing Node.js and pnpm for the Vite build
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g pnpm
@@ -13,7 +13,7 @@ WORKDIR /src
 COPY ["UI-User/UI-User.csproj", "UI-User/"]
 RUN dotnet restore "UI-User/UI-User.csproj"
 
-# copy package.json so it is cached
+# copy package files so pnpm install layer is cached
 COPY ["UI-User/package.json", "UI-User/"]
 COPY ["UI-User/pnpm-lock.yaml", "UI-User/"]
 WORKDIR /src/UI-User
@@ -22,12 +22,13 @@ WORKDIR /src
 
 COPY . .
 
-# dotnet publish automatically calls pnpm run build (via .csproj)
-RUN dotnet publish "UI-User/UI-User.csproj" -c Release -o /app/publish
+# Run Vite build explicitly before dotnet publish so MSBuild can discover the
+# generated files in wwwroot/dist/ when it evaluates static web assets.
+WORKDIR /src/UI-User
+RUN pnpm run build
+WORKDIR /src
 
-# Manually copy all Vite build output — MSBuild evaluates items before pnpm build runs,
-# so dynamically generated files in wwwroot/dist/ are not picked up automatically.
-RUN cp -r /src/UI-User/wwwroot/dist/. /app/publish/wwwroot/dist/
+RUN dotnet publish "UI-User/UI-User.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
