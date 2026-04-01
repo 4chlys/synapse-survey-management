@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: mvp-api-test
   annotations:
-    run.googleapis.com/launch-stage: BETA   # vereist voor multi-container
+    run.googleapis.com/launch-stage: BETA   # required for multi-container
 spec:
   template:
     metadata:
@@ -13,16 +13,16 @@ spec:
     spec:
       containers:
 
-        # ── Ingress container: de .NET API ──────────────────────────────────
-        # Dit is de container die HTTP-verkeer ontvangt van Cloud Run.
-        # Verbindt met postgres via 127.0.0.1 (gedeeld netwerk-namespace).
+        # -- Ingress container: the .NET API ------------------------------------
+        # This container receives HTTP traffic from Cloud Run.
+        # Connects to postgres via 127.0.0.1 (shared network namespace).
         - name: mvp-api
-          image: gcr.io/PROJECT_ID/mvp-app:development   # vervangen door CI/CD
+          image: gcr.io/synapse-ip-j2/mvp-app:development
           ports:
             - containerPort: 8080
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: Development         # deleteIfExists=true → DB opnieuw aangemaakt bij cold start
+              value: Development         # deleteIfExists=true -> DB recreated on cold start
             - name: ASPNETCORE_URLS
               value: http://+:8080
             - name: DB_HOST
@@ -34,7 +34,7 @@ spec:
             - name: DB_USER
               value: synapse-user
             - name: DB_PASSWORD
-              value: synapse-test-pw     # geen Secret Manager nodig voor test
+              value: synapse-test-pw     # no Secret Manager needed for test
             - name: ApiKey
               value: dev-api-key-synapse-2026
           resources:
@@ -45,14 +45,14 @@ spec:
             httpGet:
               path: /health
               port: 8080
-            initialDelaySeconds: 10      # geef postgres tijd om op te starten
+            initialDelaySeconds: 10      # give postgres time to start
             periodSeconds: 5
             failureThreshold: 10
 
-        # ── Sidecar container: PostgreSQL ───────────────────────────────────
-        # Draait naast de API in dezelfde instance.
-        # PGDATA op /tmp: enige schrijfbare map in Cloud Run.
-        # Data is ephemeral — verdwijnt bij scale-to-zero (gewenst gedrag).
+        # -- Sidecar container: PostgreSQL --------------------------------------
+        # Runs alongside the API in the same instance.
+        # PGDATA on /tmp: the only writable path in Cloud Run.
+        # Data is ephemeral -- lost on scale-to-zero (intended behaviour).
         - name: postgres
           image: postgres:15-alpine
           env:
@@ -63,7 +63,7 @@ spec:
             - name: POSTGRES_PASSWORD
               value: synapse-test-pw
             - name: PGDATA
-              value: /tmp/pgdata          # /tmp is de enige schrijfbare map in Cloud Run
+              value: /tmp/pgdata          # /tmp is the only writable path in Cloud Run
           resources:
             limits:
               memory: 256Mi

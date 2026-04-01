@@ -1,12 +1,12 @@
 # ════════════════════════════════════════════════════════════════════════════
 #  Synapse CI/CD Pipeline
-#  - development branch → test environment op Cloud Run (automatisch)
+#  - development branch → test environment on Cloud Run (automatic)
 # ════════════════════════════════════════════════════════════════════════════
 
 image: docker:27
 
 services:
-  - docker:27-dind   # Docker-in-Docker: zodat we docker build/push kunnen uitvoeren
+  - docker:27-dind   # Docker-in-Docker: allows docker build/push in the pipeline
 
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
@@ -18,7 +18,7 @@ stages:
   - push
   - deploy
 
-# ── Gedeelde login stap ───────────────────────────────────────────────────
+# ── Shared GCR login step ─────────────────────────────────────────────────
 .gcr_login: &gcr_login
   before_script:
     - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
@@ -54,7 +54,7 @@ build-ui:
     - development
 
 # ════════════════════════════════════════════════════════════════════════════
-#  STAGE 2 – PUSH naar Google Container Registry
+#  STAGE 2 – PUSH to Google Container Registry
 # ════════════════════════════════════════════════════════════════════════════
 
 push-dev:
@@ -69,14 +69,14 @@ push-dev:
     - development
 
 # ════════════════════════════════════════════════════════════════════════════
-#  STAGE 3 – DEPLOY naar Cloud Run (test environment)
+#  STAGE 3 – DEPLOY to Cloud Run (test environment)
 #
-#  Architectuur:
+#  Architecture:
 #    mvp-api-test  → Cloud Run multi-container (API ingress + postgres sidecar)
 #    mvp-ui-test   → Cloud Run service
 #
-#  Scale-to-zero: beide services schalen automatisch naar 0 bij inactiviteit.
-#  Bij een nieuwe request starten beide op, postgres initialiseert, seeder draait.
+#  Scale-to-zero: both services scale to zero when idle.
+#  On a new request: both start, postgres initialises, seeder runs.
 # ════════════════════════════════════════════════════════════════════════════
 
 deploy-test:
@@ -88,24 +88,21 @@ deploy-test:
     - gcloud config set project "${PROJECT_ID}"
     - gcloud services enable run.googleapis.com
   script:
-    # Vervang PROJECT_ID placeholder in de YAML met de echte waarde
-    - sed -i "s|gcr.io/PROJECT_ID|gcr.io/${PROJECT_ID}|g" cloudrun-test-api.yaml
-
-    # API + postgres sidecar deployen als multi-container Cloud Run service
+    # Deploy API + postgres sidecar as a multi-container Cloud Run service
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
     - gcloud run services add-iam-policy-binding mvp-api-test \
         --region="${REGION}" \
         --member="allUsers" \
         --role="roles/run.invoker"
 
-    # API URL ophalen zodat UI ernaar kan verwijzen
+    # Retrieve API URL for the UI
     - |
       API_URL=$(gcloud run services describe mvp-api-test \
         --region="${REGION}" \
         --format="value(status.url)")
       echo "API URL: $API_URL"
 
-    # UI deployen als aparte Cloud Run service
+    # Deploy UI as a separate Cloud Run service
     - |
       gcloud run deploy mvp-ui-test \
         --image="${IMAGE_UI}:development" \
@@ -116,12 +113,12 @@ deploy-test:
         --max-instances=3 \
         --set-env-vars="ASPNETCORE_ENVIRONMENT=Development,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
 
-    # UI URL tonen in pipeline log
+    # Print UI URL in pipeline log
     - |
       UI_URL=$(gcloud run services describe mvp-ui-test \
         --region="${REGION}" \
         --format="value(status.url)")
-      echo "Test UI bereikbaar op: $UI_URL"
+      echo "Test UI available at: $UI_URL"
   only:
     - development
   environment:
