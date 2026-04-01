@@ -169,6 +169,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Project-Emoji many-to-many (implicit join table)
+        builder.Entity<Project>()
+            .HasMany(p => p.Emojis)
+            .WithMany()
+            .UsingEntity("ProjectEmoji");
+
         // Comment
         builder.Entity<Comment>(e =>
         {

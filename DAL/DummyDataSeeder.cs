@@ -46,10 +46,10 @@ public class DummyDataSeeder
     {
         if (context.Projects.Any()) return;
 
-        _heart = new Emoji { Symbol = "❤️", Name = "heart", IsActive = true };
-        _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup", IsActive = true };
-        _fire = new Emoji { Symbol = "🔥", Name = "fire", IsActive = true };
-        _check = new Emoji { Symbol = "✅", Name = "check", IsActive = true };
+        _heart = new Emoji { Symbol = "❤️", Name = "heart" };
+        _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup" };
+        _fire = new Emoji { Symbol = "🔥", Name = "fire" };
+        _check = new Emoji { Symbol = "✅", Name = "check" };
 
         // ── Project 1: Synapse ──
         var questionnaire1 = new Questionnaire();
@@ -275,6 +275,16 @@ public class DummyDataSeeder
         context.Projects.Add(projectDraft);
 
         context.Emojis.AddRange(_heart, _thumbsup, _fire, _check);
+
+        // Enable all emojis for active projects
+        var allEmojis = new[] { _heart, _thumbsup, _fire, _check };
+        foreach (var emoji in allEmojis)
+        {
+            projectActive.Emojis.Add(emoji);
+            projectActive2.Emojis.Add(emoji);
+            projectActive3.Emojis.Add(emoji);
+        }
+
         context.SaveChanges();
     }
 }

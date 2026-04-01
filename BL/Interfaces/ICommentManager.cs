@@ -9,7 +9,7 @@ public interface ICommentManager
     Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant);
     Task<PagedResult<TextComment>> GetOkCommentsByIdeaAsync(int ideaId, int page, int pageSize, string sortKey, int? excludeParticipantId = null);
     Task<IEnumerable<TextComment>> GetOwnCommentsByIdeaAsync(int ideaId, int participantId);
-    Task<IEnumerable<Emoji>> GetEmojisAsync();
+    Task<IEnumerable<Emoji>> GetEmojisAsync(int projectId);
     Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant);
     Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant);
     Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant);
