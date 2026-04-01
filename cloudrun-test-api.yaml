@@ -17,7 +17,7 @@ spec:
         # This container receives HTTP traffic from Cloud Run.
         # Connects to postgres via 127.0.0.1 (shared network namespace).
         - name: mvp-api
-          image: gcr.io/synapse-ip-j2/mvp-app:development
+          image: IMAGE_API_PLACEHOLDER
           ports:
             - containerPort: 8080
           env:
