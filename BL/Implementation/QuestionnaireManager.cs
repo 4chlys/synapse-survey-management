@@ -67,7 +67,8 @@ public class QuestionnaireManager(IRepository repository) : IQuestionnaireManage
     {
         var current = await repository.ReadByIdAsync<Question>(
             currentQuestionId,
-            includeStrings: ["Questionnaire.Questions.BranchRules.TargetQuestion"]);
+            includeStrings: ["Questionnaire.Questions.BranchRules.TargetQuestion"],
+            tracked: true);
         
         if (current is null) throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
 
