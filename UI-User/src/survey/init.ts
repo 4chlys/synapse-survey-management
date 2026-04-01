@@ -86,7 +86,8 @@ export function initSurvey(): void {
                 animateTrackTo(track, state.currentIndex, state.visibleIndices);
                 updateProgressBar(progressBar, state.visibleIndices.indexOf(state.currentIndex), state.visibleIndices.length);
                 syncButtons(state);
-            });
+            })
+            .catch(() => { /* Resume unavailable — survey starts fresh with defaults */ });
     }
 
     updateQuestionCounters(slides, state.visibleIndices);
