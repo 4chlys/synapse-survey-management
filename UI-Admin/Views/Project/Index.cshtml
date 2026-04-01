@@ -1,0 +1,43 @@
+@model IEnumerable<SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel>
+@{
+    ViewData["Title"] = "Platform Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gray-900 text-white p-8">
+
+    <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+            <img src="@(Model.FirstOrDefault()?.OrganisationLogoUrl ?? "https://placehold.co/40x40")" alt="Organisation" class="w-full h-full object-cover" />
+        </div>
+        <span class="text-white font-medium">Admin</span>
+    </div>
+
+    <p class="text-sm text-gray-300 mb-1">@(Model.FirstOrDefault()?.OrganisationName ?? "Platform")</p>
+    <p class="text-sm text-gray-400 mb-6">Jouw projecten</p>
+
+    <div class="grid grid-cols-3 gap-4">
+
+        <a asp-controller="Project" asp-action="Create"
+           class="relative bg-gray-800 aspect-video flex flex-col items-center justify-center hover:bg-gray-700 transition cursor-pointer">
+            <span class="text-white font-bold" style="font-size: 5rem; line-height: 1;">+</span>
+            <span class="absolute bottom-3 text-sm text-gray-300 italic">→ Project Setup</span>
+        </a>
+
+        @foreach (var project in Model)
+        {
+            <div class="relative aspect-video bg-gray-800 overflow-hidden">
+                @if (!string.IsNullOrEmpty(project.ImageUrl))
+                {
+                    <img src="@project.ImageUrl"
+                         class="absolute inset-0 w-full h-full object-cover"
+                         alt="@project.Name" />
+                }
+                <div class="absolute inset-0 flex items-end justify-center pb-3">
+                    <span class="text-white text-sm">@project.Name</span>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

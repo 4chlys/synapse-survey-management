@@ -6,4 +6,6 @@ public class ProjectAdminViewModel
     public string Name { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
     public string ProjectState { get; set; } = string.Empty;
+    public string OrganisationName { get; set; } = string.Empty;
+    public string OrganisationLogoUrl { get; set; } = string.Empty;
 }

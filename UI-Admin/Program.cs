@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
+using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,9 +33,16 @@ HttpClientHandler CreateHandler()
 builder.Services.AddHttpClient<ProjectAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
+builder.Services.AddViteServices();
+
 builder.Services.AddHttpClient<QuestionAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseViteDevelopmentServer();
+}
 
 if (!app.Environment.IsDevelopment())
 {
