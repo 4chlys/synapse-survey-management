@@ -42,4 +42,49 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
         };
         return Ok(dto);
     }
+    [HttpPost]
+    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId,
+        [FromBody] CreateCategoryDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var category = await categoryManager.CreateCategoryAsync(projectId, dto.Name,
+            dto.Description);
+        if (category is null)
+            return NotFound();
+
+        return Created(string.Empty, new CategoryDto
+        {
+            CategoryId = category.CategoryId,
+            Name = category.Name,
+            Description = category.Description,
+            IdeaCount = 0
+        });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCategory(int id, [FromBody]
+        UpdateCategoryDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var success = await categoryManager.UpdateCategoryAsync(id, dto.Name,
+            dto.Description);
+        if (!success)
+            return NotFound();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCategory(int id)
+    {
+        var success = await categoryManager.DeleteCategoryAsync(id);
+        if (!success)
+            return NotFound();
+
+        return NoContent();
+    }
 }
