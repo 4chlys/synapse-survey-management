@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git -C C:/Users/noaro/KDG/Integratie_Project/development status --short)"
-    ]
-  }
-}
