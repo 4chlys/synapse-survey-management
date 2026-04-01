@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.DAL;
 
@@ -11,17 +10,14 @@ namespace SynapseEnqueteManagement.DAL;
 public class Repository : IRepository
 {
     private readonly DbContext _context;
-    private readonly ILogger<Repository> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Repository"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for data operations.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public Repository(DbContext context, ILogger<Repository> logger)
+    public Repository(DbContext context)
     {
         _context = context;
-        _logger = logger;
     }
 
     /// <summary>
@@ -63,10 +59,11 @@ public class Repository : IRepository
         Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
         bool randomize = false,
         int? skip = null,
-        int? take = null
+        int? take = null,
+        bool tracked = false
     ) where T : class
     {
-        IQueryable<T> query = _context.Set<T>();
+        IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
 
         if (includes != null)
             foreach (var include in includes)
@@ -113,13 +110,14 @@ public class Repository : IRepository
     public async Task<T> ReadByIdAsync<T>(
         object id,
         Expression<Func<T, object>>[] includes = null,
-        string[] includeStrings = null
+        string[] includeStrings = null,
+        bool tracked = false
     ) where T : class
     {
         if (includes == null && includeStrings == null)
             return await _context.Set<T>().FindAsync(id);
 
-        IQueryable<T> query = _context.Set<T>();
+        IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
 
         if (includes != null)
             foreach (var include in includes)
@@ -147,10 +145,11 @@ public class Repository : IRepository
     public async Task<T> ReadSingleAsync<T>(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
-        string[] includeStrings = null
+        string[] includeStrings = null,
+        bool tracked = false
     ) where T : class
     {
-        IQueryable<T> query = _context.Set<T>();
+        IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
 
         if (includes != null)
         {
@@ -184,19 +183,10 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
     /// <param name="entity">The entity instance with updated values.</param>
     /// <returns><c>true</c> if the update was successful; <c>false</c> if an error occurred (logged).</returns>
-    public async Task<bool> UpdateAsync<T>(T entity) where T : class
+    public async Task UpdateAsync<T>(T entity) where T : class
     {
-        try
-        {
-            _context.Set<T>().Update(entity);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogError(ex, "Failed to update entity of type {EntityType}", typeof(T).Name);
-            return false;
-        }
+        _context.Set<T>().Update(entity);
+        await _context.SaveChangesAsync();
     }
 
     /// <summary>

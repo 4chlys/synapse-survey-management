@@ -12,8 +12,8 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
         if (!canScroll) return;
         canScroll = false;
 
-        if (e.deltaY > 0) navigateNext(state);
-        else if (e.deltaY < 0) navigatePrev(state);
+        if (e.deltaY > 0) void navigateNext(state);
+        else if (e.deltaY < 0) void navigatePrev(state);
 
         setTimeout(() => {
             canScroll = true;
@@ -33,8 +33,8 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
         if (Math.abs(deltaY) < 50) return;
         if (!canScroll) return;
         canScroll = false;
-        if (deltaY > 0) navigateNext(state);
-        else navigatePrev(state);
+        if (deltaY > 0) void navigateNext(state);
+        else void navigatePrev(state);
         setTimeout(() => {
             canScroll = true;
         }, 800);
@@ -47,10 +47,10 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
 
         if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
             e.preventDefault();
-            navigateNext(state);
+            void navigateNext(state);
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
             e.preventDefault();
-            navigatePrev(state);
+            void navigatePrev(state);
         }
     });
 }

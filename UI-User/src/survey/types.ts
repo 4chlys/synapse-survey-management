@@ -5,4 +5,7 @@ export interface SurveyState {
     isAnimating: boolean;
     progressBar: HTMLElement | null;
     onSlideChange?: (state: SurveyState) => void;
+    visibleIndices: number[];
+    projectId: number;
+    hasSession: boolean;
 }

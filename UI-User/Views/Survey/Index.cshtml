@@ -1,3 +1,4 @@
+@using System.Text.Json
 @model SurveyViewModel
 
 @{
@@ -5,7 +6,11 @@
     ViewData["SurveyTitle"] = Model.Title;
 }
 
-<div id="survey-container" class="relative overflow-hidden" style="height: var(--slide-h)">
+<div id="survey-container"
+     class="relative overflow-hidden"
+     style="height: var(--slide-h)"
+     data-project-id="@Context.GetRouteValue("projectId")"
+     data-has-session="@Model.HasSession.ToString().ToLower()">
 
     @* Progress bar *@
     <div class="absolute top-0 left-0 right-0 h-0.5 bg-gray-200 z-10">
@@ -41,12 +46,13 @@
                 <section class="survey-slide flex flex-col justify-between px-6 pt-8 pb-10 bg-white"
                          style="height: var(--slide-h)"
                          data-question-id="@question.QuestionId"
+                         data-position="@question.Position"
                          data-format="@question.Format.ToString()"
                          data-mandatory="@question.IsMandatory.ToString().ToLower()">
 
                     @* Question counter *@
                     <p class="text-xs font-semibold tracking-widest uppercase text-gray-400">
-                        Vraag @question.QuestionNumber van @question.TotalQuestions
+                        Vraag <span class="q-number">@question.QuestionNumber</span> van <span class="q-total">@question.TotalQuestions</span>
                     </p>
 
                     @* Question body *@
@@ -150,3 +156,9 @@
     </form>
 
 </div>
+
+@* Existing responses for resume support *@
+@if (Model.ExistingResponses.Count > 0)
+{
+    <script type="application/json" id="existing-responses">@Html.Raw(JsonSerializer.Serialize(Model.ExistingResponses))</script>
+}
