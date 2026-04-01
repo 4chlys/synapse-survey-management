@@ -10,5 +10,6 @@ public class Section
 
     [MaxLength(100)] public string Description { get; set; }
 
+    public Questionnaire Questionnaire { get; set; }
     public ICollection<Question> Questions { get; set; } = new List<Question>();
 }
