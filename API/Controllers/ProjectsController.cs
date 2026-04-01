@@ -27,4 +27,41 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             RequestContactInfo = project.RequestContactInfo
         });
     }
+
+    [HttpPost]
+    public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects()
+    {
+        var projects = await projectManager.GetAllProjectsAsync();
+        return Ok(projects.Select(p => new ProjectDto
+        {
+            ProjectId = p.ProjectId,
+            ProjectState = p.ProjectState.ToString(),
+            FormType = p.FormType.ToString(),
+            OrganisationName = p.OrganisationName ?? string.Empty,
+            OrganisationLogoUrl = p.OrganisationLogoUrl ?? string.Empty,
+            OrganisationWebsiteUrl = p.OrganisationWebsiteUrl ?? string.Empty,
+            Introduction = p.Introduction?.Text ?? string.Empty,
+            RequestContactInfo = p.RequestContactInfo
+        }));
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ProjectDto>> Createproject([FromBody] 
+        CreateProjectDto dto)
+    { var project = await projectManager.CreateProjectAsync(dto.Name,
+            dto.ImageUrl);
+        var result = new ProjectDto
+        {
+            ProjectId = project.ProjectId,
+            ProjectState = project.ProjectState.ToString(),
+            FormType = project.FormType.ToString(),
+            OrganisationName = project.OrganisationName ?? string.Empty,
+            OrganisationLogoUrl = project.OrganisationLogoUrl ?? string.Empty,
+            OrganisationWebsiteUrl = string.Empty,
+            Introduction = string.Empty,
+            RequestContactInfo = false
+        };
+        return Created(string.Empty, result);
+        
+    }
 }

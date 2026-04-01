@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.Admin.Models;
 
-namespace Admin.Controllers;
+namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 public class HomeController : Controller
 {
