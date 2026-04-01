@@ -29,7 +29,7 @@ public class CookieSessionService : ISessionService
             SameSite = SameSiteMode.Lax,
             MaxAge = TimeSpan.FromDays(365)
         });
-        Console.WriteLine($"Set token for project {projectId} to {token}");
+
     }
 
     public bool HasToken(int projectId)

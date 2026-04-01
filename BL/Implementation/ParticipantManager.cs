@@ -11,7 +11,7 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
         var participant = new Participant
         {
             Questionnaire = questionnaire,
-            Project = await repository.ReadByIdAsync<Project>(projectId),
+            Project = await repository.ReadByIdAsync<Project>(projectId, tracked: true),
             CreatedAt = DateTime.UtcNow
         };
         return await repository.CreateAsync(participant);
@@ -26,7 +26,8 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
     {
         return await repository.ReadSingleAsync<Participant>(
             filters: [p => p.SessionToken == sessionToken],
-            includes: [p => p.Project]
+            includes: [p => p.Project],
+            tracked: true
         );
     }
 
@@ -40,7 +41,8 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
     public async Task MarkAsSubmittedAsync(Guid sessionToken)
     {
         var participant = await repository.ReadSingleAsync<Participant>(
-            filters: [p => p.SessionToken == sessionToken]);
+            filters: [p => p.SessionToken == sessionToken],
+            tracked: true);
         if (participant is null)
             throw new KeyNotFoundException("Participant not found.");
         participant.HasSubmitted = true;
@@ -49,7 +51,7 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
 
     public async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
     {
-        var participant = await repository.ReadByIdAsync<Participant>(participantId);
+        var participant = await repository.ReadByIdAsync<Participant>(participantId, tracked: true);
         if (participant is null)
             throw new KeyNotFoundException($"Participant with id {participantId} not found.");
         participant.Email = email;

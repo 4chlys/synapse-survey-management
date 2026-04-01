@@ -32,7 +32,8 @@ public class ResponseManager(IRepository repository, IResponseValidatorFactory v
             [
                 r => r.Question.QuestionId == question.QuestionId,
                 r => r.Participant.ParticipantId == participant.ParticipantId
-            ]);
+            ],
+            tracked: true);
 
         if (existing is not null)
         {
@@ -57,7 +58,8 @@ public class ResponseManager(IRepository repository, IResponseValidatorFactory v
     {
         var responses = await repository.ReadAsync<Response>(
             filters: [r => r.Participant.ParticipantId == participantId],
-            includeStrings: ["Question"]);
+            includeStrings: ["Question"],
+            tracked: true);
 
         foreach (var response in responses)
         {

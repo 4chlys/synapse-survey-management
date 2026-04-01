@@ -127,7 +127,6 @@ app.UseHttpsRedirection();
 app.UseHttpLogging();
 app.UseRouting();
 app.UseRateLimiter();
-app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapStaticAssets();

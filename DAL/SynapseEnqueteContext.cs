@@ -1,12 +1,11 @@
 ﻿using System.Text.Json;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
 
-public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext(options)
+public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<Project> Projects { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -101,12 +100,16 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
             .HasForeignKey("SourceQuestionId")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<BranchRule>()
-            .HasOne(br => br.TargetQuestion)
-            .WithMany(q => q.IncomingBranches)
-            .HasForeignKey("TargetQuestionId")
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<BranchRule>(e =>
+        {
+            e.HasOne(br => br.TargetQuestion)
+                .WithMany(q => q.IncomingBranches)
+                .HasForeignKey("TargetQuestionId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasIndex("TargetQuestionId");
+        });
 
         // Response
         builder.Entity<Response>(e =>
@@ -123,6 +126,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
 
             // Supports "which participants answered this question?" queries.
             e.HasIndex("QuestionId", "ParticipantId");
+            e.HasIndex("ParticipantId");
         });
 
         // Participant
@@ -130,6 +134,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
         {
             // SessionToken is the lookup key for every user request.
             e.HasIndex(p => p.SessionToken).IsUnique();
+            e.HasIndex("ProjectId");
 
             e.HasMany(p => p.Comments)
                 .WithOne(c => c.Participant)

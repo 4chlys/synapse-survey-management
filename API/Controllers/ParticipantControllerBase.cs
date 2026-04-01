@@ -46,6 +46,11 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return await participantManager.HasParticipantSubmittedAsync(token);
     }
 
+    protected async Task MarkAsSubmittedAsync(Guid sessionToken)
+    {
+        await participantManager.MarkAsSubmittedAsync(sessionToken);
+    }
+
     protected async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
     {
         await participantManager.SaveContactInfoAsync(participantId, email, phoneNumber);

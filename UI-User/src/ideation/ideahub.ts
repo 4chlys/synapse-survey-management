@@ -73,8 +73,8 @@ export function initIdeation(): void {
             const emojis: EmojiReaction[] = await response.json();
             const reactionsEl = document.getElementById(`emoji-reactions-${ideaId}`);
             if (reactionsEl) {
-                reactionsEl.innerHTML = renderReactionButtons(
-                    emojis, addUrl, removeUrl, projectIdVal, categoryId, ideaId, returnPage
+                reactionsEl.replaceChildren(
+                    ...buildReactionButtons(emojis, addUrl, removeUrl, projectIdVal, categoryId, ideaId, returnPage)
                 );
             }
 
@@ -131,7 +131,15 @@ export function initIdeation(): void {
     });
 }
 
-function renderReactionButtons(
+function hidden(name: string, value: string): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    return input;
+}
+
+function buildReactionButtons(
     emojis: EmojiReaction[],
     addUrl: string,
     removeUrl: string,
@@ -139,7 +147,7 @@ function renderReactionButtons(
     categoryId: string,
     ideaId: string,
     returnPage: string
-): string {
+): HTMLFormElement[] {
     const token = document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
 
     return emojis.map(emoji => {
@@ -149,20 +157,36 @@ function renderReactionButtons(
             : 'bg-gray-100 border border-gray-200 hover:bg-gray-200';
         const textClass = emoji.postedByCurrentUser ? 'text-emerald-700' : 'text-gray-700';
 
-        return `<form action="${action}" method="post" data-emoji-form>
-            <input type="hidden" name="__RequestVerificationToken" value="${token}" />
-            <input type="hidden" name="projectId" value="${projectId}" />
-            <input type="hidden" name="categoryId" value="${categoryId}" />
-            <input type="hidden" name="ideaId" value="${ideaId}" />
-            <input type="hidden" name="emojiId" value="${emoji.emojiId}" />
-            <input type="hidden" name="returnPage" value="${returnPage}" />
-            <button type="submit"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors ${btnClass}">
-                <span class="text-lg leading-none">${emoji.symbol}</span>
-                <span class="font-semibold ${textClass} text-sm leading-none">${emoji.count}</span>
-            </button>
-        </form>`;
-    }).join('');
+        const form = document.createElement('form');
+        form.action = action;
+        form.method = 'post';
+        form.setAttribute('data-emoji-form', '');
+
+        form.appendChild(hidden('__RequestVerificationToken', token));
+        form.appendChild(hidden('projectId', projectId));
+        form.appendChild(hidden('categoryId', categoryId));
+        form.appendChild(hidden('ideaId', ideaId));
+        form.appendChild(hidden('emojiId', String(emoji.emojiId)));
+        form.appendChild(hidden('returnPage', returnPage));
+
+        const btn = document.createElement('button');
+        btn.type = 'submit';
+        btn.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors ${btnClass}`;
+
+        const symbolSpan = document.createElement('span');
+        symbolSpan.className = 'text-lg leading-none';
+        symbolSpan.textContent = emoji.symbol;
+
+        const countSpan = document.createElement('span');
+        countSpan.className = `font-semibold ${textClass} text-sm leading-none`;
+        countSpan.textContent = String(emoji.count);
+
+        btn.appendChild(symbolSpan);
+        btn.appendChild(countSpan);
+        form.appendChild(btn);
+
+        return form;
+    });
 }
 
 function getProjectId(): number | null {

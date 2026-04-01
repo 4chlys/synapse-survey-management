@@ -72,7 +72,7 @@ public class CommentManager(
 
     public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"], tracked: true);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
@@ -100,14 +100,14 @@ public class CommentManager(
 
     public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"], tracked: true);
         if (idea?.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
             throw new KeyNotFoundException($"Idea {ideaId} not found in project {projectId}");
         }
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId, tracked: true);
         if (emoji == null)
         {
             logger.LogWarning("Emoji {EmojiId} not found", emojiId);
@@ -139,14 +139,14 @@ public class CommentManager(
 
     public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
     {
-        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project"]);
+        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project"], tracked: true);
         if (comment?.Idea?.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("TextComment {CommentId} not found in project {ProjectId}", commentId, projectId);
             throw new KeyNotFoundException($"TextComment {commentId} not found in project {projectId}");
         }
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId, tracked: true);
         if (emoji == null)
         {
             logger.LogWarning("Emoji {EmojiId} not found", emojiId);

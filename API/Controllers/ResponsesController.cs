@@ -128,11 +128,6 @@ public class ResponsesController(
         return Ok(new ParticipantStatusDto { HasResponded = hasSubmitted });
     }
 
-    private async Task MarkAsSubmittedAsync(Guid sessionToken)
-    {
-        await participantManager.MarkAsSubmittedAsync(sessionToken);
-    }
-
     private static ResponseDto MapToDto(Response response)
     {
         return new ResponseDto
