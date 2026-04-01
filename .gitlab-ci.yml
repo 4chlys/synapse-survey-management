@@ -86,7 +86,6 @@ deploy-test:
     - echo "${GCP_SERVICE_ACCOUNT_KEY}" | base64 -d > /tmp/key.json
     - gcloud auth activate-service-account --key-file=/tmp/key.json
     - gcloud config set project "${PROJECT_ID}"
-    - gcloud services enable run.googleapis.com
   script:
     # Deploy API + postgres sidecar as a multi-container Cloud Run service
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
