@@ -89,10 +89,7 @@ deploy-test:
   script:
     # Deploy API + postgres sidecar as a multi-container Cloud Run service
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
-    - gcloud run services add-iam-policy-binding mvp-api-test \
-        --region="${REGION}" \
-        --member="allUsers" \
-        --role="roles/run.invoker"
+    - gcloud run services add-iam-policy-binding mvp-api-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
 
     # Retrieve API URL for the UI
     - |
