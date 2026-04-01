@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
+using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,8 @@ HttpClientHandler CreateHandler()
 builder.Services.AddHttpClient<ProjectAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
+builder.Services.AddHttpClient<QuestionAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
