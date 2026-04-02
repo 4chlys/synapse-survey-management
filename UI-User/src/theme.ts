@@ -18,6 +18,8 @@ export function initTheme(): void {
 function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(STORAGE_KEY, theme);
+    // Cookie lets the server set data-theme before first paint, preventing flash
+    document.cookie = `${STORAGE_KEY}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
 
     const sun  = document.getElementById('icon-sun');
     const moon = document.getElementById('icon-moon');

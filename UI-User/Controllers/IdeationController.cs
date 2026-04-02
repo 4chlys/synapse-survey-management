@@ -151,6 +151,14 @@ public class IdeationController(
         int emojiId)
     {
         await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+            var comment = comments.FirstOrDefault(c => c.CommentId == commentId);
+            return Json(comment?.Emojis ?? []);
+        }
+
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 
@@ -177,6 +185,14 @@ public class IdeationController(
         int emojiId)
     {
         await commentService.RemoveCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+            var comment = comments.FirstOrDefault(c => c.CommentId == commentId);
+            return Json(comment?.Emojis ?? []);
+        }
+
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 }

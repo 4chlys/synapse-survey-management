@@ -1,6 +1,9 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 <!DOCTYPE html>
-<html lang="nl" data-theme="synapse-light">
+@{
+    var _theme = Context.Request.Cookies["synapse-theme"] is "synapse-dark" ? "synapse-dark" : "synapse-light";
+}
+<html lang="nl" data-theme="@_theme">
 
 <head>
     <meta charset="utf-8" />
@@ -30,7 +33,7 @@
     }
 
     <header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300" style="height: var(--header-h)">
-        <div class="h-full max-w-2xl mx-auto px-4 flex items-center justify-between gap-4">
+        <div class="h-full max-w-2xl mx-auto px-6 flex items-center justify-between gap-4">
 
             @{
                 var logoUrl = ViewData["OrganisationLogoUrl"]?.ToString();

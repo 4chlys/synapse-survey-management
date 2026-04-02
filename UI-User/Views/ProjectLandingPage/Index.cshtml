@@ -5,7 +5,7 @@
     ViewData["SurveyTitle"] = Model.OrganisationName;
 }
 
-<div class="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-6">
+<div class="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-6 page-enter">
     <div class="w-full max-w-xs">
 
         <div class="bg-base-100 rounded-2xl shadow-md border border-base-300 overflow-hidden">
@@ -33,12 +33,14 @@
                 @* Divider *@
                 <div class="w-6 h-px bg-primary/40 rounded-full mb-6"></div>
 
-                @* Introduction text *@
-                <p class="text-base text-base-content/85 leading-relaxed mb-8 max-w-[240px]">
-                    @(string.IsNullOrEmpty(Model.Introduction)
-                        ? $"Neem deel aan de bevraging van {Model.OrganisationName}"
-                        : Model.Introduction)
-                </p>
+                @* Introduction text — left-aligned in a constrained box for readability *@
+                <div class="w-full text-left mb-8">
+                    <p class="text-base text-base-content/85 leading-relaxed">
+                        @(string.IsNullOrEmpty(Model.Introduction)
+                            ? $"Neem deel aan de bevraging van {Model.OrganisationName}"
+                            : Model.Introduction)
+                    </p>
+                </div>
 
                 @* Primary CTA — full width, strong presence *@
                 <a asp-controller="Survey" asp-action="Index" asp-route-projectId="@Model.ProjectId"
