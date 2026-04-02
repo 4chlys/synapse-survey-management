@@ -1,4 +1,4 @@
-namespace SynapseEnqueteManagement.UI.User.FormStrategies;
+namespace SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 public class FormLayoutData
 {

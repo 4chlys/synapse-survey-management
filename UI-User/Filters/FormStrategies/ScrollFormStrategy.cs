@@ -1,4 +1,5 @@
-namespace SynapseEnqueteManagement.UI.User.FormStrategies;
+using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
+namespace SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 public class ScrollFormStrategy : IFormStrategy
 {
