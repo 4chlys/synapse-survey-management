@@ -16,6 +16,16 @@
         </p>
     </div>
 
+    @* CTA — Nieuw idee *@
+    <button type="button" data-action="show-create-form"
+            class="w-full btn btn-primary rounded-xl font-heading font-semibold text-base py-4 h-auto gap-2 mb-6 shadow-md cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        Nieuw idee plaatsen
+    </button>
+
     @* Create form — hidden by default *@
     <div id="createForm" class="w-full mb-6 hidden">
         <form asp-route-projectId="@Model.ProjectId" asp-action="CreateIdea" method="post"
@@ -172,7 +182,7 @@
 
 @* Bottom navigation *@
 <div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 z-50">
-    <div class="max-w-2xl mx-auto grid grid-cols-4 py-2">
+    <div class="max-w-2xl mx-auto grid grid-cols-3 py-2">
 
         <a asp-route-projectId="@Model.ProjectId" asp-controller="Category" asp-action="Index"
                class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-[52px] text-base-content/65 hover:text-primary transition-colors">
@@ -182,16 +192,6 @@
             </svg>
             <span class="text-[11px] font-medium">Terug</span>
         </a>
-
-        <button type="button" data-action="show-create-form" class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-[52px]
-            text-primary hover:opacity-75 transition-opacity cursor-pointer
-            bg-transparent border-0 outline-none appearance-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <span class="text-[11px] font-semibold">Nieuw idee</span>
-        </button>
 
         <a asp-controller="Ideation" asp-action="MyIdeas" asp-route-projectId="@Model.ProjectId"
                asp-route-categoryId="@Model.Category.CategoryId"

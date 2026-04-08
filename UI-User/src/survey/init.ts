@@ -5,12 +5,12 @@ import {updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
 
 function syncButtons(state: SurveyState): void {
-    const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
-    const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
+    const allPrev = document.querySelectorAll<HTMLButtonElement>('.btn-prev');
+    const allNext = document.querySelectorAll<HTMLButtonElement>('.btn-next');
 
-    if (btnPrev) btnPrev.disabled = state.currentIndex === 0;
-    if (btnNext) btnNext.style.visibility =
-        state.currentIndex >= state.slides.length - 1 ? 'hidden' : 'visible';
+    allPrev.forEach(btn => btn.disabled = state.currentIndex === 0);
+    allNext.forEach(btn => btn.style.visibility =
+        state.currentIndex >= state.slides.length - 1 ? 'hidden' : 'visible');
 }
 
 export function initSurvey(): void {
@@ -21,8 +21,6 @@ export function initSurvey(): void {
     if (!slides.length) return;
 
     const progressBar = document.getElementById('survey-progress-bar');
-    const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
-    const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
 
     const state: SurveyState = {
         currentIndex: 0,
@@ -39,8 +37,10 @@ export function initSurvey(): void {
     updateProgressBar(progressBar, 0, slides.length);
     syncButtons(state);
 
-    btnNext?.addEventListener('click', () => navigateNext(state));
-    btnPrev?.addEventListener('click', () => navigatePrev(state));
+    container.querySelectorAll<HTMLButtonElement>('.btn-next')
+        .forEach(btn => btn.addEventListener('click', () => navigateNext(state)));
+    container.querySelectorAll<HTMLButtonElement>('.btn-prev')
+        .forEach(btn => btn.addEventListener('click', () => navigatePrev(state)));
 
     initGestures(container, state);
 }
