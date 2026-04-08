@@ -1,0 +1,140 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
+@{
+    ViewData["Title"] = "Admin - Project Setup";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gray-900 text-white flex flex-col">
+
+    <div class="flex items-center gap-2 px-6 pt-4">
+        <div class="w-10 h-10 rounded-full border-2 border-white"></div>
+        <span class="text-xs">User</span>
+    </div>
+
+    <form asp-action="Create" method="post" class="flex-1 flex flex-col px-6 pt-4 pb-6">
+
+        <p class="text-xs font-bold mb-4 text-center">Project Setup</p>
+
+        <div class="grid grid-cols-2 gap-4 flex-1 pl-32">
+
+            @* LEFT COLUMN *@
+            <div class="space-y-5">
+
+                <div>
+                    <label class="block text-xs mb-1">Project Name</label>
+                    <input asp-for="Name"
+                           placeholder="Enter the name of your project"
+                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
+                    <span asp-validation-for="Name" class="text-red-400 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">Interaction Mode</label>
+                    <div class="flex">
+                        <button type="button" id="btn-chat"
+                                class="px-5 py-1 text-xs border border-gray-500 text-white">Chat</button>
+                        <button type="button" id="btn-scroll"
+                                class="px-5 py-1 text-xs border border-gray-500 text-white border-l-0">Scroll</button>
+                    </div>
+                    <input type="hidden" asp-for="InteractionMode" id="InteractionMode"
+                           data-initial="@Model.InteractionMode" />
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">AI Assistance</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="radio" asp-for="AiAssistance" value="ProActive" /> Pro-Active
+                        </label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="radio" asp-for="AiAssistance" value="AskFirst" /> Ask First
+                        </label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="radio" asp-for="AiAssistance" value="Never" /> Never
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">Age Range</label>
+                    <div class="flex items-center gap-2">
+                        <input asp-for="MinAge" type="number" placeholder="Min"
+                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none" />
+                        <span class="text-gray-400 text-xs">—</span>
+                        <input asp-for="MaxAge" type="number" placeholder="Max"
+                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">Image</label>
+                    <div class="border border-dashed border-gray-500 w-44 h-36 relative mb-2 overflow-hidden">
+                        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="#6B7280" stroke-width="1" />
+                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="#6B7280" stroke-width="1" />
+                        </svg>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button"
+                                class="px-4 py-1 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Generate</button>
+                        <button type="button"
+                                class="px-4 py-1 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Browse</button>
+                    </div>
+                    <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
+                </div>
+
+            </div>
+
+            @* RIGHT COLUMN *@
+            <div class="space-y-5">
+
+                <div>
+                    <label class="block text-xs mb-1">Topic</label>
+                    <input asp-for="Topic"
+                           placeholder="What is the topic of your project"
+                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">Introduction</label>
+                    <textarea asp-for="Introduction" rows="7"
+                              placeholder="Write a short introduction of your project for the participants"
+                              class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-2">Sections (optional)</label>
+                    <div id="sections-list" class="space-y-2 mb-1"></div>
+                    <button type="button" id="add-section-btn"
+                            class="text-xs text-gray-300 hover:text-white">+ Add</button>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">Contact opt-in after idea submission</label>
+                    <div class="flex">
+                        <button type="button" id="btn-off"
+                                class="px-5 py-1 text-xs border border-gray-500 text-white">OFF</button>
+                        <button type="button" id="btn-on"
+                                class="px-5 py-1 text-xs border border-gray-500 text-white border-l-0">ON</button>
+                    </div>
+                    <input type="hidden" asp-for="ContactOptIn" id="ContactOptIn"
+                           data-initial="@Model.ContactOptIn.ToString().ToLower()" />
+                </div>
+
+            </div>
+        </div>
+
+        <div class="flex justify-between mt-8">
+            <a asp-controller="Project" asp-action="Index"
+               class="px-6 py-2 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Exit</a>
+            <div class="flex gap-3">
+                <button type="submit" name="submitAction" value="save"
+                        class="px-6 py-2 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Save</button>
+                <button type="submit" name="submitAction" value="next"
+                        class="px-6 py-2 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Next →</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
