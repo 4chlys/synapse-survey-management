@@ -16,17 +16,17 @@
         </p>
     </div>
 
-    @* CTA — Nieuw idee *@
+    @* CTA Nieuw idee *@
     <button type="button" data-action="show-create-form"
             class="w-full btn btn-primary rounded-xl font-heading font-semibold text-base py-4 h-auto gap-2 mb-6 shadow-md cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-             stroke="currentColor" stroke-width="2.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
         Nieuw idee plaatsen
     </button>
 
-    @* Create form — hidden by default *@
+    @* Create form *@
     <div id="createForm" class="w-full mb-6 hidden">
         <form asp-route-projectId="@Model.ProjectId" asp-action="CreateIdea" method="post"
               class="bg-base-100 rounded-xl border border-base-300 p-5">
@@ -75,11 +75,7 @@
                 <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
                        asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
                        class="block relative rounded-xl border p-5 transition-all duration-150 active:scale-[0.99]
-                    @(idea.IsFlagged
-                                                                                                                                         ? "bg-warning/5 border-warning/30 hover:border-warning/50"
-                                                                                                                                         : idea.IsOwnedByCurrentUser
-                                                                                                                                             ? "bg-primary/5 border-primary/20 hover:border-primary/40"
-                                                                                                                                             : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
+                    @(idea.IsFlagged ? "bg-warning/5 border-warning/30 hover:border-warning/50" : idea.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20 hover:border-primary/40" : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
 
                     @* Comment count badge *@
                     <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300
@@ -110,7 +106,7 @@
 
                     <p class="text-base-content text-sm leading-relaxed pr-8">@idea.Description</p>
 
-                    @* Emoji reactions — taller pills for easier tapping *@
+                    @* Emoji reactions *@
                     <div class="flex gap-2 mt-4 items-center flex-wrap" data-emoji-container data-project-id="@Model.ProjectId"
                          data-category-id="@Model.Category.CategoryId" data-idea-id="@idea.IdeaId" data-return-page="Index"
                          data-picker-id="picker-@idea.IdeaId" data-add-url="/@Model.ProjectId/Ideation/AddIconComment"
@@ -127,10 +123,8 @@
                                     <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
                                     <input type="hidden" name="returnPage" value="Index" />
                                     <button type="submit"
-                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-[32px]
-                                        @(emoji.PostedByCurrentUser
-                                                                                                                                    ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
-                                                                                                                                    : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-8
+                                        @(emoji.PostedByCurrentUser ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20" : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
                                         <span class="text-base leading-none">@emoji.Symbol</span>
                                         <span class="leading-none font-semibold">@emoji.Count</span>
                                     </button>
@@ -185,7 +179,7 @@
     <div class="max-w-2xl mx-auto grid grid-cols-3 py-2">
 
         <a asp-route-projectId="@Model.ProjectId" asp-controller="Category" asp-action="Index"
-               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-[52px] text-base-content/65 hover:text-primary transition-colors">
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
@@ -195,7 +189,7 @@
 
         <a asp-controller="Ideation" asp-action="MyIdeas" asp-route-projectId="@Model.ProjectId"
                asp-route-categoryId="@Model.Category.CategoryId"
-               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-[52px] text-base-content/65 hover:text-primary transition-colors">
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -205,7 +199,7 @@
         </a>
 
         <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
-               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-[52px] text-base-content/65 hover:text-error transition-colors">
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-error transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"

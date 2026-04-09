@@ -5,7 +5,7 @@
 
 <div class="max-w-2xl mx-auto px-6 pt-10 pb-32 min-h-[calc(100dvh-64px)] page-enter">
 
-    @* Idea card — accented with teal left border to denote it as the topic *@
+    @* Idea card *@
     <div class="w-full mb-6">
         <div class="bg-secondary/5 rounded-xl border border-base-300 overflow-hidden border-l-2 border-l-secondary">
             <div class="p-5">
@@ -33,10 +33,10 @@
                                 <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
                                 <input type="hidden" name="returnPage" value="Detail" />
                                 <button type="submit"
-                                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-[32px]
+                                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-8
                                     @(emoji.PostedByCurrentUser
-                                                                                                                                                                                                                                                ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
-                                                                                                                                                                                                                                                : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
                                     <span class="text-base leading-none">@emoji.Symbol</span>
                                     <span class="leading-none font-semibold">@emoji.Count</span>
                                 </button>
@@ -105,7 +105,7 @@
     @* Comments section *@
     <div class="w-full">
 
-        @* Section label — visible and readable *@
+        @* Section label *@
         <div class="flex items-center gap-3 mb-4">
             <p class="text-[12px] font-bold text-base-content/90 uppercase tracking-widest">
                 Reacties (@Model.Comments.Count)
@@ -133,11 +133,7 @@
                 {
                     <div
                         class="rounded-xl border p-4
-                        @(comment.IsFlagged
-                                                                                                                                               ? "bg-warning/5 border-warning/30"
-                                                                                                                                               : comment.IsOwnedByCurrentUser
-                                                                                                                                                   ? "bg-primary/5 border-primary/20"
-                                                                                                                                                   : "bg-base-100 border-base-300")">
+                        @(comment.IsFlagged ? "bg-warning/5 border-warning/30" : comment.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20" : "bg-base-100 border-base-300")">
 
                         @if (comment.IsFlagged)
                         {
@@ -172,10 +168,10 @@
                                         <input type="hidden" name="commentId" value="@comment.CommentId" />
                                         <input type="hidden" name="emojiId" value="@commentEmoji.EmojiId" />
                                         <button type="submit"
-                                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-[32px]
+                                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-8
                                             @(commentEmoji.PostedByCurrentUser
-                                                                                                                                                                                                                                                                                                ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
-                                                                                                                                                                                                                                                                                                : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
                                             <span class="text-base leading-none">@commentEmoji.Symbol</span>
                                             <span class="leading-none font-semibold">@commentEmoji.Count</span>
                                         </button>
@@ -247,8 +243,8 @@
     </div>
 </div>
 
-@* Comment form — slides up from bottom *@
-<div id="commentForm" class="hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 shadow-xl z-[60]"
+@* Comment form *@
+<div id="commentForm" class="hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 shadow-xl z-60"
      style="padding-bottom: max(20px, env(safe-area-inset-bottom))">
     <div class="max-w-sm mx-auto px-6 py-4">
         <form asp-action="AddComment" method="post">
