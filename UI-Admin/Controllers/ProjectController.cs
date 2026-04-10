@@ -25,4 +25,13 @@ public class ProjectController(ProjectAdminService projectService) : Controller
         await projectService.CreateProjectAsync(model.Name, model.ImageUrl);
         return RedirectToAction(nameof(Index));
     }
+
+    public async Task<IActionResult> Dashboard(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null)
+            return NotFound();
+
+        return View(project);
+    }
 }

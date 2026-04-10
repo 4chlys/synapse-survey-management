@@ -26,7 +26,12 @@
 
         @foreach (var project in Model)
         {
-            <div class="relative aspect-video bg-gray-800 overflow-hidden">
+            var href = project.ProjectState == "Draft"
+                ? Url.Action("Create", "Project")
+                : Url.Action("Dashboard", "Project", new { projectId = project.ProjectId });
+
+            <a href="@href"
+               class="relative aspect-video bg-gray-800 overflow-hidden hover:ring-2 hover:ring-white transition block">
                 @if (!string.IsNullOrEmpty(project.ImageUrl))
                 {
                     <img src="@project.ImageUrl"
@@ -36,7 +41,7 @@
                 <div class="absolute inset-0 flex items-end justify-center pb-3">
                     <span class="text-white text-sm">@project.Name</span>
                 </div>
-            </div>
+            </a>
         }
 
     </div>

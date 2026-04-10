@@ -18,6 +18,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         return Ok(new ProjectDto
         {
             ProjectId = project.ProjectId,
+            Name = project.Name ?? string.Empty,
             ProjectState = project.ProjectState.ToString(),
             FormType = project.FormType.ToString(),
             OrganisationName = project.OrganisationName ?? string.Empty,
@@ -35,6 +36,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         return Ok(projects.Select(p => new ProjectDto
         {
             ProjectId = p.ProjectId,
+            Name = p.Name ?? string.Empty,
             ProjectState = p.ProjectState.ToString(),
             FormType = p.FormType.ToString(),
             OrganisationName = p.OrganisationName ?? string.Empty,

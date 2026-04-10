@@ -15,6 +15,15 @@ public class ProjectAdminService(HttpClient httpClient)
                ?? new List<ProjectAdminViewModel>();
     }
 
+    public async Task<ProjectAdminViewModel?> GetProjectByIdAsync(int projectId)
+    {
+        var response = await httpClient.GetAsync($"api/projects/{projectId}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
     public async Task<ProjectAdminViewModel> CreateProjectAsync(string name,
         string imageUrl)
     {

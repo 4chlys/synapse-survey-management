@@ -17,6 +17,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
     {
         var project = new Project
         {
+            Name = name,
             OrganisationName = name,
             OrganisationLogoUrl = imageUrl,
             ProjectState = ProjectState.Draft,
