@@ -16,7 +16,7 @@ public class CreateQuestionViewModel
     public string AnswerChoicesRaw { get; set; } = string.Empty;
 
     public List<string> GetAnswerChoices() =>
-        AnswerChoicesRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        (AnswerChoicesRaw ?? string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
             .Where(s => !string.IsNullOrEmpty(s))
             .ToList();
