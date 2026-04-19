@@ -1,0 +1,25 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel
+@{
+    ViewData["Title"] = "Project Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
+
+    <div class="flex items-center gap-3 px-6 pt-4">
+        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+            <img src="@(Model?.OrganisationLogoUrl ?? "https://placehold.co/40x40")"
+                 alt="Organisatie" class="w-full h-full object-cover" />
+        </div>
+        <span class="font-medium">@(Model?.OrganisationName ?? "Admin")</span>
+    </div>
+
+    <div class="flex items-center px-6 pt-3 pb-2">
+        <a asp-controller="Project" asp-action="Index" class="text-gray-300 hover:text-white">← Terug</a>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center">
+        <p class="text-gray-500">Dashboard voor <span class="text-white">@Model?.Name</span> — komt binnenkort.</p>
+    </div>
+
+</div>

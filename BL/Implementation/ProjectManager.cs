@@ -19,7 +19,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
         {
             Name = name,
             OrganisationName = name,
-            OrganisationLogoUrl = imageUrl,
+            ImageUrl = imageUrl,
             ProjectState = ProjectState.Draft,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),

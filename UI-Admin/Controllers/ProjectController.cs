@@ -11,7 +11,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
-    CategoryAdminService categoryService) : Controller
+    CategoryAdminService categoryService,
+    IWebHostEnvironment env) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -72,6 +73,26 @@ public class ProjectController(
     {
         await categoryService.DeleteCategoryAsync(projectId, categoryId);
         return RedirectToAction(nameof(Ideation), new { projectId });
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "Geen bestand ontvangen." });
+
+        var uploadsDir = Path.Combine(env.WebRootPath, "uploads");
+        Directory.CreateDirectory(uploadsDir);
+
+        var ext = Path.GetExtension(file.FileName);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        await using var stream = System.IO.File.Create(filePath);
+        await file.CopyToAsync(stream);
+
+        return Ok(new { url = $"/uploads/{fileName}" });
     }
 
     public async Task<IActionResult> Dashboard(int projectId)

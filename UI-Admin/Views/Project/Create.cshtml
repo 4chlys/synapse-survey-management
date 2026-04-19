@@ -68,19 +68,21 @@
 
                 <div>
                     <label class="block text-xs mb-1">Afbeelding</label>
-                    <div class="border border-dashed border-gray-500 w-44 h-36 relative mb-2 overflow-hidden">
-                        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                    <div id="image-preview-box" class="border border-dashed border-gray-500 w-44 h-36 relative mb-2 overflow-hidden">
+                        <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
                             <line x1="0" y1="0" x2="100%" y2="100%" stroke="#6B7280" stroke-width="1" />
                             <line x1="100%" y1="0" x2="0" y2="100%" stroke="#6B7280" stroke-width="1" />
                         </svg>
+                        <img id="image-preview" src="" alt="" class="absolute inset-0 w-full h-full object-cover hidden" />
                     </div>
                     <div class="flex gap-2">
                         <button type="button"
                                 class="px-4 py-1 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Genereren</button>
-                        <button type="button"
+                        <button type="button" id="browse-btn"
                                 class="px-4 py-1 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Bladeren</button>
                     </div>
                     <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
+                    <input type="file" id="image-file-input" accept="image/*" class="hidden" />
                 </div>
 
             </div>

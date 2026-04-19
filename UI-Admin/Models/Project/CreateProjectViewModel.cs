@@ -22,7 +22,6 @@ public class CreateProjectViewModel
     public int? MaxAge { get; set; }
 
     [MaxLength(500)]
-    [Url(ErrorMessage = "Voer een geldige URL in (https://...).")]
     public string ImageUrl { get; set; } = string.Empty;
 
     public List<string> Sections { get; set; } = new();

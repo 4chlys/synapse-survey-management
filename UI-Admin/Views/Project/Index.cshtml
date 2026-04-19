@@ -2,6 +2,14 @@
 @{
     ViewData["Title"] = "Platform Dashboard";
     Layout = "_Layout";
+
+    string StateLabel(string state) => state switch
+    {
+        "Active"   => "Actief",
+        "Archived" => "Gearchiveerd",
+        "Draft"    => "Concept",
+        _          => state
+    };
 }
 
 <div class="min-h-screen bg-gray-900 text-white p-8">
@@ -36,10 +44,12 @@
                 {
                     <img src="@project.ProjectImage"
                          class="absolute inset-0 w-full h-full object-cover"
-                         alt="@project.Name" />
+                         alt="@project.Name"
+                         loading="lazy" decoding="async" />
                 }
-                <div class="absolute inset-0 flex items-end justify-center pb-3">
-                    <span class="text-white text-sm">@project.Name</span>
+                <div class="absolute inset-0 flex flex-col items-center justify-end pb-3 gap-0.5">
+                    <span class="text-white text-sm" style="text-shadow: 0 1px 4px rgba(0,0,0,0.9);">@project.Name</span>
+                    <span class="text-gray-300 text-xs" style="text-shadow: 0 1px 4px rgba(0,0,0,0.9);">@StateLabel(project.ProjectState)</span>
                 </div>
             </a>
         }

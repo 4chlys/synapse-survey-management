@@ -8,8 +8,7 @@ public class CreateProjectDto
     [MaxLength(50)]
     public string Name { get; set; }
     
-    [MaxLength(100)]
-    [RegularExpression(@"^https?://.*", ErrorMessage = "Only http and https URLs are allowed.")]
+    [MaxLength(500)]
     public string ImageUrl { get; set; }
     
 }

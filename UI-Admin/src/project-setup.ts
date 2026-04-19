@@ -7,6 +7,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const contactOptInInput = document.getElementById('ContactOptIn') as HTMLInputElement | null;
     const addSectionBtn = document.getElementById('add-section-btn') as HTMLButtonElement | null;
     const sectionsList = document.getElementById('sections-list') as HTMLDivElement | null;
+    const browseBtn = document.getElementById('browse-btn') as HTMLButtonElement | null;
+    const fileInput = document.getElementById('image-file-input') as HTMLInputElement | null;
+    const imagePreview = document.getElementById('image-preview') as HTMLImageElement | null;
+    const imagePlaceholder = document.getElementById('image-placeholder') as SVGElement | null;
+    const imageUrlInput = document.getElementById('ImageUrl') as HTMLInputElement | null;
+
+    // Open file picker when Bladeren is clicked
+    browseBtn?.addEventListener('click', () => fileInput?.click());
+
+    // Upload selected file to server
+    fileInput?.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/Project/UploadImage', { method: 'POST', body: formData });
+        if (!response.ok) return;
+
+        const data = await response.json() as { url: string };
+        if (imageUrlInput) imageUrlInput.value = data.url;
+        if (imagePreview) {
+            imagePreview.src = data.url;
+            imagePreview.classList.remove('hidden');
+        }
+        imagePlaceholder?.classList.add('hidden');
+    });
 
     function setMode(mode: string) {
         if (!interactionModeInput || !btnChat || !btnScroll) return;
