@@ -11,8 +11,13 @@
         <span class="text-xs">Admin</span>
     </div>
 
+    <div class="px-6 pt-3">
+        <a asp-controller="Project" asp-action="Index" class="text-xs text-gray-300 hover:text-white">← Terug</a>
+    </div>
+
     <form asp-action="Create" method="post" class="flex-1 flex flex-col px-6 pt-4 pb-6">
 
+        <input type="hidden" asp-for="ProjectId" />
         <p class="text-xs font-bold mb-4 text-center">Project aanmaken</p>
 
         <div class="grid grid-cols-2 gap-4 flex-1 pl-32">
@@ -56,13 +61,15 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs mb-1">Leeftijdsbereik</label>
+                    <label class="block text-xs mb-1">Leeftijdsbereik <span class="text-gray-500">(optioneel)</span></label>
                     <div class="flex items-center gap-2">
-                        <input asp-for="MinAge" type="number" placeholder="Min"
-                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none" />
+                        <input asp-for="MinAge" type="number" placeholder="Min" min="1"
+                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none"
+                               style="-moz-appearance:textfield;" />
                         <span class="text-gray-400 text-xs">—</span>
-                        <input asp-for="MaxAge" type="number" placeholder="Max"
-                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none" />
+                        <input asp-for="MaxAge" type="number" placeholder="Max" min="1"
+                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none"
+                               style="-moz-appearance:textfield;" />
                     </div>
                 </div>
 
@@ -95,6 +102,7 @@
                     <input asp-for="Topic"
                            placeholder="Wat is het onderwerp van je project?"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
+                    <span asp-validation-for="Topic" class="text-red-400 text-xs"></span>
                 </div>
 
                 <div>
@@ -102,11 +110,22 @@
                     <textarea asp-for="Introduction" rows="7"
                               placeholder="Schrijf een korte introductie van je project voor de deelnemers"
                               class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none resize-none"></textarea>
+                    <span asp-validation-for="Introduction" class="text-red-400 text-xs"></span>
                 </div>
 
                 <div>
-                    <label class="block text-xs mb-2">Secties (optioneel)</label>
-                    <div id="sections-list" class="space-y-2 mb-1"></div>
+                    <label class="block text-xs mb-2">Secties <span class="text-gray-500">(optioneel)</span></label>
+                    <div id="sections-list" class="space-y-2 mb-1" data-initial-count="@Model.Sections.Count">
+                        @for (int i = 0; i < Model.Sections.Count; i++)
+                        {
+                            <div class="flex items-center gap-1">
+                                <input name="Sections[@i]" type="text" value="@Model.Sections[i]"
+                                       class="flex-1 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 focus:outline-none" />
+                                <button type="button" data-remove-section
+                                        class="text-gray-500 hover:text-white text-xs px-1">✕</button>
+                            </div>
+                        }
+                    </div>
                     <button type="button" id="add-section-btn"
                             class="text-xs text-gray-300 hover:text-white">+ Toevoegen</button>
                 </div>

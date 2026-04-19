@@ -31,6 +31,9 @@ public class Project : IHasCreatedAt
     [MaxLength(500)]
     public string ImageUrl { get; set; }
 
+    [MaxLength(20)]
+    public string AiAssistance { get; set; } = "ProActive";
+
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
     public FormType FormType { get; set; } = FormType.VerticalScroll;
     public int IdeaPageSize { get; set; } = 5;

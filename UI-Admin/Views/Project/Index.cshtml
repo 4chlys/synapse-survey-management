@@ -35,7 +35,7 @@
         @foreach (var project in Model)
         {
             var href = project.ProjectState == "Draft"
-                ? Url.Action("Create", "Project")
+                ? Url.Action("Create", "Project", new { projectId = project.ProjectId })
                 : Url.Action("Dashboard", "Project", new { projectId = project.ProjectId });
 
             <a href="@href"

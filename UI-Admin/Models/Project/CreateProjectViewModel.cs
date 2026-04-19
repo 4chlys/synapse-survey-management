@@ -1,8 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 namespace SynapseEnqueteManagement.UI.Admin.Models.Project;
 
 public class CreateProjectViewModel
 {
+    public int? ProjectId { get; set; }
+
     [Required(ErrorMessage = "Naam is verplicht.")]
     [MaxLength(100, ErrorMessage = "Naam mag maximaal 100 tekens bevatten.")]
     public string Name { get; set; } = string.Empty;
@@ -10,7 +12,7 @@ public class CreateProjectViewModel
     [MaxLength(100)]
     public string Topic { get; set; } = string.Empty;
 
-    [MaxLength(500)]
+    [MaxLength(2000)]
     public string Introduction { get; set; } = string.Empty;
 
     public string InteractionMode { get; set; } = "Scroll";

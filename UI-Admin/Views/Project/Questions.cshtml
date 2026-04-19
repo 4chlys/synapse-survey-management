@@ -19,7 +19,7 @@
 
     @* Title bar *@
     <div class="flex items-center px-6 pt-3 pb-2 gap-3">
-        <a asp-controller="Project" asp-action="Index" class="text-gray-300 hover:text-white">← Project vragen</a>
+        <a asp-controller="Project" asp-action="Create" asp-route-projectId="@projectId" class="text-gray-300 hover:text-white">← Project vragen</a>
         @if (aiAssistance != "Never")
         {
             <span class="border border-gray-500 px-3 py-1">AI</span>
@@ -119,7 +119,8 @@
            class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
         <div class="flex items-center gap-3">
             <span id="questions-next-error" class="hidden text-red-400">Voeg minimaal 1 vraag toe.</span>
-            <a asp-controller="Project" asp-action="Index"
+            <a asp-controller="Project" asp-action="Questions"
+               asp-route-projectId="@projectId" asp-route-aiAssistance="@aiAssistance"
                class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Opslaan</a>
             <button type="button" id="questions-next-btn"
                     data-question-count="@Model.Count"

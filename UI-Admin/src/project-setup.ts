@@ -36,6 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
         imagePlaceholder?.classList.add('hidden');
     });
 
+    // Pre-fill image preview on page load if a URL is already stored
+    if (imageUrlInput?.value) {
+        if (imagePreview) {
+            imagePreview.src = imageUrlInput.value;
+            imagePreview.classList.remove('hidden');
+        }
+        imagePlaceholder?.classList.add('hidden');
+    }
+
+    // Event delegation for removing pre-rendered section rows
+    sectionsList?.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('[data-remove-section]');
+        if (btn) (btn as HTMLElement).closest('div.flex.items-center')?.remove();
+    });
+
     function setMode(mode: string) {
         if (!interactionModeInput || !btnChat || !btnScroll) return;
         interactionModeInput.value = mode;
@@ -74,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnOn?.addEventListener('click', () => setContactOptIn(true));
     if (contactOptInInput) setContactOptIn(contactOptInInput.dataset.initial === 'true');
 
-    let sectionIndex = 0;
+    let sectionIndex = parseInt(sectionsList?.dataset.initialCount ?? '0', 10);
     addSectionBtn?.addEventListener('click', () => {
         if (!sectionsList) return;
         const div = document.createElement('div');

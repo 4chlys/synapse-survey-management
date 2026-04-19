@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
+using SynapseEnqueteManagement.UI.Admin.Services.Section;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -12,6 +13,7 @@ public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
+    SectionAdminService sectionService,
     IWebHostEnvironment env) : Controller
 {
     public async Task<IActionResult> Index()
@@ -20,19 +22,76 @@ public class ProjectController(
         return View(projects);
     }
 
-    public IActionResult Create()
+    public async Task<IActionResult> Create(int? projectId)
     {
-        return View(new CreateProjectViewModel());
+        if (!projectId.HasValue)
+            return View(new CreateProjectViewModel());
+
+        var project = await projectService.GetProjectByIdAsync(projectId.Value);
+        if (project is null)
+            return View(new CreateProjectViewModel());
+
+        var sections = await sectionService.GetSectionsAsync(projectId.Value);
+        var model = new CreateProjectViewModel
+        {
+            ProjectId = projectId,
+            Name = project.Name,
+            Topic = project.Topic,
+            Introduction = project.Introduction,
+            ImageUrl = project.ProjectImage,
+            InteractionMode = project.FormType == "Chat" ? "Chat" : "Scroll",
+            AiAssistance = project.AiAssistance,
+            MinAge = project.MinAge,
+            MaxAge = project.MaxAge,
+            ContactOptIn = project.RequestContactInfo,
+            Sections = sections.Select(s => s.Name).ToList()
+        };
+        return View(model);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateProjectViewModel model)
+    public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction)
     {
+        // For "next", Topic and Introduction are also required
+        if (submitAction == "next")
+        {
+            if (string.IsNullOrWhiteSpace(model.Topic))
+                ModelState.AddModelError(nameof(model.Topic), "Onderwerp is verplicht.");
+            if (string.IsNullOrWhiteSpace(model.Introduction))
+                ModelState.AddModelError(nameof(model.Introduction), "Introductie is verplicht.");
+        }
+
         if (!ModelState.IsValid)
             return View(model);
 
-        var project = await projectService.CreateProjectAsync(model.Name, model.ImageUrl);
-        return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
+        ProjectAdminViewModel project;
+        if (model.ProjectId.HasValue)
+        {
+            project = await projectService.UpdateProjectAsync(
+                model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+        }
+        else
+        {
+            project = await projectService.CreateProjectAsync(
+                model.Name, model.Topic, model.Introduction,
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+        }
+
+        // Sync sections: delete existing, add new ones from form
+        var existingSections = await sectionService.GetSectionsAsync(project.ProjectId);
+        foreach (var s in existingSections)
+            await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
+        foreach (var sectionName in model.Sections ?? new List<string>())
+        {
+            if (!string.IsNullOrWhiteSpace(sectionName))
+                await sectionService.CreateSectionAsync(project.ProjectId, sectionName, string.Empty);
+        }
+
+        if (submitAction == "next")
+            return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
+
+        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
     }
 
     public async Task<IActionResult> Questions(int projectId, string aiAssistance = "ProActive")

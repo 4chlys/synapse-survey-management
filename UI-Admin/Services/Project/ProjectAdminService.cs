@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
@@ -10,8 +10,7 @@ public class ProjectAdminService(HttpClient httpClient)
         if (!response.IsSuccessStatusCode)
             return new List<ProjectAdminViewModel>();
 
-        return await
-                   response.Content.ReadFromJsonAsync<List<ProjectAdminViewModel>>()
+        return await response.Content.ReadFromJsonAsync<List<ProjectAdminViewModel>>()
                ?? new List<ProjectAdminViewModel>();
     }
 
@@ -24,11 +23,18 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name,
-        string imageUrl)
+    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
-        var payload = new { Name = name, ImageUrl = imageUrl };
+        var payload = new { Name = name, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
+    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    {
+        var payload = new { Name = name, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
+        var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
