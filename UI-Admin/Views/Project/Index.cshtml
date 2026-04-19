@@ -32,9 +32,9 @@
 
             <a href="@href"
                class="relative aspect-video bg-gray-800 overflow-hidden hover:ring-2 hover:ring-white transition block">
-                @if (!string.IsNullOrEmpty(project.ImageUrl))
+                @if (!string.IsNullOrEmpty(project.ProjectImage))
                 {
-                    <img src="@project.ImageUrl"
+                    <img src="@project.ProjectImage"
                          class="absolute inset-0 w-full h-full object-cover"
                          alt="@project.Name" />
                 }

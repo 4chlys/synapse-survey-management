@@ -1,12 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
+using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
-public class ProjectController(ProjectAdminService projectService, QuestionAdminService questionService) : Controller
+public class ProjectController(
+    ProjectAdminService projectService,
+    QuestionAdminService questionService,
+    CategoryAdminService categoryService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -43,6 +48,30 @@ public class ProjectController(ProjectAdminService projectService, QuestionAdmin
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat, model.IsMandatory, model.GetAnswerChoices());
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+    }
+
+    public async Task<IActionResult> Ideation(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        var categories = await categoryService.GetCategoriesAsync(projectId);
+        ViewBag.ProjectId = projectId;
+        ViewBag.Project = project;
+        return View(categories);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddCategory(int projectId, CategoryFormViewModel model)
+    {
+        if (ModelState.IsValid)
+            await categoryService.CreateCategoryAsync(projectId, model.Name, model.Description ?? string.Empty);
+        return RedirectToAction(nameof(Ideation), new { projectId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteCategory(int projectId, int categoryId)
+    {
+        await categoryService.DeleteCategoryAsync(projectId, categoryId);
+        return RedirectToAction(nameof(Ideation), new { projectId });
     }
 
     public async Task<IActionResult> Dashboard(int projectId)

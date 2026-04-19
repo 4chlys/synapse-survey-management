@@ -146,6 +146,20 @@ document.addEventListener('DOMContentLoaded', () => {
         arrow.textContent = isHidden ? '>' : 'v';
     });
 
+    // Validate at least 1 question before proceeding to next step
+    const nextBtn = document.getElementById('questions-next-btn') as HTMLButtonElement | null;
+    const nextError = document.getElementById('questions-next-error') as HTMLElement | null;
+
+    nextBtn?.addEventListener('click', () => {
+        const count = parseInt(nextBtn.dataset.questionCount ?? '0', 10);
+        if (count < 1) {
+            nextError?.classList.remove('hidden');
+            return;
+        }
+        nextError?.classList.add('hidden');
+        window.location.href = nextBtn.dataset.href ?? '/';
+    });
+
     // AskFirst: reveal AI panel on click
     askFirstJa?.addEventListener('click', () => {
         document.getElementById('ask-first-prompt')?.classList.add('hidden');

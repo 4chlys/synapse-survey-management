@@ -7,6 +7,7 @@ public class ProjectDto
     public string ProjectState { get; set; } = string.Empty;
     public string FormType { get; set; } = string.Empty;
     public string OrganisationName { get; set; } = string.Empty;
+    public string ProjectImage { get; set; } = string.Empty;
     public string OrganisationLogoUrl { get; set; } = string.Empty;
     public string OrganisationWebsiteUrl { get; set; } = string.Empty;
     public string Introduction { get; set; } = string.Empty;

@@ -19,6 +19,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         {
             ProjectId = project.ProjectId,
             Name = project.Name ?? string.Empty,
+            ProjectImage = project.ImageUrl ?? string.Empty,
             ProjectState = project.ProjectState.ToString(),
             FormType = project.FormType.ToString(),
             OrganisationName = project.OrganisationName ?? string.Empty,
@@ -37,6 +38,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         {
             ProjectId = p.ProjectId,
             Name = p.Name ?? string.Empty,
+            ProjectImage = p.ImageUrl ?? string.Empty,
             ProjectState = p.ProjectState.ToString(),
             FormType = p.FormType.ToString(),
             OrganisationName = p.OrganisationName ?? string.Empty,
