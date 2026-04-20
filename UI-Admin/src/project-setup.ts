@@ -1,3 +1,20 @@
+function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const scale = Math.min(1, maxWidth / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', quality);
+        };
+        img.src = url;
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnChat = document.getElementById('btn-chat') as HTMLButtonElement | null;
     const btnScroll = document.getElementById('btn-scroll') as HTMLButtonElement | null;
@@ -21,8 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = fileInput.files?.[0];
         if (!file) return;
 
+        const compressed = await compressImage(file, 1200, 0.8);
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', compressed, 'image.jpg');
 
         const response = await fetch('/Project/UploadImage', { method: 'POST', body: formData });
         if (!response.ok) return;
