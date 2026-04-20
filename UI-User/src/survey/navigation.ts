@@ -42,6 +42,9 @@ export async function navigateNext(state: SurveyState): Promise<void> {
     }
     clearValidationError(current);
 
+    // Lock immediately so a second click during the API round-trip can't slip through.
+    state.isAnimating = true;
+
     const questionId = getQuestionId(current);
     const answer = getAnswerFromSlide(current);
 
@@ -65,7 +68,6 @@ export async function navigateNext(state: SurveyState): Promise<void> {
             if (targetIndex === -1) targetIndex = submitIndex;
         }
 
-        // Keep slides up to current position, plus the new target and submit.
         // Drops stale slides that were on a previously projected branch.
         const currentVisiblePos = getVisiblePosition(state);
         state.visibleIndices = state.visibleIndices.filter(
@@ -79,6 +81,7 @@ export async function navigateNext(state: SurveyState): Promise<void> {
         navigateTo(state, targetIndex);
     } catch (err) {
         console.error('Survey navigation error:', err);
+        state.isAnimating = false;
     }
 }
 
@@ -88,24 +91,31 @@ export async function navigatePrev(state: SurveyState): Promise<void> {
     const current = state.slides[state.currentIndex];
     clearValidationError(current);
 
-    try {
-        if (!state.hasSession) return;
+    if (!state.hasSession) return;
 
+    try {
         let targetIndex: number;
         if (current.dataset.format === 'Submit') {
             const visiblePos = getVisiblePosition(state);
             if (visiblePos <= 0) return;
             targetIndex = state.visibleIndices[visiblePos - 1];
         } else {
+            state.isAnimating = true;
             const questionId = getQuestionId(current);
             const prevQuestionId = await getPreviousQuestion(state.projectId, questionId);
-            if (prevQuestionId === null || prevQuestionId === undefined) return;
-            targetIndex = questionIdToSlideIndex(state.slides, prevQuestionId);
-            if (targetIndex === -1) return;
+            const idx = prevQuestionId != null
+                ? questionIdToSlideIndex(state.slides, prevQuestionId)
+                : -1;
+            if (idx === -1) {
+                state.isAnimating = false;
+                return;
+            }
+            targetIndex = idx;
         }
 
         navigateTo(state, targetIndex);
     } catch (err) {
         console.error('Survey back navigation error:', err);
+        state.isAnimating = false;
     }
 }

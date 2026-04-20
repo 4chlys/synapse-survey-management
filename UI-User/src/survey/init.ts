@@ -25,7 +25,7 @@ export function initSurvey(): void {
     if (!slides.length) return;
 
     const progressBar = document.getElementById('survey-progress-bar');
-    const projectId = parseInt(container.dataset.projectId ?? '0', 10);
+    const projectId = parseInt(container.dataset.projectId!, 10);
     const hasSession = container.dataset.hasSession === 'true';
 
     // Start with all slides "visible" so the counter shows the full total before
@@ -49,14 +49,11 @@ export function initSurvey(): void {
         : {};
     prefillAnswers(slides, existingResponses);
 
-    // Activate first slide — skip transition by adding class directly
     slides[0].classList.add('is-active');
     updateQuestionCounters(slides, state.visibleIndices);
     updateProgressBar(progressBar, 0, state.visibleIndices.length);
     syncButtons(state);
 
-    // Resume: ask the server for the path the user has taken and where they left off,
-    // then jump the UI to that slide.
     if (hasSession) {
         Promise.all([getVisiblePath(projectId), getResumeQuestion(projectId)])
             .then(([pathQuestionIds, resumeQuestionId]) => {
@@ -73,13 +70,12 @@ export function initSurvey(): void {
                 let resumeIndex = 0;
                 if (resumeQuestionId !== null && resumeQuestionId !== undefined) {
                     const idx = questionIdToSlideIndex(slides, resumeQuestionId);
-                    if (idx !== -1) {
-                        if (!state.visibleIndices.includes(idx)) {
-                            state.visibleIndices.push(idx);
-                            state.visibleIndices.sort((a, b) => a - b);
-                        }
-                        resumeIndex = idx;
-                    }
+                    if (idx !== -1) resumeIndex = idx;
+                }
+
+                if (!state.visibleIndices.includes(resumeIndex)) {
+                    state.visibleIndices.push(resumeIndex);
+                    state.visibleIndices.sort((a, b) => a - b);
                 }
 
                 if (resumeIndex > 0) {
