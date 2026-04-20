@@ -8,6 +8,7 @@ public class ParticipantService(HttpClient httpClient, ISessionService sessionSe
 {
     public async Task SaveContactInfoAsync(int projectId, string email)
     {
+        if (string.IsNullOrWhiteSpace(email)) return;
         var request = new HttpRequestMessage(HttpMethod.Patch,
             $"api/projects/{projectId}/participants/me/contact");
         request.Content = JsonContent.Create(new { Email = email });
