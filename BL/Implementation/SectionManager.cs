@@ -38,7 +38,8 @@ public class SectionManager(IRepository repository) : ISectionManager
 
         section.Name = name;
         section.Description = description;
-        return await repository.UpdateAsync(section);
+        await repository.UpdateAsync(section);
+        return true;
     }
 
     public async Task<bool> DeleteSectionAsync(int sectionId)

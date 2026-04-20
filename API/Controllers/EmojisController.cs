@@ -1,16 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
-[Route("api/emojis")]
-public class EmojisController(ICommentManager manager) : ControllerBase
+public class EmojisController(ICommentManager commentManager, IProjectManager projectManager) : ControllerBase
 {
-    [HttpGet]
-    public async Task<ActionResult> GetEmojis()
+    [HttpGet("api/projects/{projectId}/emojis")]
+    public async Task<ActionResult> GetProjectEmojis(int projectId)
     {
-        var emojis = await manager.GetEmojisAsync();
+        var emojis = await commentManager.GetEmojisAsync(projectId);
         var result = emojis.Select(e => new
         {
             e.EmojiId,
@@ -18,5 +17,34 @@ public class EmojisController(ICommentManager manager) : ControllerBase
             e.Name
         });
         return Ok(result);
+    }
+
+    [HttpGet("api/emojis")]
+    public async Task<ActionResult> GetAllEmojis()
+    {
+        var emojis = await projectManager.GetAllEmojisAsync();
+        var result = emojis.Select(e => new
+        {
+            e.EmojiId,
+            e.Symbol,
+            e.Name
+        });
+        return Ok(result);
+    }
+
+    [HttpPost("api/projects/{projectId}/emojis/{emojiId}")]
+    public async Task<ActionResult> EnableEmoji(int projectId, int emojiId)
+    {
+        var success = await projectManager.EnableEmojiForProjectAsync(projectId, emojiId);
+        if (!success) return NotFound();
+        return NoContent();
+    }
+
+    [HttpDelete("api/projects/{projectId}/emojis/{emojiId}")]
+    public async Task<ActionResult> DisableEmoji(int projectId, int emojiId)
+    {
+        var success = await projectManager.DisableEmojiForProjectAsync(projectId, emojiId);
+        if (!success) return NotFound();
+        return NoContent();
     }
 }

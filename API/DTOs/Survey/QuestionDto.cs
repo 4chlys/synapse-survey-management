@@ -7,4 +7,13 @@ public class QuestionDto
     public string QuestionFormat { get; set; }
     public List<string> AnswerChoices { get; set; } = new();
     public bool IsMandatory { get; set; }
+    public int Position { get; set; }
+    public List<BranchRuleDto> BranchRules { get; set; } = new();
+}
+
+public class BranchRuleDto
+{
+    public string TriggerValue { get; set; }
+    public int? TargetQuestionId { get; set; }
+    public bool SkipToEnd { get; set; }
 }

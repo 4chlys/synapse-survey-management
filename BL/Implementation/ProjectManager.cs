@@ -31,5 +31,37 @@ public class ProjectManager(IRepository repository) : IProjectManager
     {
         return await repository.ReadAsync<Project>();
     }
-    
+
+    public async Task<IEnumerable<Emoji>> GetAllEmojisAsync()
+    {
+        return await repository.ReadAsync<Emoji>();
+    }
+
+    public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId)
+    {
+        var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis], tracked: true);
+        if (project == null) return false;
+
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId, tracked: true);
+        if (emoji == null) return false;
+
+        if (project.Emojis.Any(e => e.EmojiId == emojiId)) return true;
+
+        project.Emojis.Add(emoji);
+        await repository.UpdateAsync(project);
+        return true;
+    }
+
+    public async Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId)
+    {
+        var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis], tracked: true);
+        if (project == null) return false;
+
+        var emoji = project.Emojis.FirstOrDefault(e => e.EmojiId == emojiId);
+        if (emoji == null) return false;
+
+        project.Emojis.Remove(emoji);
+        await repository.UpdateAsync(project);
+        return true;
+    }
 }

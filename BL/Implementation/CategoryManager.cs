@@ -35,7 +35,8 @@ public class CategoryManager(IRepository repository) : ICategoryManager
 
         category.Name = name;
         category.Description = description;
-        return await repository.UpdateAsync(category);
+        await repository.UpdateAsync(category);
+        return true;
     }
 
     public async Task<bool> DeleteCategoryAsync(int categoryId)
@@ -53,5 +54,17 @@ public class CategoryManager(IRepository repository) : ICategoryManager
         return await repository.CountAsync<Idea>(
             filters: [i => i.Category.CategoryId == categoryId]
         );
+    }
+
+    public async Task<Dictionary<int, int>> GetIdeaCountsByCategoryAsync(IEnumerable<int> categoryIds)
+    {
+        var ids = categoryIds.ToHashSet();
+        var ideas = await repository.ReadAsync<Idea>(
+            filters: [i => ids.Contains(i.Category.CategoryId)],
+            includeStrings: ["Category"]);
+
+        return ideas
+            .GroupBy(i => i.Category.CategoryId)
+            .ToDictionary(g => g.Key, g => g.Count());
     }
 }

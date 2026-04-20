@@ -5,7 +5,9 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 public interface IProjectManager
 {
     Task<Project> GetProjectByIdAsync(int projectId);
-    
-    Task<Project> CreateProjectAsync(string name, string imageUrl );
+    Task<Project> CreateProjectAsync(string name, string imageUrl);
     Task<IEnumerable<Project>> GetAllProjectsAsync();
+    Task<IEnumerable<Emoji>> GetAllEmojisAsync();
+    Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId);
+    Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId);
 }

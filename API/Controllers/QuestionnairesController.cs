@@ -7,7 +7,10 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/questionnaire")]
-public class QuestionnairesController(IQuestionnaireManager questionnaireManager) : ControllerBase
+public class QuestionnairesController(
+    IQuestionnaireManager questionnaireManager,
+    IParticipantManager participantManager)
+    : ParticipantControllerBase(participantManager)
 {
     [HttpGet]
     public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
@@ -27,7 +30,10 @@ public class QuestionnairesController(IQuestionnaireManager questionnaireManager
         if (questionnaire is null)
             return NotFound();
 
-        var dtos = questionnaire.Questions.Select(MapToDto).ToList();
+        var dtos = questionnaire.Questions
+            .OrderBy(q => q.Position)
+            .Select(MapToDto)
+            .ToList();
         return Ok(dtos);
     }
 
@@ -38,7 +44,7 @@ public class QuestionnairesController(IQuestionnaireManager questionnaireManager
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat>(dto.QuestionFormat, out var format)) 
+        if (!Enum.TryParse<SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var question = await questionnaireManager.AddQuestionAsync(projectId,
@@ -48,7 +54,7 @@ public class QuestionnairesController(IQuestionnaireManager questionnaireManager
 
         return Created(string.Empty, MapToDto(question));
     }
-    
+
     [HttpPut("questions/{questionId}")]
     public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
         UpdateQuestionDto dto)
@@ -56,7 +62,7 @@ public class QuestionnairesController(IQuestionnaireManager questionnaireManager
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat>(dto.QuestionFormat, out var format)) 
+        if (!Enum.TryParse<SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
@@ -77,12 +83,55 @@ public class QuestionnairesController(IQuestionnaireManager questionnaireManager
         return NoContent();
     }
 
+    [HttpGet("next-question")]
+    public async Task<ActionResult> GetNextQuestion(int projectId, [FromQuery] int currentQuestionId)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        var nextQuestion = await questionnaireManager.GetNextQuestionAsync(currentQuestionId, participant.ParticipantId);
+        return Ok(new { questionId = nextQuestion?.QuestionId });
+    }
+
+    [HttpGet("previous-question")]
+    public async Task<ActionResult> GetPreviousQuestion(int projectId, [FromQuery] int currentQuestionId)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        var prevQuestion = await questionnaireManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
+        return Ok(new { questionId = prevQuestion?.QuestionId });
+    }
+
+    [HttpGet("resume-question")]
+    public async Task<ActionResult> GetResumeQuestion(int projectId)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        var resumeQuestion = await questionnaireManager.GetResumeQuestionAsync(projectId, participant.ParticipantId);
+        return Ok(new { questionId = resumeQuestion?.QuestionId });
+    }
+
+    [HttpGet("visible-path")]
+    public async Task<ActionResult> GetVisiblePath(int projectId)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        var path = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
+        return Ok(new { questionIds = path });
+    }
+
     private static QuestionnaireDto MapToDto(Questionnaire questionnaire)
     {
         return new QuestionnaireDto
         {
             QuestionnaireId = questionnaire.QuestionnaireId,
-            Questions = questionnaire.Questions.Select(MapToDto).ToList()
+            Questions = questionnaire.Questions
+                .OrderBy(q => q.Position)
+                .Select(MapToDto)
+                .ToList()
         };
     }
 
@@ -95,6 +144,13 @@ public class QuestionnairesController(IQuestionnaireManager questionnaireManager
             QuestionFormat = question.QuestionFormat.ToString(),
             AnswerChoices = question.AnswerChoices.ToList(),
             IsMandatory = question.IsMandatory,
+            Position = question.Position,
+            BranchRules = question.BranchRules.Select(br => new BranchRuleDto
+            {
+                TriggerValue = br.TriggerValue,
+                TargetQuestionId = br.SkipToEnd ? null : br.TargetQuestion?.QuestionId,
+                SkipToEnd = br.SkipToEnd
+            }).ToList()
         };
     }
 }

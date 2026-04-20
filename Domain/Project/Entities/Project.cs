@@ -31,4 +31,5 @@ public class Project : IHasCreatedAt
 
     public ICollection<Category> Categories { get; set; } = new List<Category>();
     public ICollection<Participant> Participants { get; set; } = new List<Participant>();
+    public ICollection<Emoji> Emojis { get; set; } = new List<Emoji>();
 }

@@ -5,6 +5,7 @@ namespace SynapseEnqueteManagement.UI.User.Services.Survey;
 public class QuestionnaireApiService : IQuestionnaireApiService
 {
     private readonly HttpClient _httpClient;
+    private const string TokenHeader = "X-Participant-Token";
 
     public QuestionnaireApiService(HttpClient httpClient)
     {
@@ -34,7 +35,14 @@ public class QuestionnaireApiService : IQuestionnaireApiService
             AnswerChoices = q.AnswerChoices,
             IsMandatory = q.IsMandatory,
             QuestionNumber = number++,
-            TotalQuestions = total
+            TotalQuestions = total,
+            Position = q.Position,
+            BranchRules = q.BranchRules?.Select(br => new BranchRuleViewModel
+            {
+                TriggerValue = br.TriggerValue,
+                TargetQuestionId = br.TargetQuestionId,
+                SkipToEnd = br.SkipToEnd
+            }).ToList() ?? []
         }).ToList();
 
         return new SurveyViewModel
@@ -44,32 +52,116 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         };
     }
 
-    public async Task<string> SubmitSurveyAsync(int projectId, Dictionary<int, string> answers)
-    {
-        var payload = new
-        {
-            Answers = answers
-                .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
-                .Select(kv => new { QuestionId = kv.Key, Value = kv.Value })
-        };
-
-        var response = await _httpClient.PostAsJsonAsync($"api/projects/{projectId}/submit", payload);
-        response.EnsureSuccessStatusCode();
-
-        var participant = await response.Content.ReadFromJsonAsync<ApiParticipantDto>();
-        return participant!.ParticipantToken;
-    }
-
     public async Task<bool> HasParticipantRespondedAsync(int projectId, string participantToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/participants/me");
-        request.Headers.Add("X-Participant-Token", participantToken);
+        request.Headers.Add(TokenHeader, participantToken);
 
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode) return false;
 
         var result = await response.Content.ReadFromJsonAsync<ParticipantStatusDto>();
         return result?.HasResponded ?? false;
+    }
+
+    public async Task<string> SaveResponseAsync(int projectId, int questionId, string value, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/responses");
+        request.Headers.Add(TokenHeader, participantToken);
+        request.Content = JsonContent.Create(new { QuestionId = questionId, Value = value });
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"SaveResponse failed: {(int)response.StatusCode} {response.ReasonPhrase} — {body}");
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<ApiResponseDto>();
+        return result?.Value;
+    }
+
+    public async Task<int?> GetNextQuestionAsync(int projectId, int currentQuestionId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"api/projects/{projectId}/questionnaire/next-question?currentQuestionId={currentQuestionId}");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<NavigationResult>();
+        return result?.QuestionId;
+    }
+
+    public async Task<int?> GetPreviousQuestionAsync(int projectId, int currentQuestionId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"api/projects/{projectId}/questionnaire/previous-question?currentQuestionId={currentQuestionId}");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<NavigationResult>();
+        return result?.QuestionId;
+    }
+
+    public async Task<int?> GetResumeQuestionAsync(int projectId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"api/projects/{projectId}/questionnaire/resume-question");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<NavigationResult>();
+        return result?.QuestionId;
+    }
+
+    public async Task<Dictionary<int, string>> GetResponsesAsync(int projectId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"api/projects/{projectId}/responses");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var results = await response.Content.ReadFromJsonAsync<List<ApiResponseDto>>();
+        return results?.ToDictionary(r => r.QuestionId, r => r.Value) ?? new();
+    }
+
+    public async Task<List<int>> GetVisiblePathAsync(int projectId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"api/projects/{projectId}/questionnaire/visible-path");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<VisiblePathResult>();
+        return result?.QuestionIds ?? [];
+    }
+
+    public async Task<string> StartSessionAsync(int projectId)
+    {
+        var response = await _httpClient.PostAsync($"api/projects/{projectId}/participants", null);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<ApiParticipantDto>();
+        return result!.ParticipantToken;
+    }
+
+    public async Task SubmitAsync(int projectId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/submit");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
     }
 
     private class ApiQuestionDto
@@ -79,6 +171,15 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         public string QuestionFormat { get; set; }
         public List<string> AnswerChoices { get; set; } = new();
         public bool IsMandatory { get; set; }
+        public int Position { get; set; }
+        public List<ApiBranchRuleDto> BranchRules { get; set; } = new();
+    }
+
+    private class ApiBranchRuleDto
+    {
+        public string TriggerValue { get; set; }
+        public int? TargetQuestionId { get; set; }
+        public bool SkipToEnd { get; set; }
     }
 
     private class ParticipantStatusDto
@@ -89,5 +190,22 @@ public class QuestionnaireApiService : IQuestionnaireApiService
     private class ApiParticipantDto
     {
         public string ParticipantToken { get; set; } = string.Empty;
+    }
+
+    private class ApiResponseDto
+    {
+        public int ResponseId { get; set; }
+        public string Value { get; set; }
+        public int QuestionId { get; set; }
+    }
+
+    private class NavigationResult
+    {
+        public int? QuestionId { get; set; }
+    }
+
+    private class VisiblePathResult
+    {
+        public List<int> QuestionIds { get; set; } = [];
     }
 }

@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.FormStrategies;
@@ -100,6 +101,17 @@ builder.Services.AddViteServices();
 
 var app = builder.Build();
 
+// Cloud Run (and other reverse proxies) terminate HTTPS and forward HTTP.
+// This middleware reads X-Forwarded-For/Proto headers so Request.IsHttps
+// and Request.Scheme reflect the original client request.
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseViteDevelopmentServer();
@@ -115,7 +127,6 @@ app.UseHttpsRedirection();
 app.UseHttpLogging();
 app.UseRouting();
 app.UseRateLimiter();
-app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -125,6 +136,7 @@ app.MapControllerRoute(
     pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapGet("/", () => Results.Redirect("/1"));
 
 app.Run();
