@@ -1,32 +1,36 @@
-# ════════════════════════════════════════════════════════════════════════════
-#  Synapse CI/CD Pipeline
-#  - development branch → test environment on Cloud Run (automatic)
-# ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════
+  #  Synapse CI/CD Pipeline
+  #  - development branch → test environment on Cloud Run (automatic)
+  #  - main branch        → production MIG rolling deploy (manual trigger)
+  # ════════════════════════════════════════════════════════════════════════
 
 image: docker:27
 
 services:
-  - docker:27-dind   # Docker-in-Docker: allows docker build/push in the pipeline
+  - docker:27-dind
 
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
   IMAGE_API: "gcr.io/${PROJECT_ID}/mvp-app"
   IMAGE_UI:  "gcr.io/${PROJECT_ID}/mvp-ui"
   IMAGE_TAG: "${CI_COMMIT_SHA}"
-  
+  ZONE:      "europe-west1-b"
+
 stages:
   - build
   - push
   - deploy
 
-# ── Shared GCR login step ─────────────────────────────────────────────────
 .gcr_login: &gcr_login
   before_script:
-    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u
+  _json_key --password-stdin https://gcr.io
 
-# ════════════════════════════════════════════════════════════════════════════
-#  STAGE 1 – BUILD
-# ════════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════
+  
+  #  STAGE 1 – BUILD
+  # ════════════════════════════════════════════════════════════════════════
+  
 
 build-api:
   stage: build
@@ -40,23 +44,27 @@ build-api:
     expire_in: 1 hour
   only:
     - development
+    - main
 
 build-ui:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_UI}:${IMAGE_TAG}" -f Dockerfile.ui-user .
-    - docker save "${IMAGE_UI}:${IMAGE_TAG}" | gzip > ui-image.tar.gz
-  artifacts:
-    paths:
-      - ui-image.tar.gz
-    expire_in: 1 hour
-  only:
-    - development
+    - docker build --provenance=false -t "${IMAGE_UI}:${IMAGE_TAG}" -f
+  Dockerfile.ui-user .
+- docker save "${IMAGE_UI}:${IMAGE_TAG}" | gzip > ui-image.tar.gz
+artifacts:
+  paths:
+    - ui-image.tar.gz
+  expire_in: 1 hour
+only:
+  - development
+  - main
 
-# ════════════════════════════════════════════════════════════════════════════
-#  STAGE 2 – PUSH to Google Container Registry
-# ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════
+  #  STAGE 2 – PUSH
+  # ════════════════════════════════════════════════════════════════════════
+  
 
 push-dev:
   stage: push
@@ -69,16 +77,26 @@ push-dev:
   only:
     - development
 
-# ════════════════════════════════════════════════════════════════════════════
-#  STAGE 3 – DEPLOY to Cloud Run (test environment)
-#
-#  Architecture:
-#    mvp-api-test  → Cloud Run multi-container (API ingress + postgres sidecar)
-#    mvp-ui-test   → Cloud Run service
-#
-#  Scale-to-zero: both services scale to zero when idle.
-#  On a new request: both start, postgres initialises, seeder runs.
-# ════════════════════════════════════════════════════════════════════════════
+push-prod:
+  stage: push
+  <<: *gcr_login
+  script:
+    - docker load < api-image.tar.gz
+    - docker load < ui-image.tar.gz
+    - docker push "${IMAGE_API}:${IMAGE_TAG}"
+    - docker push "${IMAGE_UI}:${IMAGE_TAG}"
+    - docker tag "${IMAGE_API}:${IMAGE_TAG}" "${IMAGE_API}:latest"
+    - docker tag "${IMAGE_UI}:${IMAGE_TAG}"  "${IMAGE_UI}:latest"
+    - docker push "${IMAGE_API}:latest"
+    - docker push "${IMAGE_UI}:latest"
+  only:
+    - main
+
+# ════════════════════════════════════════════════════════════════════════
+  
+  #  STAGE 3 – DEPLOY test (development → Cloud Run)
+  # ════════════════════════════════════════════════════════════════════════
+  
 
 deploy-test:
   stage: deploy
@@ -88,38 +106,80 @@ deploy-test:
     - gcloud auth activate-service-account --key-file=/tmp/key.json
     - gcloud config set project "${PROJECT_ID}"
   script:
-    # Substitute the real image into the YAML before deploying
-    - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
+    - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g"
+  cloudrun-test-api.yaml
+- gcloud run services replace cloudrun-test-api.yaml
+  --region="${REGION}"
+- gcloud run services add-iam-policy-binding mvp-api-test
+  --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
+- |
+  API_URL=$(gcloud run services describe mvp-api-test
+  --region="${REGION}" --format="value(status.url)")
+echo "API URL: $API_URL"
+- |
+  gcloud run deploy mvp-ui-test \
+    --image="${IMAGE_UI}:${IMAGE_TAG}" \
+    --region="${REGION}" \
+    --allow-unauthenticated \
+    --port=8080 \
+    --min-instances=0 \
+    --max-instances=3 \
+    --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=
+  http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
+- |
+  UI_URL=$(gcloud run services describe mvp-ui-test
+  --region="${REGION}" --format="value(status.url)")
+echo "Test UI available at: $UI_URL"
+only:
+  - development
+environment:
+  name: test
 
-    # Deploy API + postgres sidecar as a multi-container Cloud Run service
-    - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
-    - gcloud run services add-iam-policy-binding mvp-api-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
+# ════════════════════════════════════════════════════════════════════════
+  
+  #  STAGE 3 – DEPLOY production (main → MIG rolling deploy)
+  # ════════════════════════════════════════════════════════════════════════
+  
 
-    # Retrieve API URL for the UI
+deploy-production:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo "${GCP_SERVICE_ACCOUNT_KEY_PROD}" | base64 -d > /tmp/key.json
+    - gcloud auth activate-service-account --key-file=/tmp/key.json
+    - gcloud config set project "${PROJECT_ID}"
+  script:
     - |
-      API_URL=$(gcloud run services describe mvp-api-test \
-        --region="${REGION}" \
-        --format="value(status.url)")
-      echo "API URL: $API_URL"
-
-    # Deploy UI as a separate Cloud Run service
-    - |
-      gcloud run deploy mvp-ui-test \
-        --image="${IMAGE_UI}:${IMAGE_TAG}" \
-        --region="${REGION}" \
-        --allow-unauthenticated \
-        --port=8080 \
-        --min-instances=0 \
-        --max-instances=3 \
-        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
-
-    # Print UI URL in pipeline log
-    - |
-      UI_URL=$(gcloud run services describe mvp-ui-test \
-        --region="${REGION}" \
-        --format="value(status.url)")
-      echo "Test UI available at: $UI_URL"
-  only:
-    - development
-  environment:
-    name: test
+      API_TMPL=$(gcloud compute instance-groups managed describe
+  synapse-api-mig --zone="${ZONE}" --format="value(instanceTemplate)" | awk
+  -F/ '{print $NF}')
+  UI_TMPL=$(gcloud compute instance-groups managed describe
+  synapse-ui-mig --zone="${ZONE}" --format="value(instanceTemplate)" | awk
+  -F/ '{print $NF}')
+  gcloud compute instance-templates create-with-container
+  synapse-api-tmpl-${CI_COMMIT_SHORT_SHA}
+  --source-instance-template="${API_TMPL}"
+  --container-image="${IMAGE_API}:${IMAGE_TAG}"
+  gcloud compute instance-templates create-with-container
+  synapse-ui-tmpl-${CI_COMMIT_SHORT_SHA}
+  --source-instance-template="${UI_TMPL}"
+  --container-image="${IMAGE_UI}:${IMAGE_TAG}"
+  gcloud compute instance-groups managed set-instance-template
+  synapse-api-mig --template=synapse-api-tmpl-${CI_COMMIT_SHORT_SHA}
+  --zone="${ZONE}"
+  gcloud compute instance-groups managed set-instance-template
+  synapse-ui-mig --template=synapse-ui-tmpl-${CI_COMMIT_SHORT_SHA}
+  --zone="${ZONE}"
+  gcloud compute instance-groups managed rolling-action replace
+  synapse-api-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
+  gcloud compute instance-groups managed rolling-action replace
+  synapse-ui-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
+  gcloud compute instance-groups managed wait-until synapse-api-mig
+  --stable --zone="${ZONE}"
+  gcloud compute instance-groups managed wait-until synapse-ui-mig
+  --stable --zone="${ZONE}"
+only:
+  - main
+when: manual
+environment:
+  name: production
