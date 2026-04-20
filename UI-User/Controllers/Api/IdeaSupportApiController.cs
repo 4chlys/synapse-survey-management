@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.UI.User.Services;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
+using SynapseEnqueteManagement.UI.User.Services.Session;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 
@@ -16,13 +16,20 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 /// </summary>
 [ApiController]
 [Route("{projectId:int}/api/[controller]")]
-public class IdeaSupportApiController(IdeaSupportService ideaSupportService) : ControllerBase
+public class IdeaSupportApiController(
+    IdeaSupportService ideaSupportService,
+    ISessionService sessionService) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponseBody>> Chat(
         int projectId,
         [FromBody] IdeaSupportChatRequestBody body)
     {
+        // Gate behind a valid participant session (survey must have been completed)
+        var token = sessionService.GetToken(projectId);
+        if (string.IsNullOrWhiteSpace(token))
+            return Unauthorized("Participant session required.");
+
         var result = await ideaSupportService.ChatAsync(
             projectId,
             body.CategoryId,
@@ -41,13 +48,17 @@ public class IdeaSupportApiController(IdeaSupportService ideaSupportService) : C
         int projectId,
         [FromBody] IdeaSupportRefineRequestBody body)
     {
+        var token = sessionService.GetToken(projectId);
+        if (string.IsNullOrWhiteSpace(token))
+            return Unauthorized("Participant session required.");
+
         var result = await ideaSupportService.RefineAsync(projectId, body.DraftText);
 
         return Ok(new IdeaSupportRefineResponseBody { RefinedText = result.RefinedText });
     }
 }
 
-// Request / response shapes (same-origin only, no need to share DTOs)
+// Request / response shapes
 
 public sealed class IdeaSupportChatRequestBody
 {
