@@ -138,6 +138,7 @@ app.MapControllerRoute(
     pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapGet("/", () => Results.Redirect("/1"));
 
 app.Run();

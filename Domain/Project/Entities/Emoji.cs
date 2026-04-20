@@ -9,5 +9,4 @@ public class Emoji
     [Required] [MaxLength(10)] public string Symbol { get; set; }
 
     [Required] [MaxLength(20)] public string Name { get; set; }
-    public bool IsActive { get; set; } = true; // Admin turns certain emojis on/off. to implement later...
 }
