@@ -81,12 +81,19 @@
                     var q = Model[i];
                     bool expanded = (i == 0);
                     <div class="mb-2">
-                        <button type="button"
-                                class="question-toggle w-full border border-gray-400 px-4 py-3 text-left flex justify-between items-center hover:bg-gray-800 transition"
-                                data-question-id="@q.QuestionId">
-                            <span>Vraag @(i + 1): @q.Text</span>
-                            <span id="arrow-@q.QuestionId" class="text-gray-300 ml-2">@(expanded ? "v" : ">")</span>
-                        </button>
+                        <div class="flex items-stretch">
+                            <button type="button"
+                                    class="question-toggle flex-1 border border-gray-400 px-4 py-3 text-left flex justify-between items-center hover:bg-gray-800 transition"
+                                    data-question-id="@q.QuestionId">
+                                <span>Vraag @(i + 1): @q.Text</span>
+                                <span id="arrow-@q.QuestionId" class="text-gray-300 ml-2">@(expanded ? "v" : ">")</span>
+                            </button>
+                            <form method="post" asp-controller="Question" asp-action="Delete"
+                                  asp-route-projectId="@ViewBag.ProjectId" asp-route-questionId="@q.QuestionId">
+                                <button type="submit"
+                                        class="border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-red-800 transition h-full">✕</button>
+                            </form>
+                        </div>
                         <div id="answers-@q.QuestionId" class="@(expanded ? "" : "hidden")">
                             @if (q.AnswerChoices.Any())
                             {

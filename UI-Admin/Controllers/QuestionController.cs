@@ -71,6 +71,6 @@ public class QuestionController(QuestionAdminService questionService) : Controll
     public async Task<IActionResult> Delete(int projectId, int questionId)
     {
         await questionService.DeleteQuestionAsync(projectId, questionId);
-        return RedirectToAction(nameof(Index), new { projectId });
+        return RedirectToAction("Questions", "Project", new { projectId });
     }
 }
