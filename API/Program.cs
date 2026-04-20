@@ -114,7 +114,7 @@ if (useAi)
     builder.Services.AddChatClient(chatClient);
 
     // Both moderation and idea-support share the same IChatClient.
-    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
+    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
 }
 else

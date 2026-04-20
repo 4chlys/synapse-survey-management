@@ -75,9 +75,9 @@ public class ModerationController(
 
         return new ModerationResponseDto
         {
-            IsAcceptable    = result.IsAcceptable,
-            Reason          = result.Reason,
-            FlaggedBy       = result.FlaggedBy,
+            IsAcceptable = result.IsAcceptable,
+            Reason = result.Reason,
+            FlaggedBy = result.FlaggedBy,
             ModerationToken = token,
         };
     }

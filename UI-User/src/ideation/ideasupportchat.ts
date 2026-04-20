@@ -38,29 +38,29 @@ let isSending = false;
 let onSubmitCallback: ((text: string) => void) | null = null;
 let isInitialised = false;
 
-// Initialise DOM refs
+// DOM initialisation
 
 function ensureRefs(): boolean {
     if (isInitialised) return true;
 
-    overlay          = document.getElementById('idea-support-overlay');
+    overlay           = document.getElementById('idea-support-overlay');
     messagesContainer = document.getElementById('idea-support-messages');
-    loadingBubble    = document.getElementById('idea-support-loading');
-    draftBanner      = document.getElementById('idea-support-draft-banner');
-    draftTextEl      = document.getElementById('idea-support-draft-text');
-    inputEl          = document.getElementById('idea-support-input') as HTMLTextAreaElement | null;
-    sendBtn          = document.getElementById('idea-support-btn-send') as HTMLButtonElement | null;
-    closeBtn         = document.getElementById('idea-support-btn-close') as HTMLButtonElement | null;
-    useDraftBtn      = document.getElementById('idea-support-btn-use-draft') as HTMLButtonElement | null;
-    refineDraftBtn   = document.getElementById('idea-support-btn-refine-draft') as HTMLButtonElement | null;
+    loadingBubble     = document.getElementById('idea-support-loading');
+    draftBanner       = document.getElementById('idea-support-draft-banner');
+    draftTextEl       = document.getElementById('idea-support-draft-text');
+    inputEl           = document.getElementById('idea-support-input') as HTMLTextAreaElement | null;
+    sendBtn           = document.getElementById('idea-support-btn-send') as HTMLButtonElement | null;
+    closeBtn          = document.getElementById('idea-support-btn-close') as HTMLButtonElement | null;
+    useDraftBtn       = document.getElementById('idea-support-btn-use-draft') as HTMLButtonElement | null;
+    refineDraftBtn    = document.getElementById('idea-support-btn-refine-draft') as HTMLButtonElement | null;
 
     if (!overlay || !messagesContainer || !inputEl || !sendBtn || !closeBtn) return false;
 
     // Wire events once
     closeBtn.addEventListener('click', closeOverlay);
-    sendBtn.addEventListener('click', handleSend);
+    sendBtn.addEventListener('click', () => { void handleSend(); });
     useDraftBtn?.addEventListener('click', handleUseDraft);
-    refineDraftBtn?.addEventListener('click', handleRefineDraft);
+    refineDraftBtn?.addEventListener('click', () => { void handleRefineDraft(); });
 
     // Auto-grow textarea
     inputEl.addEventListener('input', () => {
@@ -104,10 +104,10 @@ export function openIdeaSupportChat(
     if (!ensureRefs()) return;
 
     // Reset state
-    activeSession      = new IdeaSupportSession(projectId, categoryId);
-    currentDraft       = null;
-    onSubmitCallback   = onSubmit;
-    isSending          = false;
+    activeSession    = new IdeaSupportSession(projectId, categoryId);
+    currentDraft     = null;
+    onSubmitCallback = onSubmit;
+    isSending        = false;
 
     // Clear previous conversation
     clearMessages();
@@ -121,21 +121,29 @@ export function openIdeaSupportChat(
     // Focus input after animation frame so the keyboard appears on mobile
     requestAnimationFrame(() => inputEl?.focus());
 
-    // Fire the first assistant turn automatically (no user message needed)
+    // Fire the opening turn automatically.
+    // We pass categoryName so the BL can inject the context prompt, but we do
+    // NOT show a user bubble — the assistant should greet first.
     void fireOpeningTurn(categoryName);
 }
 
 // Opening turn
 
+/**
+ * Triggers the very first assistant message.
+ *
+ * We send an empty userMessage so the server uses only its context/system
+ * prompt and does not echo back a user sentence.  The BL treats an empty
+ * first message as the signal to produce the category-specific opening
+ * question.
+ */
 async function fireOpeningTurn(categoryName: string): Promise<void> {
     showLoading();
     setSendingState(true);
 
     try {
-        // Send an empty opening message — the service uses IsFirstTurn + category context
-        const reply = await activeSession!.send(
-            `Ik wil een idee indienen in de categorie "${categoryName}".`
-        );
+        // Empty string → server fires the context-prompt opener without a user bubble
+        const reply = await activeSession!.send('', categoryName);
 
         hideLoading();
         setSendingState(false);
@@ -150,7 +158,7 @@ async function fireOpeningTurn(categoryName: string): Promise<void> {
         hideLoading();
         setSendingState(false);
         appendAssistantBubble(
-            'Sorry, de assistent is even niet beschikbaar. Je kan je idee direct intypen hieronder.'
+            'Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.',
         );
     }
 }
@@ -199,7 +207,7 @@ async function handleRefineDraft(): Promise<void> {
     if (!currentDraft || !activeSession) return;
 
     setSendingState(true);
-    refineDraftBtn!.textContent = 'Bezig...';
+    if (refineDraftBtn) refineDraftBtn.textContent = 'Bezig...';
 
     try {
         const result = await activeSession.refineDraft(currentDraft);
@@ -224,9 +232,9 @@ function closeOverlay(): void {
     overlay.classList.add('hidden');
     overlay.classList.remove('flex');
     activeSession?.reset();
-    activeSession       = null;
-    onSubmitCallback    = null;
-    currentDraft        = null;
+    activeSession    = null;
+    onSubmitCallback = null;
+    currentDraft     = null;
 }
 
 // Message rendering
@@ -254,7 +262,7 @@ function appendAssistantBubble(text: string): void {
             </svg>
         </div>
         <div class="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]">
-            <p class="text-sm text-gray-800 leading-relaxed">${escapeHtml(text)}</p>
+            <p class="text-sm text-gray-800 leading-relaxed">${renderMarkdown(text)}</p>
         </div>`;
     messagesContainer!.appendChild(bubble);
     scrollToBottom();
@@ -291,24 +299,21 @@ function hideDraftBanner(): void {
 
 function setSendingState(sending: boolean): void {
     isSending = sending;
-    if (sendBtn) sendBtn.disabled = sending;
-    if (inputEl) inputEl.disabled = sending;
+    if (sendBtn)  sendBtn.disabled  = sending;
+    if (inputEl)  inputEl.disabled  = sending;
 }
 
 function clearMessages(): void {
     if (!messagesContainer) return;
-    // Remove all children except the loading bubble
     const children = Array.from(messagesContainer.children);
     for (const child of children) {
-        if (child.id !== 'idea-support-loading') {
-            child.remove();
-        }
+        if (child.id !== 'idea-support-loading') child.remove();
     }
 }
 
 function resetInput(): void {
     if (!inputEl) return;
-    inputEl.value = '';
+    inputEl.value        = '';
     inputEl.style.height = 'auto';
 }
 
@@ -319,12 +324,43 @@ function scrollToBottom(): void {
     });
 }
 
+// Text helpers
+
+/** Escape HTML special chars so raw text is safe to insert via innerHTML. */
 function escapeHtml(text: string): string {
     return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/\n/g, '<br>');
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#39;');
+}
+
+/**
+ * Very light markdown → HTML renderer for assistant messages.
+ *
+ * Supported:
+ *   **bold**   → <strong>
+ *   *italic*   → <em>
+ *   `code`     → <code>
+ *   \n         → <br>
+ *
+ * The input is HTML-escaped first so injected content is safe.
+ */
+function renderMarkdown(text: string): string {
+    let safe = escapeHtml(text);
+
+    // Bold: **text**
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Italic: *text* (but not **)
+    safe = safe.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+
+    // Inline code: `code`
+    safe = safe.replace(/`([^`]+)`/g, '<code class="bg-gray-200 rounded px-1 text-xs font-mono">$1</code>');
+
+    // Line breaks
+    safe = safe.replace(/\n/g, '<br>');
+
+    return safe;
 }

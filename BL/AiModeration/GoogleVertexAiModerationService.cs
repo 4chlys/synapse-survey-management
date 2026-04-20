@@ -13,10 +13,10 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 /// loaded from ai-config.json via the injected <see cref="AiConfig"/> singleton —
 /// nothing is hardcoded in this class anymore.
 /// </summary>
-public sealed class GoogleVertexAiService : IAiModerationService
+public sealed class GoogleVertexAiModerationService : IAiModerationService
 {
     private readonly IChatClient _chatClient;
-    private readonly ILogger<GoogleVertexAiService> _logger;
+    private readonly ILogger<GoogleVertexAiModerationService> _logger;
     private readonly AiConfig _config;
     private readonly BannedWordList _bannedWords;
     private readonly RegexModerationPatterns _patterns;
@@ -33,9 +33,9 @@ public sealed class GoogleVertexAiService : IAiModerationService
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public GoogleVertexAiService(
+    public GoogleVertexAiModerationService(
         IChatClient chatClient,
-        ILogger<GoogleVertexAiService> logger,
+        ILogger<GoogleVertexAiModerationService> logger,
         AiConfig config,
         BannedWordList bannedWords,
         RegexModerationPatterns patterns)
@@ -71,7 +71,8 @@ public sealed class GoogleVertexAiService : IAiModerationService
             : RunRegexAndFuzzy(collapsedNS, contentType);
     }
 
-    public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default, string contentType = "idea")
+    public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default,
+        string contentType = "idea")
     {
         if (string.IsNullOrWhiteSpace(text))
             return ModerationResult.Acceptable();

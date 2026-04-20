@@ -22,12 +22,30 @@ function getCsrfToken(): string {
     return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
 }
 
-// Low-level API calls
+// Low-level API call with timeout
+
+const FETCH_TIMEOUT_MS = 30_000; // 30 s — generous for cold-start AI
+
+async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(id);
+    }
+}
 
 /**
  * Send a chat turn.  The caller owns the history array and appends to it
  * after each successful round trip so the conversation is maintained
  * entirely on the client (stateless backend).
+ *
+ * When `userMessage` is an empty string this is treated as the opening
+ * turn: the server uses only the system + context prompt and the assistant
+ * fires its own greeting.  An empty message is NOT appended to history so
+ * the user's first real reply starts a clean conversation from the
+ * assistant's perspective.
  */
 export async function sendIdeaSupportMessage(
     projectId: number,
@@ -37,7 +55,7 @@ export async function sendIdeaSupportMessage(
     signal?: AbortSignal,
 ): Promise<IdeaSupportChatResponse> {
     try {
-        const res = await fetch(`/${projectId}/api/IdeaSupportApi/chat`, {
+        const res = await fetchWithTimeout(`/${projectId}/api/IdeaSupportApi/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -48,7 +66,7 @@ export async function sendIdeaSupportMessage(
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+        return res.json() as Promise<IdeaSupportChatResponse>;
     } catch (err) {
         if ((err as Error).name === 'AbortError') throw err;
         console.warn('[IdeaSupport] chat unreachable:', err);
@@ -64,7 +82,7 @@ export async function refineIdeaDraft(
     draftText: string,
 ): Promise<IdeaSupportRefineResponse> {
     try {
-        const res = await fetch(`/${projectId}/api/IdeaSupportApi/refine`, {
+        const res = await fetchWithTimeout(`/${projectId}/api/IdeaSupportApi/refine`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -74,7 +92,7 @@ export async function refineIdeaDraft(
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+        return res.json() as Promise<IdeaSupportRefineResponse>;
     } catch (err) {
         console.warn('[IdeaSupport] refine unreachable:', err);
         return { refinedText: null };
@@ -86,13 +104,9 @@ export async function refineIdeaDraft(
 /**
  * Manages a single idea-support conversation session.
  *
- * Usage:
- *   const session = new IdeaSupportSession(projectId, categoryId);
- *   const reply   = await session.send('Ik wil meer groen op de speelplaats');
- *   console.log(reply.assistantMessage);
- *   if (reply.suggestedDraft) { ... }
- *
  * The session holds the full conversation history so callers don't have to.
+ * An empty first userMessage triggers the assistant's opening greeting
+ * without polluting the history with a synthetic user sentence.
  */
 export class IdeaSupportSession {
     private readonly _projectId: number;
@@ -112,10 +126,17 @@ export class IdeaSupportSession {
 
     /**
      * Sends a user message and returns the assistant reply.
-     * Automatically appends both turns to the internal history.
+     *
+     * When `userMessage` is empty (opening turn) the message is NOT added to
+     * history — only the assistant's reply is stored so the first real user
+     * message starts the visible conversation.
+     *
      * Cancels any in-flight request before sending a new one.
+     *
+     * @param userMessage  — the user's text, or '' for the opening greeting
+     * @param _categoryName — unused here; kept for call-site readability
      */
-    async send(userMessage: string): Promise<IdeaSupportChatResponse> {
+    async send(userMessage: string, _categoryName?: string): Promise<IdeaSupportChatResponse> {
         this._abortController?.abort();
         this._abortController = new AbortController();
 
@@ -127,9 +148,15 @@ export class IdeaSupportSession {
             this._abortController.signal,
         );
 
-        // Append both turns to local history for the next call.
-        this._history.push({ role: 'user',      content: userMessage });
-        this._history.push({ role: 'assistant', content: reply.assistantMessage });
+        // Only append real user turns to history.
+        // An empty opening message should not appear in the conversation record.
+        if (userMessage.trim()) {
+            this._history.push({ role: 'user',      content: userMessage });
+            this._history.push({ role: 'assistant', content: reply.assistantMessage });
+        } else if (reply.assistantMessage) {
+            // Store the opening assistant greeting so subsequent turns see it
+            this._history.push({ role: 'assistant', content: reply.assistantMessage });
+        }
 
         return reply;
     }
