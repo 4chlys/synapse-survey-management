@@ -9,7 +9,6 @@ public class Participant : IHasCreatedAt
     public Guid SessionToken { get; set; } = Guid.NewGuid();
     public bool HasSubmitted { get; set; }
     public string Email { get; set; }
-    public string PhoneNumber { get; set; }
     public Project Project { get; set; }
 
     public Questionnaire Questionnaire { get; set; }

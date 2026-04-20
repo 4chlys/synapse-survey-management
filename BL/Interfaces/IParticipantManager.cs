@@ -9,5 +9,5 @@ public interface IParticipantManager
     Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken);
     Task<bool> HasParticipantSubmittedAsync(Guid sessionToken);
     Task MarkAsSubmittedAsync(Guid sessionToken);
-    Task SaveContactInfoAsync(int participantId, string email, string phoneNumber);
+    Task SaveContactInfoAsync(int participantId, string email);
 }

@@ -109,9 +109,9 @@ public class IdeationController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email, string phoneNumber)
+    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email)
     {
-        await participantService.SaveContactInfoAsync(projectId, email, phoneNumber);
+        await participantService.SaveContactInfoAsync(projectId, email);
         return RedirectToAction("Index", new { projectId, categoryId });
     }
 
