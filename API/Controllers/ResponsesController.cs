@@ -25,7 +25,7 @@ public class ResponsesController(
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, dto.PhoneNumber);
+        await SaveContactInfoAsync(participant.ParticipantId, dto.Email);
         return NoContent();
     }
 
