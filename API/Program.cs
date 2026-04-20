@@ -11,7 +11,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
-bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+bool deleteIfExists = false;
 
 // Load AI config early so we can read use_ai before building the container
 var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();

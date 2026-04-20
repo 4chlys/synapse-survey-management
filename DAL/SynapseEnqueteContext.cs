@@ -49,7 +49,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
             // lets us query all project participants directly.
             e.HasMany(p => p.Participants)
                 .WithOne(p => p.Project)
-                .HasForeignKey("ProjectId")
+                .HasForeignKey(p => p.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -64,7 +64,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
             // Restrict so that Project → Participant cascade is the sole owner.
             e.HasMany(q => q.Participants)
                 .WithOne(p => p.Questionnaire)
-                .HasForeignKey("QuestionnaireId")
+                .HasForeignKey(p => p.QuestionnaireId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -134,7 +134,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         {
             // SessionToken is the lookup key for every user request.
             e.HasIndex(p => p.SessionToken).IsUnique();
-            e.HasIndex("ProjectId");
+            e.HasIndex(p => p.ProjectId);
 
             e.HasMany(p => p.Comments)
                 .WithOne(c => c.Participant)

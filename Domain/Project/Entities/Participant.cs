@@ -10,8 +10,10 @@ public class Participant : IHasCreatedAt
     public bool HasSubmitted { get; set; }
     public string Email { get; set; }
     public string PhoneNumber { get; set; }
+    public int ProjectId { get; set; }
     public Project Project { get; set; }
 
+    public int QuestionnaireId { get; set; }
     public Questionnaire Questionnaire { get; set; }
 
     public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
