@@ -8,6 +8,7 @@ ZONE="${ZONE:-europe-west1-b}"
 GCS_BUCKET="${GCS_BUCKET:-synapse-assets-prod}"
 PROJECT_NUMBER="${PROJECT_NUMBER:-667656673282}"
 CICD_SA="synapse-cicd@${PROJECT_ID}.iam.gserviceaccount.com"
+CICD_SA_PROD="synapse-cicd-prod@${PROJECT_ID}.iam.gserviceaccount.com"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -18,6 +19,7 @@ source "${SCRIPT_DIR}/lib/03_vpc.sh"
 source "${SCRIPT_DIR}/lib/04_mig.sh"
 source "${SCRIPT_DIR}/lib/05_storage.sh"
 source "${SCRIPT_DIR}/lib/06_loadbalancer.sh"
+source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
 
 # ── Setup ───────────────────────────────────────────────────────
 echo "======================================================"
@@ -27,8 +29,11 @@ echo "======================================================"
 enable_apis
 create_service_account
 assign_iam_roles
+create_prod_service_account
+assign_prod_iam_roles
 
 create_secrets
+create_cloud_sql
 
 create_vpc_peering
 create_firewall_rules

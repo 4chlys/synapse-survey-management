@@ -7,6 +7,7 @@ REGION="${REGION:-europe-west1}"
 ZONE="${ZONE:-europe-west1-b}"
 GCS_BUCKET="${GCS_BUCKET:-synapse-assets-prod}"
 CICD_SA="synapse-cicd@${PROJECT_ID}.iam.gserviceaccount.com"
+CICD_SA_PROD="synapse-cicd-prod@${PROJECT_ID}.iam.gserviceaccount.com"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -17,6 +18,7 @@ source "${SCRIPT_DIR}/lib/03_vpc.sh"
 source "${SCRIPT_DIR}/lib/04_mig.sh"
 source "${SCRIPT_DIR}/lib/05_storage.sh"
 source "${SCRIPT_DIR}/lib/06_loadbalancer.sh"
+source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
 
 # ── Bevestiging ─────────────────────────────────────────────────
 echo "======================================================"
@@ -31,11 +33,13 @@ echo ""
 destroy_loadbalancer
 destroy_migs
 destroy_instance_templates
+destroy_cloud_sql
 destroy_storage_bucket
 destroy_firewall_rules
 destroy_vpc_peering
 destroy_secrets
-# destroy_service_account  # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
+# destroy_service_account       # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
+# destroy_prod_service_account  # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
 
 echo ""
 echo "======================================================"
