@@ -71,7 +71,7 @@ public class DummyDataSeeder
             RequestContactInfo = true,
             Questionnaire = questionnaire1,
             OrganisationName = "Synapse",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=Synapse",
+            OrganisationLogoUrl = "/uploads/logos/logo_synapse.jpg",
             OrganisationWebsiteUrl = "http://synapse-ip.xyz/1",
             Introduction = new Introduction
             {
@@ -135,7 +135,7 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire2,
             OrganisationName = "FitLife Gym",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=FitLife",
+            OrganisationLogoUrl = "/uploads/logos/logo_fitlife.png",
             OrganisationWebsiteUrl = "https://www.fitlife.com",
             Introduction = new Introduction
             {
@@ -201,7 +201,7 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire3,
             OrganisationName = "FC Eendracht",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=FC+Eendracht",
+            OrganisationLogoUrl = "/uploads/logos/logo_eendracht.png",
             OrganisationWebsiteUrl = "https://www.fceendracht.be",
             
         };

@@ -47,20 +47,22 @@ export function initIdeation(): void {
             formData.set(submitter.name, submitter.value);
         }
 
-        // Find context from the nearest data-emoji-container (reaction forms are direct children;
-        // picker forms use data-idea-id to locate the container)
-        const ideaId = form.dataset.ideaId
-            ?? form.closest<HTMLElement>('[data-emoji-container]')?.dataset.ideaId;
-        const container = ideaId
-            ? document.querySelector<HTMLElement>(`[data-emoji-container][data-idea-id="${ideaId}"]`)
-            : null;
-        if (!container || !ideaId) return;
+        // Find context from the nearest data-emoji-container
+        const emojiContainer = form.closest<HTMLElement>('[data-emoji-container]');
+        const ideaId = form.dataset.ideaId ?? emojiContainer?.dataset.ideaId;
+        const commentId = form.dataset.commentId ?? emojiContainer?.dataset.commentId;
 
-        const addUrl = container.dataset.addUrl!;
-        const removeUrl = container.dataset.removeUrl!;
-        const returnPage = container.dataset.returnPage!;
-        const categoryId = container.dataset.categoryId!;
-        const projectIdVal = container.dataset.projectId!;
+        // The target element to update (could be idea reactions or comment reactions)
+        const targetId = commentId ? `emoji-reactions-comment-${commentId}` : `emoji-reactions-${ideaId}`;
+        const targetEl = document.getElementById(targetId);
+
+        if (!targetEl || !ideaId) return;
+
+        const projectIdVal = emojiContainer?.dataset.projectId ?? getProjectId()?.toString();
+        const categoryId = emojiContainer?.dataset.categoryId;
+        const returnPage = emojiContainer?.dataset.returnPage ?? 'Detail';
+
+        if (!projectIdVal || !categoryId) return;
 
         try {
             const response = await fetch(form.action, {
@@ -71,15 +73,12 @@ export function initIdeation(): void {
             if (!response.ok) return;
 
             const emojis: EmojiReaction[] = await response.json();
-            const reactionsEl = document.getElementById(`emoji-reactions-${ideaId}`);
-            if (reactionsEl) {
-                reactionsEl.replaceChildren(
-                    ...buildReactionButtons(emojis, addUrl, removeUrl, projectIdVal, categoryId, ideaId, returnPage)
-                );
-            }
+            targetEl.innerHTML = renderReactionButtons(
+                emojis, projectIdVal, categoryId, ideaId, returnPage, commentId
+            );
 
-            // Hide the picker
-            const pickerId = container.dataset.pickerId;
+            // Hide the picker if it was open
+            const pickerId = emojiContainer?.dataset.pickerId ?? form.closest('[id^="picker-"]')?.id;
             if (pickerId) document.getElementById(pickerId)?.classList.add('hidden');
         } catch {
             // Fallback: let the browser submit normally
@@ -131,62 +130,40 @@ export function initIdeation(): void {
     });
 }
 
-function hidden(name: string, value: string): HTMLInputElement {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = name;
-    input.value = value;
-    return input;
-}
-
-function buildReactionButtons(
+function renderReactionButtons(
     emojis: EmojiReaction[],
-    addUrl: string,
-    removeUrl: string,
     projectId: string,
     categoryId: string,
     ideaId: string,
-    returnPage: string
-): HTMLFormElement[] {
+    returnPage: string,
+    commentId?: string
+): string {
     const token = document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
 
     return emojis.map(emoji => {
-        const action = emoji.postedByCurrentUser ? removeUrl : addUrl;
+        const actionBase = commentId ? 'CommentEmoji' : 'IconComment';
+        const action = emoji.postedByCurrentUser ? `Remove${actionBase}` : `Add${actionBase}`;
+        const url = `/${projectId}/Ideation/${action}`;
+
         const btnClass = emoji.postedByCurrentUser
-            ? 'bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200'
-            : 'bg-gray-100 border border-gray-200 hover:bg-gray-200';
-        const textClass = emoji.postedByCurrentUser ? 'text-emerald-700' : 'text-gray-700';
+            ? 'bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20'
+            : 'bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300';
 
-        const form = document.createElement('form');
-        form.action = action;
-        form.method = 'post';
-        form.setAttribute('data-emoji-form', '');
-
-        form.appendChild(hidden('__RequestVerificationToken', token));
-        form.appendChild(hidden('projectId', projectId));
-        form.appendChild(hidden('categoryId', categoryId));
-        form.appendChild(hidden('ideaId', ideaId));
-        form.appendChild(hidden('emojiId', String(emoji.emojiId)));
-        form.appendChild(hidden('returnPage', returnPage));
-
-        const btn = document.createElement('button');
-        btn.type = 'submit';
-        btn.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors ${btnClass}`;
-
-        const symbolSpan = document.createElement('span');
-        symbolSpan.className = 'text-lg leading-none';
-        symbolSpan.textContent = emoji.symbol;
-
-        const countSpan = document.createElement('span');
-        countSpan.className = `font-semibold ${textClass} text-sm leading-none`;
-        countSpan.textContent = String(emoji.count);
-
-        btn.appendChild(symbolSpan);
-        btn.appendChild(countSpan);
-        form.appendChild(btn);
-
-        return form;
-    });
+        return `<form action="${url}" method="post" data-emoji-form data-idea-id="${ideaId}" ${commentId ? `data-comment-id="${commentId}"` : ''}>
+            <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+            <input type="hidden" name="projectId" value="${projectId}" />
+            <input type="hidden" name="categoryId" value="${categoryId}" />
+            <input type="hidden" name="ideaId" value="${ideaId}" />
+            ${commentId ? `<input type="hidden" name="commentId" value="${commentId}" />` : ''}
+            <input type="hidden" name="emojiId" value="${emoji.emojiId}" />
+            <input type="hidden" name="returnPage" value="${returnPage}" />
+            <button type="submit"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-[32px] ${btnClass}">
+                <span class="text-base leading-none">${emoji.symbol}</span>
+                <span class="leading-none font-semibold">${emoji.count}</span>
+            </button>
+        </form>`;
+    }).join('');
 }
 
 function getProjectId(): number | null {

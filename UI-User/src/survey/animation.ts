@@ -1,26 +1,40 @@
-/** Translates the track so slide at `index` is visible. */
-export function animateTrackTo(track: HTMLElement, index: number, visibleIndices : number[]): void {
-    const visiblePosition = visibleIndices.indexOf(index);
-    track.style.transform = `translateY(calc(${visiblePosition} * -1 * var(--slide-h)))`;
-}
+/**
+ * Transitions from slide at `prevIndex` to slide at `nextIndex`.
+ * Going forward: prev exits upward, next rises from below.
+ * Going backward: prev falls back down, next descends from above.
+ */
+export function activateSlide(
+    slides: HTMLElement[],
+    prevIndex: number,
+    nextIndex: number
+): void {
+    const prev = slides[prevIndex];
+    const next = slides[nextIndex];
+    const goingForward = nextIndex > prevIndex;
 
-export function syncTrackToVisibleSlides(track: HTMLElement, slides: HTMLElement[], visibleIndices: number[]):void{
-    // Remove all slides from track
-    while (track.firstChild) track.removeChild(track.firstChild);
-    
-    // Re-insert only visible slides in order
-    for (const index of visibleIndices) {
-        track.appendChild(slides[index]);
+    if (prev) {
+        prev.classList.remove('is-active');
+        if (goingForward) {
+            // Exit upward
+            prev.classList.add('is-above');
+        }
+        // Going backward: removing is-active returns the slide to the default
+        // "below" state (translateY(56px)), so it animates downward naturally.
+    }
+
+    if (next) {
+        next.classList.remove('is-above'); // coming from above when going backward
+        next.classList.add('is-active');
     }
 }
 
-/** Shakes the answer area to indicate a blocked action. */
+/** Shakes the answer area to signal a blocked navigation. */
 export function shakeSlide(slide: HTMLElement): void {
     const target = slide.querySelector<HTMLElement>('.slide-answer-area') ?? slide;
     target.classList.remove('slide--shake');
     void target.offsetWidth; // force reflow to restart animation
     target.classList.add('slide--shake');
-    target.addEventListener('animationend', () => target.classList.remove('slide--shake'), {once: true});
+    target.addEventListener('animationend', () => target.classList.remove('slide--shake'), { once: true });
 }
 
 export function updateProgressBar(bar: HTMLElement | null, index: number, total: number): void {

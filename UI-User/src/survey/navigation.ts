@@ -1,14 +1,14 @@
 import type {SurveyState} from './types';
 import {isSlideValid, showValidationError, clearValidationError} from './validation';
-import {animateTrackTo, shakeSlide, syncTrackToVisibleSlides, updateProgressBar} from './animation';
+import {activateSlide, shakeSlide, updateProgressBar} from './animation';
 import {
     getAnswerFromSlide,
     getQuestionId,
     questionIdToSlideIndex,
     getSubmitSlideIndex,
-    updateQuestionCounters
+    updateQuestionCounters,
 } from './branching';
-import {saveResponse, getNextQuestion, getPreviousQuestion, startSession} from './api';
+import {getNextQuestion, getPreviousQuestion, saveResponse, startSession} from './api';
 
 const TRANSITION_MS = 580;
 
@@ -16,29 +16,23 @@ function getVisiblePosition(state: SurveyState): number {
     return state.visibleIndices.indexOf(state.currentIndex);
 }
 
-function navigateTo(state: SurveyState, slideIndex: number): void {
+function navigateTo(state: SurveyState, targetIndex: number): void {
     state.isAnimating = true;
-    state.currentIndex = slideIndex;
+    const prevIndex = state.currentIndex;
+    state.currentIndex = targetIndex;
     updateQuestionCounters(state.slides, state.visibleIndices);
-    syncTrackToVisibleSlides(state.track, state.slides, state.visibleIndices);
-    animateTrackTo(state.track, state.currentIndex, state.visibleIndices);
-
-    const visiblePos = getVisiblePosition(state);
-    updateProgressBar(state.progressBar, visiblePos, state.visibleIndices.length);
+    activateSlide(state.slides, prevIndex, targetIndex);
+    updateProgressBar(state.progressBar, getVisiblePosition(state), state.visibleIndices.length);
     state.onSlideChange?.(state);
 
-    setTimeout(() => {
-        state.isAnimating = false;
-    }, TRANSITION_MS);
+    setTimeout(() => { state.isAnimating = false; }, TRANSITION_MS);
 }
 
 export async function navigateNext(state: SurveyState): Promise<void> {
     if (state.isAnimating) return;
 
     const current = state.slides[state.currentIndex];
-    const format = current.dataset.format;
-
-    if (format === 'Submit') return;
+    if (current.dataset.format === 'Submit') return;
 
     const {valid, message} = isSlideValid(current);
     if (!valid) {
@@ -48,49 +42,46 @@ export async function navigateNext(state: SurveyState): Promise<void> {
     }
     clearValidationError(current);
 
+    // Lock immediately so a second click during the API round-trip can't slip through.
+    state.isAnimating = true;
+
     const questionId = getQuestionId(current);
     const answer = getAnswerFromSlide(current);
 
     try {
-        // Ensure session exists before first save
+        // Lazily create the session on first forward nav so anonymous loads cost nothing.
         if (!state.hasSession) {
             await startSession(state.projectId);
             state.hasSession = true;
         }
 
-        // Save the current answer
-        if (answer) {
-            await saveResponse(state.projectId, questionId, answer);
-        }
+        if (answer) await saveResponse(state.projectId, questionId, answer);
 
-        // Ask server for next question
         const nextQuestionId = await getNextQuestion(state.projectId, questionId);
 
+        const submitIndex = getSubmitSlideIndex(state);
         let targetIndex: number;
         if (nextQuestionId === null || nextQuestionId === undefined) {
-            targetIndex = getSubmitSlideIndex(state);
+            targetIndex = submitIndex;
         } else {
             targetIndex = questionIdToSlideIndex(state.slides, nextQuestionId);
-            if (targetIndex === -1) {
-                targetIndex = getSubmitSlideIndex(state);
-            }
+            if (targetIndex === -1) targetIndex = submitIndex;
         }
 
-        // Trim future slides that are no longer on this branch path,
-        // but keep everything up to and including the current question.
-        const currentVisiblePos = state.visibleIndices.indexOf(state.currentIndex);
-        const submitIndex = getSubmitSlideIndex(state);
+        // Drops stale slides that were on a previously projected branch.
+        const currentVisiblePos = getVisiblePosition(state);
         state.visibleIndices = state.visibleIndices.filter(
-            (idx, pos) => pos <= currentVisiblePos || idx === targetIndex || idx === submitIndex
+            (idx, pos) => pos <= currentVisiblePos || idx === targetIndex || idx === submitIndex,
         );
-
         if (!state.visibleIndices.includes(targetIndex)) {
             state.visibleIndices.push(targetIndex);
             state.visibleIndices.sort((a, b) => a - b);
         }
+
         navigateTo(state, targetIndex);
     } catch (err) {
         console.error('Survey navigation error:', err);
+        state.isAnimating = false;
     }
 }
 
@@ -100,27 +91,31 @@ export async function navigatePrev(state: SurveyState): Promise<void> {
     const current = state.slides[state.currentIndex];
     clearValidationError(current);
 
+    if (!state.hasSession) return;
+
     try {
-        if (!state.hasSession) return;
-
         let targetIndex: number;
-
         if (current.dataset.format === 'Submit') {
             const visiblePos = getVisiblePosition(state);
             if (visiblePos <= 0) return;
             targetIndex = state.visibleIndices[visiblePos - 1];
         } else {
+            state.isAnimating = true;
             const questionId = getQuestionId(current);
             const prevQuestionId = await getPreviousQuestion(state.projectId, questionId);
-
-            if (prevQuestionId === null || prevQuestionId === undefined) return;
-
-            targetIndex = questionIdToSlideIndex(state.slides, prevQuestionId);
-            if (targetIndex === -1) return;
+            const idx = prevQuestionId != null
+                ? questionIdToSlideIndex(state.slides, prevQuestionId)
+                : -1;
+            if (idx === -1) {
+                state.isAnimating = false;
+                return;
+            }
+            targetIndex = idx;
         }
 
         navigateTo(state, targetIndex);
     } catch (err) {
         console.error('Survey back navigation error:', err);
+        state.isAnimating = false;
     }
 }
