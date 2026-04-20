@@ -20,7 +20,7 @@ public class IdeationController(
     public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
     {
         var projectTask = projectApiService.GetProjectAsync(projectId);
-        var emojisTask = emojiService.GetEmojisAsync();
+        var emojisTask = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
         var ideasTask = ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
 
@@ -50,7 +50,7 @@ public class IdeationController(
         var ideaTask = ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
         var commentsTask = ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var emojisTask = emojiService.GetEmojisAsync();
+        var emojisTask = emojiService.GetEmojisAsync(projectId);
 
         await Task.WhenAll(projectTask, ideaTask, commentsTask, categoryTask, emojisTask);
 

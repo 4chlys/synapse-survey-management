@@ -9,6 +9,7 @@ export function navigateNext(state: SurveyState): void {
     if (state.currentIndex >= state.slides.length - 1) return;
 
     const current = state.slides[state.currentIndex];
+
     const {valid, message} = isSlideValid(current);
     if (!valid) {
         showValidationError(current, message);

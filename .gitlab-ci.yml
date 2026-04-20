@@ -1,0 +1,125 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  Synapse CI/CD Pipeline
+#  - development branch → test environment on Cloud Run (automatic)
+# ════════════════════════════════════════════════════════════════════════════
+
+image: docker:27
+
+services:
+  - docker:27-dind   # Docker-in-Docker: allows docker build/push in the pipeline
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_API: "gcr.io/${PROJECT_ID}/mvp-app"
+  IMAGE_UI:  "gcr.io/${PROJECT_ID}/mvp-ui"
+  IMAGE_TAG: "${CI_COMMIT_SHA}"
+  
+stages:
+  - build
+  - push
+  - deploy
+
+# ── Shared GCR login step ─────────────────────────────────────────────────
+.gcr_login: &gcr_login
+  before_script:
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
+
+# ════════════════════════════════════════════════════════════════════════════
+#  STAGE 1 – BUILD
+# ════════════════════════════════════════════════════════════════════════════
+
+build-api:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false -t "${IMAGE_API}:${IMAGE_TAG}" .
+    - docker save "${IMAGE_API}:${IMAGE_TAG}" | gzip > api-image.tar.gz
+  artifacts:
+    paths:
+      - api-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - development
+
+build-ui:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false -t "${IMAGE_UI}:${IMAGE_TAG}" -f Dockerfile.ui-user .
+    - docker save "${IMAGE_UI}:${IMAGE_TAG}" | gzip > ui-image.tar.gz
+  artifacts:
+    paths:
+      - ui-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - development
+
+# ════════════════════════════════════════════════════════════════════════════
+#  STAGE 2 – PUSH to Google Container Registry
+# ════════════════════════════════════════════════════════════════════════════
+
+push-dev:
+  stage: push
+  <<: *gcr_login
+  script:
+    - docker load < api-image.tar.gz
+    - docker load < ui-image.tar.gz
+    - docker push "${IMAGE_API}:${IMAGE_TAG}"
+    - docker push "${IMAGE_UI}:${IMAGE_TAG}"
+  only:
+    - development
+
+# ════════════════════════════════════════════════════════════════════════════
+#  STAGE 3 – DEPLOY to Cloud Run (test environment)
+#
+#  Architecture:
+#    mvp-api-test  → Cloud Run multi-container (API ingress + postgres sidecar)
+#    mvp-ui-test   → Cloud Run service
+#
+#  Scale-to-zero: both services scale to zero when idle.
+#  On a new request: both start, postgres initialises, seeder runs.
+# ════════════════════════════════════════════════════════════════════════════
+
+deploy-test:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo "${GCP_SERVICE_ACCOUNT_KEY}" | base64 -d > /tmp/key.json
+    - gcloud auth activate-service-account --key-file=/tmp/key.json
+    - gcloud config set project "${PROJECT_ID}"
+  script:
+    # Substitute the real image into the YAML before deploying
+    - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
+
+    # Deploy API + postgres sidecar as a multi-container Cloud Run service
+    - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
+    - gcloud run services add-iam-policy-binding mvp-api-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
+
+    # Retrieve API URL for the UI
+    - |
+      API_URL=$(gcloud run services describe mvp-api-test \
+        --region="${REGION}" \
+        --format="value(status.url)")
+      echo "API URL: $API_URL"
+
+    # Deploy UI as a separate Cloud Run service
+    - |
+      gcloud run deploy mvp-ui-test \
+        --image="${IMAGE_UI}:${IMAGE_TAG}" \
+        --region="${REGION}" \
+        --allow-unauthenticated \
+        --port=8080 \
+        --min-instances=0 \
+        --max-instances=3 \
+        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
+
+    # Print UI URL in pipeline log
+    - |
+      UI_URL=$(gcloud run services describe mvp-ui-test \
+        --region="${REGION}" \
+        --format="value(status.url)")
+      echo "Test UI available at: $UI_URL"
+  only:
+    - development
+  environment:
+    name: test

@@ -29,10 +29,17 @@ public class CookieSessionService : ISessionService
             SameSite = SameSiteMode.Lax,
             MaxAge = TimeSpan.FromDays(365)
         });
+
     }
 
     public bool HasToken(int projectId)
     {
         return !string.IsNullOrWhiteSpace(GetToken(projectId));
+    }
+    
+    public void ClearToken(int projectId)
+    {
+        var cookieName = CookiePrefix + projectId;
+        _httpContextAccessor.HttpContext?.Response.Cookies.Delete(cookieName);
     }
 }

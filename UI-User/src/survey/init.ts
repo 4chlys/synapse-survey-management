@@ -22,6 +22,7 @@ export function initSurvey(): void {
 
     const progressBar = document.getElementById('survey-progress-bar');
 
+
     const state: SurveyState = {
         currentIndex: 0,
         slides,

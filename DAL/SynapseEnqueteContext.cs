@@ -1,12 +1,11 @@
 ﻿using System.Text.Json;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
 
-public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext(options)
+public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<Project> Projects { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -21,6 +20,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
     public DbSet<Comment> Comments { get; set; }
+    public DbSet<BranchRule> BranchRules { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -93,6 +93,23 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+        // BranchRule — two FKs to Question
+        builder.Entity<BranchRule>()
+            .HasOne(br => br.SourceQuestion)
+            .WithMany(q => q.BranchRules)
+            .HasForeignKey("SourceQuestionId")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<BranchRule>(e =>
+        {
+            e.HasOne(br => br.TargetQuestion)
+                .WithMany(q => q.IncomingBranches)
+                .HasForeignKey("TargetQuestionId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasIndex("TargetQuestionId");
+        });
 
         // Response
         builder.Entity<Response>(e =>
@@ -109,6 +126,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
 
             // Supports "which participants answered this question?" queries.
             e.HasIndex("QuestionId", "ParticipantId");
+            e.HasIndex("ParticipantId");
         });
 
         // Participant
@@ -116,6 +134,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
         {
             // SessionToken is the lookup key for every user request.
             e.HasIndex(p => p.SessionToken).IsUnique();
+            e.HasIndex("ProjectId");
 
             e.HasMany(p => p.Comments)
                 .WithOne(c => c.Participant)
@@ -149,6 +168,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : IdentityDbContext
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Project-Emoji many-to-many (implicit join table)
+        builder.Entity<Project>()
+            .HasMany(p => p.Emojis)
+            .WithMany()
+            .UsingEntity("ProjectEmoji");
 
         // Comment
         builder.Entity<Comment>(e =>

@@ -15,6 +15,9 @@ public class Question
     public Questionnaire Questionnaire { get; set; }
 
     public Section Section { get; set; }
+    public int Position { get; set; }
+    public ICollection<BranchRule> BranchRules { get; set; } = [];
+    public ICollection<BranchRule> IncomingBranches { get; set; } = [];
 
     public ICollection<Response> Responses { get; set; } = new List<Response>();
 }

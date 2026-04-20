@@ -1,3 +1,4 @@
+@using System.Text.Json
 @model SurveyViewModel
 
 @{
@@ -5,7 +6,8 @@
     ViewData["SurveyTitle"] = Model.Title;
 }
 
-<div id="survey-container" class="relative overflow-hidden page-enter" style="height: var(--slide-h)">
+<div id="survey-container" class="relative overflow-hidden page-enter" style="height: var(--slide-h)" data-project-id="@Context.GetRouteValue("projectId")"
+     data-has-session="@Model.HasSession.ToString().ToLower()">
 
     @* Progress bar *@
     <div class="absolute top-0 left-0 right-0 h-1 bg-base-300 z-10">
@@ -20,7 +22,7 @@
         {
             @* Slide card for each question *@
             <section class="survey-slide" data-question-id="@question.QuestionId" data-format="@question.Format.ToString()"
-                     data-mandatory="@question.IsMandatory.ToString().ToLower()">
+                     data-mandatory="@question.IsMandatory.ToString().ToLower()" data-position="@question.Position">
 
                 @* Centering container *@
                 <div class="w-full h-full flex items-center justify-center px-4 py-6">
@@ -196,3 +198,9 @@
     </form>
 
 </div>
+
+@* Existing responses for resume support *@
+@if (Model.ExistingResponses.Count > 0)
+{
+    <script type="application/json" id="existing-responses">@Html.Raw(JsonSerializer.Serialize(Model.ExistingResponses))</script>
+}

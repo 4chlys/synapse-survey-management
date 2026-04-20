@@ -53,7 +53,7 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
     public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant)
     {
-        var category = await repository.ReadByIdAsync<Category>(categoryId, includes: [c => c.Project]);
+        var category = await repository.ReadByIdAsync<Category>(categoryId, includes: [c => c.Project], tracked: true);
         if (category == null || category.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Category {CategoryId} not found in project {ProjectId}", categoryId, projectId);
