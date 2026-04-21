@@ -1,14 +1,16 @@
-@model SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
+@model ProjectAdminViewModel
 @{
     ViewData["Title"] = "Project Dashboard";
     Layout = "_Layout";
+    var project = Model;
 }
 
 <div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
 
     <div class="flex items-center gap-3 px-6 pt-4">
         <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@(Model?.OrganisationLogoUrl ?? "https://placehold.co/40x40")"
+            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)"
                  alt="Organisatie" class="w-full h-full object-cover" />
         </div>
         <span class="font-medium">@(Model?.OrganisationName ?? "Admin")</span>

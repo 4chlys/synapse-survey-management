@@ -5,7 +5,7 @@ public class SectionFormViewModel
 {
     public int SectionId { get; set; }
 
-    [Required(ErrorMessage = "Naam is verplicht.")]
+    [Required]
     [MaxLength(20)]
     public string Name { get; set; }
 

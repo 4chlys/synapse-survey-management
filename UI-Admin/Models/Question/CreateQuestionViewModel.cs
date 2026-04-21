@@ -1,19 +1,19 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Question;
 
 public class CreateQuestionViewModel
 {
-    [Required(ErrorMessage = "Tekst is verplicht.")]
+    [Required]
     [MaxLength(500)]
     public string Text { get; set; }
-
-    [Required(ErrorMessage = "Kies een vraagtype.")]
-    public string QuestionFormat { get; set; }
+    
+    public QuestionFormat QuestionFormat { get; set; }
 
     public bool IsMandatory { get; set; }
 
-    public string AnswerChoicesRaw { get; set; } = string.Empty;
+    public string AnswerChoicesRaw { get; set; }
 
     public List<string> GetAnswerChoices() =>
         (AnswerChoicesRaw ?? string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries)

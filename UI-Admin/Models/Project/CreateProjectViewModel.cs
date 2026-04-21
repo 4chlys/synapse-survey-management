@@ -5,15 +5,15 @@ public class CreateProjectViewModel
 {
     public int? ProjectId { get; set; }
 
-    [Required(ErrorMessage = "Naam is verplicht.")]
-    [MaxLength(100, ErrorMessage = "Naam mag maximaal 100 tekens bevatten.")]
-    public string Name { get; set; } = string.Empty;
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; }
 
     [MaxLength(100)]
-    public string Topic { get; set; } = string.Empty;
+    public string Topic { get; set; }
 
-    [MaxLength(2000)]
-    public string Introduction { get; set; } = string.Empty;
+    [MaxLength(5000)]
+    public string Introduction { get; set; }
 
     public string InteractionMode { get; set; } = "Scroll";
 
@@ -24,7 +24,7 @@ public class CreateProjectViewModel
     public int? MaxAge { get; set; }
 
     [MaxLength(500)]
-    public string ImageUrl { get; set; } = string.Empty;
+    public string ImageUrl { get; set; }
 
     public List<string> Sections { get; set; } = new();
 

@@ -1,13 +1,17 @@
-@model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
+@model CreateProjectViewModel
 @{
     ViewData["Title"] = "Admin - Project aanmaken";
     Layout = "_Layout";
+    var project = ViewData["Project"] as ProjectAdminViewModel;
 }
 
 <div class="min-h-screen bg-gray-900 text-white flex flex-col">
 
     <div class="flex items-center gap-2 px-6 pt-4">
-        <div class="w-10 h-10 rounded-full border-2 border-white"></div>
+        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Organisatie" class="w-full h-full object-cover" />
+        </div>
         <span class="text-xs">Admin</span>
     </div>
 
@@ -64,12 +68,12 @@
                     <label class="block text-xs mb-1">Leeftijdsbereik <span class="text-gray-500">(optioneel)</span></label>
                     <div class="flex items-center gap-2">
                         <input asp-for="MinAge" type="number" placeholder="Min" min="1"
-                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none"
-                               style="-moz-appearance:textfield;" />
+                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none no-spinner"
+                               />
                         <span class="text-gray-400 text-xs">—</span>
                         <input asp-for="MaxAge" type="number" placeholder="Max" min="1"
-                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none"
-                               style="-moz-appearance:textfield;" />
+                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none no-spinner"
+                               />
                     </div>
                 </div>
 

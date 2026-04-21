@@ -509,3 +509,4 @@ UI-User/wwwroot/*.css
 UI-User/wwwroot/.vite
 UI-User/.vite
 UI-User/wwwroot/dist
+UI-Admin/.vite

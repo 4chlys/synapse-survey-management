@@ -1,9 +1,12 @@
-@model List<SynapseEnqueteManagement.UI.Admin.Models.Question.QuestionViewModel>
+@using SynapseEnqueteManagement.UI.Admin.Models.Question
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
+@model List<QuestionViewModel>
 @{
     ViewData["Title"] = "Project vragen";
     Layout = "_Layout";
-    int projectId = ViewBag.ProjectId;
-    string aiAssistance = ViewBag.AiAssistance ?? "ProActive";
+    int projectId = (int)ViewData["ProjectId"];
+    string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
+    var project = ViewData["Project"] as ProjectAdminViewModel;
     bool showLeft = aiAssistance != "Never";
 }
 
@@ -12,7 +15,7 @@
     @* Header *@
     <div class="flex items-center gap-2 px-6 pt-4">
         <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="https://placehold.co/40x40" alt="Org" class="w-full h-full object-cover" />
+            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Org" class="w-full h-full object-cover" />
         </div>
         <span>Admin</span>
     </div>
@@ -89,7 +92,7 @@
                                 <span id="arrow-@q.QuestionId" class="text-gray-300 ml-2">@(expanded ? "v" : ">")</span>
                             </button>
                             <form method="post" asp-controller="Question" asp-action="Delete"
-                                  asp-route-projectId="@ViewBag.ProjectId" asp-route-questionId="@q.QuestionId">
+                                  asp-route-projectId="@ViewData["ProjectId"]" asp-route-questionId="@q.QuestionId">
                                 <button type="submit"
                                         class="border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-red-800 transition h-full">✕</button>
                             </form>

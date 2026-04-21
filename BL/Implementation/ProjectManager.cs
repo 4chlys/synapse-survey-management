@@ -13,7 +13,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
             includes: [p => p.Introduction]);
     }
 
-    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
         var project = new Project
         {
@@ -22,7 +22,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
             Topic = topic,
             ImageUrl = imageUrl,
             FormType = formType,
-            AiAssistance = aiAssistance ?? "ProActive",
+            AiAssistance = aiAssistance,
             MinAge = minAge,
             MaxAge = maxAge,
             RequestContactInfo = requestContactInfo,
@@ -36,7 +36,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
         return await repository.CreateAsync(project);
     }
 
-    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
         var project = await repository.ReadByIdAsync<Project>(projectId,
             includes: [p => p.Introduction]);
@@ -44,10 +44,10 @@ public class ProjectManager(IRepository repository) : IProjectManager
             throw new ArgumentException($"Project {projectId} not found.");
 
         project.Name = name;
-        project.Topic = topic ?? string.Empty;
-        project.ImageUrl = imageUrl ?? string.Empty;
+        project.Topic = topic;
+        project.ImageUrl = imageUrl;
         project.FormType = formType;
-        project.AiAssistance = aiAssistance ?? "ProActive";
+        project.AiAssistance = aiAssistance;
         project.MinAge = minAge;
         project.MaxAge = maxAge;
         project.RequestContactInfo = requestContactInfo;
@@ -59,7 +59,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
         }
         else
         {
-            project.Introduction.Text = introduction ?? string.Empty;
+            project.Introduction.Text = introduction;
         }
 
         await repository.UpdateAsync(project);

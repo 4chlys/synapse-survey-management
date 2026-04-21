@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Project;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -10,9 +11,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ProjectsController(IProjectManager projectManager) : ControllerBase
 {
     private static FormType ParseFormType(string interactionMode) =>
-        interactionMode?.ToLower() == "chat" ? FormType.Chat : FormType.VerticalScroll;
+        Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult) ? formResult : FormType.VerticalScroll;
 
-    private ProjectDto MapToDto(BL.Domain.Project.Entities.Project p) => new()
+    private static AiAssistanceType ParseAiAssistanceType(string aiAssistance) =>
+        Enum.TryParse<AiAssistanceType>(aiAssistance, ignoreCase: true, out var aiResult) ? aiResult : AiAssistanceType.ProActive;
+
+    private ProjectDto MapToDto(Project p) => new()
     {
         ProjectId = p.ProjectId,
         Name = p.Name ?? string.Empty,
@@ -24,7 +28,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         OrganisationLogoUrl = p.OrganisationLogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.OrganisationWebsiteUrl ?? string.Empty,
         Introduction = p.Introduction?.Text ?? string.Empty,
-        AiAssistance = p.AiAssistance ?? "ProActive",
+        AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
         MinAge = p.MinAge,
         MaxAge = p.MaxAge
@@ -59,7 +63,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.Introduction ?? string.Empty,
             dto.ImageUrl ?? string.Empty,
             ParseFormType(dto.InteractionMode),
-            dto.AiAssistance ?? "ProActive",
+            ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo);
@@ -80,7 +84,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.Introduction ?? string.Empty,
             dto.ImageUrl ?? string.Empty,
             ParseFormType(dto.InteractionMode),
-            dto.AiAssistance ?? "ProActive",
+            ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo);

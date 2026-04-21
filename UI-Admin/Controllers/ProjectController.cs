@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
+using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
@@ -39,13 +40,14 @@ public class ProjectController(
             Topic = project.Topic,
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
-            InteractionMode = project.FormType == "Chat" ? "Chat" : "Scroll",
+            InteractionMode = project.FormType,
             AiAssistance = project.AiAssistance,
             MinAge = project.MinAge,
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
             Sections = sections.Select(s => s.Name).ToList()
         };
+        ViewData["Project"] = project;
         return View(model);
     }
 
@@ -94,19 +96,21 @@ public class ProjectController(
         return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
     }
 
-    public async Task<IActionResult> Questions(int projectId, string aiAssistance = "ProActive")
+    public async Task<IActionResult> Questions(int projectId, AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
-        ViewBag.ProjectId = projectId;
-        ViewBag.AiAssistance = aiAssistance;
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"] = projectId;
+        ViewData["AiAssistance"] = aiAssistance;
+        ViewData["Project"] = project;
         return View(questions);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion(int projectId, string aiAssistance, CreateQuestionViewModel model)
+    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance, CreateQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat, model.IsMandatory, model.GetAnswerChoices());
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices());
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
@@ -114,8 +118,8 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
-        ViewBag.ProjectId = projectId;
-        ViewBag.Project = project;
+        ViewData["ProjectId"] = projectId;
+        ViewData["Project"] = project;
         return View(categories);
     }
 

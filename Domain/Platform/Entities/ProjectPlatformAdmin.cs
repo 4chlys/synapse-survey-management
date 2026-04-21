@@ -3,7 +3,7 @@ using SynapseEnqueteManagement.BL.Domain.Platform.Enums;
 
 namespace SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 
-public class ProjectPlatformAdmin
+public class ProjectPlatformAdmin //TODO IdentityUser
 {
     public int ProjectPlatformAdminId { get; set; }
 

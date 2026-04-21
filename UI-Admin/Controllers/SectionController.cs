@@ -9,13 +9,13 @@
       public async Task<IActionResult> Index(int projectId)
       {
           var sections = await sectionService.GetSectionsAsync(projectId);
-          ViewBag.ProjectId = projectId;
+          ViewData["ProjectId"] = projectId;
           return View(sections);
       }
 
       public IActionResult Create(int projectId)
       {
-          ViewBag.ProjectId = projectId;
+          ViewData["ProjectId"] = projectId;
           return View(new SectionFormViewModel());
       }
 
@@ -25,7 +25,7 @@
       {
           if (!ModelState.IsValid)
           {
-              ViewBag.ProjectId = projectId;
+              ViewData["ProjectId"] = projectId;
               return View(model);
           }
 
@@ -47,7 +47,7 @@
               Name = section.Name,
               Description = section.Description
           };
-          ViewBag.ProjectId = projectId;
+          ViewData["ProjectId"] = projectId;
           return View(model);
       }
 
@@ -57,7 +57,7 @@
       {
           if (!ModelState.IsValid)
           {
-              ViewBag.ProjectId = projectId;
+              ViewData["ProjectId"] = projectId;
               return View(model);
           }
 

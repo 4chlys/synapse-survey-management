@@ -1,11 +1,11 @@
-@model List<SynapseEnqueteManagement.UI.Admin.Models.Category.CategoryViewModel>
 @using SynapseEnqueteManagement.UI.Admin.Models.Category
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
+@model List<CategoryViewModel>
 @{
     ViewData["Title"] = "Project Ideation";
     Layout = "_Layout";
-    int projectId = ViewBag.ProjectId;
-    var project = ViewBag.Project as ProjectAdminViewModel;
+    int projectId = (int)ViewData["ProjectId"];
+    var project = ViewData["Project"] as ProjectAdminViewModel;
 }
 
 <div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
@@ -13,7 +13,7 @@
     @* Header *@
     <div class="flex items-center gap-3 px-6 pt-4">
         <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@(project?.OrganisationLogoUrl ?? "https://placehold.co/40x40")"
+            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)"
                  alt="Organisatie" class="w-full h-full object-cover" />
         </div>
         <span class="font-medium">@(project?.OrganisationName ?? "Admin")</span>
