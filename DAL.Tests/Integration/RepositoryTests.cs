@@ -1,6 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-namespace SynapseEnqueteManagement.DAL.Tests;
+namespace SynapseEnqueteManagement.DAL.Tests.Integration;
 
 public class RepositoryTests : IDisposable
 {
@@ -12,7 +12,7 @@ public class RepositoryTests : IDisposable
     public async Task CreateAsync_WithoutSaveChanges_DoesNotPersist()
     {
         // Arrange
-        using var arrangeContext = _db.NewContext();
+        await using var arrangeContext = _db.NewContext();
         var repository = new Repository(arrangeContext);
         var project = TestEntities.NewProject();
 
@@ -20,7 +20,7 @@ public class RepositoryTests : IDisposable
         await repository.CreateAsync(project);
 
         // Assert
-        using var verifyContext = _db.NewContext();
+        await using var verifyContext = _db.NewContext();
         Assert.Empty(verifyContext.Projects);
     }
 
@@ -28,7 +28,7 @@ public class RepositoryTests : IDisposable
     public async Task CreateAsync_WithDuplicateCheck_ReturnsNull_WhenMatchExists()
     {
         // Arrange
-        using var context = _db.NewContext();
+        await using var context = _db.NewContext();
         context.Emojis.Add(TestEntities.NewEmoji("👍", "thumbsup"));
         await context.SaveChangesAsync();
         var repository = new Repository(context);
@@ -46,7 +46,7 @@ public class RepositoryTests : IDisposable
     public async Task CreateAsync_WithDuplicateCheck_DoesNotStageNewEntity_WhenMatchExists()
     {
         // Arrange
-        using var context = _db.NewContext();
+        await using var context = _db.NewContext();
         context.Emojis.Add(TestEntities.NewEmoji("👍", "thumbsup"));
         await context.SaveChangesAsync();
         var repository = new Repository(context);
@@ -58,7 +58,7 @@ public class RepositoryTests : IDisposable
         await context.SaveChangesAsync();
 
         // Assert
-        using var verifyContext = _db.NewContext();
+        await using var verifyContext = _db.NewContext();
         Assert.Single(verifyContext.Emojis);
     }
 
@@ -66,35 +66,38 @@ public class RepositoryTests : IDisposable
     public async Task Update_WithoutSaveChanges_DoesNotPersist()
     {
         // Arrange
-        using var seedContext = _db.NewContext();
+        await using var seedContext = _db.NewContext();
         var project = TestEntities.NewProject("Original");
         seedContext.Projects.Add(project);
         await seedContext.SaveChangesAsync();
         var projectId = project.ProjectId;
 
-        using var actContext = _db.NewContext();
+        await using var actContext = _db.NewContext();
         var tracked = await actContext.Projects.FindAsync(projectId);
-        tracked.OrganisationName = "Modified";
-        var repository = new Repository(actContext);
+        if (tracked != null)
+        {
+            tracked.OrganisationName = "Modified";
+            var repository = new Repository(actContext);
 
-        // Act
-        repository.Update(tracked);
+            // Act
+            repository.Update(tracked);
+        }
 
         // Assert
-        using var verifyContext = _db.NewContext();
+        await using var verifyContext = _db.NewContext();
         var stored = await verifyContext.Projects.FindAsync(projectId);
-        Assert.Equal("Original", stored.OrganisationName);
+        Assert.Equal("Original", stored?.OrganisationName);
     }
 
     [Fact]
     public async Task DeleteAsync_WithoutSaveChanges_DoesNotPersist()
     {
         // Arrange
-        using var seedContext = _db.NewContext();
+        await using var seedContext = _db.NewContext();
         seedContext.Emojis.Add(TestEntities.NewEmoji());
         await seedContext.SaveChangesAsync();
 
-        using var actContext = _db.NewContext();
+        await using var actContext = _db.NewContext();
         var repository = new Repository(actContext);
 
         // Act
@@ -102,7 +105,7 @@ public class RepositoryTests : IDisposable
 
         // Assert
         Assert.True(removed);
-        using var verifyContext = _db.NewContext();
+        await using var verifyContext = _db.NewContext();
         Assert.Single(verifyContext.Emojis);
     }
 
@@ -110,7 +113,7 @@ public class RepositoryTests : IDisposable
     public async Task DeleteAsync_ReturnsFalse_WhenEntityNotFound()
     {
         // Arrange
-        using var context = _db.NewContext();
+        await using var context = _db.NewContext();
         var repository = new Repository(context);
 
         // Act
@@ -124,13 +127,13 @@ public class RepositoryTests : IDisposable
     public async Task DeleteByIdAsync_WithoutSaveChanges_DoesNotPersist()
     {
         // Arrange
-        using var seedContext = _db.NewContext();
+        await using var seedContext = _db.NewContext();
         var emoji = TestEntities.NewEmoji();
         seedContext.Emojis.Add(emoji);
         await seedContext.SaveChangesAsync();
         var emojiId = emoji.EmojiId;
 
-        using var actContext = _db.NewContext();
+        await using var actContext = _db.NewContext();
         var repository = new Repository(actContext);
 
         // Act
@@ -138,7 +141,7 @@ public class RepositoryTests : IDisposable
 
         // Assert
         Assert.True(removed);
-        using var verifyContext = _db.NewContext();
+        await using var verifyContext = _db.NewContext();
         Assert.Single(verifyContext.Emojis);
     }
 
@@ -146,7 +149,7 @@ public class RepositoryTests : IDisposable
     public async Task DeleteByIdAsync_ReturnsFalse_WhenEntityNotFound()
     {
         // Arrange
-        using var context = _db.NewContext();
+        await using var context = _db.NewContext();
         var repository = new Repository(context);
 
         // Act

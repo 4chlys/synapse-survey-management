@@ -1,6 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-namespace SynapseEnqueteManagement.DAL.Tests;
+namespace SynapseEnqueteManagement.DAL.Tests.Integration;
 
 /// <summary>
 /// Factory helpers for entity graphs that satisfy required-relationship

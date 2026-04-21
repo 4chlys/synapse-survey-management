@@ -1,7 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace SynapseEnqueteManagement.DAL.Tests;
+namespace SynapseEnqueteManagement.DAL.Tests.Integration;
 
 /// <summary>
 /// Per-test in-memory SQLite database. A single open connection is kept alive so

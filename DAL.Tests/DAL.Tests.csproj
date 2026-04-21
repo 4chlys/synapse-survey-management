@@ -25,6 +25,9 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>SynapseEnqueteManagement.DAL.Tests</RootNamespace>
+    <Company>SynapseEnqueteManagement.DAL.Tests</Company>
+    <Product>SynapseEnqueteManagement.DAL.Tests</Product>
+    <AssemblyName>SynapseEnqueteManagement.DAL.Tests</AssemblyName>
   </PropertyGroup>
 
 </Project>
