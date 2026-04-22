@@ -85,19 +85,25 @@ def get_ssl_certs():
             results.append({"name": parts[0], "status": parts[1]})
     return results
 
-def get_backend_health(backend):
+def get_mig_instances(mig_id):
+    """Returns list of instance statuses in the MIG."""
     out, code = gcloud(
-        "compute", "backend-services", "get-health", backend,
-        "--global", f"--project={PROJECT_ID}",
-        "--format=value(status.healthStatus.healthState)",
-        timeout=15
+        "compute", "instance-groups", "managed", "list-instances", mig_id,
+        f"--region={REGION}", f"--project={PROJECT_ID}",
+        "--format=value(instance,instanceStatus,currentAction)"
     )
     if code != 0 or not out:
-        return "UNKNOWN"
-    states = [s.strip() for s in out.splitlines() if s.strip()]
-    if not states:
-        return "NO_INSTANCES"
-    return "HEALTHY" if all(s == "HEALTHY" for s in states) else "UNHEALTHY"
+        return []
+    instances = []
+    for line in out.splitlines():
+        parts = line.split()
+        if parts:
+            instances.append({
+                "name": parts[0].split("/")[-1] if parts else "?",
+                "status": parts[1] if len(parts) > 1 else "?",
+                "action": parts[2] if len(parts) > 2 else "NONE",
+            })
+    return instances
 
 def get_cloud_sql_status():
     out, code = gcloud(
@@ -106,32 +112,47 @@ def get_cloud_sql_status():
     )
     return out if (code == 0 and out) else "UNKNOWN"
 
-def get_recent_logs(limit=40):
-    out, _ = gcloud(
+def get_recent_logs(limit=50):
+    # COS Docker containers log to jsonPayload.message; system logs use textPayload
+    out, code = gcloud(
         "logging", "read",
-        "resource.type=gce_instance",
+        'resource.type="gce_instance"',
         f"--limit={limit}", f"--project={PROJECT_ID}",
-        "--format=value(timestamp,textPayload)",
-        timeout=25
+        "--format=json",
+        "--freshness=6h",
+        timeout=30
     )
-    lines = [l for l in out.splitlines() if l.strip()]
-    return lines if lines else ["Geen logs gevonden."]
+    if code != 0 or not out:
+        return ["Geen logs gevonden (controleer project en rechten)."]
+    try:
+        entries = json.loads(out)
+    except json.JSONDecodeError:
+        return [out[:2000]]
+    lines = []
+    for e in entries:
+        ts = e.get("timestamp", "")[:19].replace("T", " ")
+        msg = (e.get("jsonPayload") or {}).get("message") \
+           or e.get("textPayload") \
+           or str(e.get("protoPayload", {}).get("methodName", ""))
+        if msg and msg.strip():
+            lines.append(f"{ts}  {msg.strip()}")
+    return lines if lines else ["Geen logberichten gevonden (entries wel ontvangen)."]
 
 # ── Status (parallel) ──────────────────────────────────────────
 def fetch_all_status():
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-        mig_futures    = {m["id"]: ex.submit(mig_size, m["id"]) for m in MIGS}
-        health_futures = {m["id"]: ex.submit(get_backend_health, m["health"]) for m in MIGS}
-        lb_future      = ex.submit(get_lb_ip)
-        ssl_future     = ex.submit(get_ssl_certs)
-        sql_future     = ex.submit(get_cloud_sql_status)
+        mig_futures       = {m["id"]: ex.submit(mig_size, m["id"]) for m in MIGS}
+        instance_futures  = {m["id"]: ex.submit(get_mig_instances, m["id"]) for m in MIGS}
+        lb_future         = ex.submit(get_lb_ip)
+        ssl_future        = ex.submit(get_ssl_certs)
+        sql_future        = ex.submit(get_cloud_sql_status)
 
     domain = DOMAIN or "synapse-ip.xyz"
     lb_ip  = lb_future.result()
 
     return {
         "migs": {mid: f.result() for mid, f in mig_futures.items()},
-        "health": {mid: f.result() for mid, f in health_futures.items()},
+        "instances": {mid: f.result() for mid, f in instance_futures.items()},
         "lb_ip": lb_ip or "niet gevonden",
         "lb_ip_found": lb_ip is not None,
         "ui_url":    f"https://{domain}",
@@ -320,9 +341,9 @@ function renderMigs(data) {
   container.textContent = '';
 
   for (const m of MIGS) {
-    const size   = data.migs[m.id] ?? -1;
-    const health = data.health[m.id] ?? 'UNKNOWN';
-    const on     = size > 0;
+    const size      = data.migs[m.id] ?? -1;
+    const instances = data.instances[m.id] ?? [];
+    const on        = size > 0;
 
     const row   = el('div', 'row');
     const left  = el('div', 'row-left');
@@ -330,16 +351,29 @@ function renderMigs(data) {
     const info  = el('div');
     const name  = el('div', 'label', m.label);
     const sub   = el('div', 'sub');
-    sub.textContent = size < 0 ? 'status onbekend' : `${size} instantie${size !== 1 ? 's' : ''}`;
+    if (size < 0) {
+      sub.textContent = 'status onbekend';
+    } else if (size === 0) {
+      sub.textContent = 'gestopt';
+    } else {
+      const running = instances.filter(i => i.status === 'RUNNING').length;
+      sub.textContent = `${size} instantie${size !== 1 ? 's' : ''}`
+        + (instances.length ? ` · ${running} running` : '');
+    }
     info.append(name, sub);
     left.append(dot, info);
 
     const right = el('div', 'row-right');
 
-    // health badge
-    if (on) {
-      const htype = health === 'HEALTHY' ? 'green' : health === 'UNKNOWN' || health === 'NO_INSTANCES' ? 'muted' : 'red';
-      right.appendChild(badge(health === 'NO_INSTANCES' ? 'geen VM' : health, htype));
+    // instance action badge (CREATING, DELETING, etc.)
+    if (on && instances.length) {
+      const nonNone = instances.find(i => i.action && i.action !== 'NONE');
+      if (nonNone) {
+        right.appendChild(badge(nonNone.action, 'yellow'));
+      } else {
+        const running = instances.filter(i => i.status === 'RUNNING').length;
+        right.appendChild(badge(running === size ? '● RUNNING' : '◐ STARTING', running === size ? 'green' : 'yellow'));
+      }
     }
 
     // open link
