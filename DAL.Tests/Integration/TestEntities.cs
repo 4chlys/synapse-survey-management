@@ -8,9 +8,10 @@ namespace SynapseEnqueteManagement.DAL.Tests.Integration;
 /// </summary>
 internal static class TestEntities
 {
-    public static Project NewProject(string name = "Test Org") => new()
+    public static Project NewProject(string organisationName = "Test Org", string name = "Test Project") => new()
     {
-        OrganisationName = name,
+        OrganisationName = organisationName,
+        Name = name,
         Questionnaire = new Questionnaire()
     };
 
