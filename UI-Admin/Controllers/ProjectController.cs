@@ -122,6 +122,14 @@ public class ProjectController(
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance, EditQuestionViewModel model)
+    {
+        if (ModelState.IsValid)
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+    }
+
     public async Task<IActionResult> Ideation(int projectId)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);

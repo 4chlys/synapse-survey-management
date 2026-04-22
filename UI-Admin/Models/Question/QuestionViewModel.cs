@@ -8,4 +8,5 @@ public class QuestionViewModel
     public bool IsMandatory { get; set; }
     public List<string> AnswerChoices { get; set; } = new();
     public string SectionName { get; set; }
+    public int? SectionId { get; set; }
 }

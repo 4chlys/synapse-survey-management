@@ -93,8 +93,15 @@
                                 <span>Vraag @(i + 1): @q.Text@(string.IsNullOrEmpty(q.SectionName) ? "" : $" [{q.SectionName}]")</span>
                                 <span id="arrow-@q.QuestionId" class="text-gray-300 ml-2">@(expanded ? "v" : ">")</span>
                             </button>
+                            <button type="button"
+                                    class="question-edit-btn border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-gray-700 transition"
+                                    data-question-id="@q.QuestionId"
+                                    data-text="@q.Text"
+                                    data-format="@q.QuestionFormat"
+                                    data-answers="@System.Text.Json.JsonSerializer.Serialize(q.AnswerChoices)"
+                                    data-section-id="@(q.SectionId?.ToString() ?? "")">✎</button>
                             <form method="post" asp-controller="Question" asp-action="Delete"
-                                  asp-route-projectId="@ViewData["ProjectId"]" asp-route-questionId="@q.QuestionId">
+                                  asp-route-projectId="@ViewData["ProjectId"]" asp-route-questionId="@q.QuestionId" asp-route-aiAssistance="@aiAssistance">
                                 <button type="submit"
                                         class="border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-red-800 transition h-full">✕</button>
                             </form>
@@ -147,15 +154,17 @@
     <div class="bg-gray-900 border border-gray-500 w-[480px] p-6 text-white">
 
         <div class="flex justify-between items-center mb-4">
-            <span class="font-bold text-sm">Vraag bewerken</span>
+            <span id="modal-title" class="font-bold text-sm">Vraag aanmaken</span>
             <button type="button" id="modal-close" class="text-gray-400 hover:text-white text-lg leading-none">×</button>
         </div>
 
         <form id="question-form"
               asp-controller="Project" asp-action="CreateQuestion"
+              data-update-url="@Url.Action("UpdateQuestion", "Project")"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
             <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+            <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
             <input type="hidden" name="IsMandatory" value="false" />
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />

@@ -46,15 +46,19 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
         return questions.OrderBy(q => q.Position).ToList();
     }
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices)
+        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null)
     {
-        var question = await repository.ReadByIdAsync<Question>(questionId);
+        var question = await repository.ReadByIdAsync<Question>(questionId,
+            includeStrings: ["Section"], tracked: true);
         if (question is null) return false;
 
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
         question.AnswerChoices = answerChoices ?? new List<string>();
+        question.Section = sectionId.HasValue
+            ? await repository.ReadSingleAsync<Section>(filters: [s => s.SectionId == sectionId.Value], tracked: true)
+            : null;
         repository.Update(question);
         await uow.SaveChangesAsync();
         return true;

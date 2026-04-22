@@ -65,7 +65,7 @@ public class QuestionnairesController(
             return BadRequest("Invalid QuestionFormat.");
 
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices);
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
         if (!success)
             return NotFound();
 
@@ -150,7 +150,8 @@ public class QuestionnairesController(
                 TargetQuestionId = br.SkipToEnd ? null : br.TargetQuestion?.QuestionId,
                 SkipToEnd = br.SkipToEnd
             }).ToList(),
-            SectionName = question.Section?.Name
+            SectionName = question.Section?.Name,
+            SectionId = question.Section?.SectionId
         };
     }
 }

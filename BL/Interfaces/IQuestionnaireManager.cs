@@ -11,7 +11,7 @@ public interface IQuestionnaireManager
         format, bool isMandatory, List<string> answerChoices, int? sectionId = null);
     Task<List<Question>> GetQuestionsForProjectAsync(int projectId);
     Task<bool> UpdateQuestionAsync(int questionId, string text, QuestionFormat
-        format, bool isMandatory, List<string> answerChoices);
+        format, bool isMandatory, List<string> answerChoices, int? sectionId = null);
     Task<bool> DeleteQuestionAsync(int questionId);
     Task<Question> GetFirstQuestionAsync(int projectId);
     Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId);
