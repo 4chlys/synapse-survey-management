@@ -6,7 +6,7 @@
 @* Idea Support chat overlay *@
 @await Html.PartialAsync("_IdeaSupportPopup")
 
-@* Mode-selection sheet — shown when the + button is tapped *@
+@* Mode-selection sheet *@
 <div id="mode-select-overlay"
      class="fixed inset-0 z-40 hidden items-end sm:items-center justify-center
             bg-black/40 backdrop-blur-sm p-0 sm:p-6">
@@ -66,7 +66,7 @@
 </div>
 
 <div id="ideation-page"
-     class="min-h-screen bg-gray-50 flex flex-col items-center px-6 pt-12 pb-20"
+     class="max-w-2xl mx-auto px-6 pt-10 pb-28 min-h-[calc(100dvh-64px)] page-enter"
      data-category-id="@Model.CategoryId"
      data-category-name="@Model.Category.Name">
 
