@@ -22,9 +22,6 @@ public sealed class GoogleVertexAiIdeaSupportService(
         DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly string FallbackMessage =
-        "Sorry, ik kan je nu even niet helpen. Probeer je idee zelf te verwoorden " +
-        "en stuur het in — je kunt het altijd later aanpassen.";
 
     // ── Chat ─────────────────────────────────────────────────────────────
 
@@ -145,6 +142,10 @@ public sealed class GoogleVertexAiIdeaSupportService(
 
         if (!string.IsNullOrWhiteSpace(request.UserMessage))
             messages.Add(new ChatMessage(ChatRole.User, request.UserMessage));
+        else if (request.IsFirstTurn)
+            // Gemini requires at least one user turn to generate a response.
+            // On the opening turn the system prompt instructs the model to produce the greeting.
+            messages.Add(new ChatMessage(ChatRole.User, "start"));
 
         return messages;
     }
@@ -157,7 +158,7 @@ public sealed class GoogleVertexAiIdeaSupportService(
     /// (treats the raw text as an IDEATION-phase message so the conversation
     /// continues without crashing).
     /// </summary>
-    private static IdeaSupportChatReply ParseAiReply(string raw)
+    private IdeaSupportChatReply ParseAiReply(string raw)
     {
         var json = CodeFenceRe.Replace(raw, string.Empty).Trim();
 
@@ -190,6 +191,6 @@ public sealed class GoogleVertexAiIdeaSupportService(
         }
     }
 
-    private static IdeaSupportChatReply FallbackReply() =>
-        new() { AssistantMessage = FallbackMessage, Phase = IdeaSupportPhase.Error };
+    private IdeaSupportChatReply FallbackReply() =>
+        new() { AssistantMessage = config.FallbackMessage, Phase = IdeaSupportPhase.Error };
 }

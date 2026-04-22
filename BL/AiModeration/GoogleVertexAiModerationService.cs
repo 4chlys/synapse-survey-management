@@ -7,23 +7,16 @@ using System.Text.RegularExpressions;
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
 /// <summary>
-/// Two-layer content moderation backed by Google Vertex AI (Gemini).
-///
-/// All prompts, banned words, regex patterns and fuzzy-matching thresholds are
-/// loaded from ai-config.json via the injected <see cref="AiConfig"/> singleton —
-/// nothing is hardcoded in this class anymore.
+/// AI-backed content moderation using Google Vertex AI (Gemini).
+/// Regex pre-filtering is delegated to <see cref="IRegexModerationService"/> so this
+/// class contains only AI-specific logic.
 /// </summary>
-public sealed class GoogleVertexAiModerationService : IAiModerationService
+public sealed class GoogleVertexAiModerationService(
+    IChatClient chatClient,
+    ILogger<GoogleVertexAiModerationService> logger,
+    AiConfig config,
+    IRegexModerationService regex) : IAiModerationService
 {
-    private readonly IChatClient _chatClient;
-    private readonly ILogger<GoogleVertexAiModerationService> _logger;
-    private readonly AiConfig _config;
-    private readonly BannedWordList _bannedWords;
-    private readonly RegexModerationPatterns _patterns;
-
-    private readonly int _minSkeletonLength;
-    private readonly int _t0, _t1, _t2;
-
     private static readonly Regex CodeFenceRe =
         new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
@@ -33,54 +26,18 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public GoogleVertexAiModerationService(
-        IChatClient chatClient,
-        ILogger<GoogleVertexAiModerationService> logger,
-        AiConfig config,
-        BannedWordList bannedWords,
-        RegexModerationPatterns patterns)
-    {
-        _chatClient = chatClient;
-        _logger = logger;
-        _config = config;
-        _bannedWords = bannedWords;
-        _patterns = patterns;
-
-        var f = config.Fuzzy;
-        _minSkeletonLength = f.MinSkeletonLength;
-        _t0 = f.LevenshteinThresholds.MaxLengthFor0Edits;
-        _t1 = f.LevenshteinThresholds.MaxLengthFor1Edit;
-        _t2 = f.LevenshteinThresholds.MaxLengthFor2Edits;
-    }
-
-    public ModerationResult CheckWithRegex(string text, string contentType = "idea")
-    {
-        if (string.IsNullOrWhiteSpace(text)) return ModerationResult.Acceptable();
-
-        var raw = RunRegexAndFuzzy(text, contentType);
-        if (!raw.IsAcceptable) return raw;
-
-        string norm = ModerationUtility.NormalizeForModeration(text);
-        string normNoSpace = ModerationUtility.NormalizeForModeration(text, stripWhitespace: true);
-        string collapsed = ModerationUtility.CollapseRepeats(norm);
-        string collapsedNS = ModerationUtility.CollapseRepeats(normNoSpace);
-
-        return RunRegexAndFuzzy(norm, contentType) is { IsAcceptable: false } r1 ? r1
-            : RunRegexAndFuzzy(normNoSpace, contentType) is { IsAcceptable: false } r2 ? r2
-            : RunRegexAndFuzzy(collapsed, contentType) is { IsAcceptable: false } r3 ? r3
-            : RunRegexAndFuzzy(collapsedNS, contentType);
-    }
-
-    public async Task<ModerationResult> CheckWithAiAsync(string text, CancellationToken ct = default,
+    public async Task<ModerationResult> CheckWithAiAsync(
+        string text,
+        CancellationToken ct = default,
         string contentType = "idea")
     {
         if (string.IsNullOrWhiteSpace(text))
             return ModerationResult.Acceptable();
 
-        var regexResult = CheckWithRegex(text, contentType);
+        var regexResult = regex.Check(text, contentType);
         if (!regexResult.IsAcceptable) return regexResult;
 
-        if (!_config.Moderation.UseAi) return ModerationResult.Acceptable();
+        if (!config.Moderation.UseAi) return ModerationResult.Acceptable();
 
         try
         {
@@ -92,7 +49,7 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            logger.LogError(ex,
                 "Vertex AI moderation call failed; failing closed. Snippet: {Snippet}",
                 text.Length > 80 ? text[..80] + "…" : text);
             return ModerationResult.ServiceUnavailable();
@@ -107,11 +64,11 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
         {
             var messages = new List<ChatMessage>
             {
-                new(ChatRole.System, _config.Moderation.RewritePrompt),
+                new(ChatRole.System, config.Moderation.RewritePrompt),
                 new(ChatRole.User, text),
             };
 
-            var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -125,31 +82,21 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
+            logger.LogWarning(ex,
                 "Vertex AI rewrite suggestion failed. Snippet: {Snippet}",
                 text.Length > 80 ? text[..80] + "…" : text);
             return null;
         }
     }
 
-    private ModerationResult RunRegexAndFuzzy(string candidate, string contentType)
-    {
-        foreach (var (pattern, reason) in _patterns.GetPatterns(contentType))
-            if (pattern.IsMatch(candidate))
-                return ModerationResult.RejectedByRegex(reason);
-
-        foreach (var (word, reason) in _bannedWords.All)
-            if (ModerationUtility.FuzzyContainsBannedWord(candidate, word, _minSkeletonLength, _t0, _t1, _t2))
-                return ModerationResult.RejectedByRegex(reason);
-
-        return ModerationResult.Acceptable();
-    }
-
-    private async Task<ModerationResult> CallModerationAsync(string text, string contentType, CancellationToken ct)
+    private async Task<ModerationResult> CallModerationAsync(
+        string text,
+        string contentType,
+        CancellationToken ct)
     {
         var prompt = contentType == "comment"
-            ? _config.Moderation.CommentModerationPrompt
-            : _config.Moderation.ModerationPrompt;
+            ? config.Moderation.CommentModerationPrompt
+            : config.Moderation.ModerationPrompt;
 
         var messages = new List<ChatMessage>
         {
@@ -157,12 +104,12 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
             new(ChatRole.User, text),
         };
 
-        var response = await _chatClient.GetResponseAsync(messages, cancellationToken: ct);
-        string rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        var rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawJson))
         {
-            _logger.LogWarning("Vertex AI returned an empty response.");
+            logger.LogWarning("Vertex AI returned an empty response.");
             return ModerationResult.Acceptable();
         }
 
@@ -176,7 +123,7 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Vertex AI returned non-JSON; failing open. Raw: {Raw}",
+            logger.LogWarning(ex, "Vertex AI returned non-JSON; failing open. Raw: {Raw}",
                 rawJson.Length > 200 ? rawJson[..200] : rawJson);
             return ModerationResult.Acceptable();
         }
@@ -192,7 +139,6 @@ public sealed class GoogleVertexAiModerationService : IAiModerationService
     private sealed class ModerationVerdict
     {
         [JsonPropertyName("acceptable")] public bool Acceptable { get; set; }
-
-        [JsonPropertyName("reason")] public string Reason { get; set; }
+        [JsonPropertyName("reason")]     public string Reason   { get; set; }
     }
 }

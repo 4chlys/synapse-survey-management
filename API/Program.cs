@@ -89,6 +89,7 @@ builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
+builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
 builder.Services.AddSingleton<IInputValidationService, InputValidationService>();
 
 // Moderation token service (signed nonce — stateless across instances)

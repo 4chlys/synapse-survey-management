@@ -1,27 +1,7 @@
-using SynapseEnqueteManagement.UI.User.Services.Moderation;
+using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 
 namespace SynapseEnqueteManagement.UI.User.Services.Ideation;
-
-// Request / response models (mirror of API DTOs)
-
-public sealed class IdeaSupportMessage
-{
-    public string Role    { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-}
-
-public sealed class IdeaSupportChatResponse
-{
-    public string AssistantMessage { get; set; } = string.Empty;
-    public string SuggestedDraft   { get; set; }
-    public string Phase            { get; set; } = "Ideation";
-}
-
-public sealed class IdeaSupportRefineResponse
-{
-    public string RefinedText { get; set; }
-}
 
 // Service
 

@@ -136,6 +136,11 @@ export function initIdeation(): void {
                         categoryId,
                         categoryName,
                         (draftText) => submitIdeaFromChat(createForm, descriptionEl, moderationEl, draftText),
+                        (draft) => {
+                            createFormEl?.classList.remove('hidden');
+                            if (draft && descriptionEl) descriptionEl.value = draft;
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        },
                     );
                 }
                 break;

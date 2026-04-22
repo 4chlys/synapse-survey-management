@@ -48,6 +48,7 @@ public sealed class MockIdeaSupportService : IAiIdeaSupportService
             {
                 AssistantMessage = draftMsg,
                 SuggestedDraft   = draft,
+                Phase            = IdeaSupportPhase.Draft,
             });
         }
         

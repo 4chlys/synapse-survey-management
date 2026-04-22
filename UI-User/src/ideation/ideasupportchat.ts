@@ -22,6 +22,7 @@ let draftTextEl: HTMLElement | null = null;
 let inputEl: HTMLTextAreaElement | null = null;
 let sendBtn: HTMLButtonElement | null = null;
 let closeBtn: HTMLButtonElement | null = null;
+let switchBtn: HTMLButtonElement | null = null;
 let useDraftBtn: HTMLButtonElement | null = null;
 let refineDraftBtn: HTMLButtonElement | null = null;
 let loadingBubbleEl: HTMLElement | null = null;
@@ -32,6 +33,7 @@ let activeSession: IdeaSupportSession | null = null;
 let currentDraft: string | null = null;
 let isSending = false;
 let onSubmitCallback: ((text: string) => void) | null = null;
+let onSwitchToManualCallback: ((draft: string | null) => void) | null = null;
 let isInitialised = false;
 
 // Types & Interfaces
@@ -51,22 +53,19 @@ function ensureRefs(): boolean {
 
     overlay           = document.getElementById('idea-support-overlay');
     messagesContainer = document.getElementById('idea-support-messages');
-    // The static loading element from the HTML is no longer used – we create
-    // the loading bubble dynamically. Hide the static one permanently.
-    const staticLoading = document.getElementById('idea-support-loading');
-    if (staticLoading) staticLoading.remove();
-
     draftBanner    = document.getElementById('idea-support-draft-banner');
     draftTextEl    = document.getElementById('idea-support-draft-text');
     inputEl        = document.getElementById('idea-support-input') as HTMLTextAreaElement | null;
     sendBtn        = document.getElementById('idea-support-btn-send') as HTMLButtonElement | null;
     closeBtn       = document.getElementById('idea-support-btn-close') as HTMLButtonElement | null;
+    switchBtn      = document.getElementById('idea-support-btn-switch') as HTMLButtonElement | null;
     useDraftBtn    = document.getElementById('idea-support-btn-use-draft') as HTMLButtonElement | null;
     refineDraftBtn = document.getElementById('idea-support-btn-refine-draft') as HTMLButtonElement | null;
 
     if (!overlay || !messagesContainer || !inputEl || !sendBtn || !closeBtn) return false;
 
     closeBtn.addEventListener('click', closeOverlay);
+    switchBtn?.addEventListener('click', handleSwitchToManual);
     sendBtn.addEventListener('click', () => { void handleSend(); });
     useDraftBtn?.addEventListener('click', handleUseDraft);
     refineDraftBtn?.addEventListener('click', () => { void handleRefineDraft(); });
@@ -99,24 +98,27 @@ function ensureRefs(): boolean {
 /**
  * Opens the chat overlay for a specific category.
  *
- * @param projectId    – current project
- * @param categoryId   – the category the idea belongs to
- * @param categoryName – human-readable label (informational; context is derived server-side)
- * @param onSubmit     – called with the final idea text when the user confirms
+ * @param projectId          – current project
+ * @param categoryId         – the category the idea belongs to
+ * @param _categoryName      – human-readable label (informational; context is derived server-side)
+ * @param onSubmit           – called with the final idea text when the user confirms
+ * @param onSwitchToManual   – called when the user clicks "Zelf schrijven"; receives the current draft (or null)
  */
 export function openIdeaSupportChat(
     projectId: number,
     categoryId: number,
     _categoryName: string,
     onSubmit: (text: string) => void,
+    onSwitchToManual?: (draft: string | null) => void,
 ): void {
     if (!ensureRefs()) return;
 
     // Reset state for a fresh conversation
-    activeSession    = new IdeaSupportSession(projectId, categoryId);
-    currentDraft     = null;
-    onSubmitCallback = onSubmit;
-    isSending        = false;
+    activeSession             = new IdeaSupportSession(projectId, categoryId);
+    currentDraft              = null;
+    onSubmitCallback          = onSubmit;
+    onSwitchToManualCallback  = onSwitchToManual ?? null;
+    isSending                 = false;
 
     clearMessages();
     hideDraftBanner();
@@ -321,6 +323,13 @@ function handleUseDraft(): void {
     callback(draft);
 }
 
+function handleSwitchToManual(): void {
+    const draft    = currentDraft;
+    const callback = onSwitchToManualCallback;
+    closeOverlay();
+    callback?.(draft);
+}
+
 async function handleRefineDraft(): Promise<void> {
     if (!currentDraft || !activeSession) return;
 
@@ -350,9 +359,10 @@ function closeOverlay(): void {
     overlay.classList.add('hidden');
     overlay.classList.remove('flex');
     activeSession?.reset();
-    activeSession    = null;
-    onSubmitCallback = null;
-    currentDraft     = null;
+    activeSession            = null;
+    onSubmitCallback         = null;
+    onSwitchToManualCallback = null;
+    currentDraft             = null;
     hideLoading();
 }
 

@@ -35,7 +35,16 @@ public sealed class AiIdeaSupportConfig
     [JsonPropertyName("max_history_turns")]
     public int MaxHistoryTurns { get; init; } = 10;
 
-    // Built-in defaults
-    // These are used when no ai-config.json is present so the feature still
-    // works out of the box in development.
+    /// <summary>
+    /// Maximum number of characters of the project introduction sent to the LLM.
+    /// Longer texts are trimmed to keep the context window reasonable.
+    /// </summary>
+    [JsonPropertyName("max_introduction_length")]
+    public int MaxIntroductionLength { get; init; } = 1200;
+
+    /// <summary>User-facing message returned when the AI call fails or produces no output.</summary>
+    [JsonPropertyName("fallback_message")]
+    public string FallbackMessage { get; init; } =
+        "Sorry, ik kan je nu even niet helpen. Probeer je idee zelf te verwoorden " +
+        "en stuur het in — je kunt het altijd later aanpassen.";
 }

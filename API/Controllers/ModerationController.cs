@@ -20,7 +20,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}/moderation")]
 public class ModerationController(
-    IAiModerationService moderation,
+    IRegexModerationService regexModeration,
+    IAiModerationService aiModeration,
     IModerationTokenService tokenService,
     IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager)
@@ -31,24 +32,27 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = moderation.CheckWithRegex(dto.Text, dto.ContentType ?? "idea");
+        var result = regexModeration.Check(dto.Text, dto.ContentType ?? "idea");
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("ai")]
-    public async Task<ActionResult<ModerationResponseDto>> CheckAi(int projectId,
-        [FromBody] ModerationRequestDto dto, CancellationToken ct)
+    public async Task<ActionResult<ModerationResponseDto>> CheckAi(
+        int projectId,
+        [FromBody] ModerationRequestDto dto,
+        CancellationToken ct)
     {
         if (!TryGetParticipantToken(out _)) return Unauthorized("Participant token required.");
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = await moderation.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea");
+        var result = await aiModeration.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea");
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("suggest")]
-    public async Task<ActionResult<SuggestResponseDto>> Suggest(int projectId,
+    public async Task<ActionResult<SuggestResponseDto>> Suggest(
+        int projectId,
         [FromBody] ModerationRequestDto dto,
         CancellationToken ct)
     {
@@ -58,9 +62,8 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
-        var suggestion = await moderation.SuggestRewriteAsync(dto.Text, ct);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, ct);
 
-        // Generate a token for the rewritten text (Unflagged since it was AI-cleaned)
         string suggestionToken = null;
         if (suggestion != null)
             suggestionToken = tokenService.GenerateToken(suggestion, ModerationStatus.Unflagged, projectId);
@@ -71,13 +74,13 @@ public class ModerationController(
     private ModerationResponseDto MapToDto(ModerationResult result, string text, int projectId)
     {
         var status = result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
-        var token = tokenService.GenerateToken(text, status, projectId);
+        var token  = tokenService.GenerateToken(text, status, projectId);
 
         return new ModerationResponseDto
         {
-            IsAcceptable = result.IsAcceptable,
-            Reason = result.Reason,
-            FlaggedBy = result.FlaggedBy,
+            IsAcceptable    = result.IsAcceptable,
+            Reason          = result.Reason,
+            FlaggedBy       = result.FlaggedBy,
             ModerationToken = token,
         };
     }

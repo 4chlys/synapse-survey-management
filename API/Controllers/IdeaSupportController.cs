@@ -11,14 +11,13 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/ideasupport")]
 public class IdeaSupportController(
     IAiIdeaSupportService ideaSupportService,
+    AiIdeaSupportConfig ideaSupportConfig,
     IInputValidationService inputValidation,
     ICategoryManager categoryManager,
     IProjectManager projectManager,
     IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager)
 {
-    // Long introductions are trimmed so a single verbose text can't flood the context window.
-    private const int MaxIntroLength = 1200;
 
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponseDto>> Chat(
@@ -34,10 +33,12 @@ public class IdeaSupportController(
             return NotFound($"Category {dto.CategoryId} not found.");
 
         var isFirstTurn = string.IsNullOrWhiteSpace(dto.UserMessage)
-                          || dto.History.Count == 0;
+                          && dto.History.Count == 0;
 
         // Reject obvious violations deterministically — no AI token cost incurred.
-        if (!isFirstTurn && !string.IsNullOrWhiteSpace(dto.UserMessage))
+        // Validation runs on every non-empty message, including first-turn messages
+        // sent directly (e.g. bypassing the opening turn via a direct API call).
+        if (!string.IsNullOrWhiteSpace(dto.UserMessage))
         {
             var validation = inputValidation.Validate(dto.UserMessage);
             if (!validation.IsValid)
@@ -59,8 +60,8 @@ public class IdeaSupportController(
 
         var projectName         = project?.OrganisationName ?? string.Empty;
         var projectIntroduction = project?.Introduction?.Text ?? string.Empty;
-        if (projectIntroduction.Length > MaxIntroLength)
-            projectIntroduction = projectIntroduction[..MaxIntroLength] + "…";
+        if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
+            projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
 
         var request = new IdeaSupportChatRequest
         {

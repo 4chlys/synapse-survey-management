@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 
@@ -21,66 +22,46 @@ public class IdeaSupportApiController(
     ISessionService sessionService) : ControllerBase
 {
     [HttpPost("chat")]
-    public async Task<ActionResult<IdeaSupportChatResponseBody>> Chat(
+    public async Task<ActionResult<IdeaSupportChatResponse>> Chat(
         int projectId,
-        [FromBody] IdeaSupportChatRequestBody body)
+        [FromBody] IdeaSupportChatRequest body)
     {
         // Gate behind a valid participant session (survey must have been completed)
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))
             return Unauthorized("Participant session required.");
 
-        var result = await ideaSupportService.ChatAsync(
-            projectId,
-            body.CategoryId,
-            body.History,
-            body.UserMessage);
-
-        return Ok(new IdeaSupportChatResponseBody
+        IdeaSupportChatResponse result;
+        try
         {
-            AssistantMessage = result.AssistantMessage,
-            SuggestedDraft   = result.SuggestedDraft,
-            Phase            = result.Phase,
-        });
+            result = await ideaSupportService.ChatAsync(
+                projectId,
+                body.CategoryId,
+                body.History,
+                body.UserMessage);
+        }
+        catch (Exception)
+        {
+            return Ok(new IdeaSupportChatResponse
+            {
+                AssistantMessage = "Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.",
+                Phase            = "Error",
+            });
+        }
+
+        return Ok(result);
     }
 
     [HttpPost("refine")]
-    public async Task<ActionResult<IdeaSupportRefineResponseBody>> Refine(
+    public async Task<ActionResult<IdeaSupportRefineResponse>> Refine(
         int projectId,
-        [FromBody] IdeaSupportRefineRequestBody body)
+        [FromBody] IdeaSupportRefineRequest body)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))
             return Unauthorized("Participant session required.");
 
         var result = await ideaSupportService.RefineAsync(projectId, body.DraftText);
-
-        return Ok(new IdeaSupportRefineResponseBody { RefinedText = result.RefinedText });
+        return Ok(result);
     }
-}
-
-// Request / response shapes
-
-public sealed class IdeaSupportChatRequestBody
-{
-    public IReadOnlyList<IdeaSupportMessage> History { get; set; } = [];
-    public string UserMessage { get; set; } = string.Empty;
-    public int    CategoryId  { get; set; }
-}
-
-public sealed class IdeaSupportChatResponseBody
-{
-    public string AssistantMessage { get; set; } = string.Empty;
-    public string SuggestedDraft   { get; set; }
-    public string Phase            { get; set; } = "Ideation";
-}
-
-public sealed class IdeaSupportRefineRequestBody
-{
-    public string DraftText { get; set; } = string.Empty;
-}
-
-public sealed class IdeaSupportRefineResponseBody
-{
-    public string RefinedText { get; set; }
 }
