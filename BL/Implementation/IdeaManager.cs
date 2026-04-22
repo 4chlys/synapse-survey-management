@@ -2,23 +2,28 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Sorting;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class IdeaManager(
     IIdeaRepository ideaRepository,
-    IRepository<Category> categoryRepository,
+    ICategoryRepository categoryRepository,
+    IProjectRepository projectRepository,
     IUnitOfWork uow,
     ILogger<IdeaManager> logger,
     ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
-    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsAsync(int categoryId, int page, int pageSize, string sortKey)
+    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsAsync(int projectId, int categoryId, int page, string sortKey)
     {
+        var project = await projectRepository.ReadByIdReadOnlyAsync(projectId)
+                      ?? throw new KeyNotFoundException($"Project {projectId} not found.");
+        var pageSize = project.IdeaPageSize;
+
         var strategy = sortStrategyFactory.Get(sortKey);
         var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
-        var items = await ideaRepository.GetVisibleByCategoryWithCommentsReadOnlyAsync(
+        var items = await ideaRepository.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
             categoryId,
             strategy.DbOrderBy,
             strategy.Randomize,
@@ -29,17 +34,19 @@ public class IdeaManager(
     }
 
     public Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsAsync(int categoryId, int participantId)
-        => ideaRepository.GetByCategoryAndParticipantWithCommentsReadOnlyAsync(categoryId, participantId);
+        => ideaRepository.ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(categoryId, participantId);
 
-    public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
+    public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant, CancellationToken ct = default)
     {
-        var category = await categoryRepository.ReadByIdAsync(categoryId, includes: [c => c.Project], tracked: true);
+        var category = await categoryRepository.ReadByIdWithProjectForUpdateAsync(categoryId);
         if (category == null || category.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Category {CategoryId} not found in project {ProjectId}", categoryId, projectId);
             throw new KeyNotFoundException($"Category {categoryId} not found");
         }
+
+        var hadPriorIdeas = await ideaRepository.ExistsAsync(i => i.Participant.ParticipantId == participant.ParticipantId);
 
         var idea = new Idea
         {
@@ -52,12 +59,11 @@ public class IdeaManager(
 
         var created = await ideaRepository.CreateAsync(idea);
         await uow.SaveChangesAsync(ct);
-        return created;
+
+        var shouldAskForContactInfo = !hadPriorIdeas && category.Project.RequestContactInfo;
+        return new AddIdeaResult(created.IdeaId, shouldAskForContactInfo);
     }
 
-    public Task<int> GetIdeaCountByParticipantAsync(int participantId)
-        => ideaRepository.CountAsync([i => i.Participant.ParticipantId == participantId]);
-
     public Task<Idea> GetIdeaByIdWithCommentsAsync(int ideaId)
-        => ideaRepository.GetByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
+        => ideaRepository.ReadByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
 }

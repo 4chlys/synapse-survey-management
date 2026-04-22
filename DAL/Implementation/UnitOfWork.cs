@@ -1,7 +1,8 @@
+using SynapseEnqueteManagement.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace SynapseEnqueteManagement.DAL;
+namespace SynapseEnqueteManagement.DAL.Implementation;
 
 public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 {

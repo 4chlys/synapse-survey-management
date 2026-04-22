@@ -5,9 +5,9 @@ namespace SynapseEnqueteManagement.API.Tests;
 
 public class ResponsesControllerTests
 {
-    private readonly Mock<IQuestionnaireManager> _questionnaireManager = new();
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IResponseManager> _responseManager = new();
+    private readonly Mock<ISubmissionManager> _submissionManager = new();
     private readonly ResponsesController _controller;
 
     private const int ProjectId = 1;
@@ -19,7 +19,7 @@ public class ResponsesControllerTests
         _participant = new Participant { ParticipantId = 5, SessionToken = Guid.NewGuid(), Project = new Project { ProjectId = ProjectId } };
         _participantManager.Setup(p => p.GetParticipantBySessionTokenAsync(_sessionToken))
             .ReturnsAsync(_participant);
-        _controller = new ResponsesController(_questionnaireManager.Object, _participantManager.Object, _responseManager.Object);
+        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -29,10 +29,8 @@ public class ResponsesControllerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        var question = new Question { QuestionId = 7 };
-        _questionnaireManager.Setup(q => q.GetQuestionByIdAsync(7)).ReturnsAsync(question);
-        _responseManager.Setup(r => r.UpdateOrCreateResponseAsync("val", question, _participant, ct))
-            .ReturnsAsync(new Response { ResponseId = 1, Value = "val", Question = question, Participant = _participant })
+        _responseManager.Setup(r => r.UpdateOrCreateResponseAsync(7, "val", _participant, ct))
+            .ReturnsAsync(new Response { ResponseId = 1, Value = "val", Question = new Question { QuestionId = 7 }, Participant = _participant })
             .Verifiable(Times.Exactly(1));
 
         // Act
@@ -48,9 +46,7 @@ public class ResponsesControllerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        var questionnaire = new Questionnaire { QuestionnaireId = 1 };
-        _questionnaireManager.Setup(q => q.GetQuestionnaireByProjectIdAsync(ProjectId, false)).ReturnsAsync(questionnaire);
-        _participantManager.Setup(p => p.AddParticipantAsync(questionnaire, ProjectId, ct))
+        _participantManager.Setup(p => p.AddParticipantAsync(ProjectId, ct))
             .ReturnsAsync(new Participant { SessionToken = Guid.NewGuid() })
             .Verifiable(Times.Exactly(1));
 
@@ -58,25 +54,16 @@ public class ResponsesControllerTests
         await _controller.StartSession(ProjectId, ct);
 
         // Assert
-        _participantManager.Verify(p => p.AddParticipantAsync(questionnaire, ProjectId, ct), Times.Once);
+        _participantManager.Verify(p => p.AddParticipantAsync(ProjectId, ct), Times.Once);
     }
 
     [Fact]
-    public async Task Submit_ForwardsCancellationTokenToResponseAndParticipantManagers()
+    public async Task Submit_ForwardsCancellationTokenToSubmissionManager()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        var questionnaire = new Questionnaire { QuestionnaireId = 1 };
-        _questionnaireManager.Setup(q => q.GetQuestionnaireByProjectIdAsync(ProjectId, true)).ReturnsAsync(questionnaire);
-        _questionnaireManager.Setup(q => q.ComputeVisiblePathAsync(ProjectId, _participant.ParticipantId))
-            .ReturnsAsync(new List<int> { 1 });
-        _responseManager.Setup(r => r.GetResponsesForParticipantAsync(_participant.ParticipantId))
-            .ReturnsAsync(new List<Response>());
-        _responseManager.Setup(r => r.CommitResponsesAsync(_participant.ParticipantId, It.IsAny<HashSet<int>>(), ct))
-            .Returns(Task.CompletedTask)
-            .Verifiable(Times.Exactly(1));
-        _participantManager.Setup(p => p.MarkAsSubmittedAsync(_participant.SessionToken, ct))
+        _submissionManager.Setup(s => s.SubmitAsync(ProjectId, _participant, ct))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Exactly(1));
 
@@ -84,8 +71,7 @@ public class ResponsesControllerTests
         await _controller.Submit(ProjectId, ct);
 
         // Assert
-        _responseManager.VerifyAll();
-        _participantManager.Verify(p => p.MarkAsSubmittedAsync(_participant.SessionToken, ct), Times.Once);
+        _submissionManager.VerifyAll();
     }
 
     [Fact]

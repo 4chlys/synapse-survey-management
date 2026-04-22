@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 
@@ -21,6 +22,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
     {
         var (statusCode, message) = exception switch
         {
+            ValidationException ve => (HttpStatusCode.BadRequest, ve.Message),
             KeyNotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
             ArgumentException => (HttpStatusCode.BadRequest, "The request was invalid."),
             UnauthorizedAccessException => (HttpStatusCode.Forbidden, "Access denied."),

@@ -13,7 +13,6 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class IdeasController(
     IIdeaManager ideaManager,
     ICommentManager commentManager,
-    IProjectManager projectManager,
     IParticipantManager participantManager,
     IModerationResolver moderationResolver)
     : ParticipantControllerBase(participantManager)
@@ -23,11 +22,7 @@ public class IdeasController(
         int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
-        var project = await projectManager.GetProjectByIdAsync(projectId);
-        if (project == null) return NotFound();
-
-        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsAsync(categoryId, page, project.IdeaPageSize, sort);
-
+        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsAsync(projectId, categoryId, page, sort);
 
         return Ok(new PagedResult<IdeaDto>
         {
@@ -44,25 +39,14 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        try
-        {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
-            var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant, ct);
+        var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
+        var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant, ct);
 
-            var ideaCount = await ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
-            var project = await projectManager.GetProjectByIdAsync(projectId);
-            
-            return Created(string.Empty, new CreateIdeaResultDto
-            {
-                IdeaId = idea.IdeaId,
-                IsFirstIdea = ideaCount == 1,
-                RequestContactInfo = project?.RequestContactInfo ?? false
-            });
-        }
-        catch (KeyNotFoundException)
+        return Created(string.Empty, new CreateIdeaResultDto
         {
-            return NotFound("The requested resource was not found.");
-        }
+            IdeaId = result.IdeaId,
+            ShouldAskForContactInfo = result.ShouldAskForContactInfo
+        });
     }
 
     [HttpGet("mine")]
@@ -91,10 +75,7 @@ public class IdeasController(
         int projectId, int ideaId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
-        var project = await projectManager.GetProjectByIdAsync(projectId);
-        if (project == null) return NotFound();
-
-        var paged = await commentManager.GetCommentsWithOwnFirstAsync(ideaId, page, project.CommentPageSize, sort, participantId);
+        var paged = await commentManager.GetCommentsWithOwnFirstAsync(projectId, ideaId, page, sort, participantId);
 
         return Ok(new PagedResult<TextCommentDto>
         {

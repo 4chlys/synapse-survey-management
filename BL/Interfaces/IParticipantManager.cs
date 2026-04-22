@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 
 public interface IParticipantManager
 {
-    Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId, CancellationToken ct = default);
+    Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default);
     Task<Participant> GetParticipantByIdAsync(int participantId);
     Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken);
     Task<bool> HasParticipantSubmittedAsync(Guid sessionToken);

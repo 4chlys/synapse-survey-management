@@ -20,9 +20,9 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return (participant, null);
     }
 
-    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId, CancellationToken ct = default)
+    protected async Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default)
     {
-        return await participantManager.AddParticipantAsync(questionnaire, projectId, ct);
+        return await participantManager.AddParticipantAsync(projectId, ct);
     }
 
     protected async Task<(Participant participant, ActionResult error)> GetParticipantAsync(int projectId)

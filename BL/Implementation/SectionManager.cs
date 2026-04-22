@@ -1,25 +1,20 @@
-﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class SectionManager(IRepository repository, IUnitOfWork uow) : ISectionManager
+public class SectionManager(
+    ISectionRepository sectionRepository,
+    IQuestionnaireRepository questionnaireRepository,
+    IUnitOfWork uow) : ISectionManager
 {
-    public async Task<IEnumerable<Section>> GetSectionsAsync(int projectId)
-    {
-        return await repository.ReadAsync<Section>(
-            filters: [s => s.Questionnaire.Project.ProjectId == projectId]
-        );
-    }
+    public Task<IEnumerable<Section>> GetSectionsAsync(int projectId)
+        => sectionRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
-    public async Task<Section> CreateSectionAsync(int projectId, string name,
-        string description)
+    public async Task<Section> CreateSectionAsync(int projectId, string name, string description)
     {
-        var questionnaire = await repository.ReadSingleAsync<Questionnaire>(
-            filters: [q => q.Project.ProjectId == projectId],
-            tracked: true
-        );
+        var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
 
         var section = new Section
@@ -28,27 +23,26 @@ public class SectionManager(IRepository repository, IUnitOfWork uow) : ISectionM
             Description = description,
             Questionnaire = questionnaire
         };
-        var created = await repository.CreateAsync(section);
+        var created = await sectionRepository.CreateAsync(section);
         await uow.SaveChangesAsync();
         return created;
     }
 
-    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string
-        description)
+    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string description)
     {
-        var section = await repository.ReadByIdAsync<Section>(sectionId);
+        var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
         if (section is null) return false;
 
         section.Name = name;
         section.Description = description;
-        repository.Update(section);
+        sectionRepository.Update(section);
         await uow.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteSectionAsync(int sectionId)
     {
-        var result = await repository.DeleteByIdAsync<Section>(sectionId);
+        var result = await sectionRepository.DeleteByIdAsync(sectionId);
         if (result) await uow.SaveChangesAsync();
         return result;
     }

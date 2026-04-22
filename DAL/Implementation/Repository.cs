@@ -1,7 +1,8 @@
+using SynapseEnqueteManagement.DAL.Interfaces;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
-namespace SynapseEnqueteManagement.DAL;
+namespace SynapseEnqueteManagement.DAL.Implementation;
 
 /// <summary>
 /// A generic repository class that provides standard CRUD (Create, Read, Update, Delete)

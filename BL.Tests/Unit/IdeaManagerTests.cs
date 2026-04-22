@@ -7,7 +7,8 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 public class IdeaManagerTests
 {
     private readonly Mock<IIdeaRepository> _ideaRepository = new(MockBehavior.Strict);
-    private readonly Mock<IRepository<Category>> _categoryRepository = new(MockBehavior.Strict);
+    private readonly Mock<ICategoryRepository> _categoryRepository = new(MockBehavior.Strict);
+    private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<Idea>> _sortFactory = new();
     private readonly IdeaManager _manager;
@@ -18,35 +19,71 @@ public class IdeaManagerTests
 
     public IdeaManagerTests()
     {
-        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
+        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _projectRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
     }
 
     [Fact]
-    public async Task AddIdeaAsync_HappyPath_CreatesIdeaAndSavesOnce()
+    public async Task AddIdeaAsync_HappyPath_FirstIdeaWithContactInfoRequested_AsksForContact()
     {
         // Arrange
-        var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId } };
-        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = true } };
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId))
             .ReturnsAsync(category)
             .Verifiable(Times.Exactly(1));
+        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>()))
+            .ReturnsAsync(false);
         _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
-            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i)
+            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => { i.IdeaId = 7; return i; })
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
 
         // Act
-        var idea = await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant);
+        var result = await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant);
 
         // Assert
-        Assert.NotNull(idea);
-        Assert.Equal("desc", idea.Description);
-        Assert.Same(category, idea.Category);
-        Assert.Same(_participant, idea.Participant);
+        Assert.Equal(7, result.IdeaId);
+        Assert.True(result.ShouldAskForContactInfo);
         _categoryRepository.VerifyAll();
         _ideaRepository.VerifyAll();
         _uow.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AddIdeaAsync_HappyPath_NotFirstIdea_DoesNotAskForContact()
+    {
+        // Arrange
+        var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = true } };
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
+        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>())).ReturnsAsync(true);
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
+            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant);
+
+        // Assert
+        Assert.False(result.ShouldAskForContactInfo);
+    }
+
+    [Fact]
+    public async Task AddIdeaAsync_HappyPath_FirstIdeaButProjectDoesNotRequestContact_DoesNotAskForContact()
+    {
+        // Arrange
+        var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = false } };
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
+        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>())).ReturnsAsync(false);
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
+            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant);
+
+        // Assert
+        Assert.False(result.ShouldAskForContactInfo);
     }
 
     [Fact]
@@ -56,8 +93,9 @@ public class IdeaManagerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId } };
-        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId))
             .ReturnsAsync(category);
+        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>())).ReturnsAsync(false);
         _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
             .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
         _uow.Setup(u => u.SaveChangesAsync(ct))
@@ -75,7 +113,7 @@ public class IdeaManagerTests
     public async Task AddIdeaAsync_CategoryNotFound_ThrowsAndDoesNotSave()
     {
         // Arrange
-        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId))
             .ReturnsAsync((Category)null)
             .Verifiable(Times.Exactly(1));
 
@@ -92,7 +130,7 @@ public class IdeaManagerTests
     {
         // Arrange
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId + 1 } };
-        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId))
             .ReturnsAsync(category)
             .Verifiable(Times.Exactly(1));
 

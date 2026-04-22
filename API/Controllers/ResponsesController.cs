@@ -11,9 +11,9 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}")]
 public class ResponsesController(
-    IQuestionnaireManager questionnaireManager,
     IParticipantManager participantManager,
-    IResponseManager responseManager)
+    IResponseManager responseManager,
+    ISubmissionManager submissionManager)
     : ParticipantControllerBase(participantManager)
 {
     /// <summary>
@@ -35,12 +35,7 @@ public class ResponsesController(
     [HttpPost("participants")]
     public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var participant = await AddParticipantAsync(questionnaire, projectId, ct);
-
+        var participant = await AddParticipantAsync(projectId, ct);
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 
@@ -55,28 +50,7 @@ public class ResponsesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var visiblePath = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
-        var visibleSet = visiblePath.ToHashSet();
-
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
-        var answeredPairs = responses.Select(r => (r.Question.QuestionId, r.Value));
-
-        try
-        {
-            questionnaireManager.ValidateMandatoryAnswers(questionnaire, answeredPairs, visibleSet);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-
-        await responseManager.CommitResponsesAsync(participant.ParticipantId, visibleSet, ct);
-        await MarkAsSubmittedAsync(participant.SessionToken, ct);
-
+        await submissionManager.SubmitAsync(projectId, participant, ct);
         return Ok();
     }
 
@@ -92,11 +66,7 @@ public class ResponsesController(
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        var question = await questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
-        if (question is null)
-            return NotFound($"Question with id {createDto.QuestionId} not found.");
-
-        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.Value, question, participant, ct);
+        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
         var dto = MapToDto(response);
         return Created(string.Empty, dto);
     }

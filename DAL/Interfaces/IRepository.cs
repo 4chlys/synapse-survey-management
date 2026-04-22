@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace SynapseEnqueteManagement.DAL;
+namespace SynapseEnqueteManagement.DAL.Interfaces;
 
 public interface IRepository<T> where T : class
 {

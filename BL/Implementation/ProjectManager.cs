@@ -1,17 +1,17 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class ProjectManager(IRepository repository, IUnitOfWork uow) : IProjectManager
+public class ProjectManager(
+    IProjectRepository projectRepository,
+    IRepository<Emoji> emojiRepository,
+    IUnitOfWork uow) : IProjectManager
 {
-    public async Task<Project> GetProjectByIdAsync(int projectId)
-    {
-        return await repository.ReadByIdAsync<Project>(projectId,
-            includes: [p => p.Introduction]);
-    }
+    public Task<Project> GetProjectByIdAsync(int projectId)
+        => projectRepository.ReadByIdWithIntroductionReadOnlyAsync(projectId);
 
     public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
@@ -33,15 +33,14 @@ public class ProjectManager(IRepository repository, IUnitOfWork uow) : IProjectM
         if (!string.IsNullOrEmpty(introduction))
             project.Introduction = new Introduction { Text = introduction };
 
-        var created = await repository.CreateAsync(project);
+        var created = await projectRepository.CreateAsync(project);
         await uow.SaveChangesAsync();
         return created;
     }
 
     public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
-        var project = await repository.ReadByIdAsync<Project>(projectId,
-            includes: [p => p.Introduction]);
+        var project = await projectRepository.ReadByIdWithIntroductionForUpdateAsync(projectId);
         if (project is null)
             throw new ArgumentException($"Project {projectId} not found.");
 
@@ -64,47 +63,43 @@ public class ProjectManager(IRepository repository, IUnitOfWork uow) : IProjectM
             project.Introduction.Text = introduction;
         }
 
-        repository.Update(project);
+        projectRepository.Update(project);
         await uow.SaveChangesAsync();
         return project;
     }
 
-    public async Task<IEnumerable<Project>> GetAllProjectsAsync()
-    {
-        return await repository.ReadAsync<Project>();
-    }
+    public Task<IEnumerable<Project>> GetAllProjectsAsync()
+        => projectRepository.ReadAllReadOnlyAsync();
 
-    public async Task<IEnumerable<Emoji>> GetAllEmojisAsync()
-    {
-        return await repository.ReadAsync<Emoji>();
-    }
+    public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
+        => emojiRepository.ReadAsync();
 
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
-        var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis], tracked: true);
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
         if (project == null) return false;
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId, tracked: true);
+        var emoji = await emojiRepository.ReadByIdAsync(emojiId, tracked: true);
         if (emoji == null) return false;
 
         if (project.Emojis.Any(e => e.EmojiId == emojiId)) return true;
 
         project.Emojis.Add(emoji);
-        repository.Update(project);
+        projectRepository.Update(project);
         await uow.SaveChangesAsync(ct);
         return true;
     }
 
     public async Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
-        var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis], tracked: true);
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
         if (project == null) return false;
 
         var emoji = project.Emojis.FirstOrDefault(e => e.EmojiId == emojiId);
         if (emoji == null) return false;
 
         project.Emojis.Remove(emoji);
-        repository.Update(project);
+        projectRepository.Update(project);
         await uow.SaveChangesAsync(ct);
         return true;
     }

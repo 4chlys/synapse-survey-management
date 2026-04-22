@@ -1,20 +1,21 @@
 using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQuestionnaireManager
+public class QuestionnaireManager(
+    IQuestionnaireRepository questionnaireRepository,
+    IQuestionRepository questionRepository,
+    IResponseRepository responseRepository,
+    IUnitOfWork uow) : IQuestionnaireManager
 {
-
     public async Task<Question> AddQuestionAsync(int projectId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices)
     {
-        var questionnaire = await repository.ReadSingleAsync<Questionnaire>(
-            filters: [q => q.Project.ProjectId == projectId],
-            tracked: true);
+        var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
 
         var question = new Question
@@ -25,43 +26,40 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
             AnswerChoices = answerChoices ?? new List<string>(),
             Questionnaire = questionnaire
         };
-        var created = await repository.CreateAsync(question);
+        var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync();
         return created;
     }
+
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices)
     {
-        var question = await repository.ReadByIdAsync<Question>(questionId);
+        var question = await questionRepository.ReadByIdForUpdateAsync(questionId);
         if (question is null) return false;
 
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
         question.AnswerChoices = answerChoices ?? new List<string>();
-        repository.Update(question);
+        questionRepository.Update(question);
         await uow.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteQuestionAsync(int questionId)
     {
-        var result = await repository.DeleteByIdAsync<Question>(questionId);
+        var result = await questionRepository.DeleteByIdAsync(questionId);
         if (result) await uow.SaveChangesAsync();
         return result;
     }
-    public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId, bool includeQuestions = true)
-    {
-        return await repository.ReadSingleAsync<Questionnaire>(
-            filters: [q => q.Project.ProjectId == projectId],
-            includeStrings: includeQuestions ? ["Questions.BranchRules"] : null
-        );
-    }
 
-    public async Task<Question> GetQuestionByIdAsync(int questionId)
-    {
-        return await repository.ReadByIdAsync<Question>(questionId);
-    }
+    public Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId, bool includeQuestions = true)
+        => includeQuestions
+            ? questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId)
+            : questionnaireRepository.ReadByProjectIdReadOnlyAsync(projectId);
+
+    public Task<Question> GetQuestionByIdAsync(int questionId)
+        => questionRepository.ReadByIdReadOnlyAsync(questionId);
 
     public async Task<Question> GetFirstQuestionAsync(int projectId)
     {
@@ -75,18 +73,10 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
 
     public async Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId)
     {
-        var currentQuestion = await repository.ReadByIdAsync<Question>(
-            currentQuestionId,
-            includeStrings: ["BranchRules.TargetQuestion", "Questionnaire"]);
-
+        var currentQuestion = await questionRepository.ReadByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(currentQuestionId);
         if (currentQuestion is null) return null;
 
-        var response = await repository.ReadSingleAsync<Response>(
-            filters:
-            [
-                r => r.Question.QuestionId == currentQuestionId,
-                r => r.Participant.ParticipantId == participantId
-            ]);
+        var response = await responseRepository.ReadByQuestionAndParticipantReadOnlyAsync(currentQuestionId, participantId);
 
         if (response is not null && currentQuestion.BranchRules.Count > 0)
         {
@@ -107,11 +97,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
 
     public async Task<Question> GetPreviousQuestionAsync(int currentQuestionId, int participantId)
     {
-        var current = await repository.ReadByIdAsync<Question>(
-            currentQuestionId,
-            includeStrings: ["Questionnaire.Questions.BranchRules.TargetQuestion"],
-            tracked: true);
-        
+        var current = await questionRepository.ReadByIdWithFullQuestionnaireReadOnlyAsync(currentQuestionId);
         if (current is null) throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
 
         var allQuestions = current.Questionnaire.Questions;
@@ -122,11 +108,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
 
         foreach (var branchSource in branchSources)
         {
-            var response = await repository.ReadSingleAsync<Response>(
-                filters: [r => r.Participant.ParticipantId == participantId
-                               && r.Question.QuestionId == branchSource.QuestionId]
-            );
-
+            var response = await responseRepository.ReadByQuestionAndParticipantReadOnlyAsync(branchSource.QuestionId, participantId);
             if (response is null) continue;
 
             var matchedRule = FindMatchingBranchRule(branchSource, response.Value);
@@ -142,7 +124,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
             .OrderByDescending(q => q.Position)
             .FirstOrDefault();
     }
-    
+
     public async Task<int> GetQuestionCountAsync(int projectId)
     {
         var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
@@ -171,10 +153,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
 
         var path = await ComputeVisiblePathInternal(firstQuestion, participantId);
 
-        var responses = await repository.ReadAsync<Response>(
-            filters: [r => r.Participant.ParticipantId == participantId],
-            includeStrings: ["Question"]);
-
+        var responses = await responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
         var answeredIds = responses.Select(r => r.Question.QuestionId).ToHashSet();
 
         return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
@@ -208,10 +187,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
     {
         var allQuestions = await GetQuestionsForQuestionnaire(startQuestion);
 
-        var responses = await repository.ReadAsync<Response>(
-            filters: [r => r.Participant.ParticipantId == participantId],
-            includeStrings: ["Question"]);
-
+        var responses = await responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
         var answersByQuestionId = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
 
         var path = new List<Question>();
@@ -247,10 +223,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
 
     private async Task<List<Question>> GetQuestionsForQuestionnaire(Question question)
     {
-        var questionnaire = await repository.ReadSingleAsync<Questionnaire>(
-            filters: [q => q.Questions.Any(qu => qu.QuestionId == question.QuestionId)],
-            includeStrings: ["Questions.BranchRules.TargetQuestion"]);
-
+        var questionnaire = await questionnaireRepository.ReadByQuestionIdWithQuestionsReadOnlyAsync(question.QuestionId);
         return questionnaire?.Questions.OrderBy(q => q.Position).ToList() ?? [];
     }
 

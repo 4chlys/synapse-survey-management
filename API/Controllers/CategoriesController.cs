@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -11,36 +12,24 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
-        var categories = (await categoryManager.GetCategoriesAsync(projectId)).ToList();
-        var ideaCounts = await categoryManager.GetIdeaCountsByCategoryAsync(
-            categories.Select(c => c.CategoryId));
-
-        var dtos = categories.Select(c => new CategoryDto
-        {
-            CategoryId = c.CategoryId,
-            Name = c.Name,
-            Description = c.Description,
-            IdeaCount = ideaCounts.GetValueOrDefault(c.CategoryId, 0)
-        });
-
-        return Ok(dtos);
+        var results = await categoryManager.GetCategoriesAndTheirIdeaCountsAsync(projectId);
+        return Ok(results.Select(r => MapToDto(r.Category, r.IdeaCount)));
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
     {
-        var category = await categoryManager.GetCategoryByIdAsync(id);
-        if (category == null) return NotFound();
-
-        var dto = new CategoryDto
-        {
-            CategoryId = category.CategoryId,
-            Name = category.Name,
-            Description = category.Description,
-            IdeaCount = await categoryManager.GetIdeaCountAsync(id)
-        };
-        return Ok(dto);
+        var (category, ideaCount) = await categoryManager.GetCategoryAndItsIdeaCountByIdAsync(id);
+        return Ok(MapToDto(category, ideaCount));
     }
+
+    private static CategoryDto MapToDto(Category category, int ideaCount) => new()
+    {
+        CategoryId = category.CategoryId,
+        Name = category.Name,
+        Description = category.Description,
+        IdeaCount = ideaCount
+    };
     [HttpPost]
     public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId,
         [FromBody] CategoryRequest dto)
@@ -53,13 +42,7 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
         if (category is null)
             return NotFound();
 
-        return Created(string.Empty, new CategoryDto
-        {
-            CategoryId = category.CategoryId,
-            Name = category.Name,
-            Description = category.Description,
-            IdeaCount = 0
-        });
+        return Created(string.Empty, MapToDto(category, 0));
     }
 
     [HttpPut("{id}")]
