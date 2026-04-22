@@ -587,9 +587,11 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
 
     <!-- Two-col layout -->
     <div class="two-col">
+
+      <!-- Left column: MIG + VM + Logs -->
       <div>
         <!-- Instance Groups table -->
-        <div class="section-card">
+        <div class="section-card" style="margin-bottom:16px">
           <div class="section-card-header">
             <span class="section-card-title">Managed Instance Groups</span>
             <div class="section-card-actions">
@@ -603,12 +605,38 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
                   <th>Naam</th>
                   <th>Status</th>
                   <th>Instanties</th>
-                  <th>Regio / Zone</th>
+                  <th>Zone</th>
                   <th>Poort</th>
                   <th>Acties</th>
                 </tr>
               </thead>
               <tbody id="mig-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VM Instances table -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-header">
+            <span class="section-card-title">VM Instances</span>
+            <div class="section-card-actions">
+              <a class="btn-secondary btn-sm" id="vm-console-btn" href="#" target="_blank">⧉ Console</a>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Naam</th>
+                  <th>Status</th>
+                  <th>Machine type</th>
+                  <th>Zone</th>
+                  <th>Intern IP</th>
+                  <th style="min-width:160px">CPU gebruik (5 min)</th>
+                  <th>Acties</th>
+                </tr>
+              </thead>
+              <tbody id="vm-tbody"></tbody>
             </table>
           </div>
         </div>
@@ -629,9 +657,8 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
         </div>
       </div>
 
-      <!-- Right column -->
+      <!-- Right column: Network + Infra + Cost -->
       <div>
-        <!-- Network card -->
         <div class="section-card" style="margin-bottom:16px">
           <div class="section-card-header">
             <span class="section-card-title">Netwerk</span>
@@ -639,7 +666,6 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
           <div id="network-info"></div>
         </div>
 
-        <!-- Infra card -->
         <div class="section-card" style="margin-bottom:16px">
           <div class="section-card-header">
             <span class="section-card-title">Infrastructuur</span>
@@ -647,7 +673,6 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
           <div id="infra-info"></div>
         </div>
 
-        <!-- Cost card -->
         <div class="section-card">
           <div class="section-card-header">
             <span class="section-card-title">Geschatte Kosten</span>
@@ -658,32 +683,6 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
       </div>
     </div>
 
-    <!-- VM monitoring (full width) -->
-    <div class="section-card">
-      <div class="section-card-header">
-        <span class="section-card-title">VM Instances</span>
-        <div class="section-card-actions">
-          <button class="btn-secondary btn-sm" id="btn-refresh-vms">↺ Verversen</button>
-          <a class="btn-secondary btn-sm" id="vm-console-btn" href="#" target="_blank">⧉ Console</a>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Naam</th>
-              <th>Status</th>
-              <th>Machine type</th>
-              <th>Zone</th>
-              <th>Intern IP</th>
-              <th style="min-width:180px">CPU gebruik (5 min)</th>
-              <th>Acties</th>
-            </tr>
-          </thead>
-          <tbody id="vm-tbody"></tbody>
-        </table>
-      </div>
-    </div>
   </main>
 </div>
 
@@ -943,19 +942,18 @@ function renderVms(data) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
     td.colSpan = 7;
-    td.style.cssText = 'padding:24px;color:var(--gray3);text-align:center';
+    td.style.cssText = 'padding:24px;color:var(--gray3);text-align:center;font-size:13px';
     td.textContent = 'Geen VM instances gevonden.';
-    tr.appendChild(td); tbody.appendChild(tr);
-    return;
+    tr.appendChild(td); tbody.appendChild(tr); return;
   }
 
-  // CPU values: keys are instance IDs (numbers), try to match by index
   const cpuValues = Object.values(data.cpu || {});
 
-  for (let i = 0; i < data.vms.length; i++) {
-    const vm = data.vms[i];
-    const cpuPct = cpuValues[i] ?? null;
-    const tr = document.createElement('tr');
+  data.vms.forEach((vm, i) => {
+    const cpuPct  = cpuValues[i] ?? null;
+    const pct     = cpuPct !== null ? Math.min(cpuPct, 100) : 0;
+    const color   = pct < 50 ? '#34a853' : pct < 80 ? '#fbbc04' : '#ea4335';
+    const tr      = document.createElement('tr');
 
     // Name
     const tdName = document.createElement('td');
@@ -967,7 +965,7 @@ function renderVms(data) {
     tdStatus.appendChild(chip(vm.status, vm.status === 'RUNNING' ? 'green' : 'red', true));
     tr.appendChild(tdStatus);
 
-    // Machine type
+    // Machine
     const tdMachine = document.createElement('td');
     tdMachine.className = 'td-mono'; tdMachine.textContent = vm.machine;
     tr.appendChild(tdMachine);
@@ -984,34 +982,31 @@ function renderVms(data) {
 
     // CPU bar
     const tdCpu = document.createElement('td');
-    const cpuWrap = document.createElement('div');
-    cpuWrap.style.cssText = 'display:flex;align-items:center;gap:8px';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:8px';
     const barBg = document.createElement('div');
-    barBg.style.cssText = 'flex:1;background:var(--gray6);border-radius:3px;height:8px;overflow:hidden;min-width:80px';
-    const pct = cpuPct !== null ? Math.min(cpuPct, 100) : 0;
+    barBg.style.cssText = 'flex:1;background:var(--gray6);border-radius:3px;height:7px;overflow:hidden';
     const fill = document.createElement('div');
-    const fillColor = pct < 50 ? '#34a853' : pct < 80 ? '#fbbc04' : '#ea4335';
-    fill.style.cssText = `height:100%;width:${pct.toFixed(1)}%;background:${fillColor};border-radius:3px;transition:width .6s`;
+    fill.style.cssText = `height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:3px;transition:width .5s`;
     barBg.appendChild(fill);
     const pctLbl = document.createElement('span');
-    pctLbl.style.cssText = 'font-size:12px;color:var(--gray2);min-width:36px;text-align:right';
+    pctLbl.style.cssText = 'font-size:12px;color:var(--gray2);min-width:32px;text-align:right';
     pctLbl.textContent = cpuPct !== null ? `${cpuPct}%` : 'n/a';
-    cpuWrap.append(barBg, pctLbl);
-    tdCpu.appendChild(cpuWrap);
+    wrap.append(barBg, pctLbl);
+    tdCpu.appendChild(wrap);
     tr.appendChild(tdCpu);
 
     // Actions
     const tdAct = document.createElement('td');
-    const detailLink = document.createElement('a');
-    detailLink.className = 'btn-secondary btn-sm';
-    detailLink.href = `https://console.cloud.google.com/compute/instancesDetail/zones/${vm.zone}/instances/${vm.name}?project=${data.project_id}`;
-    detailLink.target = '_blank';
-    detailLink.textContent = '↗ Details';
-    tdAct.appendChild(detailLink);
+    const link = document.createElement('a');
+    link.className = 'btn-secondary btn-sm';
+    link.href = `https://console.cloud.google.com/compute/instancesDetail/zones/${vm.zone}/instances/${vm.name}?project=${data.project_id}`;
+    link.target = '_blank'; link.textContent = '↗ Details';
+    tdAct.appendChild(link);
     tr.appendChild(tdAct);
 
     tbody.appendChild(tr);
-  }
+  });
 }
 
 // ── Render cost ────────────────────────────────────────────────
