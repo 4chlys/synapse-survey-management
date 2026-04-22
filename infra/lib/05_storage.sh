@@ -18,5 +18,6 @@ create_storage_bucket() {
 
 destroy_storage_bucket() {
   echo ">>> Cloud Storage bucket verwijderen: gs://${GCS_BUCKET}..."
-  gsutil -m rm -r "gs://${GCS_BUCKET}" 2>/dev/null || true
+  gsutil -m rm -r "gs://${GCS_BUCKET}/**" 2>/dev/null || true
+  gsutil rb "gs://${GCS_BUCKET}" 2>/dev/null || true
 }
