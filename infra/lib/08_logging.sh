@@ -26,7 +26,7 @@ create_uptime_checks() {
     --resource-type=uptime-url \
     --resource-labels="host=api.synapse-ip.xyz,project_id=${PROJECT_ID}" \
     --path="/health" \
-    --period=60 \
+    --period=5 \
     --timeout=10 \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-api-uptime al aanwezig)"
 
@@ -35,7 +35,7 @@ create_uptime_checks() {
     --resource-type=uptime-url \
     --resource-labels="host=synapse-ip.xyz,project_id=${PROJECT_ID}" \
     --path="/health" \
-    --period=60 \
+    --period=5 \
     --timeout=10 \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-ui-uptime al aanwezig)"
 }
