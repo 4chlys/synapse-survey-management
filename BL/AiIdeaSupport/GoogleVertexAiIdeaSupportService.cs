@@ -23,7 +23,7 @@ public sealed class GoogleVertexAiIdeaSupportService(
     };
 
 
-    // ── Chat ─────────────────────────────────────────────────────────────
+    // Chat
 
     public async Task<IdeaSupportChatReply> ChatAsync(
         IdeaSupportChatRequest request,
@@ -54,7 +54,7 @@ public sealed class GoogleVertexAiIdeaSupportService(
         }
     }
 
-    // ── Refine ────────────────────────────────────────────────────────────
+    // Refine
 
     public async Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
@@ -88,7 +88,7 @@ public sealed class GoogleVertexAiIdeaSupportService(
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // Helpers
 
     /// <summary>
     /// Builds the message list sent to the LLM:

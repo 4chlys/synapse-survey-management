@@ -50,7 +50,7 @@ public class DummyDataSeeder
         _fire = new Emoji { Symbol = "🔥", Name = "fire" };
         _check = new Emoji { Symbol = "✅", Name = "check" };
 
-        // ── Project 1: Synapse ──
+        // Project 1: Synapse
         var questionnaire1 = new Questionnaire();
         var q1Stress = new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false, Position = 1 };
         var q1Welzijn = new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true, Position = 2 };
@@ -122,7 +122,7 @@ public class DummyDataSeeder
         projectActive.Categories.Add(categoryHome);
         projectActive.Categories.Add(categoryOnline);
 
-        // ── Project 2: FitLife Gym ──
+        // Project 2: FitLife Gym
         var questionnaire2 = new Questionnaire();
         questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false, Position = 1 });
         questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true, Position = 2 });
@@ -188,7 +188,7 @@ public class DummyDataSeeder
         projectActive2.Categories.Add(catLessons);
         projectActive2.Categories.Add(catSchedule);
 
-        // ── Project 3: FC Eendracht ──
+        // Project 3: FC Eendracht
         var questionnaire3 = new Questionnaire();
         questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false, Position = 1 });
         questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true, Position = 2 });
@@ -246,7 +246,7 @@ public class DummyDataSeeder
         projectActive3.Categories.Add(catInfra);
         projectActive3.Categories.Add(catSocial);
 
-        // ── Inactive & Draft ──
+        // Inactive & Draft
         var projectInactive = new Project
         {
             ProjectState = ProjectState.Archived,
