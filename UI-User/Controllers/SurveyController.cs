@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.UI.User.Extensions;
-using SynapseEnqueteManagement.UI.User.FormStrategies;
-using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Models.Survey;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
+using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
@@ -37,6 +35,25 @@ public class SurveyController(
         if (model is null)
             return View("NotFound");
 
+        // Load existing responses for resume support
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            var existingResponses = await questionnaireService.GetResponsesAsync(projectId, token);
+
+            if (existingResponses is null)
+            {
+                // null = participant not found in DB, stale cookie
+                sessionService.ClearToken(projectId);
+                Console.WriteLine("Session cleared");
+            }
+            else
+            {
+                // empty dict = participant exists, just no answers yet — still a valid session
+                model.ExistingResponses = existingResponses;
+                model.HasSession = true;
+            }
+        }
+
         this.SetLayoutData(project, projectId);
         var strategy = formStrategyFactory.Create(project.FormType);
         ViewData["FormLayout"] = strategy.GetLayoutData();
@@ -45,24 +62,13 @@ public class SurveyController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [EnableRateLimiting("participant-creation")]
-    public async Task<IActionResult> Submit(int projectId, IFormCollection form)
+    public async Task<IActionResult> Submit(int projectId)
     {
-        var answers = new Dictionary<int, string>();
+        var token = sessionService.GetToken(projectId);
+        if (string.IsNullOrWhiteSpace(token))
+            return BadRequest("No session found.");
 
-        foreach (var key in form.Keys)
-        {
-            if (!key.StartsWith("q_")) continue;
-            if (!int.TryParse(key[2..], out var questionId)) continue;
-
-            var value = string.Join(", ", form[key].Where(v => !string.IsNullOrWhiteSpace(v)));
-            if (!string.IsNullOrWhiteSpace(value))
-                answers[questionId] = value;
-        }
-
-        var participantToken = await questionnaireService.SubmitSurveyAsync(projectId, answers);
-
-        sessionService.SetToken(projectId, participantToken);
+        await questionnaireService.SubmitAsync(projectId, token);
 
         return RedirectToAction("ThankYou", new { projectId });
     }

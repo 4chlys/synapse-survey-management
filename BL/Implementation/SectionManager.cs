@@ -4,7 +4,7 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class SectionManager(IRepository repository) : ISectionManager
+public class SectionManager(IRepository repository, IUnitOfWork uow) : ISectionManager
 {
     public async Task<IEnumerable<Section>> GetSectionsAsync(int projectId)
     {
@@ -38,7 +38,9 @@ public class SectionManager(IRepository repository) : ISectionManager
 
         section.Name = name;
         section.Description = description;
-        return await repository.UpdateAsync(section);
+        repository.Update(section);
+        await uow.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteSectionAsync(int sectionId)

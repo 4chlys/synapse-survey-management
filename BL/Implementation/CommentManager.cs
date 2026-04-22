@@ -9,6 +9,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CommentManager(
     IRepository repository,
+    IUnitOfWork uow,
     ILogger<CommentManager> logger,
     ISortStrategyFactory<TextComment> sortStrategyFactory) : ICommentManager
 {
@@ -70,9 +71,9 @@ public class CommentManager(
         };
     }
 
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant, CancellationToken ct = default)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"], tracked: true);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
@@ -88,31 +89,33 @@ public class CommentManager(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(comment);
+        var created = await repository.CreateAsync(comment);
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<IEnumerable<Emoji>> GetEmojisAsync()
+    public async Task<IEnumerable<Emoji>> GetEmojisAsync(int projectId)
     {
-        return await repository.ReadAsync<Emoji>(
-            filters: [e => e.IsActive]
-        );
+        var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis]);
+        return project?.Emojis ?? Enumerable.Empty<Emoji>();
     }
 
-    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
+    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project.Emojis"], tracked: true);
         if (idea?.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
             throw new KeyNotFoundException($"Idea {ideaId} not found in project {projectId}");
         }
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
-        if (emoji == null)
+        if (idea.Category.Project.Emojis.All(e => e.EmojiId != emojiId))
         {
-            logger.LogWarning("Emoji {EmojiId} not found", emojiId);
-            throw new KeyNotFoundException($"Emoji {emojiId} not found");
+            logger.LogWarning("Emoji {EmojiId} not enabled for project {ProjectId}", emojiId, projectId);
+            throw new KeyNotFoundException($"Emoji {emojiId} not enabled for project {projectId}");
         }
+
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId, tracked: true);
 
         var iconComment = new IconComment
         {
@@ -122,36 +125,43 @@ public class CommentManager(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(iconComment,
+        var created = await repository.CreateAsync(iconComment,
             duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
                                   && ic.EmojiId == emojiId
                                   && ic.Idea.IdeaId == ideaId
                                   && ic.TextComment == null);
+        if (created == null) return null;
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
+    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
+        var removed = await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
                                                                && ic.EmojiId == emojiId
                                                                && ic.Idea.IdeaId == ideaId
                                                                && ic.TextComment == null);
+        if (!removed) return false;
+        await uow.SaveChangesAsync(ct);
+        return true;
     }
 
-    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
+    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project"]);
+        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project.Emojis"], tracked: true);
         if (comment?.Idea?.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("TextComment {CommentId} not found in project {ProjectId}", commentId, projectId);
             throw new KeyNotFoundException($"TextComment {commentId} not found in project {projectId}");
         }
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
-        if (emoji == null)
+        if (comment.Idea.Category.Project.Emojis.All(e => e.EmojiId != emojiId))
         {
-            logger.LogWarning("Emoji {EmojiId} not found", emojiId);
-            throw new KeyNotFoundException($"Emoji {emojiId} not found");
+            logger.LogWarning("Emoji {EmojiId} not enabled for project {ProjectId}", emojiId, projectId);
+            throw new KeyNotFoundException($"Emoji {emojiId} not enabled for project {projectId}");
         }
+
+        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId, tracked: true);
 
         var reaction = new IconComment
         {
@@ -161,16 +171,22 @@ public class CommentManager(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(reaction,
+        var created = await repository.CreateAsync(reaction,
             duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
                                   && ic.EmojiId == emojiId
                                   && ic.TextComment.CommentId == commentId);
+        if (created == null) return null;
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
+    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
+        var removed = await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
                                                                && ic.EmojiId == emojiId
                                                                && ic.TextComment.CommentId == commentId);
+        if (!removed) return false;
+        await uow.SaveChangesAsync(ct);
+        return true;
     }
 }

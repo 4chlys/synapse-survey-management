@@ -12,4 +12,5 @@ public interface ICategoryManager
         description);
     Task<bool> UpdateCategoryAsync(int categoryId, string name, string description);
     Task<bool> DeleteCategoryAsync(int categoryId);
+    Task<Dictionary<int, int>> GetIdeaCountsByCategoryAsync(IEnumerable<int> categoryIds);
 }

@@ -11,18 +11,17 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
-        var categories = await categoryManager.GetCategoriesAsync(projectId);
-        var dtos = new List<CategoryDto>();
-        foreach (var c in categories)
+        var categories = (await categoryManager.GetCategoriesAsync(projectId)).ToList();
+        var ideaCounts = await categoryManager.GetIdeaCountsByCategoryAsync(
+            categories.Select(c => c.CategoryId));
+
+        var dtos = categories.Select(c => new CategoryDto
         {
-            dtos.Add(new CategoryDto
-            {
-                CategoryId = c.CategoryId,
-                Name = c.Name,
-                Description = c.Description,
-                IdeaCount = await categoryManager.GetIdeaCountAsync(c.CategoryId)
-            });
-        }
+            CategoryId = c.CategoryId,
+            Name = c.Name,
+            Description = c.Description,
+            IdeaCount = ideaCounts.GetValueOrDefault(c.CategoryId, 0)
+        });
 
         return Ok(dtos);
     }

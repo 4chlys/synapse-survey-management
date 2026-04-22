@@ -1,96 +1,135 @@
-﻿@model IdeaDetailViewModel
+@model IdeaDetailViewModel
 @{
     ViewData["Title"] = "Idee";
 }
 
-<div class="min-h-screen bg-gray-50 flex flex-col items-center px-6 pt-12 pb-32">
+<div class="max-w-2xl mx-auto px-6 pt-10 pb-32 min-h-[calc(100dvh-64px)] page-enter">
 
     @* Idea card *@
-    <div class="w-full max-w-sm mb-8">
-        <div class="bg-white rounded-2xl border-2 border-gray-100 p-5">
-            <p class="text-xs font-semibold text-emerald-500 uppercase tracking-wide mb-2">
-                @Model.Category?.Name
-            </p>
-            <p class="text-gray-900 text-base leading-relaxed">@Model.Idea.Description</p>
+    <div class="w-full mb-6">
+        <div class="bg-secondary/5 rounded-xl border border-base-300 overflow-hidden border-l-2 border-l-secondary">
+            <div class="p-5">
+                <p class="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
+                    @Model.Category?.Name
+                </p>
+                <p class="text-base-content text-[15px] leading-relaxed">@Model.Idea.Description</p>
 
-            <div class="flex gap-2 mt-4 items-center flex-wrap"
-                 data-emoji-container
-                 data-project-id="@Model.ProjectId"
-                 data-category-id="@Model.CategoryId"
-                 data-idea-id="@Model.Idea.IdeaId"
-                 data-return-page="Detail"
-                 data-picker-id="picker-idea-@Model.Idea.IdeaId"
-                 data-add-url="/@Model.ProjectId/Ideation/AddIconComment"
-                 data-remove-url="/@Model.ProjectId/Ideation/RemoveIconComment">
+                @* Emoji reactions *@
+                <div class="flex gap-2 mt-5 items-center flex-wrap" data-emoji-container
+                     data-project-id="@Model.ProjectId" data-category-id="@Model.CategoryId"
+                     data-idea-id="@Model.Idea.IdeaId" data-return-page="Detail"
+                     data-picker-id="picker-idea-@Model.Idea.IdeaId"
+                     data-add-url="/@Model.ProjectId/Ideation/AddIconComment"
+                     data-remove-url="/@Model.ProjectId/Ideation/RemoveIconComment">
 
-                <div id="emoji-reactions-@Model.Idea.IdeaId" class="contents">
-                    @foreach (var emoji in Model.Idea.Emojis)
+                    <div id="emoji-reactions-@Model.Idea.IdeaId" class="contents">
+                        @foreach (var emoji in Model.Idea.Emojis)
+                        {
+                            <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")"
+                                  method="post" data-emoji-form>
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                                <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
+                                <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
+                                <input type="hidden" name="returnPage" value="Detail" />
+                                <button type="submit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-8
+                                    @(emoji.PostedByCurrentUser
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
+                                    <span class="text-base leading-none">@emoji.Symbol</span>
+                                    <span class="leading-none font-semibold">@emoji.Count</span>
+                                </button>
+                            </form>
+                        }
+                    </div>
+
+                @if (Model.Emojis.Any())
                     {
-                        <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")" method="post" data-emoji-form>
-                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                            <input type="hidden" name="categoryId" value="@Model.CategoryId" />
-                            <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
-                            <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
-                            <input type="hidden" name="returnPage" value="Detail" />
-                            <button type="submit"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors
-                                           @(emoji.PostedByCurrentUser
-                                               ? "bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200"
-                                               : "bg-gray-100 border border-gray-200 hover:bg-gray-200")">
-                                <span class="text-lg leading-none">@emoji.Symbol</span>
-                                <span class="font-semibold @(emoji.PostedByCurrentUser ? "text-emerald-700" : "text-gray-700") text-sm leading-none">@emoji.Count</span>
-                            </button>
-                        </form>
+                        <button type="button" data-action="toggle-emoji-picker" data-target="picker-idea-@Model.Idea.IdeaId"
+                                class="w-7 h-7 rounded-full border border-dashed border-base-300
+                        flex items-center justify-center text-base-content/40
+                        hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                                 stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
                     }
                 </div>
 
-                <button type="button"
-                        data-action="toggle-emoji-picker"
-                        data-target="picker-idea-@Model.Idea.IdeaId"
-                        class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300
-                               flex items-center justify-center text-gray-400
-                               hover:border-emerald-400 hover:text-emerald-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
-            </div>
-
-            @* Emoji picker for idea *@
-            <div id="picker-idea-@Model.Idea.IdeaId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@Model.Idea.IdeaId">
-                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                    <input type="hidden" name="categoryId" value="@Model.CategoryId" />
-                    <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
-                    <input type="hidden" name="returnPage" value="Detail" />
-                    <div class="flex gap-2 flex-wrap">
-                        @foreach (var emoji in Model.Emojis)
-                        {
-                            <button type="submit" name="emojiId" value="@emoji.EmojiId"
-                                    class="text-2xl hover:scale-125 transition-transform">
-                                @emoji.Symbol
-                            </button>
-                        }
+                @if (Model.Emojis.Any())
+                {
+                    @* Emoji picker *@
+                    <div id="picker-idea-@Model.Idea.IdeaId"
+                         class="hidden mt-3 p-3 bg-base-200 rounded-xl border border-base-300">
+                        <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@Model.Idea.IdeaId">
+                            <input type="hidden" name="projectId" value="@Model.ProjectId"/>
+                            <input type="hidden" name="categoryId" value="@Model.CategoryId"/>
+                            <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId"/>
+                            <input type="hidden" name="returnPage" value="Detail"/>
+                            <div class="flex gap-3 flex-wrap">
+                                @foreach (var emoji in Model.Emojis)
+                                {
+                                    <button type="submit" name="emojiId" value="@emoji.EmojiId"
+                                            class="text-2xl hover:scale-125 transition-transform cursor-pointer">
+                                        @emoji.Symbol
+                                    </button>
+                                }
+                            </div>
+                        </form>
                     </div>
-                </form>
-            </div>
+                }
 
-            <div class="flex gap-4 mt-4 text-sm text-gray-400">
-                <span>💬 @Model.Idea.CommentsCount reacties</span>
+                <div class="flex gap-4 mt-4 pt-4 border-t border-base-300 text-xs text-base-content/60">
+                    <span class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        @Model.Idea.CommentsCount reacties
+                    </span>
+                </div>
             </div>
         </div>
     </div>
 
+    @* Reageer CTA *@
+    <div class="w-full mb-6">
+        <button type="button" data-action="show-comment-form"
+                class="w-full btn btn-primary rounded-xl font-heading font-semibold text-base py-4 h-auto gap-2 shadow-md cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Reageer op dit idee
+        </button>
+    </div>
+
     @* Comments section *@
-    <div class="w-full max-w-sm">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-            Reacties (@Model.Comments.Count)
-        </h2>
+    <div class="w-full">
+
+        @* Section label *@
+        <div class="flex items-center gap-3 mb-4">
+            <p class="text-[12px] font-bold text-base-content/90 uppercase tracking-widest">
+                Reacties (@Model.Comments.Count)
+            </p>
+            <div class="flex-1 h-px bg-base-300"></div>
+        </div>
 
         @if (!Model.Comments.Any())
         {
-            <div class="text-center py-8">
-                <p class="text-gray-400 text-sm">Nog geen reacties. Wees de eerste!</p>
+            <div class="text-center py-10 flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-base-content/40" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </div>
+                <p class="text-base-content/60 text-sm">Nog geen reacties. Wees de eerste!</p>
             </div>
         }
         else
@@ -98,70 +137,89 @@
             <div class="flex flex-col gap-3">
                 @foreach (var comment in Model.Comments)
                 {
-                    <div class="rounded-2xl border-2 p-4
-                               @(comment.IsFlagged
-                                   ? "bg-amber-50 border-amber-200"
-                                   : comment.IsOwnedByCurrentUser
-                                       ? "bg-white border-emerald-100"
-                                       : "bg-white border-gray-100")">
+                    <div
+                        class="rounded-xl border p-4
+                        @(comment.IsFlagged ? "bg-warning/5 border-warning/30" : comment.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20" : "bg-base-100 border-base-300")">
+
                         @if (comment.IsFlagged)
                         {
-                            <span class="inline-block text-xs text-amber-600 font-medium mb-1">In behandeling</span>
+                            <span class="inline-flex items-center gap-1 text-xs text-warning font-medium mb-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-warning inline-block"></span>
+                                In behandeling
+                            </span>
                         }
                         else if (comment.IsOwnedByCurrentUser)
                         {
-                            <span class="inline-block text-xs text-emerald-500 font-medium mb-1">Jouw reactie</span>
+                            <span class="inline-flex items-center gap-1 text-xs text-primary font-medium mb-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+                                Jouw reactie
+                            </span>
                         }
-                        <p class="text-gray-900 text-sm leading-relaxed">@comment.Text</p>
+                        <p class="text-base-content text-[15px] leading-relaxed">@comment.Text</p>
 
-                        <div class="flex gap-2 mt-3 items-center flex-wrap">
-                            @foreach (var commentEmoji in comment.Emojis)
-                            {
-                                <form asp-action="@(commentEmoji.PostedByCurrentUser ? "RemoveCommentEmoji" : "AddCommentEmoji")" method="post">
-                                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                    <input type="hidden" name="categoryId" value="@Model.CategoryId" />
-                                    <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
-                                    <input type="hidden" name="commentId" value="@comment.CommentId" />
-                                    <input type="hidden" name="emojiId" value="@commentEmoji.EmojiId" />
-                                    <button type="submit"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs min-w-[3rem] leading-none transition-colors
-                                                   @(commentEmoji.PostedByCurrentUser
-                                                       ? "bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200"
-                                                       : "bg-gray-100 border border-gray-200 hover:bg-gray-200")">
-                                        <span class="text-lg leading-none">@commentEmoji.Symbol</span>
-                                        <span class="font-semibold @(commentEmoji.PostedByCurrentUser ? "text-emerald-700" : "text-gray-700") text-sm leading-none">@commentEmoji.Count</span>
-                                    </button>
-                                </form>
-                            }
-                            <button type="button"
-                                    data-action="toggle-emoji-picker"
-                                    data-target="picker-comment-@comment.CommentId"
-                                    class="w-7 h-7 rounded-full border-2 border-dashed border-gray-300
-                                           flex items-center justify-center text-gray-400
-                                           hover:border-emerald-400 hover:text-emerald-600 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-                        </div>
+                        <div class="flex gap-2 mt-3 items-center flex-wrap" data-emoji-container
+                             data-project-id="@Model.ProjectId" data-category-id="@Model.CategoryId"
+                             data-idea-id="@Model.Idea.IdeaId" data-comment-id="@comment.CommentId" data-return-page="Detail"
+                             data-picker-id="picker-comment-@comment.CommentId">
 
-                        <div id="picker-comment-@comment.CommentId" class="hidden mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                            <form asp-action="AddCommentEmoji" method="post">
-                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                <input type="hidden" name="categoryId" value="@Model.CategoryId" />
-                                <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
-                                <input type="hidden" name="commentId" value="@comment.CommentId" />
-                                <div class="flex gap-2 flex-wrap">
-                                    @foreach (var emoji in Model.Emojis)
-                                    {
-                                        <button type="submit" name="emojiId" value="@emoji.EmojiId"
-                                                class="text-2xl hover:scale-125 transition-transform">
-                                            @emoji.Symbol
+                            <div id="emoji-reactions-comment-@comment.CommentId" class="contents">
+                                @foreach (var commentEmoji in comment.Emojis)
+                                {
+                                    <form
+                                        asp-action="@(commentEmoji.PostedByCurrentUser ? "RemoveCommentEmoji" : "AddCommentEmoji")"
+                                        method="post" data-emoji-form>
+                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                        <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+                                        <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
+                                        <input type="hidden" name="commentId" value="@comment.CommentId" />
+                                        <input type="hidden" name="emojiId" value="@commentEmoji.EmojiId" />
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-8
+                                            @(commentEmoji.PostedByCurrentUser
+                                                ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
+                                                : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
+                                            <span class="text-base leading-none">@commentEmoji.Symbol</span>
+                                            <span class="leading-none font-semibold">@commentEmoji.Count</span>
                                         </button>
-                                    }
-                                </div>
-                            </form>
+                                    </form>
+                                }
+                            </div>
+                            @if (Model.Emojis.Any())
+                            {
+                                <button type="button" data-action="toggle-emoji-picker"
+                                        data-target="picker-comment-@comment.CommentId" class="w-6 h-6 rounded-full border border-dashed border-base-300
+                                flex items-center justify-center text-base-content/40
+                                hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                                         stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            }
                         </div>
+
+                        @if (Model.Emojis.Any())
+                        {
+                            <div id="picker-comment-@comment.CommentId"
+                                 class="hidden mt-3 p-3 bg-base-200 rounded-xl border border-base-300">
+                                <form asp-action="AddCommentEmoji" method="post" data-emoji-form
+                                      data-comment-id="@comment.CommentId" data-idea-id="@Model.Idea.IdeaId">
+                                    <input type="hidden" name="projectId" value="@Model.ProjectId"/>
+                                    <input type="hidden" name="categoryId" value="@Model.CategoryId"/>
+                                    <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId"/>
+                                    <input type="hidden" name="commentId" value="@comment.CommentId"/>
+                                    <div class="flex gap-3 flex-wrap">
+                                        @foreach (var emoji in Model.Emojis)
+                                        {
+                                            <button type="submit" name="emojiId" value="@emoji.EmojiId"
+                                                    class="text-2xl hover:scale-125 transition-transform cursor-pointer">
+                                                @emoji.Symbol
+                                            </button>
+                                        }
+                                    </div>
+                                </form>
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -170,32 +228,36 @@
 
 </div>
 
-@* Fixed bottom navigation *@
-<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-    <div class="max-w-sm mx-auto px-6 py-4 flex justify-around items-center">
+@* Fixed bottom nav *@
+<div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 z-50">
+    <div class="max-w-2xl mx-auto grid grid-cols-2 py-2">
 
-        <a asp-controller="Ideation" asp-action="Index"
-           asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
-           class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@Model.ProjectId"
+               asp-route-categoryId="@Model.CategoryId"
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
             </svg>
+            <span class="text-[11px] font-medium">Terug</span>
         </a>
 
-        <button type="button" data-action="show-comment-form"
-                class="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 text-white
-                       font-semibold rounded-xl hover:bg-emerald-600 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-error transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Reageer
-        </button>
+            <span class="text-[11px] font-medium">Afsluiten</span>
+        </a>
 
     </div>
 </div>
 
 @* Comment form *@
-<div id="commentForm" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+<div id="commentForm" class="hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 shadow-xl z-60"
+     style="padding-bottom: max(20px, env(safe-area-inset-bottom))">
     <div class="max-w-sm mx-auto px-6 py-4">
         <form asp-action="AddComment" method="post">
             <input type="hidden" name="projectId" value="@Model.ProjectId" />
@@ -203,19 +265,17 @@
             <input type="hidden" name="ideaId" value="@Model.Idea.IdeaId" />
             <input type="hidden" name="moderationToken" value="" />
             <div class="flex gap-3 items-end">
-                <textarea name="text" rows="2" required
-                          class="flex-1 px-4 py-3 border-2 border-gray-100 rounded-xl
-                                 focus:border-emerald-300 focus:outline-none resize-none text-sm"
+                <textarea name="text" rows="2" required class="flex-1 px-4 py-3 border border-base-300 rounded-xl bg-base-100
+                text-base-content text-[15px] placeholder:text-base-content/40
+                focus:border-primary focus:outline-none resize-none transition-colors"
                           placeholder="Schrijf een reactie..."></textarea>
                 <div class="flex flex-col gap-2">
                     <button type="submit"
-                            class="px-4 py-2.5 bg-emerald-500 text-white text-sm
-                                   font-semibold rounded-xl hover:bg-emerald-600 transition-colors">
+                            class="btn btn-primary rounded-xl text-sm font-heading font-semibold px-4 py-2.5 cursor-pointer">
                         Plaatsen
                     </button>
                     <button type="button" data-action="hide-comment-form"
-                            class="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm
-                                   font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+                            class="px-4 py-2.5 rounded-xl border border-base-300 text-base-content/70 text-sm font-semibold hover:bg-base-200 transition-colors cursor-pointer">
                         Annuleren
                     </button>
                 </div>

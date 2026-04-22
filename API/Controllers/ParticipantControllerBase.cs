@@ -20,9 +20,9 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return (participant, null);
     }
 
-    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId)
+    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId, CancellationToken ct = default)
     {
-        return await participantManager.AddParticipantAsync(questionnaire, projectId);
+        return await participantManager.AddParticipantAsync(questionnaire, projectId, ct);
     }
 
     protected async Task<(Participant participant, ActionResult error)> GetParticipantAsync(int projectId)
@@ -41,14 +41,19 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         return await participantManager.GetParticipantBySessionTokenAsync(token);
     }
 
-    protected async Task<bool> HasParticipantRespondedAsync(Guid token)
+    protected async Task<bool> HasParticipantSubmittedAsync(Guid token)
     {
-        return await participantManager.HasParticipantRespondedAsync(token);
+        return await participantManager.HasParticipantSubmittedAsync(token);
     }
 
-    protected async Task SaveContactInfoAsync(int participantId, string email, string phoneNumber)
+    protected async Task MarkAsSubmittedAsync(Guid sessionToken, CancellationToken ct = default)
     {
-        await participantManager.SaveContactInfoAsync(participantId, email, phoneNumber);
+        await participantManager.MarkAsSubmittedAsync(sessionToken, ct);
+    }
+
+    protected async Task SaveContactInfoAsync(int participantId, string email, CancellationToken ct = default)
+    {
+        await participantManager.SaveContactInfoAsync(participantId, email, ct);
     }
 
     protected bool TryGetParticipantToken(out Guid token)

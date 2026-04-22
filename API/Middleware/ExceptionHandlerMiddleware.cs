@@ -21,8 +21,8 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
     {
         var (statusCode, message) = exception switch
         {
-            KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),
-            ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
+            KeyNotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
+            ArgumentException => (HttpStatusCode.BadRequest, "The request was invalid."),
             UnauthorizedAccessException => (HttpStatusCode.Forbidden, "Access denied."),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
         };

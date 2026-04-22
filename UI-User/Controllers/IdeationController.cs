@@ -20,7 +20,7 @@ public class IdeationController(
     public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
     {
         var projectTask = projectApiService.GetProjectAsync(projectId);
-        var emojisTask = emojiService.GetEmojisAsync();
+        var emojisTask = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
         var ideasTask = ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
 
@@ -50,7 +50,7 @@ public class IdeationController(
         var ideaTask = ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
         var commentsTask = ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var emojisTask = emojiService.GetEmojisAsync();
+        var emojisTask = emojiService.GetEmojisAsync(projectId);
 
         await Task.WhenAll(projectTask, ideaTask, commentsTask, categoryTask, emojisTask);
 
@@ -109,9 +109,9 @@ public class IdeationController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email, string phoneNumber)
+    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email)
     {
-        await participantService.SaveContactInfoAsync(projectId, email, phoneNumber);
+        await participantService.SaveContactInfoAsync(projectId, email);
         return RedirectToAction("Index", new { projectId, categoryId });
     }
 
@@ -151,6 +151,14 @@ public class IdeationController(
         int emojiId)
     {
         await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+            var comment = comments.FirstOrDefault(c => c.CommentId == commentId);
+            return Json(comment?.Emojis ?? []);
+        }
+
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 
@@ -177,6 +185,14 @@ public class IdeationController(
         int emojiId)
     {
         await commentService.RemoveCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+            var comment = comments.FirstOrDefault(c => c.CommentId == commentId);
+            return Json(comment?.Emojis ?? []);
+        }
+
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 }

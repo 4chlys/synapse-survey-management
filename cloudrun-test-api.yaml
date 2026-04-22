@@ -1,0 +1,71 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mvp-api-test
+  annotations:
+    run.googleapis.com/launch-stage: BETA   # required for multi-container
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"   # scale-to-zero
+        autoscaling.knative.dev/maxScale: "3"
+    spec:
+      containers:
+
+        # -- Ingress container: the .NET API ------------------------------------
+        - name: mvp-api
+          image: IMAGE_API_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: DB_HOST
+              value: "127.0.0.1"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: synapse-test
+            - name: DB_USER
+              value: synapse-user
+            - name: DB_PASSWORD
+              value: synapse-test-pw
+            - name: ApiKey
+              value: dev-api-key-synapse-2026
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20      # increased to give postgres more headroom
+            periodSeconds: 5
+            failureThreshold: 10
+
+        # -- Sidecar container: PostgreSQL --------------------------------------
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_DB
+              value: synapse-test
+            - name: POSTGRES_USER
+              value: synapse-user
+            - name: POSTGRES_PASSWORD
+              value: synapse-test-pw
+            - name: PGDATA
+              value: /tmp/pgdata
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.5"
+          startupProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            failureThreshold: 10

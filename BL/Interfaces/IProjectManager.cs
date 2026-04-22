@@ -9,4 +9,7 @@ public interface IProjectManager
     Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo);
     Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo);
     Task<IEnumerable<Project>> GetAllProjectsAsync();
+    Task<IEnumerable<Emoji>> GetAllEmojisAsync();
+    Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
+    Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
 }

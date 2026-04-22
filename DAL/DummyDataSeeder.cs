@@ -10,24 +10,23 @@ public class DummyDataSeeder
     private static Emoji _fire = null!;
     private static Emoji _check = null!;
 
-    private static void AddIconComments(Idea idea, int count)
+    private static void AddIconComments(Idea idea, int count, Emoji[] emojis)
     {
-        var emojis = new[] { _heart, _thumbsup, _fire, _check };
         for (int i = 0; i < count; i++)
             idea.Comments.Add(new IconComment { Emoji = emojis[i % emojis.Length], Idea = idea });
     }
 
-    private static void AddReactions(TextComment comment, Idea idea, int count)
+    private static void AddReactions(TextComment comment, Idea idea, int count, Emoji[] emojis)
     {
-        var emojis = new[] { _heart, _thumbsup, _fire, _check };
         for (int i = 0; i < count; i++)
             comment.EmojiReactions.Add(new IconComment { Emoji = emojis[i % emojis.Length], Idea = idea, TextComment = comment });
     }
 
-    private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts)
+    private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts, Emoji[] emojis = null)
     {
+        emojis ??= new[] { _heart, _thumbsup, _fire, _check };
         var idea = new Idea { Description = description, Status = ModerationStatus.Approved };
-        AddIconComments(idea, ideaIconCount);
+        AddIconComments(idea, ideaIconCount, emojis);
         for (int i = 0; i < commentTexts.Length; i++)
         {
             var comment = new TextComment
@@ -36,7 +35,7 @@ public class DummyDataSeeder
                 Text = commentTexts[i],
                 ModerationStatus = ModerationStatus.Approved
             };
-            AddReactions(comment, idea, reactionCounts[i % reactionCounts.Length]);
+            AddReactions(comment, idea, reactionCounts[i % reactionCounts.Length], emojis);
             idea.Comments.Add(comment);
         }
         return idea;
@@ -46,17 +45,24 @@ public class DummyDataSeeder
     {
         if (context.Projects.Any()) return;
 
-        _heart = new Emoji { Symbol = "❤️", Name = "heart", IsActive = true };
-        _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup", IsActive = true };
-        _fire = new Emoji { Symbol = "🔥", Name = "fire", IsActive = true };
-        _check = new Emoji { Symbol = "✅", Name = "check", IsActive = true };
+        _heart = new Emoji { Symbol = "❤️", Name = "heart" };
+        _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup" };
+        _fire = new Emoji { Symbol = "🔥", Name = "fire" };
+        _check = new Emoji { Symbol = "✅", Name = "check" };
 
         // ── Project 1: Synapse ──
         var questionnaire1 = new Questionnaire();
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false });
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true });
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?", IsMandatory = true });
-        questionnaire1.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?", IsMandatory = true });
+        var q1Stress = new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false, Position = 1 };
+        var q1Welzijn = new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true, Position = 2 };
+        var q1Likert = new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?", IsMandatory = true, Position = 3 };
+        var q1Open = new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?", IsMandatory = true, Position = 4 };
+        questionnaire1.Questions.Add(q1Stress);
+        questionnaire1.Questions.Add(q1Welzijn);
+        questionnaire1.Questions.Add(q1Likert);
+        questionnaire1.Questions.Add(q1Open);
+
+        // Branch: if welzijn = "Goed", skip the stress likert and go straight to the open question
+        q1Welzijn.BranchRules.Add(new BranchRule { SourceQuestion = q1Welzijn, TriggerValue = "Goed", TargetQuestion = q1Open });
 
         var projectActive = new Project
         {
@@ -67,7 +73,7 @@ public class DummyDataSeeder
             Name = "Mentaal Welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
             OrganisationName = "Synapse",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=Synapse",
+            OrganisationLogoUrl = "/uploads/logos/logo_synapse.jpg",
             OrganisationWebsiteUrl = "http://synapse-ip.xyz/1",
             Introduction = new Introduction
             {
@@ -120,10 +126,10 @@ public class DummyDataSeeder
 
         // ── Project 2: FitLife Gym ──
         var questionnaire2 = new Questionnaire();
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?", IsMandatory = true });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?", IsMandatory = false });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false, Position = 1 });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true, Position = 2 });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?", IsMandatory = true, Position = 3 });
+        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?", IsMandatory = false, Position = 4 });
 
         var projectActive2 = new Project
         {
@@ -133,7 +139,7 @@ public class DummyDataSeeder
             Name = "Ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             OrganisationName = "FitLife Gym",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=FitLife",
+            OrganisationLogoUrl = "/uploads/logos/logo_fitlife.png",
             OrganisationWebsiteUrl = "https://www.fitlife.com",
             Introduction = new Introduction
             {
@@ -144,41 +150,43 @@ public class DummyDataSeeder
             }
         };
 
+        var fitLifeEmojis = new[] { _heart, _fire };
+
         var catFacilities = new Category { Name = "Faciliteiten", Description = "Kleedkamers, toestellen en ruimtes" };
-        catFacilities.Ideas.Add(CreateIdea("Meer cardio toestellen in de ochtendzone", new[] { "De rijen aan de loopbanden zijn 's ochtends niet te doen.", "Misschien een reservatiesysteem voor piekuren?", "Roeiers en steppers zijn ook altijd bezet." }, 38, new[] { 14, 9, 22 }));
-        catFacilities.Ideas.Add(CreateIdea("Sauna toevoegen aan de wellnesszone", new[] { "Dit zou het lidmaatschap zoveel meer waard maken!", "Een infraroodsauna zou ideaal zijn voor spierherstel.", "Andere gyms hebben dit al standaard." }, 45, new[] { 20, 11, 17 }));
-        catFacilities.Ideas.Add(CreateIdea("Betere ventilatie in de gewichtszaal", new[] { "Het is veel te warm en benauwd tijdens piekuren.", "Airconditioning zou een groot verschil maken.", "Extra ventilatoren als tussenoplossing?" }, 32, new[] { 8, 19, 13 }));
-        catFacilities.Ideas.Add(CreateIdea("Ruimere kleedkamers voor dames", new[] { "Nu is het bijna onmogelijk om je te kleden tijdens spitsuren.", "Meer kluisjes zouden ook welkom zijn.", "Een aparte ruimte voor föhnen zou handig zijn." }, 29, new[] { 15, 7, 24 }));
-        catFacilities.Ideas.Add(CreateIdea("Kinderhoek toevoegen aan de gym", new[] { "Dan kunnen ouders sporten terwijl de kinderen spelen.", "Zou veel meer jonge gezinnen aantrekken.", "Een begeleider voor de kinderen zou ideaal zijn." }, 36, new[] { 11, 20, 6 }));
-        catFacilities.Ideas.Add(CreateIdea("Gratis parkeerplaats voor leden", new[] { "Nu is parkeren een extra kost bovenop het lidmaatschap.", "Zeker 's avonds is dit een probleem.", "Een samenwerking met de parking naast de gym?" }, 41, new[] { 18, 12, 25 }));
-        catFacilities.Ideas.Add(CreateIdea("Smoothiebar toevoegen aan de receptie", new[] { "Gezonde snacks na het sporten zouden perfect zijn.", "Proteïneshakes en vers fruit als basis.", "Zou ook een leuke sociale plek worden." }, 27, new[] { 9, 16, 21 }));
-        catFacilities.Ideas.Add(CreateIdea("Meer spiegels in de vrije gewichtszaal", new[] { "Spiegels zijn essentieel voor techniekcontrole.", "Nu moet je soms in rare hoeken staan.", "Zeker aan de dumbbell rek zijn er te weinig." }, 33, new[] { 13, 22, 8 }));
-        catFacilities.Ideas.Add(CreateIdea("Wifi verbeteren in de sporthal", new[] { "Het signaal valt constant weg terwijl ik muziek stream.", "Wifi is tegenwoordig een basisverwachting.", "Zou ook nuttig zijn voor de personal trainers." }, 44, new[] { 17, 10, 19 }));
-        catFacilities.Ideas.Add(CreateIdea("Massagestoel toevoegen aan de relaxzone", new[] { "Na een zware training is dit de perfecte beloning.", "Zelfs een betaalde massagestoel zou ik gebruiken.", "Zou de gym onderscheiden van de concurrentie." }, 50, new[] { 24, 14, 7 }));
+        catFacilities.Ideas.Add(CreateIdea("Meer cardio toestellen in de ochtendzone", new[] { "De rijen aan de loopbanden zijn 's ochtends niet te doen.", "Misschien een reservatiesysteem voor piekuren?", "Roeiers en steppers zijn ook altijd bezet." }, 38, new[] { 14, 9, 22 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Sauna toevoegen aan de wellnesszone", new[] { "Dit zou het lidmaatschap zoveel meer waard maken!", "Een infraroodsauna zou ideaal zijn voor spierherstel.", "Andere gyms hebben dit al standaard." }, 45, new[] { 20, 11, 17 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Betere ventilatie in de gewichtszaal", new[] { "Het is veel te warm en benauwd tijdens piekuren.", "Airconditioning zou een groot verschil maken.", "Extra ventilatoren als tussenoplossing?" }, 32, new[] { 8, 19, 13 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Ruimere kleedkamers voor dames", new[] { "Nu is het bijna onmogelijk om je te kleden tijdens spitsuren.", "Meer kluisjes zouden ook welkom zijn.", "Een aparte ruimte voor föhnen zou handig zijn." }, 29, new[] { 15, 7, 24 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Kinderhoek toevoegen aan de gym", new[] { "Dan kunnen ouders sporten terwijl de kinderen spelen.", "Zou veel meer jonge gezinnen aantrekken.", "Een begeleider voor de kinderen zou ideaal zijn." }, 36, new[] { 11, 20, 6 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Gratis parkeerplaats voor leden", new[] { "Nu is parkeren een extra kost bovenop het lidmaatschap.", "Zeker 's avonds is dit een probleem.", "Een samenwerking met de parking naast de gym?" }, 41, new[] { 18, 12, 25 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Smoothiebar toevoegen aan de receptie", new[] { "Gezonde snacks na het sporten zouden perfect zijn.", "Proteïneshakes en vers fruit als basis.", "Zou ook een leuke sociale plek worden." }, 27, new[] { 9, 16, 21 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Meer spiegels in de vrije gewichtszaal", new[] { "Spiegels zijn essentieel voor techniekcontrole.", "Nu moet je soms in rare hoeken staan.", "Zeker aan de dumbbell rek zijn er te weinig." }, 33, new[] { 13, 22, 8 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Wifi verbeteren in de sporthal", new[] { "Het signaal valt constant weg terwijl ik muziek stream.", "Wifi is tegenwoordig een basisverwachting.", "Zou ook nuttig zijn voor de personal trainers." }, 44, new[] { 17, 10, 19 }, fitLifeEmojis));
+        catFacilities.Ideas.Add(CreateIdea("Massagestoel toevoegen aan de relaxzone", new[] { "Na een zware training is dit de perfecte beloning.", "Zelfs een betaalde massagestoel zou ik gebruiken.", "Zou de gym onderscheiden van de concurrentie." }, 50, new[] { 24, 14, 7 }, fitLifeEmojis));
 
         var catLessons = new Category { Name = "Lessen & Begeleiding", Description = "Groepslessen en personal training" };
-        catLessons.Ideas.Add(CreateIdea("Yogales toevoegen aan het weekendrooster", new[] { "In het weekend heb ik eindelijk tijd voor yoga!", "Liefst vroeg in de ochtend zodat de rest van de dag vrij is.", "Ook een meditatieklas zou geweldig zijn." }, 39, new[] { 16, 23, 9 }));
-        catLessons.Ideas.Add(CreateIdea("Personal training sessies goedkoper maken", new[] { "Nu is het onbetaalbaar voor studenten.", "Misschien een studentenkorting invoeren?", "Duo sessies zouden ook goedkoper zijn per persoon." }, 43, new[] { 12, 19, 25 }));
-        catLessons.Ideas.Add(CreateIdea("Online lessen streamen voor leden", new[] { "Als ik ziek ben kan ik toch nog de les volgen.", "Zou ook handig zijn voor mensen met drukke schema's.", "Opnames achteraf bekijken zou ook fijn zijn." }, 31, new[] { 8, 14, 20 }));
-        catLessons.Ideas.Add(CreateIdea("Beginnerscursus voor nieuwe leden", new[] { "Nu word je gewoon losgelaten in de gym zonder uitleg.", "Een rondleiding en basisuitleg zou het verschil maken.", "Veel mensen stoppen omdat ze niet weten hoe te starten." }, 46, new[] { 22, 11, 17 }));
-        catLessons.Ideas.Add(CreateIdea("Voedingsadvies opnemen in het lidmaatschap", new[] { "Sport en voeding gaan hand in hand.", "Zelfs een basisconsultatie zou al enorm helpen.", "Nu moet je dat apart en duur betalen." }, 35, new[] { 10, 21, 6 }));
-        catLessons.Ideas.Add(CreateIdea("Dans- en zumbaklassen toevoegen", new[] { "Zumba is superleuk en verbrand veel calorieën.", "Zou ook meer vrouwelijke leden aantrekken.", "Een wekelijkse dansles op vrijdagavond zou gezellig zijn." }, 28, new[] { 15, 9, 23 }));
-        catLessons.Ideas.Add(CreateIdea("Boksklassen voor beginners", new[] { "Boksen is een geweldige stressafvoer.", "Een veilige omgeving voor beginners is belangrijk.", "Zou ook zelfverdediging kunnen combineren." }, 42, new[] { 19, 13, 7 }));
-        catLessons.Ideas.Add(CreateIdea("Maandelijkse fitnessdoelen bijhouden met trainer", new[] { "Progressie bijhouden motiveert enorm.", "Een korte check-in van 15 minuten per maand zou al genoeg zijn.", "Nu weet ik niet of ik vooruitga." }, 37, new[] { 11, 18, 24 }));
-        catLessons.Ideas.Add(CreateIdea("Senior-vriendelijke lessen toevoegen", new[] { "Ouderen hebben andere noden dan jonge sporters.", "Lage impact cardio en stretching zouden perfect zijn.", "Zou ook nieuwe doelgroep aantrekken." }, 26, new[] { 20, 8, 16 }));
-        catLessons.Ideas.Add(CreateIdea("Aqua aerobics in het zwembad", new[] { "Gewrichtsvriendelijk sporten voor iedereen.", "Ideaal voor mensen met rugklachten.", "Het zwembad wordt nu ondergecapaciteit gebruikt." }, 48, new[] { 14, 22, 10 }));
+        catLessons.Ideas.Add(CreateIdea("Yogales toevoegen aan het weekendrooster", new[] { "In het weekend heb ik eindelijk tijd voor yoga!", "Liefst vroeg in de ochtend zodat de rest van de dag vrij is.", "Ook een meditatieklas zou geweldig zijn." }, 39, new[] { 16, 23, 9 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Personal training sessies goedkoper maken", new[] { "Nu is het onbetaalbaar voor studenten.", "Misschien een studentenkorting invoeren?", "Duo sessies zouden ook goedkoper zijn per persoon." }, 43, new[] { 12, 19, 25 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Online lessen streamen voor leden", new[] { "Als ik ziek ben kan ik toch nog de les volgen.", "Zou ook handig zijn voor mensen met drukke schema's.", "Opnames achteraf bekijken zou ook fijn zijn." }, 31, new[] { 8, 14, 20 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Beginnerscursus voor nieuwe leden", new[] { "Nu word je gewoon losgelaten in de gym zonder uitleg.", "Een rondleiding en basisuitleg zou het verschil maken.", "Veel mensen stoppen omdat ze niet weten hoe te starten." }, 46, new[] { 22, 11, 17 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Voedingsadvies opnemen in het lidmaatschap", new[] { "Sport en voeding gaan hand in hand.", "Zelfs een basisconsultatie zou al enorm helpen.", "Nu moet je dat apart en duur betalen." }, 35, new[] { 10, 21, 6 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Dans- en zumbaklassen toevoegen", new[] { "Zumba is superleuk en verbrand veel calorieën.", "Zou ook meer vrouwelijke leden aantrekken.", "Een wekelijkse dansles op vrijdagavond zou gezellig zijn." }, 28, new[] { 15, 9, 23 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Boksklassen voor beginners", new[] { "Boksen is een geweldige stressafvoer.", "Een veilige omgeving voor beginners is belangrijk.", "Zou ook zelfverdediging kunnen combineren." }, 42, new[] { 19, 13, 7 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Maandelijkse fitnessdoelen bijhouden met trainer", new[] { "Progressie bijhouden motiveert enorm.", "Een korte check-in van 15 minuten per maand zou al genoeg zijn.", "Nu weet ik niet of ik vooruitga." }, 37, new[] { 11, 18, 24 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Senior-vriendelijke lessen toevoegen", new[] { "Ouderen hebben andere noden dan jonge sporters.", "Lage impact cardio en stretching zouden perfect zijn.", "Zou ook nieuwe doelgroep aantrekken." }, 26, new[] { 20, 8, 16 }, fitLifeEmojis));
+        catLessons.Ideas.Add(CreateIdea("Aqua aerobics in het zwembad", new[] { "Gewrichtsvriendelijk sporten voor iedereen.", "Ideaal voor mensen met rugklachten.", "Het zwembad wordt nu ondergecapaciteit gebruikt." }, 48, new[] { 14, 22, 10 }, fitLifeEmojis));
 
         var catSchedule = new Category { Name = "Planning & Openingsuren", Description = "Bereikbaarheid en rooster" };
-        catSchedule.Ideas.Add(CreateIdea("Gym ook open op zondagavond", new[] { "Zondagavond is perfect om de week voor te bereiden.", "Nu moet ik altijd wachten tot maandag.", "Zelfs maar tot 20u zou al een groot verschil maken." }, 40, new[] { 17, 11, 25 }));
-        catSchedule.Ideas.Add(CreateIdea("App voor reservaties van toestellen", new[] { "Dan weet je op voorhand of het druk is.", "Wachtrijen zijn frustrerend na een lange werkdag.", "Zou ook de verdeling van leden over de dag verbeteren." }, 34, new[] { 9, 20, 14 }));
-        catSchedule.Ideas.Add(CreateIdea("Vroeger openen op weekdagen", new[] { "Om 5u30 open zou mij toelaten voor het werk te sporten.", "Veel mensen willen 's ochtends vroeg trainen.", "Nu mis ik de ochtendtrein als ik eerst naar de gym ga." }, 47, new[] { 23, 12, 8 }));
-        catSchedule.Ideas.Add(CreateIdea("Wachtlijst systeem voor populaire lessen", new[] { "Lessen zijn vaak volgeboekt tegen dat ik kan inschrijven.", "Een automatische notificatie als er een plekje vrijkomt.", "Nu kom ik soms voor niets." }, 29, new[] { 16, 7, 19 }));
-        catSchedule.Ideas.Add(CreateIdea("Rustigere tijdslots aanduiden op de app", new[] { "Ik wil weten wanneer de gym relatief leeg is.", "Nu is het altijd een verrassing of het druk is.", "Zou mijn trainingservaring veel aangenamer maken." }, 38, new[] { 13, 21, 6 }));
-        catSchedule.Ideas.Add(CreateIdea("Feestdagen openingsuren beter communiceren", new[] { "Ik ben al een paar keer voor een gesloten deur gestaan.", "Een automatische e-mail of pushmelding zou helpen.", "Op de website staat het soms verkeerd." }, 25, new[] { 10, 18, 22 }));
-        catSchedule.Ideas.Add(CreateIdea("Langere openingsuren in het weekend", new[] { "Nu sluit de gym al om 18u op zondag.", "Het weekend is voor velen de enige tijd om lang te sporten.", "Zelfs tot 21u zou al een groot verschil maken." }, 43, new[] { 15, 9, 24 }));
-        catSchedule.Ideas.Add(CreateIdea("Persoonlijk trainingsrooster in de app", new[] { "Nu moet ik alles zelf bijhouden in een notitieblok.", "Een digitaal schema met herinneringen zou perfect zijn.", "Integratie met mijn agenda zou ideaal zijn." }, 36, new[] { 20, 11, 17 }));
-        catSchedule.Ideas.Add(CreateIdea("Druktemeter aan de ingang installeren", new[] { "Dan kan ik beslissen of ik nu ga of later.", "Sommige gyms hebben dit al en het werkt geweldig.", "Zou ook via de app beschikbaar kunnen zijn." }, 31, new[] { 8, 19, 13 }));
-        catSchedule.Ideas.Add(CreateIdea("Speciale ochtendpas voor vroege sporters", new[] { "Een goedkopere pas voor enkel ochtenduren zou perfect zijn.", "Dan zijn de toestellen minder bezet en ik betaal minder.", "Win-win voor de gym en de leden." }, 52, new[] { 25, 14, 20 }));
+        catSchedule.Ideas.Add(CreateIdea("Gym ook open op zondagavond", new[] { "Zondagavond is perfect om de week voor te bereiden.", "Nu moet ik altijd wachten tot maandag.", "Zelfs maar tot 20u zou al een groot verschil maken." }, 40, new[] { 17, 11, 25 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("App voor reservaties van toestellen", new[] { "Dan weet je op voorhand of het druk is.", "Wachtrijen zijn frustrerend na een lange werkdag.", "Zou ook de verdeling van leden over de dag verbeteren." }, 34, new[] { 9, 20, 14 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Vroeger openen op weekdagen", new[] { "Om 5u30 open zou mij toelaten voor het werk te sporten.", "Veel mensen willen 's ochtends vroeg trainen.", "Nu mis ik de ochtendtrein als ik eerst naar de gym ga." }, 47, new[] { 23, 12, 8 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Wachtlijst systeem voor populaire lessen", new[] { "Lessen zijn vaak volgeboekt tegen dat ik kan inschrijven.", "Een automatische notificatie als er een plekje vrijkomt.", "Nu kom ik soms voor niets." }, 29, new[] { 16, 7, 19 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Rustigere tijdslots aanduiden op de app", new[] { "Ik wil weten wanneer de gym relatief leeg is.", "Nu is het altijd een verrassing of het druk is.", "Zou mijn trainingservaring veel aangenamer maken." }, 38, new[] { 13, 21, 6 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Feestdagen openingsuren beter communiceren", new[] { "Ik ben al een paar keer voor een gesloten deur gestaan.", "Een automatische e-mail of pushmelding zou helpen.", "Op de website staat het soms verkeerd." }, 25, new[] { 10, 18, 22 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Langere openingsuren in het weekend", new[] { "Nu sluit de gym al om 18u op zondag.", "Het weekend is voor velen de enige tijd om lang te sporten.", "Zelfs tot 21u zou al een groot verschil maken." }, 43, new[] { 15, 9, 24 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Persoonlijk trainingsrooster in de app", new[] { "Nu moet ik alles zelf bijhouden in een notitieblok.", "Een digitaal schema met herinneringen zou perfect zijn.", "Integratie met mijn agenda zou ideaal zijn." }, 36, new[] { 20, 11, 17 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Druktemeter aan de ingang installeren", new[] { "Dan kan ik beslissen of ik nu ga of later.", "Sommige gyms hebben dit al en het werkt geweldig.", "Zou ook via de app beschikbaar kunnen zijn." }, 31, new[] { 8, 19, 13 }, fitLifeEmojis));
+        catSchedule.Ideas.Add(CreateIdea("Speciale ochtendpas voor vroege sporters", new[] { "Een goedkopere pas voor enkel ochtenduren zou perfect zijn.", "Dan zijn de toestellen minder bezet en ik betaal minder.", "Win-win voor de gym en de leden." }, 52, new[] { 25, 14, 20 }, fitLifeEmojis));
 
         projectActive2.Categories.Add(catFacilities);
         projectActive2.Categories.Add(catLessons);
@@ -186,10 +194,10 @@ public class DummyDataSeeder
 
         // ── Project 3: FC Eendracht ──
         var questionnaire3 = new Questionnaire();
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?", IsMandatory = true });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3, Text = "Wat zou jij veranderen aan de club als je de kans had?", IsMandatory = false });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false, Position = 1 });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true, Position = 2 });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?", IsMandatory = true, Position = 3 });
+        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3, Text = "Wat zou jij veranderen aan de club als je de kans had?", IsMandatory = false, Position = 4 });
 
         var projectActive3 = new Project
         {
@@ -199,7 +207,7 @@ public class DummyDataSeeder
             Name = "Clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             OrganisationName = "FC Eendracht",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=FC+Eendracht",
+            OrganisationLogoUrl = "/uploads/logos/logo_eendracht.png",
             OrganisationWebsiteUrl = "https://www.fceendracht.be",
             
         };
@@ -276,6 +284,17 @@ public class DummyDataSeeder
         context.Projects.Add(projectDraft);
 
         context.Emojis.AddRange(_heart, _thumbsup, _fire, _check);
+
+        // Enable emojis per project
+        var allEmojis = new[] { _heart, _thumbsup, _fire, _check };
+        foreach (var emoji in allEmojis)
+        {
+            projectActive.Emojis.Add(emoji);
+            projectActive3.Emojis.Add(emoji);
+        }
+        projectActive2.Emojis.Add(_heart);
+        projectActive2.Emojis.Add(_fire);
+
         context.SaveChanges();
     }
 }
