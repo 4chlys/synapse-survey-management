@@ -136,6 +136,7 @@ source "${INFRA_DIR}/lib/05_storage.sh"
 source "${INFRA_DIR}/lib/06_loadbalancer.sh"
 source "${INFRA_DIR}/lib/07_cloudsql.sh"
 source "${INFRA_DIR}/lib/08_logging.sh"
+source "${INFRA_DIR}/lib/09_armor.sh"
 
 # ── Stap 6: Setup uitvoeren ────────────────────────────────────
 echo ""
@@ -168,6 +169,7 @@ reserve_static_ip
 create_forwarding_rules
 setup_logging_iam
 create_uptime_checks
+create_cloud_armor
 
 # ── Stap 7: LB IP ophalen ──────────────────────────────────────
 LB_IP=$(gcloud compute addresses describe synapse-lb-ip \
