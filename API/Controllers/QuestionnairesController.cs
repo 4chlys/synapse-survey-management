@@ -45,7 +45,7 @@ public class QuestionnairesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format)) 
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var question = await questionnaireManager.AddQuestionAsync(projectId,
@@ -55,7 +55,7 @@ public class QuestionnairesController(
 
         return Created(string.Empty, MapToDto(question));
     }
-    
+
     [HttpPut("questions/{questionId}")]
     public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
         UpdateQuestionDto dto)
@@ -63,7 +63,7 @@ public class QuestionnairesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format)) 
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
