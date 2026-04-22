@@ -33,7 +33,9 @@ public class ProjectManager(IRepository repository, IUnitOfWork uow) : IProjectM
         if (!string.IsNullOrEmpty(introduction))
             project.Introduction = new Introduction { Text = introduction };
 
-        return await repository.CreateAsync(project);
+        var created = await repository.CreateAsync(project);
+        await uow.SaveChangesAsync();
+        return created;
     }
 
     public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)

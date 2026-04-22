@@ -15,7 +15,7 @@ public class CategoryManager(IRepository repository, IUnitOfWork uow) : ICategor
     public async Task<Category> CreateCategoryAsync(int projectId, string name,
         string description)
     {
-        var project = await repository.ReadByIdAsync<Project>(projectId);
+        var project = await repository.ReadByIdAsync<Project>(projectId, tracked: true);
         if (project is null) return null;
 
         var category = new Category
@@ -24,7 +24,9 @@ public class CategoryManager(IRepository repository, IUnitOfWork uow) : ICategor
             Description = description,
             Project = project
         };
-        return await repository.CreateAsync(category);
+        var created = await repository.CreateAsync(category);
+        await uow.SaveChangesAsync();
+        return created;
     }
 
     public async Task<bool> UpdateCategoryAsync(int categoryId, string name, string
@@ -42,7 +44,9 @@ public class CategoryManager(IRepository repository, IUnitOfWork uow) : ICategor
 
     public async Task<bool> DeleteCategoryAsync(int categoryId)
     {
-        return await repository.DeleteByIdAsync<Category>(categoryId);
+        var result = await repository.DeleteByIdAsync<Category>(categoryId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
 
     public async Task<Category> GetCategoryByIdAsync(int id)

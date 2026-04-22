@@ -17,7 +17,8 @@ public class SectionManager(IRepository repository, IUnitOfWork uow) : ISectionM
         string description)
     {
         var questionnaire = await repository.ReadSingleAsync<Questionnaire>(
-            filters: [q => q.Project.ProjectId == projectId]
+            filters: [q => q.Project.ProjectId == projectId],
+            tracked: true
         );
         if (questionnaire is null) return null;
 
@@ -27,7 +28,9 @@ public class SectionManager(IRepository repository, IUnitOfWork uow) : ISectionM
             Description = description,
             Questionnaire = questionnaire
         };
-        return await repository.CreateAsync(section);
+        var created = await repository.CreateAsync(section);
+        await uow.SaveChangesAsync();
+        return created;
     }
 
     public async Task<bool> UpdateSectionAsync(int sectionId, string name, string
@@ -45,6 +48,8 @@ public class SectionManager(IRepository repository, IUnitOfWork uow) : ISectionM
 
     public async Task<bool> DeleteSectionAsync(int sectionId)
     {
-        return await repository.DeleteByIdAsync<Section>(sectionId);
+        var result = await repository.DeleteByIdAsync<Section>(sectionId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
 }
