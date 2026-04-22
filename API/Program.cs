@@ -76,6 +76,7 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
+builder.Services.AddScoped<ISectionManager, SectionManager>();
 
 // AI configuration
 //

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -35,6 +36,52 @@ public class QuestionnairesController(
             .Select(MapToDto)
             .ToList();
         return Ok(dtos);
+    }
+
+    [HttpPost("questions")]
+    public async Task<ActionResult<QuestionDto>> AddQuestion(int projectId,
+        [FromBody] CreateQuestionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format)) 
+            return BadRequest("Invalid QuestionFormat.");
+
+        var question = await questionnaireManager.AddQuestionAsync(projectId,
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices);
+        if (question is null)
+            return NotFound();
+
+        return Created(string.Empty, MapToDto(question));
+    }
+    
+    [HttpPut("questions/{questionId}")]
+    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
+        UpdateQuestionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format)) 
+            return BadRequest("Invalid QuestionFormat.");
+
+        var success = await questionnaireManager.UpdateQuestionAsync(questionId,
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices);
+        if (!success)
+            return NotFound();
+
+        return NoContent();
+    }
+
+    [HttpDelete("questions/{questionId}")]
+    public async Task<IActionResult> DeleteQuestion(int questionId)
+    {
+        var success = await questionnaireManager.DeleteQuestionAsync(questionId);
+        if (!success)
+            return NotFound();
+
+        return NoContent();
     }
 
     [HttpGet("next-question")]
