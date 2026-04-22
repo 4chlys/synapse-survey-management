@@ -31,6 +31,15 @@ create_cloud_armor() {
     --description="Rate limiting: max 100 req/min per IP, ban 5 min" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
+  echo "  >>> Geo-blocking: EU allow-regels toevoegen..."
+  gcloud compute security-policies rules create 100 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'BE' || origin.region_code == 'NL' || origin.region_code == 'LU' || origin.region_code == 'DE' || origin.region_code == 'FR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 110 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'IT' || origin.region_code == 'ES' || origin.region_code == 'PT' || origin.region_code == 'AT' || origin.region_code == 'SE'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 120 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'FI' || origin.region_code == 'DK' || origin.region_code == 'IE' || origin.region_code == 'PL' || origin.region_code == 'CZ'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 130 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SK' || origin.region_code == 'HU' || origin.region_code == 'RO' || origin.region_code == 'BG' || origin.region_code == 'HR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 140 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SI' || origin.region_code == 'EE' || origin.region_code == 'LV' || origin.region_code == 'LT' || origin.region_code == 'GR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 150 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'CY' || origin.region_code == 'MT'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 200 --security-policy="${ARMOR_POLICY}" --expression="true" --action=deny-403 --description="Geo-blocking: alleen EU toegelaten" --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
   echo "  >>> Policy koppelen aan backend services..."
   for backend in synapse-api-backend synapse-ui-backend synapse-admin-backend; do
     gcloud compute backend-services update "${backend}" \
@@ -39,7 +48,7 @@ create_cloud_armor() {
       --project="${PROJECT_ID}" 2>/dev/null || echo "  (${backend} niet gevonden, overgeslagen)"
   done
 
-  echo "  Cloud Armor actief. Kost: ~\$5/maand (policy) + requests."
+  echo "  Cloud Armor actief. Kost: ~\$10/maand (policy + regels) + requests."
 }
 
 destroy_cloud_armor() {

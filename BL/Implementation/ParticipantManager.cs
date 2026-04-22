@@ -55,8 +55,7 @@ public class ParticipantManager(IRepository repository) : IParticipantManager
         if (participant is null)
             throw new KeyNotFoundException($"Participant with id {participantId} not found.");
         participant.Email = email;
-        participant.git push --set-upstream
-        origin refactoring/deployment-code-changesPhoneNumber = phoneNumber;
+        phoneNumber = phoneNumber;
         await repository.UpdateAsync(participant);
     }
 }
