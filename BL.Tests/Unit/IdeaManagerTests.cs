@@ -6,7 +6,8 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class IdeaManagerTests
 {
-    private readonly Mock<IRepository> _repository = new(MockBehavior.Strict);
+    private readonly Mock<IIdeaRepository> _ideaRepository = new(MockBehavior.Strict);
+    private readonly Mock<IRepository<Category>> _categoryRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<Idea>> _sortFactory = new();
     private readonly IdeaManager _manager;
@@ -17,7 +18,7 @@ public class IdeaManagerTests
 
     public IdeaManagerTests()
     {
-        _manager = new IdeaManager(_repository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
+        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
     }
 
     [Fact]
@@ -25,10 +26,10 @@ public class IdeaManagerTests
     {
         // Arrange
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId } };
-        _repository.Setup(r => r.ReadByIdAsync<Category>(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
             .ReturnsAsync(category)
             .Verifiable(Times.Exactly(1));
-        _repository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
             .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -43,7 +44,8 @@ public class IdeaManagerTests
         Assert.Equal("desc", idea.Description);
         Assert.Same(category, idea.Category);
         Assert.Same(_participant, idea.Participant);
-        _repository.VerifyAll();
+        _categoryRepository.VerifyAll();
+        _ideaRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -54,9 +56,9 @@ public class IdeaManagerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId } };
-        _repository.Setup(r => r.ReadByIdAsync<Category>(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
             .ReturnsAsync(category);
-        _repository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
             .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
@@ -73,7 +75,7 @@ public class IdeaManagerTests
     public async Task AddIdeaAsync_CategoryNotFound_ThrowsAndDoesNotSave()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Category>(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
             .ReturnsAsync((Category)null)
             .Verifiable(Times.Exactly(1));
 
@@ -81,7 +83,7 @@ public class IdeaManagerTests
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant));
 
-        _repository.VerifyAll();
+        _categoryRepository.VerifyAll();
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -90,7 +92,7 @@ public class IdeaManagerTests
     {
         // Arrange
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId + 1 } };
-        _repository.Setup(r => r.ReadByIdAsync<Category>(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _categoryRepository.Setup(r => r.ReadByIdAsync(CategoryId, It.IsAny<Expression<Func<Category, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
             .ReturnsAsync(category)
             .Verifiable(Times.Exactly(1));
 
@@ -98,7 +100,7 @@ public class IdeaManagerTests
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant));
 
-        _repository.VerifyAll();
+        _categoryRepository.VerifyAll();
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

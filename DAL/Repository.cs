@@ -7,9 +7,9 @@ namespace SynapseEnqueteManagement.DAL;
 /// A generic repository class that provides standard CRUD (Create, Read, Update, Delete)
 /// operations for any entity type using Entity Framework Core.
 /// </summary>
-public class Repository : IRepository
+public class Repository<T> : IRepository<T> where T : class
 {
-    private readonly DbContext _context;
+    protected readonly DbContext _context;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Repository"/> class.
@@ -30,7 +30,7 @@ public class Repository : IRepository
     /// If an entity matching this expression already exists, the creation is skipped.
     /// </param>
     /// <returns>The created entity if successful; <c>null</c> if a duplicate was found.</returns>
-    public async Task<T> CreateAsync<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class
+    public async Task<T> CreateAsync(T entity, Expression<Func<T, bool>> duplicateCheck = null)
     {
         if (duplicateCheck != null && await _context.Set<T>().AnyAsync(duplicateCheck))
         {
@@ -40,7 +40,7 @@ public class Repository : IRepository
         await _context.Set<T>().AddAsync(entity);
         return entity;
     }
-
+    
 
     /// <summary>
     /// Retrieves a collection of entities based on provided filters and navigation property includes.
@@ -50,7 +50,7 @@ public class Repository : IRepository
     /// <param name="includes">An optional array of lambda expressions for related entities to include (eager loading).</param>
     /// <param name="includeStrings">An optional array of string paths for nested or complex related entities to include.</param>
     /// <returns>An <see cref="IEnumerable{T}"/> containing the matching entities.</returns>
-    public async Task<IEnumerable<T>> ReadAsync<T>(
+    public async Task<IEnumerable<T>> ReadAsync(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
@@ -59,7 +59,7 @@ public class Repository : IRepository
         int? skip = null,
         int? take = null,
         bool tracked = true
-    ) where T : class
+    )
     {
         IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
 
@@ -88,7 +88,7 @@ public class Repository : IRepository
         return await ordered.ToListAsync();
     }
 
-    public async Task<int> CountAsync<T>(Expression<Func<T, bool>>[] filters = null) where T : class
+    public async Task<int> CountAsync(Expression<Func<T, bool>>[] filters = null)
     {
         IQueryable<T> query = _context.Set<T>();
 
@@ -105,12 +105,12 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to find.</typeparam>
     /// <param name="id">The primary key value(s) of the entity.</param>
     /// <returns>The entity if found; <c>null</c> otherwise.</returns>
-    public async Task<T> ReadByIdAsync<T>(
+    public async Task<T> ReadByIdAsync(
         object id,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
         bool tracked = true
-    ) where T : class
+    )
     {
         if (includes == null && includeStrings == null)
             return await _context.Set<T>().FindAsync(id);
@@ -140,12 +140,12 @@ public class Repository : IRepository
     /// Retrieves a single entity based on provided filters and navigation property includes.
     /// The SingleOrDefaultAsync is executed on the IQueryable, so it translates to a SQL TOP 1 query.
     /// </summary>
-    public async Task<T> ReadSingleAsync<T>(
+    public async Task<T> ReadSingleAsync(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
         bool tracked = true
-    ) where T : class
+    )
     {
         IQueryable<T> query = tracked ? _context.Set<T>() : _context.Set<T>().AsNoTracking();
 
@@ -170,7 +170,7 @@ public class Repository : IRepository
         return await query.SingleOrDefaultAsync();
     }
 
-    public async Task<bool> ExistsAsync<T>(Expression<Func<T, bool>> filter) where T : class
+    public async Task<bool> ExistsAsync(Expression<Func<T, bool>> filter)
     {
         return await _context.Set<T>().AnyAsync(filter);
     }
@@ -181,7 +181,7 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
     /// <param name="entity">The entity instance with updated values.</param>
     /// <returns><c>true</c> if the update was successful; <c>false</c> if an error occurred (logged).</returns>
-    public void Update<T>(T entity) where T : class
+    public void Update(T entity)
     {
         _context.Set<T>().Update(entity);
     }
@@ -192,7 +192,7 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to delete.</typeparam>
     /// <param name="filter">The expression used to locate the entity for deletion.</param>
     /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
-    public async Task<bool> DeleteAsync<T>(Expression<Func<T, bool>> filter) where T : class
+    public async Task<bool> DeleteAsync(Expression<Func<T, bool>> filter)
     {
         var entity = await _context.Set<T>().SingleOrDefaultAsync(filter);
         if (entity == null)
@@ -210,7 +210,7 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity to delete.</typeparam>
     /// <param name="id">The primary key value(s) of the entity.</param>
     /// <returns><c>true</c> if the entity was found and successfully deleted; <c>false</c> if the entity does not exist.</returns>
-    public async Task<bool> DeleteByIdAsync<T>(params object[] id) where T : class
+    public async Task<bool> DeleteByIdAsync(params object[] id)
     {
         var entity = await _context.Set<T>().FindAsync(id);
         if (entity == null)

@@ -26,7 +26,7 @@ public class IdeasController(
         var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project == null) return NotFound();
 
-        var paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort);
+        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsAsync(categoryId, page, project.IdeaPageSize, sort);
 
 
         return Ok(new PagedResult<IdeaDto>
@@ -71,7 +71,7 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var ideas = await ideaManager.GetOwnIdeasByCategoryAsync(categoryId, participant.ParticipantId);
+        var ideas = await ideaManager.GetParticipantIdeasByCategoryWithCommentsAsync(categoryId, participant.ParticipantId);
         return Ok(ideas.Select(i => MapIdeaToDto(i, participant.ParticipantId)));
     }
 
@@ -80,7 +80,7 @@ public class IdeasController(
     {
         var participantId = await ResolveParticipantIdAsync();
 
-        var idea = await ideaManager.GetIdeaByIdAsync(ideaId);
+        var idea = await ideaManager.GetIdeaByIdWithCommentsAsync(ideaId);
         if (idea == null) return NotFound();
 
         return Ok(MapIdeaToDto(idea, participantId));

@@ -7,53 +7,34 @@ using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class IdeaManager(IRepository repository, IUnitOfWork uow, ILogger<IdeaManager> logger, ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
+public class IdeaManager(
+    IIdeaRepository ideaRepository,
+    IRepository<Category> categoryRepository,
+    IUnitOfWork uow,
+    ILogger<IdeaManager> logger,
+    ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
-    public async Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
+    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsAsync(int categoryId, int page, int pageSize, string sortKey)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
-        var filterList = new List<System.Linq.Expressions.Expression<Func<Idea, bool>>>
-        {
-            i => i.Category.CategoryId == categoryId,
-            i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined
-        };
-        if (excludeParticipantId.HasValue)
-            filterList.Add(i => i.Participant.ParticipantId != excludeParticipantId.Value);
-        var filters = filterList.ToArray();
-
-        var total = await repository.CountAsync<Idea>(filters);
-        var items = await repository.ReadAsync<Idea>(
-            filters: filters,
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings: ["Comments.Emoji", "Comments.Participant"],
-            orderBy: strategy.DbOrderBy,
-            randomize: strategy.Randomize,
-            skip: (page - 1) * pageSize,
-            take: pageSize
-        );
+        var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
+        var items = await ideaRepository.GetVisibleByCategoryWithCommentsReadOnlyAsync(
+            categoryId,
+            strategy.DbOrderBy,
+            strategy.Randomize,
+            (page - 1) * pageSize,
+            pageSize);
 
         return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
     }
 
-    public async Task<IEnumerable<Idea>> GetOwnIdeasByCategoryAsync(int categoryId, int participantId)
-    {
-        return await repository.ReadAsync<Idea>(
-            filters:
-            [
-                i => i.Category.CategoryId == categoryId,
-                i => i.Participant.ParticipantId == participantId,
-                i => i.Status != ModerationStatus.Declined
-            ],
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings: ["Comments.Emoji", "Comments.Participant"],
-            orderBy: q => q.OrderByDescending(i => i.CreatedAt)
-        );
-    }
+    public Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsAsync(int categoryId, int participantId)
+        => ideaRepository.GetByCategoryAndParticipantWithCommentsReadOnlyAsync(categoryId, participantId);
 
     public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant, CancellationToken ct = default)
     {
-        var category = await repository.ReadByIdAsync<Category>(categoryId, includes: [c => c.Project], tracked: true);
+        var category = await categoryRepository.ReadByIdAsync(categoryId, includes: [c => c.Project], tracked: true);
         if (category == null || category.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Category {CategoryId} not found in project {ProjectId}", categoryId, projectId);
@@ -69,26 +50,14 @@ public class IdeaManager(IRepository repository, IUnitOfWork uow, ILogger<IdeaMa
             CreatedAt = DateTime.UtcNow
         };
 
-        var created = await repository.CreateAsync(idea);
+        var created = await ideaRepository.CreateAsync(idea);
         await uow.SaveChangesAsync(ct);
         return created;
     }
 
-    public async Task<int> GetIdeaCountByParticipantAsync(int participantId)
-    {
-        return await repository.CountAsync<Idea>([i => i.Participant.ParticipantId == participantId]);
-    }
+    public Task<int> GetIdeaCountByParticipantAsync(int participantId)
+        => ideaRepository.CountAsync([i => i.Participant.ParticipantId == participantId]);
 
-    public async Task<Idea> GetIdeaByIdAsync(int ideaId)
-    {
-        return await repository.ReadByIdAsync<Idea>(
-            ideaId,
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings:
-            [
-                "Comments.Emoji",
-                "Comments.Participant"
-            ]
-        );
-    }
+    public Task<Idea> GetIdeaByIdWithCommentsAsync(int ideaId)
+        => ideaRepository.GetByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
 }

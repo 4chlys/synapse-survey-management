@@ -2,11 +2,11 @@ using System.Linq.Expressions;
 
 namespace SynapseEnqueteManagement.DAL;
 
-public interface IRepository
+public interface IRepository<T> where T : class
 {
-    Task<T> CreateAsync<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class;
+    Task<T> CreateAsync(T entity, Expression<Func<T, bool>> duplicateCheck = null);
 
-    Task<IEnumerable<T>> ReadAsync<T>(
+    Task<IEnumerable<T>> ReadAsync(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
@@ -15,29 +15,29 @@ public interface IRepository
         int? skip = null,
         int? take = null,
         bool tracked = false
-    ) where T : class;
+    );
 
-    Task<int> CountAsync<T>(Expression<Func<T, bool>>[] filters = null) where T : class;
+    Task<int> CountAsync(Expression<Func<T, bool>>[] filters = null);
 
-    Task<T> ReadByIdAsync<T>(
+    Task<T> ReadByIdAsync(
         object id,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
         bool tracked = false
-    ) where T : class;
+    );
 
-    Task<T> ReadSingleAsync<T>(
+    Task<T> ReadSingleAsync(
         Expression<Func<T, bool>>[] filters = null,
         Expression<Func<T, object>>[] includes = null,
         string[] includeStrings = null,
         bool tracked = false
-    ) where T : class;
+    );
 
-    Task<bool> ExistsAsync<T>(Expression<Func<T, bool>> filter) where T : class;
+    Task<bool> ExistsAsync(Expression<Func<T, bool>> filter);
 
-    void Update<T>(T entity) where T : class;
+    void Update(T entity);
 
-    Task<bool> DeleteAsync<T>(Expression<Func<T, bool>> filter) where T : class;
+    Task<bool> DeleteAsync(Expression<Func<T, bool>> filter);
 
-    Task<bool> DeleteByIdAsync<T>(params object[] id) where T : class;
+    Task<bool> DeleteByIdAsync(params object[] id);
 }

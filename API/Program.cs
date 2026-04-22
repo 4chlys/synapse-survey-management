@@ -48,7 +48,8 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
-builder.Services.AddScoped<IRepository, Repository>();
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Sort strategies (singleton — stateless)
