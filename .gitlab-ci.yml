@@ -97,7 +97,7 @@ push-dev:
     - docker push "${IMAGE_API}:${IMAGE_TAG}"
     - docker push "${IMAGE_UI}:${IMAGE_TAG}"
   only:
-    - development
+    - main #reverse
 
 push-prod:
   stage: push
@@ -112,7 +112,7 @@ push-prod:
     - docker push "${IMAGE_API}:latest"
     - docker push "${IMAGE_UI}:latest"
   only:
-    - main
+    - development #reverse
 
 deploy-test:
   stage: deploy
@@ -134,7 +134,7 @@ deploy-test:
       UI_URL=$(gcloud run services describe mvp-ui-test --region="${REGION}" --format="value(status.url)")
       echo "Test UI available at: $UI_URL"
   only:
-    - development
+    - main #reverse
   environment:
     name: test
 
@@ -152,7 +152,7 @@ deploy-production:
       gcloud compute instance-groups managed wait-until synapse-api-mig --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-ui-mig --stable --zone="${ZONE}"
   only:
-    - main
+    - development #reverse
   when: manual
   environment:
     name: production
