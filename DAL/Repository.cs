@@ -32,14 +32,12 @@ public class Repository : IRepository
     /// <returns>The created entity if successful; <c>null</c> if a duplicate was found.</returns>
     public async Task<T> CreateAsync<T>(T entity, Expression<Func<T, bool>> duplicateCheck = null) where T : class
     {
-        // Check for duplicates
         if (duplicateCheck != null && await _context.Set<T>().AnyAsync(duplicateCheck))
         {
             return null;
         }
 
         await _context.Set<T>().AddAsync(entity);
-        await _context.SaveChangesAsync();
         return entity;
     }
 
@@ -183,10 +181,9 @@ public class Repository : IRepository
     /// <typeparam name="T">The type of the entity being updated.</typeparam>
     /// <param name="entity">The entity instance with updated values.</param>
     /// <returns><c>true</c> if the update was successful; <c>false</c> if an error occurred (logged).</returns>
-    public async Task UpdateAsync<T>(T entity) where T : class
+    public void Update<T>(T entity) where T : class
     {
         _context.Set<T>().Update(entity);
-        await _context.SaveChangesAsync();
     }
 
     /// <summary>
@@ -204,7 +201,6 @@ public class Repository : IRepository
         }
 
         _context.Set<T>().Remove(entity);
-        await _context.SaveChangesAsync();
         return true;
     }
 
@@ -223,7 +219,6 @@ public class Repository : IRepository
         }
 
         _context.Set<T>().Remove(entity);
-        await _context.SaveChangesAsync();
         return true;
     }
 }

@@ -4,7 +4,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class ProjectManager(IRepository repository) : IProjectManager
+public class ProjectManager(IRepository repository, IUnitOfWork uow) : IProjectManager
 {
     public async Task<Project> GetProjectByIdAsync(int projectId)
     {
@@ -17,7 +17,7 @@ public class ProjectManager(IRepository repository) : IProjectManager
         return await repository.ReadAsync<Emoji>();
     }
 
-    public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId)
+    public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis], tracked: true);
         if (project == null) return false;
@@ -28,11 +28,12 @@ public class ProjectManager(IRepository repository) : IProjectManager
         if (project.Emojis.Any(e => e.EmojiId == emojiId)) return true;
 
         project.Emojis.Add(emoji);
-        await repository.UpdateAsync(project);
+        repository.Update(project);
+        await uow.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId)
+    public async Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await repository.ReadByIdAsync<Project>(projectId, includes: [p => p.Emojis], tracked: true);
         if (project == null) return false;
@@ -41,7 +42,8 @@ public class ProjectManager(IRepository repository) : IProjectManager
         if (emoji == null) return false;
 
         project.Emojis.Remove(emoji);
-        await repository.UpdateAsync(project);
+        repository.Update(project);
+        await uow.SaveChangesAsync(ct);
         return true;
     }
 }
