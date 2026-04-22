@@ -9,6 +9,7 @@ import concurrent.futures
 import http.server
 import json
 import subprocess
+import sys
 import threading
 import webbrowser
 from pathlib import Path
@@ -37,12 +38,30 @@ MIGS = [
 ]
 
 # ── GCloud helpers ─────────────────────────────────────────────
+# On Windows, gcloud is installed as gcloud.cmd — subprocess needs the full name
+_GCLOUD = "gcloud.cmd" if sys.platform == "win32" else "gcloud"
+
 def gcloud(*args, timeout=20):
     try:
-        r = subprocess.run(["gcloud", *args], capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(
+            [_GCLOUD, *args],
+            capture_output=True, text=True, timeout=timeout,
+            shell=False
+        )
         return r.stdout.strip(), r.returncode
-    except (subprocess.TimeoutExpired, FileNotFoundError):
+    except subprocess.TimeoutExpired:
         return "", 1
+    except FileNotFoundError:
+        # fallback: try with shell=True (e.g. custom PATH setups)
+        try:
+            r = subprocess.run(
+                "gcloud " + " ".join(str(a) for a in args),
+                capture_output=True, text=True, timeout=timeout,
+                shell=True
+            )
+            return r.stdout.strip(), r.returncode
+        except Exception:
+            return "", 1
 
 def mig_size(mig_id):
     out, code = gcloud(
@@ -886,6 +905,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_json(fetch_all_status())
         elif self.path == "/api/logs":
             self.send_json({"lines": get_recent_logs()})
+        elif self.path == "/api/debug":
+            out1, c1 = gcloud("config", "get-value", "project")
+            out2, c2 = gcloud("compute", "instance-groups", "managed", "list",
+                              f"--project={PROJECT_ID}", "--format=value(name,targetSize)")
+            out3, c3 = gcloud("compute", "addresses", "describe", "synapse-lb-ip",
+                              "--global", f"--project={PROJECT_ID}", "--format=value(address)")
+            self.send_json({
+                "gcloud_cmd": _GCLOUD,
+                "platform": sys.platform,
+                "project_id": PROJECT_ID,
+                "active_project": {"out": out1, "code": c1},
+                "mig_list":       {"out": out2, "code": c2},
+                "lb_ip":          {"out": out3, "code": c3},
+            })
         else:
             self.send_response(404); self.end_headers()
 
