@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Synapse – Web Dashboard
+Synapse – Web Dashboard  (GCP Console stijl)
 Start: python deploy/dashboard.py
 Open:  http://localhost:8080
 """
@@ -31,9 +31,9 @@ REGION     = config.get("REGION", "europe-west1")
 DOMAIN     = config.get("DOMAIN", "synapse-ip.xyz")
 
 MIGS = [
-    {"id": "synapse-api-mig",   "label": "API",   "url": f"https://api.{DOMAIN}",   "health": "synapse-api-backend"},
-    {"id": "synapse-ui-mig",    "label": "UI",    "url": f"https://{DOMAIN}",        "health": "synapse-ui-backend"},
-    {"id": "synapse-admin-mig", "label": "Admin", "url": f"https://admin.{DOMAIN}", "health": "synapse-admin-backend"},
+    {"id": "synapse-api-mig",   "label": "API",   "url": f"https://api.{DOMAIN}",   "port": "8080"},
+    {"id": "synapse-ui-mig",    "label": "UI",    "url": f"https://{DOMAIN}",        "port": "80"},
+    {"id": "synapse-admin-mig", "label": "Admin", "url": f"https://admin.{DOMAIN}", "port": "8081"},
 ]
 
 # ── GCloud helpers ─────────────────────────────────────────────
@@ -41,9 +41,7 @@ def gcloud(*args, timeout=20):
     try:
         r = subprocess.run(["gcloud", *args], capture_output=True, text=True, timeout=timeout)
         return r.stdout.strip(), r.returncode
-    except subprocess.TimeoutExpired:
-        return "", 1
-    except FileNotFoundError:
+    except (subprocess.TimeoutExpired, FileNotFoundError):
         return "", 1
 
 def mig_size(mig_id):
@@ -63,6 +61,25 @@ def set_mig_size(mig_id, size):
         timeout=30
     )
     return code == 0
+
+def get_mig_instances(mig_id):
+    out, code = gcloud(
+        "compute", "instance-groups", "managed", "list-instances", mig_id,
+        f"--region={REGION}", f"--project={PROJECT_ID}",
+        "--format=value(instance,instanceStatus,currentAction)"
+    )
+    if code != 0 or not out:
+        return []
+    instances = []
+    for line in out.splitlines():
+        parts = line.split()
+        if parts:
+            instances.append({
+                "name": parts[0].split("/")[-1],
+                "status": parts[1] if len(parts) > 1 else "?",
+                "action": parts[2] if len(parts) > 2 else "NONE",
+            })
+    return instances
 
 def get_lb_ip():
     out, code = gcloud(
@@ -85,84 +102,66 @@ def get_ssl_certs():
             results.append({"name": parts[0], "status": parts[1]})
     return results
 
-def get_mig_instances(mig_id):
-    """Returns list of instance statuses in the MIG."""
-    out, code = gcloud(
-        "compute", "instance-groups", "managed", "list-instances", mig_id,
-        f"--region={REGION}", f"--project={PROJECT_ID}",
-        "--format=value(instance,instanceStatus,currentAction)"
-    )
-    if code != 0 or not out:
-        return []
-    instances = []
-    for line in out.splitlines():
-        parts = line.split()
-        if parts:
-            instances.append({
-                "name": parts[0].split("/")[-1] if parts else "?",
-                "status": parts[1] if len(parts) > 1 else "?",
-                "action": parts[2] if len(parts) > 2 else "NONE",
-            })
-    return instances
-
 def get_cloud_sql_status():
     out, code = gcloud(
         "sql", "instances", "describe", "mvp-postgres",
-        f"--project={PROJECT_ID}", "--format=value(state)"
+        f"--project={PROJECT_ID}", "--format=value(state,ipAddresses[0].ipAddress)"
     )
-    return out if (code == 0 and out) else "UNKNOWN"
+    if code != 0 or not out:
+        return {"state": "UNKNOWN", "ip": ""}
+    parts = out.split()
+    return {"state": parts[0], "ip": parts[1] if len(parts) > 1 else ""}
 
 def get_recent_logs(limit=50):
-    # COS Docker containers log to jsonPayload.message; system logs use textPayload
     out, code = gcloud(
         "logging", "read",
         'resource.type="gce_instance"',
         f"--limit={limit}", f"--project={PROJECT_ID}",
-        "--format=json",
-        "--freshness=6h",
+        "--format=json", "--freshness=6h",
         timeout=30
     )
     if code != 0 or not out:
-        return ["Geen logs gevonden (controleer project en rechten)."]
+        return ["Geen logs gevonden."]
     try:
         entries = json.loads(out)
     except json.JSONDecodeError:
-        return [out[:2000]]
+        return [out[:3000]]
     lines = []
     for e in entries:
-        ts = e.get("timestamp", "")[:19].replace("T", " ")
+        ts  = e.get("timestamp", "")[:19].replace("T", " ")
         msg = (e.get("jsonPayload") or {}).get("message") \
            or e.get("textPayload") \
-           or str(e.get("protoPayload", {}).get("methodName", ""))
+           or str((e.get("protoPayload") or {}).get("methodName", ""))
         if msg and msg.strip():
             lines.append(f"{ts}  {msg.strip()}")
-    return lines if lines else ["Geen logberichten gevonden (entries wel ontvangen)."]
+    return lines if lines else ["Geen logberichten gevonden."]
 
-# ── Status (parallel) ──────────────────────────────────────────
+# ── Parallel status fetch ──────────────────────────────────────
 def fetch_all_status():
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-        mig_futures       = {m["id"]: ex.submit(mig_size, m["id"]) for m in MIGS}
-        instance_futures  = {m["id"]: ex.submit(get_mig_instances, m["id"]) for m in MIGS}
-        lb_future         = ex.submit(get_lb_ip)
-        ssl_future        = ex.submit(get_ssl_certs)
-        sql_future        = ex.submit(get_cloud_sql_status)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=9) as ex:
+        mig_futures      = {m["id"]: ex.submit(mig_size, m["id"]) for m in MIGS}
+        instance_futures = {m["id"]: ex.submit(get_mig_instances, m["id"]) for m in MIGS}
+        lb_future        = ex.submit(get_lb_ip)
+        ssl_future       = ex.submit(get_ssl_certs)
+        sql_future       = ex.submit(get_cloud_sql_status)
 
+    lb_ip = lb_future.result()
+    sql   = sql_future.result()
     domain = DOMAIN or "synapse-ip.xyz"
-    lb_ip  = lb_future.result()
 
     return {
-        "migs": {mid: f.result() for mid, f in mig_futures.items()},
+        "migs":      {mid: f.result() for mid, f in mig_futures.items()},
         "instances": {mid: f.result() for mid, f in instance_futures.items()},
-        "lb_ip": lb_ip or "niet gevonden",
+        "lb_ip": lb_ip or "",
         "lb_ip_found": lb_ip is not None,
         "ui_url":    f"https://{domain}",
         "api_url":   f"https://api.{domain}",
         "admin_url": f"https://admin.{domain}",
         "console_url": f"https://console.cloud.google.com/compute/instanceGroups?project={PROJECT_ID}",
-        "logs_url": f"https://console.cloud.google.com/logs/query?project={PROJECT_ID}",
-        "sql_url": f"https://console.cloud.google.com/sql/instances?project={PROJECT_ID}",
+        "logs_url":    f"https://console.cloud.google.com/logs/query?project={PROJECT_ID}",
+        "sql_console": f"https://console.cloud.google.com/sql/instances/mvp-postgres/overview?project={PROJECT_ID}",
         "ssl": ssl_future.result(),
-        "sql_status": sql_future.result(),
+        "sql": sql,
         "project_id": PROJECT_ID,
         "region": REGION,
         "domain": domain,
@@ -173,342 +172,662 @@ HTML = r"""<!DOCTYPE html>
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Synapse Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Synapse – Cloud Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:#0f172a; --surface:#1e293b; --surface2:#263347; --border:#334155;
-  --text:#f1f5f9; --muted:#94a3b8;
-  --green:#22c55e; --red:#ef4444; --yellow:#f59e0b; --blue:#3b82f6; --purple:#a78bfa;
+  --blue:    #1a73e8;
+  --blue-dk: #1557b0;
+  --green:   #1e8e3e;
+  --red:     #d93025;
+  --yellow:  #f9ab00;
+  --gray1:   #202124;
+  --gray2:   #3c4043;
+  --gray3:   #5f6368;
+  --gray4:   #80868b;
+  --gray5:   #dadce0;
+  --gray6:   #f1f3f4;
+  --gray7:   #f8f9fa;
+  --white:   #ffffff;
 }
-body { background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; min-height:100vh; }
-header { background:var(--surface); border-bottom:1px solid var(--border); padding:.9rem 2rem; display:flex; align-items:center; gap:.9rem; }
-header h1 { font-size:1.15rem; font-weight:700; }
-.project-chip { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.2rem .7rem; font-size:.75rem; color:var(--muted); }
-.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 2s infinite; flex-shrink:0; }
-.header-right { margin-left:auto; display:flex; gap:.5rem; align-items:center; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-main { padding:1.75rem 2rem; max-width:1200px; margin:0 auto; }
+body { font-family: 'Roboto', sans-serif; background: var(--gray7); color: var(--gray1); font-size: 14px; }
 
-/* action bar */
-.actions { display:flex; gap:.6rem; margin-bottom:1.75rem; flex-wrap:wrap; align-items:center; }
-.btn { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem 1rem; border-radius:7px; font-size:.8rem; font-weight:600; border:none; cursor:pointer; transition:opacity .15s,transform .1s; text-decoration:none; }
-.btn:hover { opacity:.85; }
-.btn:active { transform:scale(.97); }
-.btn:disabled { opacity:.4; cursor:not-allowed; }
-.btn-green  { background:var(--green);  color:#fff; }
-.btn-red    { background:var(--red);    color:#fff; }
-.btn-ghost  { background:var(--surface); border:1px solid var(--border); color:var(--text); }
-.btn-blue   { background:var(--blue);   color:#fff; }
-.refresh-note { color:var(--muted); font-size:.72rem; margin-left:auto; }
+/* ── Top bar ── */
+.topbar {
+  height: 64px; background: var(--white); border-bottom: 1px solid var(--gray5);
+  display: flex; align-items: center; padding: 0 16px; gap: 8px;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+.topbar-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.gcp-logo { width: 30px; height: 30px; }
+.topbar-title { font-family: 'Google Sans', sans-serif; font-size: 18px; color: var(--gray2); font-weight: 400; }
+.topbar-sep { width: 1px; height: 24px; background: var(--gray5); margin: 0 8px; }
+.project-select {
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid var(--gray5); border-radius: 4px;
+  padding: 6px 12px; cursor: pointer; background: var(--white);
+  font-size: 14px; color: var(--gray2); transition: border-color .15s;
+}
+.project-select:hover { border-color: var(--blue); }
+.project-select .proj-icon { font-size: 16px; }
+.project-label { font-size: 12px; color: var(--gray3); line-height: 1.2; }
+.project-id    { font-size: 13px; font-weight: 500; color: var(--gray1); }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.icon-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 50%; color: var(--gray3); font-size: 18px; transition: background .15s; display: flex; align-items: center; }
+.icon-btn:hover { background: var(--gray6); color: var(--gray1); }
 
-/* grid */
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:1.25rem; margin-bottom:1.25rem; }
-.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
-.card-title { font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; }
-.row { display:flex; align-items:center; justify-content:space-between; padding:.65rem 0; border-bottom:1px solid var(--border); }
-.row:last-child { border-bottom:none; }
-.row-left { display:flex; align-items:center; gap:.7rem; }
-.dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-.dot-on  { background:var(--green); box-shadow:0 0 5px var(--green); }
-.dot-off { background:var(--red); }
-.dot-unk { background:var(--yellow); animation:blink 1s infinite; }
-.label { font-weight:600; font-size:.875rem; }
-.sub   { font-size:.72rem; color:var(--muted); margin-top:1px; }
-.row-right { display:flex; gap:.35rem; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
-.btn-xs { padding:.28rem .65rem; border-radius:5px; font-size:.72rem; font-weight:600; border:none; cursor:pointer; transition:opacity .15s; text-decoration:none; display:inline-flex; align-items:center; gap:.25rem; }
-.btn-xs:hover { opacity:.8; }
-.btn-xs-green { background:var(--green); color:#fff; }
-.btn-xs-red   { background:var(--red);   color:#fff; }
-.btn-xs-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
-.btn-xs-blue  { background:var(--blue);  color:#fff; }
+/* ── Layout ── */
+.layout { display: flex; min-height: calc(100vh - 64px); }
 
-/* badges */
-.badge { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .55rem; border-radius:999px; font-size:.68rem; font-weight:700; }
-.badge-green { background:#166534; color:#86efac; }
-.badge-red   { background:#7f1d1d; color:#fca5a5; }
-.badge-yellow{ background:#854d0e; color:#fde68a; }
-.badge-muted { background:var(--surface2); color:var(--muted); }
+/* ── Sidebar ── */
+.sidebar {
+  width: 256px; background: var(--white); border-right: 1px solid var(--gray5);
+  padding: 8px 0; flex-shrink: 0;
+}
+.sidebar-section { padding: 8px 0; }
+.sidebar-header { padding: 8px 16px 4px; font-size: 11px; font-weight: 500; color: var(--gray3); text-transform: uppercase; letter-spacing: .08em; }
+.nav-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 16px; height: 40px; cursor: pointer;
+  color: var(--gray2); border-left: 3px solid transparent;
+  transition: background .15s; text-decoration: none; font-size: 13px;
+}
+.nav-item:hover  { background: var(--gray6); }
+.nav-item.active { background: #e8f0fe; color: var(--blue); border-left-color: var(--blue); font-weight: 500; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-divider { height: 1px; background: var(--gray5); margin: 4px 0; }
 
-/* info rows */
-.info-key { color:var(--muted); font-size:.8rem; }
-.info-val { font-size:.8rem; font-weight:500; display:flex; align-items:center; gap:.4rem; }
-a { color:var(--blue); text-decoration:none; }
-a:hover { text-decoration:underline; }
+/* ── Main ── */
+.main { flex: 1; padding: 24px; overflow-x: hidden; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.page-title  { font-family: 'Google Sans', sans-serif; font-size: 22px; font-weight: 400; color: var(--gray1); }
+.breadcrumb  { font-size: 12px; color: var(--gray3); margin-bottom: 4px; }
+.header-actions { display: flex; gap: 8px; }
 
-/* copy btn */
-.copy-btn { background:none; border:none; cursor:pointer; color:var(--muted); font-size:.75rem; padding:.1rem .3rem; border-radius:3px; }
-.copy-btn:hover { color:var(--text); background:var(--border); }
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--blue); color: var(--white); border: none;
+  border-radius: 4px; padding: 0 16px; height: 36px; font-size: 14px; font-weight: 500;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, box-shadow .15s; font-family: 'Google Sans', sans-serif;
+}
+.btn-primary:hover { background: var(--blue-dk); box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.btn-primary:disabled { background: var(--gray5); color: var(--gray4); cursor: not-allowed; }
+.btn-secondary {
+  background: var(--white); color: var(--blue); border: 1px solid var(--gray5);
+  border-radius: 4px; padding: 0 16px; height: 36px; font-size: 14px; font-weight: 500;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, border-color .15s; font-family: 'Google Sans', sans-serif;
+}
+.btn-secondary:hover { background: #e8f0fe; border-color: var(--blue); }
+.btn-danger {
+  background: var(--white); color: var(--red); border: 1px solid var(--gray5);
+  border-radius: 4px; padding: 0 16px; height: 36px; font-size: 14px; font-weight: 500;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s; font-family: 'Google Sans', sans-serif;
+}
+.btn-danger:hover { background: #fce8e6; border-color: var(--red); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
 
-/* logs */
-.logs-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
-.logs-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.9rem; }
-pre { background:#070d1a; border-radius:8px; padding:1rem; font-size:.7rem; line-height:1.75; overflow-x:auto; max-height:280px; overflow-y:auto; color:#7dd3fc; white-space:pre-wrap; word-break:break-all; }
+/* ── Summary cards ── */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.summary-card {
+  background: var(--white); border: 1px solid var(--gray5); border-radius: 8px;
+  padding: 20px; cursor: default;
+  transition: box-shadow .2s;
+}
+.summary-card:hover { box-shadow: 0 1px 6px rgba(32,33,36,.28); }
+.summary-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.summary-card-label { font-size: 12px; color: var(--gray3); font-weight: 500; }
+.summary-card-icon { font-size: 20px; }
+.summary-card-value { font-family: 'Google Sans', sans-serif; font-size: 28px; font-weight: 400; color: var(--gray1); margin-bottom: 4px; }
+.summary-card-sub { font-size: 12px; color: var(--gray3); }
+.summary-card-status { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 
-/* spinner */
-.spin { display:inline-block; animation:spin .8s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
+/* ── Section card ── */
+.section-card {
+  background: var(--white); border: 1px solid var(--gray5); border-radius: 8px;
+  margin-bottom: 24px; overflow: hidden;
+}
+.section-card-header {
+  padding: 16px 24px; border-bottom: 1px solid var(--gray5);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-card-title { font-family: 'Google Sans', sans-serif; font-size: 16px; font-weight: 400; }
+.section-card-actions { display: flex; gap: 8px; }
+
+/* ── Table ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; padding: 12px 16px;
+  font-size: 12px; font-weight: 500; color: var(--gray3);
+  border-bottom: 1px solid var(--gray5);
+  white-space: nowrap; user-select: none;
+}
+tbody tr { border-bottom: 1px solid var(--gray6); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--gray7); }
+tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+.td-name { font-weight: 500; color: var(--blue); }
+.td-mono { font-family: monospace; font-size: 12px; color: var(--gray2); }
+
+/* ── Chips / badges ── */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
+}
+.chip-green  { background: #e6f4ea; color: #137333; }
+.chip-red    { background: #fce8e6; color: #c5221f; }
+.chip-yellow { background: #fef7e0; color: #b05e00; }
+.chip-blue   { background: #e8f0fe; color: #1967d2; }
+.chip-gray   { background: var(--gray6); color: var(--gray3); }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.chip-dot-green  { background: #34a853; }
+.chip-dot-red    { background: #ea4335; }
+.chip-dot-yellow { background: #fbbc04; animation: pulse .8s infinite; }
+.chip-dot-gray   { background: var(--gray4); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Info grid ── */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.info-grid-item { padding: 12px 24px; border-bottom: 1px solid var(--gray6); border-right: 1px solid var(--gray6); }
+.info-grid-item:nth-child(2n) { border-right: none; }
+.info-grid-item:nth-last-child(-n+2) { border-bottom: none; }
+.info-key { font-size: 11px; color: var(--gray3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.info-val { font-size: 13px; color: var(--gray1); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.info-val a { color: var(--blue); text-decoration: none; }
+.info-val a:hover { text-decoration: underline; }
+
+/* ── Logs ── */
+.logs-toolbar { padding: 12px 24px; border-bottom: 1px solid var(--gray5); display: flex; align-items: center; gap: 8px; }
+.logs-filter { border: 1px solid var(--gray5); border-radius: 4px; padding: 6px 12px; font-size: 13px; flex: 1; color: var(--gray2); outline: none; }
+.logs-filter:focus { border-color: var(--blue); }
+.log-pre { font-family: 'Roboto Mono', monospace; font-size: 12px; line-height: 1.8; padding: 16px 24px; max-height: 340px; overflow-y: auto; background: #f8f9fa; color: #202124; white-space: pre-wrap; word-break: break-all; }
+.log-line { padding: 1px 0; }
+.log-line:hover { background: #e8f0fe; }
+.log-ts { color: var(--gray3); margin-right: 8px; }
+
+/* ── Copy btn ── */
+.copy-btn { background: none; border: none; cursor: pointer; color: var(--gray4); font-size: 13px; padding: 2px 4px; border-radius: 3px; transition: color .1s; }
+.copy-btn:hover { color: var(--gray1); background: var(--gray6); }
+
+/* ── Two-col layout ── */
+.two-col { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── Refresh bar ── */
+.refresh-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.refresh-note { font-size: 12px; color: var(--gray3); margin-left: auto; }
 </style>
 </head>
 <body>
-<header>
-  <div class="pulse"></div>
-  <h1>Synapse Dashboard</h1>
-  <span class="project-chip" id="project-chip">laden...</span>
-  <div class="header-right">
-    <a id="console-link" class="btn btn-ghost" href="#" target="_blank">&#9881; GCP Console</a>
-  </div>
-</header>
-<main>
-  <div class="actions">
-    <button class="btn btn-green" id="btn-all-start">&#9654; Alles starten</button>
-    <button class="btn btn-red"   id="btn-all-stop" >&#9632; Alles stoppen</button>
-    <button class="btn btn-ghost" id="btn-refresh"  >&#8635; Verversen</button>
-    <span class="refresh-note" id="last-refresh"></span>
-  </div>
 
-  <div class="grid">
-    <!-- Services -->
-    <div class="card">
-      <div class="card-title">
-        <span>Services (MIGs)</span>
-        <a id="migs-console" href="#" target="_blank" class="btn-xs btn-xs-ghost">&#8599; Console</a>
+<!-- ── Top bar ──────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg class="gcp-logo" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285f4"/>
+      <path d="M7 12l3 3 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="topbar-title">Synapse Console</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="project-select">
+    <span class="proj-icon">▤</span>
+    <div>
+      <div class="project-label">Project</div>
+      <div class="project-id" id="header-project">laden...</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="btn-refresh-top" title="Verversen">↺</button>
+    <a class="icon-btn" id="console-link" href="#" target="_blank" title="Open GCP Console">⧉</a>
+  </div>
+</div>
+
+<!-- ── Layout ───────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-header">Compute</div>
+      <a class="nav-item active" href="#" onclick="return false">
+        <span class="nav-icon">⊞</span> Instance Groups
+      </a>
+      <a class="nav-item" id="nav-vm-link" href="#" target="_blank">
+        <span class="nav-icon">▣</span> VM Instances
+      </a>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-header">Netwerk</div>
+      <a class="nav-item" id="nav-lb-link" href="#" target="_blank">
+        <span class="nav-icon">⇄</span> Load Balancing
+      </a>
+      <a class="nav-item" id="nav-armor-link" href="#" target="_blank">
+        <span class="nav-icon">⛨</span> Cloud Armor
+      </a>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-header">Data</div>
+      <a class="nav-item" id="nav-sql-link" href="#" target="_blank">
+        <span class="nav-icon">⛁</span> Cloud SQL
+      </a>
+      <a class="nav-item" id="nav-storage-link" href="#" target="_blank">
+        <span class="nav-icon">◫</span> Cloud Storage
+      </a>
+      <a class="nav-item" id="nav-secrets-link" href="#" target="_blank">
+        <span class="nav-icon">🔑</span> Secret Manager
+      </a>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-header">Observability</div>
+      <a class="nav-item" id="nav-logs-link" href="#" target="_blank">
+        <span class="nav-icon">≡</span> Logging
+      </a>
+      <a class="nav-item" id="nav-uptime-link" href="#" target="_blank">
+        <span class="nav-icon">◉</span> Uptime Checks
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+    <div class="refresh-bar">
+      <div>
+        <div class="breadcrumb">Compute Engine &rsaquo; Instance Groups</div>
+        <div class="page-title">Instance Groups</div>
       </div>
-      <div id="mig-list"><div style="color:var(--muted);font-size:.8rem">Laden <span class="spin">&#9696;</span></div></div>
-    </div>
-
-    <!-- Netwerk -->
-    <div class="card">
-      <div class="card-title">Netwerk &amp; Domeinen</div>
-      <div id="network-info"><div style="color:var(--muted);font-size:.8rem">Laden <span class="spin">&#9696;</span></div></div>
-    </div>
-
-    <!-- Infra status -->
-    <div class="card">
-      <div class="card-title">Infrastructuur</div>
-      <div id="infra-info"><div style="color:var(--muted);font-size:.8rem">Laden <span class="spin">&#9696;</span></div></div>
-    </div>
-  </div>
-
-  <!-- Logs -->
-  <div class="logs-card">
-    <div class="logs-header">
-      <span class="card-title" style="margin:0">Cloud Logging</span>
-      <div style="display:flex;gap:.5rem">
-        <a id="logs-console-link" href="#" target="_blank" class="btn btn-ghost" style="font-size:.75rem">&#8599; Open in Console</a>
-        <button class="btn btn-ghost" id="btn-logs" style="font-size:.75rem">&#8635; Logs laden</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button class="btn-primary" id="btn-all-start">▶ Alles starten</button>
+        <button class="btn-danger"  id="btn-all-stop" >■ Alles stoppen</button>
+        <span class="refresh-note" id="last-refresh"></span>
       </div>
     </div>
-    <pre id="log-output">Klik op "Logs laden" om logregels op te halen.</pre>
-  </div>
-</main>
+
+    <!-- Summary cards -->
+    <div class="summary-grid" id="summary-cards"></div>
+
+    <!-- Two-col layout -->
+    <div class="two-col">
+      <div>
+        <!-- Instance Groups table -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">Managed Instance Groups</span>
+            <div class="section-card-actions">
+              <button class="btn-secondary btn-sm" id="btn-refresh-table">↺ Verversen</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Naam</th>
+                  <th>Status</th>
+                  <th>Instanties</th>
+                  <th>Regio / Zone</th>
+                  <th>Poort</th>
+                  <th>Acties</th>
+                </tr>
+              </thead>
+              <tbody id="mig-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">Logging</span>
+            <div class="section-card-actions">
+              <a class="btn-secondary btn-sm" id="open-logs-btn" href="#" target="_blank">⧉ Open in Console</a>
+              <button class="btn-secondary btn-sm" id="btn-load-logs">↺ Laden</button>
+            </div>
+          </div>
+          <div class="logs-toolbar">
+            <input class="logs-filter" id="log-filter" type="text" placeholder="Filter logs...">
+          </div>
+          <div class="log-pre" id="log-output">Klik op "Laden" om logregels op te halen.</div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div>
+        <!-- Network card -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-header">
+            <span class="section-card-title">Netwerk</span>
+          </div>
+          <div id="network-info"></div>
+        </div>
+
+        <!-- Infra card -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">Infrastructuur</span>
+          </div>
+          <div id="infra-info"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
 
 <script>
-// Injected by server — trusted config values, not user input
 const MIGS = __MIGS_JSON__;
-
-// ── DOM helpers ────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-function el(tag, cls, text) {
-  const e = document.createElement(tag);
-  if (cls)  e.className = cls;
-  if (text !== undefined) e.textContent = text;
-  return e;
-}
-
-function badge(text, type) {
-  const b = el('span', `badge badge-${type}`);
-  b.textContent = text;
-  return b;
+// ── Helpers ────────────────────────────────────────────────────
+function chip(text, type, dot) {
+  const c = document.createElement('span');
+  c.className = `chip chip-${type}`;
+  if (dot) {
+    const d = document.createElement('span');
+    d.className = `chip-dot chip-dot-${type}`;
+    c.appendChild(d);
+  }
+  c.appendChild(document.createTextNode(text));
+  return c;
 }
 
 function copyBtn(text) {
-  const b = el('button', 'copy-btn', '⎘');
+  const b = document.createElement('button');
+  b.className = 'copy-btn';
+  b.textContent = '⎘';
   b.title = 'Kopiëren';
   b.addEventListener('click', () => {
     navigator.clipboard.writeText(text);
     b.textContent = '✓';
-    setTimeout(() => { b.textContent = '⎘'; }, 1200);
+    setTimeout(() => b.textContent = '⎘', 1200);
   });
   return b;
 }
 
-// ── Render services ────────────────────────────────────────────
-function renderMigs(data) {
-  const container = $('mig-list');
+function linkEl(href, text) {
+  const a = document.createElement('a');
+  a.href = href; a.target = '_blank'; a.textContent = text;
+  return a;
+}
+
+function infoRow(key, valueEl) {
+  const wrap = document.createElement('div');
+  wrap.className = 'info-grid-item';
+  const k = document.createElement('div'); k.className = 'info-key'; k.textContent = key;
+  const v = document.createElement('div'); v.className = 'info-val';
+  if (typeof valueEl === 'string') v.textContent = valueEl;
+  else v.appendChild(valueEl);
+  wrap.append(k, v);
+  return wrap;
+}
+
+// ── Render summary cards ───────────────────────────────────────
+function renderSummary(data) {
+  const container = $('summary-cards');
   container.textContent = '';
-
   for (const m of MIGS) {
-    const size      = data.migs[m.id] ?? -1;
-    const instances = data.instances[m.id] ?? [];
-    const on        = size > 0;
+    const size = data.migs[m.id] ?? -1;
+    const insts = data.instances[m.id] ?? [];
+    const running = insts.filter(i => i.status === 'RUNNING').length;
+    const on = size > 0;
 
-    const row   = el('div', 'row');
-    const left  = el('div', 'row-left');
-    const dot   = el('div', 'dot ' + (size < 0 ? 'dot-unk' : on ? 'dot-on' : 'dot-off'));
-    const info  = el('div');
-    const name  = el('div', 'label', m.label);
-    const sub   = el('div', 'sub');
-    if (size < 0) {
-      sub.textContent = 'status onbekend';
-    } else if (size === 0) {
-      sub.textContent = 'gestopt';
-    } else {
-      const running = instances.filter(i => i.status === 'RUNNING').length;
-      sub.textContent = `${size} instantie${size !== 1 ? 's' : ''}`
-        + (instances.length ? ` · ${running} running` : '');
-    }
-    info.append(name, sub);
-    left.append(dot, info);
+    const card = document.createElement('div');
+    card.className = 'summary-card';
 
-    const right = el('div', 'row-right');
+    const top = document.createElement('div');
+    top.className = 'summary-card-top';
+    const lbl = document.createElement('div');
+    lbl.className = 'summary-card-label';
+    lbl.textContent = m.label.toUpperCase();
+    const icon = document.createElement('div');
+    icon.className = 'summary-card-icon';
+    icon.textContent = on ? '⊞' : '⊟';
+    top.append(lbl, icon);
 
-    // instance action badge (CREATING, DELETING, etc.)
-    if (on && instances.length) {
-      const nonNone = instances.find(i => i.action && i.action !== 'NONE');
-      if (nonNone) {
-        right.appendChild(badge(nonNone.action, 'yellow'));
-      } else {
-        const running = instances.filter(i => i.status === 'RUNNING').length;
-        right.appendChild(badge(running === size ? '● RUNNING' : '◐ STARTING', running === size ? 'green' : 'yellow'));
-      }
-    }
+    const val = document.createElement('div');
+    val.className = 'summary-card-value';
+    val.textContent = size < 0 ? '–' : String(size);
 
-    // open link
+    const sub = document.createElement('div');
+    sub.className = 'summary-card-sub';
+    sub.textContent = size < 0 ? 'status onbekend' : on ? `${running} running` : 'gestopt';
+
+    const status = document.createElement('div');
+    status.className = 'summary-card-status';
+    if (size < 0) status.appendChild(chip('UNKNOWN', 'gray', true));
+    else if (!on) status.appendChild(chip('GESTOPT', 'red', true));
+    else if (running === size) status.appendChild(chip('RUNNING', 'green', true));
+    else status.appendChild(chip('STARTING', 'yellow', true));
+
+    card.append(top, val, sub, status);
+    container.appendChild(card);
+  }
+
+  // Cloud SQL card
+  const sql = data.sql;
+  const sqlCard = document.createElement('div');
+  sqlCard.className = 'summary-card';
+  const sqlTop = document.createElement('div');
+  sqlTop.className = 'summary-card-top';
+  const sqlLbl = document.createElement('div');
+  sqlLbl.className = 'summary-card-label'; sqlLbl.textContent = 'CLOUD SQL';
+  sqlTop.append(sqlLbl, Object.assign(document.createElement('div'), {className:'summary-card-icon',textContent:'⛁'}));
+  const sqlVal = document.createElement('div');
+  sqlVal.className = 'summary-card-value'; sqlVal.style.fontSize = '16px'; sqlVal.textContent = 'mvp-postgres';
+  const sqlSub = document.createElement('div');
+  sqlSub.className = 'summary-card-sub'; sqlSub.textContent = sql.ip || 'privaat IP';
+  const sqlStatus = document.createElement('div');
+  sqlStatus.className = 'summary-card-status';
+  const sqlType = sql.state === 'RUNNABLE' ? 'green' : sql.state === 'UNKNOWN' ? 'gray' : 'red';
+  sqlStatus.appendChild(chip(sql.state, sqlType, true));
+  sqlCard.append(sqlTop, sqlVal, sqlSub, sqlStatus);
+  container.appendChild(sqlCard);
+}
+
+// ── Render MIG table ───────────────────────────────────────────
+function renderTable(data) {
+  const tbody = $('mig-tbody');
+  tbody.textContent = '';
+  for (const m of MIGS) {
+    const size  = data.migs[m.id] ?? -1;
+    const insts = data.instances[m.id] ?? [];
+    const running = insts.filter(i => i.status === 'RUNNING').length;
+    const on = size > 0;
+    const action = insts.find(i => i.action && i.action !== 'NONE');
+
+    const tr = document.createElement('tr');
+
+    // Name
+    const tdName = document.createElement('td');
+    const nameLink = document.createElement('a');
+    nameLink.className = 'td-name';
+    nameLink.href = '#'; nameLink.textContent = m.id;
+    tdName.appendChild(nameLink);
+    tr.appendChild(tdName);
+
+    // Status chip
+    const tdStatus = document.createElement('td');
+    if (size < 0) tdStatus.appendChild(chip('UNKNOWN', 'gray', true));
+    else if (!on) tdStatus.appendChild(chip('STOPPED', 'gray', true));
+    else if (action) tdStatus.appendChild(chip(action.action, 'yellow', true));
+    else if (running === size) tdStatus.appendChild(chip('RUNNING', 'green', true));
+    else tdStatus.appendChild(chip('STARTING', 'yellow', true));
+    tr.appendChild(tdStatus);
+
+    // Instances
+    const tdInst = document.createElement('td');
+    tdInst.textContent = size < 0 ? '–' : `${running} / ${size}`;
+    tr.appendChild(tdInst);
+
+    // Region
+    const tdZone = document.createElement('td');
+    tdZone.className = 'td-mono';
+    tdZone.textContent = data.region + '-b';
+    tr.appendChild(tdZone);
+
+    // Port
+    const tdPort = document.createElement('td');
+    tdPort.className = 'td-mono';
+    tdPort.textContent = m.port;
+    tr.appendChild(tdPort);
+
+    // Actions
+    const tdAct = document.createElement('td');
+    tdAct.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+
     if (m.url) {
-      const a = el('a', 'btn-xs btn-xs-ghost', '↗');
-      a.href = m.url; a.target = '_blank'; a.title = m.url;
-      a.appendChild(document.createTextNode(' Open'));
-      right.appendChild(a);
+      const openBtn = document.createElement('a');
+      openBtn.className = 'btn-secondary btn-sm';
+      openBtn.href = m.url; openBtn.target = '_blank';
+      openBtn.textContent = '↗ Open';
+      tdAct.appendChild(openBtn);
     }
 
-    // toggle btn
-    const toggle = el('button', `btn-xs ${on ? 'btn-xs-red' : 'btn-xs-green'}`, on ? '■ Stoppen' : '▶ Starten');
-    toggle.addEventListener('click', () => toggleMig(m.id, on, toggle));
-    right.appendChild(toggle);
+    const toggleBtn = document.createElement('button');
+    if (on) {
+      toggleBtn.className = 'btn-danger btn-sm';
+      toggleBtn.textContent = '■ Stop';
+    } else {
+      toggleBtn.className = 'btn-primary btn-sm';
+      toggleBtn.textContent = '▶ Start';
+    }
+    toggleBtn.addEventListener('click', () => toggleMig(m.id, on, toggleBtn));
+    tdAct.appendChild(toggleBtn);
 
-    row.append(left, right);
-    container.appendChild(row);
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
   }
 }
 
 // ── Render network ─────────────────────────────────────────────
 function renderNetwork(data) {
-  const container = $('network-info');
-  container.textContent = '';
+  const c = $('network-info');
+  c.textContent = '';
+  const grid = document.createElement('div');
+  grid.className = 'info-grid';
 
-  // LB IP row
-  const ipRow = el('div', 'row');
-  const ipKey = el('span', 'info-key', 'Load Balancer IP');
-  const ipVal = el('div', 'info-val');
+  // LB IP
+  const ipVal = document.createElement('div');
   if (data.lb_ip_found) {
-    ipVal.textContent = data.lb_ip;
-    ipVal.appendChild(copyBtn(data.lb_ip));
+    const mono = document.createElement('span');
+    mono.className = 'td-mono'; mono.textContent = data.lb_ip;
+    ipVal.append(mono, copyBtn(data.lb_ip));
   } else {
-    const warn = badge('niet gevonden', 'yellow');
-    ipVal.appendChild(warn);
-    const hint = el('span');
-    hint.style.cssText = 'color:var(--muted);font-size:.68rem;display:block;margin-top:2px';
-    hint.textContent = 'Controleer: gcloud compute addresses list';
-    ipVal.appendChild(hint);
+    ipVal.appendChild(chip('niet gevonden', 'yellow'));
   }
-  ipRow.append(ipKey, ipVal);
-  container.appendChild(ipRow);
+  grid.appendChild(infoRow('Load Balancer IP', ipVal));
 
-  // domain rows
-  const links = [
-    ['UI',    data.ui_url],
-    ['API',   data.api_url],
-    ['Admin', data.admin_url],
-  ];
-  for (const [label, url] of links) {
-    const row = el('div', 'row');
-    const k   = el('span', 'info-key', label);
-    const v   = el('div', 'info-val');
-    const a   = el('a', null, url);
-    a.href = url; a.target = '_blank';
-    v.append(a, copyBtn(url));
-    row.append(k, v);
-    container.appendChild(row);
+  const urls = [['UI', data.ui_url], ['API', data.api_url], ['Admin', data.admin_url]];
+  for (const [label, url] of urls) {
+    const wrap = document.createElement('div');
+    wrap.append(linkEl(url, url.replace('https://', '')), copyBtn(url));
+    grid.appendChild(infoRow(label, wrap));
   }
 
-  // region row
-  const regRow = el('div', 'row');
-  regRow.append(el('span', 'info-key', 'Regio'), el('span', 'info-val', data.region));
-  container.appendChild(regRow);
+  const regionEl = document.createElement('span');
+  regionEl.className = 'td-mono'; regionEl.textContent = data.region;
+  grid.appendChild(infoRow('Regio', regionEl));
+
+  c.appendChild(grid);
 }
 
 // ── Render infra ───────────────────────────────────────────────
 function renderInfra(data) {
-  const container = $('infra-info');
-  container.textContent = '';
+  const c = $('infra-info');
+  c.textContent = '';
+  const grid = document.createElement('div');
+  grid.className = 'info-grid';
 
   // SSL certs
-  const sslTitle = el('div', 'card-title', 'SSL Certificaten');
-  sslTitle.style.marginBottom = '.5rem';
-  container.appendChild(sslTitle);
-
+  for (const cert of data.ssl) {
+    const t = cert.status === 'ACTIVE' ? 'green' : cert.status === 'PROVISIONING' ? 'yellow' : 'red';
+    const name = cert.name.replace('synapse-ssl-cert', 'SSL cert');
+    grid.appendChild(infoRow(name, chip(cert.status, t, true)));
+  }
   if (!data.ssl.length) {
-    container.appendChild(el('p', null, 'Geen certificaten.')).style.color = 'var(--muted)';
-  } else {
-    for (const cert of data.ssl) {
-      const row  = el('div', 'row');
-      const name = el('span', 'info-key');
-      name.textContent = cert.name.replace('synapse-ssl-cert', 'SSL cert');
-      const btype = cert.status === 'ACTIVE' ? 'green' : cert.status === 'PROVISIONING' ? 'yellow' : 'red';
-      const dot = cert.status === 'ACTIVE' ? '●' : cert.status === 'PROVISIONING' ? '◐' : '✕';
-      row.append(name, badge(`${dot} ${cert.status}`, btype));
-      container.appendChild(row);
-    }
+    grid.appendChild(infoRow('SSL', chip('geen', 'gray')));
   }
 
-  // spacer
-  container.appendChild(el('div')).style.marginTop = '.75rem';
+  // SQL
+  const sqlType = data.sql.state === 'RUNNABLE' ? 'green' : data.sql.state === 'UNKNOWN' ? 'gray' : 'red';
+  grid.appendChild(infoRow('Cloud SQL', chip(data.sql.state, sqlType, true)));
 
-  // Cloud SQL
-  const sqlTitle = el('div', 'card-title', 'Cloud SQL');
-  sqlTitle.style.marginBottom = '.5rem';
-  container.appendChild(sqlTitle);
+  if (data.sql.ip) {
+    const ipEl = document.createElement('span');
+    ipEl.className = 'td-mono'; ipEl.textContent = data.sql.ip;
+    grid.appendChild(infoRow('SQL privaat IP', ipEl));
+  }
 
-  const sqlRow  = el('div', 'row');
-  const sqlKey  = el('span', 'info-key', 'mvp-postgres');
-  const sqlSt   = data.sql_status;
-  const sqlType = sqlSt === 'RUNNABLE' ? 'green' : sqlSt === 'UNKNOWN' ? 'muted' : 'red';
-  const sqlDot  = sqlSt === 'RUNNABLE' ? '●' : '○';
-  const sqlBadge = badge(`${sqlDot} ${sqlSt}`, sqlType);
-  const sqlLink = el('a', 'btn-xs btn-xs-ghost', '↗');
-  sqlLink.href = data.sql_url; sqlLink.target = '_blank';
-  const sqlRight = el('div', 'row-right');
-  sqlRight.append(sqlBadge, sqlLink);
-  sqlRow.append(sqlKey, sqlRight);
-  container.appendChild(sqlRow);
+  c.appendChild(grid);
 }
 
-// ── Full status load ───────────────────────────────────────────
+// ── Load status ────────────────────────────────────────────────
 async function loadStatus() {
   const data = await fetch('/api/status').then(r => r.json());
 
-  $('project-chip').textContent = data.project_id;
-  $('console-link').href = data.console_url;
-  $('migs-console').href = data.console_url;
-  $('logs-console-link').href = data.logs_url;
+  $('header-project').textContent = data.project_id;
+  $('console-link').href   = data.console_url;
+  $('open-logs-btn').href  = data.logs_url;
+  $('nav-vm-link').href    = `https://console.cloud.google.com/compute/instances?project=${data.project_id}`;
+  $('nav-lb-link').href    = `https://console.cloud.google.com/net-services/loadbalancing/list/loadBalancers?project=${data.project_id}`;
+  $('nav-armor-link').href = `https://console.cloud.google.com/net-security/securitypolicies/list?project=${data.project_id}`;
+  $('nav-sql-link').href   = data.sql_console;
+  $('nav-storage-link').href  = `https://console.cloud.google.com/storage/browser?project=${data.project_id}`;
+  $('nav-secrets-link').href  = `https://console.cloud.google.com/security/secret-manager?project=${data.project_id}`;
+  $('nav-logs-link').href  = data.logs_url;
+  $('nav-uptime-link').href= `https://console.cloud.google.com/monitoring/uptime?project=${data.project_id}`;
 
-  renderMigs(data);
+  renderSummary(data);
+  renderTable(data);
   renderNetwork(data);
   renderInfra(data);
 
   $('last-refresh').textContent = 'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-BE');
 }
 
+// ── Logs ───────────────────────────────────────────────────────
+let allLogLines = [];
+
+async function loadLogs() {
+  const out = $('log-output');
+  out.textContent = 'Logs ophalen…';
+  const data = await fetch('/api/logs').then(r => r.json());
+  allLogLines = data.lines;
+  renderLogs($('log-filter').value);
+}
+
+function renderLogs(filter) {
+  const out = $('log-output');
+  out.textContent = '';
+  const lines = filter
+    ? allLogLines.filter(l => l.toLowerCase().includes(filter.toLowerCase()))
+    : allLogLines;
+  for (const line of lines) {
+    const div = document.createElement('div');
+    div.className = 'log-line';
+    const ts  = line.slice(0, 19);
+    const msg = line.slice(20);
+    const tsEl = document.createElement('span');
+    tsEl.className = 'log-ts'; tsEl.textContent = ts;
+    div.append(tsEl, document.createTextNode(msg));
+    out.appendChild(div);
+  }
+  if (!lines.length) out.textContent = 'Geen resultaten.';
+}
+
+$('log-filter').addEventListener('input', e => renderLogs(e.target.value));
+
 // ── Actions ────────────────────────────────────────────────────
 async function toggleMig(migId, isOn, btn) {
-  btn.disabled = true;
-  btn.textContent = '…';
+  btn.disabled = true; btn.textContent = '…';
   await fetch('/api/mig/' + migId, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({size: isOn ? 0 : 1})
   });
   await loadStatus();
@@ -529,13 +848,9 @@ $('btn-all-stop').addEventListener('click', async () => {
   $('btn-all-stop').disabled = false;
 });
 
-$('btn-refresh').addEventListener('click', loadStatus);
-
-$('btn-logs').addEventListener('click', async () => {
-  $('log-output').textContent = 'Logs ophalen…';
-  const data = await fetch('/api/logs').then(r => r.json());
-  $('log-output').textContent = data.lines.join('\n') || 'Geen logs.';
-});
+$('btn-refresh-top').addEventListener('click', loadStatus);
+$('btn-refresh-table').addEventListener('click', loadStatus);
+$('btn-load-logs').addEventListener('click', loadLogs);
 
 loadStatus();
 setInterval(loadStatus, 20000);
@@ -566,8 +881,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            page = HTML.replace("__MIGS_JSON__", json.dumps(MIGS))
-            self.send_html(page)
+            self.send_html(HTML.replace("__MIGS_JSON__", json.dumps(MIGS)))
         elif self.path == "/api/status":
             self.send_json(fetch_all_status())
         elif self.path == "/api/logs":
@@ -603,7 +917,7 @@ if __name__ == "__main__":
 
     server = http.server.HTTPServer(("localhost", PORT), Handler)
     url = f"http://localhost:{PORT}"
-    print(f"Synapse Dashboard → {url}")
+    print(f"Synapse Console → {url}")
     print(f"Project: {PROJECT_ID} | Domein: {DOMAIN} | Regio: {REGION}")
     print("Ctrl+C om te stoppen.\n")
 
