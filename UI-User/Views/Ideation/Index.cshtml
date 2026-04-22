@@ -185,8 +185,7 @@
                         <div id="emoji-reactions-@idea.IdeaId" class="contents">
                             @foreach (var emoji in idea.Emojis)
                             {
-                                <form
-                                    asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")"
+                                <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")"
                                     method="post" data-emoji-form>
                                     <input type="hidden" name="projectId" value="@Model.ProjectId"/>
                                     <input type="hidden" name="categoryId" value="@Model.Category.CategoryId"/>
@@ -205,12 +204,10 @@
 
                         @if (Model.Emojis.Any())
                         {
-                            <button type="button" data-action="toggle-emoji-picker"
-                                    data-target="picker-@idea.IdeaId" class="w-7 h-7 rounded-full border border-dashed border-base-300
+                            <button type="button" data-action="toggle-emoji-picker" data-target="picker-@idea.IdeaId" class="w-7 h-7 rounded-full border border-dashed border-base-300
                             flex items-center justify-center text-base-content/40
                             hover:border-primary hover:text-primary transition-colors cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
-                                     viewBox="0 0 24 24"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
                                      stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                                 </svg>
@@ -221,10 +218,8 @@
                     @if (Model.Emojis.Any())
                     {
                         @* Emoji picker *@
-                        <div id="picker-@idea.IdeaId"
-                             class="hidden mt-3 p-3 bg-base-200 rounded-xl border border-base-300">
-                            <form asp-action="AddIconComment" method="post" data-emoji-form
-                                  data-idea-id="@idea.IdeaId">
+                        <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-base-200 rounded-xl border border-base-300">
+                            <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@idea.IdeaId">
                                 <input type="hidden" name="projectId" value="@Model.ProjectId"/>
                                 <input type="hidden" name="categoryId" value="@Model.Category.CategoryId"/>
                                 <input type="hidden" name="ideaId" value="@idea.IdeaId"/>
