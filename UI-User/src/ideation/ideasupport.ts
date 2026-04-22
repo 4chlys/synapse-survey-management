@@ -9,6 +9,8 @@ export interface IdeaSupportChatResponse {
     assistantMessage: string;
     /** Present when the agent has generated a ready-to-submit draft idea. */
     suggestedDraft: string | null;
+    /** Phase returned by the server state machine. */
+    phase: 'Intro' | 'Ideation' | 'Draft' | 'Confirm' | 'Error';
 }
 
 export interface IdeaSupportRefineResponse {
@@ -19,12 +21,14 @@ export interface IdeaSupportRefineResponse {
 // CSRF
 
 function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
+    return document.querySelector<HTMLMetaElement>(
+        'meta[name="__RequestVerificationToken"]'
+    )?.content ?? '';
 }
 
-// Low-level API call with timeout
+// Low-level fetch with timeout
 
-const FETCH_TIMEOUT_MS = 30_000; // 30 s — generous for cold-start AI
+const FETCH_TIMEOUT_MS = 30_000;
 
 async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
     const controller = new AbortController();
@@ -37,15 +41,13 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
 }
 
 /**
- * Send a chat turn.  The caller owns the history array and appends to it
- * after each successful round trip so the conversation is maintained
- * entirely on the client (stateless backend).
+ * Send a single chat turn to the MVC proxy endpoint.
  *
- * When `userMessage` is an empty string this is treated as the opening
- * turn: the server uses only the system + context prompt and the assistant
- * fires its own greeting.  An empty message is NOT appended to history so
- * the user's first real reply starts a clean conversation from the
- * assistant's perspective.
+ * An empty `userMessage` is the opening turn — the server generates the
+ * greeting from the system + context prompt alone.
+ *
+ * Throws on non-OK HTTP responses so callers can distinguish network/auth
+ * failures from empty-reply situations.
  */
 export async function sendIdeaSupportMessage(
     projectId: number,
@@ -54,24 +56,21 @@ export async function sendIdeaSupportMessage(
     userMessage: string,
     signal?: AbortSignal,
 ): Promise<IdeaSupportChatResponse> {
-    try {
-        const res = await fetchWithTimeout(`/${projectId}/api/IdeaSupportApi/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': getCsrfToken(),
-            },
-            body: JSON.stringify({ history, userMessage, categoryId }),
-            signal,
-        });
+    const res = await fetchWithTimeout(`/${projectId}/api/IdeaSupportApi/chat`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': getCsrfToken(),
+        },
+        body: JSON.stringify({ history, userMessage, categoryId }),
+        signal,
+    });
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<IdeaSupportChatResponse>;
-    } catch (err) {
-        if ((err as Error).name === 'AbortError') throw err;
-        console.warn('[IdeaSupport] chat unreachable:', err);
-        return { assistantMessage: '', suggestedDraft: null };
+    if (!res.ok) {
+        throw new Error(`IdeaSupport chat returned HTTP ${res.status}`);
     }
+
+    return res.json() as Promise<IdeaSupportChatResponse>;
 }
 
 /**
@@ -101,13 +100,6 @@ export async function refineIdeaDraft(
 
 // IdeaSupportSession
 
-/**
- * Manages a single idea-support conversation session.
- *
- * The session holds the full conversation history so callers don't have to.
- * An empty first userMessage triggers the assistant's opening greeting
- * without polluting the history with a synthetic user sentence.
- */
 export class IdeaSupportSession {
     private readonly _projectId: number;
     private readonly _categoryId: number;
@@ -119,24 +111,20 @@ export class IdeaSupportSession {
         this._categoryId = categoryId;
     }
 
-    /** History of turns that have been sent/received so far. */
     get history(): readonly IdeaSupportMessage[] {
         return this._history;
     }
 
     /**
-     * Sends a user message and returns the assistant reply.
+     * Sends a turn and returns the assistant reply.
      *
-     * When `userMessage` is empty (opening turn) the message is NOT added to
-     * history — only the assistant's reply is stored so the first real user
-     * message starts the visible conversation.
+     * - Empty `userMessage` → opening turn.  The server generates the
+     *   greeting; we store it in history so the first real reply sees it.
+     * - Non-empty `userMessage` → normal turn.  Both sides are appended.
      *
-     * Cancels any in-flight request before sending a new one.
-     *
-     * @param userMessage  — the user's text, or '' for the opening greeting
-     * @param _categoryName — unused here; kept for call-site readability
+     * Throws on HTTP errors so `ideasupportchat.ts` can show the right UI.
      */
-    async send(userMessage: string, _categoryName?: string): Promise<IdeaSupportChatResponse> {
+    async send(userMessage: string): Promise<IdeaSupportChatResponse> {
         this._abortController?.abort();
         this._abortController = new AbortController();
 
@@ -148,25 +136,20 @@ export class IdeaSupportSession {
             this._abortController.signal,
         );
 
-        // Only append real user turns to history.
-        // An empty opening message should not appear in the conversation record.
         if (userMessage.trim()) {
             this._history.push({ role: 'user',      content: userMessage });
             this._history.push({ role: 'assistant', content: reply.assistantMessage });
         } else if (reply.assistantMessage) {
-            // Store the opening assistant greeting so subsequent turns see it
             this._history.push({ role: 'assistant', content: reply.assistantMessage });
         }
 
         return reply;
     }
-
-    /** Polishes the current draft without touching conversation history. */
+    
     async refineDraft(draftText: string): Promise<IdeaSupportRefineResponse> {
         return refineIdeaDraft(this._projectId, draftText);
     }
 
-    /** Resets the conversation (e.g. when the user closes and reopens the chat). */
     reset(): void {
         this._history.length = 0;
         this._abortController?.abort();

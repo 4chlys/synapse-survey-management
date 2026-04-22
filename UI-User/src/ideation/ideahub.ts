@@ -12,35 +12,47 @@ interface EmojiReaction {
 export function initIdeation(): void {
     const projectId = getProjectId();
 
-    // AI Idea-Support chat popup
-    //
-    // The "show-create-form" button now opens the AI chat instead of the plain
-    // textarea form.  When the user confirms a draft from the chat, we
-    // programmatically submit it through the hidden create-idea form.
-
     const createFormEl    = document.getElementById('createForm');
     const createForm      = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
-    const categoryIdInput = createForm?.querySelector<HTMLInputElement>('input[name="categoryId"]');
-    const descriptionEl   = createForm?.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
-    const moderationEl    = createForm?.querySelector<HTMLInputElement>('input[name="moderationToken"]');
+    
+    const categoryIdInput = createForm?.querySelector<HTMLInputElement>('input[name="categoryId"]') ?? null;
+    const descriptionEl   = createForm?.querySelector<HTMLTextAreaElement>('textarea[name="description"]') ?? null;
+    const moderationEl    = createForm?.querySelector<HTMLInputElement>('input[name="moderationToken"]') ?? null;
 
-    // Read category metadata from data attributes on the page container
-    // (set from the MVC view via data-category-id and data-category-name)
-    const pageContainer   = document.getElementById('ideation-page') ??
+    const pageContainer = document.getElementById('ideation-page') ??
         document.querySelector<HTMLElement>('[data-category-id]');
-    const categoryId      = parseInt(pageContainer?.dataset.categoryId ?? categoryIdInput?.value ?? '0', 10);
-    const categoryName    = pageContainer?.dataset.categoryName ?? '';
+    const categoryId    = parseInt(pageContainer?.dataset.categoryId ?? categoryIdInput?.value ?? '0', 10);
+    const categoryName  = pageContainer?.dataset.categoryName ?? '';
 
     if (createForm && projectId != null && categoryId) {
-        // Still wire the plain form for the "skip AI" path (direct textarea use)
         wireIdeationForm(createForm, 'description', projectId, 'idea');
         if (descriptionEl) {
             wireModerationField(descriptionEl, projectId);
         }
     }
 
-    // Add-comment form
+    // Mode-selection sheet
+    const modeOverlay = document.getElementById('mode-select-overlay');
+    const modePanel   = document.getElementById('mode-select-panel');
 
+    function openModeSelect(): void {
+        if (!modeOverlay) return;
+        modeOverlay.classList.remove('hidden');
+        modeOverlay.classList.add('flex');
+    }
+
+    function closeModeSelect(): void {
+        if (!modeOverlay) return;
+        modeOverlay.classList.add('hidden');
+        modeOverlay.classList.remove('flex');
+    }
+
+    // Dismiss mode sheet on backdrop click (outside the panel)
+    modeOverlay?.addEventListener('click', (e: MouseEvent) => {
+        if (modePanel && !modePanel.contains(e.target as Node)) closeModeSelect();
+    });
+
+    // Add-comment form
     const commentFormEl = document.getElementById('commentForm');
     const commentForm   = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
     if (commentForm && projectId != null) {
@@ -52,7 +64,6 @@ export function initIdeation(): void {
     }
 
     // Emoji reaction forms
-
     document.addEventListener('submit', async (e: Event) => {
         const form = e.target as HTMLFormElement;
         if (!form.hasAttribute('data-emoji-form')) return;
@@ -102,7 +113,6 @@ export function initIdeation(): void {
     });
 
     // Button delegation
-
     document.addEventListener('click', (e: MouseEvent) => {
         const target = (e.target as Element).closest<HTMLElement>('[data-action]');
         if (!target) return;
@@ -111,9 +121,15 @@ export function initIdeation(): void {
 
         switch (action) {
 
-            // Open AI chat overlay when user wants to add an idea
             case 'show-create-form':
                 e.preventDefault();
+                // Open the mode-selection sheet so the user can choose AI chat or classic form.
+                openModeSelect();
+                break;
+
+            case 'show-ai-form':
+                e.preventDefault();
+                closeModeSelect();
                 if (projectId != null && categoryId) {
                     openIdeaSupportChat(
                         projectId,
@@ -121,11 +137,14 @@ export function initIdeation(): void {
                         categoryName,
                         (draftText) => submitIdeaFromChat(createForm, descriptionEl, moderationEl, draftText),
                     );
-                } else {
-                    // Fallback: show the plain textarea if metadata is unavailable
-                    createFormEl?.classList.remove('hidden');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
+                break;
+
+            case 'show-manual-form':
+                e.preventDefault();
+                closeModeSelect();
+                createFormEl?.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 break;
 
             case 'hide-create-form':
@@ -159,13 +178,6 @@ export function initIdeation(): void {
 }
 
 // Submit an idea that came from the AI chat
-
-/**
- * After the user confirms a draft from the chat overlay, set the description
- * textarea value and submit the hidden create-idea form programmatically.
- * Moderation has already been handled by the AI pipeline, so we clear the
- * moderationToken (the server will re-check on the fast regex path).
- */
 async function submitIdeaFromChat(
     form: HTMLFormElement | null,
     descriptionEl: HTMLTextAreaElement | null,
@@ -177,9 +189,6 @@ async function submitIdeaFromChat(
     descriptionEl.value = draftText;
     if (moderationEl) moderationEl.value = '';
 
-    // Reuse the existing form submission helper from ideationform.ts — it runs
-    // the AI moderation check and redirects on success.  We call it by
-    // dispatching a synthetic submit so wireIdeationForm's handler fires.
     form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
 }
 
@@ -205,8 +214,8 @@ function buildReactionButtons(
     const token = document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
 
     return emojis.map(emoji => {
-        const action   = emoji.postedByCurrentUser ? removeUrl : addUrl;
-        const btnClass = emoji.postedByCurrentUser
+        const action    = emoji.postedByCurrentUser ? removeUrl : addUrl;
+        const btnClass  = emoji.postedByCurrentUser
             ? 'bg-emerald-100 border-2 border-emerald-400 hover:bg-emerald-200'
             : 'bg-gray-100 border border-gray-200 hover:bg-gray-200';
         const textClass = emoji.postedByCurrentUser ? 'text-emerald-700' : 'text-gray-700';

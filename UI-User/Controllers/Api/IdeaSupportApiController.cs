@@ -40,6 +40,7 @@ public class IdeaSupportApiController(
         {
             AssistantMessage = result.AssistantMessage,
             SuggestedDraft   = result.SuggestedDraft,
+            Phase            = result.Phase,
         });
     }
 
@@ -69,8 +70,9 @@ public sealed class IdeaSupportChatRequestBody
 
 public sealed class IdeaSupportChatResponseBody
 {
-    public string  AssistantMessage { get; set; } = string.Empty;
+    public string AssistantMessage { get; set; } = string.Empty;
     public string SuggestedDraft   { get; set; }
+    public string Phase            { get; set; } = "Ideation";
 }
 
 public sealed class IdeaSupportRefineRequestBody

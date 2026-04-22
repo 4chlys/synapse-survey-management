@@ -8,6 +8,7 @@ using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.Implementation;
+using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
@@ -88,6 +89,7 @@ builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
+builder.Services.AddSingleton<IInputValidationService, InputValidationService>();
 
 // Moderation token service (signed nonce — stateless across instances)
 var tokenSecret = builder.Configuration["ApiKey"]

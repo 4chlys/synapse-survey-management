@@ -13,8 +13,9 @@ public sealed class IdeaSupportMessage
 
 public sealed class IdeaSupportChatResponse
 {
-    public string  AssistantMessage { get; set; } = string.Empty;
+    public string AssistantMessage { get; set; } = string.Empty;
     public string SuggestedDraft   { get; set; }
+    public string Phase            { get; set; } = "Ideation";
 }
 
 public sealed class IdeaSupportRefineResponse
@@ -55,8 +56,7 @@ public sealed class IdeaSupportService(HttpClient httpClient, ISessionService se
         AddTokenHeader(request, projectId);
 
         var response = await httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
-            return new IdeaSupportChatResponse { AssistantMessage = string.Empty };
+        response.EnsureSuccessStatusCode();   // throws HttpRequestException on non-2xx
 
         return await response.Content.ReadFromJsonAsync<IdeaSupportChatResponse>()
                ?? new IdeaSupportChatResponse { AssistantMessage = string.Empty };

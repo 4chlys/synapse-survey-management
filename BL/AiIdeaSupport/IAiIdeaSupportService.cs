@@ -11,16 +11,15 @@ public interface IAiIdeaSupportService
 {
     /// <summary>
     /// Produces the next assistant turn given the current conversation state.
-    /// Never throws — returns a safe fallback message on error.
+    /// Never throws — returns a safe Error-phase reply on failure.
     /// </summary>
     Task<IdeaSupportChatReply> ChatAsync(
         IdeaSupportChatRequest request,
         CancellationToken ct = default);
 
     /// <summary>
-    /// Standalone endpoint: polishes a draft idea without any conversation history.
+    /// Standalone polish of a draft without conversation history.
     /// Returns null when the text cannot meaningfully be improved.
-    /// Never throws.
     /// </summary>
     Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,

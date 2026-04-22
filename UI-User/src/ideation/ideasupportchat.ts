@@ -3,15 +3,12 @@
  *
  * Drives the AI Idea Support chat overlay.
  *
- * Fixes applied:
- *   1. History is maintained correctly across turns (loading bubble removed
- *      from the static DOM so it doesn't pollute the messages container;
- *      it is appended/removed dynamically instead).
- *   2. When the agent produces a suggestedDraft the chat shows an inline
- *      confirmation message with YES and NO buttons instead of (only) an
- *      external banner.
- *   3. The loading bubble is always inserted at the end of the messages
- *      list, not kept as a static top-level child.
+ * State machine phases (driven by server):
+ *   Intro    → greeting rendered, input enabled
+ *   Ideation → user sends idea → AI refines with a question
+ *   Draft    → AI has enough context, proposes a draft
+ *   Confirm  → AI asks confirmation; input locked, YES/NO shown inline
+ *   Error    → fallback message shown, input re-enabled
  */
 
 import { IdeaSupportSession } from './ideasupport';
@@ -27,6 +24,7 @@ let sendBtn: HTMLButtonElement | null = null;
 let closeBtn: HTMLButtonElement | null = null;
 let useDraftBtn: HTMLButtonElement | null = null;
 let refineDraftBtn: HTMLButtonElement | null = null;
+let loadingBubbleEl: HTMLElement | null = null;
 
 //  State
 
@@ -36,9 +34,15 @@ let isSending = false;
 let onSubmitCallback: ((text: string) => void) | null = null;
 let isInitialised = false;
 
-// The loading bubble is created fresh each time it is needed and removed when
-// hidden. We keep a reference so we can remove it cleanly.
-let loadingBubbleEl: HTMLElement | null = null;
+// Types & Interfaces
+
+type ChatPhase = 'INTRO' | 'IDEATION' | 'DRAFT' | 'CONFIRM' | 'ERROR';
+
+interface AiChatResponse {
+    assistantMessage: string;
+    suggestedDraft:   string | null;
+    phase:            string;
+}
 
 //  Initialisation
 
@@ -90,20 +94,20 @@ function ensureRefs(): boolean {
     return true;
 }
 
-//  Public API 
+//  Public API
 
 /**
  * Opens the chat overlay for a specific category.
  *
  * @param projectId    – current project
  * @param categoryId   – the category the idea belongs to
- * @param categoryName – human-readable name sent to the agent for context
+ * @param categoryName – human-readable label (informational; context is derived server-side)
  * @param onSubmit     – called with the final idea text when the user confirms
  */
 export function openIdeaSupportChat(
     projectId: number,
     categoryId: number,
-    categoryName: string,
+    _categoryName: string,
     onSubmit: (text: string) => void,
 ): void {
     if (!ensureRefs()) return;
@@ -124,33 +128,80 @@ export function openIdeaSupportChat(
 
     requestAnimationFrame(() => inputEl?.focus());
 
-    void fireOpeningTurn(categoryName);
+    void fireOpeningTurn();
 }
 
 //  Opening turn
 
-async function fireOpeningTurn(categoryName: string): Promise<void> {
+async function fireOpeningTurn(): Promise<void> {
     showLoading();
     setSendingState(true);
 
     try {
-        const reply = await activeSession!.send('', categoryName);
-
-        hideLoading();
-        setSendingState(false);
-
-        if (reply.assistantMessage) {
-            appendAssistantBubble(reply.assistantMessage);
-        }
-        if (reply.suggestedDraft) {
-            showDraftConfirmation(reply.suggestedDraft);
-        }
+        // Empty userMessage signals the server to generate the greeting.
+        const reply = await activeSession!.send('') as AiChatResponse;
+        await handleAiReply(reply);
     } catch {
         hideLoading();
         setSendingState(false);
         appendAssistantBubble(
             'Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.',
         );
+    }
+}
+
+//  Reply handler
+
+/**
+ * Drives the UI state machine based on the phase returned by the server.
+ *
+ * INTRO / IDEATION : show assistant message, keep input enabled.
+ * DRAFT  / CONFIRM : show message + inline YES/NO card, lock input until user decides.
+ * ERROR            : show fallback message, re-enable input.
+ */
+async function handleAiReply(reply: AiChatResponse): Promise<void> {
+    hideLoading();
+
+    // Guard: an empty message means the backend silently failed — show the fallback.
+    if (!reply.assistantMessage?.trim()) {
+        setSendingState(false);
+        appendAssistantBubble(
+            'Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.',
+        );
+        return;
+    }
+
+    const phase = (reply.phase?.toUpperCase() ?? 'IDEATION') as ChatPhase;
+
+    switch (phase) {
+        case 'INTRO':
+        case 'IDEATION':
+            setSendingState(false);
+            appendAssistantBubble(reply.assistantMessage);
+            break;
+
+        case 'DRAFT':
+        case 'CONFIRM':
+            if (reply.suggestedDraft) {
+                appendAssistantBubble(reply.assistantMessage);
+                showDraftConfirmation(reply.suggestedDraft);
+                // Lock input — the YES button closes the overlay, NO re-enables it.
+                if (inputEl) inputEl.disabled = true;
+                if (sendBtn) sendBtn.disabled = true;
+                isSending = true;
+            } else {
+                setSendingState(false);
+                appendAssistantBubble(reply.assistantMessage);
+            }
+            break;
+
+        case 'ERROR':
+        default:
+            setSendingState(false);
+            appendAssistantBubble(
+                reply.assistantMessage || 'Er is iets misgegaan. Probeer het opnieuw.',
+            );
+            break;
     }
 }
 
@@ -168,17 +219,8 @@ async function handleSend(): Promise<void> {
     setSendingState(true);
 
     try {
-        const reply = await activeSession.send(text);
-
-        hideLoading();
-        setSendingState(false);
-
-        if (reply.assistantMessage) {
-            appendAssistantBubble(reply.assistantMessage);
-        }
-        if (reply.suggestedDraft) {
-            showDraftConfirmation(reply.suggestedDraft);
-        }
+        const reply = await activeSession!.send(text) as AiChatResponse;
+        await handleAiReply(reply);
     } catch {
         hideLoading();
         setSendingState(false);
@@ -189,8 +231,8 @@ async function handleSend(): Promise<void> {
 //  Draft confirmation (inline YES / NO buttons)
 
 /**
- * Appends an inline confirmation bubble with the proposed draft and two
- * buttons: "Ja, indienen" (YES) and "Nee, aanpassen" (NO).
+ * Appends an inline confirmation card showing the proposed draft with
+ * "Ja, indienen" (YES) and "Nee, aanpassen" (NO) buttons.
  *
  * The external banner is also updated so the user can still see the draft
  * text while they decide.
@@ -198,10 +240,8 @@ async function handleSend(): Promise<void> {
 function showDraftConfirmation(draft: string): void {
     currentDraft = draft;
 
-    // Update the external banner text (hidden until the user decides)
     if (draftTextEl) draftTextEl.textContent = draft;
 
-    // Build inline confirmation bubble
     const bubble = document.createElement('div');
     bubble.className = 'flex gap-2 items-end';
     bubble.setAttribute('data-draft-confirmation', 'true');
@@ -244,7 +284,6 @@ function showDraftConfirmation(draft: string): void {
     noBtn.textContent = 'Nee, aanpassen';
 
     yesBtn.addEventListener('click', () => {
-        // Disable both buttons to prevent double-tap
         yesBtn.disabled = true;
         noBtn.disabled  = true;
         handleUseDraft();
@@ -254,7 +293,6 @@ function showDraftConfirmation(draft: string): void {
         yesBtn.disabled = true;
         noBtn.disabled  = true;
         appendAssistantBubble('Geen probleem! Vertel me wat je wil aanpassen.');
-        // Re-enable input so the user can continue the conversation
         setSendingState(false);
     });
 
@@ -275,9 +313,12 @@ function showDraftConfirmation(draft: string): void {
 //  Draft handlers
 
 function handleUseDraft(): void {
-    if (!currentDraft || !onSubmitCallback) return;
+    // Capture locals BEFORE closeOverlay() nullifies the module-level references.
+    const draft    = currentDraft;
+    const callback = onSubmitCallback;
+    if (!draft || !callback) return;
     closeOverlay();
-    onSubmitCallback(currentDraft);
+    callback(draft);
 }
 
 async function handleRefineDraft(): Promise<void> {
@@ -349,7 +390,6 @@ function appendAssistantBubble(text: string): void {
 //  Loading indicator (dynamic — always at the bottom)
 
 function showLoading(): void {
-    // Remove any existing loading bubble first
     hideLoading();
 
     loadingBubbleEl = document.createElement('div');
@@ -382,7 +422,7 @@ function hideLoading(): void {
     }
 }
 
-//  Draft banner (external, below the chat) 
+//  Draft banner (external, below the chat)
 
 function hideDraftBanner(): void {
     draftBanner?.classList.add('hidden');
@@ -390,7 +430,7 @@ function hideDraftBanner(): void {
     currentDraft = null;
 }
 
-//  UI helpers 
+//  UI helpers
 
 function setSendingState(sending: boolean): void {
     isSending = sending;

@@ -1,37 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.API.DTOs;
 using SynapseEnqueteManagement.API.DTOs.IdeaSupport;
-using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
-/// <summary>
-/// Conversational AI endpoints that help a participant articulate and refine
-/// an idea before submitting it.
-///
-/// All endpoints require a valid participant token so the feature is gated
-/// behind survey completion (same contract as ideas/comments).
-///
-/// Endpoints
-/// ─────────
-///   POST {projectId}/ideasupport/chat
-///       Full stateless chat turn. The client maintains and forwards the
-///       complete conversation history on every call.
-///
-///   POST {projectId}/ideasupport/refine
-///       One-shot polish of a draft idea text without any chat context.
-/// </summary>
 [ApiController]
 [Route("api/projects/{projectId}/ideasupport")]
 public class IdeaSupportController(
     IAiIdeaSupportService ideaSupportService,
+    IInputValidationService inputValidation,
     ICategoryManager categoryManager,
+    IProjectManager projectManager,
     IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager)
 {
-    // Chat
+    // Long introductions are trimmed so a single verbose text can't flood the context window.
+    private const int MaxIntroLength = 1200;
 
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponseDto>> Chat(
@@ -41,18 +28,55 @@ public class IdeaSupportController(
     {
         var (_, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
-        
+
         var category = await categoryManager.GetCategoryByIdAsync(dto.CategoryId);
         if (category is null)
             return NotFound($"Category {dto.CategoryId} not found.");
 
+        var isFirstTurn = string.IsNullOrWhiteSpace(dto.UserMessage)
+                          || dto.History.Count == 0;
+
+        // Reject obvious violations deterministically — no AI token cost incurred.
+        if (!isFirstTurn && !string.IsNullOrWhiteSpace(dto.UserMessage))
+        {
+            var validation = inputValidation.Validate(dto.UserMessage);
+            if (!validation.IsValid)
+                return BadRequest(new IdeaSupportChatResponseDto
+                {
+                    AssistantMessage = validation.Reason,
+                    Phase            = "Error",
+                });
+        }
+
+        // Fetch project to give the AI introduction context on the opening turn.
+        // Non-fatal: a DB error here must not block the greeting; continue without context.
+        Project project = null;
+        if (isFirstTurn)
+        {
+            try { project = await projectManager.GetProjectByIdAsync(projectId); }
+            catch { /* intentionally swallowed — greeting still works without project text */ }
+        }
+
+        var projectName         = project?.OrganisationName ?? string.Empty;
+        var projectIntroduction = project?.Introduction?.Text ?? string.Empty;
+        if (projectIntroduction.Length > MaxIntroLength)
+            projectIntroduction = projectIntroduction[..MaxIntroLength] + "…";
+
         var request = new IdeaSupportChatRequest
         {
-            History             = dto.History.Select(h => new IdeaSupportChatMessage { Role = h.Role, Content = h.Content }).ToList(),
-            UserMessage         = dto.UserMessage,
+            History             = dto.History
+                                    .Select(h => new IdeaSupportChatMessage
+                                    {
+                                        Role    = h.Role,
+                                        Content = h.Content,
+                                    })
+                                    .ToList(),
+            UserMessage         = dto.UserMessage ?? string.Empty,
+            ProjectName         = projectName,
+            ProjectIntroduction = projectIntroduction,
             CategoryName        = category.Name,
             CategoryDescription = category.Description ?? string.Empty,
-            IsFirstTurn         = dto.History.Count == 0,
+            IsFirstTurn         = isFirstTurn,
         };
 
         var reply = await ideaSupportService.ChatAsync(request, ct);
@@ -61,6 +85,7 @@ public class IdeaSupportController(
         {
             AssistantMessage = reply.AssistantMessage,
             SuggestedDraft   = reply.SuggestedDraft,
+            Phase            = reply.Phase.ToString(),
         });
     }
 
@@ -74,7 +99,6 @@ public class IdeaSupportController(
         if (error is not null) return error;
 
         var result = await ideaSupportService.RefineAsync(dto.DraftText, ct);
-
         return Ok(new IdeaSupportRefineResponseDto { RefinedText = result.RefinedText });
     }
 }

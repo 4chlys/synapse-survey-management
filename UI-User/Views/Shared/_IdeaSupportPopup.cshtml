@@ -1,16 +1,21 @@
 @* AI Idea Support Chat Overlay
-   The loading indicator is now rendered dynamically by ideasupportchat.ts
+   Mobile  : bottom-sheet anchored to the viewport bottom.
+   Desktop : centred modal with generous max-width and rounded corners.
+   The loading indicator is rendered dynamically by ideasupportchat.ts
    so it always appears at the bottom of the chat instead of the top.
    The draft banner below is kept as a supplementary display only —
    the primary YES/NO confirmation is shown inline in the chat.
 *@
 
 <div id="idea-support-overlay"
-     class="fixed inset-0 z-50 hidden items-end justify-center bg-black/50 backdrop-blur-sm">
+     class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center
+            bg-black/50 backdrop-blur-sm p-0 sm:p-6">
 
     <div id="idea-support-panel"
-         class="relative bg-white w-full max-w-sm flex flex-col shadow-2xl"
-         style="height: 88dvh; border-radius: 1.25rem 1.25rem 0 0;">
+         class="relative bg-white flex flex-col shadow-2xl
+                w-full max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl
+                h-[88dvh] sm:h-[82dvh] md:h-[78dvh]
+                rounded-t-[1.25rem] sm:rounded-[1.25rem]">
 
         @* Header *@
         <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
@@ -78,7 +83,8 @@
                           class="flex-1 px-4 py-3 border-2 border-gray-100 rounded-2xl
                                  focus:border-emerald-300 focus:outline-none resize-none
                                  text-sm leading-relaxed transition-colors
-                                 max-h-32 overflow-y-auto"></textarea>
+                                 max-h-32 overflow-y-auto
+                                 disabled:opacity-50 disabled:cursor-not-allowed"></textarea>
                 <button id="idea-support-btn-send"
                         type="button"
                         aria-label="Versturen"

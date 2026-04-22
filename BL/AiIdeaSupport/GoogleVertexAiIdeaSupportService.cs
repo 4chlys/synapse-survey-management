@@ -1,33 +1,32 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
-/// <summary>
-/// Idea-support chat backed by Google Vertex AI (Gemini).
-///
-/// The conversation is reconstructed on every call from the history supplied
-/// by the client — no server-side session state is maintained.
-///
-/// A "suggested draft" extraction pass runs after every assistant reply:
-/// if Gemini embeds a ready-to-submit draft between [DRAFT]…[/DRAFT] markers,
-/// it is stripped from the visible message and returned separately so the
-/// front-end can offer a one-click "use this idea" button.
-/// </summary>
 public sealed class GoogleVertexAiIdeaSupportService(
     IChatClient chatClient,
     ILogger<GoogleVertexAiIdeaSupportService> logger,
     AiIdeaSupportConfig config)
     : IAiIdeaSupportService
 {
-    private const string DraftOpenTag = "[DRAFT]";
-    private const string DraftCloseTag = "[/DRAFT]";
+    private static readonly Regex CodeFenceRe =
+        new(@"^```[a-zA-Z]*\s*|\s*```$",
+            RegexOptions.Compiled | RegexOptions.Multiline);
+
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
+    };
 
     private static readonly string FallbackMessage =
         "Sorry, ik kan je nu even niet helpen. Probeer je idee zelf te verwoorden " +
         "en stuur het in — je kunt het altijd later aanpassen.";
 
-    // Chat
+    // ── Chat ─────────────────────────────────────────────────────────────
 
     public async Task<IdeaSupportChatReply> ChatAsync(
         IdeaSupportChatRequest request,
@@ -37,12 +36,12 @@ public sealed class GoogleVertexAiIdeaSupportService(
         {
             var messages = BuildMessages(request);
             var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-            var raw = response.Messages.LastOrDefault()?.Text.Trim() ?? string.Empty;
+            var raw      = response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(raw))
-                return new IdeaSupportChatReply { AssistantMessage = FallbackMessage };
+                return FallbackReply();
 
-            return ExtractDraft(raw);
+            return ParseAiReply(raw);
         }
         catch (OperationCanceledException)
         {
@@ -54,11 +53,11 @@ public sealed class GoogleVertexAiIdeaSupportService(
                 "[IdeaSupport] Chat call failed; returning fallback. Category: {Category}",
                 request.CategoryName);
 
-            return new IdeaSupportChatReply { AssistantMessage = FallbackMessage };
+            return FallbackReply();
         }
     }
 
-    // Refine
+    // ── Refine ────────────────────────────────────────────────────────────
 
     public async Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
@@ -69,12 +68,14 @@ public sealed class GoogleVertexAiIdeaSupportService(
 
         try
         {
-            var prompt = config.RefinePrompt.Replace("{draft}", draftText, StringComparison.OrdinalIgnoreCase);
+            var prompt   = config.RefinePrompt.Replace("{draft}", draftText,
+                               StringComparison.OrdinalIgnoreCase);
             var messages = new List<ChatMessage> { new(ChatRole.User, prompt) };
             var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-            var refined = response.Messages.LastOrDefault()?.Text.Trim();
+            var refined  = response.Messages.LastOrDefault()?.Text?.Trim();
 
-            if (string.IsNullOrWhiteSpace(refined) || refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(refined) ||
+                refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                 return new IdeaSupportRefineResult { RefinedText = null };
 
             return new IdeaSupportRefineResult { RefinedText = refined };
@@ -90,14 +91,19 @@ public sealed class GoogleVertexAiIdeaSupportService(
         }
     }
 
-    // Helpers
+    // ── Helpers ───────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Builds the full message list that is sent to the model:
-    ///   1. System prompt (platform persona).
-    ///   2. Optional context message (category + first-turn primer).
-    ///   3. Trimmed conversation history.
-    ///   4. Latest user message.
+    /// Builds the message list sent to the LLM:
+    ///   1. System prompt  (persona + JSON output rules)
+    ///   2. Context prompt (category primer) — first turn only
+    ///   3. Trimmed conversation history
+    ///   4. Latest user message — OMITTED when empty (opening turn)
+    ///
+    /// Omitting the user message on the opening turn is intentional: the
+    /// LLM receives only the system + context prompt and responds with the
+    /// greeting.  Adding an empty user turn would confuse models that
+    /// require strict user/assistant alternation.
     /// </summary>
     private List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
     {
@@ -109,52 +115,81 @@ public sealed class GoogleVertexAiIdeaSupportService(
         if (request.IsFirstTurn && !string.IsNullOrWhiteSpace(request.CategoryName))
         {
             var ctx = config.ContextPrompt
-                .Replace("{category_name}", request.CategoryName, StringComparison.OrdinalIgnoreCase)
-                .Replace("{category_description}", request.CategoryDescription, StringComparison.OrdinalIgnoreCase);
+                .Replace("{project_name}",         request.ProjectName,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace("{project_introduction}", request.ProjectIntroduction,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace("{category_name}",        request.CategoryName,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace("{category_description}", request.CategoryDescription,
+                    StringComparison.OrdinalIgnoreCase);
 
             messages.Add(new ChatMessage(ChatRole.System, ctx));
         }
 
-        var trimmedHistory = request.History.Count > config.MaxHistoryTurns * 2
+        var history = request.History.Count > config.MaxHistoryTurns * 2
             ? request.History.Skip(request.History.Count - config.MaxHistoryTurns * 2).ToList()
             : request.History;
+
+        var trimmedHistory = history
+            .SkipWhile(m => !m.Role.Equals("user", StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         foreach (var turn in trimmedHistory)
         {
             var role = turn.Role.Equals("assistant", StringComparison.OrdinalIgnoreCase)
                 ? ChatRole.Assistant
                 : ChatRole.User;
-
             messages.Add(new ChatMessage(role, turn.Content));
         }
 
-        messages.Add(new ChatMessage(ChatRole.User, request.UserMessage));
+        if (!string.IsNullOrWhiteSpace(request.UserMessage))
+            messages.Add(new ChatMessage(ChatRole.User, request.UserMessage));
 
         return messages;
     }
 
     /// <summary>
-    /// Looks for an optional [DRAFT]…[/DRAFT] block in the model reply.
-    /// When found, the block is removed from the visible message and its
-    /// contents are returned as <see cref="IdeaSupportChatReply.SuggestedDraft"/>.
+    /// Parses the structured JSON the system prompt instructs the AI to return:
+    /// <c>{"phase":"INTRO","message":"…","draft":null}</c>
+    ///
+    /// Falls back gracefully when the model returns plain text instead of JSON
+    /// (treats the raw text as an IDEATION-phase message so the conversation
+    /// continues without crashing).
     /// </summary>
-    private static IdeaSupportChatReply ExtractDraft(string raw)
+    private static IdeaSupportChatReply ParseAiReply(string raw)
     {
-        var openIdx = raw.IndexOf(DraftOpenTag, StringComparison.OrdinalIgnoreCase);
-        var closeIdx = raw.IndexOf(DraftCloseTag, StringComparison.OrdinalIgnoreCase);
+        var json = CodeFenceRe.Replace(raw, string.Empty).Trim();
 
-        if (openIdx < 0 || closeIdx < 0 || closeIdx <= openIdx)
-            return new IdeaSupportChatReply { AssistantMessage = raw };
-
-        var draft = raw.Substring(openIdx + DraftOpenTag.Length, closeIdx - openIdx - DraftOpenTag.Length).Trim();
-        var visibleMessage = (raw[..openIdx] + raw[(closeIdx + DraftCloseTag.Length)..]).Trim();
-
-        return new IdeaSupportChatReply
+        try
         {
-            AssistantMessage = string.IsNullOrWhiteSpace(visibleMessage)
-                ? "Hier is een voorstel voor je idee:"
-                : visibleMessage,
-            SuggestedDraft = string.IsNullOrWhiteSpace(draft) ? null : draft,
-        };
+            var aiReply = JsonSerializer.Deserialize<IdeaSupportAiReply>(json, JsonOpts);
+
+            if (aiReply is null || string.IsNullOrWhiteSpace(aiReply.Message))
+                return FallbackReply();
+
+            var phase = Enum.TryParse<IdeaSupportPhase>(aiReply.Phase, ignoreCase: true, out var p)
+                ? p
+                : IdeaSupportPhase.Ideation;
+
+            return new IdeaSupportChatReply
+            {
+                AssistantMessage = aiReply.Message,
+                SuggestedDraft   = string.IsNullOrWhiteSpace(aiReply.Draft) ? null : aiReply.Draft,
+                Phase            = phase,
+            };
+        }
+        catch (JsonException)
+        {
+            // Model returned plain text — show it as-is in Ideation phase.
+            return new IdeaSupportChatReply
+            {
+                AssistantMessage = raw,
+                Phase            = IdeaSupportPhase.Ideation,
+            };
+        }
     }
+
+    private static IdeaSupportChatReply FallbackReply() =>
+        new() { AssistantMessage = FallbackMessage, Phase = IdeaSupportPhase.Error };
 }

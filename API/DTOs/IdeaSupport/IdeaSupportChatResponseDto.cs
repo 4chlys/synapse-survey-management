@@ -3,10 +3,11 @@ namespace SynapseEnqueteManagement.API.DTOs.IdeaSupport;
 public class IdeaSupportChatResponseDto
 {
     public string AssistantMessage { get; set; } = string.Empty;
- 
+    public string SuggestedDraft   { get; set; }
+
     /// <summary>
-    /// Non-null when the agent has generated a ready-to-submit draft.
-    /// The client should offer a "use this idea" button when this is present.
+    /// One of: Intro | Ideation | Draft | Confirm | Error
+    /// The frontend uses this to drive its state machine — no string-parsing needed.
     /// </summary>
-    public string SuggestedDraft { get; set; }
+    public string Phase { get; set; } = "Ideation";
 }
