@@ -16,6 +16,7 @@ get_secret() {
 
 docker run -d --name mvp-api --restart always -p 8080:8080 \
   -e ASPNETCORE_ENVIRONMENT=Production \
+  -e AllowedHosts='*' \
   -e DB_HOST=$(get_secret db-host) \
   -e DB_PORT=5432 \
   -e DB_NAME=mvp-db \
