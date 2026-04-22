@@ -15,6 +15,8 @@ public class CreateQuestionViewModel
 
     public string AnswerChoicesRaw { get; set; }
 
+    public int? SectionId { get; set; }
+
     public List<string> GetAnswerChoices() =>
         (AnswerChoicesRaw ?? string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
