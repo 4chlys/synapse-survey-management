@@ -167,6 +167,21 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(c => c.Idea)
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Store the embedding as a JSON array in a TEXT column. Provider-agnostic:
+            // works on both SQLite (dev) and PostgreSQL (prod). Swap to pgvector later
+            // by replacing this converter with a provider-specific mapping.
+            e.Property(i => i.Embedding)
+                .HasConversion(
+                    v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => string.IsNullOrEmpty(v) ? null : JsonSerializer.Deserialize<float[]>(v, (JsonSerializerOptions)null)
+                )
+                .HasColumnType("TEXT")
+                .Metadata.SetValueComparer(new ValueComparer<float[]>(
+                    (a, b) => (a == null && b == null) || (a != null && b != null && a.SequenceEqual(b)),
+                    a => a == null ? 0 : a.Aggregate(0, (acc, v) => HashCode.Combine(acc, v.GetHashCode())),
+                    a => a == null ? null : a.ToArray()
+                ));
         });
 
         // Project-Emoji many-to-many (implicit join table)
