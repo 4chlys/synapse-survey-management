@@ -1,4 +1,7 @@
 #!/bin/bash
+export DOCKER_CONFIG=/tmp/.docker
+mkdir -p /tmp/.docker
+
 TOKEN=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
   -H "Metadata-Flavor: Google" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
