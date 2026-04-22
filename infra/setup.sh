@@ -21,6 +21,7 @@ source "${SCRIPT_DIR}/lib/05_storage.sh"
 source "${SCRIPT_DIR}/lib/06_loadbalancer.sh"
 source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
 source "${SCRIPT_DIR}/lib/08_logging.sh"
+source "${SCRIPT_DIR}/lib/09_armor.sh"
 
 # ── Setup ───────────────────────────────────────────────────────
 echo "======================================================"
@@ -43,6 +44,8 @@ create_instance_templates
 create_migs
 
 create_storage_bucket
+
+create_cloud_armor
 
 create_health_checks
 create_backend_services
