@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
+using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 
@@ -34,6 +35,8 @@ HttpClientHandler CreateHandler()
 builder.Services.AddHttpClient<ProjectAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
+builder.Services.AddViteServices();
+
 builder.Services.AddHttpClient<QuestionAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
@@ -44,6 +47,11 @@ builder.Services.AddHttpClient<SectionAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseViteDevelopmentServer();
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -58,7 +66,7 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapControllerRoute(
         name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}")
+        pattern: "{controller=Project}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.Run();

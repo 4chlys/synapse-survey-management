@@ -50,6 +50,7 @@ else
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Sort strategies (singleton — stateless)
 builder.Services.AddSingleton<ISortStrategy<Idea>, RandomSortStrategy<Idea>>();

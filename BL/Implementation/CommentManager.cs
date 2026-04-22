@@ -9,6 +9,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CommentManager(
     IRepository repository,
+    IUnitOfWork uow,
     ILogger<CommentManager> logger,
     ISortStrategyFactory<TextComment> sortStrategyFactory) : ICommentManager
 {
@@ -70,7 +71,7 @@ public class CommentManager(
         };
     }
 
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant, CancellationToken ct = default)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"], tracked: true);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
@@ -88,7 +89,9 @@ public class CommentManager(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(comment);
+        var created = await repository.CreateAsync(comment);
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
     public async Task<IEnumerable<Emoji>> GetEmojisAsync(int projectId)
@@ -97,7 +100,7 @@ public class CommentManager(
         return project?.Emojis ?? Enumerable.Empty<Emoji>();
     }
 
-    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
+    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
         var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project.Emojis"], tracked: true);
         if (idea?.Category?.Project?.ProjectId != projectId)
@@ -122,22 +125,28 @@ public class CommentManager(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(iconComment,
+        var created = await repository.CreateAsync(iconComment,
             duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
                                   && ic.EmojiId == emojiId
                                   && ic.Idea.IdeaId == ideaId
                                   && ic.TextComment == null);
+        if (created == null) return null;
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
+    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
+        var removed = await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
                                                                && ic.EmojiId == emojiId
                                                                && ic.Idea.IdeaId == ideaId
                                                                && ic.TextComment == null);
+        if (!removed) return false;
+        await uow.SaveChangesAsync(ct);
+        return true;
     }
 
-    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
+    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
         var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project.Emojis"], tracked: true);
         if (comment?.Idea?.Category?.Project?.ProjectId != projectId)
@@ -162,16 +171,22 @@ public class CommentManager(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(reaction,
+        var created = await repository.CreateAsync(reaction,
             duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
                                   && ic.EmojiId == emojiId
                                   && ic.TextComment.CommentId == commentId);
+        if (created == null) return null;
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
+    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
+        var removed = await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
                                                                && ic.EmojiId == emojiId
                                                                && ic.TextComment.CommentId == commentId);
+        if (!removed) return false;
+        await uow.SaveChangesAsync(ct);
+        return true;
     }
 }

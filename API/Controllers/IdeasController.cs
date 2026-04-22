@@ -47,7 +47,7 @@ public class IdeasController(
         try
         {
             var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
-            var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant);
+            var idea = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant, ct);
 
             var ideaCount = await ideaManager.GetIdeaCountByParticipantAsync(participant.ParticipantId);
             var project = await projectManager.GetProjectByIdAsync(projectId);

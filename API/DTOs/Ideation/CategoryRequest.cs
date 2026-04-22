@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class UpdateCategoryDto
+public class CategoryRequest
 {
     [Required][MaxLength(100)]
     public string Name { get; set; }
@@ -9,3 +9,4 @@ public class UpdateCategoryDto
     [MaxLength(1000)]
     public string Description { get; set; }
 }
+

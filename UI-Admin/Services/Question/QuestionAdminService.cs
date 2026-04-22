@@ -5,6 +5,14 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 public class QuestionAdminService(HttpClient httpClient)
 {
+    private class QuestionRequest
+    {
+        public string Text { get; set; }
+        public string QuestionFormat { get; set; }
+        public bool IsMandatory { get; set; }
+        public List<string> AnswerChoices { get; set; }
+    }
+
     public async Task<List<QuestionViewModel>> GetQuestionsAsync(int projectId)
     {
         var response = await
@@ -20,7 +28,7 @@ public class QuestionAdminService(HttpClient httpClient)
     public async Task CreateQuestionAsync(int projectId, string text, string
         questionFormat, bool isMandatory, List<string> answerChoices)
     {
-        var payload = new { Text = text, QuestionFormat = questionFormat,
+        var payload = new QuestionRequest { Text = text, QuestionFormat = questionFormat,
             IsMandatory = isMandatory, AnswerChoices = answerChoices };
         var response = await
             httpClient.PostAsJsonAsync($"api/projects/{projectId}/questionnaire/questions",
@@ -31,7 +39,7 @@ public class QuestionAdminService(HttpClient httpClient)
     public async Task UpdateQuestionAsync(int projectId, int questionId, string
         text, string questionFormat, bool isMandatory, List<string> answerChoices)
     {
-        var payload = new { Text = text, QuestionFormat = questionFormat,
+        var payload = new QuestionRequest { Text = text, QuestionFormat = questionFormat,
             IsMandatory = isMandatory, AnswerChoices = answerChoices };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}/questionnaire/questions/{questionId}", payload);
 response.EnsureSuccessStatusCode();

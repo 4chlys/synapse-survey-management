@@ -20,12 +20,12 @@ public class ResponsesController(
     /// Saves optional contact info (email / phone) for the current participant.
     /// </summary>
     [HttpPatch("participants/me/contact")]
-    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto)
+    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, dto.PhoneNumber);
+        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
         return NoContent();
     }
 
@@ -33,13 +33,13 @@ public class ResponsesController(
     /// Creates an anonymous participant and returns a session token.
     /// </summary>
     [HttpPost("participants")]
-    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId)
+    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
     {
         var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
         if (questionnaire is null)
             return NotFound("Questionnaire not found.");
 
-        var participant = await AddParticipantAsync(questionnaire, projectId);
+        var participant = await AddParticipantAsync(questionnaire, projectId, ct);
 
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
@@ -50,7 +50,7 @@ public class ResponsesController(
     /// and marks the participant as submitted.
     /// </summary>
     [HttpPost("submit")]
-    public async Task<ActionResult> Submit(int projectId)
+    public async Task<ActionResult> Submit(int projectId, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -74,8 +74,8 @@ public class ResponsesController(
             return BadRequest(ex.Message);
         }
 
-        await responseManager.CommitResponsesAsync(participant.ParticipantId, visibleSet);
-        await MarkAsSubmittedAsync(participant.SessionToken);
+        await responseManager.CommitResponsesAsync(participant.ParticipantId, visibleSet, ct);
+        await MarkAsSubmittedAsync(participant.SessionToken, ct);
 
         return Ok();
     }
@@ -84,7 +84,7 @@ public class ResponsesController(
     /// Upserts a single response. Saves with IsCommitted = false (interim save).
     /// </summary>
     [HttpPost("responses")]
-    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto)
+    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -96,7 +96,7 @@ public class ResponsesController(
         if (question is null)
             return NotFound($"Question with id {createDto.QuestionId} not found.");
 
-        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.Value, question, participant);
+        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.Value, question, participant, ct);
         var dto = MapToDto(response);
         return Created(string.Empty, dto);
     }

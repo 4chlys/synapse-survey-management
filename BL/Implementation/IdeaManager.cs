@@ -7,7 +7,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
+public class IdeaManager(IRepository repository, IUnitOfWork uow, ILogger<IdeaManager> logger, ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
     public async Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
     {
@@ -51,7 +51,7 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
     }
 
     public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
-        Participant participant)
+        Participant participant, CancellationToken ct = default)
     {
         var category = await repository.ReadByIdAsync<Category>(categoryId, includes: [c => c.Project], tracked: true);
         if (category == null || category.Project?.ProjectId != projectId)
@@ -69,7 +69,9 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(idea);
+        var created = await repository.CreateAsync(idea);
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
     public async Task<int> GetIdeaCountByParticipantAsync(int participantId)

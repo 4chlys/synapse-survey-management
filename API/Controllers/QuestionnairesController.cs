@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -44,7 +45,7 @@ public class QuestionnairesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat>(dto.QuestionFormat, out var format))
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var question = await questionnaireManager.AddQuestionAsync(projectId,
@@ -62,7 +63,7 @@ public class QuestionnairesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat>(dto.QuestionFormat, out var format))
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
