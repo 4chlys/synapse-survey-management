@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.User.Extensions;
-using SynapseEnqueteManagement.UI.User.FormStrategies;
 using SynapseEnqueteManagement.UI.User.Models.Survey;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
+using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
@@ -38,7 +38,6 @@ public class SurveyController(
         // Load existing responses for resume support
         if (!string.IsNullOrWhiteSpace(token))
         {
-            Console.WriteLine("Loading responses");
             var existingResponses = await questionnaireService.GetResponsesAsync(projectId, token);
 
             if (existingResponses is null)

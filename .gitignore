@@ -503,6 +503,7 @@ start.sh
 
 # manually by Jonas
 JonasAssignment/
+UI-Admin/wwwroot/uploads/
 UI-User/wwwroot/*.js
 UI-User/wwwroot/*.css
 UI-User/wwwroot/.vite
@@ -510,3 +511,6 @@ UI-User/.vite
 UI-User/wwwroot/dist
 cicd-key.json
 deploy/config.env
+.claude/
+
+UI-Admin/.vite

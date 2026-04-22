@@ -6,14 +6,15 @@ using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class QuestionnaireManager(IRepository repository) : IQuestionnaireManager
+public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQuestionnaireManager
 {
 
     public async Task<Question> AddQuestionAsync(int projectId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices)
     {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId,
-            includeQuestions: false);
+        var questionnaire = await repository.ReadSingleAsync<Questionnaire>(
+            filters: [q => q.Project.ProjectId == projectId],
+            tracked: true);
         if (questionnaire is null) return null;
 
         var question = new Question
@@ -24,7 +25,9 @@ public class QuestionnaireManager(IRepository repository) : IQuestionnaireManage
             AnswerChoices = answerChoices ?? new List<string>(),
             Questionnaire = questionnaire
         };
-        return await repository.CreateAsync(question);
+        var created = await repository.CreateAsync(question);
+        await uow.SaveChangesAsync();
+        return created;
     }
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices)
@@ -36,13 +39,16 @@ public class QuestionnaireManager(IRepository repository) : IQuestionnaireManage
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
         question.AnswerChoices = answerChoices ?? new List<string>();
-        await repository.UpdateAsync(question);
+        repository.Update(question);
+        await uow.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteQuestionAsync(int questionId)
     {
-        return await repository.DeleteByIdAsync<Question>(questionId);
+        var result = await repository.DeleteByIdAsync<Question>(questionId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
     public async Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId, bool includeQuestions = true)
     {

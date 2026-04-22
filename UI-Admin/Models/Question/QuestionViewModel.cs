@@ -3,8 +3,8 @@
 public class QuestionViewModel
 {
     public int QuestionId { get; set; }
-    public string Text { get; set; } = string.Empty;
-    public string QuestionFormat { get; set; } = string.Empty;
+    public string Text { get; set; }
+    public string QuestionFormat { get; set; }
     public bool IsMandatory { get; set; }
     public List<string> AnswerChoices { get; set; } = new();
 }

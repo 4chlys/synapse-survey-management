@@ -43,7 +43,7 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
     }
     [HttpPost]
     public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId,
-        [FromBody] CreateCategoryDto dto)
+        [FromBody] CategoryRequest dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -64,7 +64,7 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCategory(int id, [FromBody]
-        UpdateCategoryDto dto)
+        CategoryRequest dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);

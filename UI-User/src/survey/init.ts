@@ -1,44 +1,38 @@
 import type {SurveyState} from './types';
 import {navigateNext, navigatePrev} from './navigation';
 import {initGestures} from './gestures';
-import {animateTrackTo, updateProgressBar, syncTrackToVisibleSlides} from './animation';
+import {updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
-import {prefillAnswers, questionIdToSlideIndex, getSubmitSlideIndex, updateQuestionCounters} from './branching';
-import {getResumeQuestion, getVisiblePath} from './api';
+import {getSubmitSlideIndex, prefillAnswers, questionIdToSlideIndex, updateQuestionCounters} from './branching';
+import {getResumeQuestion, getVisiblePath, submitSurvey} from './api';
 
 function syncButtons(state: SurveyState): void {
-    const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
-    const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
+    const allPrev = document.querySelectorAll<HTMLButtonElement>('.btn-prev');
+    const allNext = document.querySelectorAll<HTMLButtonElement>('.btn-next');
 
     const isFirstVisible = state.visibleIndices.indexOf(state.currentIndex) === 0;
     const isSubmitSlide = state.currentIndex === getSubmitSlideIndex(state);
 
-    if (btnPrev) btnPrev.disabled = isFirstVisible;
-    if (btnNext) btnNext.style.visibility = isSubmitSlide ? 'hidden' : 'visible';
+    allPrev.forEach(btn => btn.disabled = isFirstVisible);
+    allNext.forEach(btn => btn.style.visibility = isSubmitSlide ? 'hidden' : 'visible');
 }
 
 export function initSurvey(): void {
-    console.log('I loaded the newest version');
-    const track = document.getElementById('survey-track') as HTMLElement | null;
-    if (!track) return;
+    const container = document.getElementById('survey-container') as HTMLElement | null;
+    if (!container) return;
 
-    const container = document.getElementById('survey-container') as HTMLElement;
-    const slides = Array.from(track.querySelectorAll<HTMLElement>('.survey-slide'));
+    const slides = Array.from(container.querySelectorAll<HTMLElement>('.survey-slide'));
+    if (!slides.length) return;
+
     const progressBar = document.getElementById('survey-progress-bar');
-    const btnNext = document.getElementById('btn-next') as HTMLButtonElement | null;
-    const btnPrev = document.getElementById('btn-prev') as HTMLButtonElement | null;
-
-    const projectId = parseInt(container.dataset.projectId ?? '0', 10);
+    const projectId = parseInt(container.dataset.projectId!, 10);
     const hasSession = container.dataset.hasSession === 'true';
 
-    // All slides visible initially so the counter shows the correct total from the start.
-    // navigateNext trims stale slides when branching kicks in.
-    // On resume, this is overwritten by the server-computed visible path.
-    const submitIndex = slides.length - 1;
+    // Start with all slides "visible" so the counter shows the full total before
+    // branching narrows the path. navigateNext trims stale indices as the user proceeds.
     const state: SurveyState = {
         currentIndex: 0,
         slides,
-        track,
         isAnimating: false,
         progressBar,
         onSlideChange: syncButtons,
@@ -49,18 +43,21 @@ export function initSurvey(): void {
 
     slides.forEach(slide => initCharCounter(slide));
 
-    // Load existing responses for resume and prefill
     const existingResponsesEl = document.getElementById('existing-responses');
     const existingResponses = existingResponsesEl
         ? JSON.parse(existingResponsesEl.textContent ?? '{}') as Record<string, string>
         : {};
     prefillAnswers(slides, existingResponses);
 
-    // If we have a session, get the server-computed visible path and resume point
+    slides[0].classList.add('is-active');
+    updateQuestionCounters(slides, state.visibleIndices);
+    updateProgressBar(progressBar, 0, state.visibleIndices.length);
+    syncButtons(state);
+
     if (hasSession) {
         Promise.all([getVisiblePath(projectId), getResumeQuestion(projectId)])
             .then(([pathQuestionIds, resumeQuestionId]) => {
-                // Rebuild visibleIndices from the server's computed path
+                const submitIndex = getSubmitSlideIndex(state);
                 state.visibleIndices = [submitIndex];
                 for (const qId of pathQuestionIds) {
                     const idx = questionIdToSlideIndex(slides, qId);
@@ -70,39 +67,44 @@ export function initSurvey(): void {
                 }
                 state.visibleIndices.sort((a, b) => a - b);
 
-                // Navigate to the resume question
-                if (resumeQuestionId !== null) {
-                    const resumeIndex = questionIdToSlideIndex(slides, resumeQuestionId);
-                    if (resumeIndex !== -1) {
-                        if (!state.visibleIndices.includes(resumeIndex)) {
-                            state.visibleIndices.push(resumeIndex);
-                            state.visibleIndices.sort((a, b) => a - b);
-                        }
-                        state.currentIndex = resumeIndex;
+                let resumeIndex = 0;
+                if (resumeQuestionId !== null && resumeQuestionId !== undefined) {
+                    const idx = questionIdToSlideIndex(slides, resumeQuestionId);
+                    if (idx !== -1) resumeIndex = idx;
+                }
+
+                if (!state.visibleIndices.includes(resumeIndex)) {
+                    state.visibleIndices.push(resumeIndex);
+                    state.visibleIndices.sort((a, b) => a - b);
+                }
+
+                if (resumeIndex > 0) {
+                    // Put already-visited slides "above" so a back-swipe animates down from the top,
+                    // not up from below.
+                    slides[0].classList.remove('is-active');
+                    for (const idx of state.visibleIndices) {
+                        if (idx < resumeIndex) slides[idx].classList.add('is-above');
                     }
+                    slides[resumeIndex].classList.add('is-active');
+                    state.currentIndex = resumeIndex;
                 }
 
                 updateQuestionCounters(slides, state.visibleIndices);
-                syncTrackToVisibleSlides(track, slides, state.visibleIndices);
-                animateTrackTo(track, state.currentIndex, state.visibleIndices);
                 updateProgressBar(progressBar, state.visibleIndices.indexOf(state.currentIndex), state.visibleIndices.length);
                 syncButtons(state);
             })
             .catch(() => { /* Resume unavailable — survey starts fresh with defaults */ });
     }
 
-    updateQuestionCounters(slides, state.visibleIndices);
-    syncTrackToVisibleSlides(track, slides, state.visibleIndices);
-    animateTrackTo(track, state.currentIndex, state.visibleIndices);
-    updateProgressBar(progressBar, 0, state.visibleIndices.length);
-    syncButtons(state);
+    container.querySelectorAll<HTMLButtonElement>('.btn-next')
+        .forEach(btn => btn.addEventListener('click', () => navigateNext(state)));
+    container.querySelectorAll<HTMLButtonElement>('.btn-prev')
+        .forEach(btn => btn.addEventListener('click', () => navigatePrev(state)));
 
-    btnNext?.addEventListener('click', () => navigateNext(state));
-    btnPrev?.addEventListener('click', () => navigatePrev(state));
+    initGestures(container, state);
 
-    if (container) initGestures(container, state);
-
-    // Intercept form submit to use the API submit endpoint
+    // Responses are already saved progressively, so the final submit is just
+    // "finalize this session" — go through the API and redirect to ThankYou.
     const form = document.getElementById('survey-form') as HTMLFormElement | null;
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -114,9 +116,7 @@ export function initSurvey(): void {
         }
 
         try {
-            const {submitSurvey} = await import('./api');
             await submitSurvey(projectId);
-            // Redirect to thank you page
             window.location.href = `/${projectId}/Survey/ThankYou`;
         } catch {
             if (submitBtn) {

@@ -35,7 +35,7 @@ public interface IRepository
 
     Task<bool> ExistsAsync<T>(Expression<Func<T, bool>> filter) where T : class;
 
-    Task UpdateAsync<T>(T entity) where T : class;
+    void Update<T>(T entity) where T : class;
 
     Task<bool> DeleteAsync<T>(Expression<Func<T, bool>> filter) where T : class;
 

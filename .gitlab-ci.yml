@@ -16,6 +16,7 @@ variables:
 
 stages:
   - build
+  - scan
   - push
   - deploy
 
@@ -47,6 +48,42 @@ build-ui:
     paths:
       - ui-image.tar.gz
     expire_in: 1 hour
+  only:
+    - development
+    - main
+
+scan-api:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-api.json --input api-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --input api-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-api.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
+  only:
+    - development
+    - main
+
+scan-ui:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-ui.json --input ui-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --input ui-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-ui.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
   only:
     - development
     - main

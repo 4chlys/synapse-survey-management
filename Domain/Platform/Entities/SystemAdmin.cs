@@ -2,7 +2,7 @@
 
 namespace SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 
-public class SystemAdmin
+public class SystemAdmin //TODO IdentityUser 
 {
     public int SystemAdminId { get; set; }
 

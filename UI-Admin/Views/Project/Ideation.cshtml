@@ -1,0 +1,107 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Category
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
+@model List<CategoryViewModel>
+@{
+    ViewData["Title"] = "Project Ideation";
+    Layout = "_Layout";
+    int projectId = (int)ViewData["ProjectId"];
+    var project = ViewData["Project"] as ProjectAdminViewModel;
+}
+
+<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
+
+    @* Header *@
+    <div class="flex items-center gap-3 px-6 pt-4">
+        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)"
+                 alt="Organisatie" class="w-full h-full object-cover" />
+        </div>
+        <span class="font-medium">@(project?.OrganisationName ?? "Admin")</span>
+    </div>
+
+    @* Title bar *@
+    <div class="flex items-center px-6 pt-3 pb-2">
+        <a asp-controller="Project" asp-action="Questions"
+           asp-route-projectId="@projectId"
+           class="text-gray-300 hover:text-white">← Project Ideation</a>
+    </div>
+
+    @* Main content *@
+    <div class="flex-1 flex flex-col items-center px-6 py-4">
+
+        <div class="w-full max-w-2xl">
+
+            <h2 class="text-sm font-bold mb-4">Project Ideation</h2>
+
+            @* Categories table *@
+            <table class="w-full border border-gray-600 mb-2 text-xs">
+                <thead>
+                    <tr class="border-b border-gray-600 bg-gray-800">
+                        <th class="text-left px-4 py-2 font-semibold w-1/3">Naam</th>
+                        <th class="text-left px-4 py-2 font-semibold">Beschrijving</th>
+                        <th class="px-4 py-2 w-12"></th>
+                    </tr>
+                </thead>
+                <tbody id="categories-body">
+                    @if (!Model.Any())
+                    {
+                        <tr id="empty-row">
+                            <td colspan="3" class="px-4 py-3 text-gray-500 italic text-center">
+                                Nog geen categorieën toegevoegd.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var cat in Model)
+                    {
+                        <tr class="border-b border-gray-700 hover:bg-gray-800">
+                            <td class="px-4 py-2">@cat.Name</td>
+                            <td class="px-4 py-2 text-gray-400">@cat.Description</td>
+                            <td class="px-4 py-2 text-center">
+                                <form asp-controller="Project" asp-action="DeleteCategory"
+                                      method="post" class="inline">
+                                    <input type="hidden" name="projectId" value="@projectId" />
+                                    <input type="hidden" name="categoryId" value="@cat.CategoryId" />
+                                    <button type="submit"
+                                            class="text-gray-500 hover:text-red-400 transition">×</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @* Validation error *@
+            <span id="categories-error" class="hidden text-red-400 text-xs mb-3 block">
+                Voeg minimaal 1 categorie toe.
+            </span>
+
+            @* Add category form *@
+            <p class="font-semibold mt-5 mb-2">Categorie toevoegen</p>
+            <form asp-controller="Project" asp-action="AddCategory" method="post"
+                  class="flex gap-2">
+                <input type="hidden" name="projectId" value="@projectId" />
+                <input type="text" name="Name" id="cat-name"
+                       placeholder="Naam *"
+                       class="flex-1 bg-gray-800 border border-gray-500 text-white px-3 py-2 focus:outline-none" />
+                <input type="text" name="Description" id="cat-description"
+                       placeholder="Beschrijving (optioneel)"
+                       class="flex-[2] bg-gray-800 border border-gray-500 text-white px-3 py-2 focus:outline-none" />
+                <button type="submit"
+                        class="border border-gray-400 px-4 py-2 hover:bg-gray-700 whitespace-nowrap">
+                    + Toevoegen
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    @* Bottom buttons *@
+    <div class="flex justify-between px-6 py-4">
+        <a asp-controller="Project" asp-action="Index"
+           class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
+        <button type="button" id="save-btn"
+                data-project-count="@Model.Count"
+                data-href="@Url.Action("Index", "Project")"
+                class="border border-gray-400 px-6 py-2 hover:bg-gray-700">Opslaan</button>
+    </div>
+</div>
