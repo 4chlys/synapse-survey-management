@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (answerList) answerList.innerHTML = '';
         const firstBtn = document.querySelector<HTMLElement>('.type-btn');
         if (firstBtn) selectType(firstBtn.dataset.type ?? 'MultipleChoice', firstBtn);
+        const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
+        if (sectionSelect) sectionSelect.value = '';
     }
 
     function selectType(type: string, activeBtn: HTMLElement): void {

@@ -7,4 +7,5 @@ public class QuestionViewModel
     public string QuestionFormat { get; set; }
     public bool IsMandatory { get; set; }
     public List<string> AnswerChoices { get; set; } = new();
+    public string SectionName { get; set; }
 }

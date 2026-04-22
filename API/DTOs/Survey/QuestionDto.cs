@@ -9,6 +9,7 @@ public class QuestionDto
     public bool IsMandatory { get; set; }
     public int Position { get; set; }
     public List<BranchRuleDto> BranchRules { get; set; } = new();
+    public string SectionName { get; set; }
 }
 
 public class BranchRuleDto
