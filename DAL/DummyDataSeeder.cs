@@ -70,8 +70,10 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             RequestContactInfo = true,
             Questionnaire = questionnaire1,
+            Name = "Mentaal Welzijn",
+            ImageUrl = "https://placehold.co/400x225?text=Synapse",
             OrganisationName = "Synapse",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=Synapse",
+            OrganisationLogoUrl = "/uploads/logos/logo_synapse.jpg",
             OrganisationWebsiteUrl = "http://synapse-ip.xyz/1",
             Introduction = new Introduction
             {
@@ -134,8 +136,10 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire2,
+            Name = "Ledenbevraging",
+            ImageUrl = "https://placehold.co/400x225?text=FitLife",
             OrganisationName = "FitLife Gym",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=FitLife",
+            OrganisationLogoUrl = "/uploads/logos/logo_fitlife.png",
             OrganisationWebsiteUrl = "https://www.fitlife.com",
             Introduction = new Introduction
             {
@@ -200,8 +204,10 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire3,
+            Name = "Clubbevraging",
+            ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             OrganisationName = "FC Eendracht",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=FC+Eendracht",
+            OrganisationLogoUrl = "/uploads/logos/logo_eendracht.png",
             OrganisationWebsiteUrl = "https://www.fceendracht.be",
             
         };
@@ -252,6 +258,7 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Archived,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
+            Name = "Gearchiveerd Project",
             OrganisationName = "Inactive Org",
             OrganisationLogoUrl = "https://placehold.co/120x40?text=Inactive",
             OrganisationWebsiteUrl = "https://www.inactive.com",
@@ -263,6 +270,7 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Draft,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
+            Name = "Draft Project",
             OrganisationName = "Draft Org",
             OrganisationLogoUrl = "https://placehold.co/120x40?text=Draft",
             OrganisationWebsiteUrl = "https://www.draft.com",

@@ -19,6 +19,20 @@ public class Project : IHasCreatedAt
     [RegularExpression(@"^https?://.*", ErrorMessage = "Only http and https URLs are allowed.")]
     public string OrganisationWebsiteUrl { get; set; }
 
+    [Required] [MaxLength(100)]
+    public string Name { get; set; }
+
+    [MaxLength(100)]
+    public string Topic { get; set; }
+
+    public int? MinAge { get; set; }
+    public int? MaxAge { get; set; }
+
+    [MaxLength(500)]
+    public string ImageUrl { get; set; }
+
+    public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
+
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
     public FormType FormType { get; set; } = FormType.VerticalScroll;
     public int IdeaPageSize { get; set; } = 5;

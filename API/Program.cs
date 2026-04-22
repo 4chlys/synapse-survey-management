@@ -5,6 +5,7 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.Implementation;
@@ -51,6 +52,7 @@ else
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 builder.Services.AddScoped<IRepository, Repository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Sort strategies (singleton — stateless)
 builder.Services.AddSingleton<ISortStrategy<Idea>, RandomSortStrategy<Idea>>();
@@ -68,6 +70,9 @@ builder.Services.AddSingleton<IResponseValidator, MultipleChoiceResponseValidato
 builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
 builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
 
+// Storage
+builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
+
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
@@ -77,6 +82,7 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
+builder.Services.AddScoped<ISectionManager, SectionManager>();
 
 // AI configuration
 //

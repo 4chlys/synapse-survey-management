@@ -1,76 +1,108 @@
-﻿@model CategoryIndexViewModel
+@model CategoryIndexViewModel
 
 @{
     ViewData["Title"] = "Kies een Categorie";
 }
 
-<div class="min-h-screen bg-gray-50 flex flex-col items-center px-6 pt-12 pb-20">
+<div class="max-w-2xl mx-auto px-6 pt-10 pb-28 min-h-[calc(100dvh-64px)] page-enter">
 
-    @* Header *@
-    <div class="w-full max-w-sm mb-10">
-        <h1 class="text-2xl font-semibold text-gray-900 leading-snug">
+    @* Page header *@
+    <div class="w-full mb-8">
+        <h1 class="font-heading text-2xl font-bold text-base-content leading-snug">
             Kies een categorie.
         </h1>
-        <p class="text-sm text-gray-400 mt-2 font-normal">
-            Bekijk bestaande ideeen of voeg zelf iets toe.
+        <p class="text-sm text-base-content/85 mt-2 leading-relaxed">
+            Bekijk bestaande ideeën of voeg zelf iets toe.
         </p>
     </div>
 
-    @* End process button *@
-    <div class="w-full max-w-sm mb-8 flex justify-end">
-        <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white
-                  text-sm text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-            Afsluiten
-        </a>
-    </div>
-
-    @* CategoryViewModel cards *@
-    <div class="w-full max-w-sm flex flex-col gap-6">
+    @* Category cards *@
+    <div class="w-full flex flex-col gap-3">
         @foreach (var category in Model.Categories)
         {
             <a asp-controller="Ideation" asp-action="Index" asp-route-projectId="@Model.ProjectId"
-               asp-route-categoryId="@category.CategoryId"
-               class="relative flex flex-col px-5 py-5 rounded-2xl border-2 border-gray-100 bg-white
-                      cursor-pointer transition-all duration-150
-                      hover:border-emerald-300 hover:shadow-md active:scale-[0.98]
-                      group">
+                   asp-route-categoryId="@category.CategoryId" class="group relative flex items-center gap-4 px-5 py-7 rounded-xl
+                bg-base-100 border border-base-300
+                hover:border-primary/40 hover:shadow-sm
+                active:scale-[0.99] transition-all duration-150">
 
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-900 text-base font-semibold">@category.Name</span>
-
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-4 w-4 text-gray-300 group-hover:text-emerald-500 transition-colors duration-150"
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
+                @* Left accent bar *@
+                <div
+                    class="w-0.5 h-9 rounded-full bg-primary/20 group-hover:bg-primary transition-colors duration-150 shrink-0">
                 </div>
 
-                <p class="text-xs text-gray-400 mt-1 font-normal">@category.Description</p>
+                <div class="flex-1 min-w-0">
+                    <span
+                    class="font-heading font-semibold text-base-content text-base block leading-snug">@category.Name</span>
+                    <p class="text-sm text-base-content/70 mt-0.5 leading-snug">@category.Description</p>
+                </div>
 
-                @* Speech bubble badge *@
-                <div class="absolute -bottom-3.5 right-5
-                            bg-emerald-50 border border-emerald-200
-                            text-emerald-700 text-xs font-semibold
-                            px-3 py-1 rounded-full shadow-sm">
-                    <span class="absolute -top-[6px] right-4
-                                 border-l-[5px] border-l-transparent
-                                 border-r-[5px] border-r-transparent
-                                 border-b-[6px] border-b-emerald-200"></span>
-                    <span class="absolute -top-[4px] right-[17px]
-                                 border-l-[4px] border-l-transparent
-                                 border-r-[4px] border-r-transparent
-                                 border-b-[5px] border-b-emerald-50"></span>
-                    @category.IdeaCount ideeen
+                @* Badge *@
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                        bg-secondary/10 text-secondary text-xs font-semibold">
+                        @category.IdeaCount
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-4 w-4 text-base-300 group-hover:text-primary transition-colors duration-150" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                 </div>
 
             </a>
         }
     </div>
 
+</div>
+
+@* Bottom navigation *@
+<div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 z-50">
+    <div class="max-w-2xl mx-auto grid grid-cols-4 py-2">
+
+        <a asp-route-projectId="@Model.ProjectId" asp-controller="Category" asp-action="Index"
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            </svg>
+            <span class="text-[11px] font-medium">Terug</span>
+        </a>
+
+        <button class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13
+            text-primary hover:opacity-75 transition-opacity
+            bg-transparent border-0 outline-none appearance-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span class="hidden text-[11px] font-semibold">Nieuw idee</span>
+        </button>
+
+        <a
+            class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span class="hidden text-[11px] font-medium">Mijn ideeën</span>
+        </a>
+
+        <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
+               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-error transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="text-[11px] font-medium">Afsluiten</span>
+        </a>
+
+    </div>
 </div>

@@ -8,4 +8,33 @@
     <RootNamespace>SynapseEnqueteManagement.UI.Admin</RootNamespace>
   </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Vite.AspNetCore" Version="2.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Remove="package-lock.json" />
+        <Content Remove="package.json" />
+        <Content Remove="tsconfig.json" />
+
+        <None Include="package-lock.json" />
+        <None Include="package.json" />
+        <None Include="tsconfig.json" />
+
+        <Content Include="wwwroot\dist\.vite\**" />
+    </ItemGroup>
+
+    <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
+        <Exec Command="node --version" ContinueOnError="true">
+            <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+        </Exec>
+        <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project." />
+        <Message Importance="high" Text="Restoring dependencies using 'pnpm'. This may take several minutes..." />
+        <Exec Command="pnpm install" />
+    </Target>
+
+    <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
+        <Exec Command="pnpm run build" />
+    </Target>
+
 </Project>

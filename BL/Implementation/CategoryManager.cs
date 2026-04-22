@@ -4,13 +4,49 @@ using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class CategoryManager(IRepository repository) : ICategoryManager
+public class CategoryManager(IRepository repository, IUnitOfWork uow) : ICategoryManager
 {
     public async Task<IEnumerable<Category>> GetCategoriesAsync(int projectId)
     {
         return await repository.ReadAsync<Category>(
             filters: [c => c.Project.ProjectId == projectId]
         );
+    }
+    public async Task<Category> CreateCategoryAsync(int projectId, string name,
+        string description)
+    {
+        var project = await repository.ReadByIdAsync<Project>(projectId, tracked: true);
+        if (project is null) return null;
+
+        var category = new Category
+        {
+            Name = name,
+            Description = description,
+            Project = project
+        };
+        var created = await repository.CreateAsync(category);
+        await uow.SaveChangesAsync();
+        return created;
+    }
+
+    public async Task<bool> UpdateCategoryAsync(int categoryId, string name, string
+        description)
+    {
+        var category = await repository.ReadByIdAsync<Category>(categoryId);
+        if (category is null) return false;
+
+        category.Name = name;
+        category.Description = description;
+        repository.Update(category);
+        await uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteCategoryAsync(int categoryId)
+    {
+        var result = await repository.DeleteByIdAsync<Category>(categoryId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
 
     public async Task<Category> GetCategoryByIdAsync(int id)
