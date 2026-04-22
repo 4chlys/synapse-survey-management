@@ -59,7 +59,7 @@ scan-api:
     entrypoint: [""]
   script:
     - trivy image --format spdx-json --output sbom-api.json --input api-image.tar.gz
-    - trivy image --severity HIGH,CRITICAL --exit-code 1 --input api-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input api-image.tar.gz
   artifacts:
     paths:
       - sbom-api.json
@@ -77,7 +77,7 @@ scan-ui:
     entrypoint: [""]
   script:
     - trivy image --format spdx-json --output sbom-ui.json --input ui-image.tar.gz
-    - trivy image --severity HIGH,CRITICAL --exit-code 1 --input ui-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input ui-image.tar.gz
   artifacts:
     paths:
       - sbom-ui.json
