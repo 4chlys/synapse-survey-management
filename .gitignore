@@ -510,3 +510,4 @@ UI-User/.vite
 UI-User/wwwroot/dist
 cicd-key.json
 deploy/config.env
+.claude/
