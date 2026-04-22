@@ -5,19 +5,19 @@ Start: python deploy/dashboard.py
 Open:  http://localhost:8080
 """
 
+import concurrent.futures
 import http.server
 import json
-import os
 import subprocess
 import threading
 import webbrowser
 from pathlib import Path
 
-# ── Config ─────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).parent
 CONFIG_FILE = SCRIPT_DIR / "config.env"
 PORT = 8080
 
+# ── Config ─────────────────────────────────────────────────────
 config = {}
 if CONFIG_FILE.exists():
     for line in CONFIG_FILE.read_text().splitlines():
@@ -28,32 +28,28 @@ if CONFIG_FILE.exists():
 
 PROJECT_ID = config.get("PROJECT_ID", "")
 REGION     = config.get("REGION", "europe-west1")
-DOMAIN     = config.get("DOMAIN", "")
+DOMAIN     = config.get("DOMAIN", "synapse-ip.xyz")
 
 MIGS = [
-    {"id": "synapse-api-mig",   "label": "API",   "url": f"https://api.{DOMAIN}"},
-    {"id": "synapse-ui-mig",    "label": "UI",    "url": f"https://{DOMAIN}"},
-    {"id": "synapse-admin-mig", "label": "Admin", "url": f"https://admin.{DOMAIN}"},
+    {"id": "synapse-api-mig",   "label": "API",   "url": f"https://api.{DOMAIN}",   "health": "synapse-api-backend"},
+    {"id": "synapse-ui-mig",    "label": "UI",    "url": f"https://{DOMAIN}",        "health": "synapse-ui-backend"},
+    {"id": "synapse-admin-mig", "label": "Admin", "url": f"https://admin.{DOMAIN}", "health": "synapse-admin-backend"},
 ]
 
 # ── GCloud helpers ─────────────────────────────────────────────
-def gcloud(*args, timeout=15):
+def gcloud(*args, timeout=20):
     try:
-        result = subprocess.run(
-            ["gcloud", *args],
-            capture_output=True, text=True, timeout=timeout
-        )
-        return result.stdout.strip(), result.returncode
+        r = subprocess.run(["gcloud", *args], capture_output=True, text=True, timeout=timeout)
+        return r.stdout.strip(), r.returncode
     except subprocess.TimeoutExpired:
-        return "timeout", 1
+        return "", 1
     except FileNotFoundError:
-        return "gcloud not found", 1
+        return "", 1
 
 def mig_size(mig_id):
     out, code = gcloud(
         "compute", "instance-groups", "managed", "describe", mig_id,
-        f"--region={REGION}", f"--project={PROJECT_ID}",
-        "--format=value(targetSize)"
+        f"--region={REGION}", f"--project={PROJECT_ID}", "--format=value(targetSize)"
     )
     try:
         return int(out) if code == 0 else -1
@@ -68,20 +64,19 @@ def set_mig_size(mig_id, size):
     )
     return code == 0
 
-def lb_ip():
+def get_lb_ip():
     out, code = gcloud(
         "compute", "addresses", "describe", "synapse-lb-ip",
         "--global", f"--project={PROJECT_ID}", "--format=value(address)"
     )
-    return out if code == 0 else "onbekend"
+    return out if (code == 0 and out) else None
 
-def ssl_status():
+def get_ssl_certs():
     out, code = gcloud(
         "compute", "ssl-certificates", "list",
-        f"--project={PROJECT_ID}",
-        "--format=value(name,managed.status)"
+        f"--project={PROJECT_ID}", "--format=value(name,managed.status)"
     )
-    if code != 0:
+    if code != 0 or not out:
         return []
     results = []
     for line in out.splitlines():
@@ -90,16 +85,67 @@ def ssl_status():
             results.append({"name": parts[0], "status": parts[1]})
     return results
 
-def recent_logs(limit=30):
+def get_backend_health(backend):
+    out, code = gcloud(
+        "compute", "backend-services", "get-health", backend,
+        "--global", f"--project={PROJECT_ID}",
+        "--format=value(status.healthStatus.healthState)",
+        timeout=15
+    )
+    if code != 0 or not out:
+        return "UNKNOWN"
+    states = [s.strip() for s in out.splitlines() if s.strip()]
+    if not states:
+        return "NO_INSTANCES"
+    return "HEALTHY" if all(s == "HEALTHY" for s in states) else "UNHEALTHY"
+
+def get_cloud_sql_status():
+    out, code = gcloud(
+        "sql", "instances", "describe", "mvp-postgres",
+        f"--project={PROJECT_ID}", "--format=value(state)"
+    )
+    return out if (code == 0 and out) else "UNKNOWN"
+
+def get_recent_logs(limit=40):
     out, _ = gcloud(
         "logging", "read",
-        f"resource.type=gce_instance",
+        "resource.type=gce_instance",
         f"--limit={limit}", f"--project={PROJECT_ID}",
         "--format=value(timestamp,textPayload)",
-        timeout=20
+        timeout=25
     )
     lines = [l for l in out.splitlines() if l.strip()]
-    return lines[-limit:] if lines else ["Geen logs gevonden."]
+    return lines if lines else ["Geen logs gevonden."]
+
+# ── Status (parallel) ──────────────────────────────────────────
+def fetch_all_status():
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+        mig_futures    = {m["id"]: ex.submit(mig_size, m["id"]) for m in MIGS}
+        health_futures = {m["id"]: ex.submit(get_backend_health, m["health"]) for m in MIGS}
+        lb_future      = ex.submit(get_lb_ip)
+        ssl_future     = ex.submit(get_ssl_certs)
+        sql_future     = ex.submit(get_cloud_sql_status)
+
+    domain = DOMAIN or "synapse-ip.xyz"
+    lb_ip  = lb_future.result()
+
+    return {
+        "migs": {mid: f.result() for mid, f in mig_futures.items()},
+        "health": {mid: f.result() for mid, f in health_futures.items()},
+        "lb_ip": lb_ip or "niet gevonden",
+        "lb_ip_found": lb_ip is not None,
+        "ui_url":    f"https://{domain}",
+        "api_url":   f"https://api.{domain}",
+        "admin_url": f"https://admin.{domain}",
+        "console_url": f"https://console.cloud.google.com/compute/instanceGroups?project={PROJECT_ID}",
+        "logs_url": f"https://console.cloud.google.com/logs/query?project={PROJECT_ID}",
+        "sql_url": f"https://console.cloud.google.com/sql/instances?project={PROJECT_ID}",
+        "ssl": ssl_future.result(),
+        "sql_status": sql_future.result(),
+        "project_id": PROJECT_ID,
+        "region": REGION,
+        "domain": domain,
+    }
 
 # ── HTML ───────────────────────────────────────────────────────
 HTML = r"""<!DOCTYPE html>
@@ -109,246 +155,356 @@ HTML = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Synapse Dashboard</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0f172a; --surface: #1e293b; --border: #334155;
-    --text: #f1f5f9; --muted: #94a3b8;
-    --green: #22c55e; --red: #ef4444; --yellow: #f59e0b; --blue: #3b82f6;
-  }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
-  header h1 { font-size: 1.25rem; font-weight: 700; }
-  .project { color: var(--muted); font-size: .85rem; }
-  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  main { padding: 2rem; max-width: 1100px; margin: 0 auto; }
-  .actions { display: flex; gap: .75rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
-  .btn { padding: .5rem 1.1rem; border-radius: 8px; font-size: .85rem; font-weight: 600; border: none; cursor: pointer; transition: opacity .15s; }
-  .btn:hover { opacity: .85; }
-  .btn:disabled { opacity: .4; cursor: not-allowed; }
-  .btn-green { background: var(--green); color: #fff; }
-  .btn-red   { background: var(--red);   color: #fff; }
-  .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
-  .note { color: var(--muted); font-size: .75rem; margin-left: auto; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-  .card-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 1rem; }
-  .row { display: flex; align-items: center; justify-content: space-between; padding: .7rem 0; border-bottom: 1px solid var(--border); }
-  .row:last-child { border-bottom: none; }
-  .row-left { display: flex; align-items: center; gap: .75rem; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .dot-on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .dot-off { background: var(--red); }
-  .dot-unk { background: var(--yellow); animation: pulse 1s infinite; }
-  .name { font-weight: 600; font-size: .9rem; }
-  .sub  { font-size: .75rem; color: var(--muted); }
-  .row-right { display: flex; gap: .4rem; align-items: center; }
-  .btn-sm { padding: .3rem .75rem; border-radius: 6px; font-size: .75rem; font-weight: 600; border: none; cursor: pointer; transition: opacity .15s; }
-  .btn-sm:hover { opacity: .85; }
-  .btn-sm-green { background: var(--green); color: #fff; }
-  .btn-sm-red   { background: var(--red);   color: #fff; }
-  .btn-sm-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
-  .badge { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .03em; }
-  .badge-active      { background: #166534; color: #86efac; }
-  .badge-provisioning{ background: #854d0e; color: #fde68a; }
-  .badge-failed      { background: #7f1d1d; color: #fca5a5; }
-  .logs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-  .logs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-  pre { background: #070d1a; border-radius: 8px; padding: 1rem; font-size: .72rem; line-height: 1.7; overflow-x: auto; max-height: 320px; overflow-y: auto; color: #7dd3fc; white-space: pre-wrap; word-break: break-all; }
-  a { color: var(--blue); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0f172a; --surface:#1e293b; --surface2:#263347; --border:#334155;
+  --text:#f1f5f9; --muted:#94a3b8;
+  --green:#22c55e; --red:#ef4444; --yellow:#f59e0b; --blue:#3b82f6; --purple:#a78bfa;
+}
+body { background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; min-height:100vh; }
+header { background:var(--surface); border-bottom:1px solid var(--border); padding:.9rem 2rem; display:flex; align-items:center; gap:.9rem; }
+header h1 { font-size:1.15rem; font-weight:700; }
+.project-chip { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.2rem .7rem; font-size:.75rem; color:var(--muted); }
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 2s infinite; flex-shrink:0; }
+.header-right { margin-left:auto; display:flex; gap:.5rem; align-items:center; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+main { padding:1.75rem 2rem; max-width:1200px; margin:0 auto; }
+
+/* action bar */
+.actions { display:flex; gap:.6rem; margin-bottom:1.75rem; flex-wrap:wrap; align-items:center; }
+.btn { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem 1rem; border-radius:7px; font-size:.8rem; font-weight:600; border:none; cursor:pointer; transition:opacity .15s,transform .1s; text-decoration:none; }
+.btn:hover { opacity:.85; }
+.btn:active { transform:scale(.97); }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+.btn-green  { background:var(--green);  color:#fff; }
+.btn-red    { background:var(--red);    color:#fff; }
+.btn-ghost  { background:var(--surface); border:1px solid var(--border); color:var(--text); }
+.btn-blue   { background:var(--blue);   color:#fff; }
+.refresh-note { color:var(--muted); font-size:.72rem; margin-left:auto; }
+
+/* grid */
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:1.25rem; margin-bottom:1.25rem; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
+.card-title { font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; }
+.row { display:flex; align-items:center; justify-content:space-between; padding:.65rem 0; border-bottom:1px solid var(--border); }
+.row:last-child { border-bottom:none; }
+.row-left { display:flex; align-items:center; gap:.7rem; }
+.dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.dot-on  { background:var(--green); box-shadow:0 0 5px var(--green); }
+.dot-off { background:var(--red); }
+.dot-unk { background:var(--yellow); animation:blink 1s infinite; }
+.label { font-weight:600; font-size:.875rem; }
+.sub   { font-size:.72rem; color:var(--muted); margin-top:1px; }
+.row-right { display:flex; gap:.35rem; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.btn-xs { padding:.28rem .65rem; border-radius:5px; font-size:.72rem; font-weight:600; border:none; cursor:pointer; transition:opacity .15s; text-decoration:none; display:inline-flex; align-items:center; gap:.25rem; }
+.btn-xs:hover { opacity:.8; }
+.btn-xs-green { background:var(--green); color:#fff; }
+.btn-xs-red   { background:var(--red);   color:#fff; }
+.btn-xs-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+.btn-xs-blue  { background:var(--blue);  color:#fff; }
+
+/* badges */
+.badge { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .55rem; border-radius:999px; font-size:.68rem; font-weight:700; }
+.badge-green { background:#166534; color:#86efac; }
+.badge-red   { background:#7f1d1d; color:#fca5a5; }
+.badge-yellow{ background:#854d0e; color:#fde68a; }
+.badge-muted { background:var(--surface2); color:var(--muted); }
+
+/* info rows */
+.info-key { color:var(--muted); font-size:.8rem; }
+.info-val { font-size:.8rem; font-weight:500; display:flex; align-items:center; gap:.4rem; }
+a { color:var(--blue); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* copy btn */
+.copy-btn { background:none; border:none; cursor:pointer; color:var(--muted); font-size:.75rem; padding:.1rem .3rem; border-radius:3px; }
+.copy-btn:hover { color:var(--text); background:var(--border); }
+
+/* logs */
+.logs-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
+.logs-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.9rem; }
+pre { background:#070d1a; border-radius:8px; padding:1rem; font-size:.7rem; line-height:1.75; overflow-x:auto; max-height:280px; overflow-y:auto; color:#7dd3fc; white-space:pre-wrap; word-break:break-all; }
+
+/* spinner */
+.spin { display:inline-block; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
 <header>
   <div class="pulse"></div>
   <h1>Synapse Dashboard</h1>
-  <span class="project" id="project-label"></span>
+  <span class="project-chip" id="project-chip">laden...</span>
+  <div class="header-right">
+    <a id="console-link" class="btn btn-ghost" href="#" target="_blank">&#9881; GCP Console</a>
+  </div>
 </header>
 <main>
   <div class="actions">
     <button class="btn btn-green" id="btn-all-start">&#9654; Alles starten</button>
-    <button class="btn btn-red"   id="btn-all-stop">&#9632; Alles stoppen</button>
-    <button class="btn btn-ghost" id="btn-refresh">&#8635; Verversen</button>
-    <span class="note" id="last-refresh"></span>
+    <button class="btn btn-red"   id="btn-all-stop" >&#9632; Alles stoppen</button>
+    <button class="btn btn-ghost" id="btn-refresh"  >&#8635; Verversen</button>
+    <span class="refresh-note" id="last-refresh"></span>
   </div>
 
   <div class="grid">
+    <!-- Services -->
     <div class="card">
-      <div class="card-title">Services (MIGs)</div>
-      <div id="mig-list"></div>
+      <div class="card-title">
+        <span>Services (MIGs)</span>
+        <a id="migs-console" href="#" target="_blank" class="btn-xs btn-xs-ghost">&#8599; Console</a>
+      </div>
+      <div id="mig-list"><div style="color:var(--muted);font-size:.8rem">Laden <span class="spin">&#9696;</span></div></div>
     </div>
+
+    <!-- Netwerk -->
     <div class="card">
-      <div class="card-title">Netwerk</div>
-      <div id="network-info"></div>
+      <div class="card-title">Netwerk &amp; Domeinen</div>
+      <div id="network-info"><div style="color:var(--muted);font-size:.8rem">Laden <span class="spin">&#9696;</span></div></div>
     </div>
+
+    <!-- Infra status -->
     <div class="card">
-      <div class="card-title">SSL Certificaten</div>
-      <div id="ssl-info"></div>
+      <div class="card-title">Infrastructuur</div>
+      <div id="infra-info"><div style="color:var(--muted);font-size:.8rem">Laden <span class="spin">&#9696;</span></div></div>
     </div>
   </div>
 
+  <!-- Logs -->
   <div class="logs-card">
     <div class="logs-header">
       <span class="card-title" style="margin:0">Cloud Logging</span>
-      <button class="btn btn-ghost" id="btn-logs">&#8635; Logs laden</button>
+      <div style="display:flex;gap:.5rem">
+        <a id="logs-console-link" href="#" target="_blank" class="btn btn-ghost" style="font-size:.75rem">&#8599; Open in Console</a>
+        <button class="btn btn-ghost" id="btn-logs" style="font-size:.75rem">&#8635; Logs laden</button>
+      </div>
     </div>
-    <pre id="log-output">Klik op "Logs laden" om te starten.</pre>
+    <pre id="log-output">Klik op "Logs laden" om logregels op te halen.</pre>
   </div>
 </main>
 
 <script>
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// Injected by server — trusted config values, not user input
+const MIGS = __MIGS_JSON__;
 
-// Injected server-side — these come from trusted config, not user input
-const MIGS = __MIGS__;
-const PROJECT_ID = '__PROJECT_ID__';
+// ── DOM helpers ────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
 
-document.getElementById('project-label').textContent = PROJECT_ID;
-
-async function loadStatus() {
-  const data = await fetch('/api/status').then(r => r.json());
-  renderMigs(data);
-  renderNetwork(data);
-  renderSsl(data.ssl);
-  document.getElementById('last-refresh').textContent = 'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-BE');
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls)  e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
 }
 
+function badge(text, type) {
+  const b = el('span', `badge badge-${type}`);
+  b.textContent = text;
+  return b;
+}
+
+function copyBtn(text) {
+  const b = el('button', 'copy-btn', '⎘');
+  b.title = 'Kopiëren';
+  b.addEventListener('click', () => {
+    navigator.clipboard.writeText(text);
+    b.textContent = '✓';
+    setTimeout(() => { b.textContent = '⎘'; }, 1200);
+  });
+  return b;
+}
+
+// ── Render services ────────────────────────────────────────────
 function renderMigs(data) {
-  const container = document.getElementById('mig-list');
+  const container = $('mig-list');
   container.textContent = '';
+
   for (const m of MIGS) {
-    const size = data.migs[m.id] ?? -1;
-    const on   = size > 0;
-    const row  = document.createElement('div');
-    row.className = 'row';
+    const size   = data.migs[m.id] ?? -1;
+    const health = data.health[m.id] ?? 'UNKNOWN';
+    const on     = size > 0;
 
-    const left = document.createElement('div');
-    left.className = 'row-left';
-
-    const dot = document.createElement('div');
-    dot.className = 'dot ' + (size < 0 ? 'dot-unk' : on ? 'dot-on' : 'dot-off');
-
-    const info = document.createElement('div');
-    const nameEl = document.createElement('div');
-    nameEl.className = 'name';
-    nameEl.textContent = m.label;
-    const subEl = document.createElement('div');
-    subEl.className = 'sub';
-    subEl.textContent = size < 0 ? 'onbekend' : size + ' instantie(s)';
-    info.append(nameEl, subEl);
+    const row   = el('div', 'row');
+    const left  = el('div', 'row-left');
+    const dot   = el('div', 'dot ' + (size < 0 ? 'dot-unk' : on ? 'dot-on' : 'dot-off'));
+    const info  = el('div');
+    const name  = el('div', 'label', m.label);
+    const sub   = el('div', 'sub');
+    sub.textContent = size < 0 ? 'status onbekend' : `${size} instantie${size !== 1 ? 's' : ''}`;
+    info.append(name, sub);
     left.append(dot, info);
 
-    const right = document.createElement('div');
-    right.className = 'row-right';
+    const right = el('div', 'row-right');
 
-    if (m.url) {
-      const link = document.createElement('a');
-      link.className = 'btn-sm btn-sm-ghost';
-      link.href = m.url;
-      link.target = '_blank';
-      link.textContent = '\u2197 Open';
-      right.appendChild(link);
+    // health badge
+    if (on) {
+      const htype = health === 'HEALTHY' ? 'green' : health === 'UNKNOWN' || health === 'NO_INSTANCES' ? 'muted' : 'red';
+      right.appendChild(badge(health === 'NO_INSTANCES' ? 'geen VM' : health, htype));
     }
 
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'btn-sm ' + (on ? 'btn-sm-red' : 'btn-sm-green');
-    toggleBtn.textContent = on ? 'Stoppen' : 'Starten';
-    toggleBtn.addEventListener('click', () => toggleMig(m.id, on));
-    right.appendChild(toggleBtn);
+    // open link
+    if (m.url) {
+      const a = el('a', 'btn-xs btn-xs-ghost', '↗');
+      a.href = m.url; a.target = '_blank'; a.title = m.url;
+      a.appendChild(document.createTextNode(' Open'));
+      right.appendChild(a);
+    }
+
+    // toggle btn
+    const toggle = el('button', `btn-xs ${on ? 'btn-xs-red' : 'btn-xs-green'}`, on ? '■ Stoppen' : '▶ Starten');
+    toggle.addEventListener('click', () => toggleMig(m.id, on, toggle));
+    right.appendChild(toggle);
 
     row.append(left, right);
     container.appendChild(row);
   }
 }
 
+// ── Render network ─────────────────────────────────────────────
 function renderNetwork(data) {
-  const container = document.getElementById('network-info');
+  const container = $('network-info');
   container.textContent = '';
-  const rows = [
-    ['Load Balancer IP', data.lb_ip],
+
+  // LB IP row
+  const ipRow = el('div', 'row');
+  const ipKey = el('span', 'info-key', 'Load Balancer IP');
+  const ipVal = el('div', 'info-val');
+  if (data.lb_ip_found) {
+    ipVal.textContent = data.lb_ip;
+    ipVal.appendChild(copyBtn(data.lb_ip));
+  } else {
+    const warn = badge('niet gevonden', 'yellow');
+    ipVal.appendChild(warn);
+    const hint = el('span');
+    hint.style.cssText = 'color:var(--muted);font-size:.68rem;display:block;margin-top:2px';
+    hint.textContent = 'Controleer: gcloud compute addresses list';
+    ipVal.appendChild(hint);
+  }
+  ipRow.append(ipKey, ipVal);
+  container.appendChild(ipRow);
+
+  // domain rows
+  const links = [
     ['UI',    data.ui_url],
     ['API',   data.api_url],
     ['Admin', data.admin_url],
   ];
-  for (const [label, value] of rows) {
-    const row = document.createElement('div');
-    row.className = 'row';
-    const l = document.createElement('span');
-    l.textContent = label;
-    const v = document.createElement('span');
-    if (String(value).startsWith('https')) {
-      const a = document.createElement('a');
-      a.href = value;
-      a.target = '_blank';
-      a.textContent = value;
-      v.appendChild(a);
-    } else {
-      v.textContent = value;
-    }
-    v.style.fontWeight = '500';
-    row.append(l, v);
+  for (const [label, url] of links) {
+    const row = el('div', 'row');
+    const k   = el('span', 'info-key', label);
+    const v   = el('div', 'info-val');
+    const a   = el('a', null, url);
+    a.href = url; a.target = '_blank';
+    v.append(a, copyBtn(url));
+    row.append(k, v);
     container.appendChild(row);
   }
+
+  // region row
+  const regRow = el('div', 'row');
+  regRow.append(el('span', 'info-key', 'Regio'), el('span', 'info-val', data.region));
+  container.appendChild(regRow);
 }
 
-function renderSsl(certs) {
-  const container = document.getElementById('ssl-info');
+// ── Render infra ───────────────────────────────────────────────
+function renderInfra(data) {
+  const container = $('infra-info');
   container.textContent = '';
-  if (!certs.length) {
-    const p = document.createElement('p');
-    p.style.color = 'var(--muted)';
-    p.textContent = 'Geen certificaten gevonden.';
-    container.appendChild(p);
-    return;
+
+  // SSL certs
+  const sslTitle = el('div', 'card-title', 'SSL Certificaten');
+  sslTitle.style.marginBottom = '.5rem';
+  container.appendChild(sslTitle);
+
+  if (!data.ssl.length) {
+    container.appendChild(el('p', null, 'Geen certificaten.')).style.color = 'var(--muted)';
+  } else {
+    for (const cert of data.ssl) {
+      const row  = el('div', 'row');
+      const name = el('span', 'info-key');
+      name.textContent = cert.name.replace('synapse-ssl-cert', 'SSL cert');
+      const btype = cert.status === 'ACTIVE' ? 'green' : cert.status === 'PROVISIONING' ? 'yellow' : 'red';
+      const dot = cert.status === 'ACTIVE' ? '●' : cert.status === 'PROVISIONING' ? '◐' : '✕';
+      row.append(name, badge(`${dot} ${cert.status}`, btype));
+      container.appendChild(row);
+    }
   }
-  for (const cert of certs) {
-    const row = document.createElement('div');
-    row.className = 'row';
-    const name = document.createElement('span');
-    name.textContent = cert.name;
-    const badge = document.createElement('span');
-    const cls = cert.status === 'ACTIVE' ? 'badge-active'
-               : cert.status === 'PROVISIONING' ? 'badge-provisioning'
-               : 'badge-failed';
-    badge.className = 'badge ' + cls;
-    badge.textContent = cert.status;
-    row.append(name, badge);
-    container.appendChild(row);
-  }
+
+  // spacer
+  container.appendChild(el('div')).style.marginTop = '.75rem';
+
+  // Cloud SQL
+  const sqlTitle = el('div', 'card-title', 'Cloud SQL');
+  sqlTitle.style.marginBottom = '.5rem';
+  container.appendChild(sqlTitle);
+
+  const sqlRow  = el('div', 'row');
+  const sqlKey  = el('span', 'info-key', 'mvp-postgres');
+  const sqlSt   = data.sql_status;
+  const sqlType = sqlSt === 'RUNNABLE' ? 'green' : sqlSt === 'UNKNOWN' ? 'muted' : 'red';
+  const sqlDot  = sqlSt === 'RUNNABLE' ? '●' : '○';
+  const sqlBadge = badge(`${sqlDot} ${sqlSt}`, sqlType);
+  const sqlLink = el('a', 'btn-xs btn-xs-ghost', '↗');
+  sqlLink.href = data.sql_url; sqlLink.target = '_blank';
+  const sqlRight = el('div', 'row-right');
+  sqlRight.append(sqlBadge, sqlLink);
+  sqlRow.append(sqlKey, sqlRight);
+  container.appendChild(sqlRow);
 }
 
-async function toggleMig(migId, isOn) {
+// ── Full status load ───────────────────────────────────────────
+async function loadStatus() {
+  const data = await fetch('/api/status').then(r => r.json());
+
+  $('project-chip').textContent = data.project_id;
+  $('console-link').href = data.console_url;
+  $('migs-console').href = data.console_url;
+  $('logs-console-link').href = data.logs_url;
+
+  renderMigs(data);
+  renderNetwork(data);
+  renderInfra(data);
+
+  $('last-refresh').textContent = 'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-BE');
+}
+
+// ── Actions ────────────────────────────────────────────────────
+async function toggleMig(migId, isOn, btn) {
+  btn.disabled = true;
+  btn.textContent = '…';
   await fetch('/api/mig/' + migId, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify({size: isOn ? 0 : 1})
   });
   await loadStatus();
 }
 
-document.getElementById('btn-all-start').addEventListener('click', async () => {
-  await fetch('/api/all', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({size:1})});
+$('btn-all-start').addEventListener('click', async () => {
+  $('btn-all-start').disabled = true;
+  await fetch('/api/all', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({size:1})});
   await loadStatus();
+  $('btn-all-start').disabled = false;
 });
 
-document.getElementById('btn-all-stop').addEventListener('click', async () => {
+$('btn-all-stop').addEventListener('click', async () => {
   if (!confirm('Alle services stoppen?')) return;
-  await fetch('/api/all', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({size:0})});
+  $('btn-all-stop').disabled = true;
+  await fetch('/api/all', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({size:0})});
   await loadStatus();
+  $('btn-all-stop').disabled = false;
 });
 
-document.getElementById('btn-refresh').addEventListener('click', loadStatus);
+$('btn-refresh').addEventListener('click', loadStatus);
 
-document.getElementById('btn-logs').addEventListener('click', async () => {
-  const pre = document.getElementById('log-output');
-  pre.textContent = 'Logs ophalen...';
+$('btn-logs').addEventListener('click', async () => {
+  $('log-output').textContent = 'Logs ophalen…';
   const data = await fetch('/api/logs').then(r => r.json());
-  pre.textContent = data.lines.join('\n') || 'Geen logs.';
+  $('log-output').textContent = data.lines.join('\n') || 'Geen logs.';
 });
 
 loadStatus();
-setInterval(loadStatus, 15000);
+setInterval(loadStatus, 20000);
 </script>
 </body>
 </html>
@@ -356,8 +512,7 @@ setInterval(loadStatus, 15000);
 
 # ── Request handler ────────────────────────────────────────────
 class Handler(http.server.BaseHTTPRequestHandler):
-    def log_message(self, fmt, *args):
-        pass  # suppress default access log
+    def log_message(self, fmt, *args): pass
 
     def send_json(self, data, code=200):
         body = json.dumps(data).encode()
@@ -377,46 +532,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            page = HTML \
-                .replace("__MIGS__", json.dumps(MIGS)) \
-                .replace("__PROJECT_ID__", PROJECT_ID)
+            page = HTML.replace("__MIGS_JSON__", json.dumps(MIGS))
             self.send_html(page)
-
         elif self.path == "/api/status":
-            sizes = {m["id"]: mig_size(m["id"]) for m in MIGS}
-            ip = lb_ip()
-            domain = DOMAIN or "synapse-ip.xyz"
-            self.send_json({
-                "migs": sizes,
-                "lb_ip": ip,
-                "ui_url": f"https://{domain}",
-                "api_url": f"https://api.{domain}",
-                "admin_url": f"https://admin.{domain}",
-                "ssl": ssl_status(),
-            })
-
+            self.send_json(fetch_all_status())
         elif self.path == "/api/logs":
-            self.send_json({"lines": recent_logs()})
-
+            self.send_json({"lines": get_recent_logs()})
         else:
-            self.send_response(404)
-            self.end_headers()
+            self.send_response(404); self.end_headers()
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length)) if length else {}
+        valid_ids = {m["id"] for m in MIGS}
 
         if self.path.startswith("/api/mig/"):
             mig_id = self.path[len("/api/mig/"):]
-            # only allow known MIG IDs
-            valid_ids = {m["id"] for m in MIGS}
             if mig_id not in valid_ids:
-                self.send_response(400)
-                self.end_headers()
-                return
+                self.send_response(400); self.end_headers(); return
             size = max(0, min(10, int(body.get("size", 1))))
-            ok = set_mig_size(mig_id, size)
-            self.send_json({"ok": ok})
+            self.send_json({"ok": set_mig_size(mig_id, size)})
 
         elif self.path == "/api/all":
             size = max(0, min(10, int(body.get("size", 1))))
@@ -424,19 +559,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_json({"ok": True, "results": results})
 
         else:
-            self.send_response(404)
-            self.end_headers()
+            self.send_response(404); self.end_headers()
 
 # ── Main ───────────────────────────────────────────────────────
 if __name__ == "__main__":
     if not PROJECT_ID:
-        print("Geen config.env gevonden. Maak deploy/config.env aan of voer bootstrap.sh uit.")
+        print("Geen config.env gevonden. Voer eerst deploy/bootstrap.sh uit.")
         raise SystemExit(1)
 
     server = http.server.HTTPServer(("localhost", PORT), Handler)
     url = f"http://localhost:{PORT}"
     print(f"Synapse Dashboard → {url}")
-    print(f"Project: {PROJECT_ID} | Domein: {DOMAIN}")
+    print(f"Project: {PROJECT_ID} | Domein: {DOMAIN} | Regio: {REGION}")
     print("Ctrl+C om te stoppen.\n")
 
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
