@@ -156,6 +156,45 @@ def get_recent_logs(limit=50):
             lines.append(f"{ts}  {msg.strip()}")
     return lines if lines else ["Geen logberichten gevonden."]
 
+# ── Cost estimate ─────────────────────────────────────────────
+# europe-west1 on-demand prices (USD/month, approximate)
+_COSTS = {
+    "e2-small":    13.14,
+    "e2-micro":     6.11,
+    "db-f1-micro": 10.08,   # Cloud SQL
+    "lb":          18.26,   # Global LB (forwarding rules + min data)
+    "storage":      0.23,   # ~10 GB Cloud Storage
+    "armor":        5.00,   # Cloud Armor base
+}
+
+def estimate_cost(mig_sizes):
+    """Returns estimated monthly cost based on running VMs."""
+    # API + UI = e2-small, Admin = e2-micro
+    api_count   = mig_sizes.get("synapse-api-mig", 0)
+    ui_count    = mig_sizes.get("synapse-ui-mig", 0)
+    admin_count = mig_sizes.get("synapse-admin-mig", 0)
+
+    vm_cost = (
+        max(api_count, 0)   * _COSTS["e2-small"] +
+        max(ui_count, 0)    * _COSTS["e2-small"] +
+        max(admin_count, 0) * _COSTS["e2-micro"]
+    )
+
+    total = vm_cost + _COSTS["db-f1-micro"] + _COSTS["lb"] + _COSTS["storage"] + _COSTS["armor"]
+    per_day = total / 30
+
+    return {
+        "vms":     round(vm_cost, 2),
+        "sql":     _COSTS["db-f1-micro"],
+        "lb":      _COSTS["lb"],
+        "storage": _COSTS["storage"],
+        "armor":   _COSTS["armor"],
+        "total":   round(total, 2),
+        "per_day": round(per_day, 2),
+        "budgets": [10, 25, 40],
+        "billing_url": f"https://console.cloud.google.com/billing?project={PROJECT_ID}",
+    }
+
 # ── Parallel status fetch ──────────────────────────────────────
 def fetch_all_status():
     with concurrent.futures.ThreadPoolExecutor(max_workers=9) as ex:
@@ -168,9 +207,10 @@ def fetch_all_status():
     lb_ip = lb_future.result()
     sql   = sql_future.result()
     domain = DOMAIN or "synapse-ip.xyz"
+    mig_sizes = {mid: f.result() for mid, f in mig_futures.items()}
 
     return {
-        "migs":      {mid: f.result() for mid, f in mig_futures.items()},
+        "migs":      mig_sizes,
         "instances": {mid: f.result() for mid, f in instance_futures.items()},
         "lb_ip": lb_ip or "",
         "lb_ip_found": lb_ip is not None,
@@ -186,6 +226,7 @@ def fetch_all_status():
         "region": REGION,
         "zone": ZONE,
         "domain": domain,
+        "cost": estimate_cost(mig_sizes),
     }
 
 # ── HTML ───────────────────────────────────────────────────────
@@ -456,6 +497,13 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
         <span class="nav-icon">◉</span> Uptime Checks
       </a>
     </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <div class="sidebar-header">Kosten</div>
+      <a class="nav-item" id="nav-billing-link" href="#" target="_blank">
+        <span class="nav-icon">$</span> Billing
+      </a>
+    </div>
   </nav>
 
   <!-- Main content -->
@@ -530,11 +578,20 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
         </div>
 
         <!-- Infra card -->
-        <div class="section-card">
+        <div class="section-card" style="margin-bottom:16px">
           <div class="section-card-header">
             <span class="section-card-title">Infrastructuur</span>
           </div>
           <div id="infra-info"></div>
+        </div>
+
+        <!-- Cost card -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">Geschatte Kosten</span>
+            <a class="btn-secondary btn-sm" id="billing-console-btn" href="#" target="_blank">⧉ Billing</a>
+          </div>
+          <div id="cost-info"></div>
         </div>
       </div>
     </div>
@@ -788,6 +845,83 @@ function renderInfra(data) {
   c.appendChild(grid);
 }
 
+// ── Render cost ────────────────────────────────────────────────
+function renderCost(data) {
+  const c = $('cost-info');
+  c.textContent = '';
+  const cost = data.cost;
+
+  // Big total
+  const hero = document.createElement('div');
+  hero.style.cssText = 'padding:16px 24px 8px;display:flex;align-items:flex-end;gap:8px;border-bottom:1px solid var(--gray6)';
+  const totalEl = document.createElement('div');
+  totalEl.style.cssText = 'font-family:"Google Sans",sans-serif;font-size:32px;color:var(--gray1)';
+  totalEl.textContent = `$${cost.total.toFixed(2)}`;
+  const perDay = document.createElement('div');
+  perDay.style.cssText = 'font-size:12px;color:var(--gray3);padding-bottom:6px';
+  perDay.textContent = `/ maand  ·  ~$${cost.per_day.toFixed(2)} / dag`;
+  hero.append(totalEl, perDay);
+  c.appendChild(hero);
+
+  // Breakdown
+  const grid = document.createElement('div');
+  grid.className = 'info-grid';
+
+  const rows = [
+    ['VMs (compute)', `$${cost.vms.toFixed(2)}`],
+    ['Cloud SQL',     `$${cost.sql.toFixed(2)}`],
+    ['Load Balancer', `$${cost.lb.toFixed(2)}`],
+    ['Cloud Armor',   `$${cost.armor.toFixed(2)}`],
+    ['Cloud Storage', `$${cost.storage.toFixed(2)}`],
+  ];
+  for (const [k, v] of rows) {
+    const wrap = document.createElement('div');
+    wrap.className = 'info-grid-item';
+    const key = document.createElement('div'); key.className = 'info-key'; key.textContent = k;
+    const val = document.createElement('div'); val.className = 'info-val'; val.textContent = v;
+    wrap.append(key, val);
+    grid.appendChild(wrap);
+  }
+  c.appendChild(grid);
+
+  // Budget bar
+  const barWrap = document.createElement('div');
+  barWrap.style.cssText = 'padding:14px 24px;border-top:1px solid var(--gray6)';
+  const barLabel = document.createElement('div');
+  barLabel.style.cssText = 'font-size:11px;color:var(--gray3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px';
+  barLabel.textContent = 'Budget gebruik (max $40/maand)';
+  const barBg = document.createElement('div');
+  barBg.style.cssText = 'background:var(--gray6);border-radius:4px;height:8px;overflow:hidden';
+  const pct = Math.min((cost.total / 40) * 100, 100);
+  const barFill = document.createElement('div');
+  const fillColor = pct < 50 ? '#34a853' : pct < 80 ? '#fbbc04' : '#ea4335';
+  barFill.style.cssText = `height:100%;width:${pct.toFixed(1)}%;background:${fillColor};border-radius:4px;transition:width .5s`;
+  barBg.appendChild(barFill);
+
+  // Budget ticks
+  const ticks = document.createElement('div');
+  ticks.style.cssText = 'display:flex;justify-content:space-between;margin-top:4px';
+  for (const b of cost.budgets) {
+    const t = document.createElement('span');
+    t.style.cssText = 'font-size:10px;color:var(--gray4)';
+    t.textContent = `$${b}`;
+    ticks.appendChild(t);
+  }
+
+  const pctLabel = document.createElement('div');
+  pctLabel.style.cssText = 'font-size:11px;color:var(--gray3);margin-top:4px';
+  pctLabel.textContent = `${pct.toFixed(0)}% van $40 budget`;
+
+  barWrap.append(barLabel, barBg, ticks, pctLabel);
+  c.appendChild(barWrap);
+
+  // Note
+  const note = document.createElement('div');
+  note.style.cssText = 'padding:8px 24px 14px;font-size:11px;color:var(--gray4)';
+  note.textContent = '* Schatting op basis van draaiende resources. Werkelijke kost zie je in de GCP Billing Console.';
+  c.appendChild(note);
+}
+
 // ── Load status ────────────────────────────────────────────────
 async function loadStatus() {
   const data = await fetch('/api/status').then(r => r.json());
@@ -801,13 +935,16 @@ async function loadStatus() {
   $('nav-sql-link').href   = data.sql_console;
   $('nav-storage-link').href  = `https://console.cloud.google.com/storage/browser?project=${data.project_id}`;
   $('nav-secrets-link').href  = `https://console.cloud.google.com/security/secret-manager?project=${data.project_id}`;
-  $('nav-logs-link').href  = data.logs_url;
-  $('nav-uptime-link').href= `https://console.cloud.google.com/monitoring/uptime?project=${data.project_id}`;
+  $('nav-logs-link').href    = data.logs_url;
+  $('nav-uptime-link').href  = `https://console.cloud.google.com/monitoring/uptime?project=${data.project_id}`;
+  $('nav-billing-link').href = data.cost.billing_url;
+  $('billing-console-btn').href = data.cost.billing_url;
 
   renderSummary(data);
   renderTable(data);
   renderNetwork(data);
   renderInfra(data);
+  renderCost(data);
 
   $('last-refresh').textContent = 'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-BE');
 }
