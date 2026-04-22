@@ -29,6 +29,7 @@ if CONFIG_FILE.exists():
 
 PROJECT_ID = config.get("PROJECT_ID", "")
 REGION     = config.get("REGION", "europe-west1")
+ZONE       = config.get("ZONE", REGION + "-b") if "REGION" in config else config.get("ZONE", "europe-west1-b")
 DOMAIN     = config.get("DOMAIN", "synapse-ip.xyz")
 
 MIGS = [
@@ -66,7 +67,7 @@ def gcloud(*args, timeout=20):
 def mig_size(mig_id):
     out, code = gcloud(
         "compute", "instance-groups", "managed", "describe", mig_id,
-        f"--region={REGION}", f"--project={PROJECT_ID}", "--format=value(targetSize)"
+        f"--zone={ZONE}", f"--project={PROJECT_ID}", "--format=value(targetSize)"
     )
     try:
         return int(out) if code == 0 else -1
@@ -76,7 +77,7 @@ def mig_size(mig_id):
 def set_mig_size(mig_id, size):
     _, code = gcloud(
         "compute", "instance-groups", "managed", "resize", mig_id,
-        f"--size={size}", f"--region={REGION}", f"--project={PROJECT_ID}", "--quiet",
+        f"--size={size}", f"--zone={ZONE}", f"--project={PROJECT_ID}", "--quiet",
         timeout=30
     )
     return code == 0
@@ -84,7 +85,7 @@ def set_mig_size(mig_id, size):
 def get_mig_instances(mig_id):
     out, code = gcloud(
         "compute", "instance-groups", "managed", "list-instances", mig_id,
-        f"--region={REGION}", f"--project={PROJECT_ID}",
+        f"--zone={ZONE}", f"--project={PROJECT_ID}",
         "--format=value(instance,instanceStatus,currentAction)"
     )
     if code != 0 or not out:
@@ -183,6 +184,7 @@ def fetch_all_status():
         "sql": sql,
         "project_id": PROJECT_ID,
         "region": REGION,
+        "zone": ZONE,
         "domain": domain,
     }
 
@@ -687,7 +689,7 @@ function renderTable(data) {
     // Region
     const tdZone = document.createElement('td');
     tdZone.className = 'td-mono';
-    tdZone.textContent = data.region + '-b';
+    tdZone.textContent = data.zone;
     tr.appendChild(tdZone);
 
     // Port
