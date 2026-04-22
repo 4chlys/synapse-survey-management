@@ -1103,8 +1103,7 @@ async function loadStatus() {
   $('nav-uptime-link').href  = `https://console.cloud.google.com/monitoring/uptime?project=${data.project_id}`;
   $('nav-billing-link').href    = data.cost.billing_url;
   $('billing-console-btn').href = data.cost.billing_url;
-  $('vm-console-btn').href    = `https://console.cloud.google.com/compute/instances?project=${data.project_id}`;
-  $('btn-refresh-vms').addEventListener('click', loadStatus);
+  $('vm-console-btn').href = `https://console.cloud.google.com/compute/instances?project=${data.project_id}`;
 
   renderSummary(data);
   renderTable(data);
