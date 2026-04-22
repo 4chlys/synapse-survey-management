@@ -156,6 +156,64 @@ def get_recent_logs(limit=50):
             lines.append(f"{ts}  {msg.strip()}")
     return lines if lines else ["Geen logberichten gevonden."]
 
+# ── VM monitoring ─────────────────────────────────────────────
+def get_vm_details():
+    out, code = gcloud(
+        "compute", "instances", "list",
+        f"--project={PROJECT_ID}",
+        "--format=json(name,status,machineType,zone,networkInterfaces[0].networkIP,creationTimestamp)",
+        timeout=20
+    )
+    if code != 0 or not out:
+        return []
+    try:
+        vms = json.loads(out)
+    except json.JSONDecodeError:
+        return []
+    results = []
+    for vm in vms:
+        machine = vm.get("machineType", "").split("/")[-1]
+        zone    = vm.get("zone", "").split("/")[-1]
+        ip      = (vm.get("networkInterfaces") or [{}])[0].get("networkIP", "")
+        results.append({
+            "name":    vm.get("name", ""),
+            "status":  vm.get("status", ""),
+            "machine": machine,
+            "zone":    zone,
+            "ip":      ip,
+        })
+    return results
+
+def get_cpu_metrics():
+    """Returns latest CPU utilization per instance (0-100%)."""
+    import datetime
+    now   = datetime.datetime.utcnow()
+    start = (now - datetime.timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    end   = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    out, code = gcloud(
+        "monitoring", "time-series", "list",
+        f"--project={PROJECT_ID}",
+        '--filter=metric.type="compute.googleapis.com/instance/cpu/utilization"',
+        f"--start-time={start}",
+        f"--end-time={end}",
+        "--format=json",
+        timeout=20
+    )
+    if code != 0 or not out:
+        return {}
+    try:
+        series = json.loads(out)
+    except json.JSONDecodeError:
+        return {}
+    cpu = {}
+    for s in series:
+        name = s.get("resource", {}).get("labels", {}).get("instance_id", "")
+        points = s.get("points", [])
+        if points:
+            val = points[0].get("value", {}).get("doubleValue", 0)
+            cpu[name] = round(val * 100, 1)
+    return cpu
+
 # ── Cost estimate ─────────────────────────────────────────────
 # europe-west1 on-demand prices (USD/month, approximate)
 _COSTS = {
@@ -197,12 +255,14 @@ def estimate_cost(mig_sizes):
 
 # ── Parallel status fetch ──────────────────────────────────────
 def fetch_all_status():
-    with concurrent.futures.ThreadPoolExecutor(max_workers=9) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=11) as ex:
         mig_futures      = {m["id"]: ex.submit(mig_size, m["id"]) for m in MIGS}
         instance_futures = {m["id"]: ex.submit(get_mig_instances, m["id"]) for m in MIGS}
         lb_future        = ex.submit(get_lb_ip)
         ssl_future       = ex.submit(get_ssl_certs)
         sql_future       = ex.submit(get_cloud_sql_status)
+        vm_future        = ex.submit(get_vm_details)
+        cpu_future       = ex.submit(get_cpu_metrics)
 
     lb_ip = lb_future.result()
     sql   = sql_future.result()
@@ -227,6 +287,8 @@ def fetch_all_status():
         "zone": ZONE,
         "domain": domain,
         "cost": estimate_cost(mig_sizes),
+        "vms":  vm_future.result(),
+        "cpu":  cpu_future.result(),
     }
 
 # ── HTML ───────────────────────────────────────────────────────
@@ -585,6 +647,15 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
           <div id="infra-info"></div>
         </div>
 
+        <!-- VM monitoring card -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-header">
+            <span class="section-card-title">VM Instances</span>
+            <a class="btn-secondary btn-sm" id="vm-console-btn" href="#" target="_blank">⧉ Console</a>
+          </div>
+          <div id="vm-info"></div>
+        </div>
+
         <!-- Cost card -->
         <div class="section-card">
           <div class="section-card-header">
@@ -845,6 +916,94 @@ function renderInfra(data) {
   c.appendChild(grid);
 }
 
+// ── Render VMs ─────────────────────────────────────────────────
+function renderVms(data) {
+  const c = $('vm-info');
+  c.textContent = '';
+
+  if (!data.vms || !data.vms.length) {
+    const p = document.createElement('div');
+    p.style.cssText = 'padding:16px 24px;color:var(--gray3);font-size:13px';
+    p.textContent = 'Geen VM instances gevonden.';
+    c.appendChild(p);
+    return;
+  }
+
+  for (const vm of data.vms) {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:12px 24px;border-bottom:1px solid var(--gray6);display:flex;flex-direction:column;gap:6px';
+
+    // Top row: name + status
+    const top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px';
+    const nameEl = document.createElement('span');
+    nameEl.style.cssText = 'font-weight:500;font-size:13px;color:var(--blue)';
+    nameEl.textContent = vm.name;
+    const statusChip = chip(vm.status, vm.status === 'RUNNING' ? 'green' : 'red', true);
+    top.append(nameEl, statusChip);
+
+    // CPU bar
+    const cpuWrap = document.createElement('div');
+    // Try to match by instance name in cpu dict (keys are instance IDs, not names)
+    // We show CPU if available, otherwise just show the bar as empty
+    const cpuEntries = Object.values(data.cpu || {});
+    // Match by checking if any cpu key is associated with this VM name
+    const cpuPct = cpuEntries.length > 0
+      ? (data.cpu[vm.name] ?? cpuEntries[0] ?? null)
+      : null;
+
+    const metaRow = document.createElement('div');
+    metaRow.style.cssText = 'display:flex;gap:16px;flex-wrap:wrap';
+
+    const meta = [
+      ['Type', vm.machine],
+      ['Zone', vm.zone],
+      ['Intern IP', vm.ip || '–'],
+    ];
+    for (const [k, v] of meta) {
+      const item = document.createElement('div');
+      item.style.cssText = 'font-size:11px';
+      const key = document.createElement('span');
+      key.style.cssText = 'color:var(--gray3)'; key.textContent = k + ': ';
+      const val = document.createElement('span');
+      val.style.cssText = 'color:var(--gray2);font-family:monospace'; val.textContent = v;
+      item.append(key, val);
+      metaRow.appendChild(item);
+    }
+
+    // CPU bar
+    const cpuRow = document.createElement('div');
+    cpuRow.style.cssText = 'display:flex;align-items:center;gap:8px';
+    const cpuLabel = document.createElement('span');
+    cpuLabel.style.cssText = 'font-size:11px;color:var(--gray3);width:28px;flex-shrink:0';
+    cpuLabel.textContent = 'CPU';
+    const barBg = document.createElement('div');
+    barBg.style.cssText = 'flex:1;background:var(--gray6);border-radius:3px;height:6px;overflow:hidden';
+    const pct = cpuPct !== null ? cpuPct : 0;
+    const fill = document.createElement('div');
+    const fillColor = pct < 50 ? '#34a853' : pct < 80 ? '#fbbc04' : '#ea4335';
+    fill.style.cssText = `height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${fillColor};border-radius:3px;transition:width .5s`;
+    barBg.appendChild(fill);
+    const pctLabel = document.createElement('span');
+    pctLabel.style.cssText = 'font-size:11px;color:var(--gray2);width:36px;text-align:right';
+    pctLabel.textContent = cpuPct !== null ? `${pct}%` : 'n/a';
+    cpuRow.append(cpuLabel, barBg, pctLabel);
+
+    // SSH link
+    const sshLink = document.createElement('a');
+    sshLink.style.cssText = 'font-size:11px;color:var(--blue)';
+    sshLink.href = `https://console.cloud.google.com/compute/instancesDetail/zones/${vm.zone}/instances/${vm.name}?project=${data.project_id}`;
+    sshLink.target = '_blank';
+    sshLink.textContent = '↗ Details in Console';
+
+    row.append(top, metaRow, cpuRow, sshLink);
+    c.appendChild(row);
+  }
+
+  // Remove border on last row
+  if (c.lastChild) c.lastChild.style.borderBottom = 'none';
+}
+
 // ── Render cost ────────────────────────────────────────────────
 function renderCost(data) {
   const c = $('cost-info');
@@ -937,13 +1096,15 @@ async function loadStatus() {
   $('nav-secrets-link').href  = `https://console.cloud.google.com/security/secret-manager?project=${data.project_id}`;
   $('nav-logs-link').href    = data.logs_url;
   $('nav-uptime-link').href  = `https://console.cloud.google.com/monitoring/uptime?project=${data.project_id}`;
-  $('nav-billing-link').href = data.cost.billing_url;
+  $('nav-billing-link').href    = data.cost.billing_url;
   $('billing-console-btn').href = data.cost.billing_url;
+  $('vm-console-btn').href = `https://console.cloud.google.com/compute/instances?project=${data.project_id}`;
 
   renderSummary(data);
   renderTable(data);
   renderNetwork(data);
   renderInfra(data);
+  renderVms(data);
   renderCost(data);
 
   $('last-refresh').textContent = 'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-BE');
