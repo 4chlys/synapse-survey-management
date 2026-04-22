@@ -647,15 +647,6 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
           <div id="infra-info"></div>
         </div>
 
-        <!-- VM monitoring card -->
-        <div class="section-card" style="margin-bottom:16px">
-          <div class="section-card-header">
-            <span class="section-card-title">VM Instances</span>
-            <a class="btn-secondary btn-sm" id="vm-console-btn" href="#" target="_blank">⧉ Console</a>
-          </div>
-          <div id="vm-info"></div>
-        </div>
-
         <!-- Cost card -->
         <div class="section-card">
           <div class="section-card-header">
@@ -664,6 +655,33 @@ tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
           </div>
           <div id="cost-info"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- VM monitoring (full width) -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <span class="section-card-title">VM Instances</span>
+        <div class="section-card-actions">
+          <button class="btn-secondary btn-sm" id="btn-refresh-vms">↺ Verversen</button>
+          <a class="btn-secondary btn-sm" id="vm-console-btn" href="#" target="_blank">⧉ Console</a>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Naam</th>
+              <th>Status</th>
+              <th>Machine type</th>
+              <th>Zone</th>
+              <th>Intern IP</th>
+              <th style="min-width:180px">CPU gebruik (5 min)</th>
+              <th>Acties</th>
+            </tr>
+          </thead>
+          <tbody id="vm-tbody"></tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -918,90 +936,82 @@ function renderInfra(data) {
 
 // ── Render VMs ─────────────────────────────────────────────────
 function renderVms(data) {
-  const c = $('vm-info');
-  c.textContent = '';
+  const tbody = $('vm-tbody');
+  tbody.textContent = '';
 
   if (!data.vms || !data.vms.length) {
-    const p = document.createElement('div');
-    p.style.cssText = 'padding:16px 24px;color:var(--gray3);font-size:13px';
-    p.textContent = 'Geen VM instances gevonden.';
-    c.appendChild(p);
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.cssText = 'padding:24px;color:var(--gray3);text-align:center';
+    td.textContent = 'Geen VM instances gevonden.';
+    tr.appendChild(td); tbody.appendChild(tr);
     return;
   }
 
-  for (const vm of data.vms) {
-    const row = document.createElement('div');
-    row.style.cssText = 'padding:12px 24px;border-bottom:1px solid var(--gray6);display:flex;flex-direction:column;gap:6px';
+  // CPU values: keys are instance IDs (numbers), try to match by index
+  const cpuValues = Object.values(data.cpu || {});
 
-    // Top row: name + status
-    const top = document.createElement('div');
-    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px';
-    const nameEl = document.createElement('span');
-    nameEl.style.cssText = 'font-weight:500;font-size:13px;color:var(--blue)';
-    nameEl.textContent = vm.name;
-    const statusChip = chip(vm.status, vm.status === 'RUNNING' ? 'green' : 'red', true);
-    top.append(nameEl, statusChip);
+  for (let i = 0; i < data.vms.length; i++) {
+    const vm = data.vms[i];
+    const cpuPct = cpuValues[i] ?? null;
+    const tr = document.createElement('tr');
+
+    // Name
+    const tdName = document.createElement('td');
+    tdName.className = 'td-name'; tdName.textContent = vm.name;
+    tr.appendChild(tdName);
+
+    // Status
+    const tdStatus = document.createElement('td');
+    tdStatus.appendChild(chip(vm.status, vm.status === 'RUNNING' ? 'green' : 'red', true));
+    tr.appendChild(tdStatus);
+
+    // Machine type
+    const tdMachine = document.createElement('td');
+    tdMachine.className = 'td-mono'; tdMachine.textContent = vm.machine;
+    tr.appendChild(tdMachine);
+
+    // Zone
+    const tdZone = document.createElement('td');
+    tdZone.className = 'td-mono'; tdZone.textContent = vm.zone;
+    tr.appendChild(tdZone);
+
+    // IP
+    const tdIp = document.createElement('td');
+    tdIp.className = 'td-mono'; tdIp.textContent = vm.ip || '–';
+    tr.appendChild(tdIp);
 
     // CPU bar
+    const tdCpu = document.createElement('td');
     const cpuWrap = document.createElement('div');
-    // Try to match by instance name in cpu dict (keys are instance IDs, not names)
-    // We show CPU if available, otherwise just show the bar as empty
-    const cpuEntries = Object.values(data.cpu || {});
-    // Match by checking if any cpu key is associated with this VM name
-    const cpuPct = cpuEntries.length > 0
-      ? (data.cpu[vm.name] ?? cpuEntries[0] ?? null)
-      : null;
-
-    const metaRow = document.createElement('div');
-    metaRow.style.cssText = 'display:flex;gap:16px;flex-wrap:wrap';
-
-    const meta = [
-      ['Type', vm.machine],
-      ['Zone', vm.zone],
-      ['Intern IP', vm.ip || '–'],
-    ];
-    for (const [k, v] of meta) {
-      const item = document.createElement('div');
-      item.style.cssText = 'font-size:11px';
-      const key = document.createElement('span');
-      key.style.cssText = 'color:var(--gray3)'; key.textContent = k + ': ';
-      const val = document.createElement('span');
-      val.style.cssText = 'color:var(--gray2);font-family:monospace'; val.textContent = v;
-      item.append(key, val);
-      metaRow.appendChild(item);
-    }
-
-    // CPU bar
-    const cpuRow = document.createElement('div');
-    cpuRow.style.cssText = 'display:flex;align-items:center;gap:8px';
-    const cpuLabel = document.createElement('span');
-    cpuLabel.style.cssText = 'font-size:11px;color:var(--gray3);width:28px;flex-shrink:0';
-    cpuLabel.textContent = 'CPU';
+    cpuWrap.style.cssText = 'display:flex;align-items:center;gap:8px';
     const barBg = document.createElement('div');
-    barBg.style.cssText = 'flex:1;background:var(--gray6);border-radius:3px;height:6px;overflow:hidden';
-    const pct = cpuPct !== null ? cpuPct : 0;
+    barBg.style.cssText = 'flex:1;background:var(--gray6);border-radius:3px;height:8px;overflow:hidden;min-width:80px';
+    const pct = cpuPct !== null ? Math.min(cpuPct, 100) : 0;
     const fill = document.createElement('div');
     const fillColor = pct < 50 ? '#34a853' : pct < 80 ? '#fbbc04' : '#ea4335';
-    fill.style.cssText = `height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${fillColor};border-radius:3px;transition:width .5s`;
+    fill.style.cssText = `height:100%;width:${pct.toFixed(1)}%;background:${fillColor};border-radius:3px;transition:width .6s`;
     barBg.appendChild(fill);
-    const pctLabel = document.createElement('span');
-    pctLabel.style.cssText = 'font-size:11px;color:var(--gray2);width:36px;text-align:right';
-    pctLabel.textContent = cpuPct !== null ? `${pct}%` : 'n/a';
-    cpuRow.append(cpuLabel, barBg, pctLabel);
+    const pctLbl = document.createElement('span');
+    pctLbl.style.cssText = 'font-size:12px;color:var(--gray2);min-width:36px;text-align:right';
+    pctLbl.textContent = cpuPct !== null ? `${cpuPct}%` : 'n/a';
+    cpuWrap.append(barBg, pctLbl);
+    tdCpu.appendChild(cpuWrap);
+    tr.appendChild(tdCpu);
 
-    // SSH link
-    const sshLink = document.createElement('a');
-    sshLink.style.cssText = 'font-size:11px;color:var(--blue)';
-    sshLink.href = `https://console.cloud.google.com/compute/instancesDetail/zones/${vm.zone}/instances/${vm.name}?project=${data.project_id}`;
-    sshLink.target = '_blank';
-    sshLink.textContent = '↗ Details in Console';
+    // Actions
+    const tdAct = document.createElement('td');
+    const detailLink = document.createElement('a');
+    detailLink.className = 'btn-secondary btn-sm';
+    detailLink.href = `https://console.cloud.google.com/compute/instancesDetail/zones/${vm.zone}/instances/${vm.name}?project=${data.project_id}`;
+    detailLink.target = '_blank';
+    detailLink.textContent = '↗ Details';
+    tdAct.appendChild(detailLink);
+    tr.appendChild(tdAct);
 
-    row.append(top, metaRow, cpuRow, sshLink);
-    c.appendChild(row);
+    tbody.appendChild(tr);
   }
-
-  // Remove border on last row
-  if (c.lastChild) c.lastChild.style.borderBottom = 'none';
 }
 
 // ── Render cost ────────────────────────────────────────────────
@@ -1098,7 +1108,8 @@ async function loadStatus() {
   $('nav-uptime-link').href  = `https://console.cloud.google.com/monitoring/uptime?project=${data.project_id}`;
   $('nav-billing-link').href    = data.cost.billing_url;
   $('billing-console-btn').href = data.cost.billing_url;
-  $('vm-console-btn').href = `https://console.cloud.google.com/compute/instances?project=${data.project_id}`;
+  $('vm-console-btn').href    = `https://console.cloud.google.com/compute/instances?project=${data.project_id}`;
+  $('btn-refresh-vms').addEventListener('click', loadStatus);
 
   renderSummary(data);
   renderTable(data);
