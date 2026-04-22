@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Sorting.Embeddings;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -15,19 +16,32 @@ public class IdeasController(
     ICommentManager commentManager,
     IProjectManager projectManager,
     IParticipantManager participantManager,
-    IModerationResolver moderationResolver)
+    IModerationResolver moderationResolver,
+    IIdeaSortStrategyFactory embeddingSortFactory)
     : ParticipantControllerBase(participantManager)
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
-        int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
+        int projectId, int categoryId,
+        [FromQuery][Range(1, int.MaxValue)] int page = 1,
+        [FromQuery] string sort = null,
+        [FromQuery] string query = null,
+        CancellationToken ct = default)
     {
         var participantId = await ResolveParticipantIdAsync();
         var project = await projectManager.GetProjectByIdAsync(projectId);
         if (project == null) return NotFound();
 
-        var paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort);
-
+        PagedResult<Idea> paged;
+        if (embeddingSortFactory.IsEmbeddingKey(sort))
+        {
+            paged = await ideaManager.GetOkIdeasByCategoryEmbeddingSortedAsync(
+                categoryId, page, project.IdeaPageSize, sort, query, cancellationToken: ct);
+        }
+        else
+        {
+            paged = await ideaManager.GetOkIdeasByCategoryAsync(categoryId, page, project.IdeaPageSize, sort);
+        }
 
         return Ok(new PagedResult<IdeaDto>
         {

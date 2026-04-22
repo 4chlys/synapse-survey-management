@@ -53,6 +53,34 @@
         </form>
     </div>
 
+    @* Sort toggle *@
+    <div class="w-full flex gap-2 mb-5">
+        <a asp-controller="Ideation" asp-action="Index"
+               asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
+               asp-route-sort="diverse"
+               class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-semibold border transition-colors
+               @(Model.CurrentSort == "diverse" ? "bg-primary text-primary-content border-primary" : "bg-base-100 border-base-300 text-base-content/70 hover:border-primary/40")">
+            Divers
+        </a>
+        @if (Model.HasOwnIdeas)
+        {
+            <a asp-controller="Ideation" asp-action="Index"
+                   asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
+                   asp-route-sort="similar"
+                   class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-semibold border transition-colors
+                   @(Model.CurrentSort == "similar" ? "bg-primary text-primary-content border-primary" : "bg-base-100 border-base-300 text-base-content/70 hover:border-primary/40")">
+                Gelijkaardig
+            </a>
+            <a asp-controller="Ideation" asp-action="Index"
+                   asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
+                   asp-route-sort="different"
+                   class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-semibold border transition-colors
+                   @(Model.CurrentSort == "different" ? "bg-primary text-primary-content border-primary" : "bg-base-100 border-base-300 text-base-content/70 hover:border-primary/40")">
+                Anders
+            </a>
+        }
+    </div>
+
     @* Ideas list *@
     <div class="w-full flex flex-col gap-3 mb-4">
         @if (!Model.Ideas.Any())

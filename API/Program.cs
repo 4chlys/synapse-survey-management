@@ -1,7 +1,10 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Sorting;
+using SynapseEnqueteManagement.BL.Sorting.Embeddings;
+using SynapseEnqueteManagement.BL.Embeddings;
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
+using Microsoft.Extensions.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
@@ -59,6 +62,16 @@ builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrateg
 builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
     new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
 
+// Embedding-based sort strategies (in-memory; not expressible as SQL ORDER BY)
+builder.Services.AddSingleton<IIdeaSortStrategy, SimilarSortStrategy>();
+builder.Services.AddSingleton<IIdeaSortStrategy, DifferentSortStrategy>();
+builder.Services.AddSingleton<IIdeaSortStrategy, DiverseSortStrategy>();
+builder.Services.AddSingleton<IIdeaSortStrategyFactory, IdeaSortStrategyFactory>();
+
+// IEmbeddingService is registered below inside/after the Vertex-AI block: the
+// real backing IEmbeddingGenerator<string, Embedding<float>> only exists when
+// useAi=true, so Mock is the fallback when AI is disabled.
+
 // Response validators (OCP: add new formats by registering a new IResponseValidator)
 builder.Services.AddSingleton<IResponseValidator, OpenResponseValidator>();
 builder.Services.AddSingleton<IResponseValidator, SingleChoiceResponseValidator>();
@@ -101,6 +114,7 @@ if (useAi)
                     ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
     var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
     var model = builder.Configuration["VertexAi:Model"] ?? "gemini-2.5-flash-lite";
+    var embeddingModel = builder.Configuration["VertexAi:EmbeddingModel"] ?? "gemini-embedding-001";
     var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
     var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
@@ -110,7 +124,22 @@ if (useAi)
 
     builder.Services.AddChatClient(chatClient);
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
-} else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
+
+    // Embedding generator — same PredictionServiceClientBuilder, different model
+    // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so
+    // swapping Vertex for OpenAI/Ollama later means registering a different
+    // IEmbeddingGenerator here; nothing in BL changes.
+    var embeddingModelResource = EndpointName.FormatProjectLocationPublisherModel(
+        projectId, location, "google", embeddingModel);
+    var embeddingGenerator = await predictionBuilder.BuildIEmbeddingGeneratorAsync(embeddingModelResource);
+    builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(embeddingGenerator);
+    builder.Services.AddSingleton<IEmbeddingService, AiEmbeddingService>();
+}
+else
+{
+    builder.Services.AddScoped<IAiModerationService, MockModerationService>();
+    builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
+}
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
 // Re-enable if a browser-based client ever needs direct API access.
@@ -133,7 +162,8 @@ var app = builder.Build();
         try
         {
             context.CreateDatabase(deleteIfExists);
-            DummyDataSeeder.Seed(context);
+            var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
+            DummyDataSeeder.Seed(context, text => seedEmbedSvc.GenerateAsync(text).GetAwaiter().GetResult());
             break;
         }
         catch (Exception ex) when (attempt < maxRetries)

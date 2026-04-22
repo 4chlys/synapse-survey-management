@@ -1,14 +1,26 @@
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
+using SynapseEnqueteManagement.BL.Sorting.Embeddings;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
+public class IdeaManager(
+    IRepository repository,
+    ILogger<IdeaManager> logger,
+    ISortStrategyFactory<Idea> sortStrategyFactory,
+    IIdeaSortStrategyFactory embeddingSortFactory,
+    IEmbeddingService embeddingService) : IIdeaManager
 {
+    // Safety cap for embedding sorts: they materialise the full filtered set in
+    // memory. The brief calls for "performant for ≤1,000 ideas" — so that's
+    // where we draw the line.
+    private const int EmbeddingSortMaxItems = 1000;
+
     public async Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
@@ -33,6 +45,45 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
         );
 
         return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+    }
+
+    public async Task<PagedResult<Idea>> GetOkIdeasByCategoryEmbeddingSortedAsync(
+        int categoryId, int page, int pageSize, string sortKey,
+        string queryText, int? excludeParticipantId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var strategy = embeddingSortFactory.Get(sortKey);
+
+        var filterList = new List<System.Linq.Expressions.Expression<Func<Idea, bool>>>
+        {
+            i => i.Category.CategoryId == categoryId,
+            i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined
+        };
+        if (excludeParticipantId.HasValue)
+            filterList.Add(i => i.Participant.ParticipantId != excludeParticipantId.Value);
+        var filters = filterList.ToArray();
+
+        // Materialise the full filtered set (capped) — embedding sort cannot be
+        // pushed into SQL. Pagination happens in-memory after sorting.
+        var all = (await repository.ReadAsync<Idea>(
+            filters: filters,
+            includes: [i => i.Comments, i => i.Participant],
+            includeStrings: ["Comments.Emoji", "Comments.Participant"],
+            take: EmbeddingSortMaxItems
+        )).ToList();
+
+        if (all.Count == EmbeddingSortMaxItems)
+            logger.LogWarning("Embedding sort hit the {Cap}-item cap for category {CategoryId}; results are truncated",
+                EmbeddingSortMaxItems, categoryId);
+
+        float[] queryEmbedding = null;
+        if (!string.IsNullOrWhiteSpace(queryText))
+            queryEmbedding = await embeddingService.GenerateAsync(queryText, cancellationToken);
+
+        var ordered = strategy.Sort(all, queryEmbedding);
+        var paged = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        return new PagedResult<Idea> { Items = paged, Page = page, PageSize = pageSize, TotalCount = ordered.Count };
     }
 
     public async Task<IEnumerable<Idea>> GetOwnIdeasByCategoryAsync(int categoryId, int participantId)
@@ -60,12 +111,27 @@ public class IdeaManager(IRepository repository, ILogger<IdeaManager> logger, IS
             throw new KeyNotFoundException($"Category {categoryId} not found");
         }
 
+        // Generate embedding at write-time so reads stay cheap. Failure here
+        // must not block submission — Embedding is nullable and the sort
+        // strategies handle that case. A background backfill job can fill in
+        // missing vectors later.
+        float[] embedding = null;
+        try
+        {
+            embedding = await embeddingService.GenerateAsync(description);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to generate embedding for new idea; storing without vector");
+        }
+
         var idea = new Idea
         {
             Status = status,
             Description = description,
             Category = category,
             Participant = participant,
+            Embedding = embedding,
             CreatedAt = DateTime.UtcNow
         };
 

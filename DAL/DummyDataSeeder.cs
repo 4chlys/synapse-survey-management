@@ -9,6 +9,7 @@ public class DummyDataSeeder
     private static Emoji _thumbsup = null!;
     private static Emoji _fire = null!;
     private static Emoji _check = null!;
+    private static Func<string, float[]> _embed;
 
     private static void AddIconComments(Idea idea, int count, Emoji[] emojis)
     {
@@ -25,7 +26,7 @@ public class DummyDataSeeder
     private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts, Emoji[] emojis = null)
     {
         emojis ??= new[] { _heart, _thumbsup, _fire, _check };
-        var idea = new Idea { Description = description, Status = ModerationStatus.Approved };
+        var idea = new Idea { Description = description, Status = ModerationStatus.Approved, Embedding = _embed?.Invoke(description) };
         AddIconComments(idea, ideaIconCount, emojis);
         for (int i = 0; i < commentTexts.Length; i++)
         {
@@ -41,10 +42,11 @@ public class DummyDataSeeder
         return idea;
     }
 
-    public static void Seed(SynapseEnqueteContext context)
+    public static void Seed(SynapseEnqueteContext context, Func<string, float[]> embed = null)
     {
         if (context.Projects.Any()) return;
 
+        _embed = embed;
         _heart = new Emoji { Symbol = "❤️", Name = "heart" };
         _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup" };
         _fire = new Emoji { Symbol = "🔥", Name = "fire" };

@@ -29,11 +29,11 @@ public class MockEmbeddingService(int dimensions = 128) : IEmbeddingService
         var vector = new float[Dimensions];
         if (string.IsNullOrWhiteSpace(text)) return vector;
 
+        Span<byte> hash = stackalloc byte[32];
         foreach (var raw in text.ToLowerInvariant().Split(Separators, StringSplitOptions.RemoveEmptyEntries))
         {
             // SHA-256 gives a uniform hash that splits cleanly across buckets —
             // GetHashCode() is unstable across runs and would break determinism.
-            Span<byte> hash = stackalloc byte[32];
             SHA256.HashData(Encoding.UTF8.GetBytes(raw), hash);
             int bucket = (int)(BitConverter.ToUInt32(hash[..4]) % (uint)Dimensions);
             int signBit = hash[4] & 1;

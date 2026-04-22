@@ -17,18 +17,26 @@ public class IdeationController(
     ParticipantService participantService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
+    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse")
     {
         var projectTask = projectApiService.GetProjectAsync(projectId);
         var emojisTask = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var ideasTask = ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
+        var ownIdeasTask = ideaService.GetMyIdeasAsync(projectId, categoryId);
 
-        await Task.WhenAll(projectTask, emojisTask, categoryTask, ideasTask);
+        await Task.WhenAll(projectTask, emojisTask, categoryTask, ownIdeasTask);
 
         var project = await projectTask;
         var category = await categoryTask;
         if (category == null) return NotFound();
+
+        var ownIdeas = await ownIdeasTask;
+        var queryText = ownIdeas.FirstOrDefault()?.Description;
+
+        if ((sort == "similar" || sort == "different") && queryText == null)
+            sort = "diverse";
+
+        var ideas = await ideaService.GetIdeasByCategoryAsync(projectId, categoryId, sort: sort, queryText: queryText);
 
         this.SetLayoutData(project, projectId, showModerationPopup: true);
 
@@ -37,10 +45,12 @@ public class IdeationController(
             ProjectId = projectId,
             CategoryId = categoryId,
             Category = category,
-            Ideas = await ideasTask,
+            Ideas = ideas,
             Emojis = await emojisTask,
             ShowContactInfoPopup = contactInfo,
-            RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false)
+            RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false),
+            CurrentSort = sort,
+            HasOwnIdeas = ownIdeas.Any()
         });
     }
 
