@@ -8,10 +8,11 @@ public class ParticipantManager(IRepository repository, IUnitOfWork uow) : IPart
 {
     public async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId, CancellationToken ct = default)
     {
+        var trackedQuestionnaire = await repository.ReadByIdAsync<Questionnaire>(questionnaire.QuestionnaireId, tracked: true);
         var participant = new Participant
         {
-            QuestionnaireId = questionnaire.QuestionnaireId,
-            ProjectId = projectId,
+            Questionnaire = trackedQuestionnaire,
+            Project = await repository.ReadByIdAsync<Project>(projectId, tracked: true),
             CreatedAt = DateTime.UtcNow
         };
         var created = await repository.CreateAsync(participant);
