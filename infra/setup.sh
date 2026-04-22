@@ -20,6 +20,7 @@ source "${SCRIPT_DIR}/lib/04_mig.sh"
 source "${SCRIPT_DIR}/lib/05_storage.sh"
 source "${SCRIPT_DIR}/lib/06_loadbalancer.sh"
 source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
+source "${SCRIPT_DIR}/lib/08_logging.sh"
 
 # ── Setup ───────────────────────────────────────────────────────
 echo "======================================================"
@@ -49,6 +50,9 @@ create_url_map
 create_ssl_and_proxy
 reserve_static_ip
 create_forwarding_rules
+
+setup_logging_iam
+create_uptime_checks
 
 echo ""
 echo "======================================================"

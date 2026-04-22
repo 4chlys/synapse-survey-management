@@ -19,6 +19,7 @@ source "${SCRIPT_DIR}/lib/04_mig.sh"
 source "${SCRIPT_DIR}/lib/05_storage.sh"
 source "${SCRIPT_DIR}/lib/06_loadbalancer.sh"
 source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
+source "${SCRIPT_DIR}/lib/08_logging.sh"
 
 # ── Bevestiging ─────────────────────────────────────────────────
 echo "======================================================"
@@ -30,6 +31,7 @@ read -r -p "Typ 'ja' om te bevestigen: " confirm
 
 # ── Teardown (omgekeerde volgorde van setup) ────────────────────
 echo ""
+destroy_uptime_checks
 destroy_loadbalancer
 destroy_migs
 destroy_instance_templates
