@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ParticipantManagerTests
@@ -23,8 +21,8 @@ public class ParticipantManagerTests
         var project = new Project { ProjectId = 10 };
         _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(10))
             .ReturnsAsync(project);
-        _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>(), It.IsAny<Expression<Func<Participant, bool>>>()))
-            .ReturnsAsync((Participant p, Expression<Func<Participant, bool>> _) => p)
+        _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
+            .ReturnsAsync((Participant p) => p)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -51,7 +49,7 @@ public class ParticipantManagerTests
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _manager.AddParticipantAsync(999));
 
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _participantRepository.Verify(r => r.CreateAsync(It.IsAny<Participant>(), It.IsAny<Expression<Func<Participant, bool>>>()), Times.Never);
+        _participantRepository.Verify(r => r.CreateAsync(It.IsAny<Participant>()), Times.Never);
     }
 
     [Fact]
@@ -62,8 +60,8 @@ public class ParticipantManagerTests
         var ct = cts.Token;
         _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(It.IsAny<int>()))
             .ReturnsAsync(new Project());
-        _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>(), It.IsAny<Expression<Func<Participant, bool>>>()))
-            .ReturnsAsync((Participant p, Expression<Func<Participant, bool>> _) => p);
+        _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
+            .ReturnsAsync((Participant p) => p);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

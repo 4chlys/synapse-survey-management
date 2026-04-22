@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.BL.Sorting;
 
@@ -52,8 +51,8 @@ public class CommentManagerTests
         _ideaRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(IdeaId))
             .ReturnsAsync(IdeaInProject())
             .Verifiable(Times.Exactly(1));
-        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>(), It.IsAny<Expression<Func<Comment, bool>>>()))
-            .ReturnsAsync((TextComment c, Expression<Func<Comment, bool>> _) => c)
+        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>()))
+            .ReturnsAsync((TextComment c) => c)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -293,8 +292,8 @@ public class CommentManagerTests
         var ct = cts.Token;
         _ideaRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(IdeaId))
             .ReturnsAsync(IdeaInProject());
-        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>(), It.IsAny<Expression<Func<Comment, bool>>>()))
-            .ReturnsAsync((TextComment c, Expression<Func<Comment, bool>> _) => c);
+        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>()))
+            .ReturnsAsync((TextComment c) => c);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

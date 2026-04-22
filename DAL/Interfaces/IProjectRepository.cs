@@ -8,13 +8,9 @@ public interface IProjectRepository : IRepository<Project>
 
     Task<Project> ReadByIdWithIntroductionReadOnlyAsync(int projectId);
 
-    Task<Project> ReadByIdForUpdateAsync(int projectId);
-
     Task<Project> ReadByIdWithIntroductionForUpdateAsync(int projectId);
 
     Task<Project> ReadByIdWithEmojisForUpdateAsync(int projectId);
 
     Task<Project> ReadByIdWithEmojisReadOnlyAsync(int projectId);
-
-    Task<IEnumerable<Project>> ReadAllReadOnlyAsync();
 }

@@ -8,17 +8,17 @@ namespace SynapseEnqueteManagement.DAL.Implementation;
 public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIdeaRepository
 {
     public Task<Idea> ReadByIdWithProjectForUpdateAsync(int ideaId)
-        => _context.Set<Idea>()
+        => Context.Set<Idea>()
             .Include(i => i.Category).ThenInclude(c => c.Project)
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
     public Task<Idea> ReadByIdWithProjectAndEmojisForUpdateAsync(int ideaId)
-        => _context.Set<Idea>()
+        => Context.Set<Idea>()
             .Include(i => i.Category).ThenInclude(c => c.Project).ThenInclude(p => p.Emojis)
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
     public Task<Idea> ReadByIdWithCommentsAndParticipantReadOnlyAsync(int ideaId)
-        => _context.Set<Idea>()
+        => Context.Set<Idea>()
             .AsNoTracking()
             .Include(i => i.Participant)
             .Include(i => i.Comments).ThenInclude(c => c.Participant)
@@ -26,19 +26,19 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
     public Task<int> CountVisibleByCategoryAsync(int categoryId)
-        => _context.Set<Idea>()
+        => Context.Set<Idea>()
             .CountAsync(i => i.Category.CategoryId == categoryId
                              && i.Status != ModerationStatus.Flagged
                              && i.Status != ModerationStatus.Declined);
 
     public Task<int> CountByCategoryAsync(int categoryId)
-        => _context.Set<Idea>()
+        => Context.Set<Idea>()
             .CountAsync(i => i.Category.CategoryId == categoryId);
 
     public async Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
     {
         var ids = categoryIds.ToHashSet();
-        return await _context.Set<Idea>()
+        return await Context.Set<Idea>()
             .Where(i => ids.Contains(i.Category.CategoryId))
             .GroupBy(i => i.Category.CategoryId)
             .ToDictionaryAsync(g => g.Key, g => g.Count());
@@ -51,7 +51,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         int skip,
         int take)
     {
-        var query = _context.Set<Idea>()
+        var query = Context.Set<Idea>()
             .AsNoTracking()
             .Include(i => i.Participant)
             .Include(i => i.Comments).ThenInclude(c => c.Participant)
@@ -67,8 +67,12 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         return await ordered.Skip(skip).Take(take).ToListAsync();
     }
 
+    public Task<bool> AnyExistByParticipantAsync(int participantId)
+        => Context.Set<Idea>()
+            .AnyAsync(i => i.Participant.ParticipantId == participantId);
+
     public async Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId)
-        => await _context.Set<Idea>()
+        => await Context.Set<Idea>()
             .AsNoTracking()
             .Include(i => i.Participant)
             .Include(i => i.Comments).ThenInclude(c => c.Participant)

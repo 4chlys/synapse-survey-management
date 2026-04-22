@@ -7,7 +7,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ProjectManager(
     IProjectRepository projectRepository,
-    IRepository<Emoji> emojiRepository,
+    IEmojiRepository emojiRepository,
     IUnitOfWork uow) : IProjectManager
 {
     public Task<Project> GetProjectByIdAsync(int projectId)
@@ -72,14 +72,14 @@ public class ProjectManager(
         => projectRepository.ReadAllReadOnlyAsync();
 
     public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
-        => emojiRepository.ReadAsync();
+        => emojiRepository.ReadAllReadOnlyAsync();
 
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
         if (project == null) return false;
 
-        var emoji = await emojiRepository.ReadByIdAsync(emojiId, tracked: true);
+        var emoji = await emojiRepository.ReadByIdForUpdateAsync(emojiId);
         if (emoji == null) return false;
 
         if (project.Emojis.Any(e => e.EmojiId == emojiId)) return true;

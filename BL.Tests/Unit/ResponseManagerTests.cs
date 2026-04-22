@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ResponseManagerTests
@@ -26,8 +24,8 @@ public class ResponseManagerTests
     public async Task AddResponseAsync_HappyPath_CreatesAndSavesOnce()
     {
         // Arrange
-        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()))
-            .ReturnsAsync((Response r, Expression<Func<Response, bool>> _) => r)
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .ReturnsAsync((Response r) => r)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -48,8 +46,8 @@ public class ResponseManagerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()))
-            .ReturnsAsync((Response r, Expression<Func<Response, bool>> _) => r);
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .ReturnsAsync((Response r) => r);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -72,7 +70,7 @@ public class ResponseManagerTests
             _manager.AddResponseAsync(999, "value", _participant));
 
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _responseRepository.Verify(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()), Times.Never);
+        _responseRepository.Verify(r => r.CreateAsync(It.IsAny<Response>()), Times.Never);
     }
 
     [Fact]
@@ -104,8 +102,8 @@ public class ResponseManagerTests
         // Arrange
         _responseRepository.Setup(r => r.ReadByQuestionAndParticipantForUpdateAsync(_question.QuestionId, _participant.ParticipantId))
             .ReturnsAsync((Response)null);
-        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()))
-            .ReturnsAsync((Response r, Expression<Func<Response, bool>> _) => r)
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .ReturnsAsync((Response r) => r)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -132,7 +130,7 @@ public class ResponseManagerTests
             _manager.AddResponseAsync(_question.QuestionId, tooLong, _participant));
 
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _responseRepository.Verify(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()), Times.Never);
+        _responseRepository.Verify(r => r.CreateAsync(It.IsAny<Response>()), Times.Never);
     }
 
     [Fact]

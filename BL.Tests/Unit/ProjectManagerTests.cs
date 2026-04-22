@@ -1,11 +1,9 @@
-using System.Linq.Expressions;
-
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ProjectManagerTests
 {
     private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
-    private readonly Mock<IRepository<Emoji>> _emojiRepository = new(MockBehavior.Strict);
+    private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ProjectManager _manager;
 
@@ -27,7 +25,7 @@ public class ProjectManagerTests
         var emoji = new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _emojiRepository.Setup(r => r.ReadByIdAsync(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
         _projectRepository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -53,7 +51,7 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _emojiRepository.Setup(r => r.ReadByIdAsync(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
         _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(ct))
@@ -88,7 +86,7 @@ public class ProjectManagerTests
         // Arrange
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() });
-        _emojiRepository.Setup(r => r.ReadByIdAsync(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync((Emoji)null);
 
         // Act
@@ -107,7 +105,7 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _emojiRepository.Setup(r => r.ReadByIdAsync(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
 
         // Act

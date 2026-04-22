@@ -8,7 +8,5 @@ public interface ICategoryRepository : IRepository<Category>
 
     Task<Category> ReadByIdReadOnlyAsync(int categoryId);
 
-    Task<Category> ReadByIdForUpdateAsync(int categoryId);
-
     Task<Category> ReadByIdWithProjectForUpdateAsync(int categoryId);
 }

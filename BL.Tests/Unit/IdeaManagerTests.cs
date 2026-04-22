@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.BL.Sorting;
 
@@ -30,10 +29,10 @@ public class IdeaManagerTests
         _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId))
             .ReturnsAsync(category)
             .Verifiable(Times.Exactly(1));
-        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>()))
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>()))
             .ReturnsAsync(false);
-        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
-            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => { i.IdeaId = 7; return i; })
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .ReturnsAsync((Idea i) => { i.IdeaId = 7; return i; })
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -56,9 +55,9 @@ public class IdeaManagerTests
         // Arrange
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = true } };
         _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
-        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>())).ReturnsAsync(true);
-        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
-            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>())).ReturnsAsync(true);
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .ReturnsAsync((Idea i) => i);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
@@ -74,9 +73,9 @@ public class IdeaManagerTests
         // Arrange
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = false } };
         _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
-        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>())).ReturnsAsync(false);
-        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
-            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>())).ReturnsAsync(false);
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .ReturnsAsync((Idea i) => i);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
@@ -95,9 +94,9 @@ public class IdeaManagerTests
         var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId } };
         _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId))
             .ReturnsAsync(category);
-        _ideaRepository.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Idea, bool>>>())).ReturnsAsync(false);
-        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>(), It.IsAny<Expression<Func<Idea, bool>>>()))
-            .ReturnsAsync((Idea i, Expression<Func<Idea, bool>> _) => i);
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>())).ReturnsAsync(false);
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .ReturnsAsync((Idea i) => i);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

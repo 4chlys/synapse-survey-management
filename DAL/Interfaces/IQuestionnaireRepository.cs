@@ -4,8 +4,6 @@ namespace SynapseEnqueteManagement.DAL.Interfaces;
 
 public interface IQuestionnaireRepository : IRepository<Questionnaire>
 {
-    Task<Questionnaire> ReadByIdForUpdateAsync(int questionnaireId);
-
     Task<Questionnaire> ReadByProjectIdReadOnlyAsync(int projectId);
 
     Task<Questionnaire> ReadByProjectIdWithQuestionsReadOnlyAsync(int projectId);

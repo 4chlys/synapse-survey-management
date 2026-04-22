@@ -24,4 +24,6 @@ public interface IIdeaRepository : IRepository<Idea>
         int take);
 
     Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId);
+
+    Task<bool> AnyExistByParticipantAsync(int participantId);
 }

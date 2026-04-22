@@ -5,6 +5,4 @@ namespace SynapseEnqueteManagement.DAL.Interfaces;
 public interface ISectionRepository : IRepository<Section>
 {
     Task<IEnumerable<Section>> ReadByProjectIdReadOnlyAsync(int projectId);
-
-    Task<Section> ReadByIdForUpdateAsync(int sectionId);
 }

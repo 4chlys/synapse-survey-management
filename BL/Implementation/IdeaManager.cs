@@ -46,7 +46,7 @@ public class IdeaManager(
             throw new KeyNotFoundException($"Category {categoryId} not found");
         }
 
-        var hadPriorIdeas = await ideaRepository.ExistsAsync(i => i.Participant.ParticipantId == participant.ParticipantId);
+        var hadPriorIdeas = await ideaRepository.AnyExistByParticipantAsync(participant.ParticipantId);
 
         var idea = new Idea
         {
