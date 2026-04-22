@@ -27,7 +27,7 @@ public class ProjectAdminService(HttpClient httpClient)
                ?? new List<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel?> GetProjectByIdAsync(int projectId)
+    public async Task<ProjectAdminViewModel> GetProjectByIdAsync(int projectId)
     {
         var response = await httpClient.GetAsync($"api/projects/{projectId}");
         if (!response.IsSuccessStatusCode)
