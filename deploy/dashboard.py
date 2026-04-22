@@ -913,13 +913,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
                               f"--project={PROJECT_ID}", "--format=value(name,targetSize)")
             out3, c3 = gcloud("compute", "addresses", "describe", "synapse-lb-ip",
                               "--global", f"--project={PROJECT_ID}", "--format=value(address)")
+            out4, c4 = gcloud("compute", "instance-groups", "managed", "describe", "synapse-ui-mig",
+                              f"--zone={ZONE}", f"--project={PROJECT_ID}", "--format=value(targetSize)")
             self.send_json({
                 "gcloud_cmd": _GCLOUD,
                 "platform": sys.platform,
                 "project_id": PROJECT_ID,
-                "active_project": {"out": out1, "code": c1},
-                "mig_list":       {"out": out2, "code": c2},
-                "lb_ip":          {"out": out3, "code": c3},
+                "zone": ZONE,
+                "region": REGION,
+                "active_project":  {"out": out1, "code": c1},
+                "mig_list":        {"out": out2, "code": c2},
+                "lb_ip":           {"out": out3, "code": c3},
+                "mig_describe_ui": {"out": out4, "code": c4},
             })
         else:
             self.send_response(404); self.end_headers()
