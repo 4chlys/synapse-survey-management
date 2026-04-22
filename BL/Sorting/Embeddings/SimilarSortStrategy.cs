@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.BL.Sorting.Embeddings;
 // Sorts ideas by cosine similarity to the query embedding, descending.
 // Ideas without an embedding are placed last (sim = -∞) so they never crowd out
 // genuinely similar results.
-public class SimilarSortStrategy : IIdeaSortStrategy
+public class SimilarSortStrategy : IEmbeddingSortStrategy
 {
     public string Key => "similar";
 
@@ -17,7 +17,7 @@ public class SimilarSortStrategy : IIdeaSortStrategy
         return ideas
             .Select(i => (idea: i, score: i.Embedding == null
                 ? float.NegativeInfinity
-                : VectorMath.CosineSimilarity(i.Embedding, queryEmbedding)))
+                : VectorMath.CosineSimilarity(i.Embedding.Memory.Span, queryEmbedding)))
             .OrderByDescending(x => x.score)
             .Select(x => x.idea)
             .ToList();

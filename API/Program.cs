@@ -1,3 +1,4 @@
+using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.BL.Sorting.Embeddings;
@@ -43,7 +44,7 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseNpgsql(connStr));
+    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseNpgsql(connStr, o => o.UseVector()));
 }
 else
 {
@@ -63,10 +64,10 @@ builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
     new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
 
 // Embedding-based sort strategies (in-memory; not expressible as SQL ORDER BY)
-builder.Services.AddSingleton<IIdeaSortStrategy, SimilarSortStrategy>();
-builder.Services.AddSingleton<IIdeaSortStrategy, DifferentSortStrategy>();
-builder.Services.AddSingleton<IIdeaSortStrategy, DiverseSortStrategy>();
-builder.Services.AddSingleton<IIdeaSortStrategyFactory, IdeaSortStrategyFactory>();
+builder.Services.AddSingleton<IEmbeddingSortStrategy, SimilarSortStrategy>();
+builder.Services.AddSingleton<IEmbeddingSortStrategy, DifferentSortStrategy>();
+builder.Services.AddSingleton<IEmbeddingSortStrategy, DiverseSortStrategy>();
+builder.Services.AddSingleton<IEmbeddingSortStrategyFactory, EmbeddingSortStrategyFactory>();
 
 // IEmbeddingService is registered below inside/after the Vertex-AI block: the
 // real backing IEmbeddingGenerator<string, Embedding<float>> only exists when

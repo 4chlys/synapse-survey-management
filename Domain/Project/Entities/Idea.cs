@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Pgvector;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain;
 
@@ -15,7 +16,7 @@ public class Idea : IHasCreatedAt
     // Vector embedding of Description used by embedding-based sort strategies
     // (Similar / Different / Diverse). Null means "not yet generated" — strategies
     // must skip or cold-generate such entries.
-    public float[] Embedding { get; set; }
+    public Vector Embedding { get; set; }
 
     public Category Category { get; set; }
 

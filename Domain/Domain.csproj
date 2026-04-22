@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Pgvector" Version="0.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Platform\Entities\" />
     <Folder Include="Platform\Enums\" />
   </ItemGroup>

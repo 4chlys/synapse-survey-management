@@ -17,7 +17,7 @@ public class IdeasController(
     IProjectManager projectManager,
     IParticipantManager participantManager,
     IModerationResolver moderationResolver,
-    IIdeaSortStrategyFactory embeddingSortFactory)
+    IEmbeddingSortStrategyFactory embeddingSortFactory)
     : ParticipantControllerBase(participantManager)
 {
     [HttpGet]

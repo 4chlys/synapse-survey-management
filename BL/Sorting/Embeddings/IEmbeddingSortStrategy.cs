@@ -8,7 +8,7 @@ namespace SynapseEnqueteManagement.BL.Sorting.Embeddings;
 //   2) They are parameterised by a query embedding (nullable for Diverse).
 // Keeping them on their own abstraction avoids polluting ISortStrategy<T> with
 // concerns that don't apply to its implementations.
-public interface IIdeaSortStrategy
+public interface IEmbeddingSortStrategy
 {
     string Key { get; }
 

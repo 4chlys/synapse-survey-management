@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Pgvector;
+using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Embeddings;
@@ -13,8 +16,9 @@ public class IdeaManager(
     IRepository repository,
     ILogger<IdeaManager> logger,
     ISortStrategyFactory<Idea> sortStrategyFactory,
-    IIdeaSortStrategyFactory embeddingSortFactory,
-    IEmbeddingService embeddingService) : IIdeaManager
+    IEmbeddingSortStrategyFactory embeddingSortFactory,
+    IEmbeddingService embeddingService,
+    SynapseEnqueteContext context) : IIdeaManager
 {
     // Safety cap for embedding sorts: they materialise the full filtered set in
     // memory. The brief calls for "performant for ≤1,000 ideas" — so that's
@@ -52,8 +56,69 @@ public class IdeaManager(
         string queryText, int? excludeParticipantId = null,
         CancellationToken cancellationToken = default)
     {
-        var strategy = embeddingSortFactory.Get(sortKey);
+        float[] rawEmbedding = null;
+        if (!string.IsNullOrWhiteSpace(queryText))
+            rawEmbedding = await embeddingService.GenerateAsync(queryText, cancellationToken);
 
+        if (context.Database.IsNpgsql() && rawEmbedding != null)
+            return await GetEmbeddingSortedFromDbAsync(categoryId, page, pageSize, sortKey, rawEmbedding, excludeParticipantId, cancellationToken);
+
+        return await GetEmbeddingSortedInMemoryAsync(categoryId, page, pageSize, sortKey, rawEmbedding, excludeParticipantId, cancellationToken);
+    }
+
+    private async Task<PagedResult<Idea>> GetEmbeddingSortedFromDbAsync(
+        int categoryId, int page, int pageSize, string sortKey,
+        float[] rawEmbedding, int? excludeParticipantId,
+        CancellationToken ct)
+    {
+        var queryVector = new Vector(rawEmbedding);
+
+        var baseQuery = context.Ideas
+            .AsNoTracking()
+            .Include(i => i.Comments)
+            .Include(i => i.Participant)
+            .Include("Comments.Emoji")
+            .Include("Comments.Participant")
+            .Where(i => i.Category.CategoryId == categoryId)
+            .Where(i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined);
+
+        if (excludeParticipantId.HasValue)
+            baseQuery = baseQuery.Where(i => i.Participant.ParticipantId != excludeParticipantId.Value);
+
+        var total = await baseQuery.CountAsync(ct);
+
+        if (sortKey == "diverse")
+        {
+            // Fetch the most relevant candidates first so MMR has a good pool to pick from,
+            // then apply the in-memory greedy selection for diversity.
+            var candidates = await baseQuery
+                .OrderBy(i => i.Embedding.CosineDistance(queryVector))
+                .Take(EmbeddingSortMaxItems)
+                .ToListAsync(ct);
+
+            if (candidates.Count == EmbeddingSortMaxItems)
+                logger.LogWarning("Diverse sort hit the {Cap}-item cap for category {CategoryId}",
+                    EmbeddingSortMaxItems, categoryId);
+
+            var sorted = embeddingSortFactory.Get("diverse").Sort(candidates, rawEmbedding);
+            var paged = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return new PagedResult<Idea> { Items = paged, Page = page, PageSize = pageSize, TotalCount = total };
+        }
+
+        // similar: lowest cosine distance first; different: highest first
+        var ordered = sortKey == "different"
+            ? baseQuery.OrderByDescending(i => i.Embedding.CosineDistance(queryVector))
+            : baseQuery.OrderBy(i => i.Embedding.CosineDistance(queryVector));
+
+        var items = await ordered.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+    }
+
+    private async Task<PagedResult<Idea>> GetEmbeddingSortedInMemoryAsync(
+        int categoryId, int page, int pageSize, string sortKey,
+        float[] rawEmbedding, int? excludeParticipantId,
+        CancellationToken ct)
+    {
         var filterList = new List<System.Linq.Expressions.Expression<Func<Idea, bool>>>
         {
             i => i.Category.CategoryId == categoryId,
@@ -61,12 +126,9 @@ public class IdeaManager(
         };
         if (excludeParticipantId.HasValue)
             filterList.Add(i => i.Participant.ParticipantId != excludeParticipantId.Value);
-        var filters = filterList.ToArray();
 
-        // Materialise the full filtered set (capped) — embedding sort cannot be
-        // pushed into SQL. Pagination happens in-memory after sorting.
         var all = (await repository.ReadAsync<Idea>(
-            filters: filters,
+            filters: filterList.ToArray(),
             includes: [i => i.Comments, i => i.Participant],
             includeStrings: ["Comments.Emoji", "Comments.Participant"],
             take: EmbeddingSortMaxItems
@@ -76,13 +138,8 @@ public class IdeaManager(
             logger.LogWarning("Embedding sort hit the {Cap}-item cap for category {CategoryId}; results are truncated",
                 EmbeddingSortMaxItems, categoryId);
 
-        float[] queryEmbedding = null;
-        if (!string.IsNullOrWhiteSpace(queryText))
-            queryEmbedding = await embeddingService.GenerateAsync(queryText, cancellationToken);
-
-        var ordered = strategy.Sort(all, queryEmbedding);
+        var ordered = embeddingSortFactory.Get(sortKey).Sort(all, rawEmbedding);
         var paged = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
         return new PagedResult<Idea> { Items = paged, Page = page, PageSize = pageSize, TotalCount = ordered.Count };
     }
 
@@ -115,10 +172,11 @@ public class IdeaManager(
         // must not block submission — Embedding is nullable and the sort
         // strategies handle that case. A background backfill job can fill in
         // missing vectors later.
-        float[] embedding = null;
+        Vector embedding = null;
         try
         {
-            embedding = await embeddingService.GenerateAsync(description);
+            var raw = await embeddingService.GenerateAsync(description);
+            embedding = new Vector(raw);
         }
         catch (Exception ex)
         {

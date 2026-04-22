@@ -8,7 +8,7 @@ public interface IIdeaManager
     Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null);
 
     // Embedding-based sort variant: the sortKey selects a strategy in
-    // IIdeaSortStrategyFactory (similar / different / diverse). For similar /
+    // IEmbeddingSortStrategyFactory (similar / different / diverse). For similar /
     // different, queryText is required and is embedded on the fly; for diverse
     // it may be null (falls back to corpus centroid).
     Task<PagedResult<Idea>> GetOkIdeasByCategoryEmbeddingSortedAsync(

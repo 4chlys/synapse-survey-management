@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.BL.Sorting.Embeddings;
 
-public interface IIdeaSortStrategyFactory
+public interface IEmbeddingSortStrategyFactory
 {
     bool IsEmbeddingKey(string key);
-    IIdeaSortStrategy Get(string key);
+    IEmbeddingSortStrategy Get(string key);
 }

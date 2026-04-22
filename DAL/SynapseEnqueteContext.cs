@@ -1,6 +1,9 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Pgvector;
+using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -168,20 +171,29 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Store the embedding as a JSON array in a TEXT column. Provider-agnostic:
-            // works on both SQLite (dev) and PostgreSQL (prod). Swap to pgvector later
-            // by replacing this converter with a provider-specific mapping.
-            e.Property(i => i.Embedding)
-                .HasConversion(
-                    v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => string.IsNullOrEmpty(v) ? null : JsonSerializer.Deserialize<float[]>(v, (JsonSerializerOptions)null)
-                )
-                .HasColumnType("TEXT")
-                .Metadata.SetValueComparer(new ValueComparer<float[]>(
-                    (a, b) => (a == null && b == null) || (a != null && b != null && a.SequenceEqual(b)),
-                    a => a == null ? 0 : a.Aggregate(0, (acc, v) => HashCode.Combine(acc, v.GetHashCode())),
-                    a => a == null ? null : a.ToArray()
-                ));
+            if (Database.IsNpgsql())
+            {
+                // Native pgvector column — enables ORDER BY embedding <=> query in SQL.
+                // Dimensions must match the embedding model (gemini-embedding-001 = 3072).
+                e.Property(i => i.Embedding).HasColumnType("vector(3072)");
+            }
+            else
+            {
+                // SQLite (dev): store as JSON text. No vector index, in-memory sort only.
+                e.Property(i => i.Embedding)
+                    .HasConversion(
+                        new ValueConverter<Vector, string>(
+                            v => JsonSerializer.Serialize(v.Memory.ToArray(), (JsonSerializerOptions)null),
+                            v => new Vector(JsonSerializer.Deserialize<float[]>(v, (JsonSerializerOptions)null))
+                        )
+                    )
+                    .HasColumnType("TEXT")
+                    .Metadata.SetValueComparer(new ValueComparer<Vector>(
+                        (a, b) => (a == null && b == null) || (a != null && b != null && a.Memory.ToArray().SequenceEqual(b.Memory.ToArray())),
+                        a => a == null ? 0 : a.Memory.ToArray().Aggregate(0, (acc, v) => HashCode.Combine(acc, v.GetHashCode())),
+                        a => a == null ? null : new Vector(a.Memory.ToArray())
+                    ));
+            }
         });
 
         // Project-Emoji many-to-many (implicit join table)

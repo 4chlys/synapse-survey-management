@@ -1,4 +1,5 @@
-﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+﻿using Pgvector;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -26,7 +27,8 @@ public class DummyDataSeeder
     private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts, Emoji[] emojis = null)
     {
         emojis ??= new[] { _heart, _thumbsup, _fire, _check };
-        var idea = new Idea { Description = description, Status = ModerationStatus.Approved, Embedding = _embed?.Invoke(description) };
+        var raw = _embed?.Invoke(description);
+        var idea = new Idea { Description = description, Status = ModerationStatus.Approved, Embedding = raw != null ? new Vector(raw) : null };
         AddIconComments(idea, ideaIconCount, emojis);
         for (int i = 0; i < commentTexts.Length; i++)
         {
