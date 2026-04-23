@@ -78,10 +78,10 @@
             @Html.AntiForgeryToken()
             <div id="questions-list"
                  data-project-id="@projectId"
-                 data-move-url="@Url.Action("Move", "Question")"
-                 data-ending-url="@Url.Action("UpdateEndingAnswers", "Question")"
-                 data-tree-url="@Url.Action("Tree", "Question", new { projectId })">
-                <partial name="_QuestionsTree" model="Model" />
+                 data-ai-assistance="@aiAssistance"
+                 data-questions-endpoint="@($"/api/admin/projects/{projectId}/questions")"
+                 data-delete-endpoint="@Url.Action("Delete", "Question")">
+                <p class="text-gray-500 text-sm">Vragen worden geladen...</p>
             </div>
 
             <button type="button" id="add-question-btn"

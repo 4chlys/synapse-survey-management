@@ -1,17 +1,45 @@
-// Native HTML5 drag-and-drop for the questionnaire builder.
-// Moves sub-questions between answer-groups, promotes them back to top level,
-// reorders within a scope, and toggles "ends survey" per answer.
+// Native HTML5 drag-and-drop + fetch wiring for the questionnaire builder.
+// Owns the data lifecycle: fetches the flat question list, delegates
+// rendering to questionnaire-tree.ts, and re-fetches on move / ending
+// toggle. Event handlers are attached once to the stable #questions-list
+// container; re-rendering its innerHTML does not invalidate them.
+
+import { renderTree, Question, RenderContext } from './questionnaire-tree';
 
 interface MovePayload {
-    questionId: number;
     parentQuestionId: number | null;
     parentTriggerValue: string | null;
     position: number;
 }
 
 interface EndingPayload {
-    questionId: number;
     endingAnswers: string[];
+}
+
+function getAntiforgeryToken(): string {
+    return document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
+}
+
+async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Promise<boolean> {
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': getAntiforgeryToken(),
+            },
+            body: JSON.stringify(body),
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
+}
+
+async function fetchQuestions(endpoint: string): Promise<Question[]> {
+    const response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`Failed to fetch questions: ${response.status}`);
+    return (await response.json()) as Question[];
 }
 
 function captureExpandedIds(list: HTMLElement): Set<string> {
@@ -38,28 +66,29 @@ function applyExpandedIds(list: HTMLElement, ids: Set<string>): void {
     });
 }
 
-async function refreshTree(list: HTMLElement, treeUrl: string): Promise<boolean> {
-    const expanded = captureExpandedIds(list);
-    try {
-        const response = await fetch(treeUrl, { headers: { 'Accept': 'text/html' } });
-        if (!response.ok) return false;
-        const html = await response.text();
-        list.innerHTML = html;
-        applyExpandedIds(list, expanded);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const list = document.getElementById('questions-list') as HTMLElement | null;
     if (!list) return;
 
-    const moveUrl = list.dataset.moveUrl ?? '';
-    const endingUrl = list.dataset.endingUrl ?? '';
-    const treeUrl = list.dataset.treeUrl ?? '';
     const projectId = parseInt(list.dataset.projectId ?? '0', 10);
+    const questionsEndpoint = list.dataset.questionsEndpoint ?? '';
+    const deleteEndpoint = list.dataset.deleteEndpoint ?? '';
+    const aiAssistance = list.dataset.aiAssistance ?? 'ProActive';
+
+    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId };
+
+    async function reload(): Promise<void> {
+        const expanded = captureExpandedIds(list!);
+        try {
+            const questions = await fetchQuestions(questionsEndpoint);
+            renderTree(list!, questions, ctx);
+            applyExpandedIds(list!, expanded);
+        } catch (err) {
+            list!.innerHTML = `<p class="text-red-400 text-sm">Kon vragen niet laden: ${String(err)}</p>`;
+        }
+    }
+
+    await reload();
 
     let dragged: HTMLElement | null = null;
 
@@ -81,8 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     list.addEventListener('dragover', (e) => {
         const zone = (e.target as HTMLElement).closest<HTMLElement>('.drop-zone');
         if (!zone || !dragged) return;
-
-        if (isDescendantOf(zone, dragged)) return; // can't drop into own subtree
+        if (dragged.contains(zone)) return; // no dropping into own subtree
 
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
@@ -104,17 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const parentIdStr = zone.dataset.parentId ?? '';
         const triggerStr = zone.dataset.parentTrigger ?? '';
         const payload: MovePayload = {
-            questionId,
             parentQuestionId: parentIdStr === '' ? null : parseInt(parentIdStr, 10),
             parentTriggerValue: parentIdStr === '' ? null : triggerStr,
-            position: 9999, // repack on the server clamps to end
+            position: 9999, // server clamps to end of scope
         };
 
-        const ok = await postJson(moveUrl, { ...payload, projectId });
-        if (ok) await refreshTree(list, treeUrl);
+        const ok = await sendJson(`${questionsEndpoint}/${questionId}/location`, 'PUT', payload);
+        if (ok) await reload();
     });
 
-    // "Ends survey" toggle per answer row.
     list.addEventListener('change', async (e) => {
         const input = e.target as HTMLInputElement;
         if (!input.classList.contains('ending-answer-toggle')) return;
@@ -123,34 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = input.closest<HTMLElement>('.question-card');
         if (!card) return;
 
-        const current = Array.from(card.querySelectorAll<HTMLInputElement>('.ending-answer-toggle'))
+        const values = Array.from(card.querySelectorAll<HTMLInputElement>('.ending-answer-toggle'))
             .filter((c) => c.checked)
             .map((c) => c.dataset.triggerValue ?? '')
             .filter((v) => v !== '');
 
-        const payload: EndingPayload = { questionId, endingAnswers: current };
-        await postJson(endingUrl, { ...payload, projectId });
+        const payload: EndingPayload = { endingAnswers: values };
+        await sendJson(`${questionsEndpoint}/${questionId}/ending-answers`, 'PUT', payload);
     });
 });
-
-function isDescendantOf(zone: HTMLElement, card: HTMLElement): boolean {
-    // If the drop zone is nested inside the card's own answer-groups, skip.
-    return card.contains(zone);
-}
-
-async function postJson(url: string, body: unknown): Promise<boolean> {
-    try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        const token = document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value;
-        if (token) headers['RequestVerificationToken'] = token;
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-        });
-        return response.ok;
-    } catch {
-        return false;
-    }
-}
