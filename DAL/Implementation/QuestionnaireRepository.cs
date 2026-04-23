@@ -14,7 +14,8 @@ public class QuestionnaireRepository(DbContext context) : Repository<Questionnai
     public Task<Questionnaire> ReadByProjectIdWithQuestionsReadOnlyAsync(int projectId)
         => Context.Set<Questionnaire>()
             .AsNoTracking()
-            .Include(q => q.Questions).ThenInclude(qu => qu.BranchRules)
+            .Include(q => q.Questions).ThenInclude(qu => qu.EndingAnswers)
+            .Include(q => q.Questions).ThenInclude(qu => qu.ParentQuestion)
             .FirstOrDefaultAsync(q => q.Project.ProjectId == projectId);
 
     public Task<Questionnaire> ReadByProjectIdForUpdateAsync(int projectId)
@@ -24,6 +25,7 @@ public class QuestionnaireRepository(DbContext context) : Repository<Questionnai
     public Task<Questionnaire> ReadByQuestionIdWithQuestionsReadOnlyAsync(int questionId)
         => Context.Set<Questionnaire>()
             .AsNoTracking()
-            .Include(q => q.Questions).ThenInclude(qu => qu.BranchRules).ThenInclude(b => b.TargetQuestion)
+            .Include(q => q.Questions).ThenInclude(qu => qu.EndingAnswers)
+            .Include(q => q.Questions).ThenInclude(qu => qu.ParentQuestion)
             .FirstOrDefaultAsync(q => q.Questions.Any(qu => qu.QuestionId == questionId));
 }

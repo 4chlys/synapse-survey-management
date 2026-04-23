@@ -61,8 +61,48 @@ public class DummyDataSeeder
         questionnaire1.Questions.Add(q1Likert);
         questionnaire1.Questions.Add(q1Open);
 
-        // Branch: if welzijn = "Goed", skip the stress likert and go straight to the open question
-        q1Welzijn.BranchRules.Add(new BranchRule { SourceQuestion = q1Welzijn, TriggerValue = "Goed", TargetQuestion = q1Open });
+        // "Goed" → survey ends immediately for students who feel fine.
+        q1Welzijn.EndingAnswers.Add(new EndingAnswer { Question = q1Welzijn, Value = "Goed" });
+
+        // "Slecht" → drill down with two sub-questions; the first has its own
+        // recursive child to exercise nested branching.
+        var q1WelzijnSlechtFollowup = new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice,
+            Questionnaire = questionnaire1,
+            Text = "Wil je graag praten met een vertrouwenspersoon op school?",
+            AnswerChoices = new List<string> { "Ja", "Nee" },
+            IsMandatory = true,
+            Position = 1,
+            ParentQuestion = q1Welzijn,
+            ParentTriggerValue = "Slecht"
+        };
+        var q1WelzijnSlechtWho = new Question
+        {
+            QuestionFormat = QuestionFormat.Open,
+            Questionnaire = questionnaire1,
+            Text = "Wie zou je graag willen spreken en waarover?",
+            IsMandatory = false,
+            Position = 1,
+            ParentQuestion = q1WelzijnSlechtFollowup,
+            ParentTriggerValue = "Ja"
+        };
+        var q1WelzijnSlechtSupport = new Question
+        {
+            QuestionFormat = QuestionFormat.Open,
+            Questionnaire = questionnaire1,
+            Text = "Wat kunnen wij concreet doen om je beter te laten voelen?",
+            IsMandatory = false,
+            Position = 2,
+            ParentQuestion = q1Welzijn,
+            ParentTriggerValue = "Slecht"
+        };
+        q1Welzijn.Children.Add(q1WelzijnSlechtFollowup);
+        q1Welzijn.Children.Add(q1WelzijnSlechtSupport);
+        q1WelzijnSlechtFollowup.Children.Add(q1WelzijnSlechtWho);
+        questionnaire1.Questions.Add(q1WelzijnSlechtFollowup);
+        questionnaire1.Questions.Add(q1WelzijnSlechtWho);
+        questionnaire1.Questions.Add(q1WelzijnSlechtSupport);
 
         var projectActive = new Project
         {

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class UpdateQuestionDto
@@ -11,6 +11,7 @@ public class UpdateQuestionDto
 
     public bool IsMandatory { get; set; }
 
-    public List<string> AnswerChoices { get; set; } = new();
+    public ICollection<string> AnswerChoices { get; set; } = new List<string>();
     public int? SectionId { get; set; }
+    public ICollection<string> EndingAnswers { get; set; } = new List<string>();
 }

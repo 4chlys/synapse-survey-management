@@ -16,8 +16,14 @@ public class Question
 
     public Section Section { get; set; }
     public int Position { get; set; }
-    public ICollection<BranchRule> BranchRules { get; set; } = [];
-    public ICollection<BranchRule> IncomingBranches { get; set; } = [];
+
+    public Question ParentQuestion { get; set; }
+
+    [MaxLength(500)] public string ParentTriggerValue { get; set; }
+
+    public ICollection<Question> Children { get; set; } = new List<Question>();
+
+    public ICollection<EndingAnswer> EndingAnswers { get; set; } = new List<EndingAnswer>();
 
     public ICollection<Response> Responses { get; set; } = new List<Response>();
 }

@@ -20,7 +20,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
     public DbSet<Comment> Comments { get; set; }
-    public DbSet<BranchRule> BranchRules { get; set; }
+    public DbSet<EndingAnswer> EndingAnswers { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -86,23 +86,25 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .HasForeignKey("SectionId")
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
-        });
-        // BranchRule — two FKs to Question
-        builder.Entity<BranchRule>()
-            .HasOne(br => br.SourceQuestion)
-            .WithMany(q => q.BranchRules)
-            .HasForeignKey("SourceQuestionId")
-            .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<BranchRule>(e =>
-        {
-            e.HasOne(br => br.TargetQuestion)
-                .WithMany(q => q.IncomingBranches)
-                .HasForeignKey("TargetQuestionId")
+            e.HasOne(q => q.ParentQuestion)
+                .WithMany(q => q.Children)
+                .HasForeignKey("ParentQuestionId")
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
-            e.HasIndex("TargetQuestionId");
+            e.HasIndex("ParentQuestionId");
+        });
+
+        // EndingAnswer — rows only exist for answers that terminate the survey.
+        builder.Entity<EndingAnswer>(e =>
+        {
+            e.HasOne(ea => ea.Question)
+                .WithMany(q => q.EndingAnswers)
+                .HasForeignKey("QuestionId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex("QuestionId");
         });
 
         // Response

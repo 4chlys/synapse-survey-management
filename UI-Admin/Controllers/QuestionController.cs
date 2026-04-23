@@ -76,4 +76,56 @@ public class QuestionController(QuestionAdminService questionService) : Controll
         await questionService.DeleteQuestionAsync(projectId, questionId);
         return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Tree(int projectId)
+    {
+        var questions = await questionService.GetQuestionsAsync(projectId);
+        ViewData["ProjectId"] = projectId;
+        return PartialView("_QuestionsTree", questions);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Move([FromBody] MoveRequest request)
+    {
+        try
+        {
+            await questionService.MoveQuestionAsync(request.ProjectId, request.QuestionId,
+                request.ParentQuestionId, request.ParentTriggerValue, request.Position);
+            return Ok();
+        }
+        catch (HttpRequestException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateEndingAnswers([FromBody] EndingAnswersRequest request)
+    {
+        var questions = await questionService.GetQuestionsAsync(request.ProjectId);
+        var question = questions.FirstOrDefault(q => q.QuestionId == request.QuestionId);
+        if (question is null) return NotFound();
+
+        await questionService.UpdateQuestionAsync(request.ProjectId, request.QuestionId,
+            question.Text, question.QuestionFormat, question.IsMandatory,
+            question.AnswerChoices, question.SectionId, request.EndingAnswers);
+        return Ok();
+    }
+
+    public class MoveRequest
+    {
+        public int ProjectId { get; set; }
+        public int QuestionId { get; set; }
+        public int? ParentQuestionId { get; set; }
+        public string ParentTriggerValue { get; set; }
+        public int Position { get; set; }
+    }
+
+    public class EndingAnswersRequest
+    {
+        public int ProjectId { get; set; }
+        public int QuestionId { get; set; }
+        public ICollection<string> EndingAnswers { get; set; } = new List<string>();
+    }
 }
