@@ -1,5 +1,6 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Question
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
+@using SynapseEnqueteManagement.UI.Admin.Models.Section
 @model List<QuestionViewModel>
 @{
     ViewData["Title"] = "Project vragen";
@@ -7,6 +8,7 @@
     int projectId = (int)ViewData["ProjectId"];
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
     var project = ViewData["Project"] as ProjectAdminViewModel;
+    var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
     bool showLeft = aiAssistance != "Never";
 }
 
@@ -88,11 +90,18 @@
                             <button type="button"
                                     class="question-toggle flex-1 border border-gray-400 px-4 py-3 text-left flex justify-between items-center hover:bg-gray-800 transition"
                                     data-question-id="@q.QuestionId">
-                                <span>Vraag @(i + 1): @q.Text</span>
+                                <span>Vraag @(i + 1): @q.Text@(string.IsNullOrEmpty(q.SectionName) ? "" : $" [{q.SectionName}]")</span>
                                 <span id="arrow-@q.QuestionId" class="text-gray-300 ml-2">@(expanded ? "v" : ">")</span>
                             </button>
+                            <button type="button"
+                                    class="question-edit-btn border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-gray-700 transition"
+                                    data-question-id="@q.QuestionId"
+                                    data-text="@q.Text"
+                                    data-format="@q.QuestionFormat"
+                                    data-answers="@System.Text.Json.JsonSerializer.Serialize(q.AnswerChoices)"
+                                    data-section-id="@(q.SectionId?.ToString() ?? "")">✎</button>
                             <form method="post" asp-controller="Question" asp-action="Delete"
-                                  asp-route-projectId="@ViewData["ProjectId"]" asp-route-questionId="@q.QuestionId">
+                                  asp-route-projectId="@ViewData["ProjectId"]" asp-route-questionId="@q.QuestionId" asp-route-aiAssistance="@aiAssistance">
                                 <button type="submit"
                                         class="border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-red-800 transition h-full">✕</button>
                             </form>
@@ -145,15 +154,17 @@
     <div class="bg-gray-900 border border-gray-500 w-[480px] p-6 text-white">
 
         <div class="flex justify-between items-center mb-4">
-            <span class="font-bold text-sm">Vraag bewerken</span>
+            <span id="modal-title" class="font-bold text-sm">Vraag aanmaken</span>
             <button type="button" id="modal-close" class="text-gray-400 hover:text-white text-lg leading-none">×</button>
         </div>
 
         <form id="question-form"
               asp-controller="Project" asp-action="CreateQuestion"
+              data-update-url="@Url.Action("UpdateQuestion", "Project")"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
             <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+            <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
             <input type="hidden" name="IsMandatory" value="false" />
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
@@ -191,6 +202,21 @@
                 <button type="button" id="add-answer-btn"
                         class="text-gray-400 hover:text-white">+ Antwoord toevoegen</button>
             </div>
+
+            @if (sections.Any())
+            {
+                <div class="mt-4">
+                    <label class="block mb-2">Sectie (optioneel)</label>
+                    <select name="SectionId" id="SectionId"
+                            class="w-full bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 focus:outline-none">
+                        <option value="">— Geen sectie —</option>
+                        @foreach (var sec in sections)
+                        {
+                            <option value="@sec.SectionId">@sec.Name</option>
+                        }
+                    </select>
+                </div>
+            }
 
             <hr class="border-gray-600 mt-4 mb-4" />
 

@@ -48,7 +48,8 @@ public class QuestionController(QuestionAdminService questionService) : Controll
             Text = question.Text,
             QuestionFormat = Enum.TryParse<QuestionFormat>(question.QuestionFormat, ignoreCase: true, out var qf) ? qf : QuestionFormat.Open,
             IsMandatory = question.IsMandatory,
-            AnswerChoicesRaw = string.Join('\n', question.AnswerChoices)
+            AnswerChoicesRaw = string.Join('\n', question.AnswerChoices),
+            SectionId = question.SectionId
         };
         ViewData["ProjectId"] = projectId;
         return View(model);
@@ -65,14 +66,14 @@ public class QuestionController(QuestionAdminService questionService) : Controll
         }
 
         await questionService.UpdateQuestionAsync(projectId, questionId,
-            model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices());
+            model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         return RedirectToAction(nameof(Index), new { projectId });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Delete(int projectId, int questionId)
+    public async Task<IActionResult> Delete(int projectId, int questionId, AiAssistanceType aiAssistance)
     {
         await questionService.DeleteQuestionAsync(projectId, questionId);
-        return RedirectToAction("Questions", "Project", new { projectId });
+        return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
     }
 }

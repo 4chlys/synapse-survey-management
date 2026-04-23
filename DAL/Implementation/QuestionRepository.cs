@@ -26,4 +26,18 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
                 .ThenInclude(qu => qu.BranchRules)
                 .ThenInclude(b => b.TargetQuestion)
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
+
+    public Task<Question> ReadByIdWithSectionForUpdateAsync(int questionId)
+        => Context.Set<Question>()
+            .Include(q => q.Section)
+            .FirstOrDefaultAsync(q => q.QuestionId == questionId);
+
+    public async Task<IEnumerable<Question>> ReadByProjectIdWithSectionAndBranchRulesReadOnlyAsync(int projectId)
+        => await Context.Set<Question>()
+            .AsNoTracking()
+            .Include(q => q.Section)
+            .Include(q => q.BranchRules)
+            .Where(q => q.Questionnaire.Project.ProjectId == projectId)
+            .OrderBy(q => q.Position)
+            .ToListAsync();
 }

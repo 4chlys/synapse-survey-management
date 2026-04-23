@@ -10,13 +10,18 @@ public class QuestionnaireManager(
     IQuestionnaireRepository questionnaireRepository,
     IQuestionRepository questionRepository,
     IResponseRepository responseRepository,
+    ISectionRepository sectionRepository,
     IUnitOfWork uow) : IQuestionnaireManager
 {
     public async Task<Question> AddQuestionAsync(int projectId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices)
+        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null)
     {
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
+
+        var section = sectionId.HasValue
+            ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
+            : null;
 
         var question = new Question
         {
@@ -24,23 +29,33 @@ public class QuestionnaireManager(
             QuestionFormat = format,
             IsMandatory = isMandatory,
             AnswerChoices = answerChoices ?? new List<string>(),
-            Questionnaire = questionnaire
+            Questionnaire = questionnaire,
+            Section = section
         };
         var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync();
         return created;
     }
 
-    public async Task<bool> UpdateQuestionAsync(int questionId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices)
+    public async Task<List<Question>> GetQuestionsForProjectAsync(int projectId)
     {
-        var question = await questionRepository.ReadByIdForUpdateAsync(questionId);
+        var questions = await questionRepository.ReadByProjectIdWithSectionAndBranchRulesReadOnlyAsync(projectId);
+        return questions.ToList();
+    }
+
+    public async Task<bool> UpdateQuestionAsync(int questionId, string text,
+        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null)
+    {
+        var question = await questionRepository.ReadByIdWithSectionForUpdateAsync(questionId);
         if (question is null) return false;
 
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
         question.AnswerChoices = answerChoices ?? new List<string>();
+        question.Section = sectionId.HasValue
+            ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
+            : null;
         questionRepository.Update(question);
         await uow.SaveChangesAsync();
         return true;

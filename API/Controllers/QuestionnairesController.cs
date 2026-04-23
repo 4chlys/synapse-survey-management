@@ -27,14 +27,12 @@ public class QuestionnairesController(
     [HttpGet("questions")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
         if (questionnaire is null)
             return NotFound();
 
-        var dtos = questionnaire.Questions
-            .OrderBy(q => q.Position)
-            .Select(MapToDto)
-            .ToList();
+        var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
+        var dtos = questions.Select(MapToDto).ToList();
         return Ok(dtos);
     }
 
@@ -45,17 +43,17 @@ public class QuestionnairesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format)) 
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var question = await questionnaireManager.AddQuestionAsync(projectId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices);
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
         if (question is null)
             return NotFound();
 
         return Created(string.Empty, MapToDto(question));
     }
-    
+
     [HttpPut("questions/{questionId}")]
     public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
         UpdateQuestionDto dto)
@@ -63,11 +61,11 @@ public class QuestionnairesController(
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format)) 
+        if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices);
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
         if (!success)
             return NotFound();
 
@@ -151,7 +149,9 @@ public class QuestionnairesController(
                 TriggerValue = br.TriggerValue,
                 TargetQuestionId = br.SkipToEnd ? null : br.TargetQuestion?.QuestionId,
                 SkipToEnd = br.SkipToEnd
-            }).ToList()
+            }).ToList(),
+            SectionName = question.Section?.Name,
+            SectionId = question.Section?.SectionId
         };
     }
 }

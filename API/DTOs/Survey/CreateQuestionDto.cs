@@ -12,4 +12,6 @@ public class CreateQuestionDto
     public bool IsMandatory { get; set; }
 
     public List<string> AnswerChoices { get; set; } = new();
+
+    public int? SectionId { get; set; }
 }

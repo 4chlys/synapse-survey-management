@@ -5,6 +5,7 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -77,6 +78,9 @@ builder.Services.AddSingleton<IResponseValidator, SingleChoiceResponseValidator>
 builder.Services.AddSingleton<IResponseValidator, MultipleChoiceResponseValidator>();
 builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
 builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
+
+// Storage
+builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();

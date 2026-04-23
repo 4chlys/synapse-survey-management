@@ -80,15 +80,21 @@ public class ProjectController(
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
         }
 
-        // Sync sections: delete existing, add new ones from form
+        // Sync sections: keep existing by name, delete removed, add new
         var existingSections = await sectionService.GetSectionsAsync(project.ProjectId);
+        var newNames = (model.Sections ?? new List<string>())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .ToList();
+
         foreach (var s in existingSections)
-            await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
-        foreach (var sectionName in model.Sections ?? new List<string>())
-        {
-            if (!string.IsNullOrWhiteSpace(sectionName))
-                await sectionService.CreateSectionAsync(project.ProjectId, sectionName, string.Empty);
-        }
+            if (!newNames.Contains(s.Name))
+                await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
+
+        var existingNames = existingSections.Select(s => s.Name).ToList();
+        foreach (var name in newNames)
+            if (!existingNames.Contains(name))
+                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty);
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
@@ -100,9 +106,11 @@ public class ProjectController(
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
+        var sections = await sectionService.GetSectionsAsync(projectId);
         ViewData["ProjectId"] = projectId;
         ViewData["AiAssistance"] = aiAssistance;
         ViewData["Project"] = project;
+        ViewData["Sections"] = sections;
         return View(questions);
     }
 
@@ -110,7 +118,15 @@ public class ProjectController(
     public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance, CreateQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices());
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance, EditQuestionViewModel model)
+    {
+        if (ModelState.IsValid)
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
