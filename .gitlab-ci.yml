@@ -129,7 +129,7 @@ deploy-test:
       API_URL=$(gcloud run services describe mvp-api-test --region="${REGION}" --format="value(status.url)")
       echo "API URL: $API_URL"
     - |
-      gcloud run deploy mvp-ui-test --image="${IMAGE_UI}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=3 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
+      gcloud run deploy mvp-ui-test --image="${IMAGE_UI}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=3 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*"
     - |
       UI_URL=$(gcloud run services describe mvp-ui-test --region="${REGION}" --format="value(status.url)")
       echo "Test UI available at: $UI_URL"
