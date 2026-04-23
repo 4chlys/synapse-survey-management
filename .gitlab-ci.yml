@@ -117,10 +117,13 @@ push-prod:
 deploy-test:
   stage: deploy
   image: google/cloud-sdk:latest
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   before_script:
-    - echo "${GCP_SERVICE_ACCOUNT_KEY}" | base64 -d > /tmp/key.json
-    - gcloud auth activate-service-account --key-file=/tmp/key.json
-    - gcloud config set project "${PROJECT_ID}"
+      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+      - gcloud auth login --cred-file=gcp-wif-test.json
+      - gcloud config set project "${PROJECT_ID}"
   script:
     - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
@@ -141,10 +144,13 @@ deploy-test:
 deploy-production:
   stage: deploy
   image: google/cloud-sdk:latest
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   before_script:
-    - echo "${GCP_SERVICE_ACCOUNT_KEY_PROD}" | base64 -d > /tmp/key.json
-    - gcloud auth activate-service-account --key-file=/tmp/key.json
-    - gcloud config set project "${PROJECT_ID}"
+      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+      - gcloud auth login --cred-file=gcp-wif-prod.json
+      - gcloud config set project "${PROJECT_ID}"
   script:
     - |
       gcloud compute instance-groups managed rolling-action replace synapse-api-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
