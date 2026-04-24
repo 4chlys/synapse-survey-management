@@ -9,8 +9,9 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class CommentsController(
     ICommentManager manager,
     IParticipantManager participantManager,
-    IModerationResolver moderationResolver)
-    : ParticipantControllerBase(participantManager)
+    IModerationResolver moderationResolver,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("comments")]
     public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto, CancellationToken ct)

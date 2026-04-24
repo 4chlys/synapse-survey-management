@@ -13,8 +13,9 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ResponsesController(
     IParticipantManager participantManager,
     IResponseManager responseManager,
-    ISubmissionManager submissionManager)
-    : ParticipantControllerBase(participantManager)
+    ISubmissionManager submissionManager,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     /// <summary>
     /// Saves optional contact info (email / phone) for the current participant.
@@ -80,7 +81,7 @@ public class ResponsesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant.ParticipantId);
         var dtos = responses.Select(MapToDto).ToList();
         return Ok(dtos);
     }

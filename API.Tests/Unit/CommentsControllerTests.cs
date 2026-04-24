@@ -7,6 +7,7 @@ public class CommentsControllerTests
     private readonly Mock<ICommentManager> _commentManager = new();
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IModerationResolver> _moderationResolver = new();
+    private readonly Mock<IProjectManager> _projectManager = new();
     private readonly CommentsController _controller;
 
     private const int ProjectId = 1;
@@ -19,9 +20,9 @@ public class CommentsControllerTests
     public CommentsControllerTests()
     {
         _participant = new Participant { ParticipantId = 5, Project = new Project { ProjectId = ProjectId } };
-        _participantManager.Setup(p => p.GetParticipantBySessionTokenAsync(_sessionToken))
+        _participantManager.Setup(p => p.GetParticipantBySessionTokenForUpdateAsync(_sessionToken))
             .ReturnsAsync(_participant);
-        _controller = new CommentsController(_commentManager.Object, _participantManager.Object, _moderationResolver.Object);
+        _controller = new CommentsController(_commentManager.Object, _participantManager.Object, _moderationResolver.Object, _projectManager.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 

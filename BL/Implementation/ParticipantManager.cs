@@ -6,14 +6,10 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ParticipantManager(
     IParticipantRepository participantRepository,
-    IProjectRepository projectRepository,
     IUnitOfWork uow) : IParticipantManager
 {
-    public async Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default)
+    public async Task<Participant> AddParticipantAsync(Project project, CancellationToken ct = default)
     {
-        var project = await projectRepository.ReadByIdForUpdateAsync(projectId)
-                      ?? throw new KeyNotFoundException($"Project {projectId} not found.");
-
         var participant = new Participant
         {
             Project = project,
@@ -24,10 +20,10 @@ public class ParticipantManager(
         return created;
     }
 
-    public Task<Participant> GetParticipantByIdAsync(int participantId)
+    public Task<Participant> GetParticipantByIdReadOnlyAsync(int participantId)
         => participantRepository.ReadByIdReadOnlyAsync(participantId);
 
-    public Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken)
+    public Task<Participant> GetParticipantBySessionTokenForUpdateAsync(Guid sessionToken)
         => participantRepository.ReadBySessionTokenWithProjectForUpdateAsync(sessionToken);
 
     public async Task<bool> HasParticipantSubmittedAsync(Guid sessionToken)

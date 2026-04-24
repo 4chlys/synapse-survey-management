@@ -5,18 +5,19 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class SubmissionManager(
     IQuestionnaireManager questionnaireManager,
+    ISurveyFlowManager surveyFlowManager,
     IResponseManager responseManager,
     IParticipantManager participantManager) : ISubmissionManager
 {
     public async Task SubmitAsync(int projectId, Participant participant, CancellationToken ct = default)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId)
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId)
                             ?? throw new KeyNotFoundException($"Questionnaire for project {projectId} not found.");
 
-        var visiblePath = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
+        var visiblePath = await surveyFlowManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
         var visibleSet = visiblePath.ToHashSet();
 
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant.ParticipantId);
         var answeredPairs = responses.Select(r => (r.Question.QuestionId, r.Value));
 
         questionnaireManager.ValidateMandatoryAnswers(questionnaire, answeredPairs, visibleSet);

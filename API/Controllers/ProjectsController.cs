@@ -37,7 +37,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     [HttpGet("{projectId}")]
     public async Task<ActionResult<ProjectDto>> GetProject(int projectId)
     {
-        var project = await projectManager.GetProjectByIdAsync(projectId);
+        var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
         if (project is null)
             return NotFound();
 

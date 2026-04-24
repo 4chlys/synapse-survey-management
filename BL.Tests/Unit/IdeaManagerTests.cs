@@ -7,7 +7,6 @@ public class IdeaManagerTests
 {
     private readonly Mock<IIdeaRepository> _ideaRepository = new(MockBehavior.Strict);
     private readonly Mock<ICategoryRepository> _categoryRepository = new(MockBehavior.Strict);
-    private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<Idea>> _sortFactory = new();
     private readonly IdeaManager _manager;
@@ -18,7 +17,7 @@ public class IdeaManagerTests
 
     public IdeaManagerTests()
     {
-        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _projectRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
+        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
     }
 
     [Fact]

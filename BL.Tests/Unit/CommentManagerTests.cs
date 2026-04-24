@@ -7,7 +7,6 @@ public class CommentManagerTests
 {
     private readonly Mock<ICommentRepository> _commentRepository = new(MockBehavior.Strict);
     private readonly Mock<IIdeaRepository> _ideaRepository = new(MockBehavior.Strict);
-    private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<TextComment>> _sortFactory = new();
     private readonly CommentManager _manager;
@@ -20,7 +19,7 @@ public class CommentManagerTests
 
     public CommentManagerTests()
     {
-        _manager = new CommentManager(_commentRepository.Object, _ideaRepository.Object, _projectRepository.Object, _uow.Object, NullLogger<CommentManager>.Instance, _sortFactory.Object);
+        _manager = new CommentManager(_commentRepository.Object, _ideaRepository.Object, _uow.Object, NullLogger<CommentManager>.Instance, _sortFactory.Object);
     }
 
     private Idea IdeaInProject() => new()

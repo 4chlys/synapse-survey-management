@@ -22,8 +22,9 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ModerationController(
     IAiModerationService moderation,
     IModerationTokenService tokenService,
-    IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    IParticipantManager participantManager,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("regex")]
     public ActionResult<ModerationResponseDto> CheckRegex(int projectId, [FromBody] ModerationRequestDto dto)

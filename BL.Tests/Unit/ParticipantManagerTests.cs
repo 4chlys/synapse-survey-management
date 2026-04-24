@@ -3,13 +3,12 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 public class ParticipantManagerTests
 {
     private readonly Mock<IParticipantRepository> _participantRepository = new(MockBehavior.Strict);
-    private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ParticipantManager _manager;
 
     public ParticipantManagerTests()
     {
-        _manager = new ParticipantManager(_participantRepository.Object, _projectRepository.Object, _uow.Object);
+        _manager = new ParticipantManager(_participantRepository.Object, _uow.Object);
     }
 
     #region AddParticipantAsync
@@ -19,8 +18,6 @@ public class ParticipantManagerTests
     {
         // Arrange
         var project = new Project { ProjectId = 10 };
-        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(10))
-            .ReturnsAsync(project);
         _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
             .ReturnsAsync((Participant p) => p)
             .Verifiable(Times.Exactly(1));
@@ -29,7 +26,7 @@ public class ParticipantManagerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        var created = await _manager.AddParticipantAsync(10);
+        var created = await _manager.AddParticipantAsync(project);
 
         // Assert
         Assert.NotNull(created);
@@ -39,27 +36,11 @@ public class ParticipantManagerTests
     }
 
     [Fact]
-    public async Task AddParticipantAsync_ProjectNotFound_ThrowsWithoutSaving()
-    {
-        // Arrange
-        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(It.IsAny<int>()))
-            .ReturnsAsync((Project)null);
-
-        // Act + Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _manager.AddParticipantAsync(999));
-
-        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _participantRepository.Verify(r => r.CreateAsync(It.IsAny<Participant>()), Times.Never);
-    }
-
-    [Fact]
     public async Task AddParticipantAsync_ForwardsCancellationTokenToUnitOfWork()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(It.IsAny<int>()))
-            .ReturnsAsync(new Project());
         _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
             .ReturnsAsync((Participant p) => p);
         _uow.Setup(u => u.SaveChangesAsync(ct))
@@ -67,7 +48,7 @@ public class ParticipantManagerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _manager.AddParticipantAsync(1, ct);
+        await _manager.AddParticipantAsync(new Project(), ct);
 
         // Assert
         _uow.VerifyAll();

@@ -9,7 +9,6 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 public class QuestionnaireManager(
     IQuestionnaireRepository questionnaireRepository,
     IQuestionRepository questionRepository,
-    IResponseRepository responseRepository,
     ISectionRepository sectionRepository,
     IUnitOfWork uow) : IQuestionnaireManager
 {
@@ -19,10 +18,6 @@ public class QuestionnaireManager(
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
 
-        var section = sectionId.HasValue
-            ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
-            : null;
-
         var question = new Question
         {
             Text = text,
@@ -30,18 +25,17 @@ public class QuestionnaireManager(
             IsMandatory = isMandatory,
             AnswerChoices = answerChoices ?? new List<string>(),
             Questionnaire = questionnaire,
-            Section = section
+            Section = sectionId.HasValue
+                ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
+                : null
         };
         var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync();
         return created;
     }
 
-    public async Task<List<Question>> GetQuestionsForProjectAsync(int projectId)
-    {
-        var questions = await questionRepository.ReadByProjectIdWithSectionAndBranchRulesReadOnlyAsync(projectId);
-        return questions.ToList();
-    }
+    public Task<IEnumerable<Question>> GetQuestionsForProjectAsync(int projectId)
+        => questionRepository.ReadByProjectIdWithSectionAndBranchRulesReadOnlyAsync(projectId);
 
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null)
@@ -68,17 +62,30 @@ public class QuestionnaireManager(
         return result;
     }
 
-    public Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId, bool includeQuestions = true)
-        => includeQuestions
-            ? questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId)
-            : questionnaireRepository.ReadByProjectIdReadOnlyAsync(projectId);
+    public Task<Questionnaire> GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(int projectId)
+        => questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId);
 
-    public Task<Question> GetQuestionByIdAsync(int questionId)
+    public Task<Questionnaire> GetQuestionnaireByProjectIdReadOnlyAsync(int projectId)
+        => questionnaireRepository.ReadByProjectIdReadOnlyAsync(projectId);
+
+    public Task<Questionnaire> GetQuestionnaireByProjectIdForUpdateAsync(int projectId)
+        => questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
+
+    public Task<Question> GetQuestionByIdReadOnlyAsync(int questionId)
         => questionRepository.ReadByIdReadOnlyAsync(questionId);
+
+    public Task<Question> GetQuestionByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(int questionId)
+        => questionRepository.ReadByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(questionId);
+
+    public Task<Question> GetQuestionByIdWithFullQuestionnaireReadOnlyAsync(int questionId)
+        => questionRepository.ReadByIdWithFullQuestionnaireReadOnlyAsync(questionId);
+
+    public Task<Questionnaire> GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(int questionId)
+        => questionnaireRepository.ReadByQuestionIdWithQuestionsReadOnlyAsync(questionId);
 
     public async Task<Question> GetFirstQuestionAsync(int projectId)
     {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null) return null;
 
         return questionnaire.Questions
@@ -86,92 +93,10 @@ public class QuestionnaireManager(
             .FirstOrDefault();
     }
 
-    public async Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId)
-    {
-        var currentQuestion = await questionRepository.ReadByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(currentQuestionId);
-        if (currentQuestion is null) return null;
-
-        var response = await responseRepository.ReadByQuestionAndParticipantReadOnlyAsync(currentQuestionId, participantId);
-
-        if (response is not null && currentQuestion.BranchRules.Count > 0)
-        {
-            var matchingRule = FindMatchingBranchRule(currentQuestion, response.Value);
-            if (matchingRule is not null)
-            {
-                if (matchingRule.SkipToEnd) return null;
-                return matchingRule.TargetQuestion;
-            }
-        }
-
-        var allQuestions = await GetQuestionsForQuestionnaire(currentQuestion);
-        return allQuestions
-            .Where(q => q.Position > currentQuestion.Position)
-            .OrderBy(q => q.Position)
-            .FirstOrDefault();
-    }
-
-    public async Task<Question> GetPreviousQuestionAsync(int currentQuestionId, int participantId)
-    {
-        var current = await questionRepository.ReadByIdWithFullQuestionnaireReadOnlyAsync(currentQuestionId);
-        if (current is null) throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
-
-        var allQuestions = current.Questionnaire.Questions;
-
-        var branchSources = allQuestions
-            .Where(q => q.BranchRules.Any(b => b.TargetQuestion?.QuestionId == currentQuestionId))
-            .ToList();
-
-        foreach (var branchSource in branchSources)
-        {
-            var response = await responseRepository.ReadByQuestionAndParticipantReadOnlyAsync(branchSource.QuestionId, participantId);
-            if (response is null) continue;
-
-            var matchedRule = FindMatchingBranchRule(branchSource, response.Value);
-            var ruleWasTaken = matchedRule?.TargetQuestion?.QuestionId == currentQuestionId;
-
-            if (ruleWasTaken)
-                return branchSource;
-        }
-
-        // Linear fallback: nearest question with a lower position
-        return allQuestions
-            .Where(q => q.Position < current.Position)
-            .OrderByDescending(q => q.Position)
-            .FirstOrDefault();
-    }
-
     public async Task<int> GetQuestionCountAsync(int projectId)
     {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         return questionnaire?.Questions.Count ?? 0;
-    }
-
-    public async Task<List<int>> ComputeVisiblePathAsync(int projectId, int participantId)
-    {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null) return [];
-
-        var firstQuestion = questionnaire.Questions.OrderBy(q => q.Position).FirstOrDefault();
-        if (firstQuestion is null) return [];
-
-        var path = await ComputeVisiblePathInternal(firstQuestion, participantId);
-        return path.Select(q => q.QuestionId).ToList();
-    }
-
-    public async Task<Question> GetResumeQuestionAsync(int projectId, int participantId)
-    {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null) return null;
-
-        var firstQuestion = questionnaire.Questions.OrderBy(q => q.Position).FirstOrDefault();
-        if (firstQuestion is null) return null;
-
-        var path = await ComputeVisiblePathInternal(firstQuestion, participantId);
-
-        var responses = await responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
-        var answeredIds = responses.Select(r => r.Question.QuestionId).ToHashSet();
-
-        return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
     }
 
     public void ValidateMandatoryAnswers(Questionnaire questionnaire,
@@ -198,69 +123,41 @@ public class QuestionnaireManager(
             throw new ValidationException($"Missing answers for mandatory questions: {string.Join(", ", missing)}");
     }
 
-    private async Task<List<Question>> ComputeVisiblePathInternal(Question startQuestion, int participantId)
+    public Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId)
+        => sectionRepository.ReadByProjectIdReadOnlyAsync(projectId);
+
+    public async Task<Section> CreateSectionAsync(int projectId, string name, string description)
     {
-        var allQuestions = await GetQuestionsForQuestionnaire(startQuestion);
+        var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
+        if (questionnaire is null) return null;
 
-        var responses = await responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
-        var answersByQuestionId = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
-
-        var path = new List<Question>();
-        var visited = new HashSet<int>();
-        var current = startQuestion;
-
-        while (current is not null)
+        var section = new Section
         {
-            if (!visited.Add(current.QuestionId)) break;
-
-            path.Add(current);
-
-            if (answersByQuestionId.TryGetValue(current.QuestionId, out var answer)
-                && current.BranchRules.Count > 0)
-            {
-                var matchingRule = FindMatchingBranchRule(current, answer);
-                if (matchingRule is not null)
-                {
-                    if (matchingRule.SkipToEnd) break;
-                    current = allQuestions.FirstOrDefault(q => q.QuestionId == matchingRule.TargetQuestion?.QuestionId);
-                    continue;
-                }
-            }
-
-            current = allQuestions
-                .Where(q => q.Position > current.Position)
-                .OrderBy(q => q.Position)
-                .FirstOrDefault();
-        }
-
-        return path;
+            Name = name,
+            Description = description,
+            Questionnaire = questionnaire
+        };
+        var created = await sectionRepository.CreateAsync(section);
+        await uow.SaveChangesAsync();
+        return created;
     }
 
-    private async Task<List<Question>> GetQuestionsForQuestionnaire(Question question)
+    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string description)
     {
-        var questionnaire = await questionnaireRepository.ReadByQuestionIdWithQuestionsReadOnlyAsync(question.QuestionId);
-        return questionnaire?.Questions.OrderBy(q => q.Position).ToList() ?? [];
+        var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
+        if (section is null) return false;
+
+        section.Name = name;
+        section.Description = description;
+        sectionRepository.Update(section);
+        await uow.SaveChangesAsync();
+        return true;
     }
 
-    private static BranchRule FindMatchingBranchRule(Question question, string answer)
+    public async Task<bool> DeleteSectionAsync(int sectionId)
     {
-        if (string.IsNullOrWhiteSpace(answer)) return null;
-
-        foreach (var rule in question.BranchRules)
-        {
-            if (question.QuestionFormat == QuestionFormat.MultipleChoice)
-            {
-                var selectedValues = answer.Split(", ", StringSplitOptions.RemoveEmptyEntries);
-                if (selectedValues.Contains(rule.TriggerValue))
-                    return rule;
-            }
-            else
-            {
-                if (string.Equals(rule.TriggerValue, answer, StringComparison.OrdinalIgnoreCase))
-                    return rule;
-            }
-        }
-
-        return null;
+        var result = await sectionRepository.DeleteByIdAsync(sectionId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
 }

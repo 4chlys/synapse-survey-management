@@ -10,17 +10,12 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 public class IdeaManager(
     IIdeaRepository ideaRepository,
     ICategoryRepository categoryRepository,
-    IProjectRepository projectRepository,
     IUnitOfWork uow,
     ILogger<IdeaManager> logger,
     ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
-    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsAsync(int projectId, int categoryId, int page, string sortKey)
+    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(int projectId, int categoryId, int page, string sortKey, int pageSize)
     {
-        var project = await projectRepository.ReadByIdReadOnlyAsync(projectId)
-                      ?? throw new KeyNotFoundException($"Project {projectId} not found.");
-        var pageSize = project.IdeaPageSize;
-
         var strategy = sortStrategyFactory.Get(sortKey);
         var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
         var items = await ideaRepository.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
@@ -33,7 +28,7 @@ public class IdeaManager(
         return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
     }
 
-    public Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsAsync(int categoryId, int participantId)
+    public Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int participantId)
         => ideaRepository.ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(categoryId, participantId);
 
     public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
@@ -64,6 +59,12 @@ public class IdeaManager(
         return new AddIdeaResult(created.IdeaId, shouldAskForContactInfo);
     }
 
-    public Task<Idea> GetIdeaByIdWithCommentsAsync(int ideaId)
+    public Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId)
         => ideaRepository.ReadByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
+
+    public async Task<IReadOnlyDictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
+        => await ideaRepository.CountByCategoriesAsync(categoryIds);
+
+    public Task<int> CountByCategoryAsync(int categoryId)
+        => ideaRepository.CountByCategoryAsync(categoryId);
 }

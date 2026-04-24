@@ -7,20 +7,25 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects/{projectId}/categories")]
-public class CategoriesController(ICategoryManager categoryManager) : ControllerBase
+public class CategoriesController(
+    ICategoryManager categoryManager,
+    IIdeaManager ideaManager,
+    IProjectManager projectManager) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
-        var results = await categoryManager.GetCategoriesAndTheirIdeaCountsAsync(projectId);
-        return Ok(results.Select(r => MapToDto(r.Category, r.IdeaCount)));
+        var categories = (await categoryManager.GetCategoriesForProjectReadOnlyAsync(projectId)).ToList();
+        var counts = await ideaManager.CountByCategoriesAsync(categories.Select(c => c.CategoryId));
+        return Ok(categories.Select(c => MapToDto(c, counts.GetValueOrDefault(c.CategoryId, 0))));
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
     {
-        var (category, ideaCount) = await categoryManager.GetCategoryAndItsIdeaCountByIdAsync(id);
-        return Ok(MapToDto(category, ideaCount));
+        var category = await categoryManager.GetCategoryByIdReadOnlyAsync(id);
+        var count = await ideaManager.CountByCategoryAsync(category.CategoryId);
+        return Ok(MapToDto(category, count));
     }
 
     private static CategoryDto MapToDto(Category category, int ideaCount) => new()
@@ -30,6 +35,7 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
         Description = category.Description,
         IdeaCount = ideaCount
     };
+
     [HttpPost]
     public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId,
         [FromBody] CategoryRequest dto)
@@ -37,23 +43,21 @@ public class CategoriesController(ICategoryManager categoryManager) : Controller
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var category = await categoryManager.CreateCategoryAsync(projectId, dto.Name,
-            dto.Description);
-        if (category is null)
+        var project = await projectManager.GetProjectByIdForUpdateAsync(projectId);
+        if (project is null)
             return NotFound();
 
+        var category = await categoryManager.CreateCategoryAsync(project, dto.Name, dto.Description);
         return Created(string.Empty, MapToDto(category, 0));
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromBody]
-        CategoryRequest dto)
+    public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryRequest dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var success = await categoryManager.UpdateCategoryAsync(id, dto.Name,
-            dto.Description);
+        var success = await categoryManager.UpdateCategoryAsync(id, dto.Name, dto.Description);
         if (!success)
             return NotFound();
 
