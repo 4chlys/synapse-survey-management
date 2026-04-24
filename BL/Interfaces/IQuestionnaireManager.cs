@@ -10,7 +10,6 @@ public interface IQuestionnaireManager
     Task<Questionnaire> GetQuestionnaireByProjectIdForUpdateAsync(int projectId);
     Task<Question> GetQuestionByIdReadOnlyAsync(int questionId);
     Task<Question> GetQuestionByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(int questionId);
-    Task<Question> GetQuestionByIdWithFullQuestionnaireReadOnlyAsync(int questionId);
     Task<Questionnaire> GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(int questionId);
     Task<Question> AddQuestionAsync(int projectId, string text, QuestionFormat
         format, bool isMandatory, List<string> answerChoices, int? sectionId = null);

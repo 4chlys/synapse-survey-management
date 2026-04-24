@@ -77,9 +77,6 @@ public class QuestionnaireManager(
     public Task<Question> GetQuestionByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(int questionId)
         => questionRepository.ReadByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(questionId);
 
-    public Task<Question> GetQuestionByIdWithFullQuestionnaireReadOnlyAsync(int questionId)
-        => questionRepository.ReadByIdWithFullQuestionnaireReadOnlyAsync(questionId);
-
     public Task<Questionnaire> GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(int questionId)
         => questionnaireRepository.ReadByQuestionIdWithQuestionsReadOnlyAsync(questionId);
 

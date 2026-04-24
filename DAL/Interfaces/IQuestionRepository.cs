@@ -8,8 +8,6 @@ public interface IQuestionRepository : IRepository<Question>
 
     Task<Question> ReadByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(int questionId);
 
-    Task<Question> ReadByIdWithFullQuestionnaireReadOnlyAsync(int questionId);
-
     Task<Question> ReadByIdWithSectionForUpdateAsync(int questionId);
 
     Task<IEnumerable<Question>> ReadByProjectIdWithSectionAndBranchRulesReadOnlyAsync(int projectId);

@@ -34,10 +34,13 @@ public class SurveyFlowManager(
 
     public async Task<Question> GetPreviousQuestionAsync(int currentQuestionId, int participantId)
     {
-        var current = await questionnaireManager.GetQuestionByIdWithFullQuestionnaireReadOnlyAsync(currentQuestionId);
+        var current = await questionnaireManager.GetQuestionByIdReadOnlyAsync(currentQuestionId);
         if (current is null) throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
 
-        var allQuestions = current.Questionnaire.Questions;
+        var questionnaire = await questionnaireManager.GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(currentQuestionId);
+        if (questionnaire is null) throw new KeyNotFoundException($"Questionnaire for question {currentQuestionId} not found.");
+
+        var allQuestions = questionnaire.Questions;
 
         var branchSources = allQuestions
             .Where(q => q.BranchRules.Any(b => b.TargetQuestion?.QuestionId == currentQuestionId))
@@ -96,7 +99,8 @@ public class SurveyFlowManager(
 
         var path = new List<Question>();
         var visited = new HashSet<int>();
-        var current = startQuestion;
+        var current = allQuestions.FirstOrDefault(q => q.QuestionId == startQuestion.QuestionId);
+        if (current is null) return path;
 
         while (current is not null)
         {

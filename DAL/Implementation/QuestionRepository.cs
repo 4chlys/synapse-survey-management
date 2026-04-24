@@ -18,15 +18,6 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
             .Include(q => q.Questionnaire)
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
 
-    public Task<Question> ReadByIdWithFullQuestionnaireReadOnlyAsync(int questionId)
-        => Context.Set<Question>()
-            .AsNoTracking()
-            .Include(q => q.Questionnaire)
-                .ThenInclude(qn => qn.Questions)
-                .ThenInclude(qu => qu.BranchRules)
-                .ThenInclude(b => b.TargetQuestion)
-            .FirstOrDefaultAsync(q => q.QuestionId == questionId);
-
     public Task<Question> ReadByIdWithSectionForUpdateAsync(int questionId)
         => Context.Set<Question>()
             .Include(q => q.Section)
