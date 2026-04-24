@@ -8,6 +8,7 @@ public class ResponsesControllerTests
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IResponseManager> _responseManager = new();
     private readonly Mock<ISubmissionManager> _submissionManager = new();
+    private readonly Mock<IProjectManager> _projectManager = new();
     private readonly ResponsesController _controller;
 
     private const int ProjectId = 1;
@@ -17,9 +18,9 @@ public class ResponsesControllerTests
     public ResponsesControllerTests()
     {
         _participant = new Participant { ParticipantId = 5, SessionToken = Guid.NewGuid(), Project = new Project { ProjectId = ProjectId } };
-        _participantManager.Setup(p => p.GetParticipantBySessionTokenAsync(_sessionToken))
+        _participantManager.Setup(p => p.GetParticipantBySessionTokenForUpdateAsync(_sessionToken))
             .ReturnsAsync(_participant);
-        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object);
+        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object, _projectManager.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -46,7 +47,10 @@ public class ResponsesControllerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _participantManager.Setup(p => p.AddParticipantAsync(ProjectId, ct))
+        var project = new Project { ProjectId = ProjectId };
+        _projectManager.Setup(p => p.GetProjectByIdForUpdateAsync(ProjectId))
+            .ReturnsAsync(project);
+        _participantManager.Setup(p => p.AddParticipantAsync(project, ct))
             .ReturnsAsync(new Participant { SessionToken = Guid.NewGuid() })
             .Verifiable(Times.Exactly(1));
 
@@ -54,7 +58,7 @@ public class ResponsesControllerTests
         await _controller.StartSession(ProjectId, ct);
 
         // Assert
-        _participantManager.Verify(p => p.AddParticipantAsync(ProjectId, ct), Times.Once);
+        _participantManager.Verify(p => p.AddParticipantAsync(project, ct), Times.Once);
     }
 
     [Fact]

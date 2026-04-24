@@ -24,7 +24,7 @@ public class QuestionnaireRepository(DbContext context) : Repository<Questionnai
 
     public Task<Questionnaire> ReadByQuestionIdWithQuestionsReadOnlyAsync(int questionId)
         => Context.Set<Questionnaire>()
-            .AsNoTracking()
+            .AsNoTrackingWithIdentityResolution()
             .Include(q => q.Questions).ThenInclude(qu => qu.EndingAnswers)
             .Include(q => q.Questions).ThenInclude(qu => qu.ParentQuestion)
             .FirstOrDefaultAsync(q => q.Questions.Any(qu => qu.QuestionId == questionId));

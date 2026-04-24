@@ -4,10 +4,10 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 
 public interface ICategoryManager
 {
-    Task<IEnumerable<(Category Category, int IdeaCount)>> GetCategoriesAndTheirIdeaCountsAsync(int projectId);
-    Task<(Category Category, int IdeaCount)> GetCategoryAndItsIdeaCountByIdAsync(int id);
+    Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId);
+    Task<Category> GetCategoryByIdReadOnlyAsync(int id);
 
-    Task<Category> CreateCategoryAsync(int projectId, string name, string description);
+    Task<Category> CreateCategoryAsync(Project project, string name, string description);
     Task<bool> UpdateCategoryAsync(int categoryId, string name, string description);
     Task<bool> DeleteCategoryAsync(int categoryId);
 }

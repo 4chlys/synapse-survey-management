@@ -6,22 +6,16 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CategoryManager(
     ICategoryRepository categoryRepository,
-    IProjectRepository projectRepository,
-    IIdeaRepository ideaRepository,
     IUnitOfWork uow) : ICategoryManager
 {
-    public async Task<IEnumerable<(Category Category, int IdeaCount)>> GetCategoriesAndTheirIdeaCountsAsync(int projectId)
-    {
-        var categories = (await categoryRepository.ReadByProjectIdReadOnlyAsync(projectId)).ToList();
-        var counts = await ideaRepository.CountByCategoriesAsync(categories.Select(c => c.CategoryId));
-        return categories.Select(c => (c, counts.GetValueOrDefault(c.CategoryId, 0)));
-    }
+    public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
+        => categoryRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
-    public async Task<Category> CreateCategoryAsync(int projectId, string name, string description)
-    {
-        var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
-        if (project is null) return null;
+    public Task<Category> GetCategoryByIdReadOnlyAsync(int id)
+        => categoryRepository.ReadByIdReadOnlyAsync(id);
 
+    public async Task<Category> CreateCategoryAsync(Project project, string name, string description)
+    {
         var category = new Category
         {
             Name = name,
@@ -50,13 +44,5 @@ public class CategoryManager(
         var result = await categoryRepository.DeleteByIdAsync(categoryId);
         if (result) await uow.SaveChangesAsync();
         return result;
-    }
-
-    public async Task<(Category Category, int IdeaCount)> GetCategoryAndItsIdeaCountByIdAsync(int id)
-    {
-        var category = await categoryRepository.ReadByIdReadOnlyAsync(id)
-                       ?? throw new KeyNotFoundException($"Category {id} not found.");
-        var count = await ideaRepository.CountByCategoryAsync(id);
-        return (category, count);
     }
 }

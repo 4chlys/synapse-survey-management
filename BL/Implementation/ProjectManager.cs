@@ -13,6 +13,12 @@ public class ProjectManager(
     public Task<Project> GetProjectByIdAsync(int projectId)
         => projectRepository.ReadByIdWithIntroductionReadOnlyAsync(projectId);
 
+    public Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
+        => projectRepository.ReadByIdReadOnlyAsync(projectId);
+
+    public Task<Project> GetProjectByIdForUpdateAsync(int projectId)
+        => projectRepository.ReadByIdForUpdateAsync(projectId);
+
     public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
         var project = new Project

@@ -14,15 +14,18 @@ public class IdeasController(
     IIdeaManager ideaManager,
     ICommentManager commentManager,
     IParticipantManager participantManager,
-    IModerationResolver moderationResolver)
-    : ParticipantControllerBase(participantManager)
+    IModerationResolver moderationResolver,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
     public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
         int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var participantId = await ResolveParticipantIdAsync();
-        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsAsync(projectId, categoryId, page, sort);
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var pageSize = project?.IdeaPageSize ?? 5;
+        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, pageSize, page, sort);
 
         return Ok(new PagedResult<IdeaDto>
         {
@@ -55,7 +58,7 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var ideas = await ideaManager.GetParticipantIdeasByCategoryWithCommentsAsync(categoryId, participant.ParticipantId);
+        var ideas = await ideaManager.GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, participant.ParticipantId);
         return Ok(ideas.Select(i => MapIdeaToDto(i, participant.ParticipantId)));
     }
 
@@ -64,7 +67,7 @@ public class IdeasController(
     {
         var participantId = await ResolveParticipantIdAsync();
 
-        var idea = await ideaManager.GetIdeaByIdWithCommentsAsync(ideaId);
+        var idea = await ideaManager.GetIdeaByIdWithCommentsReadOnlyAsync(ideaId);
         if (idea == null) return NotFound();
 
         return Ok(MapIdeaToDto(idea, participantId));

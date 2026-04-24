@@ -11,13 +11,15 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/questionnaire")]
 public class QuestionnairesController(
     IQuestionnaireManager questionnaireManager,
-    IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    ISurveyFlowManager surveyFlowManager,
+    IParticipantManager participantManager,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
     public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
@@ -28,7 +30,7 @@ public class QuestionnairesController(
     [HttpGet("questions")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
@@ -64,8 +66,7 @@ public class QuestionnairesController(
     }
 
     [HttpPut("questions/{questionId}")]
-    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
-        UpdateQuestionDto dto)
+    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody] UpdateQuestionDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -118,7 +119,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var nextQuestion = await questionnaireManager.GetNextQuestionAsync(currentQuestionId, participant.ParticipantId);
+        var nextQuestion = await surveyFlowManager.GetNextQuestionAsync(currentQuestionId, participant.ParticipantId);
         return Ok(new { questionId = nextQuestion?.QuestionId });
     }
 
@@ -128,7 +129,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var prevQuestion = await questionnaireManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
+        var prevQuestion = await surveyFlowManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
         return Ok(new { questionId = prevQuestion?.QuestionId });
     }
 
@@ -138,7 +139,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var resumeQuestion = await questionnaireManager.GetResumeQuestionAsync(projectId, participant.ParticipantId);
+        var resumeQuestion = await surveyFlowManager.GetResumeQuestionAsync(projectId, participant.ParticipantId);
         return Ok(new { questionId = resumeQuestion?.QuestionId });
     }
 
@@ -148,7 +149,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var path = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
+        var path = await surveyFlowManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
         return Ok(new { questionIds = path });
     }
 

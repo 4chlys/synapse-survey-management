@@ -10,10 +10,11 @@ function syncButtons(state: SurveyState): void {
     const allPrev = document.querySelectorAll<HTMLButtonElement>('.btn-prev');
     const allNext = document.querySelectorAll<HTMLButtonElement>('.btn-next');
 
-    const isFirstVisible = state.visibleIndices.indexOf(state.currentIndex) === 0;
     const isSubmitSlide = state.currentIndex === getSubmitSlideIndex(state);
 
-    allPrev.forEach(btn => btn.disabled = isFirstVisible);
+    // Disable back only before a session exists — once the user has answered at
+    // least one question navigatePrev handles the "nothing to go back to" case itself.
+    allPrev.forEach(btn => btn.disabled = !state.hasSession);
     allNext.forEach(btn => btn.style.visibility = isSubmitSlide ? 'hidden' : 'visible');
 }
 
@@ -39,6 +40,8 @@ export function initSurvey(): void {
         visibleIndices: slides.map((_, i) => i),
         projectId,
         hasSession,
+        maxProgressPct: 0,
+        lastForwardTargets: new Map(),
     };
 
     slides.forEach(slide => initCharCounter(slide));
@@ -51,7 +54,7 @@ export function initSurvey(): void {
 
     slides[0].classList.add('is-active');
     updateQuestionCounters(slides, state.visibleIndices);
-    updateProgressBar(progressBar, 0, state.visibleIndices.length);
+    state.maxProgressPct = updateProgressBar(progressBar, 0, state.visibleIndices.length, 0);
     syncButtons(state);
 
     if (hasSession) {
@@ -90,7 +93,7 @@ export function initSurvey(): void {
                 }
 
                 updateQuestionCounters(slides, state.visibleIndices);
-                updateProgressBar(progressBar, state.visibleIndices.indexOf(state.currentIndex), state.visibleIndices.length);
+                state.maxProgressPct = updateProgressBar(progressBar, state.visibleIndices.indexOf(state.currentIndex), state.visibleIndices.length, 0);
                 syncButtons(state);
             })
             .catch(() => { /* Resume unavailable — survey starts fresh with defaults */ });

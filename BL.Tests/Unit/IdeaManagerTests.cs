@@ -18,7 +18,7 @@ public class IdeaManagerTests
 
     public IdeaManagerTests()
     {
-        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _projectRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
+        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
     }
 
     [Fact]

@@ -9,10 +9,21 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 public class QuestionnaireManager(
     IQuestionnaireRepository questionnaireRepository,
     IQuestionRepository questionRepository,
-    IResponseRepository responseRepository,
     ISectionRepository sectionRepository,
     IUnitOfWork uow) : IQuestionnaireManager
 {
+    public Task<Questionnaire> GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(int projectId)
+        => questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId);
+
+    public Task<Questionnaire> GetQuestionnaireByProjectIdReadOnlyAsync(int projectId)
+        => questionnaireRepository.ReadByProjectIdReadOnlyAsync(projectId);
+
+    public Task<Questionnaire> GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(int questionId)
+        => questionnaireRepository.ReadByQuestionIdWithQuestionsReadOnlyAsync(questionId);
+
+    public Task<Question> GetQuestionByIdReadOnlyAsync(int questionId)
+        => questionRepository.ReadByIdReadOnlyAsync(questionId);
+
     public async Task<Question> AddQuestionAsync(int projectId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
         int? parentQuestionId = null, string parentTriggerValue = null,
@@ -63,11 +74,8 @@ public class QuestionnaireManager(
         return created;
     }
 
-    public async Task<List<Question>> GetQuestionsForProjectAsync(int projectId)
-    {
-        var questions = await questionRepository.ReadByProjectIdWithSectionAndEndingAnswersReadOnlyAsync(projectId);
-        return questions.ToList();
-    }
+    public async Task<IEnumerable<Question>> GetQuestionsForProjectAsync(int projectId)
+        => await questionRepository.ReadByProjectIdWithSectionAndEndingAnswersReadOnlyAsync(projectId);
 
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
@@ -145,17 +153,9 @@ public class QuestionnaireManager(
         return question;
     }
 
-    public Task<Questionnaire> GetQuestionnaireByProjectIdAsync(int projectId, bool includeQuestions = true)
-        => includeQuestions
-            ? questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId)
-            : questionnaireRepository.ReadByProjectIdReadOnlyAsync(projectId);
-
-    public Task<Question> GetQuestionByIdAsync(int questionId)
-        => questionRepository.ReadByIdReadOnlyAsync(questionId);
-
     public async Task<Question> GetFirstQuestionAsync(int projectId)
     {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null) return null;
 
         return questionnaire.Questions
@@ -164,55 +164,10 @@ public class QuestionnaireManager(
             .FirstOrDefault();
     }
 
-    public async Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId)
-    {
-        var current = await questionRepository.ReadByIdWithFullQuestionnaireReadOnlyAsync(currentQuestionId);
-        if (current is null) return null;
-
-        var path = await ComputeVisiblePathForQuestionnaireAsync(current.Questionnaire, participantId);
-        var idx = path.FindIndex(q => q.QuestionId == currentQuestionId);
-        if (idx < 0 || idx + 1 >= path.Count) return null;
-        return path[idx + 1];
-    }
-
-    public async Task<Question> GetPreviousQuestionAsync(int currentQuestionId, int participantId)
-    {
-        var current = await questionRepository.ReadByIdWithFullQuestionnaireReadOnlyAsync(currentQuestionId);
-        if (current is null) throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
-
-        var path = await ComputeVisiblePathForQuestionnaireAsync(current.Questionnaire, participantId);
-        var idx = path.FindIndex(q => q.QuestionId == currentQuestionId);
-        if (idx <= 0) return null;
-        return path[idx - 1];
-    }
-
     public async Task<int> GetQuestionCountAsync(int projectId)
     {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId);
         return questionnaire?.Questions.Count ?? 0;
-    }
-
-    public async Task<List<int>> ComputeVisiblePathAsync(int projectId, int participantId)
-    {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null) return [];
-
-        var path = await ComputeVisiblePathForQuestionnaireAsync(questionnaire, participantId);
-        return path.Select(q => q.QuestionId).ToList();
-    }
-
-    public async Task<Question> GetResumeQuestionAsync(int projectId, int participantId)
-    {
-        var questionnaire = await GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null) return null;
-
-        var path = await ComputeVisiblePathForQuestionnaireAsync(questionnaire, participantId);
-        if (path.Count == 0) return null;
-
-        var responses = await responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
-        var answeredIds = responses.Select(r => r.Question.QuestionId).ToHashSet();
-
-        return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
     }
 
     public void ValidateMandatoryAnswers(Questionnaire questionnaire,
@@ -239,61 +194,42 @@ public class QuestionnaireManager(
             throw new ValidationException($"Missing answers for mandatory questions: {string.Join(", ", missing)}");
     }
 
-    // Walks the questionnaire honouring nested sub-questions and EndingAnswers.
-    // Caller must pass a Questionnaire loaded with Questions + ParentQuestion + EndingAnswers.
-    private async Task<List<Question>> ComputeVisiblePathForQuestionnaireAsync(Questionnaire questionnaire, int participantId)
+    public Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId)
+        => sectionRepository.ReadByProjectIdReadOnlyAsync(projectId);
+
+    public async Task<Section> CreateSectionAsync(int projectId, string name, string description)
     {
-        if (questionnaire?.Questions is null || questionnaire.Questions.Count == 0) return [];
+        var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
+        if (questionnaire is null) return null;
 
-        var allQuestions = questionnaire.Questions.ToList();
-
-        var responses = await responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
-        var answersById = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
-
-        var path = new List<Question>();
-        var visited = new HashSet<int>();
-        WalkScope(parentId: null, triggerValue: null, allQuestions, answersById, path, visited);
-        return path;
-    }
-
-    private static bool WalkScope(int? parentId, string triggerValue,
-        List<Question> allQuestions,
-        Dictionary<int, string> answersById,
-        List<Question> path,
-        HashSet<int> visited)
-    {
-        var children = allQuestions
-            .Where(q => (q.ParentQuestion?.QuestionId) == parentId
-                        && q.ParentTriggerValue == triggerValue)
-            .OrderBy(q => q.Position);
-
-        foreach (var child in children)
+        var section = new Section
         {
-            if (!visited.Add(child.QuestionId)) continue;
-            path.Add(child);
-
-            if (!answersById.TryGetValue(child.QuestionId, out var answer)) continue;
-
-            var selected = SplitSelected(child.QuestionFormat, answer);
-
-            if (child.EndingAnswers.Any(ea => selected.Contains(ea.Value)))
-                return true; // survey ends
-
-            foreach (var value in selected)
-            {
-                var ended = WalkScope(child.QuestionId, value, allQuestions, answersById, path, visited);
-                if (ended) return true;
-            }
-        }
-        return false;
+            Name = name,
+            Description = description,
+            Questionnaire = questionnaire
+        };
+        var created = await sectionRepository.CreateAsync(section);
+        await uow.SaveChangesAsync();
+        return created;
     }
 
-    private static IReadOnlyList<string> SplitSelected(QuestionFormat format, string rawAnswer)
+    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string description)
     {
-        if (string.IsNullOrWhiteSpace(rawAnswer)) return Array.Empty<string>();
-        return format == QuestionFormat.MultipleChoice
-            ? rawAnswer.Split(", ", StringSplitOptions.RemoveEmptyEntries)
-            : new[] { rawAnswer };
+        var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
+        if (section is null) return false;
+
+        section.Name = name;
+        section.Description = description;
+        sectionRepository.Update(section);
+        await uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteSectionAsync(int sectionId)
+    {
+        var result = await sectionRepository.DeleteByIdAsync(sectionId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
 
     private static void ValidateParentTrigger(Question parent, string triggerValue)
