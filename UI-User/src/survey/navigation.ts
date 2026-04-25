@@ -16,13 +16,13 @@ function getVisiblePosition(state: SurveyState): number {
     return state.visibleIndices.indexOf(state.currentIndex);
 }
 
-function navigateTo(state: SurveyState, targetIndex: number): void {
+function navigateTo(state: SurveyState, targetIndex: number, goingForward: boolean): void {
     state.isAnimating = true;
     const prevIndex = state.currentIndex;
     state.currentIndex = targetIndex;
     updateQuestionCounters(state.slides, state.visibleIndices);
-    activateSlide(state.slides, prevIndex, targetIndex);
-    updateProgressBar(state.progressBar, getVisiblePosition(state), state.visibleIndices.length);
+    activateSlide(state.slides, prevIndex, targetIndex, goingForward);
+    state.maxProgressPct = updateProgressBar(state.progressBar, getVisiblePosition(state), state.visibleIndices.length, goingForward ? state.maxProgressPct : 0);
     state.onSlideChange?.(state);
 
     setTimeout(() => { state.isAnimating = false; }, TRANSITION_MS);
@@ -68,6 +68,13 @@ export async function navigateNext(state: SurveyState): Promise<void> {
             if (targetIndex === -1) targetIndex = submitIndex;
         }
 
+        // If the user has been here before and chose a different next slide this time,
+        // their answer changed and the path diverged — drop the progress floor so the
+        // bar reflects the actual position on the new (potentially longer) branch.
+        const prevTarget = state.lastForwardTargets.get(state.currentIndex);
+        if (prevTarget !== undefined && prevTarget !== targetIndex) state.maxProgressPct = 0;
+        state.lastForwardTargets.set(state.currentIndex, targetIndex);
+
         // Drops stale slides that were on a previously projected branch.
         const currentVisiblePos = getVisiblePosition(state);
         state.visibleIndices = state.visibleIndices.filter(
@@ -78,7 +85,7 @@ export async function navigateNext(state: SurveyState): Promise<void> {
             state.visibleIndices.sort((a, b) => a - b);
         }
 
-        navigateTo(state, targetIndex);
+        navigateTo(state, targetIndex, true);
     } catch (err) {
         console.error('Survey navigation error:', err);
         state.isAnimating = false;
@@ -108,12 +115,13 @@ export async function navigatePrev(state: SurveyState): Promise<void> {
                 : -1;
             if (idx === -1) {
                 state.isAnimating = false;
+                shakeSlide(current);
                 return;
             }
             targetIndex = idx;
         }
 
-        navigateTo(state, targetIndex);
+        navigateTo(state, targetIndex, false);
     } catch (err) {
         console.error('Survey back navigation error:', err);
         state.isAnimating = false;

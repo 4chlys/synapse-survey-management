@@ -9,11 +9,14 @@ using Microsoft.Extensions.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
+using SynapseEnqueteManagement.DAL.Implementation;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -52,7 +55,17 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
-builder.Services.AddScoped<IRepository, Repository>();
+builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
+builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<ISectionRepository, SectionRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Sort strategies (singleton — stateless)
 builder.Services.AddSingleton<ISortStrategy<Idea>, RandomSortStrategy<Idea>>();
@@ -80,6 +93,9 @@ builder.Services.AddSingleton<IResponseValidator, MultipleChoiceResponseValidato
 builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
 builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
 
+// Storage
+builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
+
 // Registering BL
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
@@ -89,6 +105,8 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
+builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
+builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 
 // AI configuration
 //

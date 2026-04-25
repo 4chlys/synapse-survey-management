@@ -112,7 +112,7 @@ public class IdeationController(
         var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
         if (!result.Success) return PartialView("_ModerationPopup");
 
-        if (result.IsFirstIdea)
+        if (result.ShouldAskForContactInfo)
             return RedirectToAction("Index", new { projectId, categoryId, contactInfo = true });
 
         return RedirectToAction("Index", new { projectId, categoryId });

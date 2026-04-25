@@ -1,0 +1,188 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Question
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
+@using SynapseEnqueteManagement.UI.Admin.Models.Section
+@model List<QuestionViewModel>
+@{
+    ViewData["Title"] = "Project vragen";
+    Layout = "_Layout";
+    int projectId = (int)ViewData["ProjectId"];
+    string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
+    var project = ViewData["Project"] as ProjectAdminViewModel;
+    var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
+    bool showLeft = aiAssistance != "Never";
+}
+
+<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
+
+    @* Header *@
+    <div class="flex items-center gap-2 px-6 pt-4">
+        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Org" class="w-full h-full object-cover" />
+        </div>
+        <span>Admin</span>
+    </div>
+
+    @* Title bar *@
+    <div class="flex items-center px-6 pt-3 pb-2 gap-3">
+        <a asp-controller="Project" asp-action="Create" asp-route-projectId="@projectId" class="text-gray-300 hover:text-white">← Project vragen</a>
+        @if (aiAssistance != "Never")
+        {
+            <span class="border border-gray-500 px-3 py-1">AI</span>
+        }
+    </div>
+
+    @* Main content *@
+    <div class="flex flex-1 gap-4 px-6 pb-2 overflow-hidden">
+
+        @if (showLeft)
+        {
+            @* AI left panel *@
+            <div class="w-64 flex-shrink-0 border border-gray-500 flex flex-col p-3 overflow-y-auto">
+                <p class="font-bold text-center mb-3">AI Assistent</p>
+
+                @if (aiAssistance == "AskFirst")
+                {
+                    @* Ask-first mode: show prompt until user clicks Ja *@
+                    <div id="ask-first-prompt" class="flex flex-col items-center gap-3 mt-4">
+                        <p class="text-center text-gray-300">AI-assistentie nodig?</p>
+                        <button type="button" id="ask-first-ja"
+                                class="border border-gray-500 px-6 py-2 hover:bg-gray-700">Ja</button>
+                    </div>
+                    <div id="ai-content" class="hidden flex-col flex-1 gap-2">
+                        <div class="self-start bg-gray-800 border border-gray-600 rounded px-3 py-2 max-w-[85%]">
+                            Kan ik je helpen met Vraag 1?
+                        </div>
+                        <button type="button" class="self-center border border-gray-500 px-4 py-1 hover:bg-gray-700 mt-1">Herformuleer</button>
+                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer antwoord</button>
+                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer subvraag</button>
+                    </div>
+                }
+                else
+                {
+                    @* Pro-active mode: always visible *@
+                    <div class="flex flex-col gap-2">
+                        <div class="self-start bg-gray-800 border border-gray-600 rounded px-3 py-2 max-w-[85%]">
+                            Kan ik je helpen met Vraag 1?
+                        </div>
+                        <button type="button" class="self-center border border-gray-500 px-4 py-1 hover:bg-gray-700 mt-1">Herformuleer</button>
+                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer antwoord</button>
+                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer subvraag</button>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Questions panel *@
+        <div class="flex-1 border border-gray-500 flex flex-col p-4 overflow-y-auto">
+
+            @Html.AntiForgeryToken()
+            <div id="questions-list"
+                 data-project-id="@projectId"
+                 data-ai-assistance="@aiAssistance"
+                 data-questions-endpoint="@($"/api/admin/projects/{projectId}/questions")"
+                 data-delete-endpoint="@Url.Action("Delete", "Question")">
+                <p class="text-gray-500 text-sm">Vragen worden geladen...</p>
+            </div>
+
+            <button type="button" id="add-question-btn"
+                    class="text-gray-400 hover:text-white mt-4 text-left w-fit">+ Vraag toevoegen</button>
+        </div>
+    </div>
+
+    @* Bottom buttons *@
+    <div class="flex justify-between items-center px-6 py-4">
+        <a asp-controller="Project" asp-action="Index"
+           class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
+        <div class="flex items-center gap-3">
+            <span id="questions-next-error" class="hidden text-red-400">Voeg minimaal 1 vraag toe.</span>
+            <a asp-controller="Project" asp-action="Questions"
+               asp-route-projectId="@projectId" asp-route-aiAssistance="@aiAssistance"
+               class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Opslaan</a>
+            <button type="button" id="questions-next-btn"
+                    data-question-count="@Model.Count"
+                    data-href="@Url.Action("Ideation", "Project", new { projectId })"
+                    class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Volgende →</button>
+        </div>
+    </div>
+</div>
+
+@* Modal for adding a question *@
+<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-500 w-[480px] p-6 text-white">
+
+        <div class="flex justify-between items-center mb-4">
+            <span id="modal-title" class="font-bold text-sm">Vraag aanmaken</span>
+            <button type="button" id="modal-close" class="text-gray-400 hover:text-white text-lg leading-none">×</button>
+        </div>
+
+        <form id="question-form"
+              asp-controller="Project" asp-action="CreateQuestion"
+              data-update-url="@Url.Action("UpdateQuestion", "Project")"
+              method="post">
+            <input type="hidden" name="projectId" value="@projectId" />
+            <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+            <input type="hidden" name="questionId" id="QuestionId" value="" />
+            <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
+            <input type="hidden" name="IsMandatory" value="false" />
+            <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
+
+            <label class="block mb-1">Vraagtekst</label>
+            <textarea name="Text" id="QuestionText" rows="3"
+                      class="w-full bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 resize-none focus:outline-none"
+                      placeholder="Vul je vraag in..."></textarea>
+            <span id="text-error" class="hidden text-red-400 text-xs mt-1 mb-2 block">Dit veld moet ingevuld zijn.</span>
+
+            <label class="block mb-2 mt-3">Vraagtype</label>
+            <div class="flex gap-2 mb-4">
+                <div class="flex flex-col items-center gap-1">
+                    <button type="button" class="type-btn bg-gray-600 border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="MultipleChoice">MCQ</button>
+                    <span class="type-selected-label text-gray-400 italic text-xs">(geselecteerd)</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="SingleChoice">SCQ</button>
+                    <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="Open">Open</button>
+                    <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="Likert">Likert</button>
+                    <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
+                </div>
+            </div>
+
+            <div id="answers-section">
+                <label class="block mb-2">Antwoorden</label>
+                <div id="answer-list" class="space-y-2 mb-2"></div>
+                <span id="answers-error" class="hidden text-red-400 text-xs mb-2 block"></span>
+                <button type="button" id="add-answer-btn"
+                        class="text-gray-400 hover:text-white">+ Antwoord toevoegen</button>
+            </div>
+
+            @if (sections.Any())
+            {
+                <div class="mt-4">
+                    <label class="block mb-2">Sectie (optioneel)</label>
+                    <select name="SectionId" id="SectionId"
+                            class="w-full bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 focus:outline-none">
+                        <option value="">— Geen sectie —</option>
+                        @foreach (var sec in sections)
+                        {
+                            <option value="@sec.SectionId">@sec.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            <hr class="border-gray-600 mt-4 mb-4" />
+
+            <div class="flex justify-end gap-3">
+                <button type="button" id="modal-cancel"
+                        class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Annuleer</button>
+                <button type="submit"
+                        class="border border-gray-400 px-6 py-2 hover:bg-gray-700">OK</button>
+            </div>
+        </form>
+    </div>
+</div>

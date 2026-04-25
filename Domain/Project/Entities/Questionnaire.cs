@@ -6,5 +6,7 @@ public class Questionnaire
     public Project Project { get; set; }
 
     public ICollection<Question> Questions { get; set; } = new List<Question>();
+    
+    public ICollection<Section> Sections { get; set; } = new List<Section>();
     public ICollection<Participant> Participants { get; set; } = new List<Participant>();
 }

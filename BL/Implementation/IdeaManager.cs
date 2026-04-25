@@ -1,187 +1,50 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Pgvector;
-using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
-using SynapseEnqueteManagement.BL.Sorting.Embeddings;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class IdeaManager(
-    IRepository repository,
+    IIdeaRepository ideaRepository,
+    ICategoryRepository categoryRepository,
+    IUnitOfWork uow,
     ILogger<IdeaManager> logger,
-    ISortStrategyFactory<Idea> sortStrategyFactory,
-    IEmbeddingSortStrategyFactory embeddingSortFactory,
-    IEmbeddingService embeddingService,
-    SynapseEnqueteContext context) : IIdeaManager
+    ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
-    // Safety cap for embedding sorts: they materialise the full filtered set in
-    // memory. The brief calls for "performant for ≤1,000 ideas" — so that's
-    // where we draw the line.
-    private const int EmbeddingSortMaxItems = 1000;
-
-    public async Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
+    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int pageSize, int page, string sortKey)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
-        var filterList = new List<System.Linq.Expressions.Expression<Func<Idea, bool>>>
-        {
-            i => i.Category.CategoryId == categoryId,
-            i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined
-        };
-        if (excludeParticipantId.HasValue)
-            filterList.Add(i => i.Participant.ParticipantId != excludeParticipantId.Value);
-        var filters = filterList.ToArray();
-
-        var total = await repository.CountAsync<Idea>(filters);
-        var items = await repository.ReadAsync<Idea>(
-            filters: filters,
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings: ["Comments.Emoji", "Comments.Participant"],
-            orderBy: strategy.DbOrderBy,
-            randomize: strategy.Randomize,
-            skip: (page - 1) * pageSize,
-            take: pageSize
-        );
+        var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
+        var items = await ideaRepository.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            categoryId,
+            strategy.DbOrderBy,
+            strategy.Randomize,
+            (page - 1) * pageSize,
+            pageSize);
 
         return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
     }
 
-    public async Task<PagedResult<Idea>> GetOkIdeasByCategoryEmbeddingSortedAsync(
-        int categoryId, int page, int pageSize, string sortKey,
-        string queryText, int? excludeParticipantId = null,
-        CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int participantId)
+        => ideaRepository.ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(categoryId, participantId);
+
+    public Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId)
+        => ideaRepository.ReadByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
+
+    public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
+        Participant participant, CancellationToken ct = default)
     {
-        float[] rawEmbedding = null;
-        if (!string.IsNullOrWhiteSpace(queryText))
-            rawEmbedding = await embeddingService.GenerateAsync(queryText, cancellationToken);
-
-        if (context.Database.IsNpgsql() && rawEmbedding != null)
-            return await GetEmbeddingSortedFromDbAsync(categoryId, page, pageSize, sortKey, rawEmbedding, excludeParticipantId, cancellationToken);
-
-        return await GetEmbeddingSortedInMemoryAsync(categoryId, page, pageSize, sortKey, rawEmbedding, excludeParticipantId, cancellationToken);
-    }
-
-    private async Task<PagedResult<Idea>> GetEmbeddingSortedFromDbAsync(
-        int categoryId, int page, int pageSize, string sortKey,
-        float[] rawEmbedding, int? excludeParticipantId,
-        CancellationToken ct)
-    {
-        var queryVector = new Vector(rawEmbedding);
-
-        var baseQuery = context.Ideas
-            .AsNoTracking()
-            .Include(i => i.Comments)
-            .Include(i => i.Participant)
-            .Include("Comments.Emoji")
-            .Include("Comments.Participant")
-            .Where(i => i.Category.CategoryId == categoryId)
-            .Where(i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined);
-
-        if (excludeParticipantId.HasValue)
-            baseQuery = baseQuery.Where(i => i.Participant.ParticipantId != excludeParticipantId.Value);
-
-        var total = await baseQuery.CountAsync(ct);
-
-        if (sortKey == "diverse")
-        {
-            // Fetch the most relevant candidates first so MMR has a good pool to pick from,
-            // then apply the in-memory greedy selection for diversity.
-            var candidates = await baseQuery
-                .OrderBy(i => i.Embedding.CosineDistance(queryVector))
-                .Take(EmbeddingSortMaxItems)
-                .ToListAsync(ct);
-
-            if (candidates.Count == EmbeddingSortMaxItems)
-                logger.LogWarning("Diverse sort hit the {Cap}-item cap for category {CategoryId}",
-                    EmbeddingSortMaxItems, categoryId);
-
-            var sorted = embeddingSortFactory.Get("diverse").Sort(candidates, rawEmbedding);
-            var paged = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-            return new PagedResult<Idea> { Items = paged, Page = page, PageSize = pageSize, TotalCount = total };
-        }
-
-        // similar: lowest cosine distance first; different: highest first
-        var ordered = sortKey == "different"
-            ? baseQuery.OrderByDescending(i => i.Embedding.CosineDistance(queryVector))
-            : baseQuery.OrderBy(i => i.Embedding.CosineDistance(queryVector));
-
-        var items = await ordered.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
-        return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
-    }
-
-    private async Task<PagedResult<Idea>> GetEmbeddingSortedInMemoryAsync(
-        int categoryId, int page, int pageSize, string sortKey,
-        float[] rawEmbedding, int? excludeParticipantId,
-        CancellationToken ct)
-    {
-        var filterList = new List<System.Linq.Expressions.Expression<Func<Idea, bool>>>
-        {
-            i => i.Category.CategoryId == categoryId,
-            i => i.Status != ModerationStatus.Flagged && i.Status != ModerationStatus.Declined
-        };
-        if (excludeParticipantId.HasValue)
-            filterList.Add(i => i.Participant.ParticipantId != excludeParticipantId.Value);
-
-        var all = (await repository.ReadAsync<Idea>(
-            filters: filterList.ToArray(),
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings: ["Comments.Emoji", "Comments.Participant"],
-            take: EmbeddingSortMaxItems
-        )).ToList();
-
-        if (all.Count == EmbeddingSortMaxItems)
-            logger.LogWarning("Embedding sort hit the {Cap}-item cap for category {CategoryId}; results are truncated",
-                EmbeddingSortMaxItems, categoryId);
-
-        var ordered = embeddingSortFactory.Get(sortKey).Sort(all, rawEmbedding);
-        var paged = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return new PagedResult<Idea> { Items = paged, Page = page, PageSize = pageSize, TotalCount = ordered.Count };
-    }
-
-    public async Task<IEnumerable<Idea>> GetOwnIdeasByCategoryAsync(int categoryId, int participantId)
-    {
-        return await repository.ReadAsync<Idea>(
-            filters:
-            [
-                i => i.Category.CategoryId == categoryId,
-                i => i.Participant.ParticipantId == participantId,
-                i => i.Status != ModerationStatus.Declined
-            ],
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings: ["Comments.Emoji", "Comments.Participant"],
-            orderBy: q => q.OrderByDescending(i => i.CreatedAt)
-        );
-    }
-
-    public async Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
-        Participant participant)
-    {
-        var category = await repository.ReadByIdAsync<Category>(categoryId, includes: [c => c.Project], tracked: true);
+        var category = await categoryRepository.ReadByIdWithProjectForUpdateAsync(categoryId);
         if (category == null || category.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Category {CategoryId} not found in project {ProjectId}", categoryId, projectId);
             throw new KeyNotFoundException($"Category {categoryId} not found");
         }
 
-        // Generate embedding at write-time so reads stay cheap. Failure here
-        // must not block submission — Embedding is nullable and the sort
-        // strategies handle that case. A background backfill job can fill in
-        // missing vectors later.
-        Vector embedding = null;
-        try
-        {
-            var raw = await embeddingService.GenerateAsync(description);
-            embedding = new Vector(raw);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to generate embedding for new idea; storing without vector");
-        }
+        var hadPriorIdeas = await ideaRepository.AnyExistByParticipantAsync(participant.ParticipantId);
 
         var idea = new Idea
         {
@@ -189,28 +52,19 @@ public class IdeaManager(
             Description = description,
             Category = category,
             Participant = participant,
-            Embedding = embedding,
             CreatedAt = DateTime.UtcNow
         };
 
-        return await repository.CreateAsync(idea);
+        var created = await ideaRepository.CreateAsync(idea);
+        await uow.SaveChangesAsync(ct);
+
+        var shouldAskForContactInfo = !hadPriorIdeas && category.Project.RequestContactInfo;
+        return new AddIdeaResult(created.IdeaId, shouldAskForContactInfo);
     }
 
-    public async Task<int> GetIdeaCountByParticipantAsync(int participantId)
-    {
-        return await repository.CountAsync<Idea>([i => i.Participant.ParticipantId == participantId]);
-    }
+    public Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
+        => ideaRepository.CountByCategoriesAsync(categoryIds);
 
-    public async Task<Idea> GetIdeaByIdAsync(int ideaId)
-    {
-        return await repository.ReadByIdAsync<Idea>(
-            ideaId,
-            includes: [i => i.Comments, i => i.Participant],
-            includeStrings:
-            [
-                "Comments.Emoji",
-                "Comments.Participant"
-            ]
-        );
-    }
+    public Task<int> CountByCategoryAsync(int categoryId)
+        => ideaRepository.CountByCategoryAsync(categoryId);
 }
