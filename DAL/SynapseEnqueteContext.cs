@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -8,6 +9,7 @@ namespace SynapseEnqueteManagement.DAL;
 public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<Response> Responses { get; set; }
@@ -30,6 +32,11 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         // Project
         builder.Entity<Project>(e =>
         {
+            e.HasOne(p => p.ProjectPlatform)
+                .WithMany()
+                .HasForeignKey(p => p.ProjectPlatformId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             e.HasOne(p => p.Questionnaire)
                 .WithOne(q => q.Project)
                 .HasForeignKey<Questionnaire>("ProjectId")
