@@ -63,6 +63,8 @@ builder.Services.AddHttpClient<EmojiService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IdeaSupportService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 // Rate limiting — per real client IP, applied only to expensive AI moderation endpoints
 builder.Services.AddRateLimiter(options =>

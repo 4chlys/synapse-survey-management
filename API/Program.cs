@@ -7,7 +7,9 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.Implementation;
+using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
@@ -29,9 +31,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
-                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
-                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
-                          | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
+                            | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
+                            | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
+                            | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
 });
 
 // Database
@@ -102,12 +104,16 @@ builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 //
 // To apply changes to ai-config.json, restart the API.
 builder.Services.AddSingleton(aiConfig);
+builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
+builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
+builder.Services.AddSingleton<IInputValidationService, InputValidationService>();
 
 // Moderation token service (signed nonce — stateless across instances)
 var tokenSecret = builder.Configuration["ApiKey"]
-    ?? throw new InvalidOperationException("ApiKey is not configured. Set it in .env or as an environment variable.");
+                  ?? throw new InvalidOperationException(
+                      "ApiKey is not configured. Set it in .env or as an environment variable.");
 
 builder.Services.AddSingleton<IModerationTokenService>(sp =>
     new ModerationTokenService(tokenSecret, sp.GetRequiredService<ILogger<ModerationTokenService>>()));
@@ -127,8 +133,16 @@ if (useAi)
     var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
     builder.Services.AddChatClient(chatClient);
-    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiService>();
-} else builder.Services.AddScoped<IAiModerationService, MockModerationService>();
+
+    // Both moderation and idea-support share the same IChatClient.
+    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
+    builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
+}
+else
+{
+    builder.Services.AddScoped<IAiModerationService, MockModerationService>();
+    builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
+}
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
 // Re-enable if a browser-based client ever needs direct API access.

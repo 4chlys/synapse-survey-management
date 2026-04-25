@@ -3,7 +3,72 @@
     ViewData["Title"] = Model.Category.Name;
 }
 
-<div class="max-w-2xl mx-auto px-6 pt-10 pb-28 min-h-[calc(100dvh-64px)] page-enter">
+@* Idea Support chat overlay *@
+@await Html.PartialAsync("_IdeaSupportPopup")
+
+@* Mode-selection sheet *@
+<div id="mode-select-overlay"
+     class="fixed inset-0 z-40 hidden items-end sm:items-center justify-center
+            bg-black/40 backdrop-blur-sm p-0 sm:p-6">
+    <div id="mode-select-panel"
+         class="bg-base-100 w-full max-w-sm sm:rounded-[1.25rem] rounded-t-[1.25rem]
+                px-5 pt-5 pb-8 shadow-2xl">
+
+        @* Drag handle (mobile only) *@
+        <div class="w-10 h-1 bg-base-300 rounded-full mx-auto mb-5 sm:hidden"></div>
+
+        <p class="text-sm font-semibold text-base-content/50 uppercase tracking-wide mb-4">
+            Hoe wil je jouw idee toevoegen?
+        </p>
+
+        <div class="flex flex-col gap-3">
+
+            @* AI chat option *@
+            <button type="button" data-action="show-ai-form"
+                    class="flex items-center gap-4 p-4 rounded-2xl border-2 border-primary/20
+                           bg-primary/5 hover:border-primary/40 active:scale-[0.98] transition-all text-left w-full cursor-pointer">
+                <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3
+                                 m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0
+                                 l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0
+                                 v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-semibold text-base-content text-sm">Met AI-assistent</p>
+                    <p class="text-xs text-base-content/40 mt-0.5">Wij helpen je idee te formuleren</p>
+                </div>
+            </button>
+
+            @* Classic form option *@
+            <button type="button" data-action="show-manual-form"
+                    class="flex items-center gap-4 p-4 rounded-2xl border-2 border-base-300
+                           hover:border-primary/30 bg-base-100 active:scale-[0.98] transition-all text-left w-full cursor-pointer">
+                <div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-base-content/50"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
+                                 m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-semibold text-base-content text-sm">Zelf schrijven</p>
+                    <p class="text-xs text-base-content/40 mt-0.5">Typ je idee direct in het formulier</p>
+                </div>
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<div id="ideation-page"
+     class="max-w-2xl mx-auto px-6 pt-10 pb-28 min-h-[calc(100dvh-64px)] page-enter"
+     data-category-id="@Model.CategoryId"
+     data-category-name="@Model.Category.Name">
 
     @* Page header *@
     <div class="w-full mb-8">
@@ -15,13 +80,14 @@
             @Model.Category.Description
         </p>
     </div>
-
+    
     @* CTA Nieuw idee *@
     <button type="button" data-action="show-create-form"
             class="w-full btn btn-primary rounded-xl font-heading font-semibold text-base py-4 h-auto gap-2 mb-6 shadow-md cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor"
              stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
         </svg>
         Nieuw idee plaatsen
     </button>
@@ -30,8 +96,8 @@
     <div id="createForm" class="w-full mb-6 hidden">
         <form asp-route-projectId="@Model.ProjectId" asp-action="CreateIdea" method="post"
               class="bg-base-100 rounded-xl border border-base-300 p-5">
-            <input type="hidden" name="categoryId" value="@Model.Category.CategoryId" />
-            <input type="hidden" name="moderationToken" value="" />
+            <input type="hidden" name="categoryId" value="@Model.Category.CategoryId"/>
+            <input type="hidden" name="moderationToken" value=""/>
             <div class="mb-4">
                 <label class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2 block">
                     Jouw idee
@@ -59,10 +125,11 @@
         {
             <div class="text-center py-16 flex flex-col items-center gap-3">
                 <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary/70" fill="none" viewBox="0 0 24 24"
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary/70" fill="none"
+                         viewBox="0 0 24 24"
                          stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                     </svg>
                 </div>
                 <p class="text-base-content/70 text-sm font-medium">Nog geen ideeën — wees de eerste!</p>
@@ -73,8 +140,8 @@
             @foreach (var idea in Model.Ideas)
             {
                 <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
-                       asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
-                       class="block relative rounded-xl border p-5 transition-all duration-150 active:scale-[0.99]
+                   asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
+                   class="block relative rounded-xl border p-5 transition-all duration-150 active:scale-[0.99]
                     @(idea.IsFlagged ? "bg-warning/5 border-warning/30 hover:border-warning/50" : idea.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20 hover:border-primary/40" : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
 
                     @* Comment count badge *@
@@ -83,7 +150,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-neutral/70" fill="none"
                              viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
                         <span class="text-xs font-bold text-base-content tabular-nums">@idea.CommentsCount</span>
                     </div>
@@ -107,21 +174,24 @@
                     <p class="text-base-content text-sm leading-relaxed pr-8">@idea.Description</p>
 
                     @* Emoji reactions *@
-                    <div class="flex gap-2 mt-4 items-center flex-wrap" data-emoji-container data-project-id="@Model.ProjectId"
-                         data-category-id="@Model.Category.CategoryId" data-idea-id="@idea.IdeaId" data-return-page="Index"
-                         data-picker-id="picker-@idea.IdeaId" data-add-url="/@Model.ProjectId/Ideation/AddIconComment"
+                    <div class="flex gap-2 mt-4 items-center flex-wrap" data-emoji-container
+                         data-project-id="@Model.ProjectId"
+                         data-category-id="@Model.Category.CategoryId" data-idea-id="@idea.IdeaId"
+                         data-return-page="Index"
+                         data-picker-id="picker-@idea.IdeaId"
+                         data-add-url="/@Model.ProjectId/Ideation/AddIconComment"
                          data-remove-url="/@Model.ProjectId/Ideation/RemoveIconComment">
 
                         <div id="emoji-reactions-@idea.IdeaId" class="contents">
                             @foreach (var emoji in idea.Emojis)
                             {
                                 <form asp-action="@(emoji.PostedByCurrentUser ? "RemoveIconComment" : "AddIconComment")"
-                                      method="post" data-emoji-form>
-                                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                    <input type="hidden" name="categoryId" value="@Model.Category.CategoryId" />
-                                    <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                    <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
-                                    <input type="hidden" name="returnPage" value="Index" />
+                                    method="post" data-emoji-form>
+                                    <input type="hidden" name="projectId" value="@Model.ProjectId"/>
+                                    <input type="hidden" name="categoryId" value="@Model.Category.CategoryId"/>
+                                    <input type="hidden" name="ideaId" value="@idea.IdeaId"/>
+                                    <input type="hidden" name="emojiId" value="@emoji.EmojiId"/>
+                                    <input type="hidden" name="returnPage" value="Index"/>
                                     <button type="submit"
                                             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer min-h-8
                                         @(emoji.PostedByCurrentUser ? "bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20" : "bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300")">
@@ -185,31 +255,30 @@
     <div class="max-w-2xl mx-auto grid grid-cols-3 py-2">
 
         <a asp-route-projectId="@Model.ProjectId" asp-controller="Category" asp-action="Index"
-               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
+           class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
             </svg>
             <span class="text-[11px] font-medium">Terug</span>
         </a>
-
-        <a asp-controller="Ideation" asp-action="MyIdeas" asp-route-projectId="@Model.ProjectId"
-               asp-route-categoryId="@Model.Category.CategoryId"
-               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-primary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+        <a asp-controller="Ideation" asp-action="MyIdeas"
+           asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.Category.CategoryId"
+           class="flex flex-col items-center gap-1 text-base-content/65 hover:text-primary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
             <span class="text-[11px] font-medium">Mijn ideeën</span>
         </a>
 
         <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
-               class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-error transition-colors">
+           class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13 text-base-content/65 hover:text-error transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
             </svg>
             <span class="text-[11px] font-medium">Afsluiten</span>
         </a>
