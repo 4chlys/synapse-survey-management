@@ -16,7 +16,7 @@ public class IdeaSupportController(
     ICategoryManager categoryManager,
     IProjectManager projectManager,
     IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
 
     [HttpPost("chat")]
@@ -28,7 +28,7 @@ public class IdeaSupportController(
         var (_, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var category = await categoryManager.GetCategoryByIdAsync(dto.CategoryId);
+        var category = await categoryManager.GetCategoryByIdReadOnlyAsync(dto.CategoryId);
         if (category is null)
             return NotFound($"Category {dto.CategoryId} not found.");
 
@@ -54,7 +54,7 @@ public class IdeaSupportController(
         Project project = null;
         if (isFirstTurn)
         {
-            try { project = await projectManager.GetProjectByIdAsync(projectId); }
+            try { project = await GetProjectByIdReadOnlyAsync(projectId); }
             catch { /* intentionally swallowed — greeting still works without project text */ }
         }
 
