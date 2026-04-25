@@ -10,6 +10,9 @@ public class ProjectViewsController(IProjectManager projectManager) : Controller
     [HttpPost]
     public async Task<IActionResult> TrackView(int projectId)
     {
+        var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (project is null) return NotFound();
+
         await projectManager.IncrementViewCountAsync(projectId);
         return NoContent();
     }

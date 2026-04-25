@@ -54,7 +54,7 @@ public class DashboardController(
                 {
                     IdeaId = i.IdeaId,
                     Description = i.Description.Length > 100
-                        ? i.Description[..100]
+                        ? i.Description[..100] + "…"
                         : i.Description,
                     ReactionCount = reactionCount,
                     CommentCount = commentCount
