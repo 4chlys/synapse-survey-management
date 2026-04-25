@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.add('hidden');
     }
 
+    const createUrl = questionForm?.action ?? '';
+
     function resetModal(): void {
         const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
         if (textArea) textArea.value = '';
@@ -30,6 +32,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if (answerList) answerList.innerHTML = '';
         const firstBtn = document.querySelector<HTMLElement>('.type-btn');
         if (firstBtn) selectType(firstBtn.dataset.type ?? 'MultipleChoice', firstBtn);
+        const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
+        if (sectionSelect) sectionSelect.value = '';
+        const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
+        if (qIdInput) qIdInput.value = '';
+        if (questionForm) questionForm.action = createUrl;
+        const title = document.getElementById('modal-title');
+        if (title) title.textContent = 'Vraag aanmaken';
+    }
+
+    function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string): void {
+        resetModal();
+
+        const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
+        if (qIdInput) qIdInput.value = String(questionId);
+
+        const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
+        if (textArea) textArea.value = text;
+
+        const formatBtn = document.querySelector<HTMLElement>(`.type-btn[data-type="${format}"]`);
+        if (formatBtn) selectType(format, formatBtn);
+
+        answers.forEach(a => {
+            addAnswer();
+            const inputs = document.querySelectorAll<HTMLInputElement>('.answer-input');
+            const last = inputs[inputs.length - 1];
+            if (last) last.value = a;
+        });
+
+        const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
+        if (sectionSelect) sectionSelect.value = sectionId;
+
+        if (questionForm) questionForm.action = questionForm.dataset.updateUrl ?? '';
+
+        const title = document.getElementById('modal-title');
+        if (title) title.textContent = 'Vraag bewerken';
+
+        modal.classList.remove('hidden');
     }
 
     function selectType(type: string, activeBtn: HTMLElement): void {
@@ -125,12 +164,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!valid) return;
 
-        // Collect answers into hidden field
-        const answers = Array.from(document.querySelectorAll<HTMLInputElement>('.answer-input'))
-            .map(i => i.value.trim())
-            .filter(v => v);
+        // Collect answers into hidden field (only for choice types)
         const raw = document.getElementById('AnswerChoicesRaw') as HTMLInputElement | null;
-        if (raw) raw.value = answers.join('\n');
+        if (raw) {
+            const isChoiceType = currentType === 'MultipleChoice' || currentType === 'SingleChoice';
+            if (isChoiceType) {
+                const answers = Array.from(document.querySelectorAll<HTMLInputElement>('.answer-input'))
+                    .map(i => i.value.trim())
+                    .filter(v => v);
+                raw.value = answers.join('\n');
+            } else {
+                raw.value = '';
+            }
+        }
     });
 
     // Collapse/expand questions via event delegation
@@ -144,6 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!answersDiv || !arrow) return;
         const isHidden = answersDiv.classList.toggle('hidden');
         arrow.textContent = isHidden ? '>' : 'v';
+    });
+
+    // Edit question via event delegation
+    questionsList?.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('.question-edit-btn');
+        if (!btn) return;
+        const id = parseInt(btn.dataset.questionId ?? '0', 10);
+        const text = btn.dataset.text ?? '';
+        const format = btn.dataset.format ?? 'MultipleChoice';
+        const answers = JSON.parse(btn.dataset.answers ?? '[]') as string[];
+        const sectionId = btn.dataset.sectionId ?? '';
+        openEditModal(id, text, format, answers, sectionId);
     });
 
     // Validate at least 1 question before proceeding to next step

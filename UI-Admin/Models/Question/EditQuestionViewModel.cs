@@ -17,8 +17,10 @@ public class EditQuestionViewModel
 
     public string AnswerChoicesRaw { get; set; }
 
+    public int? SectionId { get; set; }
+
     public List<string> GetAnswerChoices() =>
-        AnswerChoicesRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        (AnswerChoicesRaw ?? string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
             .Where(s => !string.IsNullOrEmpty(s))
             .ToList();

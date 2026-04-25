@@ -10,12 +10,18 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
 {
 
     public async Task<Question> AddQuestionAsync(int projectId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices)
+        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null)
     {
         var questionnaire = await repository.ReadSingleAsync<Questionnaire>(
             filters: [q => q.Project.ProjectId == projectId],
             tracked: true);
         if (questionnaire is null) return null;
+
+        Section section = null;
+        if (sectionId.HasValue)
+            section = await repository.ReadSingleAsync<Section>(
+                filters: [s => s.SectionId == sectionId.Value],
+                tracked: true);
 
         var question = new Question
         {
@@ -23,22 +29,36 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
             QuestionFormat = format,
             IsMandatory = isMandatory,
             AnswerChoices = answerChoices ?? new List<string>(),
-            Questionnaire = questionnaire
+            Questionnaire = questionnaire,
+            Section = section
         };
         var created = await repository.CreateAsync(question);
         await uow.SaveChangesAsync();
         return created;
     }
-    public async Task<bool> UpdateQuestionAsync(int questionId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices)
+
+    public async Task<List<Question>> GetQuestionsForProjectAsync(int projectId)
     {
-        var question = await repository.ReadByIdAsync<Question>(questionId);
+        var questions = await repository.ReadAsync<Question>(
+            filters: [q => q.Questionnaire.Project.ProjectId == projectId],
+            includeStrings: ["Section", "BranchRules"]
+        );
+        return questions.OrderBy(q => q.Position).ToList();
+    }
+    public async Task<bool> UpdateQuestionAsync(int questionId, string text,
+        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null)
+    {
+        var question = await repository.ReadByIdAsync<Question>(questionId,
+            includeStrings: ["Section"], tracked: true);
         if (question is null) return false;
 
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
         question.AnswerChoices = answerChoices ?? new List<string>();
+        question.Section = sectionId.HasValue
+            ? await repository.ReadSingleAsync<Section>(filters: [s => s.SectionId == sectionId.Value], tracked: true)
+            : null;
         repository.Update(question);
         await uow.SaveChangesAsync();
         return true;
@@ -54,7 +74,7 @@ public class QuestionnaireManager(IRepository repository, IUnitOfWork uow) : IQu
     {
         return await repository.ReadSingleAsync<Questionnaire>(
             filters: [q => q.Project.ProjectId == projectId],
-            includeStrings: includeQuestions ? ["Questions.BranchRules"] : null
+            includeStrings: includeQuestions ? ["Questions.BranchRules", "Questions.Section"] : null
         );
     }
 

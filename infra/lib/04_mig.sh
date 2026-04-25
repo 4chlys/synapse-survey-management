@@ -10,7 +10,7 @@ _create_template() {
     --machine-type="${machine_type}" \
     --image-family=cos-stable \
     --image-project=cos-cloud \
-    --tags=allow-health-check \
+    --tags=mig-instance \
     --scopes=cloud-platform \
     --metadata-from-file "startup-script=${SCRIPT_DIR}/${startup_script}" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "    (al aanwezig, overgeslagen)"
