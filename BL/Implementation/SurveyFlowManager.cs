@@ -48,14 +48,14 @@ public class SurveyFlowManager(
         return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
     }
 
-    public async Task<List<int>> ComputeVisiblePathAsync(int projectId, int participantId)
+    public async Task<ICollection<int>> ComputeVisiblePathAsync(int projectId, int participantId)
     {
         var questionnaire = await questionnaireManager
             .GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null) return [];
 
         var path = await ComputePathAsync(questionnaire, participantId);
-        return path.Select(q => q.QuestionId).ToList();
+        return path.ConvertAll(q => q.QuestionId);
     }
 
     private async Task<List<Question>> ComputePathAsync(Questionnaire questionnaire, int participantId)
