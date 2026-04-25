@@ -12,8 +12,7 @@ public class AdminDbContextFactory : IDesignTimeDbContextFactory<AdminDbContext>
         var optionsBuilder = new DbContextOptionsBuilder<AdminDbContext>();
 
         // Design-time connection string — only used by EF tooling, never at runtime.
-        optionsBuilder.UseNpgsql(
-            "Host=localhost;Database=SynapseAdmin_Design;Username=postgres;Password=REDACTED");
+        optionsBuilder.UseSqlite("Data Source=../API/SynapseEnquete.db");
 
         return new AdminDbContext(optionsBuilder.Options);
     }
