@@ -1,5 +1,6 @@
-import {wireIdeationForm} from './ideationform';
-import {wireModerationField} from './moderation';
+import { wireIdeationForm } from './ideationform';
+import { wireModerationField } from './moderation';
+import { openIdeaSupportChat } from './ideasupportchat';
 
 interface EmojiReaction {
     emojiId: number;
@@ -11,16 +12,45 @@ interface EmojiReaction {
 export function initIdeation(): void {
     const projectId = getProjectId();
 
-    // Create-idea form
-    const createFormEl = document.getElementById('createForm');
-    const createForm = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
-    if (createForm && projectId != null) {
+    const createFormEl    = document.getElementById('createForm');
+    const createForm      = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
+    
+    const categoryIdInput = createForm?.querySelector<HTMLInputElement>('input[name="categoryId"]') ?? null;
+    const descriptionEl   = createForm?.querySelector<HTMLTextAreaElement>('textarea[name="description"]') ?? null;
+    const moderationEl    = createForm?.querySelector<HTMLInputElement>('input[name="moderationToken"]') ?? null;
+
+    const pageContainer = document.getElementById('ideation-page') ??
+        document.querySelector<HTMLElement>('[data-category-id]');
+    const categoryId    = parseInt(pageContainer?.dataset.categoryId ?? categoryIdInput?.value ?? '0', 10);
+    const categoryName  = pageContainer?.dataset.categoryName ?? '';
+
+    if (createForm && projectId != null && categoryId) {
         wireIdeationForm(createForm, 'description', projectId, 'idea');
-        const descriptionTextarea = createForm.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
-        if (descriptionTextarea) {
-            wireModerationField(descriptionTextarea, projectId);
+        if (descriptionEl) {
+            wireModerationField(descriptionEl, projectId);
         }
     }
+
+    // Mode-selection sheet
+    const modeOverlay = document.getElementById('mode-select-overlay');
+    const modePanel   = document.getElementById('mode-select-panel');
+
+    function openModeSelect(): void {
+        if (!modeOverlay) return;
+        modeOverlay.classList.remove('hidden');
+        modeOverlay.classList.add('flex');
+    }
+
+    function closeModeSelect(): void {
+        if (!modeOverlay) return;
+        modeOverlay.classList.add('hidden');
+        modeOverlay.classList.remove('flex');
+    }
+
+    // Dismiss mode sheet on backdrop click (outside the panel)
+    modeOverlay?.addEventListener('click', (e: MouseEvent) => {
+        if (modePanel && !modePanel.contains(e.target as Node)) closeModeSelect();
+    });
 
     // Add-comment form
     const commentFormEl = document.getElementById('commentForm');
@@ -33,14 +63,13 @@ export function initIdeation(): void {
         }
     }
 
-    // Emoji reaction forms — intercept and update in place without page reload
+    // Emoji reaction forms
     document.addEventListener('submit', async (e: Event) => {
         const form = e.target as HTMLFormElement;
         if (!form.hasAttribute('data-emoji-form')) return;
 
         e.preventDefault();
 
-        // For picker forms, the submitter button carries the emojiId as name/value
         const submitter = (e as SubmitEvent).submitter as HTMLButtonElement | null;
         const formData = new FormData(form);
         if (submitter?.name) {
@@ -86,7 +115,7 @@ export function initIdeation(): void {
         }
     });
 
-    // Delegate all data-action button clicks
+    // Button delegation
     document.addEventListener('click', (e: MouseEvent) => {
         const target = (e.target as Element).closest<HTMLElement>('[data-action]');
         if (!target) return;
@@ -96,6 +125,31 @@ export function initIdeation(): void {
         switch (action) {
             case 'show-create-form':
                 e.preventDefault();
+                // Open the mode-selection sheet so the user can choose AI chat or classic form.
+                openModeSelect();
+                break;
+
+            case 'show-ai-form':
+                e.preventDefault();
+                closeModeSelect();
+                if (projectId != null && categoryId) {
+                    openIdeaSupportChat(
+                        projectId,
+                        categoryId,
+                        categoryName,
+                        (draftText) => submitIdeaFromChat(createForm, descriptionEl, moderationEl, draftText),
+                        (draft) => {
+                            createFormEl?.classList.remove('hidden');
+                            if (draft && descriptionEl) descriptionEl.value = draft;
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        },
+                    );
+                }
+                break;
+
+            case 'show-manual-form':
+                e.preventDefault();
+                closeModeSelect();
                 createFormEl?.classList.remove('hidden');
                 window.scrollTo({top: 0, behavior: 'smooth'});
                 break;
@@ -129,6 +183,31 @@ export function initIdeation(): void {
         }
     });
 }
+
+// Submit an idea that came from the AI chat
+async function submitIdeaFromChat(
+    form: HTMLFormElement | null,
+    descriptionEl: HTMLTextAreaElement | null,
+    moderationEl: HTMLInputElement | null,
+    draftText: string,
+): Promise<void> {
+    if (!form || !descriptionEl) return;
+
+    descriptionEl.value = draftText;
+    if (moderationEl) moderationEl.value = '';
+
+    form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+}
+
+// Helpers
+
+// function hidden(name: string, value: string): HTMLInputElement {
+//     const input  = document.createElement('input');
+//     input.type   = 'hidden';
+//     input.name   = name;
+//     input.value  = value;
+//     return input;
+// }
 
 function renderReactionButtons(
     emojis: EmojiReaction[],

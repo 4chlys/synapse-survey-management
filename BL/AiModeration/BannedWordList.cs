@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 /// Provides the list of banned words sourced from the loaded <see cref="AiConfig"/>.
 ///
 /// Previously this was a static list of hardcoded strings. It is now a thin adapter
-/// so the rest of the moderation pipeline (<see cref="GoogleVertexAiService"/>,
+/// so the rest of the moderation pipeline (<see cref="GoogleVertexAiModerationService"/>,
 /// <see cref="RegexModerationPatterns"/>) can continue to call the same shape
 /// while the data comes from ai-config.json.
 /// </summary>

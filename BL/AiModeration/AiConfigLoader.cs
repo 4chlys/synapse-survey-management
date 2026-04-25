@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
@@ -79,28 +80,37 @@ public static class AiConfigLoader
     private static AiConfig ApplyPlatformSubstitutions(AiConfig config)
     {
         var p = config.Platform;
-
-        string Sub(string s) => s
+        string Sub(string s) => string.IsNullOrEmpty(s) ? s : s
             .Replace("{platform_name}", p.Name, StringComparison.OrdinalIgnoreCase)
-            .Replace("{language}", p.Language, StringComparison.OrdinalIgnoreCase)
-            .Replace("{country}", p.Country, StringComparison.OrdinalIgnoreCase);
-
+            .Replace("{language}",      p.Language, StringComparison.OrdinalIgnoreCase)
+            .Replace("{country}",       p.Country, StringComparison.OrdinalIgnoreCase);
+        
         var m = config.Moderation;
         var substitutedModeration = new ModerationConfig
         {
-            UseAi = m.UseAi,
-            ModerationPrompt = Sub(m.ModerationPrompt),
+            UseAi                  = m.UseAi,
+            ModerationPrompt       = Sub(m.ModerationPrompt),
             CommentModerationPrompt = Sub(m.CommentModerationPrompt),
-            RewritePrompt = Sub(m.RewritePrompt),
-            BannedWords = m.BannedWords,
-            RegexPatterns = m.RegexPatterns,
+            RewritePrompt          = Sub(m.RewritePrompt),
+            BannedWords            = m.BannedWords,
+            RegexPatterns          = m.RegexPatterns,
+        };
+        
+        var i = config.IdeaSupport;
+        var substitutedIdeaSupport = new AiIdeaSupportConfig
+        {
+            SystemPrompt   = Sub(i.SystemPrompt),
+            ContextPrompt  = Sub(i.ContextPrompt),
+            RefinePrompt   = Sub(i.RefinePrompt),
+            MaxHistoryTurns = i.MaxHistoryTurns,
         };
 
         return new AiConfig
         {
-            Platform = config.Platform,
-            Moderation = substitutedModeration,
-            Fuzzy = config.Fuzzy,
+            Platform    = config.Platform,
+            Moderation  = substitutedModeration,
+            IdeaSupport = substitutedIdeaSupport,
+            Fuzzy       = config.Fuzzy,
         };
     }
 }

@@ -113,10 +113,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Strip DaisyUI's default button chrome from nav icon buttons */
-button:not(.btn) {
-  background: transparent;
-  border: none;
+/* Strip browser-default button chrome from non-DaisyUI buttons.
+   In @layer base so Tailwind utility classes (bg-*, border-*) can override it. */
+@layer base {
+  button:not(.btn) {
+    background: transparent;
+    border: none;
+  }
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {

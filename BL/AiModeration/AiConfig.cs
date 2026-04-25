@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
@@ -11,6 +12,8 @@ public sealed class AiConfig
     [JsonPropertyName("platform")] public PlatformConfig Platform { get; init; } = new();
 
     [JsonPropertyName("moderation")] public ModerationConfig Moderation { get; init; } = new();
+    
+    [JsonPropertyName("idea_support")] public AiIdeaSupportConfig IdeaSupport { get; init; } = new();
 
     [JsonPropertyName("fuzzy")] public FuzzyConfig Fuzzy { get; init; } = new();
 }
