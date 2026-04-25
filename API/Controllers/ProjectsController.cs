@@ -52,7 +52,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectDto dto)
+    public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -66,13 +66,14 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
-            dto.RequestContactInfo);
+            dto.RequestContactInfo,
+            ct);
 
         return Created(string.Empty, MapToDto(project));
     }
 
     [HttpPut("{projectId}")]
-    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, [FromBody] UpdateProjectDto dto)
+    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, [FromBody] UpdateProjectDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -87,7 +88,8 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
-            dto.RequestContactInfo);
+            dto.RequestContactInfo,
+            ct);
 
         return Ok(MapToDto(project));
     }

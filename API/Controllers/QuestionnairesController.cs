@@ -41,7 +41,7 @@ public class QuestionnairesController(
 
     [HttpPost("questions")]
     public async Task<ActionResult<QuestionDto>> AddQuestion(int projectId,
-        [FromBody] CreateQuestionDto dto)
+        [FromBody] CreateQuestionDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -53,7 +53,7 @@ public class QuestionnairesController(
         {
             var question = await questionnaireManager.AddQuestionAsync(projectId,
                 dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
-                dto.ParentQuestionId, dto.ParentTriggerValue, dto.EndingAnswers?.ToList());
+                dto.ParentQuestionId, dto.ParentTriggerValue, dto.EndingAnswers?.ToList(), ct);
             if (question is null)
                 return NotFound();
 
@@ -66,7 +66,7 @@ public class QuestionnairesController(
     }
 
     [HttpPut("questions/{questionId}")]
-    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody] UpdateQuestionDto dto)
+    public async Task<IActionResult> UpdateQuestion(int projectId, int questionId, [FromBody] UpdateQuestionDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -74,9 +74,12 @@ public class QuestionnairesController(
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
+        if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
+            return NotFound();
+
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
             dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
-            dto.EndingAnswers?.ToList());
+            dto.EndingAnswers?.ToList(), ct);
         if (!success)
             return NotFound();
 
@@ -84,9 +87,12 @@ public class QuestionnairesController(
     }
 
     [HttpDelete("questions/{questionId}")]
-    public async Task<IActionResult> DeleteQuestion(int questionId)
+    public async Task<IActionResult> DeleteQuestion(int projectId, int questionId, CancellationToken ct)
     {
-        var success = await questionnaireManager.DeleteQuestionAsync(questionId);
+        if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
+            return NotFound();
+
+        var success = await questionnaireManager.DeleteQuestionAsync(questionId, ct);
         if (!success)
             return NotFound();
 
@@ -94,15 +100,18 @@ public class QuestionnairesController(
     }
 
     [HttpPut("questions/{questionId}/location")]
-    public async Task<ActionResult<QuestionDto>> MoveQuestion(int questionId, [FromBody] MoveQuestionDto dto)
+    public async Task<ActionResult<QuestionDto>> MoveQuestion(int projectId, int questionId, [FromBody] MoveQuestionDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
+            return NotFound();
+
         try
         {
             var moved = await questionnaireManager.MoveQuestionAsync(
-                questionId, dto.ParentQuestionId, dto.ParentTriggerValue, dto.Position);
+                questionId, dto.ParentQuestionId, dto.ParentTriggerValue, dto.Position, ct);
             if (moved is null)
                 return NotFound();
             return Ok(MapToDto(moved));

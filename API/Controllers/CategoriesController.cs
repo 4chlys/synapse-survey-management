@@ -21,16 +21,16 @@ public class CategoriesController(
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
+    public async Task<ActionResult<CategoryDto>> GetCategoryById(int projectId, int id)
     {
-        var category = await categoryManager.GetCategoryByIdReadOnlyAsync(id);
-        if (category is null) return NotFound();
+        var category = await categoryManager.GetCategoryByIdWithProjectReadOnlyAsync(id);
+        if (category is null || category.Project?.ProjectId != projectId) return NotFound();
         var count = await ideaManager.CountByCategoryAsync(id);
         return Ok(MapToDto(category, count));
     }
 
     [HttpPost]
-    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId, [FromBody] CategoryRequest dto)
+    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId, [FromBody] CategoryRequest dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -39,17 +39,17 @@ public class CategoriesController(
         if (project is null)
             return NotFound();
 
-        var category = await categoryManager.CreateCategoryAsync(project, dto.Name, dto.Description);
+        var category = await categoryManager.CreateCategoryAsync(project, dto.Name, dto.Description, ct);
         return Created(string.Empty, MapToDto(category, 0));
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryRequest dto)
+    public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryRequest dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var success = await categoryManager.UpdateCategoryAsync(id, dto.Name, dto.Description);
+        var success = await categoryManager.UpdateCategoryAsync(id, dto.Name, dto.Description, ct);
         if (!success)
             return NotFound();
 
@@ -57,9 +57,9 @@ public class CategoriesController(
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCategory(int id)
+    public async Task<IActionResult> DeleteCategory(int id, CancellationToken ct)
     {
-        var success = await categoryManager.DeleteCategoryAsync(id);
+        var success = await categoryManager.DeleteCategoryAsync(id, ct);
         if (!success)
             return NotFound();
 

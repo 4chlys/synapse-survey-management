@@ -65,6 +65,12 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
             .OrderBy(q => q.Position)
             .ToListAsync();
 
+    public Task<bool> ExistsForProjectAsync(int questionId, int projectId)
+        => Context.Set<Question>()
+            .AsNoTracking()
+            .AnyAsync(q => q.QuestionId == questionId
+                           && q.Questionnaire.Project.ProjectId == projectId);
+
     public async Task<IEnumerable<Question>> ReadSiblingsForUpdateAsync(int? parentQuestionId, string parentTriggerValue, int questionnaireId)
     {
         var query = Context.Set<Question>()
