@@ -97,7 +97,7 @@ push-dev:
     - docker push "${IMAGE_API}:${IMAGE_TAG}"
     - docker push "${IMAGE_UI}:${IMAGE_TAG}"
   only:
-    - main #reverse
+    - development #reverse
 
 push-prod:
   stage: push
@@ -112,15 +112,18 @@ push-prod:
     - docker push "${IMAGE_API}:latest"
     - docker push "${IMAGE_UI}:latest"
   only:
-    - development #reverse
+    - main #reverse
 
 deploy-test:
   stage: deploy
   image: google/cloud-sdk:latest
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   before_script:
-    - echo "${GCP_SERVICE_ACCOUNT_KEY}" | base64 -d > /tmp/key.json
-    - gcloud auth activate-service-account --key-file=/tmp/key.json
-    - gcloud config set project "${PROJECT_ID}"
+      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+      - gcloud auth login --cred-file=gcp-wif-test.json
+      - gcloud config set project "${PROJECT_ID}"
   script:
     - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
@@ -129,22 +132,25 @@ deploy-test:
       API_URL=$(gcloud run services describe mvp-api-test --region="${REGION}" --format="value(status.url)")
       echo "API URL: $API_URL"
     - |
-      gcloud run deploy mvp-ui-test --image="${IMAGE_UI}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=3 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED"
+      gcloud run deploy mvp-ui-test --image="${IMAGE_UI}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=3 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*"
     - |
       UI_URL=$(gcloud run services describe mvp-ui-test --region="${REGION}" --format="value(status.url)")
       echo "Test UI available at: $UI_URL"
   only:
-    - main #reverse
+    - development #reverse
   environment:
     name: test
 
 deploy-production:
   stage: deploy
   image: google/cloud-sdk:latest
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   before_script:
-    - echo "${GCP_SERVICE_ACCOUNT_KEY_PROD}" | base64 -d > /tmp/key.json
-    - gcloud auth activate-service-account --key-file=/tmp/key.json
-    - gcloud config set project "${PROJECT_ID}"
+      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+      - gcloud auth login --cred-file=gcp-wif-prod.json
+      - gcloud config set project "${PROJECT_ID}"
   script:
     - |
       gcloud compute instance-groups managed rolling-action replace synapse-api-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
@@ -152,7 +158,7 @@ deploy-production:
       gcloud compute instance-groups managed wait-until synapse-api-mig --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-ui-mig --stable --zone="${ZONE}"
   only:
-    - development #reverse
+    - main #reverse
   when: manual
   environment:
     name: production
