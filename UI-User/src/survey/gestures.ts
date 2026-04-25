@@ -5,40 +5,32 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
     let touchStartX = 0;
     let touchStartY = 0;
 
-    // Mouse wheel / trackpad — two-phase debounce:
+    // Mouse wheel / trackpad debounce.
     //
-    // Phase 1 (isAnimating = true, 580 ms):
-    //   Drop every event silently. Do NOT touch the timer — events during
-    //   animation must not extend the post-animation lockout.
+    // Uses a fixed cooldown measured from navigation time rather than an
+    // event-resetting timer. Event-resetting timers cause two failure modes:
+    //   - Lockout: continuous momentum events endlessly defer the timer.
+    //   - Double scroll: a timer that expires early lets stray momentum fire a second nav.
     //
-    // Phase 2 (after animation, timer running):
-    //   Momentum events keep arriving. Each one resets the timer to 80 ms.
-    //   Only when the trackpad has been truly quiet for 80 ms does the timer
-    //   expire and unlock the next navigation.
-    //
-    // The initial timer after a navigation is set to TRANSITION_MS + 80 ms
-    // (= 660 ms) so it cannot fire while the animation is still running —
-    // it only becomes relevant for post-animation momentum tails.
-    const TRANSITION_MS = 580;
-    let wheelTimer: ReturnType<typeof setTimeout> | null = null;
+    // Anything arriving within POST_NAV_BLOCK_MS of the last navigation is dropped
+    // silently. isAnimating covers the CSS transition; the timestamp check covers
+    // the trackpad momentum tail (macOS can send momentum for ~1 s after gesture ends).
+    const POST_NAV_BLOCK_MS = 900;
+    let lastNavTime = 0;
 
     container.addEventListener('wheel', (e: WheelEvent) => {
         e.preventDefault();
 
-        // Phase 1: silently drop events during animation.
         if (state.isAnimating) return;
+        if (Date.now() - lastNavTime < POST_NAV_BLOCK_MS) return;
 
-        // Phase 2: post-animation momentum — keep resetting the quiet window.
-        if (wheelTimer !== null) {
-            clearTimeout(wheelTimer);
-            wheelTimer = setTimeout(() => { wheelTimer = null; }, 80);
-            return;
+        if (e.deltaY > 0) {
+            lastNavTime = Date.now();
+            void navigateNext(state);
+        } else if (e.deltaY < 0) {
+            lastNavTime = Date.now();
+            void navigatePrev(state);
         }
-
-        // Unlocked — navigate and arm the timer.
-        if (e.deltaY > 0) void navigateNext(state);
-        else if (e.deltaY < 0) void navigatePrev(state);
-        wheelTimer = setTimeout(() => { wheelTimer = null; }, TRANSITION_MS + 80);
     }, {passive: false});
 
     // Touch swipe (mobile)
