@@ -32,7 +32,6 @@ public class ProjectManager(
         var project = new Project
         {
             Name = name,
-            OrganisationName = name.Length > 50 ? name[..50] : name,
             Topic = topic,
             ImageUrl = imageUrl,
             FormType = formType,
