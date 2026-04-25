@@ -37,8 +37,7 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
     {
         var query = Context.Set<Project>()
             .AsNoTracking()
-            .Include(p => p.ProjectPlatform)
-            .AsQueryable();
+            .Include(p => p.ProjectPlatform);
 
         if (platformId.HasValue)
             query = query.Where(p => p.ProjectPlatformId == platformId.Value);
