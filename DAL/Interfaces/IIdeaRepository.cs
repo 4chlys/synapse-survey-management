@@ -26,4 +26,12 @@ public interface IIdeaRepository : IRepository<Idea>
     Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId);
 
     Task<bool> AnyExistByParticipantAsync(int participantId);
+
+    // Embedding-sorted reads. Implementation selects pgvector SQL (PostgreSQL) or
+    // in-memory cosine sort (SQLite / other) based on the active provider.
+    Task<IEnumerable<Idea>> ReadVisibleByCategoryOrderedByEmbeddingReadOnlyAsync(
+        int categoryId, float[] queryEmbedding, bool ascending, int skip, int take);
+
+    Task<IEnumerable<Idea>> ReadVisibleByCategoryTopNByEmbeddingReadOnlyAsync(
+        int categoryId, float[] queryEmbedding, int maxItems);
 }
