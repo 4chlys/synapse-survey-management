@@ -10,7 +10,7 @@ public class ProjectManager(
     IEmojiRepository emojiRepository,
     IUnitOfWork uow) : IProjectManager
 {
-    public Task<Project> GetProjectByIdAsync(int projectId)
+    public Task<Project> GetProjectByIdWithIntroductionReadOnlyAsync(int projectId)
         => projectRepository.ReadByIdWithIntroductionReadOnlyAsync(projectId);
 
     public Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
@@ -18,6 +18,14 @@ public class ProjectManager(
 
     public Task<Project> GetProjectByIdForUpdateAsync(int projectId)
         => projectRepository.ReadByIdForUpdateAsync(projectId);
+    
+    public async Task<IEnumerable<Emoji>> GetEmojisForProjectAsync(int projectId)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisReadOnlyAsync(projectId);
+        return project?.Emojis ?? Enumerable.Empty<Emoji>();
+    }
+
+
 
     public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {

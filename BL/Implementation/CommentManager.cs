@@ -10,17 +10,12 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 public class CommentManager(
     ICommentRepository commentRepository,
     IIdeaRepository ideaRepository,
-    IProjectRepository projectRepository,
     IUnitOfWork uow,
     ILogger<CommentManager> logger,
     ISortStrategyFactory<TextComment> sortStrategyFactory) : ICommentManager
 {
-    public async Task<PagedResult<TextComment>> GetCommentsWithOwnFirstAsync(int projectId, int ideaId, int page, string sortKey, int? participantId)
+    public async Task<PagedResult<TextComment>> GetCommentsWithOwnFirstReadOnlyAsync(int projectId, int ideaId, int page, string sortKey, int pageSize, int? participantId)
     {
-        var project = await projectRepository.ReadByIdReadOnlyAsync(projectId)
-                      ?? throw new KeyNotFoundException($"Project {projectId} not found.");
-        var pageSize = project.CommentPageSize;
-
         var ownComments = participantId.HasValue
             ? await commentRepository.ReadOwnTextCommentsByIdeaWithReactionsReadOnlyAsync(ideaId, participantId.Value)
             : Enumerable.Empty<TextComment>();
@@ -60,12 +55,6 @@ public class CommentManager(
         var created = (TextComment)await commentRepository.CreateAsync(comment);
         await uow.SaveChangesAsync(ct);
         return created;
-    }
-
-    public async Task<IEnumerable<Emoji>> GetEmojisAsync(int projectId)
-    {
-        var project = await projectRepository.ReadByIdWithEmojisReadOnlyAsync(projectId);
-        return project?.Emojis ?? Enumerable.Empty<Emoji>();
     }
 
     public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)

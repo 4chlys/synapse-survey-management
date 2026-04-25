@@ -77,8 +77,11 @@ public class IdeasController(
     public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
         int projectId, int ideaId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        if (project is null) return NotFound();
+
         var participantId = await ResolveParticipantIdAsync();
-        var paged = await commentManager.GetCommentsWithOwnFirstAsync(projectId, ideaId, page, sort, participantId);
+        var paged = await commentManager.GetCommentsWithOwnFirstReadOnlyAsync(projectId, ideaId, page, sort, project.CommentPageSize, participantId);
 
         return Ok(new PagedResult<TextCommentDto>
         {
@@ -88,6 +91,7 @@ public class IdeasController(
             TotalCount = paged.TotalCount
         });
     }
+
 
     private async Task<int?> ResolveParticipantIdAsync()
     {

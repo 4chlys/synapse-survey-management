@@ -7,7 +7,6 @@ public class IdeaManagerTests
 {
     private readonly Mock<IIdeaRepository> _ideaRepository = new(MockBehavior.Strict);
     private readonly Mock<ICategoryRepository> _categoryRepository = new(MockBehavior.Strict);
-    private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<Idea>> _sortFactory = new();
     private readonly IdeaManager _manager;
