@@ -12,6 +12,14 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Where(c => c.Project.ProjectId == projectId)
             .ToListAsync();
 
+    public async Task<IEnumerable<Category>> ReadAllWithIdeasByProjectReadOnlyAsync(int projectId)
+        => await Context.Set<Category>()
+            .AsNoTracking()
+            .Where(c => c.Project.ProjectId == projectId)
+            .Include(c => c.Ideas)
+                .ThenInclude(i => i.Comments)
+            .ToListAsync();
+
     public Task<Category> ReadByIdReadOnlyAsync(int categoryId)
         => Context.Set<Category>()
             .AsNoTracking()

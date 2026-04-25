@@ -27,11 +27,14 @@ public class ProjectManager(
 
 
 
-    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction,
+        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        int? minAge, int? maxAge, bool requestContactInfo, int platformId)
     {
         var project = new Project
         {
             Name = name,
+            ProjectPlatformId = platformId,
             Topic = topic,
             ImageUrl = imageUrl,
             FormType = formType,
@@ -81,8 +84,17 @@ public class ProjectManager(
         return project;
     }
 
-    public Task<IEnumerable<Project>> GetAllProjectsAsync()
-        => projectRepository.ReadAllReadOnlyAsync();
+    public Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null)
+        => projectRepository.ReadAllWithPlatformReadOnlyAsync(platformId);
+
+    public async Task IncrementViewCountAsync(int projectId)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
+        if (project is null) return;
+        project.ViewCount++;
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync();
+    }
 
     public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
         => emojiRepository.ReadAllReadOnlyAsync();

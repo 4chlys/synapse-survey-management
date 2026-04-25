@@ -5,6 +5,7 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 public interface ICategoryManager
 {
     Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId);
+    Task<IEnumerable<Category>> GetCategoriesWithIdeasForProjectReadOnlyAsync(int projectId);
     Task<Category> GetCategoryByIdReadOnlyAsync(int id);
 
     Task<Category> CreateCategoryAsync(Project project, string name, string description);

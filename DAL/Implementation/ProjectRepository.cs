@@ -35,7 +35,7 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
 
     public async Task<IEnumerable<Project>> ReadAllWithPlatformReadOnlyAsync(int? platformId = null)
     {
-        var query = Context.Set<Project>()
+        IQueryable<Project> query = Context.Set<Project>()
             .AsNoTracking()
             .Include(p => p.ProjectPlatform);
 

@@ -38,9 +38,13 @@ public class ParticipantManager(
         if (participant is null)
             throw new KeyNotFoundException("Participant not found.");
         participant.HasSubmitted = true;
+        participant.CompletedAt = DateTime.UtcNow;
         participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
     }
+
+    public Task<int> CountCompletionsByProjectAsync(int projectId)
+        => participantRepository.CountCompletionsByProjectAsync(projectId);
 
     public async Task SaveContactInfoAsync(int participantId, string email, CancellationToken ct = default)
     {
