@@ -24,4 +24,10 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
     public Task<Participant> ReadBySessionTokenForUpdateAsync(Guid sessionToken)
         => Context.Set<Participant>()
             .FirstOrDefaultAsync(p => p.SessionToken == sessionToken);
+
+    public Task<int> CountCompletionsByProjectAsync(int projectId)
+        => Context.Set<Participant>()
+            .AsNoTracking()
+            .CountAsync(p => EF.Property<int>(p, "ProjectId") == projectId
+                             && p.CompletedAt.HasValue);
 }

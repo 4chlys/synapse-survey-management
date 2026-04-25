@@ -32,4 +32,17 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
             .AsNoTracking()
             .Include(p => p.Emojis)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
+    public async Task<IEnumerable<Project>> ReadAllWithPlatformReadOnlyAsync(int? platformId = null)
+    {
+        var query = Context.Set<Project>()
+            .AsNoTracking()
+            .Include(p => p.ProjectPlatform)
+            .AsQueryable();
+
+        if (platformId.HasValue)
+            query = query.Where(p => p.ProjectPlatformId == platformId.Value);
+
+        return await query.ToListAsync();
+    }
 }

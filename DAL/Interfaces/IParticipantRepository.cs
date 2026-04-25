@@ -11,4 +11,6 @@ public interface IParticipantRepository : IRepository<Participant>
     Task<Participant> ReadBySessionTokenReadOnlyAsync(Guid sessionToken);
 
     Task<Participant> ReadBySessionTokenForUpdateAsync(Guid sessionToken);
+
+    Task<int> CountCompletionsByProjectAsync(int projectId);
 }
