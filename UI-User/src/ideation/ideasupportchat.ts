@@ -249,23 +249,23 @@ function showDraftConfirmation(draft: string): void {
     bubble.setAttribute('data-draft-confirmation', 'true');
 
     const avatar = document.createElement('div');
-    avatar.className = 'w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 self-end';
+    avatar.className = 'w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 self-end';
     avatar.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600" fill="none"
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-primary" fill="none"
              viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
                   d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
         </svg>`;
 
     const card = document.createElement('div');
-    card.className = 'bg-emerald-50 border-2 border-emerald-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[85%] flex flex-col gap-3';
+    card.className = 'bg-primary/10 border-2 border-primary/30 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[85%] flex flex-col gap-3';
 
     const label = document.createElement('p');
-    label.className = 'text-xs font-semibold text-emerald-700 uppercase tracking-wide';
+    label.className = 'text-xs font-semibold text-primary uppercase tracking-wide';
     label.textContent = 'Jouw idee — wil je dit indienen?';
 
     const draftPara = document.createElement('p');
-    draftPara.className = 'text-sm text-gray-800 leading-relaxed';
+    draftPara.className = 'text-sm text-base-content leading-relaxed';
     draftPara.textContent = draft;
 
     const btnRow = document.createElement('div');
@@ -274,15 +274,15 @@ function showDraftConfirmation(draft: string): void {
     const yesBtn = document.createElement('button');
     yesBtn.type = 'button';
     yesBtn.className =
-        'flex-1 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold ' +
-        'hover:bg-emerald-600 active:scale-95 transition-all cursor-pointer';
+        'flex-1 py-2 rounded-xl bg-primary text-primary-content text-sm font-semibold ' +
+        'hover:bg-primary/90 active:scale-95 transition-all cursor-pointer';
     yesBtn.textContent = 'Ja, indienen';
 
     const noBtn = document.createElement('button');
     noBtn.type = 'button';
     noBtn.className =
-        'flex-1 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-medium ' +
-        'hover:border-gray-300 hover:bg-gray-50 active:scale-95 transition-all cursor-pointer';
+        'flex-1 py-2 rounded-xl border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
+        'hover:bg-base-200 active:scale-95 transition-all cursor-pointer';
     noBtn.textContent = 'Nee, aanpassen';
 
     yesBtn.addEventListener('click', () => {
@@ -372,7 +372,7 @@ function appendUserBubble(text: string): void {
     const bubble = document.createElement('div');
     bubble.className = 'flex justify-end';
     bubble.innerHTML = `
-        <div class="bg-emerald-500 text-white rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
+        <div class="bg-primary text-primary-content rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
             <p class="text-sm leading-relaxed">${escapeHtml(text)}</p>
         </div>`;
     messagesContainer!.appendChild(bubble);
@@ -383,15 +383,15 @@ function appendAssistantBubble(text: string): void {
     const bubble = document.createElement('div');
     bubble.className = 'flex gap-2 items-end';
     bubble.innerHTML = `
-        <div class="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 self-end">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600" fill="none"
+        <div class="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 self-end">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-primary" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
             </svg>
         </div>
-        <div class="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]">
-            <p class="text-sm text-gray-800 leading-relaxed">${renderMarkdown(text)}</p>
+        <div class="bg-base-200 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]">
+            <p class="text-sm text-base-content leading-relaxed">${renderMarkdown(text)}</p>
         </div>`;
     messagesContainer!.appendChild(bubble);
     scrollToBottom();
@@ -406,18 +406,18 @@ function showLoading(): void {
     loadingBubbleEl.className = 'flex gap-2 items-end';
     loadingBubbleEl.setAttribute('data-loading-bubble', 'true');
     loadingBubbleEl.innerHTML = `
-        <div class="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600" fill="none"
+        <div class="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-primary" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
             </svg>
         </div>
-        <div class="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
+        <div class="bg-base-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
             <div class="flex gap-1 items-center h-4">
-                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
-                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
-                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                <span class="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                <span class="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                <span class="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style="animation-delay:300ms"></span>
             </div>
         </div>`;
 
@@ -482,7 +482,7 @@ function renderMarkdown(text: string): string {
     let safe = escapeHtml(text);
     safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     safe = safe.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-    safe = safe.replace(/`([^`]+)`/g, '<code class="bg-gray-200 rounded px-1 text-xs font-mono">$1</code>');
+    safe = safe.replace(/`([^`]+)`/g, '<code class="bg-base-300 rounded px-1 text-xs font-mono">$1</code>');
     safe = safe.replace(/\n/g, '<br>');
     return safe;
 }

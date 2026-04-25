@@ -11,13 +11,13 @@
      class="fixed inset-0 z-40 hidden items-end sm:items-center justify-center
             bg-black/40 backdrop-blur-sm p-0 sm:p-6">
     <div id="mode-select-panel"
-         class="bg-white w-full max-w-sm sm:rounded-[1.25rem] rounded-t-[1.25rem]
+         class="bg-base-100 w-full max-w-sm sm:rounded-[1.25rem] rounded-t-[1.25rem]
                 px-5 pt-5 pb-8 shadow-2xl">
 
         @* Drag handle (mobile only) *@
-        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
+        <div class="w-10 h-1 bg-base-300 rounded-full mx-auto mb-5 sm:hidden"></div>
 
-        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+        <p class="text-sm font-semibold text-base-content/50 uppercase tracking-wide mb-4">
             Hoe wil je jouw idee toevoegen?
         </p>
 
@@ -25,10 +25,10 @@
 
             @* AI chat option *@
             <button type="button" data-action="show-ai-form"
-                    class="flex items-center gap-4 p-4 rounded-2xl border-2 border-emerald-100
-                           bg-emerald-50 hover:border-emerald-300 transition-colors text-left w-full">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600"
+                    class="flex items-center gap-4 p-4 rounded-2xl border-2 border-primary/20
+                           bg-primary/5 hover:border-primary/40 active:scale-[0.98] transition-all text-left w-full cursor-pointer">
+                <div class="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3
@@ -38,17 +38,17 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="font-semibold text-gray-900 text-sm">Met AI-assistent</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Wij helpen je idee te formuleren</p>
+                    <p class="font-semibold text-base-content text-sm">Met AI-assistent</p>
+                    <p class="text-xs text-base-content/40 mt-0.5">Wij helpen je idee te formuleren</p>
                 </div>
             </button>
 
             @* Classic form option *@
             <button type="button" data-action="show-manual-form"
-                    class="flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100
-                           hover:border-gray-200 bg-white transition-colors text-left w-full">
-                <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500"
+                    class="flex items-center gap-4 p-4 rounded-2xl border-2 border-base-300
+                           hover:border-primary/30 bg-base-100 active:scale-[0.98] transition-all text-left w-full cursor-pointer">
+                <div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-base-content/50"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
@@ -56,8 +56,8 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="font-semibold text-gray-900 text-sm">Zelf schrijven</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Typ je idee direct in het formulier</p>
+                    <p class="font-semibold text-base-content text-sm">Zelf schrijven</p>
+                    <p class="text-xs text-base-content/40 mt-0.5">Typ je idee direct in het formulier</p>
                 </div>
             </button>
 
@@ -264,7 +264,7 @@
         </a>
         <a asp-controller="Ideation" asp-action="MyIdeas"
            asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.Category.CategoryId"
-           class="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 transition-colors">
+           class="flex flex-col items-center gap-1 text-base-content/65 hover:text-primary transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
