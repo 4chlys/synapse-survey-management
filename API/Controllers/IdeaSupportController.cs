@@ -58,7 +58,7 @@ public class IdeaSupportController(
             catch { /* intentionally swallowed — greeting still works without project text */ }
         }
 
-        var projectName         = project?.OrganisationName ?? string.Empty;
+        var projectName         = project?.ProjectPlatform?.Name ?? string.Empty;
         var projectIntroduction = project?.Introduction?.Text ?? string.Empty;
         if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
