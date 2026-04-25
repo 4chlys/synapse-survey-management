@@ -61,6 +61,24 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         return await response.Content.ReadFromJsonAsync<IdeaViewModel>();
     }
 
+    public async Task<IdeaIndexResult> GetIdeasForIndexAsync(int projectId, int categoryId, string sort)
+    {
+        var ownIdeas = await GetMyIdeasAsync(projectId, categoryId);
+        var queryText = ownIdeas.FirstOrDefault()?.Description;
+
+        if ((sort == "similar" || sort == "different") && queryText is null)
+            sort = "diverse";
+
+        var ideas = await GetIdeasByCategoryAsync(projectId, categoryId, sort: sort, queryText: queryText);
+
+        return new IdeaIndexResult
+        {
+            Ideas = ideas,
+            ResolvedSort = sort,
+            HasOwnIdeas = ownIdeas.Count > 0
+        };
+    }
+
     public async Task<List<CommentViewModel>> GetCommentsByIdeaAsync(int projectId, int categoryId, int ideaId, int page = 1, string sort = null)
     {
         var url = $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments?page={page}";

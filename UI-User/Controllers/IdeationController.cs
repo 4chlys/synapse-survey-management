@@ -19,38 +19,31 @@ public class IdeationController(
 {
     public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse")
     {
-        var projectTask = projectApiService.GetProjectAsync(projectId);
-        var emojisTask = emojiService.GetEmojisAsync(projectId);
+        var projectTask  = projectApiService.GetProjectAsync(projectId);
+        var emojisTask   = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var ownIdeasTask = ideaService.GetMyIdeasAsync(projectId, categoryId);
+        var indexTask    = ideaService.GetIdeasForIndexAsync(projectId, categoryId, sort);
 
-        await Task.WhenAll(projectTask, emojisTask, categoryTask, ownIdeasTask);
+        await Task.WhenAll(projectTask, emojisTask, categoryTask, indexTask);
 
-        var project = await projectTask;
         var category = await categoryTask;
         if (category == null) return NotFound();
 
-        var ownIdeas = await ownIdeasTask;
-        var queryText = ownIdeas.FirstOrDefault()?.Description;
-
-        if ((sort == "similar" || sort == "different") && queryText == null)
-            sort = "diverse";
-
-        var ideas = await ideaService.GetIdeasByCategoryAsync(projectId, categoryId, sort: sort, queryText: queryText);
+        var project = await projectTask;
+        var index   = await indexTask;
 
         this.SetLayoutData(project, projectId, showModerationPopup: true);
 
         return View(new IdeaIndexViewModel
         {
-            ProjectId = projectId,
-            CategoryId = categoryId,
-            Category = category,
-            Ideas = ideas,
-            Emojis = await emojisTask,
-            ShowContactInfoPopup = contactInfo,
-            RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false),
-            CurrentSort = sort,
-            HasOwnIdeas = ownIdeas.Any()
+            ProjectId            = projectId,
+            CategoryId           = categoryId,
+            Category             = category,
+            Ideas                = index.Ideas,
+            Emojis               = await emojisTask,
+            ShowContactInfoPopup = contactInfo && (project?.RequestContactInfo ?? false),
+            CurrentSort          = index.ResolvedSort,
+            HasOwnIdeas          = index.HasOwnIdeas
         });
     }
 

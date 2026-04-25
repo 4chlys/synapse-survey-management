@@ -8,7 +8,6 @@ public class IdeaIndexViewModel
     public List<IdeaViewModel> Ideas { get; set; } = new();
     public List<EmojiViewModel> Emojis { get; set; } = new();
     public bool ShowContactInfoPopup { get; set; }
-    public bool RequestContactInfo { get; set; }
     public string CurrentSort { get; set; } = "diverse";
     public bool HasOwnIdeas { get; set; }
 }

@@ -165,6 +165,7 @@ else
 {
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
     builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
+    builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
