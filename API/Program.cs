@@ -8,6 +8,7 @@ using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
@@ -97,6 +98,7 @@ builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton(aiConfig.Moderation);
 builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
+builder.Services.AddSingleton(aiConfig.CommentSupport);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
@@ -127,15 +129,17 @@ if (useAi)
 
     builder.Services.AddChatClient(chatClient);
 
-    // Moderation, idea-support, and speech-to-text all share the same IChatClient.
+    // All AI features share the same IChatClient.
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
 }
 else
 {
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
 }
 

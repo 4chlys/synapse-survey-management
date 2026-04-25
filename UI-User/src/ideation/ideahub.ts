@@ -1,6 +1,7 @@
 import { wireIdeationForm } from './ideationform';
 import { wireModerationField } from './moderation';
 import { openIdeaSupportChat } from './ideasupportchat';
+import { openCommentSupportChat } from './commentsupportchat';
 
 interface EmojiReaction {
     emojiId: number;
@@ -55,13 +56,35 @@ export function initIdeation(): void {
     // Add-comment form
     const commentFormEl = document.getElementById('commentForm');
     const commentForm = commentFormEl?.querySelector<HTMLFormElement>('form') ?? null;
+    const commentTextEl = commentForm?.querySelector<HTMLTextAreaElement>('textarea[name="text"]') ?? null;
+    const commentModerationEl = commentForm?.querySelector<HTMLInputElement>('input[name="moderationToken"]') ?? null;
     if (commentForm && projectId != null) {
         wireIdeationForm(commentForm, 'text', projectId, 'comment');
-        const commentTextarea = commentForm.querySelector<HTMLTextAreaElement>('textarea[name="text"]');
-        if (commentTextarea) {
-            wireModerationField(commentTextarea, projectId);
+        if (commentTextEl) {
+            wireModerationField(commentTextEl, projectId);
         }
     }
+
+    // Comment mode selector
+    const commentModeOverlay = document.getElementById('comment-mode-overlay');
+    const commentModePanel   = document.getElementById('comment-mode-panel');
+
+    function openCommentModeSelect(): void {
+        if (!commentModeOverlay) return;
+        commentModeOverlay.classList.remove('hidden');
+        commentModeOverlay.classList.add('flex');
+    }
+
+    function closeCommentModeSelect(): void {
+        if (!commentModeOverlay) return;
+        commentModeOverlay.classList.add('hidden');
+        commentModeOverlay.classList.remove('flex');
+    }
+
+    commentModeOverlay?.addEventListener('click', (e: MouseEvent) => {
+        if (commentModePanel && !commentModePanel.contains(e.target as Node))
+            closeCommentModeSelect();
+    });
 
     // Emoji reaction forms
     document.addEventListener('submit', async (e: Event) => {
@@ -159,6 +182,37 @@ export function initIdeation(): void {
                 createFormEl?.classList.add('hidden');
                 break;
 
+            case 'show-comment-mode':
+                e.preventDefault();
+                openCommentModeSelect();
+                break;
+
+            case 'show-ai-comment': {
+                e.preventDefault();
+                closeCommentModeSelect();
+                if (projectId == null) break;
+
+                const ideaText     = target.dataset.ideaText ?? '';
+                const categoryName = target.dataset.categoryName ?? '';
+
+                openCommentSupportChat(
+                    projectId,
+                    ideaText,
+                    categoryName,
+                    (commentText) => submitCommentFromChat(commentForm, commentTextEl, commentModerationEl, commentText),
+                    () => {
+                        commentFormEl?.classList.remove('hidden');
+                    },
+                );
+                break;
+            }
+
+            case 'show-manual-comment':
+                e.preventDefault();
+                closeCommentModeSelect();
+                commentFormEl?.classList.remove('hidden');
+                break;
+
             case 'show-comment-form':
                 e.preventDefault();
                 commentFormEl?.classList.remove('hidden');
@@ -184,6 +238,21 @@ export function initIdeation(): void {
     });
 }
 
+// Submit a comment that came from the AI chat
+async function submitCommentFromChat(
+    form: HTMLFormElement | null,
+    textEl: HTMLTextAreaElement | null,
+    moderationEl: HTMLInputElement | null,
+    commentText: string,
+): Promise<void> {
+    if (!form || !textEl) return;
+
+    textEl.value = commentText;
+    if (moderationEl) moderationEl.value = '';
+
+    form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+}
+
 // Submit an idea that came from the AI chat
 async function submitIdeaFromChat(
     form: HTMLFormElement | null,
@@ -200,14 +269,6 @@ async function submitIdeaFromChat(
 }
 
 // Helpers
-
-function hidden(name: string, value: string): HTMLInputElement {
-    const input  = document.createElement('input');
-    input.type   = 'hidden';
-    input.name   = name;
-    input.value  = value;
-    return input;
-}
 
 function renderReactionButtons(
     emojis: EmojiReaction[],

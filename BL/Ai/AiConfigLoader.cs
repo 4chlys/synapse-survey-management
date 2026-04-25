@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
@@ -114,13 +115,22 @@ public static class AiConfigLoader
             MaxAudioSizeBytes   = s.MaxAudioSizeBytes,
         };
 
+        var c = config.CommentSupport;
+        var substitutedCommentSupport = new AiCommentSupportConfig
+        {
+            SystemPrompt    = Sub(c.SystemPrompt),
+            ContextPrompt   = Sub(c.ContextPrompt),
+            FallbackMessage = c.FallbackMessage,
+        };
+
         return new AiConfig
         {
-            Platform     = config.Platform,
-            Moderation   = substitutedModeration,
-            IdeaSupport  = substitutedIdeaSupport,
-            SpeechToText = substitutedSpeechToText,
-            Fuzzy        = config.Fuzzy,
+            Platform       = config.Platform,
+            Moderation     = substitutedModeration,
+            IdeaSupport    = substitutedIdeaSupport,
+            CommentSupport = substitutedCommentSupport,
+            SpeechToText   = substitutedSpeechToText,
+            Fuzzy          = config.Fuzzy,
         };
     }
 }
