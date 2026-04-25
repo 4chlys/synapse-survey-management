@@ -201,13 +201,13 @@ async function submitIdeaFromChat(
 
 // Helpers
 
-function hidden(name: string, value: string): HTMLInputElement {
-    const input  = document.createElement('input');
-    input.type   = 'hidden';
-    input.name   = name;
-    input.value  = value;
-    return input;
-}
+// function hidden(name: string, value: string): HTMLInputElement {
+//     const input  = document.createElement('input');
+//     input.type   = 'hidden';
+//     input.name   = name;
+//     input.value  = value;
+//     return input;
+// }
 
 function renderReactionButtons(
     emojis: EmojiReaction[],
