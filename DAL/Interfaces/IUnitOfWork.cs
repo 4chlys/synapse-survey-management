@@ -1,4 +1,4 @@
-namespace SynapseEnqueteManagement.DAL;
+namespace SynapseEnqueteManagement.DAL.Interfaces;
 
 public interface IUnitOfWork
 {

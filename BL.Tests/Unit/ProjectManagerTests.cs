@@ -1,10 +1,9 @@
-using System.Linq.Expressions;
-
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ProjectManagerTests
 {
-    private readonly Mock<IRepository> _repository = new(MockBehavior.Strict);
+    private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
+    private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ProjectManager _manager;
 
@@ -13,7 +12,7 @@ public class ProjectManagerTests
 
     public ProjectManagerTests()
     {
-        _manager = new ProjectManager(_repository.Object, _uow.Object);
+        _manager = new ProjectManager(_projectRepository.Object, _emojiRepository.Object, _uow.Object);
     }
 
     #region EnableEmojiForProjectAsync
@@ -24,11 +23,11 @@ public class ProjectManagerTests
         // Arrange
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() };
         var emoji = new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" };
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
-        _repository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
+        _projectRepository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -39,7 +38,7 @@ public class ProjectManagerTests
         // Assert
         Assert.True(result);
         Assert.Contains(emoji, project.Emojis);
-        _repository.VerifyAll();
+        _projectRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -50,11 +49,11 @@ public class ProjectManagerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() };
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
-        _repository.Setup(r => r.Update(project));
+        _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -70,7 +69,7 @@ public class ProjectManagerTests
     public async Task EnableEmojiForProjectAsync_ProjectNotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync((Project)null);
 
         // Act
@@ -85,9 +84,9 @@ public class ProjectManagerTests
     public async Task EnableEmojiForProjectAsync_EmojiNotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() });
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync((Emoji)null);
 
         // Act
@@ -104,9 +103,9 @@ public class ProjectManagerTests
         // Arrange
         var emoji = new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" };
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
 
         // Act
@@ -115,7 +114,7 @@ public class ProjectManagerTests
         // Assert
         Assert.True(result);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _repository.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
+        _projectRepository.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
     }
 
     #endregion
@@ -128,9 +127,9 @@ public class ProjectManagerTests
         // Arrange
         var emoji = new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" };
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
+        _projectRepository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -141,7 +140,7 @@ public class ProjectManagerTests
         // Assert
         Assert.True(result);
         Assert.DoesNotContain(emoji, project.Emojis);
-        _repository.VerifyAll();
+        _projectRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -149,7 +148,7 @@ public class ProjectManagerTests
     public async Task DisableEmojiForProjectAsync_ProjectNotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync((Project)null);
 
         // Act
@@ -164,7 +163,7 @@ public class ProjectManagerTests
     public async Task DisableEmojiForProjectAsync_EmojiNotEnabled_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Project>(ProjectId, It.IsAny<Expression<Func<Project, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() });
 
         // Act
@@ -173,7 +172,7 @@ public class ProjectManagerTests
         // Assert
         Assert.False(result);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _repository.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
+        _projectRepository.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
     }
 
     #endregion

@@ -1,10 +1,9 @@
-using System.Linq.Expressions;
-
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ResponseManagerTests
 {
-    private readonly Mock<IRepository> _repository = new(MockBehavior.Strict);
+    private readonly Mock<IResponseRepository> _responseRepository = new(MockBehavior.Strict);
+    private readonly Mock<IQuestionRepository> _questionRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<IResponseValidatorFactory> _validatorFactory = new(MockBehavior.Strict);
     private readonly Mock<IResponseValidator> _validator = new(MockBehavior.Strict);
@@ -17,26 +16,27 @@ public class ResponseManagerTests
     {
         _validatorFactory.Setup(f => f.GetValidator(It.IsAny<QuestionFormat>())).Returns(_validator.Object);
         _validator.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<Question>()));
-        _manager = new ResponseManager(_repository.Object, _uow.Object, _validatorFactory.Object);
+        _questionRepository.Setup(r => r.ReadByIdForUpdateAsync(_question.QuestionId)).ReturnsAsync(_question);
+        _manager = new ResponseManager(_responseRepository.Object, _questionRepository.Object, _uow.Object, _validatorFactory.Object);
     }
 
     [Fact]
     public async Task AddResponseAsync_HappyPath_CreatesAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()))
-            .ReturnsAsync((Response r, Expression<Func<Response, bool>> _) => r)
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .ReturnsAsync((Response r) => r)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
 
         // Act
-        var result = await _manager.AddResponseAsync("value", _question, _participant);
+        var result = await _manager.AddResponseAsync(_question.QuestionId, "value", _participant);
 
         // Assert
         Assert.Equal("value", result.Value);
-        _repository.VerifyAll();
+        _responseRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -46,17 +46,31 @@ public class ResponseManagerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _repository.Setup(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()))
-            .ReturnsAsync((Response r, Expression<Func<Response, bool>> _) => r);
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .ReturnsAsync((Response r) => r);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _manager.AddResponseAsync("value", _question, _participant, ct);
+        await _manager.AddResponseAsync(_question.QuestionId, "value", _participant, ct);
 
         // Assert
         _uow.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AddResponseAsync_QuestionNotFound_ThrowsAndDoesNotSave()
+    {
+        // Arrange
+        _questionRepository.Setup(r => r.ReadByIdForUpdateAsync(999)).ReturnsAsync((Question)null);
+
+        // Act + Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _manager.AddResponseAsync(999, "value", _participant));
+
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _responseRepository.Verify(r => r.CreateAsync(It.IsAny<Response>()), Times.Never);
     }
 
     [Fact]
@@ -64,25 +78,21 @@ public class ResponseManagerTests
     {
         // Arrange
         var existing = new Response { ResponseId = 1, Question = _question, Participant = _participant, Value = "old", IsCommitted = true };
-        _repository.Setup(r => r.ReadSingleAsync<Response>(
-                It.IsAny<Expression<Func<Response, bool>>[]>(),
-                It.IsAny<Expression<Func<Response, object>>[]>(),
-                It.IsAny<string[]>(),
-                It.IsAny<bool>()))
+        _responseRepository.Setup(r => r.ReadByQuestionAndParticipantForUpdateAsync(_question.QuestionId, _participant.ParticipantId))
             .ReturnsAsync(existing);
-        _repository.Setup(r => r.Update(existing)).Verifiable(Times.Exactly(1));
+        _responseRepository.Setup(r => r.Update(existing)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
 
         // Act
-        var result = await _manager.UpdateOrCreateResponseAsync("new", _question, _participant);
+        var result = await _manager.UpdateOrCreateResponseAsync(_question.QuestionId, "new", _participant);
 
         // Assert
         Assert.Same(existing, result);
         Assert.Equal("new", existing.Value);
         Assert.False(existing.IsCommitted);
-        _repository.VerifyAll();
+        _responseRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -90,26 +100,22 @@ public class ResponseManagerTests
     public async Task UpdateOrCreateResponseAsync_WhenNotExisting_CreatesAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.ReadSingleAsync<Response>(
-                It.IsAny<Expression<Func<Response, bool>>[]>(),
-                It.IsAny<Expression<Func<Response, object>>[]>(),
-                It.IsAny<string[]>(),
-                It.IsAny<bool>()))
+        _responseRepository.Setup(r => r.ReadByQuestionAndParticipantForUpdateAsync(_question.QuestionId, _participant.ParticipantId))
             .ReturnsAsync((Response)null);
-        _repository.Setup(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()))
-            .ReturnsAsync((Response r, Expression<Func<Response, bool>> _) => r)
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .ReturnsAsync((Response r) => r)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
 
         // Act
-        var result = await _manager.UpdateOrCreateResponseAsync("new", _question, _participant);
+        var result = await _manager.UpdateOrCreateResponseAsync(_question.QuestionId, "new", _participant);
 
         // Assert
         Assert.Equal("new", result.Value);
         Assert.False(result.IsCommitted);
-        _repository.VerifyAll();
+        _responseRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -121,10 +127,10 @@ public class ResponseManagerTests
 
         // Act + Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _manager.AddResponseAsync(tooLong, _question, _participant));
+            _manager.AddResponseAsync(_question.QuestionId, tooLong, _participant));
 
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _repository.Verify(r => r.CreateAsync(It.IsAny<Response>(), It.IsAny<Expression<Func<Response, bool>>>()), Times.Never);
+        _responseRepository.Verify(r => r.CreateAsync(It.IsAny<Response>()), Times.Never);
     }
 
     [Fact]
@@ -140,17 +146,9 @@ public class ResponseManagerTests
             new() { Question = q2, IsCommitted = true  }, // → hidden, will change to false
             new() { Question = q3, IsCommitted = true  }, // → visible, unchanged
         };
-        _repository.Setup(r => r.ReadAsync<Response>(
-                It.IsAny<Expression<Func<Response, bool>>[]>(),
-                It.IsAny<Expression<Func<Response, object>>[]>(),
-                It.IsAny<string[]>(),
-                It.IsAny<Func<IQueryable<Response>, IOrderedQueryable<Response>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<int?>(),
-                It.IsAny<int?>(),
-                It.IsAny<bool>()))
+        _responseRepository.Setup(r => r.ReadByParticipantWithQuestionForUpdateAsync(_participant.ParticipantId))
             .ReturnsAsync(responses);
-        _repository.Setup(r => r.Update(It.IsAny<Response>())).Verifiable(Times.Exactly(2));
+        _responseRepository.Setup(r => r.Update(It.IsAny<Response>())).Verifiable(Times.Exactly(2));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2)
             .Verifiable(Times.Exactly(1));
@@ -159,7 +157,7 @@ public class ResponseManagerTests
         await _manager.CommitResponsesAsync(_participant.ParticipantId, [1, 3]);
 
         // Assert
-        _repository.VerifyAll();
+        _responseRepository.VerifyAll();
         _uow.VerifyAll();
         Assert.True(responses[0].IsCommitted);
         Assert.False(responses[1].IsCommitted);
@@ -175,22 +173,14 @@ public class ResponseManagerTests
         {
             new() { Question = q1, IsCommitted = true }
         };
-        _repository.Setup(r => r.ReadAsync<Response>(
-                It.IsAny<Expression<Func<Response, bool>>[]>(),
-                It.IsAny<Expression<Func<Response, object>>[]>(),
-                It.IsAny<string[]>(),
-                It.IsAny<Func<IQueryable<Response>, IOrderedQueryable<Response>>>(),
-                It.IsAny<bool>(),
-                It.IsAny<int?>(),
-                It.IsAny<int?>(),
-                It.IsAny<bool>()))
+        _responseRepository.Setup(r => r.ReadByParticipantWithQuestionForUpdateAsync(_participant.ParticipantId))
             .ReturnsAsync(responses);
 
         // Act
         await _manager.CommitResponsesAsync(_participant.ParticipantId, [1]);
 
         // Assert
-        _repository.Verify(r => r.Update(It.IsAny<Response>()), Times.Never);
+        _responseRepository.Verify(r => r.Update(It.IsAny<Response>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

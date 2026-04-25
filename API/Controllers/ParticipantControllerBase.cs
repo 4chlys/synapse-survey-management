@@ -4,7 +4,9 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
-public abstract class ParticipantControllerBase(IParticipantManager participantManager) : ControllerBase
+public abstract class ParticipantControllerBase(
+    IParticipantManager participantManager,
+    IProjectManager projectManager) : ControllerBase
 {
     private const string SessionHeader = "X-Participant-Token";
 
@@ -13,16 +15,21 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
         if (!TryGetParticipantToken(out var token))
             return (null, Unauthorized("Missing or invalid X-Participant-Token header."));
 
-        var participant = await participantManager.GetParticipantBySessionTokenAsync(token);
+        var participant = await participantManager.GetParticipantBySessionTokenForUpdateAsync(token);
         if (participant is null)
             return (null, NotFound("Participant session not found."));
 
         return (participant, null);
     }
 
-    protected async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId, CancellationToken ct = default)
+    protected Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
+        => projectManager.GetProjectByIdReadOnlyAsync(projectId);
+
+    protected async Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default)
     {
-        return await participantManager.AddParticipantAsync(questionnaire, projectId, ct);
+        var project = await projectManager.GetProjectByIdForUpdateAsync(projectId)
+                      ?? throw new KeyNotFoundException($"Project {projectId} not found.");
+        return await participantManager.AddParticipantAsync(project, ct);
     }
 
     protected async Task<(Participant participant, ActionResult error)> GetParticipantAsync(int projectId)
@@ -38,7 +45,7 @@ public abstract class ParticipantControllerBase(IParticipantManager participantM
 
     protected async Task<Participant> GetParticipantByTokenAsync(Guid token)
     {
-        return await participantManager.GetParticipantBySessionTokenAsync(token);
+        return await participantManager.GetParticipantBySessionTokenForUpdateAsync(token);
     }
 
     protected async Task<bool> HasParticipantSubmittedAsync(Guid token)
