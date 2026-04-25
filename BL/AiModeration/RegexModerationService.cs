@@ -3,19 +3,16 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 /// <summary>
 /// Deterministic content moderation using compiled regex patterns and
 /// fuzzy banned-word matching. No AI dependency — safe for every request.
-///
-/// The check runs against four text variants to catch obfuscation attempts:
-///   raw → normalized → normalized+no-spaces → collapsed-repeats variants.
 /// </summary>
 public sealed class RegexModerationService(
     RegexModerationPatterns patterns,
     BannedWordList bannedWords,
-    AiConfig config) : IRegexModerationService
+    FuzzyConfig fuzzy) : IRegexModerationService
 {
-    private readonly int _minSkeletonLength = config.Fuzzy.MinSkeletonLength;
-    private readonly int _t0 = config.Fuzzy.LevenshteinThresholds.MaxLengthFor0Edits;
-    private readonly int _t1 = config.Fuzzy.LevenshteinThresholds.MaxLengthFor1Edit;
-    private readonly int _t2 = config.Fuzzy.LevenshteinThresholds.MaxLengthFor2Edits;
+    private readonly int _minSkeletonLength = fuzzy.MinSkeletonLength;
+    private readonly int _t0               = fuzzy.LevenshteinThresholds.MaxLengthFor0Edits;
+    private readonly int _t1               = fuzzy.LevenshteinThresholds.MaxLengthFor1Edit;
+    private readonly int _t2               = fuzzy.LevenshteinThresholds.MaxLengthFor2Edits;
 
     public ModerationResult Check(string text, string contentType = "idea")
     {

@@ -7,11 +7,13 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
@@ -92,7 +94,10 @@ builder.Services.AddScoped<ISectionManager, SectionManager>();
 //
 // To apply changes to ai-config.json, restart the API.
 builder.Services.AddSingleton(aiConfig);
+builder.Services.AddSingleton(aiConfig.Moderation);
+builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
+builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -122,14 +127,16 @@ if (useAi)
 
     builder.Services.AddChatClient(chatClient);
 
-    // Both moderation and idea-support share the same IChatClient.
+    // Moderation, idea-support, and speech-to-text all share the same IChatClient.
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
 }
 else
 {
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
