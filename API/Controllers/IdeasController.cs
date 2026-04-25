@@ -22,11 +22,10 @@ public class IdeasController(
     public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
         int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
-        var project = await GetProjectByIdReadOnlyAsync(projectId);
-        if (project is null) return NotFound();
-
         var participantId = await ResolveParticipantIdAsync();
-        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(projectId, categoryId, page, sort, project.IdeaPageSize);
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var pageSize = project?.IdeaPageSize ?? 5;
+        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, pageSize, page, sort);
 
         return Ok(new PagedResult<IdeaDto>
         {
@@ -92,6 +91,7 @@ public class IdeasController(
             TotalCount = paged.TotalCount
         });
     }
+
 
     private async Task<int?> ResolveParticipantIdAsync()
     {

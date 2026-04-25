@@ -59,8 +59,8 @@ export function initIdeation(): void {
         if (!targetEl || !ideaId) return;
 
         const projectIdVal = emojiContainer?.dataset.projectId ?? getProjectId()?.toString();
-        const categoryId = emojiContainer?.dataset.categoryId;
-        const returnPage = emojiContainer?.dataset.returnPage ?? 'Detail';
+        const categoryId = emojiContainer?.dataset.categoryId ?? (formData.get('categoryId') as string | null) ?? undefined;
+        const returnPage = emojiContainer?.dataset.returnPage ?? (formData.get('returnPage') as string | null) ?? 'Detail';
 
         if (!projectIdVal || !categoryId) return;
 

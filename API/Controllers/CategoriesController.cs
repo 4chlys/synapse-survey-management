@@ -24,21 +24,13 @@ public class CategoriesController(
     public async Task<ActionResult<CategoryDto>> GetCategoryById(int id)
     {
         var category = await categoryManager.GetCategoryByIdReadOnlyAsync(id);
-        var count = await ideaManager.CountByCategoryAsync(category.CategoryId);
+        if (category is null) return NotFound();
+        var count = await ideaManager.CountByCategoryAsync(id);
         return Ok(MapToDto(category, count));
     }
 
-    private static CategoryDto MapToDto(Category category, int ideaCount) => new()
-    {
-        CategoryId = category.CategoryId,
-        Name = category.Name,
-        Description = category.Description,
-        IdeaCount = ideaCount
-    };
-
     [HttpPost]
-    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId,
-        [FromBody] CategoryRequest dto)
+    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId, [FromBody] CategoryRequest dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -73,4 +65,12 @@ public class CategoriesController(
 
         return NoContent();
     }
+
+    private static CategoryDto MapToDto(Category category, int ideaCount) => new()
+    {
+        CategoryId = category.CategoryId,
+        Name = category.Name,
+        Description = category.Description,
+        IdeaCount = ideaCount
+    };
 }

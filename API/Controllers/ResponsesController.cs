@@ -17,9 +17,6 @@ public class ResponsesController(
     IProjectManager projectManager)
     : ParticipantControllerBase(participantManager, projectManager)
 {
-    /// <summary>
-    /// Saves optional contact info (email / phone) for the current participant.
-    /// </summary>
     [HttpPatch("participants/me/contact")]
     public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto, CancellationToken ct)
     {
@@ -30,9 +27,6 @@ public class ResponsesController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Creates an anonymous participant and returns a session token.
-    /// </summary>
     [HttpPost("participants")]
     public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
     {
@@ -40,11 +34,6 @@ public class ResponsesController(
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 
-    /// <summary>
-    /// Submits the survey for a participant who saved responses incrementally.
-    /// Computes the visible path, validates mandatory answers, commits visible responses,
-    /// and marks the participant as submitted.
-    /// </summary>
     [HttpPost("submit")]
     public async Task<ActionResult> Submit(int projectId, CancellationToken ct)
     {
@@ -55,9 +44,6 @@ public class ResponsesController(
         return Ok();
     }
 
-    /// <summary>
-    /// Upserts a single response. Saves with IsCommitted = false (interim save).
-    /// </summary>
     [HttpPost("responses")]
     public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto, CancellationToken ct)
     {
@@ -72,23 +58,17 @@ public class ResponsesController(
         return Created(string.Empty, dto);
     }
 
-    /// <summary>
-    /// Returns all responses for the current participant (for resume support).
-    /// </summary>
     [HttpGet("responses")]
     public async Task<ActionResult<IEnumerable<ResponseDto>>> GetResponses(int projectId)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant.ParticipantId);
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant);
         var dtos = responses.Select(MapToDto).ToList();
         return Ok(dtos);
     }
 
-    /// <summary>
-    /// Check if a participant (by token) has already submitted.
-    /// </summary>
     [HttpGet("participants/me")]
     public async Task<ActionResult> GetParticipantStatus(int projectId)
     {

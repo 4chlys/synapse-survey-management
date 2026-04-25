@@ -22,13 +22,11 @@ public abstract class ParticipantControllerBase(
         return (participant, null);
     }
 
-    protected Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
-        => projectManager.GetProjectByIdReadOnlyAsync(projectId);
-
     protected async Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default)
     {
-        var project = await projectManager.GetProjectByIdForUpdateAsync(projectId)
-                      ?? throw new KeyNotFoundException($"Project {projectId} not found.");
+        var project = await projectManager.GetProjectByIdForUpdateAsync(projectId);
+        if (project is null)
+            throw new KeyNotFoundException($"Project {projectId} not found.");
         return await participantManager.AddParticipantAsync(project, ct);
     }
 
@@ -71,4 +69,7 @@ public abstract class ParticipantControllerBase(
 
         return Guid.TryParse(headerValue.ToString(), out token);
     }
+
+    protected Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
+        => projectManager.GetProjectByIdReadOnlyAsync(projectId);
 }

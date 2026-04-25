@@ -17,7 +17,7 @@ public class SubmissionManager(
         var visiblePath = await surveyFlowManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
         var visibleSet = visiblePath.ToHashSet();
 
-        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant.ParticipantId);
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant);
         var answeredPairs = responses.Select(r => (r.Question.QuestionId, r.Value));
 
         questionnaireManager.ValidateMandatoryAnswers(questionnaire, answeredPairs, visibleSet);

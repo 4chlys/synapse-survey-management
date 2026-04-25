@@ -10,67 +10,37 @@ public class SurveyFlowManager(
 {
     public async Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId)
     {
-        var currentQuestion = await questionnaireManager.GetQuestionByIdWithBranchRulesAndQuestionnaireReadOnlyAsync(currentQuestionId);
-        if (currentQuestion is null) return null;
+        var questionnaire = await questionnaireManager
+            .GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(currentQuestionId);
+        if (questionnaire is null) return null;
 
-        var response = await responseManager.GetResponseByQuestionIdAndParticipantIdReadOnlyAsync(currentQuestionId, participantId);
-
-        if (response is not null && currentQuestion.BranchRules.Count > 0)
-        {
-            var matchingRule = FindMatchingBranchRule(currentQuestion, response.Value);
-            if (matchingRule is not null)
-            {
-                if (matchingRule.SkipToEnd) return null;
-                return matchingRule.TargetQuestion;
-            }
-        }
-
-        var allQuestions = await GetQuestionsForQuestionnaire(currentQuestion);
-        return allQuestions
-            .Where(q => q.Position > currentQuestion.Position)
-            .OrderBy(q => q.Position)
-            .FirstOrDefault();
+        var path = await ComputePathAsync(questionnaire, participantId);
+        var idx = path.FindIndex(q => q.QuestionId == currentQuestionId);
+        if (idx < 0 || idx + 1 >= path.Count) return null;
+        return path[idx + 1];
     }
 
     public async Task<Question> GetPreviousQuestionAsync(int currentQuestionId, int participantId)
     {
-        var current = await questionnaireManager.GetQuestionByIdReadOnlyAsync(currentQuestionId);
-        if (current is null) throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
+        var questionnaire = await questionnaireManager
+            .GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(currentQuestionId);
+        if (questionnaire is null)
+            throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
 
-        var questionnaire = await questionnaireManager.GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(currentQuestionId);
-        if (questionnaire is null) throw new KeyNotFoundException($"Questionnaire for question {currentQuestionId} not found.");
-
-        var allQuestions = questionnaire.Questions;
-
-        var branchSources = allQuestions
-            .Where(q => q.BranchRules.Any(b => b.TargetQuestion?.QuestionId == currentQuestionId))
-            .ToList();
-
-        foreach (var branchSource in branchSources)
-        {
-            var response = await responseManager.GetResponseByQuestionIdAndParticipantIdReadOnlyAsync(branchSource.QuestionId, participantId);
-            if (response is null) continue;
-
-            var matchedRule = FindMatchingBranchRule(branchSource, response.Value);
-            if (matchedRule?.TargetQuestion?.QuestionId == currentQuestionId)
-                return branchSource;
-        }
-
-        return allQuestions
-            .Where(q => q.Position < current.Position)
-            .OrderByDescending(q => q.Position)
-            .FirstOrDefault();
+        var path = await ComputePathAsync(questionnaire, participantId);
+        var idx = path.FindIndex(q => q.QuestionId == currentQuestionId);
+        if (idx <= 0) return null;
+        return path[idx - 1];
     }
 
     public async Task<Question> GetResumeQuestionAsync(int projectId, int participantId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
+        var questionnaire = await questionnaireManager
+            .GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null) return null;
 
-        var firstQuestion = questionnaire.Questions.OrderBy(q => q.Position).FirstOrDefault();
-        if (firstQuestion is null) return null;
-
-        var path = await ComputeVisiblePathInternal(firstQuestion, participantId);
+        var path = await ComputePathAsync(questionnaire, participantId);
+        if (path.Count == 0) return null;
 
         var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
         var answeredIds = responses.Select(r => r.Question.QuestionId).ToHashSet();
@@ -78,82 +48,67 @@ public class SurveyFlowManager(
         return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
     }
 
-    public async Task<IEnumerable<int>> ComputeVisiblePathAsync(int projectId, int participantId)
+    public async Task<List<int>> ComputeVisiblePathAsync(int projectId, int participantId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
+        var questionnaire = await questionnaireManager
+            .GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null) return [];
 
-        var firstQuestion = questionnaire.Questions.OrderBy(q => q.Position).FirstOrDefault();
-        if (firstQuestion is null) return [];
-
-        var path = await ComputeVisiblePathInternal(firstQuestion, participantId);
-        return path.Select(q => q.QuestionId);
+        var path = await ComputePathAsync(questionnaire, participantId);
+        return path.Select(q => q.QuestionId).ToList();
     }
 
-    private async Task<List<Question>> ComputeVisiblePathInternal(Question startQuestion, int participantId)
+    private async Task<List<Question>> ComputePathAsync(Questionnaire questionnaire, int participantId)
     {
-        var allQuestions = await GetQuestionsForQuestionnaire(startQuestion);
+        if (questionnaire?.Questions is null || questionnaire.Questions.Count == 0) return [];
 
+        var allQuestions = questionnaire.Questions.ToList();
         var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
-        var answersByQuestionId = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
+        var answersById = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
 
         var path = new List<Question>();
         var visited = new HashSet<int>();
-        var current = allQuestions.FirstOrDefault(q => q.QuestionId == startQuestion.QuestionId);
-        if (current is null) return path;
-
-        while (current is not null)
-        {
-            if (!visited.Add(current.QuestionId)) break;
-
-            path.Add(current);
-
-            if (answersByQuestionId.TryGetValue(current.QuestionId, out var answer)
-                && current.BranchRules.Count > 0)
-            {
-                var matchingRule = FindMatchingBranchRule(current, answer);
-                if (matchingRule is not null)
-                {
-                    if (matchingRule.SkipToEnd) break;
-                    current = allQuestions.FirstOrDefault(q => q.QuestionId == matchingRule.TargetQuestion?.QuestionId);
-                    continue;
-                }
-            }
-
-            current = allQuestions
-                .Where(q => q.Position > current.Position)
-                .OrderBy(q => q.Position)
-                .FirstOrDefault();
-        }
-
+        WalkScope(parentId: null, triggerValue: null, allQuestions, answersById, path, visited);
         return path;
     }
 
-    private async Task<List<Question>> GetQuestionsForQuestionnaire(Question question)
+    private static bool WalkScope(int? parentId, string triggerValue,
+        List<Question> allQuestions,
+        Dictionary<int, string> answersById,
+        List<Question> path,
+        HashSet<int> visited)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(question.QuestionId);
-        return questionnaire?.Questions.OrderBy(q => q.Position).ToList() ?? [];
-    }
+        var children = allQuestions
+            .Where(q => (q.ParentQuestion?.QuestionId) == parentId
+                        && q.ParentTriggerValue == triggerValue)
+            .OrderBy(q => q.Position);
 
-    private static BranchRule FindMatchingBranchRule(Question question, string answer)
-    {
-        if (string.IsNullOrWhiteSpace(answer)) return null;
-
-        foreach (var rule in question.BranchRules)
+        foreach (var child in children)
         {
-            if (question.QuestionFormat == QuestionFormat.MultipleChoice)
+            if (!visited.Add(child.QuestionId)) continue;
+            path.Add(child);
+
+            if (!answersById.TryGetValue(child.QuestionId, out var answer)) continue;
+
+            var selected = SplitSelected(child.QuestionFormat, answer);
+
+            if (child.EndingAnswers.Any(ea => selected.Contains(ea.Value)))
+                return true;
+
+            foreach (var value in selected)
             {
-                var selectedValues = answer.Split(", ", StringSplitOptions.RemoveEmptyEntries);
-                if (selectedValues.Contains(rule.TriggerValue))
-                    return rule;
-            }
-            else
-            {
-                if (string.Equals(rule.TriggerValue, answer, StringComparison.OrdinalIgnoreCase))
-                    return rule;
+                var ended = WalkScope(child.QuestionId, value, allQuestions, answersById, path, visited);
+                if (ended) return true;
             }
         }
+        return false;
+    }
 
-        return null;
+    private static IReadOnlyList<string> SplitSelected(QuestionFormat format, string rawAnswer)
+    {
+        if (string.IsNullOrWhiteSpace(rawAnswer)) return Array.Empty<string>();
+        return format == QuestionFormat.MultipleChoice
+            ? rawAnswer.Split(", ", StringSplitOptions.RemoveEmptyEntries)
+            : new[] { rawAnswer };
     }
 }

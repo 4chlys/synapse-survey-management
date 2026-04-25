@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('modal') as HTMLDivElement | null;
-    if (!modal) return;
+    const modalMaybe = document.getElementById('modal') as HTMLDivElement | null;
+    if (!modalMaybe) return;
+    const modal: HTMLDivElement = modalMaybe;
 
     const questionForm = document.getElementById('question-form') as HTMLFormElement | null;
     const questionsList = document.getElementById('questions-list') as HTMLDivElement | null;

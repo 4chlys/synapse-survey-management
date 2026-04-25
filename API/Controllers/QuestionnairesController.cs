@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -48,17 +49,24 @@ public class QuestionnairesController(
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
-        var question = await questionnaireManager.AddQuestionAsync(projectId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
-        if (question is null)
-            return NotFound();
+        try
+        {
+            var question = await questionnaireManager.AddQuestionAsync(projectId,
+                dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
+                dto.ParentQuestionId, dto.ParentTriggerValue, dto.EndingAnswers?.ToList());
+            if (question is null)
+                return NotFound();
 
-        return Created(string.Empty, MapToDto(question));
+            return Created(string.Empty, MapToDto(question));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPut("questions/{questionId}")]
-    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
-        UpdateQuestionDto dto)
+    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody] UpdateQuestionDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -67,7 +75,8 @@ public class QuestionnairesController(
             return BadRequest("Invalid QuestionFormat.");
 
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
+            dto.EndingAnswers?.ToList());
         if (!success)
             return NotFound();
 
@@ -82,6 +91,26 @@ public class QuestionnairesController(
             return NotFound();
 
         return NoContent();
+    }
+
+    [HttpPut("questions/{questionId}/location")]
+    public async Task<ActionResult<QuestionDto>> MoveQuestion(int questionId, [FromBody] MoveQuestionDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
+        {
+            var moved = await questionnaireManager.MoveQuestionAsync(
+                questionId, dto.ParentQuestionId, dto.ParentTriggerValue, dto.Position);
+            if (moved is null)
+                return NotFound();
+            return Ok(MapToDto(moved));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet("next-question")]
@@ -146,12 +175,9 @@ public class QuestionnairesController(
             AnswerChoices = question.AnswerChoices.ToList(),
             IsMandatory = question.IsMandatory,
             Position = question.Position,
-            BranchRules = question.BranchRules.Select(br => new BranchRuleDto
-            {
-                TriggerValue = br.TriggerValue,
-                TargetQuestionId = br.SkipToEnd ? null : br.TargetQuestion?.QuestionId,
-                SkipToEnd = br.SkipToEnd
-            }).ToList(),
+            ParentQuestionId = question.ParentQuestion?.QuestionId,
+            ParentTriggerValue = question.ParentTriggerValue,
+            EndingAnswers = question.EndingAnswers.Select(e => e.Value).ToList(),
             SectionName = question.Section?.Name,
             SectionId = question.Section?.SectionId
         };

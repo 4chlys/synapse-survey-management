@@ -22,8 +22,7 @@ public class SectionsController(IQuestionnaireManager questionnaireManager) : Co
     }
 
     [HttpPost]
-    public async Task<ActionResult<SectionDto>> CreateSection(int projectId,
-        [FromBody] CreateSectionDto dto)
+    public async Task<ActionResult<SectionDto>> CreateSection(int projectId, [FromBody] CreateSectionDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);

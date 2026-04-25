@@ -14,7 +14,7 @@ public class IdeaManager(
     ILogger<IdeaManager> logger,
     ISortStrategyFactory<Idea> sortStrategyFactory) : IIdeaManager
 {
-    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(int projectId, int categoryId, int page, string sortKey, int pageSize)
+    public async Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int pageSize, int page, string sortKey)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
         var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
@@ -30,6 +30,9 @@ public class IdeaManager(
 
     public Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int participantId)
         => ideaRepository.ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(categoryId, participantId);
+
+    public Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId)
+        => ideaRepository.ReadByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
 
     public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant, CancellationToken ct = default)
@@ -59,11 +62,8 @@ public class IdeaManager(
         return new AddIdeaResult(created.IdeaId, shouldAskForContactInfo);
     }
 
-    public Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId)
-        => ideaRepository.ReadByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
-
-    public async Task<IReadOnlyDictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
-        => await ideaRepository.CountByCategoriesAsync(categoryIds);
+    public Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
+        => ideaRepository.CountByCategoriesAsync(categoryIds);
 
     public Task<int> CountByCategoryAsync(int categoryId)
         => ideaRepository.CountByCategoryAsync(categoryId);

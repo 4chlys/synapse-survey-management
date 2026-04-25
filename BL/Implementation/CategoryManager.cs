@@ -11,9 +11,8 @@ public class CategoryManager(
     public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
         => categoryRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
-    public async Task<Category> GetCategoryByIdReadOnlyAsync(int id)
-        => await categoryRepository.ReadByIdReadOnlyAsync(id)
-           ?? throw new KeyNotFoundException($"Category {id} not found.");
+    public Task<Category> GetCategoryByIdReadOnlyAsync(int id)
+        => categoryRepository.ReadByIdReadOnlyAsync(id);
 
     public async Task<Category> CreateCategoryAsync(Project project, string name, string description)
     {

@@ -80,9 +80,9 @@ public class ResponseManager(
         if (changed) await uow.SaveChangesAsync(ct);
     }
 
-    public Task<Response> GetResponseByQuestionIdAndParticipantIdReadOnlyAsync(int questionId, int participantId)
-        => responseRepository.ReadByQuestionAndParticipantReadOnlyAsync(questionId, participantId);
-
     public Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(int participantId)
         => responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participantId);
+
+    public Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(Participant participant)
+        => responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participant.ParticipantId);
 }

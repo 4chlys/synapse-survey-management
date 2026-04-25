@@ -75,56 +75,13 @@
         @* Questions panel *@
         <div class="flex-1 border border-gray-500 flex flex-col p-4 overflow-y-auto">
 
-            <div id="questions-list">
-                @if (!Model.Any())
-                {
-                    <p class="text-gray-500 mb-4">Nog geen vragen toegevoegd.</p>
-                }
-
-                @for (int i = 0; i < Model.Count; i++)
-                {
-                    var q = Model[i];
-                    bool expanded = (i == 0);
-                    <div class="mb-2">
-                        <div class="flex items-stretch">
-                            <button type="button"
-                                    class="question-toggle flex-1 border border-gray-400 px-4 py-3 text-left flex justify-between items-center hover:bg-gray-800 transition"
-                                    data-question-id="@q.QuestionId">
-                                <span>Vraag @(i + 1): @q.Text@(string.IsNullOrEmpty(q.SectionName) ? "" : $" [{q.SectionName}]")</span>
-                                <span id="arrow-@q.QuestionId" class="text-gray-300 ml-2">@(expanded ? "v" : ">")</span>
-                            </button>
-                            <button type="button"
-                                    class="question-edit-btn border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-gray-700 transition"
-                                    data-question-id="@q.QuestionId"
-                                    data-text="@q.Text"
-                                    data-format="@q.QuestionFormat"
-                                    data-answers="@System.Text.Json.JsonSerializer.Serialize(q.AnswerChoices)"
-                                    data-section-id="@(q.SectionId?.ToString() ?? "")">✎</button>
-                            <form method="post" asp-controller="Question" asp-action="Delete"
-                                  asp-route-projectId="@ViewData["ProjectId"]" asp-route-questionId="@q.QuestionId" asp-route-aiAssistance="@aiAssistance">
-                                <button type="submit"
-                                        class="border border-gray-400 border-l-0 px-3 text-gray-400 hover:text-white hover:bg-red-800 transition h-full">✕</button>
-                            </form>
-                        </div>
-                        <div id="answers-@q.QuestionId" class="@(expanded ? "" : "hidden")">
-                            @if (q.AnswerChoices.Any())
-                            {
-                                foreach (var answer in q.AnswerChoices)
-                                {
-                                    <div class="border border-gray-600 px-4 py-2 ml-6 mt-1 bg-gray-800">
-                                        @answer
-                                    </div>
-                                }
-                            }
-                            else
-                            {
-                                <div class="border border-gray-600 px-4 py-2 ml-6 mt-1 bg-gray-800 text-gray-500 italic">
-                                    @q.QuestionFormat
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
+            @Html.AntiForgeryToken()
+            <div id="questions-list"
+                 data-project-id="@projectId"
+                 data-ai-assistance="@aiAssistance"
+                 data-questions-endpoint="@($"/api/admin/projects/{projectId}/questions")"
+                 data-delete-endpoint="@Url.Action("Delete", "Question")">
+                <p class="text-gray-500 text-sm">Vragen worden geladen...</p>
             </div>
 
             <button type="button" id="add-question-btn"
