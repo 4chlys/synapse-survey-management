@@ -11,21 +11,22 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}")]
 public class ResponsesController(
-    IQuestionnaireManager questionnaireManager,
     IParticipantManager participantManager,
-    IResponseManager responseManager)
-    : ParticipantControllerBase(participantManager)
+    IResponseManager responseManager,
+    ISubmissionManager submissionManager,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     /// <summary>
     /// Saves optional contact info (email / phone) for the current participant.
     /// </summary>
     [HttpPatch("participants/me/contact")]
-    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto)
+    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        await SaveContactInfoAsync(participant.ParticipantId, dto.Email);
+        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
         return NoContent();
     }
 
@@ -33,14 +34,9 @@ public class ResponsesController(
     /// Creates an anonymous participant and returns a session token.
     /// </summary>
     [HttpPost("participants")]
-    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId)
+    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var participant = await AddParticipantAsync(questionnaire, projectId);
-
+        var participant = await AddParticipantAsync(projectId, ct);
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 
@@ -50,33 +46,12 @@ public class ResponsesController(
     /// and marks the participant as submitted.
     /// </summary>
     [HttpPost("submit")]
-    public async Task<ActionResult> Submit(int projectId)
+    public async Task<ActionResult> Submit(int projectId, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var visiblePath = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
-        var visibleSet = visiblePath.ToHashSet();
-
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
-        var answeredPairs = responses.Select(r => (r.Question.QuestionId, r.Value));
-
-        try
-        {
-            questionnaireManager.ValidateMandatoryAnswers(questionnaire, answeredPairs, visibleSet);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-
-        await responseManager.CommitResponsesAsync(participant.ParticipantId, visibleSet);
-        await MarkAsSubmittedAsync(participant.SessionToken);
-
+        await submissionManager.SubmitAsync(projectId, participant, ct);
         return Ok();
     }
 
@@ -84,7 +59,7 @@ public class ResponsesController(
     /// Upserts a single response. Saves with IsCommitted = false (interim save).
     /// </summary>
     [HttpPost("responses")]
-    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto)
+    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -92,11 +67,7 @@ public class ResponsesController(
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        var question = await questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
-        if (question is null)
-            return NotFound($"Question with id {createDto.QuestionId} not found.");
-
-        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.Value, question, participant);
+        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
         var dto = MapToDto(response);
         return Created(string.Empty, dto);
     }
@@ -110,7 +81,7 @@ public class ResponsesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant.ParticipantId);
         var dtos = responses.Select(MapToDto).ToList();
         return Ok(dtos);
     }

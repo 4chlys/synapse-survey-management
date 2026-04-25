@@ -60,12 +60,6 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(q => q.Questionnaire)
                 .HasForeignKey("QuestionnaireId")
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Restrict so that Project → Participant cascade is the sole owner.
-            e.HasMany(q => q.Participants)
-                .WithOne(p => p.Questionnaire)
-                .HasForeignKey("QuestionnaireId")
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Question

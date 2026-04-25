@@ -1,39 +1,49 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class CategoryManager(IRepository repository) : ICategoryManager
+public class CategoryManager(
+    ICategoryRepository categoryRepository,
+    IUnitOfWork uow) : ICategoryManager
 {
-    public async Task<IEnumerable<Category>> GetCategoriesAsync(int projectId)
+    public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
+        => categoryRepository.ReadByProjectIdReadOnlyAsync(projectId);
+
+    public async Task<Category> GetCategoryByIdReadOnlyAsync(int id)
+        => await categoryRepository.ReadByIdReadOnlyAsync(id)
+           ?? throw new KeyNotFoundException($"Category {id} not found.");
+
+    public async Task<Category> CreateCategoryAsync(Project project, string name, string description)
     {
-        return await repository.ReadAsync<Category>(
-            filters: [c => c.Project.ProjectId == projectId]
-        );
+        var category = new Category
+        {
+            Name = name,
+            Description = description,
+            Project = project
+        };
+        var created = await categoryRepository.CreateAsync(category);
+        await uow.SaveChangesAsync();
+        return created;
     }
 
-    public async Task<Category> GetCategoryByIdAsync(int id)
+    public async Task<bool> UpdateCategoryAsync(int categoryId, string name, string description)
     {
-        return await repository.ReadByIdAsync<Category>(id);
+        var category = await categoryRepository.ReadByIdForUpdateAsync(categoryId);
+        if (category is null) return false;
+
+        category.Name = name;
+        category.Description = description;
+        categoryRepository.Update(category);
+        await uow.SaveChangesAsync();
+        return true;
     }
 
-    public async Task<int> GetIdeaCountAsync(int categoryId)
+    public async Task<bool> DeleteCategoryAsync(int categoryId)
     {
-        return await repository.CountAsync<Idea>(
-            filters: [i => i.Category.CategoryId == categoryId]
-        );
-    }
-
-    public async Task<Dictionary<int, int>> GetIdeaCountsByCategoryAsync(IEnumerable<int> categoryIds)
-    {
-        var ids = categoryIds.ToHashSet();
-        var ideas = await repository.ReadAsync<Idea>(
-            filters: [i => ids.Contains(i.Category.CategoryId)],
-            includeStrings: ["Category"]);
-
-        return ideas
-            .GroupBy(i => i.Category.CategoryId)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var result = await categoryRepository.DeleteByIdAsync(categoryId);
+        if (result) await uow.SaveChangesAsync();
+        return result;
     }
 }

@@ -9,8 +9,9 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class CommentsController(
     ICommentManager manager,
     IParticipantManager participantManager,
-    IModerationResolver moderationResolver)
-    : ParticipantControllerBase(participantManager)
+    IModerationResolver moderationResolver,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("comments")]
     public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto, CancellationToken ct)
@@ -21,7 +22,7 @@ public class CommentsController(
         try
         {
             var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct);
-            var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant);
+            var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant, ct);
             return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }
         catch (KeyNotFoundException)
@@ -31,14 +32,14 @@ public class CommentsController(
     }
 
     [HttpPost("iconcomments")]
-    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
+            var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant, ct);
             if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new CreatedIconCommentDto { CommentId = iconComment.CommentId, EmojiId = iconComment.EmojiId });
         }
@@ -49,26 +50,26 @@ public class CommentsController(
     }
 
     [HttpDelete("iconcomments")]
-    public async Task<ActionResult> RemoveIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto)
+    public async Task<ActionResult> RemoveIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveIconCommentAsync(ideaId, projectId, dto.EmojiId, participant);
+        var removed = await manager.RemoveIconCommentAsync(ideaId, projectId, dto.EmojiId, participant, ct);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }
 
     [HttpPost("comments/{commentId}/emoji")]
     public async Task<ActionResult> AddCommentEmoji(int projectId, int ideaId, int commentId,
-        [FromBody] AddIconCommentDto dto)
+        [FromBody] AddIconCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         try
         {
-            var reaction = await manager.AddCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
+            var reaction = await manager.AddCommentReactionAsync(commentId, projectId, dto.EmojiId, participant, ct);
             if (reaction == null) return Conflict("Participant already reacted with this emoji.");
             return Ok(new CreatedIconCommentDto { CommentId = reaction.CommentId, EmojiId = reaction.EmojiId });
         }
@@ -80,12 +81,12 @@ public class CommentsController(
 
     [HttpDelete("comments/{commentId}/emoji")]
     public async Task<ActionResult> RemoveCommentEmoji(int projectId, int ideaId, int commentId,
-        [FromBody] AddIconCommentDto dto)
+        [FromBody] AddIconCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveCommentReactionAsync(commentId, projectId, dto.EmojiId, participant);
+        var removed = await manager.RemoveCommentReactionAsync(commentId, projectId, dto.EmojiId, participant, ct);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }

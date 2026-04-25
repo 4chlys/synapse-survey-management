@@ -1,61 +1,54 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class ParticipantManager(IRepository repository) : IParticipantManager
+public class ParticipantManager(
+    IParticipantRepository participantRepository,
+    IUnitOfWork uow) : IParticipantManager
 {
-    public async Task<Participant> AddParticipantAsync(Questionnaire questionnaire, int projectId)
+    public async Task<Participant> AddParticipantAsync(Project project, CancellationToken ct = default)
     {
-        var trackedQuestionnaire = await repository.ReadByIdAsync<Questionnaire>(questionnaire.QuestionnaireId, tracked: true);
         var participant = new Participant
         {
-            Questionnaire = trackedQuestionnaire,
-            Project = await repository.ReadByIdAsync<Project>(projectId, tracked: true),
+            Project = project,
             CreatedAt = DateTime.UtcNow
         };
-        return await repository.CreateAsync(participant);
+        var created = await participantRepository.CreateAsync(participant);
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<Participant> GetParticipantByIdAsync(int participantId)
-    {
-        return await repository.ReadByIdAsync<Participant>(participantId);
-    }
+    public Task<Participant> GetParticipantByIdReadOnlyAsync(int participantId)
+        => participantRepository.ReadByIdReadOnlyAsync(participantId);
 
-    public async Task<Participant> GetParticipantBySessionTokenAsync(Guid sessionToken)
-    {
-        return await repository.ReadSingleAsync<Participant>(
-            filters: [p => p.SessionToken == sessionToken],
-            includes: [p => p.Project],
-            tracked: true
-        );
-    }
+    public Task<Participant> GetParticipantBySessionTokenForUpdateAsync(Guid sessionToken)
+        => participantRepository.ReadBySessionTokenWithProjectForUpdateAsync(sessionToken);
 
     public async Task<bool> HasParticipantSubmittedAsync(Guid sessionToken)
     {
-        var participant = await repository.ReadSingleAsync<Participant>(
-            filters: [p => p.SessionToken == sessionToken]);
+        var participant = await participantRepository.ReadBySessionTokenReadOnlyAsync(sessionToken);
         return participant?.HasSubmitted ?? false;
     }
 
-    public async Task MarkAsSubmittedAsync(Guid sessionToken)
+    public async Task MarkAsSubmittedAsync(Guid sessionToken, CancellationToken ct = default)
     {
-        var participant = await repository.ReadSingleAsync<Participant>(
-            filters: [p => p.SessionToken == sessionToken],
-            tracked: true);
+        var participant = await participantRepository.ReadBySessionTokenForUpdateAsync(sessionToken);
         if (participant is null)
             throw new KeyNotFoundException("Participant not found.");
         participant.HasSubmitted = true;
-        await repository.UpdateAsync(participant);
+        participantRepository.Update(participant);
+        await uow.SaveChangesAsync(ct);
     }
 
-    public async Task SaveContactInfoAsync(int participantId, string email)
+    public async Task SaveContactInfoAsync(int participantId, string email, CancellationToken ct = default)
     {
-        var participant = await repository.ReadByIdAsync<Participant>(participantId, tracked: true);
+        var participant = await participantRepository.ReadByIdForUpdateAsync(participantId);
         if (participant is null)
             throw new KeyNotFoundException($"Participant with id {participantId} not found.");
         participant.Email = email;
-        await repository.UpdateAsync(participant);
+        participantRepository.Update(participant);
+        await uow.SaveChangesAsync(ct);
     }
 }

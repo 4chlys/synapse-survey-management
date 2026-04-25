@@ -8,9 +8,4 @@
     <RootNamespace>SynapseEnqueteManagement.BL.Domain</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Platform\Entities\" />
-    <Folder Include="Platform\Enums\" />
-  </ItemGroup>
-
 </Project>
