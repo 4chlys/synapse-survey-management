@@ -9,11 +9,13 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
     public Task<Project> ReadByIdReadOnlyAsync(int projectId)
         => Context.Set<Project>()
             .AsNoTracking()
+            .Include(p => p.ProjectPlatform)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
     public Task<Project> ReadByIdWithIntroductionReadOnlyAsync(int projectId)
         => Context.Set<Project>()
             .AsNoTracking()
+            .Include(p => p.ProjectPlatform)
             .Include(p => p.Introduction)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 

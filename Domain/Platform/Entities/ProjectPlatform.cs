@@ -11,8 +11,8 @@ public class ProjectPlatform : IHasCreatedAt
     [Required] [StringLength(100, MinimumLength = 1)] public string Name { get; set; }
 
     [MaxLength(500)]
-    public string? LogoUrl { get; set; }
+    public string LogoUrl { get; set; }
 
     [MaxLength(500)]
-    public string? WebsiteUrl { get; set; }
+    public string WebsiteUrl { get; set; }
 }
