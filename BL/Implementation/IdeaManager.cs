@@ -34,6 +34,12 @@ public class IdeaManager(
     public Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId)
         => ideaRepository.ReadByIdWithCommentsAndParticipantReadOnlyAsync(ideaId);
 
+    public async Task<int?> GetIdeaAuthorParticipantIdReadOnlyAsync(int ideaId)
+    {
+        var idea = await ideaRepository.ReadByIdWithParticipantReadOnlyAsync(ideaId);
+        return idea?.Participant?.ParticipantId;
+    }
+
     public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
         Participant participant, CancellationToken ct = default)
     {
