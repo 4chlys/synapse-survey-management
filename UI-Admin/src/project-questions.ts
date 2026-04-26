@@ -1,3 +1,5 @@
+import { toast } from './lib/notify';
+
 document.addEventListener('DOMContentLoaded', () => {
     const modalMaybe = document.getElementById('modal') as HTMLDivElement | null;
     if (!modalMaybe) return;
@@ -12,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const askFirstJa = document.getElementById('ask-first-ja') as HTMLButtonElement | null;
     const textError = document.getElementById('text-error') as HTMLElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
+
+    if (new URLSearchParams(window.location.search).get('saved') === '1')
+        toast('Opgeslagen', 'success');
 
     function openModal(): void {
         resetModal();
@@ -37,12 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sectionSelect) sectionSelect.value = '';
         const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
         if (qIdInput) qIdInput.value = '';
+        const mandatoryCb = document.getElementById('IsMandatory-cb') as HTMLInputElement | null;
+        if (mandatoryCb) mandatoryCb.checked = true;
         if (questionForm) questionForm.action = createUrl;
         const title = document.getElementById('modal-title');
         if (title) title.textContent = 'Vraag aanmaken';
     }
 
-    function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string): void {
+    function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string, isMandatory: boolean): void {
         resetModal();
 
         const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
@@ -63,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
         if (sectionSelect) sectionSelect.value = sectionId;
+
+        const mandatoryEditCb = document.getElementById('IsMandatory-cb') as HTMLInputElement | null;
+        if (mandatoryEditCb) mandatoryEditCb.checked = isMandatory;
 
         if (questionForm) questionForm.action = questionForm.dataset.updateUrl ?? '';
 
@@ -202,7 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const format = btn.dataset.format ?? 'MultipleChoice';
         const answers = JSON.parse(btn.dataset.answers ?? '[]') as string[];
         const sectionId = btn.dataset.sectionId ?? '';
-        openEditModal(id, text, format, answers, sectionId);
+        const isMandatory = btn.dataset.isMandatory === 'true';
+        openEditModal(id, text, format, answers, sectionId, isMandatory);
     });
 
     // Validate at least 1 question before proceeding to next step

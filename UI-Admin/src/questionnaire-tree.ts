@@ -121,7 +121,8 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                         data-text="${escapeHtml(q.text)}"
                         data-format="${escapeHtml(q.questionFormat)}"
                         data-answers='${escapeHtml(JSON.stringify(q.answerChoices))}'
-                        data-section-id="${q.sectionId ?? ''}">✎</button>
+                        data-section-id="${q.sectionId ?? ''}"
+                        data-is-mandatory="${q.isMandatory}">✎</button>
                 <form method="post" action="${escapeHtml(deleteUrl)}">
                     <input type="hidden" name="__RequestVerificationToken" value="${getAntiforgeryToken()}" />
                     <button type="submit"

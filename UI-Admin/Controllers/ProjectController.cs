@@ -99,7 +99,7 @@ public class ProjectController(
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
 
-        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
+        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, saved = 1 });
     }
 
     public async Task<IActionResult> Questions(int projectId, AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
@@ -119,7 +119,7 @@ public class ProjectController(
     {
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
     }
 
     [HttpPost]
@@ -127,7 +127,7 @@ public class ProjectController(
     {
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
     }
 
     public async Task<IActionResult> Ideation(int projectId)
