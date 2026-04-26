@@ -1,10 +1,18 @@
-using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
-using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
 public class PlatformDetailViewModel
 {
-    public ProjectPlatform Platform { get; set; }
-    public List<ApplicationUser> Admins { get; set; }
+    public int ProjectPlatformId { get; set; }
+    public string Name { get; set; }
+    public string LogoUrl { get; set; }
+    public string WebsiteUrl { get; set; }
+    public List<AdminSummaryViewModel> Admins { get; set; }
+}
+
+public class AdminSummaryViewModel
+{
+    public string UserName { get; set; }
+    public string Email { get; set; }
 }

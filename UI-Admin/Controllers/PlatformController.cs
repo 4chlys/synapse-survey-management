@@ -74,15 +74,19 @@ public class PlatformController(PlatformAdminService platformService) : Controll
     public async Task<IActionResult> Detail(int id)
     {
         var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null)
-            return NotFound();
-
+        if (platform is null) return NotFound();
         var admins = await platformService.GetAdminsForPlatformAsync(id);
-        var viewModel = new PlatformDetailViewModel
+        return View(new PlatformDetailViewModel
         {
-            Platform = platform,
-            Admins = admins
-        };
-        return View(viewModel);
+            ProjectPlatformId = platform.ProjectPlatformId,
+            Name = platform.Name,
+            LogoUrl = platform.LogoUrl,
+            WebsiteUrl = platform.WebsiteUrl,
+            Admins = admins.Select(a => new AdminSummaryViewModel
+            {
+                UserName = a.UserName,
+                Email = a.Email
+            }).ToList()
+        });
     }
 }
