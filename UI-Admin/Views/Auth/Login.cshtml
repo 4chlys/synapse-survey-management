@@ -12,14 +12,14 @@
             <input type="hidden" asp-for="ReturnUrl" />
 
             <div>
-                <label class="block text-xs text-gray-300 mb-1">E-mailadres</label>
+                <label asp-for="Email" class="block text-xs text-gray-300 mb-1">E-mailadres</label>
                 <input asp-for="Email" type="email" autocomplete="email"
                        class="w-full bg-gray-800 border border-gray-600 text-white text-xs px-3 py-2 focus:outline-none focus:border-white" />
                 <span asp-validation-for="Email" class="text-red-400 text-xs"></span>
             </div>
 
             <div>
-                <label class="block text-xs text-gray-300 mb-1">Wachtwoord</label>
+                <label asp-for="Password" class="block text-xs text-gray-300 mb-1">Wachtwoord</label>
                 <input asp-for="Password" type="password" autocomplete="current-password"
                        class="w-full bg-gray-800 border border-gray-600 text-white text-xs px-3 py-2 focus:outline-none focus:border-white" />
                 <span asp-validation-for="Password" class="text-red-400 text-xs"></span>

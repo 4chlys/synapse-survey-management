@@ -12,10 +12,10 @@ public class AuthController(
 {
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult Login(string returnUrl = null)
+    public async Task<IActionResult> Login(string returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectAfterLogin();
+            return await RedirectAfterLogin(User.Identity!.Name!);
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
@@ -27,7 +27,13 @@ public class AuthController(
         if (!ModelState.IsValid) return View(model);
 
         var result = await signInManager.PasswordSignInAsync(
-            model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
+            model.Email, model.Password, isPersistent: false, lockoutOnFailure: true);
+
+        if (result.IsLockedOut)
+        {
+            ModelState.AddModelError(string.Empty, "Account is vergrendeld. Probeer het later opnieuw.");
+            return View(model);
+        }
 
         if (!result.Succeeded)
         {
@@ -38,7 +44,7 @@ public class AuthController(
         if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             return Redirect(model.ReturnUrl);
 
-        return RedirectAfterLogin();
+        return await RedirectAfterLogin(model.Email);
     }
 
     [HttpPost]
@@ -49,11 +55,13 @@ public class AuthController(
         return RedirectToAction(nameof(Login));
     }
 
-    private IActionResult RedirectAfterLogin()
+    private async Task<IActionResult> RedirectAfterLogin(string email)
     {
-        if (User.IsInRole("SystemAdmin"))
+        var user = await userManager.FindByEmailAsync(email);
+        var roles = await userManager.GetRolesAsync(user!);
+        if (roles.Contains("SystemAdmin"))
             return RedirectToAction("Index", "Platform");
-        if (User.IsInRole("ProjectPlatformAdmin"))
+        if (roles.Contains("ProjectPlatformAdmin"))
             return RedirectToAction("Index", "Dashboard");
         return Forbid();
     }
