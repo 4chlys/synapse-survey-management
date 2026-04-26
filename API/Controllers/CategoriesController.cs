@@ -30,11 +30,9 @@ public class CategoriesController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId, [FromBody] CategoryRequest dto, CancellationToken ct)
+    public async Task<ActionResult<CategoryDto>> CreateCategory(int projectId, CategoryRequest dto,
+        CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var project = await projectManager.GetProjectByIdForUpdateAsync(projectId);
         if (project is null)
             return NotFound();
@@ -44,11 +42,8 @@ public class CategoriesController(
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryRequest dto, CancellationToken ct)
+    public async Task<IActionResult> UpdateCategory(int id, CategoryRequest dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var success = await categoryManager.UpdateCategoryAsync(id, dto.Name, dto.Description, ct);
         if (!success)
             return NotFound();

@@ -22,11 +22,8 @@ public class SectionsController(IQuestionnaireManager questionnaireManager) : Co
     }
 
     [HttpPost]
-    public async Task<ActionResult<SectionDto>> CreateSection(int projectId, [FromBody] CreateSectionDto dto, CancellationToken ct)
+    public async Task<ActionResult<SectionDto>> CreateSection(int projectId, CreateSectionDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var section = await questionnaireManager.CreateSectionAsync(projectId, dto.Name, dto.Description, ct);
         if (section is null)
             return NotFound();
@@ -40,11 +37,8 @@ public class SectionsController(IQuestionnaireManager questionnaireManager) : Co
     }
 
     [HttpPut("{sectionId}")]
-    public async Task<IActionResult> UpdateSection(int sectionId, [FromBody] UpdateSectionDto dto, CancellationToken ct)
+    public async Task<IActionResult> UpdateSection(int sectionId, UpdateSectionDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var success = await questionnaireManager.UpdateSectionAsync(sectionId, dto.Name, dto.Description, ct);
         if (!success)
             return NotFound();

@@ -24,7 +24,7 @@ public class IdeaSupportApiController(
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponse>> Chat(
         int projectId,
-        [FromBody] IdeaSupportChatRequest body)
+        IdeaSupportChatRequest body)
     {
         // Gate behind a valid participant session (survey must have been completed)
         var token = sessionService.GetToken(projectId);
@@ -44,8 +44,9 @@ public class IdeaSupportApiController(
         {
             return Ok(new IdeaSupportChatResponse
             {
-                AssistantMessage = "Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.",
-                Phase            = "Error",
+                AssistantMessage =
+                    "Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.",
+                Phase = "Error",
             });
         }
 
@@ -55,7 +56,7 @@ public class IdeaSupportApiController(
     [HttpPost("refine")]
     public async Task<ActionResult<IdeaSupportRefineResponse>> Refine(
         int projectId,
-        [FromBody] IdeaSupportRefineRequest body)
+        IdeaSupportRefineRequest body)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))

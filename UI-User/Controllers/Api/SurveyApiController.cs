@@ -21,7 +21,7 @@ public class SurveyApiController(
     }
 
     [HttpPost("responses")]
-    public async Task<ActionResult> SaveResponse(int projectId, [FromBody] SaveResponseRequest request)
+    public async Task<ActionResult> SaveResponse(int projectId, SaveResponseRequest request)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))

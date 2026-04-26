@@ -14,7 +14,7 @@ public class CommentsController(
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("comments")]
-    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto, CancellationToken ct)
+    public async Task<ActionResult> AddComment(int projectId, int ideaId, CreateCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -32,7 +32,8 @@ public class CommentsController(
     }
 
     [HttpPost("iconcomments")]
-    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto, CancellationToken ct)
+    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, AddIconCommentDto dto,
+        CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -62,7 +63,7 @@ public class CommentsController(
 
     [HttpPost("comments/{commentId}/emoji")]
     public async Task<ActionResult> AddCommentEmoji(int projectId, int ideaId, int commentId,
-        [FromBody] AddIconCommentDto dto, CancellationToken ct)
+        AddIconCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -90,5 +91,4 @@ public class CommentsController(
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }
-
 }
