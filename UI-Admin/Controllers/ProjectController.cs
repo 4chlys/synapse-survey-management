@@ -10,6 +10,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
+using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
@@ -22,7 +23,8 @@ public class ProjectController(
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
     IWebHostEnvironment env,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    WidgetPreferenceService widgetPreferenceService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -198,11 +200,51 @@ public class ProjectController(
 
     public async Task<IActionResult> Dashboard(int projectId)
     {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
         var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project is null)
-            return NotFound();
+        if (project is null) return NotFound();
 
         var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
+        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+
+        dashboard.WidgetLayout = layout;
+        dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
+
         return View(dashboard);
+    }
+
+    public async Task<IActionResult> ConfigureDashboard(int projectId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        return View(new ConfigureDashboardViewModel
+        {
+            ProjectId = projectId,
+            ProjectName = project.Name,
+            Layout = layout,
+            AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ConfigureDashboard(int projectId, ConfigureDashboardViewModel model)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var sanitized = (model.Layout ?? WidgetPreferenceService.DefaultLayout)
+            .Take(9)
+            .Select(w => WidgetPreferenceService.AllWidgetTypes.Contains(w) ? w : WidgetPreferenceService.DefaultLayout[0])
+            .ToArray();
+
+        await widgetPreferenceService.SaveLayoutAsync(user.Id, projectId, sanitized);
+        return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 }

@@ -1,3 +1,5 @@
+using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
+
 namespace SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 
 public class DashboardViewModel
@@ -10,6 +12,8 @@ public class DashboardViewModel
     public string SurveyUrl { get; set; }
     public List<CategoryMetricViewModel> TopCategories { get; set; } = new();
     public List<IdeaMetricViewModel> TopIdeas { get; set; } = new();
+    public string[] WidgetLayout { get; set; } = WidgetPreferenceService.DefaultLayout;
+    public string ApiBaseUrl { get; set; } = string.Empty;
 }
 
 public class CategoryMetricViewModel
