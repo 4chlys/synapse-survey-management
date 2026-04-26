@@ -10,6 +10,7 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
+    public DbSet<UserWidgetPreference> UserWidgetPreferences { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -30,6 +31,14 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
                 .HasForeignKey(u => u.ProjectPlatformId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<UserWidgetPreference>(e =>
+        {
+            e.HasKey(p => p.Id);
+            e.HasIndex(p => new { p.UserId, p.ProjectId, p.Position }).IsUnique();
+            e.Property(p => p.UserId).IsRequired().HasMaxLength(450);
+            e.Property(p => p.WidgetType).IsRequired().HasMaxLength(50);
         });
     }
 }

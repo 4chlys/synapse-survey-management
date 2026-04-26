@@ -87,6 +87,7 @@ builder.Services.AddHttpClient<DashboardAdminService>(ConfigureApiClient)
 
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();
+builder.Services.AddScoped<WidgetPreferenceService>();
 
 builder.Services.AddViteServices();
 
