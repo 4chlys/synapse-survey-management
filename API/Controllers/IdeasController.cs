@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
-using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.BL.Sorting.Embeddings;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -16,39 +15,30 @@ public class IdeasController(
     ICommentManager commentManager,
     IParticipantManager participantManager,
     IModerationResolver moderationResolver,
-    IProjectManager projectManager,
-    IEmbeddingSortStrategyFactory embeddingSortFactory)
+    IProjectManager projectManager)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
+    public async Task<ActionResult<IdeaIndexResponseDto>> GetIdeasByCategory(
         int projectId, int categoryId,
         [FromQuery][Range(1, int.MaxValue)] int page = 1,
         [FromQuery] string sort = null,
-        [FromQuery] string query = null,
         CancellationToken ct = default)
     {
         var participantId = await ResolveParticipantIdAsync();
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var pageSize = project?.IdeaPageSize ?? 5;
 
-        PagedResult<Idea> paged;
-        if (embeddingSortFactory.IsEmbeddingKey(sort))
-        {
-            paged = await ideaManager.GetVisibleIdeasByCategoryEmbeddingSortedWithCommentsReadOnlyAsync(
-                categoryId, pageSize, page, sort, query, ct);
-        }
-        else
-        {
-            paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, pageSize, page, sort);
-        }
+        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, ct);
 
-        return Ok(new PagedResult<IdeaDto>
+        return Ok(new IdeaIndexResponseDto
         {
-            Items = paged.Items.Select(i => MapIdeaToDto(i, participantId)),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
+            Items = result.Items.Select(i => MapIdeaToDto(i, participantId)),
+            Page = result.Page,
+            PageSize = result.PageSize,
+            TotalCount = result.TotalCount,
+            ResolvedSort = result.ResolvedSort,
+            HasOwnIdeas = result.HasOwnIdeas
         });
     }
 

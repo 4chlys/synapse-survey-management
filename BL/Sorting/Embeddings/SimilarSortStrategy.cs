@@ -17,7 +17,7 @@ public class SimilarSortStrategy : IEmbeddingSortStrategy
         return ideas
             .Select(i => (idea: i, score: i.Embedding == null
                 ? float.NegativeInfinity
-                : VectorMath.CosineSimilarity(i.Embedding.Memory.Span, queryEmbedding)))
+                : VectorMath.CosineSimilarity(i.Embedding, queryEmbedding)))
             .OrderByDescending(x => x.score)
             .Select(x => x.idea)
             .ToList();

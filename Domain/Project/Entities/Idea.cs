@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Pgvector;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain;
 
@@ -14,9 +13,8 @@ public class Idea : IHasCreatedAt
     [Required] [MaxLength(1000)] public string Description { get; set; }
 
     // Vector embedding of Description used by embedding-based sort strategies
-    // (Similar / Different / Diverse). Null means "not yet generated" — strategies
-    // must skip or cold-generate such entries.
-    public Vector Embedding { get; set; }
+    // must skip or cold-generate such entries. DAL maps to pgvector or JSON.
+    public float[] Embedding { get; set; }
 
     public Category Category { get; set; }
 

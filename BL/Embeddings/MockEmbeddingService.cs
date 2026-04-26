@@ -12,21 +12,14 @@ public class MockEmbeddingService(int dimensions = 128) : IEmbeddingService
     private static readonly char[] Separators =
         [' ', '\t', '\n', '\r', '.', ',', ';', ':', '!', '?', '-', '(', ')', '[', ']', '/', '\\', '"', '\''];
 
-    public int Dimensions { get; } = dimensions;
+    private readonly int _dimensions = dimensions;
 
     public Task<float[]> GenerateAsync(string text, CancellationToken cancellationToken = default)
         => Task.FromResult(Embed(text));
 
-    public Task<IReadOnlyList<float[]>> GenerateBatchAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
-    {
-        var result = new float[texts.Count][];
-        for (int i = 0; i < texts.Count; i++) result[i] = Embed(texts[i]);
-        return Task.FromResult<IReadOnlyList<float[]>>(result);
-    }
-
     private float[] Embed(string text)
     {
-        var vector = new float[Dimensions];
+        var vector = new float[_dimensions];
         if (string.IsNullOrWhiteSpace(text)) return vector;
 
         Span<byte> hash = stackalloc byte[32];
@@ -35,7 +28,7 @@ public class MockEmbeddingService(int dimensions = 128) : IEmbeddingService
             // SHA-256 gives a uniform hash that splits cleanly across buckets —
             // GetHashCode() is unstable across runs and would break determinism.
             SHA256.HashData(Encoding.UTF8.GetBytes(raw), hash);
-            int bucket = (int)(BitConverter.ToUInt32(hash[..4]) % (uint)Dimensions);
+            int bucket = (int)(BitConverter.ToUInt32(hash[..4]) % (uint)_dimensions);
             int signBit = hash[4] & 1;
             vector[bucket] += signBit == 0 ? 1f : -1f;
         }

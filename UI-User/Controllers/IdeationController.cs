@@ -22,7 +22,7 @@ public class IdeationController(
         var projectTask  = projectApiService.GetProjectAsync(projectId);
         var emojisTask   = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var indexTask    = ideaService.GetIdeasForIndexAsync(projectId, categoryId, sort);
+        var indexTask    = ideaService.GetIdeasIndexAsync(projectId, categoryId, sort);
 
         await Task.WhenAll(projectTask, emojisTask, categoryTask, indexTask);
 

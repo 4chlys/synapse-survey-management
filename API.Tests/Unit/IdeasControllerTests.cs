@@ -9,7 +9,6 @@ public class IdeasControllerTests
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IModerationResolver> _moderationResolver = new();
     private readonly Mock<IProjectManager> _projectManager = new();
-    private readonly Mock<IEmbeddingSortStrategyFactory> _embeddingSortFactory = new();
     private readonly IdeasController _controller;
 
     private const int ProjectId = 1;
@@ -28,8 +27,7 @@ public class IdeasControllerTests
             _commentManager.Object,
             _participantManager.Object,
             _moderationResolver.Object,
-            _projectManager.Object,
-            _embeddingSortFactory.Object);
+            _projectManager.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 

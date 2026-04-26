@@ -23,20 +23,20 @@ public class DiverseSortStrategy : IEmbeddingSortStrategy
 
     public IReadOnlyList<Idea> Sort(IReadOnlyList<Idea> ideas, float[] queryEmbedding)
     {
-        var embedded = ideas.Where(i => i.Embedding != null && !i.Embedding.Memory.IsEmpty).ToList();
-        var unembedded = ideas.Where(i => i.Embedding == null || i.Embedding.Memory.IsEmpty).ToList();
+        var embedded = ideas.Where(i => i.Embedding != null && i.Embedding.Length > 0).ToList();
+        var unembedded = ideas.Where(i => i.Embedding == null || i.Embedding.Length == 0).ToList();
 
         if (embedded.Count == 0) return ideas.ToList();
 
         // Fall back to the centroid when no query is given — picks items that
         // are broadly on-topic for the corpus while still maximising spread.
-        float[] query = queryEmbedding ?? VectorMath.Centroid(embedded.Select(i => i.Embedding.Memory.ToArray()).ToList());
+        float[] query = queryEmbedding ?? VectorMath.Centroid(embedded.Select(i => i.Embedding).ToList());
 
         // Pre-compute sim(d, q) once per idea; the relevance term never changes
         // during greedy selection, only the diversity term does.
         var relevance = new float[embedded.Count];
         for (int i = 0; i < embedded.Count; i++)
-            relevance[i] = VectorMath.CosineSimilarity(embedded[i].Embedding.Memory.Span, query);
+            relevance[i] = VectorMath.CosineSimilarity(embedded[i].Embedding, query);
 
         // maxSimToSelected[i] = max_{s ∈ selected} sim(embedded[i], s).
         // Maintained incrementally so each step is O(n), total O(n²).
@@ -80,10 +80,10 @@ public class DiverseSortStrategy : IEmbeddingSortStrategy
 
     private static void UpdateMaxSim(IReadOnlyList<Idea> embedded, float[] maxSim, int justAdded, IEnumerable<int> remaining)
     {
-        var addedVec = embedded[justAdded].Embedding.Memory.ToArray();
+        var addedVec = embedded[justAdded].Embedding;
         foreach (var i in remaining)
         {
-            float sim = VectorMath.CosineSimilarity(embedded[i].Embedding.Memory.Span, addedVec);
+            float sim = VectorMath.CosineSimilarity(embedded[i].Embedding, addedVec);
             if (sim > maxSim[i]) maxSim[i] = sim;
         }
     }

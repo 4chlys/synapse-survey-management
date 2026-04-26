@@ -189,8 +189,16 @@ var app = builder.Build();
         try
         {
             context.CreateDatabase(deleteIfExists);
+            DummyDataSeeder.Seed(context);
+
             var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
-            DummyDataSeeder.Seed(context, text => seedEmbedSvc.GenerateAsync(text).GetAwaiter().GetResult());
+            var ideasNeedingEmbeddings = await context.Set<Idea>()
+                .Where(i => i.Embedding == null || i.Embedding.Length == 0)
+                .ToListAsync();
+            foreach (var idea in ideasNeedingEmbeddings)
+                idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description);
+            if (ideasNeedingEmbeddings.Count > 0)
+                await context.SaveChangesAsync();
             break;
         }
         catch (Exception ex) when (attempt < maxRetries)
