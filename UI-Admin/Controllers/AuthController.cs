@@ -55,6 +55,33 @@ public class AuthController(
         return RedirectToAction(nameof(Login));
     }
 
+    [HttpGet]
+    [Authorize]
+    public IActionResult ChangePassword() => View(new ChangePasswordViewModel());
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction(nameof(Login));
+
+        var result = await userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        await signInManager.RefreshSignInAsync(user);
+
+        TempData["SuccessMessage"] = "Wachtwoord succesvol gewijzigd.";
+        return RedirectToAction(nameof(ChangePassword));
+    }
+
     private async Task<IActionResult> RedirectAfterLogin(string email)
     {
         var user = await userManager.FindByEmailAsync(email);
