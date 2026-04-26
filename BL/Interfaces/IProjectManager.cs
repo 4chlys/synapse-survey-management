@@ -15,4 +15,5 @@ public interface IProjectManager
     Task<IEnumerable<Emoji>> GetAllEmojisAsync();
     Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
+    Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
 }

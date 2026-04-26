@@ -88,6 +88,18 @@ public class ProjectManager(
     public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
         => emojiRepository.ReadAllReadOnlyAsync();
 
+    public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
+        if (project is null)
+            throw new ArgumentException($"Project {projectId} not found.");
+
+        project.ProjectState = newState;
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync();
+        return project;
+    }
+
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);

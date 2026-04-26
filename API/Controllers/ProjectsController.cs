@@ -91,4 +91,14 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
 
         return Ok(MapToDto(project));
     }
+
+    [HttpPatch("{projectId}/state")]
+    public async Task<ActionResult<ProjectDto>> UpdateProjectState(int projectId, UpdateProjectStateDto dto)
+    {
+        if (!Enum.TryParse<ProjectState>(dto.State, ignoreCase: true, out var newState))
+            return BadRequest(new { error = "Invalid project state." });
+
+        var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
+        return Ok(MapToDto(project));
+    }
 }
