@@ -53,6 +53,8 @@ public class AuthController(
     {
         if (User.IsInRole("SystemAdmin"))
             return RedirectToAction("Index", "Platform");
-        return RedirectToAction("Index", "Dashboard");
+        if (User.IsInRole("ProjectPlatformAdmin"))
+            return RedirectToAction("Index", "Dashboard");
+        return Forbid();
     }
 }
