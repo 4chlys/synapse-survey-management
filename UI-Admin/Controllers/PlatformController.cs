@@ -89,4 +89,32 @@ public class PlatformController(PlatformAdminService platformService) : Controll
             }).ToList()
         });
     }
+
+    public async Task<IActionResult> AddAdmin(int id)
+    {
+        var platform = await platformService.GetPlatformByIdAsync(id);
+        if (platform is null) return NotFound();
+        return View(new AddAdminViewModel
+        {
+            ProjectPlatformId = id,
+            PlatformName = platform.Name
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var result = await platformService.AddAdminAsync(id, model.Email, model.Password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        return RedirectToAction(nameof(Detail), new { id });
+    }
 }

@@ -47,4 +47,18 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
             .Where(u => u.ProjectPlatformId == platformId)
             .ToListAsync();
     }
+
+    public async Task<IdentityResult> AddAdminAsync(int platformId, string email, string password)
+    {
+        var user = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            ProjectPlatformId = platformId
+        };
+        var result = await userManager.CreateAsync(user, password);
+        if (!result.Succeeded) return result;
+        await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+        return result;
+    }
 }
