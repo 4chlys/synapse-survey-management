@@ -176,16 +176,18 @@ var app = builder.Build();
 // Database initialisation & seeding
 // Retry loop: needed for Cloud Run cold starts where the postgres sidecar
 // is not yet ready when the API boots (race condition).
+// Scope is recreated per attempt so a failed attempt's stale ChangeTracker
+// can't leak into the next attempt's SaveChanges.
 {
-    using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
-    var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
     const int maxRetries = 10;
     const int delayMs = 3000;
 
     for (int attempt = 1; attempt <= maxRetries; attempt++)
     {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
+        var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
         try
         {
             context.CreateDatabase(deleteIfExists);
@@ -193,7 +195,7 @@ var app = builder.Build();
 
             var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             var ideasNeedingEmbeddings = await context.Set<Idea>()
-                .Where(i => i.Embedding == null || i.Embedding.Length == 0)
+                .Where(i => i.Embedding == null)
                 .ToListAsync();
             foreach (var idea in ideasNeedingEmbeddings)
                 idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description);
