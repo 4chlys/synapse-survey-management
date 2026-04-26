@@ -81,11 +81,12 @@ public class IdeasController(
         if (project is null) return NotFound();
 
         var participantId = await ResolveParticipantIdAsync();
+        var ideaAuthorParticipantId = await ideaManager.GetIdeaAuthorParticipantIdReadOnlyAsync(ideaId);
         var paged = await commentManager.GetCommentsWithOwnFirstReadOnlyAsync(projectId, ideaId, page, sort, project.CommentPageSize, participantId);
 
         return Ok(new PagedResult<TextCommentDto>
         {
-            Items = paged.Items.Select(c => MapCommentToDto(c, participantId)),
+            Items = paged.Items.Select(c => MapCommentToDto(c, participantId, ideaAuthorParticipantId)),
             Page = paged.Page,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount
@@ -111,12 +112,13 @@ public class IdeasController(
         Emojis = GroupEmojiReactions(i.Comments.OfType<IconComment>(), participantId)
     };
 
-    private static TextCommentDto MapCommentToDto(TextComment c, int? participantId) => new()
+    private static TextCommentDto MapCommentToDto(TextComment c, int? participantId, int? ideaAuthorParticipantId = null) => new()
     {
         CommentId = c.CommentId,
         Text = c.Text,
         CreatedAt = c.CreatedAt,
         IsOwnedByCurrentUser = participantId.HasValue && c.Participant?.ParticipantId == participantId.Value,
+        IsPostedByIdeaAuthor = ideaAuthorParticipantId.HasValue && c.Participant?.ParticipantId == ideaAuthorParticipantId.Value,
         IsFlagged = c.ModerationStatus == ModerationStatus.Flagged,
         Emojis = GroupEmojiReactions(c.EmojiReactions.Where(r => r.Emoji != null), participantId)
     };

@@ -6,6 +6,8 @@ public interface IIdeaRepository : IRepository<Idea>
 {
     Task<Idea> ReadByIdWithCommentsAndParticipantReadOnlyAsync(int ideaId);
 
+    Task<Idea> ReadByIdWithParticipantReadOnlyAsync(int ideaId);
+
     Task<Idea> ReadByIdWithProjectForUpdateAsync(int ideaId);
 
     Task<Idea> ReadByIdWithProjectAndEmojisForUpdateAsync(int ideaId);

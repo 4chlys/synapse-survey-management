@@ -25,6 +25,12 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
             .Include($"{nameof(Idea.Comments)}.{nameof(IconComment.Emoji)}")
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
+    public Task<Idea> ReadByIdWithParticipantReadOnlyAsync(int ideaId)
+        => Context.Set<Idea>()
+            .AsNoTracking()
+            .Include(i => i.Participant)
+            .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
+
     public Task<int> CountVisibleByCategoryAsync(int categoryId)
         => Context.Set<Idea>()
             .CountAsync(i => i.Category.CategoryId == categoryId
