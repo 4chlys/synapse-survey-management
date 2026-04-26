@@ -15,6 +15,3 @@ public interface ICategoryManager
     Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, int count = 10);
     Task<ModerationQueueResult> GetModerationQueueAsync(int projectId);
 }
-
-public record IdeaFeedItem(int IdeaId, string Description, string CategoryName, int ReactionCount, DateTime CreatedAt);
-public record ModerationQueueResult(int Approved, int Declined, int Flagged, int Unflagged);

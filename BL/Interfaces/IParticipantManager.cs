@@ -13,5 +13,3 @@ public interface IParticipantManager
     Task<int> CountCompletionsByProjectAsync(int projectId);
     Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30);
 }
-
-public record TimelineResult(List<string> Dates, List<int> Starts, List<int> Completions);

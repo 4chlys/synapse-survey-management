@@ -34,10 +34,10 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
     public async Task<List<Idea>> ReadLatestIdeasAsync(int projectId, int count)
         => await Context.Set<Idea>()
             .AsNoTracking()
-            .Where(i => i.Status == ModerationStatus.Approved
-                        && i.Category.Project.ProjectId == projectId)
             .Include(i => i.Category)
             .Include(i => i.Comments)
+            .Where(i => i.Status == ModerationStatus.Approved
+                        && i.Category.Project.ProjectId == projectId)
             .OrderByDescending(i => i.CreatedAt)
             .Take(count)
             .ToListAsync();
