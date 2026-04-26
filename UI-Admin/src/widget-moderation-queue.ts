@@ -17,27 +17,37 @@ export function initModerationQueueWidget(el: HTMLElement): () => void {
             const res = await fetch(url);
             if (!res.ok) return;
             const q: ModerationQueue = await res.json();
+
             el.innerHTML = `
                 <p class="text-xs text-gray-400 mb-3">Moderatiestatus</p>
                 <div class="grid grid-cols-2 gap-2 text-center">
                     <div class="bg-gray-700 rounded p-2">
-                        <p class="text-lg font-bold text-green-400">${q.approved}</p>
+                        <p id="modq-approved-${projectId}" class="text-lg font-bold text-green-400"></p>
                         <p class="text-xs text-gray-400">Goedgekeurd</p>
                     </div>
                     <div class="bg-gray-700 rounded p-2">
-                        <p class="text-lg font-bold text-yellow-400">${q.unflagged}</p>
+                        <p id="modq-unflagged-${projectId}" class="text-lg font-bold text-yellow-400"></p>
                         <p class="text-xs text-gray-400">Nieuw</p>
                     </div>
                     <div class="bg-gray-700 rounded p-2">
-                        <p class="text-lg font-bold text-red-400">${q.flagged}</p>
+                        <p id="modq-flagged-${projectId}" class="text-lg font-bold text-red-400"></p>
                         <p class="text-xs text-gray-400">Gemarkeerd</p>
                     </div>
                     <div class="bg-gray-700 rounded p-2">
-                        <p class="text-lg font-bold text-gray-400">${q.declined}</p>
+                        <p id="modq-declined-${projectId}" class="text-lg font-bold text-gray-400"></p>
                         <p class="text-xs text-gray-400">Afgewezen</p>
                     </div>
                 </div>
             `;
+
+            const setText = (id: string, val: number) => {
+                const node = document.getElementById(id);
+                if (node) node.textContent = String(val);
+            };
+            setText(`modq-approved-${projectId}`, q.approved);
+            setText(`modq-unflagged-${projectId}`, q.unflagged);
+            setText(`modq-flagged-${projectId}`, q.flagged);
+            setText(`modq-declined-${projectId}`, q.declined);
         } catch {
             // ignore
         }
