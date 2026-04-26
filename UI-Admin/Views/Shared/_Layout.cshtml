@@ -21,6 +21,10 @@
         <span class="text-white text-sm font-semibold tracking-wide">Synapse Admin</span>
         <div class="flex items-center gap-4">
             <span class="text-gray-300 text-xs">@User.Identity.Name</span>
+            <a asp-controller="Auth" asp-action="ChangePassword"
+               class="text-xs text-gray-400 hover:text-white transition">
+                Wachtwoord wijzigen
+            </a>
             <form asp-controller="Auth" asp-action="Logout" method="post" class="inline">
                 <button type="submit"
                         class="text-xs text-gray-400 hover:text-white border border-gray-600 px-3 py-1 hover:border-gray-400 transition">
