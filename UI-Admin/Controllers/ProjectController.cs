@@ -25,7 +25,8 @@ public class ProjectController(
     public async Task<IActionResult> Index()
     {
         var user = await userManager.GetUserAsync(User);
-        var projects = await projectService.GetAllProjectsAsync(user!.ProjectPlatformId);
+        if (user is null) return RedirectToAction("Login", "Auth");
+        var projects = await projectService.GetAllProjectsAsync(user.ProjectPlatformId);
         return View(projects);
     }
 
@@ -73,6 +74,7 @@ public class ProjectController(
             return View(model);
 
         var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
         ProjectAdminViewModel project;
         if (model.ProjectId.HasValue)
         {
@@ -82,10 +84,16 @@ public class ProjectController(
         }
         else
         {
+            if (user.ProjectPlatformId is null)
+            {
+                ModelState.AddModelError(string.Empty, "Uw account is niet gekoppeld aan een platform.");
+                return View(model);
+            }
             project = await projectService.CreateProjectAsync(
                 model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn,
-                platformId: user!.ProjectPlatformId ?? 0);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance,
+                model.MinAge, model.MaxAge, model.ContactOptIn,
+                platformId: user.ProjectPlatformId.Value);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -169,10 +177,14 @@ public class ProjectController(
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "Geen bestand ontvangen." });
 
+        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        var ext = Path.GetExtension(file.FileName);
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(new { error = "Bestandstype niet toegestaan." });
+
         var uploadsDir = Path.Combine(env.WebRootPath, "uploads");
         Directory.CreateDirectory(uploadsDir);
 
-        var ext = Path.GetExtension(file.FileName);
         var fileName = $"{Guid.NewGuid()}{ext}";
         var filePath = Path.Combine(uploadsDir, fileName);
 
