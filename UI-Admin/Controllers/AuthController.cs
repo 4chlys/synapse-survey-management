@@ -62,7 +62,7 @@ public class AuthController(
         if (roles.Contains("SystemAdmin"))
             return RedirectToAction("Index", "Platform");
         if (roles.Contains("ProjectPlatformAdmin"))
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("Index", "Project");
         return Forbid();
     }
 }
