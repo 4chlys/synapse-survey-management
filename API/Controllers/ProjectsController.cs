@@ -20,11 +20,12 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     {
         ProjectId = p.ProjectId,
         Name = p.Name ?? string.Empty,
+        ShortForm = p.ShortForm ?? string.Empty,
         Topic = p.Topic ?? string.Empty,
-        ProjectImage = p.ImageUrl ?? string.Empty,
         ProjectState = p.ProjectState.ToString(),
         FormType = p.FormType.ToString(),
         OrganisationName = p.OrganisationName ?? string.Empty,
+        ProjectImage = p.ImageUrl ?? string.Empty,
         OrganisationLogoUrl = p.OrganisationLogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.OrganisationWebsiteUrl ?? string.Empty,
         Introduction = p.Introduction?.Text ?? string.Empty,
@@ -51,6 +52,21 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         return Ok(projects.Select(MapToDto));
     }
 
+    [HttpGet("by-shortform/{shortForm}")]
+    public async Task<ActionResult<ProjectShortFormLookupDto>> GetByShortForm(string shortForm)
+    {
+        var project = await projectManager.GetProjectByShortFormAsync(shortForm.ToLowerInvariant());
+        if (project is null)
+            return NotFound();
+
+        return Ok(new ProjectShortFormLookupDto
+        {
+            ProjectId = project.ProjectId,
+            ShortForm = project.ShortForm,
+            ProjectState = project.ProjectState.ToString()
+        });
+    }
+
     [HttpPost]
     public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectDto dto, CancellationToken ct)
     {
@@ -67,6 +83,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
+            dto.ShortForm,
             ct);
 
         return Created(string.Empty, MapToDto(project));
@@ -89,6 +106,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
+            dto.ShortForm,
             ct);
 
         return Ok(MapToDto(project));

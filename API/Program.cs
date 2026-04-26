@@ -85,6 +85,10 @@ builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactor
 builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 
 // Registering BL
+var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
+var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
+builder.Services.AddScoped<IShortFormService>(sp =>
+    new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();

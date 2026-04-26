@@ -7,6 +7,12 @@ public class UpdateProjectDto
     [MaxLength(100)]
     public string Name { get; set; }
 
+    [Required]
+    [MaxLength(30)]
+    [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
+        ErrorMessage = "ShortForm must be lowercase alphanumeric with single hyphens.")]
+    public string ShortForm { get; set; }
+
     [MaxLength(100)]
     public string Topic { get; set; }
 

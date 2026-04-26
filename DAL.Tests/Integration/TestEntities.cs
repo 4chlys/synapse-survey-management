@@ -12,6 +12,7 @@ internal static class TestEntities
     {
         OrganisationName = organisationName,
         Name = name,
+        ShortForm = "test-project",
         Questionnaire = new Questionnaire()
     };
 

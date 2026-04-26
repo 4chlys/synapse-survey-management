@@ -32,9 +32,28 @@
                 <div>
                     <label class="block text-xs mb-1">Projectnaam</label>
                     <input asp-for="Name"
+                           id="project-name-input"
                            placeholder="Voer de naam van je project in"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
                     <span asp-validation-for="Name" class="text-red-400 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">URL-shortform</label>
+                    <input asp-for="ShortForm"
+                           id="project-shortform-input"
+                           placeholder="automatisch ingevuld vanuit de naam"
+                           readonly="@(project != null && project.ProjectState != "Draft" ? "readonly" : null)"
+                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
+                    <span asp-validation-for="ShortForm" class="text-red-400 text-xs"></span>
+                    @if (project != null && project.ProjectState != "Draft")
+                    {
+                        <p class="text-xs text-gray-500 mt-1">Vergrendeld omdat dit project gepubliceerd is.</p>
+                    }
+                    else
+                    {
+                        <p class="text-xs text-gray-500 mt-1">Gebruikt voor de deelnemers-URL: &lt;shortform&gt;.synapse-ip.xyz. Laat leeg om automatisch in te vullen vanuit de projectnaam.</p>
+                    }
                 </div>
 
                 <div>

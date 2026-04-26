@@ -19,4 +19,14 @@ public class ProjectApiService : IProjectApiService
 
         return await response.Content.ReadFromJsonAsync<ProjectViewModel>();
     }
+
+    public async Task<ProjectShortFormLookupViewModel> GetByShortFormAsync(string shortForm)
+    {
+        var response = await _httpClient.GetAsync($"api/projects/by-shortform/{shortForm}");
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ProjectShortFormLookupViewModel>();
+    }
 }

@@ -4,6 +4,7 @@ public class ProjectAdminViewModel
 {
     public int ProjectId { get; set; }
     public string Name { get; set; }
+    public string ShortForm { get; set; }
     public string Topic { get; set; }
     public string ProjectImage { get; set; }
     public string ProjectState { get; set; }

@@ -32,4 +32,14 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
             .AsNoTracking()
             .Include(p => p.Emojis)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
+    public Task<bool> ExistsByShortFormAsync(string shortForm, int? excludeProjectId = null)
+        => Context.Set<Project>()
+            .AnyAsync(p => p.ShortForm == shortForm
+                           && (excludeProjectId == null || p.ProjectId != excludeProjectId));
+
+    public Task<Project> ReadByShortFormReadOnlyAsync(string shortForm)
+        => Context.Set<Project>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ShortForm == shortForm);
 }

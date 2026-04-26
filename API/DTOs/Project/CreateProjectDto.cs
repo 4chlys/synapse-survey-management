@@ -7,6 +7,9 @@ public class CreateProjectDto
     [MaxLength(100)]
     public string Name { get; set; }
 
+    [MaxLength(30)]
+    public string ShortForm { get; set; }
+
     [MaxLength(100)]
     public string Topic { get; set; }
 

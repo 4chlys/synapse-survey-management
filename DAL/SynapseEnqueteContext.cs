@@ -28,6 +28,10 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         base.OnModelCreating(builder);
 
         // Project
+        builder.Entity<Project>()
+            .HasIndex(p => p.ShortForm)
+            .IsUnique();
+
         builder.Entity<Project>(e =>
         {
             e.HasOne(p => p.Questionnaire)

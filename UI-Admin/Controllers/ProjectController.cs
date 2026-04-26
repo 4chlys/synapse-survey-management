@@ -37,6 +37,7 @@ public class ProjectController(
         {
             ProjectId = projectId,
             Name = project.Name,
+            ShortForm = project.ShortForm,
             Topic = project.Topic,
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
@@ -71,13 +72,13 @@ public class ProjectController(
         {
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn, model.ShortForm);
         }
         else
         {
             project = await projectService.CreateProjectAsync(
                 model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn, model.ShortForm);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
