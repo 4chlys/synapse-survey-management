@@ -25,9 +25,10 @@
 
     @* Main content *@
     <div class="flex-1 flex flex-col items-center justify-center px-6 py-4">
-        <p class="text-sm mb-2">Wilt u het project activeren?</p>
+        <p class="text-sm mb-2">Project activeren</p>
         <p class="text-gray-400 mb-6 max-w-md text-center">
-            Dit betekent dat je het structuur niet meer zal kunnen wijzigen maar wel eventuele typfouten.
+            Na activatie kunnen deelnemers het project invullen.
+            De structuur van het project kan daarna niet meer worden aangepast, maar tekstuele correcties blijven mogelijk.
         </p>
         <form asp-controller="Project" asp-action="ActivateProject" method="post">
             <input type="hidden" name="projectId" value="@Model.ProjectId" />

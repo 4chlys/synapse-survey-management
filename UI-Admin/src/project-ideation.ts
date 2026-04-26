@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
-    const nextBtn = document.getElementById('next-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById('save-btn');
+    const nextBtn = document.getElementById('next-btn');
+    if (!saveBtn || !nextBtn) return;
 
-    const categoriesError = document.getElementById('categories-error') as HTMLElement | null;
+    const categoriesError = document.getElementById('categories-error');
 
     function validateAndNavigate(btn: HTMLButtonElement) {
         const count = parseInt(btn.dataset.projectCount ?? '0', 10);

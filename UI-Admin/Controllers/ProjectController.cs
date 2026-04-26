@@ -174,6 +174,13 @@ public class ProjectController(
         return Ok(new { url = $"/uploads/{fileName}" });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectService.DeleteProjectAsync(projectId);
+        return RedirectToAction(nameof(Index));
+    }
+
     public async Task<IActionResult> Activate(int projectId)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);

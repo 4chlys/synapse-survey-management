@@ -92,6 +92,16 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         return Ok(MapToDto(project));
     }
 
+    [HttpDelete("{projectId}")]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        var deleted = await projectManager.DeleteProjectAsync(projectId);
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
+    }
+
     [HttpPatch("{projectId}/state")]
     public async Task<ActionResult<ProjectDto>> UpdateProjectState(int projectId, UpdateProjectStateDto dto)
     {

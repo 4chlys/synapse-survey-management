@@ -100,6 +100,14 @@ public class ProjectManager(
         return project;
     }
 
+    public async Task<bool> DeleteProjectAsync(int projectId)
+    {
+        var deleted = await projectRepository.DeleteWithRelationsAsync(projectId);
+        if (deleted)
+            await uow.SaveChangesAsync();
+        return deleted;
+    }
+
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
