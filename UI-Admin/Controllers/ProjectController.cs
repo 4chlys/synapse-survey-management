@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
@@ -10,16 +13,19 @@ using SynapseEnqueteManagement.UI.Admin.Services.Section;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
+[Authorize(Roles = "ProjectPlatformAdmin")]
 public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
     SectionAdminService sectionService,
-    IWebHostEnvironment env) : Controller
+    IWebHostEnvironment env,
+    UserManager<ApplicationUser> userManager) : Controller
 {
     public async Task<IActionResult> Index()
     {
-        var projects = await projectService.GetAllProjectsAsync();
+        var user = await userManager.GetUserAsync(User);
+        var projects = await projectService.GetAllProjectsAsync(user!.ProjectPlatformId);
         return View(projects);
     }
 
@@ -66,6 +72,7 @@ public class ProjectController(
         if (!ModelState.IsValid)
             return View(model);
 
+        var user = await userManager.GetUserAsync(User);
         ProjectAdminViewModel project;
         if (model.ProjectId.HasValue)
         {
@@ -77,7 +84,8 @@ public class ProjectController(
         {
             project = await projectService.CreateProjectAsync(
                 model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn,
+                platformId: user!.ProjectPlatformId ?? 0);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
