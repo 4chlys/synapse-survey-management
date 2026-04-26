@@ -1,27 +1,121 @@
-@using SynapseEnqueteManagement.UI.Admin.Models.Project
-@model ProjectAdminViewModel
+@using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
+@model DashboardViewModel
 @{
-    ViewData["Title"] = "Project Dashboard";
+    ViewData["Title"] = Model.ProjectName + " — Dashboard";
     Layout = "_Layout";
-    var project = Model;
+    var qrUrl = "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=" + Uri.EscapeDataString(Model.SurveyUrl ?? "");
 }
 
-<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
+<div class="min-h-screen bg-gray-900 text-white p-8 text-sm">
 
-    <div class="flex items-center gap-3 px-6 pt-4">
-        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)"
-                 alt="Organisatie" class="w-full h-full object-cover" />
+    @* Header *@
+    <div class="mb-6">
+        <a asp-controller="Project" asp-action="Index" class="text-gray-400 hover:text-white text-xs">← Terug naar projecten</a>
+        <h1 class="text-2xl font-bold mt-2">@Model.ProjectName</h1>
+    </div>
+
+    @* Metrics row *@
+    <div class="grid grid-cols-3 gap-4 mb-8">
+
+        <div class="bg-gray-800 p-4 rounded">
+            <p class="text-3xl font-bold text-white">@Model.ViewCount</p>
+            <p class="text-xs text-gray-400 mt-1">Bekeken</p>
         </div>
-        <span class="font-medium">@(Model?.OrganisationName ?? "Admin")</span>
+
+        <div class="bg-gray-800 p-4 rounded">
+            <p class="text-3xl font-bold text-white">@Model.CompletionCount</p>
+            <p class="text-xs text-gray-400 mt-1">Ingevuld</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded">
+            <p class="text-3xl font-bold text-white">@((Model.CompletionRate * 100).ToString("F0"))%</p>
+            <p class="text-xs text-gray-400 mt-1">Voltooiingsgraad</p>
+        </div>
+
     </div>
 
-    <div class="flex items-center px-6 pt-3 pb-2">
-        <a asp-controller="Project" asp-action="Index" class="text-gray-300 hover:text-white">← Terug</a>
+    @* Survey URL distribution panel *@
+    <div class="bg-gray-800 p-4 rounded mb-8">
+        <p class="text-xs text-gray-400 mb-2">Survey-link</p>
+
+        <div class="flex items-center gap-3 mb-4">
+            <span id="survey-url-text" class="text-gray-200 break-all flex-1">@Model.SurveyUrl</span>
+            <button
+                type="button"
+                onclick="navigator.clipboard.writeText(document.getElementById('survey-url-text').textContent)"
+                class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded whitespace-nowrap transition">
+                Kopieer
+            </button>
+        </div>
+
+        <div class="flex flex-col items-start gap-2">
+            <img src="@qrUrl" alt="QR code survey" class="rounded" width="200" height="200" />
+            <a href="@qrUrl" download="qr-code.png" class="text-xs text-gray-400 hover:text-white underline">
+                QR downloaden
+            </a>
+        </div>
     </div>
 
-    <div class="flex-1 flex items-center justify-center">
-        <p class="text-gray-500">Dashboard voor <span class="text-white">@Model?.Name</span> — komt binnenkort.</p>
+    @* Top 5 categories *@
+    <div class="bg-gray-800 p-4 rounded mb-8">
+        <h2 class="text-sm font-semibold text-gray-300 mb-3">Top categorieën</h2>
+        @if (Model.TopCategories.Count == 0)
+        {
+            <p class="text-gray-500 text-xs">Nog geen categorieën</p>
+        }
+        else
+        {
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="text-left text-gray-400 pb-2">Naam</th>
+                        <th class="text-left text-gray-400 pb-2">Ideeën</th>
+                        <th class="text-left text-gray-400 pb-2">Reacties</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cat in Model.TopCategories)
+                    {
+                        <tr>
+                            <td class="py-1 text-gray-200">@cat.Name</td>
+                            <td class="py-1 text-gray-200">@cat.IdeaCount</td>
+                            <td class="py-1 text-gray-200">@cat.TotalReactions</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    @* Top 5 ideas *@
+    <div class="bg-gray-800 p-4 rounded">
+        <h2 class="text-sm font-semibold text-gray-300 mb-3">Top ideeën</h2>
+        @if (Model.TopIdeas.Count == 0)
+        {
+            <p class="text-gray-500 text-xs">Nog geen ideeën</p>
+        }
+        else
+        {
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="text-left text-gray-400 pb-2">Omschrijving</th>
+                        <th class="text-left text-gray-400 pb-2">Reacties</th>
+                        <th class="text-left text-gray-400 pb-2">Opmerkingen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var idea in Model.TopIdeas)
+                    {
+                        <tr>
+                            <td class="py-1 text-gray-200">@idea.Description</td>
+                            <td class="py-1 text-gray-200">@idea.ReactionCount</td>
+                            <td class="py-1 text-gray-200">@idea.CommentCount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 
 </div>
