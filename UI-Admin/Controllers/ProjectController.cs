@@ -7,6 +7,7 @@ using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
+using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
@@ -19,6 +20,7 @@ public class ProjectController(
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
     SectionAdminService sectionService,
+    DashboardAdminService dashboardService,
     IWebHostEnvironment env,
     UserManager<ApplicationUser> userManager) : Controller
 {
@@ -200,6 +202,7 @@ public class ProjectController(
         if (project is null)
             return NotFound();
 
-        return View(project);
+        var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
+        return View(dashboard);
     }
 }
