@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -10,4 +11,7 @@ public interface ICategoryRepository : IRepository<Category>
     Task<Category> ReadByIdReadOnlyAsync(int categoryId);
 
     Task<Category> ReadByIdWithProjectForUpdateAsync(int categoryId);
+
+    Task<List<Idea>> ReadLatestIdeasAsync(int projectId, int count);
+    Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId);
 }

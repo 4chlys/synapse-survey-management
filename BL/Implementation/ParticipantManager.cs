@@ -46,6 +46,29 @@ public class ParticipantManager(
     public Task<int> CountCompletionsByProjectAsync(int projectId)
         => participantRepository.CountCompletionsByProjectAsync(projectId);
 
+    public async Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30)
+    {
+        var events = await participantRepository.ReadTimelineAsync(projectId, days);
+        var cutoff = DateTime.UtcNow.Date.AddDays(-days + 1);
+        var allDates = Enumerable.Range(0, days)
+            .Select(i => cutoff.AddDays(i))
+            .ToList();
+
+        var startsByDate = events.Where(e => !e.IsCompletion)
+            .GroupBy(e => e.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var completionsByDate = events.Where(e => e.IsCompletion)
+            .GroupBy(e => e.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return new TimelineResult(
+            Dates: allDates.Select(d => d.ToString("yyyy-MM-dd")).ToList(),
+            Starts: allDates.Select(d => startsByDate.GetValueOrDefault(d, 0)).ToList(),
+            Completions: allDates.Select(d => completionsByDate.GetValueOrDefault(d, 0)).ToList()
+        );
+    }
+
     public async Task SaveContactInfoAsync(int participantId, string email, CancellationToken ct = default)
     {
         var participant = await participantRepository.ReadByIdForUpdateAsync(participantId);
