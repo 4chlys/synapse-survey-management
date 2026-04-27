@@ -16,4 +16,10 @@ public interface ICategoryRepository : IRepository<Category>
 
     Task<List<Idea>> ReadLatestIdeasAsync(int projectId, int count);
     Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId);
+
+    Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
+        int projectId, string? search, int? categoryId, ModerationStatus? status,
+        int page, int pageSize);
+
+    Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId);
 }

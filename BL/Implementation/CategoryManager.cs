@@ -61,7 +61,8 @@ public class CategoryManager(
             Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
             CategoryName: i.Category.Name,
             ReactionCount: i.Comments.OfType<IconComment>().Count(),
-            CreatedAt: i.CreatedAt
+            CreatedAt: i.CreatedAt,
+            Status: i.Status
         )).ToList();
     }
 
@@ -74,5 +75,38 @@ public class CategoryManager(
             Flagged: counts.GetValueOrDefault(ModerationStatus.Flagged, 0),
             Unflagged: counts.GetValueOrDefault(ModerationStatus.Unflagged, 0)
         );
+    }
+
+    public async Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
+        GetIdeasPagedAsync(int projectId, string? search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20)
+    {
+        var (ideas, total) = await categoryRepository.ReadIdeasPagedAsync(
+            projectId, search, categoryId, status, page, pageSize);
+
+        // Global counts (unfiltered) for summary bar
+        var (allIdeas, _) = await categoryRepository.ReadIdeasPagedAsync(
+            projectId, null, null, null, 1, int.MaxValue);
+        var approved = allIdeas.Count(i => i.Status == ModerationStatus.Approved);
+        var pending  = allIdeas.Count(i => i.Status == ModerationStatus.Unflagged);
+        var flagged  = allIdeas.Count(i => i.Status == ModerationStatus.Flagged);
+
+        var items = ideas.Select(i => new IdeaFeedItem(
+            IdeaId:        i.IdeaId,
+            Description:   i.Description,
+            CategoryName:  i.Category.Name,
+            ReactionCount: i.Comments.OfType<IconComment>().Count(),
+            CreatedAt:     i.CreatedAt,
+            Status:        i.Status
+        )).ToList();
+
+        return (items, total, approved, pending, flagged);
+    }
+
+    public async Task SetIdeaModerationStatusAsync(int ideaId, ModerationStatus status)
+    {
+        var idea = await categoryRepository.ReadIdeaByIdForUpdateAsync(ideaId)
+            ?? throw new KeyNotFoundException($"Idea {ideaId} not found.");
+        idea.Status = status;
+        await uow.SaveChangesAsync();
     }
 }
