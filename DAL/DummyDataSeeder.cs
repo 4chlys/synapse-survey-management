@@ -1,4 +1,5 @@
-﻿using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+﻿using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -51,6 +52,28 @@ public class DummyDataSeeder
         _check = new Emoji { Symbol = "✅", Name = "check" };
         context.Emojis.AddRange(_heart, _thumbsup, _fire, _check);
         context.SaveChanges();
+
+        var platformSynapse = new ProjectPlatform
+        {
+            Name = "Synapse",
+            LogoUrl = "https://synapse-ip.xyz/uploads/logos/logo_synapse.jpg",
+            WebsiteUrl = "https://synapse-ip.xyz",
+            CreatedAt = DateTime.UtcNow
+        };
+        var platformFitLife = new ProjectPlatform
+        {
+            Name = "FitLife Gym",
+            LogoUrl = "https://www.fitlife.com/uploads/logos/logo_fitlife.png",
+            WebsiteUrl = "https://www.fitlife.com",
+            CreatedAt = DateTime.UtcNow
+        };
+        var platformEendracht = new ProjectPlatform
+        {
+            Name = "FC Eendracht",
+            LogoUrl = "https://www.fceendracht.be/uploads/logos/logo_eendracht.png",
+            WebsiteUrl = "https://www.fceendracht.be",
+            CreatedAt = DateTime.UtcNow
+        };
 
         // Project 1: Synapse
         var questionnaire1 = new Questionnaire();
@@ -113,10 +136,9 @@ public class DummyDataSeeder
             RequestContactInfo = true,
             Questionnaire = questionnaire1,
             Name = "Mentaal Welzijn",
+            ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
-            OrganisationName = "Synapse",
-            OrganisationLogoUrl = "/uploads/logos/logo_synapse.jpg",
-            OrganisationWebsiteUrl = "http://synapse-ip.xyz/1",
+            ProjectPlatform = platformSynapse,
             Introduction = new Introduction
             {
                 Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
@@ -179,10 +201,9 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire2,
             Name = "Ledenbevraging",
+            ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
-            OrganisationName = "FitLife Gym",
-            OrganisationLogoUrl = "/uploads/logos/logo_fitlife.png",
-            OrganisationWebsiteUrl = "https://www.fitlife.com",
+            ProjectPlatform = platformFitLife,
             Introduction = new Introduction
             {
                 Text = "Welkom bij de FitLife ledenbevraging! " +
@@ -247,11 +268,9 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire3,
             Name = "Clubbevraging",
+            ShortForm = "clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
-            OrganisationName = "FC Eendracht",
-            OrganisationLogoUrl = "/uploads/logos/logo_eendracht.png",
-            OrganisationWebsiteUrl = "https://www.fceendracht.be",
-            
+            ProjectPlatform = platformEendracht,
         };
 
         var catTraining = new Category { Name = "Trainingen", Description = "Kwaliteit en opbouw van de trainingen" };
@@ -301,9 +320,8 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
             Name = "Gearchiveerd Project",
-            OrganisationName = "Inactive Org",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=Inactive",
-            OrganisationWebsiteUrl = "https://www.inactive.com",
+            ShortForm = "gearchiveerd-project",
+            ProjectPlatform = platformSynapse,
             Introduction = new Introduction { Text = "Dit project is momenteel inactief." }
         };
 
@@ -313,11 +331,12 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
             Name = "Draft Project",
-            OrganisationName = "Draft Org",
-            OrganisationLogoUrl = "https://placehold.co/120x40?text=Draft",
-            OrganisationWebsiteUrl = "https://www.draft.com",
+            ShortForm = "draft-project",
+            ProjectPlatform = platformSynapse,
             Introduction = new Introduction { Text = "Dit project is nog in opbouw." }
         };
+
+        context.ProjectPlatforms.AddRange(platformSynapse, platformFitLife, platformEendracht);
 
         context.Projects.Add(projectActive);
         context.Projects.Add(projectActive2);

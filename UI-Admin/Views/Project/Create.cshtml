@@ -1,9 +1,12 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
+@using Microsoft.Extensions.Options
+@inject IOptions<SynapseEnqueteManagement.UI.Admin.AdminSettings> AdminSettingsOptions
 @model CreateProjectViewModel
 @{
     ViewData["Title"] = "Admin - Project aanmaken";
     Layout = "_Layout";
     var project = ViewData["Project"] as ProjectAdminViewModel;
+    var participantDomain = AdminSettingsOptions.Value.ParticipantDomain;
 }
 
 <div class="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -13,10 +16,6 @@
             <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Organisatie" class="w-full h-full object-cover" />
         </div>
         <span class="text-xs">Admin</span>
-    </div>
-
-    <div class="px-6 pt-3">
-        <a asp-controller="Project" asp-action="Index" class="text-xs text-gray-300 hover:text-white">← Terug</a>
     </div>
 
     <form asp-action="Create" method="post" class="flex-1 flex flex-col px-6 pt-4 pb-6">
@@ -32,9 +31,29 @@
                 <div>
                     <label class="block text-xs mb-1">Projectnaam</label>
                     <input asp-for="Name"
+                           id="project-name-input"
                            placeholder="Voer de naam van je project in"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
                     <span asp-validation-for="Name" class="text-red-400 text-xs"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs mb-1">URL-shortform</label>
+                    <input asp-for="ShortForm"
+                           id="project-shortform-input"
+                           placeholder="automatisch ingevuld vanuit de naam"
+                           readonly="@(project != null && project.ProjectState != "Draft" ? "readonly" : null)"
+                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
+                    <span asp-validation-for="ShortForm" class="text-red-400 text-xs"></span>
+                    <span id="shortform-availability-msg" class="text-red-400 text-xs block"></span>
+                    @if (project != null && project.ProjectState != "Draft")
+                    {
+                        <p class="text-xs text-gray-500 mt-1">Vergrendeld omdat dit project gepubliceerd is.</p>
+                    }
+                    else
+                    {
+                        <p class="text-xs text-gray-500 mt-1">Gebruikt voor de deelnemers-URL: &lt;shortform&gt;.@participantDomain. Laat leeg om automatisch in te vullen vanuit de projectnaam.</p>
+                    }
                 </div>
 
                 <div>

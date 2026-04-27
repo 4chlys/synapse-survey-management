@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class CreateResponseDto
 {
-    [Required] [StringLength(500)] public string Value { get; set; }
+    [MaxLength(500)] public string Value { get; set; }
 
-    [Required] public int QuestionId { get; set; }
+    [Range(1, int.MaxValue)] public int QuestionId { get; set; }
 }

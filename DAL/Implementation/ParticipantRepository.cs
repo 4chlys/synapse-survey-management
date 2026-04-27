@@ -24,4 +24,30 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
     public Task<Participant> ReadBySessionTokenForUpdateAsync(Guid sessionToken)
         => Context.Set<Participant>()
             .FirstOrDefaultAsync(p => p.SessionToken == sessionToken);
+
+    public Task<int> CountCompletionsByProjectAsync(int projectId)
+        => Context.Set<Participant>()
+            .AsNoTracking()
+            .CountAsync(p => EF.Property<int>(p, "ProjectId") == projectId
+                             && p.CompletedAt.HasValue);
+
+    public async Task<List<(DateTime Date, bool IsCompletion)>> ReadTimelineAsync(int projectId, int days)
+    {
+        var cutoff = DateTime.UtcNow.AddDays(-days);
+        var participants = await Context.Set<Participant>()
+            .AsNoTracking()
+            .Where(p => EF.Property<int>(p, "ProjectId") == projectId
+                        && p.CreatedAt >= cutoff)
+            .Select(p => new { p.CreatedAt, p.CompletedAt })
+            .ToListAsync();
+
+        var result = new List<(DateTime Date, bool IsCompletion)>();
+        foreach (var p in participants)
+        {
+            result.Add((p.CreatedAt.Date, false));
+            if (p.CompletedAt.HasValue)
+                result.Add((p.CompletedAt.Value.Date, true));
+        }
+        return result;
+    }
 }

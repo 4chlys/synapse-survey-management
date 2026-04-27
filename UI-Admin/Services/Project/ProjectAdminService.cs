@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+using System.Net;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
@@ -7,6 +7,7 @@ public class ProjectAdminService(HttpClient httpClient)
     private class ProjectRequest
     {
         public string Name { get; set; }
+        public string ShortForm { get; set; }
         public string Topic { get; set; }
         public string Introduction { get; set; }
         public string ImageUrl { get; set; }
@@ -15,11 +16,13 @@ public class ProjectAdminService(HttpClient httpClient)
         public int? MinAge { get; set; }
         public int? MaxAge { get; set; }
         public bool RequestContactInfo { get; set; }
+        public int PlatformId { get; set; }
     }
 
-    public async Task<List<ProjectAdminViewModel>> GetAllProjectsAsync()
+    public async Task<List<ProjectAdminViewModel>> GetAllProjectsAsync(int? platformId = null)
     {
-        var response = await httpClient.GetAsync("api/projects");
+        var url = platformId.HasValue ? $"api/projects?platformId={platformId}" : "api/projects";
+        var response = await httpClient.GetAsync(url);
         if (!response.IsSuccessStatusCode)
             return new List<ProjectAdminViewModel>();
 
@@ -36,14 +39,14 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null)
     {
-        var payload = new ProjectRequest { Name = name, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
+        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, PlatformId = platformId };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
-
+    
     public async Task DeleteProjectAsync(int projectId)
     {
         var response = await httpClient.DeleteAsync($"api/projects/{projectId}");
@@ -57,11 +60,27 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null)
     {
-        var payload = new ProjectRequest { Name = name, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
+        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
+    public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)
+    {
+        var response = await httpClient.GetAsync($"api/projects/by-shortform/{Uri.EscapeDataString(shortForm)}");
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return true;
+        if (!response.IsSuccessStatusCode)
+            return true;
+        var dto = await response.Content.ReadFromJsonAsync<ShortFormLookup>();
+        return dto?.ProjectId == excludeProjectId;
+    }
+
+    private sealed class ShortFormLookup
+    {
+        public int ProjectId { get; set; }
     }
 }

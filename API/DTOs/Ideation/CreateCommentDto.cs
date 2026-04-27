@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 public class CreateCommentDto
 {
     [Required]
-    [StringLength(500, MinimumLength = 1)]
+    [MaxLength(500)]
     public string Text { get; set; }
 
     /// <summary>

@@ -3,10 +3,10 @@ namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class UpdateQuestionDto
 {
-    [Required][MaxLength(500)]
+    [Required] [MaxLength(500)]
     public string Text { get; set; }
 
-    [Required]
+    [Required] [MaxLength(50)]
     public string QuestionFormat { get; set; }
 
     public bool IsMandatory { get; set; }

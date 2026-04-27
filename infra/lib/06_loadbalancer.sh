@@ -62,7 +62,7 @@ create_url_map() {
 create_ssl_and_proxy() {
   echo ">>> SSL certificaat + HTTPS proxy aanmaken..."
   gcloud compute ssl-certificates create synapse-ssl-cert \
-    --domains="synapse-ip.xyz,api.synapse-ip.xyz,admin.synapse-ip.xyz" \
+    --domains="synapse-ip.xyz,api.synapse-ip.xyz,admin.synapse-ip.xyz,*.synapse-ip.xyz" \
     --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-ssl-cert al aanwezig)"
 
   gcloud compute target-https-proxies create synapse-https-proxy \
