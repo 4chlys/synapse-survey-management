@@ -503,7 +503,7 @@ start.sh
 
 # manually by Jonas
 JonasAssignment/
-UI-*/wwwroot/uploads/
+UI-Admin/wwwroot/uploads/
 UI-*/wwwroot/*.js
 UI-*/wwwroot/*.css
 UI-*/wwwroot/.vite
