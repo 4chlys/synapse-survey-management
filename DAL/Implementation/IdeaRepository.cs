@@ -1,7 +1,7 @@
-using SynapseEnqueteManagement.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.DAL.Implementation;
 
@@ -23,6 +23,12 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
             .Include(i => i.Participant)
             .Include(i => i.Comments).ThenInclude(c => c.Participant)
             .Include($"{nameof(Idea.Comments)}.{nameof(IconComment.Emoji)}")
+            .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
+
+    public Task<Idea> ReadByIdWithParticipantReadOnlyAsync(int ideaId)
+        => Context.Set<Idea>()
+            .AsNoTracking()
+            .Include(i => i.Participant)
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
     public Task<int> CountVisibleByCategoryAsync(int categoryId)
@@ -71,6 +77,16 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         => Context.Set<Idea>()
             .AnyAsync(i => i.Participant.ParticipantId == participantId);
 
+    public Task<string> ReadMostRecentDescriptionByCategoryAndParticipantAsync(int categoryId, int participantId)
+        => Context.Set<Idea>()
+            .AsNoTracking()
+            .Where(i => i.Category.CategoryId == categoryId
+                        && i.Participant.ParticipantId == participantId
+                        && i.Status != ModerationStatus.Declined)
+            .OrderByDescending(i => i.CreatedAt)
+            .Select(i => i.Description)
+            .FirstOrDefaultAsync();
+
     public async Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId)
         => await Context.Set<Idea>()
             .AsNoTracking()
@@ -82,4 +98,5 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
                         && i.Status != ModerationStatus.Declined)
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
+
 }

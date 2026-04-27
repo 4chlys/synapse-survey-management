@@ -2,7 +2,6 @@
 @{
     var projectId = Model.ProjectId;
     var categoryId = Model.CategoryId;
-    var requestContactInfo = Model.RequestContactInfo;
 }
 
 <div id="contactInfoPopup" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
@@ -12,38 +11,32 @@
         <div class="text-center mb-6">
             <div class="text-4xl mb-3">🎉</div>
             <h2 class="font-heading text-xl font-semibold text-base-content">Bedankt voor jouw idee!</h2>
-            @if (requestContactInfo)
-            {
-                <p class="text-sm text-neutral mt-2 leading-relaxed">
-                    Wil je op de hoogte blijven? Laat optioneel je contactgegevens achter.
-                </p>
-            }
+            <p class="text-sm text-neutral mt-2 leading-relaxed">
+                Wil je op de hoogte blijven? Laat optioneel je contactgegevens achter.
+            </p>
         </div>
 
-        @if (requestContactInfo)
-        {
-            <form asp-action="SaveContactInfo" method="post" class="flex flex-col gap-3">
-                <input type="hidden" name="projectId" value="@projectId" />
-                <input type="hidden" name="categoryId" value="@categoryId" />
+        <form asp-action="SaveContactInfo" method="post" class="flex flex-col gap-3">
+            <input type="hidden" name="projectId" value="@projectId" />
+            <input type="hidden" name="categoryId" value="@categoryId" />
 
-                <div>
-                    <label class="text-xs font-semibold text-neutral uppercase tracking-wide mb-1.5 block">
-                        E-mailadres
-                    </label>
-                    <input type="email" name="email" placeholder="jouw@email.be" class="w-full px-4 py-3 border border-base-300 rounded-xl bg-base-100
+            <div>
+                <label class="text-xs font-semibold text-neutral uppercase tracking-wide mb-1.5 block">
+                    E-mailadres
+                </label>
+                <input type="email" name="email" placeholder="jouw@email.be" class="w-full px-4 py-3 border border-base-300 rounded-xl bg-base-100
                     text-base-content text-sm placeholder:text-neutral/50
                     focus:border-primary focus:outline-none transition-colors" />
-                </div>
+            </div>
 
-                <button type="submit" class="btn btn-primary w-full rounded-xl font-heading font-semibold mt-1">
-                    Opslaan
-                </button>
-            </form>
-        }
+            <button type="submit" class="btn btn-primary w-full rounded-xl font-heading font-semibold mt-1">
+                Opslaan
+            </button>
+        </form>
 
         <a asp-action="Index" asp-route-projectId="@projectId" asp-route-categoryId="@categoryId"
                class="block text-center mt-4 text-sm text-neutral/60 hover:text-neutral transition-colors">
-            @(requestContactInfo ? "Overslaan" : "Sluiten")
+            Overslaan
         </a>
 
     </div>

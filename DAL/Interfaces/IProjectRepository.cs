@@ -16,4 +16,5 @@ public interface IProjectRepository : IRepository<Project>
 
     Task<bool> ExistsByShortFormAsync(string shortForm, int? excludeProjectId = null);
     Task<Project> ReadByShortFormReadOnlyAsync(string shortForm);
+    Task<bool> DeleteWithRelationsAsync(int projectId);
 }

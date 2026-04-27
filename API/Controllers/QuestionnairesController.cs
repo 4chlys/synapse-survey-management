@@ -41,11 +41,8 @@ public class QuestionnairesController(
 
     [HttpPost("questions")]
     public async Task<ActionResult<QuestionDto>> AddQuestion(int projectId,
-        [FromBody] CreateQuestionDto dto, CancellationToken ct)
+        CreateQuestionDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
@@ -66,11 +63,9 @@ public class QuestionnairesController(
     }
 
     [HttpPut("questions/{questionId}")]
-    public async Task<IActionResult> UpdateQuestion(int projectId, int questionId, [FromBody] UpdateQuestionDto dto, CancellationToken ct)
+    public async Task<IActionResult> UpdateQuestion(int projectId, int questionId, UpdateQuestionDto dto,
+        CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
@@ -100,11 +95,9 @@ public class QuestionnairesController(
     }
 
     [HttpPut("questions/{questionId}/location")]
-    public async Task<ActionResult<QuestionDto>> MoveQuestion(int projectId, int questionId, [FromBody] MoveQuestionDto dto, CancellationToken ct)
+    public async Task<ActionResult<QuestionDto>> MoveQuestion(int projectId, int questionId, MoveQuestionDto dto,
+        CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
             return NotFound();
 
@@ -138,7 +131,8 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var prevQuestion = await surveyFlowManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
+        var prevQuestion =
+            await surveyFlowManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
         return Ok(new { questionId = prevQuestion?.QuestionId });
     }
 

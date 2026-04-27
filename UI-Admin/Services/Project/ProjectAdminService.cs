@@ -47,6 +47,21 @@ public class ProjectAdminService(HttpClient httpClient)
     }
 
     public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null)
+
+    public async Task DeleteProjectAsync(int projectId)
+    {
+        var response = await httpClient.DeleteAsync($"api/projects/{projectId}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<ProjectAdminViewModel> UpdateProjectStateAsync(int projectId, string state)
+    {
+        var response = await httpClient.PatchAsJsonAsync($"api/projects/{projectId}/state", new { State = state });
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
+    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
     {
         var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);

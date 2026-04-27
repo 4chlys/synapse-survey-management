@@ -183,6 +183,28 @@ public class ProjectController(
 
         var available = await projectService.IsShortFormAvailableAsync(shortForm, projectId);
         return Json(new { available });
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectService.DeleteProjectAsync(projectId);
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Activate(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null)
+            return NotFound();
+
+        return View(project);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ActivateProject(int projectId)
+    {
+        await projectService.UpdateProjectStateAsync(projectId, "Active");
+        return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
     public async Task<IActionResult> Dashboard(int projectId)

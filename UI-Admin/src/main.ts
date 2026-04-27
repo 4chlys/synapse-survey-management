@@ -1,4 +1,5 @@
 import './main.css';
+import './project-index';
 import './project-setup';
 import './project-shortform-autofill';
 import './project-questions';

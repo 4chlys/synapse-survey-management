@@ -99,9 +99,15 @@
     <div class="flex justify-between px-6 py-4">
         <a asp-controller="Project" asp-action="Index"
            class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
-        <button type="button" id="save-btn"
-                data-project-count="@Model.Count"
-                data-href="@Url.Action("Index", "Project")"
-                class="border border-gray-400 px-6 py-2 hover:bg-gray-700">Opslaan</button>
+        <div class="flex items-center gap-3">
+            <button type="button" id="save-btn"
+                    data-project-count="@Model.Count"
+                    data-href="@Url.Action("Index", "Project")"
+                    class="border border-gray-400 px-6 py-2 hover:bg-gray-700">Opslaan</button>
+            <button type="button" id="next-btn"
+                    data-project-count="@Model.Count"
+                    data-href="@Url.Action("Activate", "Project", new { projectId })"
+                    class="border border-gray-400 px-6 py-2 hover:bg-gray-700">Volgende →</button>
+        </div>
     </div>
 </div>
