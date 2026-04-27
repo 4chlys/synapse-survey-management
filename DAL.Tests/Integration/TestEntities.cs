@@ -12,6 +12,7 @@ internal static class TestEntities
     public static Project NewProject(string name = "Test Project") => new()
     {
         Name = name,
+        ShortForm = "test-project",
         Questionnaire = new Questionnaire(),
         ProjectPlatform = new ProjectPlatform { Name = "Test Platform", CreatedAt = DateTime.UtcNow }
     };

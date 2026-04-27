@@ -7,6 +7,11 @@ public class CreateProjectDto
     [MaxLength(100)]
     public string Name { get; set; }
 
+    [MaxLength(30)]
+    [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
+        ErrorMessage = "ShortForm must be lowercase alphanumeric with single hyphens.")]
+    public string ShortForm { get; set; }
+
     [MaxLength(100)]
     public string Topic { get; set; }
 
@@ -22,12 +27,11 @@ public class CreateProjectDto
     [MaxLength(20)]
     public string AiAssistance { get; set; }
 
-    public int? MinAge { get; set; }
-
-    public int? MaxAge { get; set; }
+    [Range(0, 120)] public int? MinAge { get; set; }
+    [Range(0, 120)] public int? MaxAge { get; set; }
 
     public bool RequestContactInfo { get; set; }
 
-    [Required]
+    [Range(1, int.MaxValue)]
     public int PlatformId { get; set; }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
@@ -24,7 +25,8 @@ public class ProjectController(
     DashboardAdminService dashboardService,
     IWebHostEnvironment env,
     UserManager<ApplicationUser> userManager,
-    WidgetPreferenceService widgetPreferenceService) : Controller
+    WidgetPreferenceService widgetPreferenceService,
+    IOptions<AdminSettings> adminSettings) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -48,6 +50,7 @@ public class ProjectController(
         {
             ProjectId = projectId,
             Name = project.Name,
+            ShortForm = project.ShortForm,
             Topic = project.Topic,
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
@@ -84,7 +87,8 @@ public class ProjectController(
         {
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                model.ContactOptIn, model.ShortForm);
         }
         else
         {
@@ -97,7 +101,8 @@ public class ProjectController(
                 model.Name, model.Topic, model.Introduction,
                 model.ImageUrl, model.InteractionMode, model.AiAssistance,
                 model.MinAge, model.MaxAge, model.ContactOptIn,
-                platformId: user.ProjectPlatformId.Value);
+                platformId: user.ProjectPlatformId.Value,
+                shortForm: model.ShortForm);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -117,12 +122,14 @@ public class ProjectController(
                 await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty);
 
         if (submitAction == "next")
-            return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
+            return RedirectToAction(nameof(Questions),
+                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
 
         return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
     }
 
-    public async Task<IActionResult> Questions(int projectId, AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
+    public async Task<IActionResult> Questions(int projectId,
+        AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
@@ -135,18 +142,22 @@ public class ProjectController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance, CreateQuestionViewModel model)
+    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
+        CreateQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance, EditQuestionViewModel model)
+    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
+        EditQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text,
+                model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
@@ -198,12 +209,22 @@ public class ProjectController(
         return Ok(new { url = $"/uploads/{fileName}" });
     }
 
-    [HttpPost]
-    public async Task<IActionResult> DeleteProject(int projectId)
+    [HttpGet]
+    public async Task<IActionResult> CheckShortForm(string shortForm, int? projectId)
     {
-        await projectService.DeleteProjectAsync(projectId);
-        return RedirectToAction(nameof(Index));
+        if (string.IsNullOrWhiteSpace(shortForm))
+            return Json(new { available = true });
+
+        var available = await projectService.IsShortFormAvailableAsync(shortForm, projectId);
+        return Json(new { available });
     }
+
+    [HttpPost]
+        public async Task<IActionResult> DeleteProject(int projectId)
+        {
+            await projectService.DeleteProjectAsync(projectId);
+            return RedirectToAction(nameof(Index));
+        }
 
     public async Task<IActionResult> Activate(int projectId)
     {
@@ -234,6 +255,9 @@ public class ProjectController(
 
         dashboard.WidgetLayout = layout;
         dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
+        var participantDomain = adminSettings.Value.ParticipantDomain;
+        var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
+        dashboard.SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}";
 
         return View(dashboard);
     }

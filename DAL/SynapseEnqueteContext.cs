@@ -34,6 +34,10 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         builder.HasPostgresExtension("vector");
 
         // Project
+        builder.Entity<Project>()
+            .HasIndex(p => p.ShortForm)
+            .IsUnique();
+
         builder.Entity<Project>(e =>
         {
             e.HasOne(p => p.ProjectPlatform)

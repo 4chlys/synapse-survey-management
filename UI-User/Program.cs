@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
+using SynapseEnqueteManagement.UI.User.Middleware;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Moderation;
 using SynapseEnqueteManagement.UI.User.Services.Project;
@@ -66,6 +67,8 @@ builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
 builder.Services.AddHttpClient<IdeaSupportService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
+builder.Services.AddMemoryCache();
+
 // Rate limiting — per real client IP, applied only to expensive AI moderation endpoints
 builder.Services.AddRateLimiter(options =>
 {
@@ -114,6 +117,8 @@ forwardedHeadersOptions.KnownNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
+app.UseMiddleware<ProjectShortFormResolverMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseViteDevelopmentServer();
@@ -138,7 +143,10 @@ app.MapControllerRoute(
     pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
-app.MapGet("/", () => Results.Redirect("/1"));
 
 app.Run();

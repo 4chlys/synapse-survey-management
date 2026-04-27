@@ -11,7 +11,7 @@ public class Response : IHasCreatedAt
     [MaxLength(500)] public string Value { get; set; }
     public bool IsCommitted { get; set; }
 
-    public Question Question { get; set; }
+    [Required] public Question Question { get; set; }
 
-    public Participant Participant { get; set; }
+    [Required] public Participant Participant { get; set; }
 }

@@ -51,7 +51,7 @@ public class CommentManager(
             Participant = participant,
             CreatedAt = DateTime.UtcNow
         };
-
+        EntityValidator.Validate(comment);
         var created = (TextComment)await commentRepository.CreateAsync(comment);
         await uow.SaveChangesAsync(ct);
         return created;

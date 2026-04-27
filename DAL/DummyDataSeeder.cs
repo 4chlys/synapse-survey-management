@@ -136,6 +136,7 @@ public class DummyDataSeeder
             RequestContactInfo = true,
             Questionnaire = questionnaire1,
             Name = "Mentaal Welzijn",
+            ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
             ProjectPlatform = platformSynapse,
             Introduction = new Introduction
@@ -200,6 +201,7 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire2,
             Name = "Ledenbevraging",
+            ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             ProjectPlatform = platformFitLife,
             Introduction = new Introduction
@@ -266,6 +268,7 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire3,
             Name = "Clubbevraging",
+            ShortForm = "clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             ProjectPlatform = platformEendracht,
         };
@@ -317,6 +320,7 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
             Name = "Gearchiveerd Project",
+            ShortForm = "gearchiveerd-project",
             ProjectPlatform = platformSynapse,
             Introduction = new Introduction { Text = "Dit project is momenteel inactief." }
         };
@@ -327,6 +331,7 @@ public class DummyDataSeeder
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
             Name = "Draft Project",
+            ShortForm = "draft-project",
             ProjectPlatform = platformSynapse,
             Introduction = new Introduction { Text = "Dit project is nog in opbouw." }
         };
