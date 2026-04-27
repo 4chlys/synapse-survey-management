@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 
 public interface IIdeaManager
 {
-    Task<PagedResult<Idea>> GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int pageSize, int page, string sortKey);
+    Task<IdeaIndexResult> GetIdeasIndexAsync(int categoryId, int? participantId, int pageSize, int page, string sortKey, CancellationToken ct = default);
     Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int participantId);
     Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId);
     Task<int?> GetIdeaAuthorParticipantIdReadOnlyAsync(int ideaId);

@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
-using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -19,22 +19,26 @@ public class IdeasController(
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
-        int projectId, int categoryId, [FromQuery] [Range(1, int.MaxValue)] int page = 1,
-        [FromQuery] string sort = null)
+    public async Task<ActionResult<IdeaIndexResponseDto>> GetIdeasByCategory(
+        int projectId, int categoryId,
+        [FromQuery][Range(1, int.MaxValue)] int page = 1,
+        [FromQuery] string sort = null,
+        CancellationToken ct = default)
     {
         var participantId = await ResolveParticipantIdAsync();
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var pageSize = project?.IdeaPageSize ?? 5;
-        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, pageSize, page,
-            sort);
 
-        return Ok(new PagedResult<IdeaDto>
+        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, ct);
+
+        return Ok(new IdeaIndexResponseDto
         {
-            Items = paged.Items.Select(i => MapIdeaToDto(i, participantId)),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
+            Items = result.Items.Select(i => MapIdeaToDto(i, participantId)),
+            Page = result.Page,
+            PageSize = result.PageSize,
+            TotalCount = result.TotalCount,
+            ResolvedSort = result.ResolvedSort,
+            HasOwnIdeas = result.HasOwnIdeas
         });
     }
 
