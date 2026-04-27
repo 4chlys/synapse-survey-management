@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SynapseEnqueteManagement.UI.Admin;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
@@ -86,6 +87,8 @@ builder.Services.AddHttpClient<DashboardAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<StatsProxyService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+
+builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
 
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();

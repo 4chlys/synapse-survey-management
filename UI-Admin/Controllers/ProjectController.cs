@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
@@ -24,7 +25,8 @@ public class ProjectController(
     DashboardAdminService dashboardService,
     IWebHostEnvironment env,
     UserManager<ApplicationUser> userManager,
-    WidgetPreferenceService widgetPreferenceService) : Controller
+    WidgetPreferenceService widgetPreferenceService,
+    IOptions<AdminSettings> adminSettings) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -253,6 +255,9 @@ public class ProjectController(
 
         dashboard.WidgetLayout = layout;
         dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
+        var participantDomain = adminSettings.Value.ParticipantDomain;
+        var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
+        dashboard.SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}";
 
         return View(dashboard);
     }
