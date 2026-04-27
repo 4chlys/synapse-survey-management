@@ -11,7 +11,7 @@ public class Project : IHasCreatedAt
     public DateTime CreatedAt { get; set; }
 
     public int ProjectPlatformId { get; set; }
-    public ProjectPlatform ProjectPlatform { get; set; }
+    [Required] public ProjectPlatform ProjectPlatform { get; set; }
     public int ViewCount { get; set; } = 0;
 
     [Required] [MaxLength(100)]
@@ -26,18 +26,18 @@ public class Project : IHasCreatedAt
     [MaxLength(100)]
     public string Topic { get; set; }
 
-    public int? MinAge { get; set; }
-    public int? MaxAge { get; set; }
+    [Range(0, 120)] public int? MinAge { get; set; }
+    [Range(0, 120)] public int? MaxAge { get; set; }
 
     [MaxLength(500)]
     public string ImageUrl { get; set; }
 
-    public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
+    [Required] public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
 
-    public ProjectState ProjectState { get; set; } = ProjectState.Draft;
-    public FormType FormType { get; set; } = FormType.VerticalScroll;
-    public int IdeaPageSize { get; set; } = 5;
-    public int CommentPageSize { get; set; } = 20;
+    [Required] public ProjectState ProjectState { get; set; } = ProjectState.Draft;
+    [Required] public FormType FormType { get; set; } = FormType.VerticalScroll;
+    [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
+    [Range(1, 200)] public int CommentPageSize { get; set; } = 20;
     public bool RequestContactInfo { get; set; } = false;
 
     public Questionnaire Questionnaire { get; set; }

@@ -28,9 +28,8 @@ public class UpdateProjectDto
     [MaxLength(20)]
     public string AiAssistance { get; set; }
 
-    public int? MinAge { get; set; }
-
-    public int? MaxAge { get; set; }
+    [Range(0, 120)] public int? MinAge { get; set; }
+    [Range(0, 120)] public int? MaxAge { get; set; }
 
     public bool RequestContactInfo { get; set; }
 }

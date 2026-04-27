@@ -71,7 +71,7 @@ public class QuestionnaireManager(
         if (endingAnswers is not null)
             foreach (var value in endingAnswers)
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
-
+        EntityValidator.Validate(question);
         var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -87,6 +87,7 @@ public class QuestionnaireManager(
         var question = await questionRepository.ReadByIdWithSectionForUpdateAsync(questionId);
         if (question is null) return false;
 
+        EntityValidator.ValidateProperty(question, text, nameof(Question.Text));
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
@@ -211,6 +212,7 @@ public class QuestionnaireManager(
             Description = description,
             Questionnaire = questionnaire
         };
+        EntityValidator.Validate(section);
         var created = await sectionRepository.CreateAsync(section);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -221,6 +223,8 @@ public class QuestionnaireManager(
         var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
         if (section is null) return false;
 
+        EntityValidator.ValidateProperty(section, name, nameof(Section.Name));
+        EntityValidator.ValidateProperty(section, description, nameof(Section.Description));
         section.Name = name;
         section.Description = description;
         sectionRepository.Update(section);

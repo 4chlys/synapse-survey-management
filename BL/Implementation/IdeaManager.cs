@@ -132,7 +132,7 @@ public class IdeaManager(
             Embedding = embedding,
             CreatedAt = DateTime.UtcNow
         };
-
+        EntityValidator.Validate(idea);
         var created = await ideaRepository.CreateAsync(idea);
         await uow.SaveChangesAsync(ct);
 

@@ -29,6 +29,7 @@ public class CategoryManager(
             Description = description,
             Project = project
         };
+        EntityValidator.Validate(category);
         var created = await categoryRepository.CreateAsync(category);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -39,6 +40,8 @@ public class CategoryManager(
         var category = await categoryRepository.ReadByIdForUpdateAsync(categoryId);
         if (category is null) return false;
 
+        EntityValidator.ValidateProperty(category, name, nameof(Category.Name));
+        EntityValidator.ValidateProperty(category, description, nameof(Category.Description));
         category.Name = name;
         category.Description = description;
         categoryRepository.Update(category);

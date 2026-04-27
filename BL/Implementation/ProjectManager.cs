@@ -60,6 +60,9 @@ public class ProjectManager(
             Questionnaire = new Questionnaire(),
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.ValidateProperty(project, name, nameof(Project.Name));
+        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
+        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
         if (!string.IsNullOrEmpty(introduction))
             project.Introduction = new Introduction { Text = introduction };
 
@@ -88,6 +91,9 @@ public class ProjectManager(
             project.ShortForm = await shortFormService.EnsureUniqueAsync(shortForm, excludeProjectId: projectId);
         }
 
+        EntityValidator.ValidateProperty(project, name, nameof(Project.Name));
+        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
+        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
         project.Name = name;
         project.Topic = topic;
         project.ImageUrl = imageUrl;

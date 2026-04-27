@@ -16,10 +16,10 @@ public class IdeaSupportChatRequestDto
     /// The user's latest message. Empty string on the opening turn — the
     /// server uses IsFirstTurn + category context to generate the greeting.
     /// </summary>
-    [StringLength(1000)]
+    [MaxLength(1000)]
     public string UserMessage { get; set; } = string.Empty;
 
     /// <summary>Id of the category the participant is posting in.</summary>
-    [Required]
+    [Range(1, int.MaxValue)]
     public int CategoryId { get; set; }
 }
