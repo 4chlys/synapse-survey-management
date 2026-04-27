@@ -5,6 +5,7 @@
 // container; re-rendering its innerHTML does not invalidate them.
 
 import { renderTree, Question, RenderContext } from './questionnaire-tree';
+import { toast } from './lib/notify';
 
 interface MovePayload {
     parentQuestionId: number | null;
@@ -20,9 +21,9 @@ function getAntiforgeryToken(): string {
     return document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
 }
 
-async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Promise<boolean> {
+async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Promise<Response | null> {
     try {
-        const response = await fetch(url, {
+        return await fetch(url, {
             method,
             headers: {
                 'Content-Type': 'application/json',
@@ -30,9 +31,8 @@ async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Pro
             },
             body: JSON.stringify(body),
         });
-        return response.ok;
     } catch {
-        return false;
+        return null;
     }
 }
 
@@ -137,8 +137,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             position: 9999, // server clamps to end of scope
         };
 
-        const ok = await sendJson(`${questionsEndpoint}/${questionId}/location`, 'PUT', payload);
-        if (ok) await reload();
+        const response = await sendJson(`${questionsEndpoint}/${questionId}/location`, 'PUT', payload);
+        if (response?.ok) {
+            toast('Opgeslagen', 'success');
+            await reload();
+        } else {
+            toast('Opslaan mislukt — opnieuw proberen', 'error');
+        }
     });
 
     list.addEventListener('change', async (e) => {
@@ -155,6 +160,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             .filter((v) => v !== '');
 
         const payload: EndingPayload = { endingAnswers: values };
-        await sendJson(`${questionsEndpoint}/${questionId}/ending-answers`, 'PUT', payload);
+        const endingResponse = await sendJson(`${questionsEndpoint}/${questionId}/ending-answers`, 'PUT', payload);
+        if (endingResponse?.ok) {
+            toast('Opgeslagen', 'success');
+        } else {
+            toast('Opslaan mislukt — opnieuw proberen', 'error');
+        }
     });
 });

@@ -8,5 +8,5 @@ public class Introduction
 
     [Required] [MaxLength(5000)] public string Text { get; set; }
 
-    public Project Project { get; set; }
+    [Required] public Project Project { get; set; }
 }

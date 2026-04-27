@@ -25,11 +25,12 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         ProjectId = p.ProjectId,
         PlatformId = p.ProjectPlatformId,
         Name = p.Name ?? string.Empty,
+        ShortForm = p.ShortForm ?? string.Empty,
         Topic = p.Topic ?? string.Empty,
-        ProjectImage = p.ImageUrl ?? string.Empty,
         ProjectState = p.ProjectState.ToString(),
         FormType = p.FormType.ToString(),
         OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
+        ProjectImage = p.ImageUrl ?? string.Empty,
         OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
         Introduction = p.Introduction?.Text ?? string.Empty,
@@ -57,6 +58,21 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         return Ok(projects.Select(MapToDto));
     }
 
+    [HttpGet("by-shortform/{shortForm}")]
+    public async Task<ActionResult<ProjectShortFormLookupDto>> GetByShortForm(string shortForm)
+    {
+        var project = await projectManager.GetProjectByShortFormAsync(shortForm.ToLowerInvariant());
+        if (project is null)
+            return NotFound();
+
+        return Ok(new ProjectShortFormLookupDto
+        {
+            ProjectId = project.ProjectId,
+            ShortForm = project.ShortForm,
+            ProjectState = project.ProjectState.ToString()
+        });
+    }
+
     [HttpPost]
     public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto)
     {
@@ -70,7 +86,8 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
-            dto.PlatformId);
+            dto.PlatformId,
+            dto.ShortForm);
 
         return Created(string.Empty, MapToDto(project));
     }
@@ -88,7 +105,8 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
-            dto.RequestContactInfo);
+            dto.RequestContactInfo,
+            dto.ShortForm);
 
         return Ok(MapToDto(project));
     }

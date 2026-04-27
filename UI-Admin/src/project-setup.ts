@@ -1,6 +1,8 @@
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
+import { toast, bindDirtyTracking } from './lib/notify';
+
 function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
     return new Promise((resolve) => {
         const img = new Image();
@@ -19,6 +21,13 @@ function compressImage(file: File, maxWidth: number, quality: number): Promise<B
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const mainForm = document.querySelector<HTMLFormElement>('form[method="post"]');
+    if (mainForm) {
+        bindDirtyTracking(mainForm);
+        if (new URLSearchParams(window.location.search).get('saved') === '1')
+            toast('Opgeslagen', 'success');
+    }
+
     const btnChat = document.getElementById('btn-chat') as HTMLButtonElement | null;
     const btnScroll = document.getElementById('btn-scroll') as HTMLButtonElement | null;
     const interactionModeInput = document.getElementById('InteractionMode') as HTMLInputElement | null;

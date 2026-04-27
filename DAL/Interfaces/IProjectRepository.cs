@@ -14,6 +14,8 @@ public interface IProjectRepository : IRepository<Project>
 
     Task<Project> ReadByIdWithEmojisReadOnlyAsync(int projectId);
 
+    Task<bool> ExistsByShortFormAsync(string shortForm, int? excludeProjectId = null);
+    Task<Project> ReadByShortFormReadOnlyAsync(string shortForm);
     Task<IEnumerable<Project>> ReadAllWithPlatformReadOnlyAsync(int? platformId = null);
 
     Task<bool> DeleteWithRelationsAsync(int projectId);

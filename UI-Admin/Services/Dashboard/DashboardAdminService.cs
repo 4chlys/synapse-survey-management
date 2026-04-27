@@ -1,10 +1,9 @@
 using System.Net.Http.Json;
-using Microsoft.Extensions.Configuration;
 using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 
-public class DashboardAdminService(HttpClient httpClient, IConfiguration config)
+public class DashboardAdminService(HttpClient httpClient)
 {
     public async Task<DashboardViewModel> GetDashboardAsync(int projectId, string projectName)
     {
@@ -16,8 +15,6 @@ public class DashboardAdminService(HttpClient httpClient, IConfiguration config)
         if (dto is null)
             return new DashboardViewModel { ProjectId = projectId, ProjectName = projectName };
 
-        var surveyBase = config["SurveyBaseUrl"] ?? string.Empty;
-
         return new DashboardViewModel
         {
             ProjectId = projectId,
@@ -25,7 +22,6 @@ public class DashboardAdminService(HttpClient httpClient, IConfiguration config)
             ViewCount = dto.ViewCount,
             CompletionCount = dto.CompletionCount,
             CompletionRate = dto.CompletionRate,
-            SurveyUrl = $"{surveyBase}/survey/{projectId}",
             TopCategories = dto.TopCategories.Select(c => new CategoryMetricViewModel
             {
                 CategoryId = c.CategoryId,

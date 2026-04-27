@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 public class CreateIdeaDto
 {
     [Required]
-    [StringLength(1000, MinimumLength = 1)]
+    [MaxLength(1000)]
     public string Description { get; set; }
 
     /// <summary>
