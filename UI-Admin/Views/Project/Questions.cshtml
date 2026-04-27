@@ -91,8 +91,12 @@
 
     @* Bottom buttons *@
     <div class="flex justify-between items-center px-6 py-4">
-        <a asp-controller="Project" asp-action="Index"
-           class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
+        <div class="flex items-center gap-3">
+            <a asp-controller="Project" asp-action="Index"
+               class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
+            <a asp-controller="Project" asp-action="Create" asp-route-projectId="@projectId"
+               class="border border-gray-500 px-6 py-2 hover:bg-gray-800">← Vorige</a>
+        </div>
         <div class="flex items-center gap-3">
             <span id="questions-next-error" class="hidden text-red-400">Voeg minimaal 1 vraag toe.</span>
             <a asp-controller="Project" asp-action="Questions"
