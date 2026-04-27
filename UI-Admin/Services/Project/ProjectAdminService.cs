@@ -44,10 +44,10 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<bool> DeleteProjectAsync(int projectId)
+    public async Task DeleteProjectAsync(int projectId)
     {
         var response = await httpClient.DeleteAsync($"api/projects/{projectId}");
-        return response.IsSuccessStatusCode;
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task<ProjectAdminViewModel> UpdateProjectStateAsync(int projectId, string state)

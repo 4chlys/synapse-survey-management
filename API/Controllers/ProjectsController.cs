@@ -95,10 +95,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     [HttpDelete("{projectId}")]
     public async Task<IActionResult> DeleteProject(int projectId)
     {
-        var deleted = await projectManager.DeleteProjectAsync(projectId);
-        if (!deleted)
-            return NotFound();
-
+        await projectManager.DeleteProjectAsync(projectId);
         return NoContent();
     }
 

@@ -100,12 +100,13 @@ public class ProjectManager(
         return project;
     }
 
-    public async Task<bool> DeleteProjectAsync(int projectId)
+    public async Task DeleteProjectAsync(int projectId)
     {
         var deleted = await projectRepository.DeleteWithRelationsAsync(projectId);
-        if (deleted)
-            await uow.SaveChangesAsync();
-        return deleted;
+        if (!deleted)
+            throw new KeyNotFoundException($"Project {projectId} not found.");
+
+        await uow.SaveChangesAsync();
     }
 
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)

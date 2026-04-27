@@ -16,5 +16,5 @@ public interface IProjectManager
     Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
-    Task<bool> DeleteProjectAsync(int projectId);
+    Task DeleteProjectAsync(int projectId);
 }
