@@ -30,4 +30,7 @@ public class CreateProjectDto
     public int? MaxAge { get; set; }
 
     public bool RequestContactInfo { get; set; }
+
+    [Required]
+    public int PlatformId { get; set; }
 }

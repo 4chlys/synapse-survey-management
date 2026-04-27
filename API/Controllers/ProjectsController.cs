@@ -23,15 +23,16 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     private ProjectDto MapToDto(Project p) => new()
     {
         ProjectId = p.ProjectId,
+        PlatformId = p.ProjectPlatformId,
         Name = p.Name ?? string.Empty,
         ShortForm = p.ShortForm ?? string.Empty,
         Topic = p.Topic ?? string.Empty,
         ProjectState = p.ProjectState.ToString(),
         FormType = p.FormType.ToString(),
-        OrganisationName = p.OrganisationName ?? string.Empty,
+        OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
         ProjectImage = p.ImageUrl ?? string.Empty,
-        OrganisationLogoUrl = p.OrganisationLogoUrl ?? string.Empty,
-        OrganisationWebsiteUrl = p.OrganisationWebsiteUrl ?? string.Empty,
+        OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
+        OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
         Introduction = p.Introduction?.Text ?? string.Empty,
         AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
@@ -50,9 +51,10 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects()
+    public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects(
+        [FromQuery] int? platformId = null)
     {
-        var projects = await projectManager.GetAllProjectsAsync();
+        var projects = await projectManager.GetAllProjectsAsync(platformId);
         return Ok(projects.Select(MapToDto));
     }
 
@@ -72,7 +74,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
+    public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto)
     {
         var project = await projectManager.CreateProjectAsync(
             dto.Name,
@@ -84,14 +86,14 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
-            dto.ShortForm,
-            ct);
+            dto.PlatformId,
+            dto.ShortForm);
 
         return Created(string.Empty, MapToDto(project));
     }
 
     [HttpPut("{projectId}")]
-    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, UpdateProjectDto dto, CancellationToken ct)
+    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, UpdateProjectDto dto)
     {
         var project = await projectManager.UpdateProjectAsync(
             projectId,
@@ -104,8 +106,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
-            dto.ShortForm,
-            ct);
+            dto.ShortForm);
 
         return Ok(MapToDto(project));
     }

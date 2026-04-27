@@ -84,13 +84,13 @@ public class ProjectsControllerTests
             .Setup(m => m.CreateProjectAsync(
                 "Test", string.Empty, string.Empty, string.Empty,
                 FormType.VerticalScroll, AiAssistanceType.ProActive,
-                null, null, false, null, It.IsAny<CancellationToken>()))
+                null, null, false, 0, null))
             .ReturnsAsync(createdProject);
 
         var dto = new CreateProjectDto { Name = "Test" };
 
         // Act
-        var result = await _controller.CreateProject(dto, CancellationToken.None);
+        var result = await _controller.CreateProject(dto);
 
         // Assert
         var created = Assert.IsType<CreatedResult>(result.Result);
@@ -108,14 +108,14 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                "admin", It.IsAny<CancellationToken>()))
+                It.IsAny<int>(), "admin"))
             .ThrowsAsync(new ValidationException("'admin' is a reserved shortform."));
 
         var dto = new CreateProjectDto { Name = "Admin", ShortForm = "admin" };
 
         // Act & Assert — middleware converts this; the controller lets it propagate
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _controller.CreateProject(dto, CancellationToken.None));
+            _controller.CreateProject(dto));
     }
 
     #endregion
@@ -131,14 +131,14 @@ public class ProjectsControllerTests
                 1, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                "new-form", It.IsAny<CancellationToken>()))
+                "new-form"))
             .ThrowsAsync(new ValidationException("ShortForm cannot be changed after the project has been published."));
 
         var dto = new UpdateProjectDto { Name = "Name", ShortForm = "new-form" };
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _controller.UpdateProject(1, dto, CancellationToken.None));
+            _controller.UpdateProject(1, dto));
     }
 
     #endregion

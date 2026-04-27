@@ -1,25 +1,36 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
+using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
+using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
+[Authorize(Roles = "ProjectPlatformAdmin")]
 public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
     SectionAdminService sectionService,
-    IWebHostEnvironment env) : Controller
+    DashboardAdminService dashboardService,
+    IWebHostEnvironment env,
+    UserManager<ApplicationUser> userManager,
+    WidgetPreferenceService widgetPreferenceService) : Controller
 {
     public async Task<IActionResult> Index()
     {
-        var projects = await projectService.GetAllProjectsAsync();
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+        var projects = await projectService.GetAllProjectsAsync(user.ProjectPlatformId);
         return View(projects);
     }
 
@@ -67,6 +78,8 @@ public class ProjectController(
         if (!ModelState.IsValid)
             return View(model);
 
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
         ProjectAdminViewModel project;
         if (model.ProjectId.HasValue)
         {
@@ -77,10 +90,17 @@ public class ProjectController(
         }
         else
         {
+            if (user.ProjectPlatformId is null)
+            {
+                ModelState.AddModelError(string.Empty, "Uw account is niet gekoppeld aan een platform.");
+                return View(model);
+            }
             project = await projectService.CreateProjectAsync(
                 model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
-                model.ContactOptIn, model.ShortForm);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance,
+                model.MinAge, model.MaxAge, model.ContactOptIn,
+                platformId: user.ProjectPlatformId.Value,
+                shortForm: model.ShortForm);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -170,10 +190,14 @@ public class ProjectController(
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "Geen bestand ontvangen." });
 
+        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        var ext = Path.GetExtension(file.FileName);
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest(new { error = "Bestandstype niet toegestaan." });
+
         var uploadsDir = Path.Combine(env.WebRootPath, "uploads");
         Directory.CreateDirectory(uploadsDir);
 
-        var ext = Path.GetExtension(file.FileName);
         var fileName = $"{Guid.NewGuid()}{ext}";
         var filePath = Path.Combine(uploadsDir, fileName);
 
@@ -200,28 +224,71 @@ public class ProjectController(
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> Activate(int projectId)
-        {
-            var project = await projectService.GetProjectByIdAsync(projectId);
-            if (project is null)
-                return NotFound();
+    public async Task<IActionResult> Activate(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null)
+            return NotFound();
 
-            return View(project);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> ActivateProject(int projectId)
-        {
-            await projectService.UpdateProjectStateAsync(projectId, "Active");
-            return RedirectToAction(nameof(Dashboard), new { projectId });
-        }
-
-        public async Task<IActionResult> Dashboard(int projectId)
-        {
-            var project = await projectService.GetProjectByIdAsync(projectId);
-            if (project is null)
-                return NotFound();
-
-            return View(project);
-        }
+        return View(project);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> ActivateProject(int projectId)
+    {
+        await projectService.UpdateProjectStateAsync(projectId, "Active");
+        return RedirectToAction(nameof(Dashboard), new { projectId });
+    }
+
+    public async Task<IActionResult> Dashboard(int projectId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
+        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+
+        dashboard.WidgetLayout = layout;
+        dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
+
+        return View(dashboard);
+    }
+
+    public async Task<IActionResult> ConfigureDashboard(int projectId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        return View(new ConfigureDashboardViewModel
+        {
+            ProjectId = projectId,
+            ProjectName = project.Name,
+            Layout = layout,
+            AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ConfigureDashboard(int projectId, ConfigureDashboardViewModel model)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var source = model.Layout ?? WidgetPreferenceService.DefaultLayout;
+        var sanitized = Enumerable.Range(0, 9)
+            .Select(i => i < source.Length && WidgetPreferenceService.AllWidgetTypes.Contains(source[i])
+                ? source[i]
+                : WidgetPreferenceService.DefaultLayout[i])
+            .ToArray();
+
+        await widgetPreferenceService.SaveLayoutAsync(user.Id, projectId, sanitized);
+        return RedirectToAction(nameof(Dashboard), new { projectId });
+    }
+}

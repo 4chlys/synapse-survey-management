@@ -16,11 +16,13 @@ public class ProjectAdminService(HttpClient httpClient)
         public int? MinAge { get; set; }
         public int? MaxAge { get; set; }
         public bool RequestContactInfo { get; set; }
+        public int PlatformId { get; set; }
     }
 
-    public async Task<List<ProjectAdminViewModel>> GetAllProjectsAsync()
+    public async Task<List<ProjectAdminViewModel>> GetAllProjectsAsync(int? platformId = null)
     {
-        var response = await httpClient.GetAsync("api/projects");
+        var url = platformId.HasValue ? $"api/projects?platformId={platformId}" : "api/projects";
+        var response = await httpClient.GetAsync(url);
         if (!response.IsSuccessStatusCode)
             return new List<ProjectAdminViewModel>();
 
@@ -37,9 +39,9 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null)
+    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null)
     {
-        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo };
+        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, PlatformId = platformId };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();

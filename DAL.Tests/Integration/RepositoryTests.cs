@@ -36,7 +36,7 @@ public class RepositoryTests : IDisposable
         var tracked = await actContext.Projects.FindAsync(projectId);
         if (tracked != null)
         {
-            tracked.OrganisationName = "Modified";
+            tracked.Name = "Modified";
             var repository = new Repository<Project>(actContext);
 
             // Act
@@ -46,7 +46,7 @@ public class RepositoryTests : IDisposable
         // Assert
         await using var verifyContext = _db.NewContext();
         var stored = await verifyContext.Projects.FindAsync(projectId);
-        Assert.Equal("Original", stored?.OrganisationName);
+        Assert.Equal("Original", stored?.Name);
     }
 
     [Fact]

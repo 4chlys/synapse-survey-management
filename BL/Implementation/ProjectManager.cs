@@ -30,7 +30,7 @@ public class ProjectManager(
     public Task<Project> GetProjectByShortFormAsync(string shortForm)
         => projectRepository.ReadByShortFormReadOnlyAsync(shortForm);
 
-    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, CancellationToken ct = default)
+    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null)
     {
         var candidate = string.IsNullOrWhiteSpace(shortForm)
             ? shortFormService.Normalize(name)
@@ -48,7 +48,7 @@ public class ProjectManager(
         {
             Name = name,
             ShortForm = unique,
-            OrganisationName = name.Length > 50 ? name[..50] : name,
+            ProjectPlatformId = platformId,
             Topic = topic,
             ImageUrl = imageUrl,
             FormType = formType,
@@ -64,11 +64,11 @@ public class ProjectManager(
             project.Introduction = new Introduction { Text = introduction };
 
         var created = await projectRepository.CreateAsync(project);
-        await uow.SaveChangesAsync(ct);
+        await uow.SaveChangesAsync();
         return created;
     }
 
-    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, CancellationToken ct = default)
+    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null)
     {
         var project = await projectRepository.ReadByIdWithIntroductionForUpdateAsync(projectId);
         if (project is null)
@@ -108,12 +108,21 @@ public class ProjectManager(
         }
 
         projectRepository.Update(project);
-        await uow.SaveChangesAsync(ct);
+        await uow.SaveChangesAsync();
         return project;
     }
 
-    public Task<IEnumerable<Project>> GetAllProjectsAsync()
-        => projectRepository.ReadAllReadOnlyAsync();
+    public Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null)
+        => projectRepository.ReadAllWithPlatformReadOnlyAsync(platformId);
+
+    public async Task IncrementViewCountAsync(int projectId)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
+        if (project is null) return;
+        project.ViewCount++;
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync();
+    }
 
     public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
         => emojiRepository.ReadAllReadOnlyAsync();

@@ -41,7 +41,7 @@ public class ProjectManagerTests
         var result = await _manager.CreateProjectAsync(
             "My Project", string.Empty, string.Empty, string.Empty,
             FormType.VerticalScroll, AiAssistanceType.ProActive,
-            null, null, false, shortForm: null);
+            null, null, false, platformId: 1, shortForm: null);
 
         // Assert
         Assert.Equal("my-project", result.ShortForm);
@@ -59,7 +59,7 @@ public class ProjectManagerTests
             _manager.CreateProjectAsync(
                 "Admin", string.Empty, string.Empty, string.Empty,
                 FormType.VerticalScroll, AiAssistanceType.ProActive,
-                null, null, false, shortForm: "admin"));
+                null, null, false, platformId: 1, shortForm: "admin"));
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class ProjectManagerTests
             _manager.CreateProjectAsync(
                 "Test", string.Empty, string.Empty, string.Empty,
                 FormType.VerticalScroll, AiAssistanceType.ProActive,
-                null, null, false, shortForm: "INVALID FORM"));
+                null, null, false, platformId: 1, shortForm: "INVALID FORM"));
     }
 
     #endregion

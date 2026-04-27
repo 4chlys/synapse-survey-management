@@ -1,0 +1,72 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model PlatformFormViewModel
+@{
+    ViewData["Title"] = "Nieuw platform";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gray-900 text-white p-8">
+
+    <div class="max-w-lg">
+
+        <div class="flex items-center gap-3 mb-8">
+            <a asp-controller="Platform" asp-action="Index"
+               class="text-gray-400 hover:text-white transition text-sm">
+                ← Platformen
+            </a>
+        </div>
+
+        <h1 class="text-2xl font-semibold mb-6">Nieuw platform</h1>
+
+        <div class="bg-gray-800 p-6">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="mb-4 text-sm text-red-400 border border-red-700 bg-red-900/20 px-4 py-3"></div>
+
+            <form asp-controller="Platform" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-4">
+                    <label asp-for="Name" class="block text-sm text-gray-300 mb-1">Naam</label>
+                    <input asp-for="Name"
+                           class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
+                           placeholder="Naam van het platform" />
+                    <span asp-validation-for="Name" class="text-xs text-red-400 mt-1 block"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="LogoUrl" class="block text-sm text-gray-300 mb-1">Logo-URL</label>
+                    <input asp-for="LogoUrl"
+                           class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
+                           placeholder="https://..." />
+                    <span asp-validation-for="LogoUrl" class="text-xs text-red-400 mt-1 block"></span>
+                </div>
+
+                <div class="mb-6">
+                    <label asp-for="WebsiteUrl" class="block text-sm text-gray-300 mb-1">Website-URL</label>
+                    <input asp-for="WebsiteUrl"
+                           class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
+                           placeholder="https://..." />
+                    <span asp-validation-for="WebsiteUrl" class="text-xs text-red-400 mt-1 block"></span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="border border-gray-400 px-5 py-2 text-sm text-white hover:bg-gray-700 transition">
+                        Opslaan
+                    </button>
+                    <a asp-controller="Platform" asp-action="Index"
+                       class="border border-gray-600 px-5 py-2 text-sm text-gray-300 hover:text-white hover:border-gray-400 transition">
+                        Annuleer
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
