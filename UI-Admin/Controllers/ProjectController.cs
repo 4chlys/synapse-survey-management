@@ -125,7 +125,7 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions),
                 new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
 
-        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
+        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, saved = 1 });
     }
 
     public async Task<IActionResult> Questions(int projectId,
@@ -146,9 +146,8 @@ public class ProjectController(
         CreateQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
-                model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
     }
 
     [HttpPost]
@@ -156,9 +155,8 @@ public class ProjectController(
         EditQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text,
-                model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
     }
 
     public async Task<IActionResult> Ideation(int projectId)

@@ -43,9 +43,9 @@
                         <div class="self-start bg-gray-800 border border-gray-600 rounded px-3 py-2 max-w-[85%]">
                             Kan ik je helpen met Vraag 1?
                         </div>
-                        <button type="button" class="self-center border border-gray-500 px-4 py-1 hover:bg-gray-700 mt-1">Herformuleer</button>
-                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer antwoord</button>
-                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer subvraag</button>
+                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-4 py-1 mt-1 text-gray-500 cursor-not-allowed opacity-50">Herformuleer</button>
+                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer antwoord</button>
+                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer subvraag</button>
                     </div>
                 }
                 else
@@ -55,9 +55,9 @@
                         <div class="self-start bg-gray-800 border border-gray-600 rounded px-3 py-2 max-w-[85%]">
                             Kan ik je helpen met Vraag 1?
                         </div>
-                        <button type="button" class="self-center border border-gray-500 px-4 py-1 hover:bg-gray-700 mt-1">Herformuleer</button>
-                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer antwoord</button>
-                        <button type="button" class="self-center border border-gray-500 px-3 py-1 hover:bg-gray-700">Genereer subvraag</button>
+                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-4 py-1 mt-1 text-gray-500 cursor-not-allowed opacity-50">Herformuleer</button>
+                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer antwoord</button>
+                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer subvraag</button>
                     </div>
                 }
             </div>
@@ -90,9 +90,6 @@
         </div>
         <div class="flex items-center gap-3">
             <span id="questions-next-error" class="hidden text-red-400">Voeg minimaal 1 vraag toe.</span>
-            <a asp-controller="Project" asp-action="Questions"
-               asp-route-projectId="@projectId" asp-route-aiAssistance="@aiAssistance"
-               class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Opslaan</a>
             <button type="button" id="questions-next-btn"
                     data-question-count="@Model.Count"
                     data-href="@Url.Action("Ideation", "Project", new { projectId })"
@@ -118,7 +115,6 @@
             <input type="hidden" name="aiAssistance" value="@aiAssistance" />
             <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
-            <input type="hidden" name="IsMandatory" value="false" />
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
 
             <label class="block mb-1">Vraagtekst</label>
@@ -145,6 +141,12 @@
                     <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="Likert">Likert</button>
                     <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
                 </div>
+            </div>
+
+            <div class="flex items-center gap-2 mb-3">
+                <input type="hidden" name="IsMandatory" value="false" />
+                <input type="checkbox" name="IsMandatory" id="IsMandatory-cb" value="true" />
+                <label for="IsMandatory-cb" class="text-xs cursor-pointer">Verplicht</label>
             </div>
 
             <div id="answers-section">
