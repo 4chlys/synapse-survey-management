@@ -1,7 +1,7 @@
-using SynapseEnqueteManagement.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.DAL.Implementation;
 
@@ -77,6 +77,16 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         => Context.Set<Idea>()
             .AnyAsync(i => i.Participant.ParticipantId == participantId);
 
+    public Task<string> ReadMostRecentDescriptionByCategoryAndParticipantAsync(int categoryId, int participantId)
+        => Context.Set<Idea>()
+            .AsNoTracking()
+            .Where(i => i.Category.CategoryId == categoryId
+                        && i.Participant.ParticipantId == participantId
+                        && i.Status != ModerationStatus.Declined)
+            .OrderByDescending(i => i.CreatedAt)
+            .Select(i => i.Description)
+            .FirstOrDefaultAsync();
+
     public async Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId)
         => await Context.Set<Idea>()
             .AsNoTracking()
@@ -88,4 +98,5 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
                         && i.Status != ModerationStatus.Declined)
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
+
 }

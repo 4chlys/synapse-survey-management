@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
-using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -19,25 +19,32 @@ public class IdeasController(
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<IdeaDto>>> GetIdeasByCategory(
-        int projectId, int categoryId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
+    public async Task<ActionResult<IdeaIndexResponseDto>> GetIdeasByCategory(
+        int projectId, int categoryId,
+        [FromQuery][Range(1, int.MaxValue)] int page = 1,
+        [FromQuery] string sort = null,
+        CancellationToken ct = default)
     {
         var participantId = await ResolveParticipantIdAsync();
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var pageSize = project?.IdeaPageSize ?? 5;
-        var paged = await ideaManager.GetVisibleIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, pageSize, page, sort);
 
-        return Ok(new PagedResult<IdeaDto>
+        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, ct);
+
+        return Ok(new IdeaIndexResponseDto
         {
-            Items = paged.Items.Select(i => MapIdeaToDto(i, participantId)),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
+            Items = result.Items.Select(i => MapIdeaToDto(i, participantId)),
+            Page = result.Page,
+            PageSize = result.PageSize,
+            TotalCount = result.TotalCount,
+            ResolvedSort = result.ResolvedSort,
+            HasOwnIdeas = result.HasOwnIdeas
         });
     }
 
     [HttpPost]
-    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, [FromBody] CreateIdeaDto dto, CancellationToken ct)
+    public async Task<ActionResult<CreateIdeaResultDto>> CreateIdea(int projectId, int categoryId, CreateIdeaDto dto,
+        CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -58,7 +65,8 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var ideas = await ideaManager.GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(categoryId, participant.ParticipantId);
+        var ideas = await ideaManager.GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(categoryId,
+            participant.ParticipantId);
         return Ok(ideas.Select(i => MapIdeaToDto(i, participant.ParticipantId)));
     }
 
@@ -75,7 +83,7 @@ public class IdeasController(
 
     [HttpGet("{ideaId}/comments")]
     public async Task<ActionResult<PagedResult<TextCommentDto>>> GetCommentsByIdea(
-        int projectId, int ideaId, [FromQuery][Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
+        int projectId, int ideaId, [FromQuery] [Range(1, int.MaxValue)] int page = 1, [FromQuery] string sort = null)
     {
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         if (project is null) return NotFound();
@@ -131,6 +139,7 @@ public class IdeasController(
                 EmojiId = g.First().EmojiId,
                 Symbol = g.Key,
                 Count = g.Count(),
-                PostedByCurrentUser = participantId.HasValue && g.Any(r => r.Participant?.ParticipantId == participantId.Value)
+                PostedByCurrentUser = participantId.HasValue &&
+                                      g.Any(r => r.Participant?.ParticipantId == participantId.Value)
             }).ToList();
 }

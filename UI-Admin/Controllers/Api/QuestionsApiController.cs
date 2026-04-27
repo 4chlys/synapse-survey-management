@@ -16,7 +16,7 @@ public class QuestionsApiController(QuestionAdminService questionService) : Cont
     }
 
     [HttpPut("{questionId:int}/location")]
-    public async Task<ActionResult> Move(int projectId, int questionId, [FromBody] MoveRequest request)
+    public async Task<ActionResult> Move(int projectId, int questionId, MoveRequest request)
     {
         try
         {
@@ -31,7 +31,7 @@ public class QuestionsApiController(QuestionAdminService questionService) : Cont
     }
 
     [HttpPut("{questionId:int}/ending-answers")]
-    public async Task<ActionResult> UpdateEndingAnswers(int projectId, int questionId, [FromBody] EndingAnswersRequest request)
+    public async Task<ActionResult> UpdateEndingAnswers(int projectId, int questionId, EndingAnswersRequest request)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var question = questions.FirstOrDefault(q => q.QuestionId == questionId);

@@ -27,7 +27,7 @@ public class ProjectManager(
 
 
 
-    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, CancellationToken ct = default)
     {
         var project = new Project
         {
@@ -48,11 +48,11 @@ public class ProjectManager(
             project.Introduction = new Introduction { Text = introduction };
 
         var created = await projectRepository.CreateAsync(project);
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return created;
     }
 
-    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo)
+    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithIntroductionForUpdateAsync(projectId);
         if (project is null)
@@ -78,7 +78,7 @@ public class ProjectManager(
         }
 
         projectRepository.Update(project);
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return project;
     }
 
@@ -87,6 +87,27 @@ public class ProjectManager(
 
     public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
         => emojiRepository.ReadAllReadOnlyAsync();
+
+    public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
+        if (project is null)
+            throw new ArgumentException($"Project {projectId} not found.");
+
+        project.ProjectState = newState;
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync();
+        return project;
+    }
+
+    public async Task DeleteProjectAsync(int projectId)
+    {
+        var deleted = await projectRepository.DeleteWithRelationsAsync(projectId);
+        if (!deleted)
+            throw new KeyNotFoundException($"Project {projectId} not found.");
+
+        await uow.SaveChangesAsync();
+    }
 
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {

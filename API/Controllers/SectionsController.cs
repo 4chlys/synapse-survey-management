@@ -22,12 +22,9 @@ public class SectionsController(IQuestionnaireManager questionnaireManager) : Co
     }
 
     [HttpPost]
-    public async Task<ActionResult<SectionDto>> CreateSection(int projectId, [FromBody] CreateSectionDto dto)
+    public async Task<ActionResult<SectionDto>> CreateSection(int projectId, CreateSectionDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var section = await questionnaireManager.CreateSectionAsync(projectId, dto.Name, dto.Description);
+        var section = await questionnaireManager.CreateSectionAsync(projectId, dto.Name, dto.Description, ct);
         if (section is null)
             return NotFound();
 
@@ -40,12 +37,9 @@ public class SectionsController(IQuestionnaireManager questionnaireManager) : Co
     }
 
     [HttpPut("{sectionId}")]
-    public async Task<IActionResult> UpdateSection(int sectionId, [FromBody] UpdateSectionDto dto)
+    public async Task<IActionResult> UpdateSection(int sectionId, UpdateSectionDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var success = await questionnaireManager.UpdateSectionAsync(sectionId, dto.Name, dto.Description);
+        var success = await questionnaireManager.UpdateSectionAsync(sectionId, dto.Name, dto.Description, ct);
         if (!success)
             return NotFound();
 
@@ -53,9 +47,9 @@ public class SectionsController(IQuestionnaireManager questionnaireManager) : Co
     }
 
     [HttpDelete("{sectionId}")]
-    public async Task<IActionResult> DeleteSection(int sectionId)
+    public async Task<IActionResult> DeleteSection(int sectionId, CancellationToken ct)
     {
-        var success = await questionnaireManager.DeleteSectionAsync(sectionId);
+        var success = await questionnaireManager.DeleteSectionAsync(sectionId, ct);
         if (!success)
             return NotFound();
 

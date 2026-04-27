@@ -7,5 +7,4 @@ public class OldestFirstSortStrategy<T> : ISortStrategy<T> where T : IHasCreated
     public string Key => "oldest";
     public bool Randomize => false;
     public Func<IQueryable<T>, IOrderedQueryable<T>> DbOrderBy => q => q.OrderBy(x => x.CreatedAt);
-    public IEnumerable<T> Sort(IEnumerable<T> items) => items.OrderBy(x => x.CreatedAt);
 }

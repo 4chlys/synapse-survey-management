@@ -39,21 +39,57 @@
                 ? Url.Action("Create", "Project", new { projectId = project.ProjectId })
                 : Url.Action("Dashboard", "Project", new { projectId = project.ProjectId });
 
-            <a href="@href"
-               class="relative aspect-video bg-gray-800 overflow-hidden hover:ring-2 hover:ring-white transition block">
-                @if (!string.IsNullOrEmpty(project.ProjectImage))
-                {
-                    <img src="@project.ProjectImage"
-                         class="absolute inset-0 w-full h-full object-cover opacity-70"
-                         alt="@project.Name"
-                         loading="lazy" decoding="async" />
-                }
-                <div class="absolute inset-0 flex flex-col items-center justify-end pb-3 gap-0.5">
-                    <span class="text-white text-sm" style="text-shadow: 0 1px 4px rgba(0,0,0,0.9);">@project.Name</span>
-                    <span class="text-gray-300 text-xs" style="text-shadow: 0 1px 4px rgba(0,0,0,0.9);">@StateLabel(project.ProjectState)</span>
+            <div class="relative aspect-video bg-gray-800 overflow-hidden hover:ring-2 hover:ring-white transition group">
+                <a href="@href" class="absolute inset-0">
+                    @if (!string.IsNullOrEmpty(project.ProjectImage))
+                    {
+                        <img src="@project.ProjectImage"
+                             class="absolute inset-0 w-full h-full object-cover opacity-70"
+                             alt="@project.Name"
+                             loading="lazy" decoding="async" />
+                    }
+                    <div class="absolute inset-0 flex flex-col items-center justify-end pb-3 gap-0.5">
+                        <span class="text-white text-sm" style="text-shadow: 0 1px 4px rgba(0,0,0,0.9);">@project.Name</span>
+                        <span class="text-gray-300 text-xs" style="text-shadow: 0 1px 4px rgba(0,0,0,0.9);">@StateLabel(project.ProjectState)</span>
+                    </div>
+                </a>
+
+                @* Options menu *@
+                <div class="absolute top-2 right-2 z-10">
+                    <button type="button"
+                            class="project-menu-btn text-white bg-black/50 hover:bg-black/70 rounded-full w-7 h-7 flex items-center justify-center text-sm leading-none"
+                            data-project-id="@project.ProjectId">&#8942;</button>
+                    <div class="project-menu hidden absolute right-0 mt-1 bg-gray-800 border border-gray-600 rounded shadow-lg min-w-[140px]"
+                         data-project-id="@project.ProjectId">
+                        <button type="button"
+                                class="delete-project-btn w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-gray-700"
+                                data-project-id="@project.ProjectId"
+                                data-project-name="@project.Name">Verwijderen</button>
+                    </div>
                 </div>
-            </a>
+            </div>
         }
 
     </div>
 </div>
+
+@* Delete confirmation modal *@
+<div id="delete-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-gray-900 border border-gray-600 p-6 rounded max-w-sm w-full text-white">
+        <p class="text-sm font-semibold mb-2">Project verwijderen</p>
+        <p class="text-xs text-gray-300 mb-5">
+            Weet je zeker dat je <strong id="delete-project-name"></strong> wilt verwijderen?
+            Dit kan niet ongedaan worden gemaakt.
+        </p>
+        <div class="flex justify-end gap-3">
+            <button type="button" id="delete-cancel"
+                    class="border border-gray-500 px-4 py-2 text-xs hover:bg-gray-800">Annuleren</button>
+            <form id="delete-form" asp-controller="Project" asp-action="DeleteProject" method="post">
+                <input type="hidden" name="projectId" id="delete-project-id" />
+                <button type="submit"
+                        class="border border-red-500 text-red-400 px-4 py-2 text-xs hover:bg-red-500/20">Verwijderen</button>
+            </form>
+        </div>
+    </div>
+</div>
+

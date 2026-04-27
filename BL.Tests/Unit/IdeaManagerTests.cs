@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
+using SynapseEnqueteManagement.BL.Sorting.Embeddings;
 
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
@@ -9,6 +11,8 @@ public class IdeaManagerTests
     private readonly Mock<ICategoryRepository> _categoryRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<Idea>> _sortFactory = new();
+    private readonly Mock<IEmbeddingSortStrategyFactory> _embeddingSortFactory = new();
+    private readonly Mock<IEmbeddingService> _embeddingService = new();
     private readonly IdeaManager _manager;
 
     private readonly Participant _participant = new() { ParticipantId = 1 };
@@ -17,7 +21,7 @@ public class IdeaManagerTests
 
     public IdeaManagerTests()
     {
-        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object);
+        _manager = new IdeaManager(_ideaRepository.Object, _categoryRepository.Object, _uow.Object, NullLogger<IdeaManager>.Instance, _sortFactory.Object, _embeddingSortFactory.Object, _embeddingService.Object);
     }
 
     [Fact]
