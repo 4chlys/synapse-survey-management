@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const saveBtn = document.getElementById('save-btn');
-    const nextBtn = document.getElementById('next-btn');
+    const saveBtn = document.getElementById('save-btn') as HTMLButtonElement | null;
+    const nextBtn = document.getElementById('next-btn') as HTMLButtonElement | null;
     if (!saveBtn || !nextBtn) return;
 
     const categoriesError = document.getElementById('categories-error');
