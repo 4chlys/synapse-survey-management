@@ -91,4 +91,21 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
 
         return Ok(MapToDto(project));
     }
+
+    [HttpDelete("{projectId}")]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectManager.DeleteProjectAsync(projectId);
+        return NoContent();
+    }
+
+    [HttpPatch("{projectId}/state")]
+    public async Task<ActionResult<ProjectDto>> UpdateProjectState(int projectId, UpdateProjectStateDto dto)
+    {
+        if (!Enum.TryParse<ProjectState>(dto.State, ignoreCase: true, out var newState))
+            return BadRequest(new { error = "Invalid project state." });
+
+        var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
+        return Ok(MapToDto(project));
+    }
 }
