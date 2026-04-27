@@ -72,13 +72,15 @@ public class ProjectController(
         {
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn, model.ShortForm);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                model.ContactOptIn, model.ShortForm);
         }
         else
         {
             project = await projectService.CreateProjectAsync(
                 model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn, model.ShortForm);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                model.ContactOptIn, model.ShortForm);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -98,12 +100,14 @@ public class ProjectController(
                 await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty);
 
         if (submitAction == "next")
-            return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
+            return RedirectToAction(nameof(Questions),
+                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
 
         return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
     }
 
-    public async Task<IActionResult> Questions(int projectId, AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
+    public async Task<IActionResult> Questions(int projectId,
+        AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
@@ -116,18 +120,22 @@ public class ProjectController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance, CreateQuestionViewModel model)
+    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
+        CreateQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance, EditQuestionViewModel model)
+    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
+        EditQuestionViewModel model)
     {
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text,
+                model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
@@ -183,36 +191,37 @@ public class ProjectController(
 
         var available = await projectService.IsShortFormAvailableAsync(shortForm, projectId);
         return Json(new { available });
-
-    [HttpPost]
-    public async Task<IActionResult> DeleteProject(int projectId)
-    {
-        await projectService.DeleteProjectAsync(projectId);
-        return RedirectToAction(nameof(Index));
-    }
-
-    public async Task<IActionResult> Activate(int projectId)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project is null)
-            return NotFound();
-
-        return View(project);
     }
 
     [HttpPost]
-    public async Task<IActionResult> ActivateProject(int projectId)
-    {
-        await projectService.UpdateProjectStateAsync(projectId, "Active");
-        return RedirectToAction(nameof(Dashboard), new { projectId });
-    }
+        public async Task<IActionResult> DeleteProject(int projectId)
+        {
+            await projectService.DeleteProjectAsync(projectId);
+            return RedirectToAction(nameof(Index));
+        }
 
-    public async Task<IActionResult> Dashboard(int projectId)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project is null)
-            return NotFound();
+        public async Task<IActionResult> Activate(int projectId)
+        {
+            var project = await projectService.GetProjectByIdAsync(projectId);
+            if (project is null)
+                return NotFound();
 
-        return View(project);
+            return View(project);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ActivateProject(int projectId)
+        {
+            await projectService.UpdateProjectStateAsync(projectId, "Active");
+            return RedirectToAction(nameof(Dashboard), new { projectId });
+        }
+
+        public async Task<IActionResult> Dashboard(int projectId)
+        {
+            var project = await projectService.GetProjectByIdAsync(projectId);
+            if (project is null)
+                return NotFound();
+
+            return View(project);
+        }
     }
-}

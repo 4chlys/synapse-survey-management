@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.UI.Admin;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using Vite.AspNetCore;
