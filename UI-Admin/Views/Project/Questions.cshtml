@@ -2,18 +2,19 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Enums
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
 @using SynapseEnqueteManagement.UI.Admin.Models.Section
+@using System.Text.Json
 @model List<QuestionViewModel>
 @{
     ViewData["Title"] = "Vragen";
     Layout = "_Layout";
     int projectId = (int)ViewData["ProjectId"];
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
-    var project = ViewData["Project"] as ProjectAdminViewModel;
     var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
 }
 <div class="max-w-3xl">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
-    <div class="card bg-base-100 shadow-sm mb-6">
+
+    <div id="questions-list" class="card bg-base-100 shadow-sm mb-6">
         <div class="card-body p-0 overflow-x-auto">
             <table class="table table-sm">
                 <thead><tr><th>#</th><th>Tekst</th><th>Type</th><th>Verplicht</th><th class="w-16"></th></tr></thead>
@@ -30,13 +31,22 @@
                             <td class="max-w-xs truncate">@q.Text</td>
                             <td><span class="badge badge-ghost badge-sm">@q.QuestionFormat</span></td>
                             <td>@(q.IsMandatory ? "✓" : "–")</td>
-                            <td><button type="button" class="btn btn-ghost btn-xs" onclick="openEditModal(@q.QuestionId)">Bewerk</button></td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-ghost btn-xs question-edit-btn"
+                                        data-question-id="@q.QuestionId"
+                                        data-text="@q.Text"
+                                        data-format="@q.QuestionFormat"
+                                        data-answers="@JsonSerializer.Serialize(q.AnswerChoices)"
+                                        data-section-id="@(q.SectionId?.ToString() ?? "")">Bewerk</button>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
     </div>
+
     <div class="card bg-base-100 shadow-sm mb-6">
         <div class="card-body gap-4">
             <h2 class="font-semibold">Vraag toevoegen</h2>
@@ -75,18 +85,23 @@
             </form>
         </div>
     </div>
+
     <div class="flex justify-between">
         <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-ghost btn-sm">← Instellingen</a>
-        <a asp-action="Ideation" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">Volgende →</a>
+        <button type="button" id="questions-next-btn"
+                class="btn btn-primary btn-sm"
+                data-question-count="@Model.Count"
+                data-href="@Url.Action("Ideation", new { projectId })">Volgende →</button>
     </div>
+    <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">Voeg minstens één vraag toe.</p>
 </div>
 
-@* Modal for editing/adding a question *@
-<div id="modal" class="modal">
+@* Modal for editing a question — controlled by project-questions.ts via #questions-list event delegation *@
+<div id="modal" class="modal hidden">
     <div class="modal-box w-[480px] max-w-xl">
         <div class="flex justify-between items-center mb-4">
             <span id="modal-title" class="font-bold text-base">Vraag aanmaken</span>
-            <button type="button" id="modal-close" class="btn btn-ghost btn-sm btn-circle" onclick="document.getElementById('modal').classList.remove('modal-open')">×</button>
+            <button type="button" id="modal-close" class="btn btn-ghost btn-sm btn-circle">×</button>
         </div>
 
         @Html.AntiForgeryToken()
@@ -139,8 +154,7 @@
                 <label class="label"><span class="label-text text-xs">Antwoorden</span></label>
                 <div id="answer-list" class="space-y-2 mb-2"></div>
                 <span id="answers-error" class="hidden text-error text-xs mb-2 block"></span>
-                <button type="button" id="add-answer-btn"
-                        class="btn btn-ghost btn-xs">+ Antwoord toevoegen</button>
+                <button type="button" id="add-answer-btn" class="btn btn-ghost btn-xs">+ Antwoord toevoegen</button>
             </div>
 
             @if (sections.Any())
@@ -160,14 +174,16 @@
             <div class="divider my-2"></div>
 
             <div class="modal-action gap-2">
-                <button type="button" id="modal-cancel"
-                        class="btn btn-ghost btn-sm"
-                        onclick="document.getElementById('modal').classList.remove('modal-open')">Annuleer</button>
+                <button type="button" id="modal-cancel" class="btn btn-ghost btn-sm">Annuleer</button>
                 <button type="submit" class="btn btn-primary btn-sm">OK</button>
             </div>
         </form>
     </div>
     <form method="dialog" class="modal-backdrop">
-        <button onclick="document.getElementById('modal').classList.remove('modal-open')">close</button>
+        <button id="modal-backdrop-close">close</button>
     </form>
 </div>
+
+@section Scripts {
+    <script type="module" vite-src="~/project-questions.ts"></script>
+}
