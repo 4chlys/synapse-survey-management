@@ -160,7 +160,12 @@ export function initIdeation(): void {
                         projectId,
                         categoryId,
                         categoryName,
-                        (draftText) => submitIdeaFromChat(createForm, descriptionEl, moderationEl, draftText),
+                        (draftText) => {
+                            // Reveal the form before dispatching submit so that, if moderation
+                            // flags the text and the user picks "Bewerken", the editor is visible.
+                            createFormEl?.classList.remove('hidden');
+                            submitIdeaFromChat(createForm, descriptionEl, moderationEl, draftText);
+                        },
                         (draft) => {
                             createFormEl?.classList.remove('hidden');
                             if (draft && descriptionEl) descriptionEl.value = draft;
@@ -199,7 +204,12 @@ export function initIdeation(): void {
                     projectId,
                     ideaText,
                     categoryName,
-                    (commentText) => submitCommentFromChat(commentForm, commentTextEl, commentModerationEl, commentText),
+                    (commentText) => {
+                        // Reveal the form before dispatching submit so that, if moderation
+                        // flags the text and the user picks "Bewerken", the editor is visible.
+                        commentFormEl?.classList.remove('hidden');
+                        submitCommentFromChat(commentForm, commentTextEl, commentModerationEl, commentText);
+                    },
                     () => {
                         commentFormEl?.classList.remove('hidden');
                     },
