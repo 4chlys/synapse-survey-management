@@ -1,47 +1,26 @@
-@using SynapseEnqueteManagement.UI.Admin.Models.Project
-@model ProjectAdminViewModel
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel
 @{
     ViewData["Title"] = "Project activeren";
+    ViewData["ActiveSection"] = "Instellingen";
     Layout = "_Layout";
 }
-
-<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
-
-    @* Header *@
-    <div class="flex items-center gap-3 px-6 pt-4">
-        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@(Model.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)"
-                 alt="Organisatie" class="w-full h-full object-cover" />
+<div class="max-w-sm">
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body items-center text-center gap-4">
+            <div class="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center">
+                <svg class="text-success" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h1 class="font-heading font-bold text-xl text-base-content">Project activeren</h1>
+            <p class="text-sm text-base-content/60">
+                <strong>@Model.Name</strong> staat momenteel op <em>Concept</em>. Activeren maakt het project zichtbaar voor deelnemers.
+            </p>
+            <div class="card-actions w-full flex-col gap-2 mt-2">
+                <form asp-action="ActivateProject" method="post" class="w-full">
+                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                    <button type="submit" class="btn btn-success w-full">Project activeren</button>
+                </form>
+                <a asp-action="Index" class="btn btn-ghost w-full">Nog niet</a>
+            </div>
         </div>
-        <span class="font-medium">@(Model.OrganisationName ?? "Admin")</span>
-    </div>
-
-    @* Title bar *@
-    <div class="flex items-center px-6 pt-3 pb-2">
-        <a asp-controller="Project" asp-action="Ideation"
-           asp-route-projectId="@Model.ProjectId"
-           class="text-gray-300 hover:text-white">← Project activeren</a>
-    </div>
-
-    @* Main content *@
-    <div class="flex-1 flex flex-col items-center justify-center px-6 py-4">
-        <p class="text-sm mb-2">Project activeren</p>
-        <p class="text-gray-400 mb-6 max-w-md text-center">
-            Na activatie kunnen deelnemers het project invullen.
-            De structuur van het project kan daarna niet meer worden aangepast, maar tekstuele correcties blijven mogelijk.
-        </p>
-        <form asp-controller="Project" asp-action="ActivateProject" method="post">
-            <input type="hidden" name="projectId" value="@Model.ProjectId" />
-            <button type="submit"
-                    class="border border-gray-400 px-6 py-2 hover:bg-gray-700">
-                Project activeren
-            </button>
-        </form>
-    </div>
-
-    @* Bottom buttons *@
-    <div class="flex justify-between px-6 py-4">
-        <a asp-controller="Project" asp-action="Index"
-           class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
     </div>
 </div>
