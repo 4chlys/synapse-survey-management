@@ -31,6 +31,7 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
         var projects = await projectService.GetAllProjectsAsync(user.ProjectPlatformId);
+        ViewData["ActiveSection"] = "Projecten";
         return View(projects);
     }
 
@@ -59,6 +60,11 @@ public class ProjectController(
             Sections = sections.Select(s => s.Name).ToList()
         };
         ViewData["Project"] = project;
+        ViewData["ProjectId"]     = projectId.Value;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Instellingen";
         return View(model);
     }
 
@@ -75,7 +81,18 @@ public class ProjectController(
         }
 
         if (!ModelState.IsValid)
+        {
+            if (model.ProjectId.HasValue)
+            {
+                var existingProject = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
+                ViewData["ProjectId"]     = model.ProjectId.Value;
+                ViewData["ProjectName"]   = existingProject?.Name ?? model.Name ?? "";
+                ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
+                ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
+            }
+            ViewData["ActiveSection"] = "Instellingen";
             return View(model);
+        }
 
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
@@ -127,10 +144,14 @@ public class ProjectController(
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
         var sections = await sectionService.GetSectionsAsync(projectId);
-        ViewData["ProjectId"] = projectId;
-        ViewData["AiAssistance"] = aiAssistance;
-        ViewData["Project"] = project;
-        ViewData["Sections"] = sections;
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project?.Name ?? "";
+        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Vragen";
+        ViewData["AiAssistance"]  = aiAssistance;
+        ViewData["Project"]       = project;
+        ViewData["Sections"]      = sections;
         return View(questions);
     }
 
@@ -139,6 +160,12 @@ public class ProjectController(
     {
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+        var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = projectForCreate?.Name ?? "";
+        ViewData["PlatformName"]  = projectForCreate?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = projectForCreate?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Vragen";
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
@@ -147,6 +174,12 @@ public class ProjectController(
     {
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+        var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = projectForUpdate?.Name ?? "";
+        ViewData["PlatformName"]  = projectForUpdate?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = projectForUpdate?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Vragen";
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
     }
 
@@ -154,8 +187,12 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
-        ViewData["ProjectId"] = projectId;
-        ViewData["Project"] = project;
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project?.Name ?? "";
+        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Categorieën";
+        ViewData["Project"]       = project;
         return View(categories);
     }
 
@@ -164,6 +201,12 @@ public class ProjectController(
     {
         if (ModelState.IsValid)
             await categoryService.CreateCategoryAsync(projectId, model.Name, model.Description ?? string.Empty);
+        var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = projectForAdd?.Name ?? "";
+        ViewData["PlatformName"]  = projectForAdd?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = projectForAdd?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Categorieën";
         return RedirectToAction(nameof(Ideation), new { projectId });
     }
 
@@ -171,6 +214,12 @@ public class ProjectController(
     public async Task<IActionResult> DeleteCategory(int projectId, int categoryId)
     {
         await categoryService.DeleteCategoryAsync(projectId, categoryId);
+        var projectForDelete = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = projectForDelete?.Name ?? "";
+        ViewData["PlatformName"]  = projectForDelete?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = projectForDelete?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Categorieën";
         return RedirectToAction(nameof(Ideation), new { projectId });
     }
 
@@ -211,6 +260,11 @@ public class ProjectController(
         if (project is null)
             return NotFound();
 
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Instellingen";
         return View(project);
     }
 
@@ -218,6 +272,12 @@ public class ProjectController(
     public async Task<IActionResult> ActivateProject(int projectId)
     {
         await projectService.UpdateProjectStateAsync(projectId, "Active");
+        var projectForActivate = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = projectForActivate?.Name ?? "";
+        ViewData["PlatformName"]  = projectForActivate?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = projectForActivate?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Instellingen";
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
@@ -235,6 +295,11 @@ public class ProjectController(
         dashboard.WidgetLayout = layout;
         dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
 
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Dashboard";
         return View(dashboard);
     }
 
@@ -247,6 +312,11 @@ public class ProjectController(
         if (project is null) return NotFound();
 
         var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Dashboard";
         return View(new ConfigureDashboardViewModel
         {
             ProjectId = projectId,
@@ -270,6 +340,12 @@ public class ProjectController(
             .ToArray();
 
         await widgetPreferenceService.SaveLayoutAsync(user.Id, projectId, sanitized);
+        var projectForConfigure = await projectService.GetProjectByIdAsync(projectId);
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = projectForConfigure?.Name ?? "";
+        ViewData["PlatformName"]  = projectForConfigure?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = projectForConfigure?.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 }
