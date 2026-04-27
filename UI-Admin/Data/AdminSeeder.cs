@@ -1,18 +1,21 @@
 // UI-Admin/Data/AdminSeeder.cs
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace SynapseEnqueteManagement.UI.Admin.Data;
 
 public class AdminSeeder(
     RoleManager<IdentityRole> roleManager,
     UserManager<ApplicationUser> userManager,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    AdminDbContext db)
 {
     public async Task SeedAsync()
     {
         await EnsureRoleAsync("SystemAdmin");
         await EnsureRoleAsync("ProjectPlatformAdmin");
         await EnsureSystemAdminAsync();
+        await EnsurePlatformAdminsAsync();
     }
 
     private async Task EnsureRoleAsync(string roleName)
@@ -44,5 +47,33 @@ public class AdminSeeder(
                 $"Failed to seed SystemAdmin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         await userManager.AddToRoleAsync(user, "SystemAdmin");
+    }
+
+    private async Task EnsurePlatformAdminsAsync()
+    {
+        var platforms = await db.ProjectPlatforms.ToListAsync();
+
+        foreach (var platform in platforms)
+        {
+            var slug = platform.Name.ToLower().Replace(" ", "").Replace(".", "");
+            var email = $"admin@{slug}.com";
+
+            if (await userManager.FindByEmailAsync(email) is not null) continue;
+
+            var user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                ProjectPlatformId = platform.ProjectPlatformId
+            };
+
+            var result = await userManager.CreateAsync(user, "Admin1234!");
+            if (!result.Succeeded)
+                throw new InvalidOperationException(
+                    $"Failed to seed ProjectPlatformAdmin for '{platform.Name}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
+
+            await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+        }
     }
 }
