@@ -1,6 +1,6 @@
 {
   "dashboard.ts": {
-    "file": "dashboard-DzeeJh_7.js",
+    "file": "dashboard-Dadk5tQN.js",
     "name": "dashboard",
     "src": "dashboard.ts",
     "isEntry": true,
@@ -10,11 +10,13 @@
     ]
   },
   "main.ts": {
-    "file": "main-D4-fcwMZ.js",
+    "file": "main-AXFSw85n.js",
     "name": "main",
     "src": "main.ts",
     "isEntry": true,
     "imports": [
+      "theme.ts",
+      "project-index.ts",
       "project-setup.ts",
       "project-questions.ts",
       "questionnaire-dnd.ts",
@@ -22,13 +24,19 @@
       "questionnaire-tree.ts"
     ],
     "css": [
-      "main-DwHU14a7.css"
+      "main-Cx3sDuO-.css"
     ]
   },
   "project-ideation.ts": {
-    "file": "project-ideation-B2-CvKx1.js",
+    "file": "project-ideation-z0m8_3er.js",
     "name": "project-ideation",
     "src": "project-ideation.ts",
+    "isEntry": true
+  },
+  "project-index.ts": {
+    "file": "project-index-C4lAkF_f.js",
+    "name": "project-index",
+    "src": "project-index.ts",
     "isEntry": true
   },
   "project-questions.ts": {
@@ -58,8 +66,14 @@
     "src": "questionnaire-tree.ts",
     "isEntry": true
   },
+  "theme.ts": {
+    "file": "theme-BndyDEQS.js",
+    "name": "theme",
+    "src": "theme.ts",
+    "isEntry": true
+  },
   "widget-idea-feed.ts": {
-    "file": "widget-idea-feed-CIeCnDT4.js",
+    "file": "widget-idea-feed-CdyJKEum.js",
     "name": "widget-idea-feed",
     "src": "widget-idea-feed.ts",
     "isEntry": true,
@@ -69,7 +83,7 @@
     ]
   },
   "widget-moderation-queue.ts": {
-    "file": "widget-moderation-queue-nWCLUmnb.js",
+    "file": "widget-moderation-queue-BNAn-UVu.js",
     "name": "widget-moderation-queue",
     "src": "widget-moderation-queue.ts",
     "isEntry": true,
@@ -79,7 +93,7 @@
     ]
   },
   "widget-stat.ts": {
-    "file": "widget-stat-jjgOrdO4.js",
+    "file": "widget-stat-C2hKp57u.js",
     "name": "widget-stat",
     "src": "widget-stat.ts",
     "isEntry": true,
@@ -94,7 +108,7 @@
     "isEntry": true
   },
   "widget-timeline.ts": {
-    "file": "widget-timeline--I1Qg07u.js",
+    "file": "widget-timeline-B-rXsFpC.js",
     "name": "widget-timeline",
     "src": "widget-timeline.ts",
     "isEntry": true,
@@ -104,7 +118,7 @@
     ]
   },
   "widget-top-categories.ts": {
-    "file": "widget-top-categories-Dpuo07rK.js",
+    "file": "widget-top-categories-C-Dkio-l.js",
     "name": "widget-top-categories",
     "src": "widget-top-categories.ts",
     "isEntry": true,
@@ -114,7 +128,7 @@
     ]
   },
   "widget-top-ideas.ts": {
-    "file": "widget-top-ideas-UoK_jxyw.js",
+    "file": "widget-top-ideas-CQ7gkXk6.js",
     "name": "widget-top-ideas",
     "src": "widget-top-ideas.ts",
     "isEntry": true,
