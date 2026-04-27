@@ -21,5 +21,5 @@ public interface ICategoryRepository : IRepository<Category>
         int projectId, string? search, int? categoryId, ModerationStatus? status,
         int page, int pageSize);
 
-    Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId);
+    Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null);
 }

@@ -42,7 +42,7 @@ public class AdminIdeasController(
             ApprovedCount = approved,
             PendingCount  = pending,
             FlaggedCount  = flagged,
-            Items = items.Select(i => new IdeaDto
+            Items = items.Select(i => new AdminIdeaDto
             {
                 IdeaId        = i.IdeaId,
                 Description   = i.Description,
@@ -64,7 +64,7 @@ public class AdminIdeasController(
         if (!Enum.TryParse<ModerationStatus>(dto.Status, ignoreCase: true, out var status))
             return BadRequest(new { error = $"Ongeldige status '{dto.Status}'." });
 
-        await categoryManager.SetIdeaModerationStatusAsync(ideaId, status);
+        await categoryManager.SetIdeaModerationStatusAsync(ideaId, status, projectId);
         return NoContent();
     }
 }

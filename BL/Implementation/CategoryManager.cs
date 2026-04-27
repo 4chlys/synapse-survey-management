@@ -84,12 +84,11 @@ public class CategoryManager(
         var (ideas, total) = await categoryRepository.ReadIdeasPagedAsync(
             projectId, search, categoryId, status, page, pageSize);
 
-        // Global counts (unfiltered) for summary bar
-        var (allIdeas, _) = await categoryRepository.ReadIdeasPagedAsync(
-            projectId, null, null, null, 1, int.MaxValue);
-        var approved = allIdeas.Count(i => i.Status == ModerationStatus.Approved);
-        var pending  = allIdeas.Count(i => i.Status == ModerationStatus.Unflagged);
-        var flagged  = allIdeas.Count(i => i.Status == ModerationStatus.Flagged);
+        // Global counts (unfiltered) for summary bar — single GROUP BY query
+        var queue    = await categoryRepository.ReadModerationQueueAsync(projectId);
+        var approved = queue.GetValueOrDefault(ModerationStatus.Approved, 0);
+        var pending  = queue.GetValueOrDefault(ModerationStatus.Unflagged, 0);
+        var flagged  = queue.GetValueOrDefault(ModerationStatus.Flagged, 0);
 
         var items = ideas.Select(i => new IdeaFeedItem(
             IdeaId:        i.IdeaId,
@@ -104,9 +103,9 @@ public class CategoryManager(
         return (items, total, approved, pending, flagged);
     }
 
-    public async Task SetIdeaModerationStatusAsync(int ideaId, ModerationStatus status)
+    public async Task SetIdeaModerationStatusAsync(int ideaId, ModerationStatus status, int? projectId = null)
     {
-        var idea = await categoryRepository.ReadIdeaByIdForUpdateAsync(ideaId)
+        var idea = await categoryRepository.ReadIdeaByIdForUpdateAsync(ideaId, projectId)
             ?? throw new KeyNotFoundException($"Idea {ideaId} not found.");
         idea.Status = status;
         await uow.SaveChangesAsync();

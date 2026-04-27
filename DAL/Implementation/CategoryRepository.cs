@@ -82,6 +82,8 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
         return (items, total);
     }
 
-    public async Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId)
-        => await Context.Set<Idea>().FirstOrDefaultAsync(i => i.IdeaId == ideaId);
+    public async Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null)
+        => await Context.Set<Idea>()
+            .FirstOrDefaultAsync(i => i.IdeaId == ideaId
+                && (projectId == null || i.Category.Project.ProjectId == projectId));
 }

@@ -15,7 +15,7 @@ public class CategoryManagerTests
     public async Task SetIdeaModerationStatusAsync_IdeaExists_UpdatesStatusAndSaves()
     {
         var idea = new Idea { IdeaId = 1, Status = ModerationStatus.Unflagged };
-        _categoryRepo.Setup(r => r.ReadIdeaByIdForUpdateAsync(1))
+        _categoryRepo.Setup(r => r.ReadIdeaByIdForUpdateAsync(1, It.IsAny<int?>()))
             .ReturnsAsync(idea)
             .Verifiable(Times.Once());
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -32,7 +32,7 @@ public class CategoryManagerTests
     [Fact]
     public async Task SetIdeaModerationStatusAsync_IdeaNotFound_Throws()
     {
-        _categoryRepo.Setup(r => r.ReadIdeaByIdForUpdateAsync(99))
+        _categoryRepo.Setup(r => r.ReadIdeaByIdForUpdateAsync(99, It.IsAny<int?>()))
             .ReturnsAsync((Idea?)null)
             .Verifiable(Times.Once());
 
