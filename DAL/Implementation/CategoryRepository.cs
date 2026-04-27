@@ -26,6 +26,12 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
 
+    public Task<Category> ReadByIdWithProjectReadOnlyAsync(int categoryId)
+        => Context.Set<Category>()
+            .AsNoTracking()
+            .Include(c => c.Project)
+            .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+
     public Task<Category> ReadByIdWithProjectForUpdateAsync(int categoryId)
         => Context.Set<Category>()
             .Include(c => c.Project)

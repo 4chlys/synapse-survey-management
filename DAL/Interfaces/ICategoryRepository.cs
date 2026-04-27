@@ -10,6 +10,8 @@ public interface ICategoryRepository : IRepository<Category>
 
     Task<Category> ReadByIdReadOnlyAsync(int categoryId);
 
+    Task<Category> ReadByIdWithProjectReadOnlyAsync(int categoryId);
+
     Task<Category> ReadByIdWithProjectForUpdateAsync(int categoryId);
 
     Task<List<Idea>> ReadLatestIdeasAsync(int projectId, int count);

@@ -50,6 +50,8 @@ public class DummyDataSeeder
         _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup" };
         _fire = new Emoji { Symbol = "🔥", Name = "fire" };
         _check = new Emoji { Symbol = "✅", Name = "check" };
+        context.Emojis.AddRange(_heart, _thumbsup, _fire, _check);
+        context.SaveChanges();
 
         var platformSynapse = new ProjectPlatform
         {
@@ -336,8 +338,6 @@ public class DummyDataSeeder
         context.Projects.Add(projectActive3);
         context.Projects.Add(projectInactive);
         context.Projects.Add(projectDraft);
-
-        context.Emojis.AddRange(_heart, _thumbsup, _fire, _check);
 
         // Enable emojis per project
         var allEmojis = new[] { _heart, _thumbsup, _fire, _check };

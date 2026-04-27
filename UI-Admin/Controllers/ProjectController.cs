@@ -198,6 +198,29 @@ public class ProjectController(
         return Ok(new { url = $"/uploads/{fileName}" });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectService.DeleteProjectAsync(projectId);
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Activate(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null)
+            return NotFound();
+
+        return View(project);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ActivateProject(int projectId)
+    {
+        await projectService.UpdateProjectStateAsync(projectId, "Active");
+        return RedirectToAction(nameof(Dashboard), new { projectId });
+    }
+
     public async Task<IActionResult> Dashboard(int projectId)
     {
         var user = await userManager.GetUserAsync(User);
@@ -239,9 +262,11 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var sanitized = (model.Layout ?? WidgetPreferenceService.DefaultLayout)
-            .Take(9)
-            .Select(w => WidgetPreferenceService.AllWidgetTypes.Contains(w) ? w : WidgetPreferenceService.DefaultLayout[0])
+        var source = model.Layout ?? WidgetPreferenceService.DefaultLayout;
+        var sanitized = Enumerable.Range(0, 9)
+            .Select(i => i < source.Length && WidgetPreferenceService.AllWidgetTypes.Contains(source[i])
+                ? source[i]
+                : WidgetPreferenceService.DefaultLayout[i])
             .ToArray();
 
         await widgetPreferenceService.SaveLayoutAsync(user.Id, projectId, sanitized);

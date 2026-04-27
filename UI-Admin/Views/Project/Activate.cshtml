@@ -1,0 +1,47 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
+@model ProjectAdminViewModel
+@{
+    ViewData["Title"] = "Project activeren";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
+
+    @* Header *@
+    <div class="flex items-center gap-3 px-6 pt-4">
+        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+            <img src="@(Model.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)"
+                 alt="Organisatie" class="w-full h-full object-cover" />
+        </div>
+        <span class="font-medium">@(Model.OrganisationName ?? "Admin")</span>
+    </div>
+
+    @* Title bar *@
+    <div class="flex items-center px-6 pt-3 pb-2">
+        <a asp-controller="Project" asp-action="Ideation"
+           asp-route-projectId="@Model.ProjectId"
+           class="text-gray-300 hover:text-white">← Project activeren</a>
+    </div>
+
+    @* Main content *@
+    <div class="flex-1 flex flex-col items-center justify-center px-6 py-4">
+        <p class="text-sm mb-2">Project activeren</p>
+        <p class="text-gray-400 mb-6 max-w-md text-center">
+            Na activatie kunnen deelnemers het project invullen.
+            De structuur van het project kan daarna niet meer worden aangepast, maar tekstuele correcties blijven mogelijk.
+        </p>
+        <form asp-controller="Project" asp-action="ActivateProject" method="post">
+            <input type="hidden" name="projectId" value="@Model.ProjectId" />
+            <button type="submit"
+                    class="border border-gray-400 px-6 py-2 hover:bg-gray-700">
+                Project activeren
+            </button>
+        </form>
+    </div>
+
+    @* Bottom buttons *@
+    <div class="flex justify-between px-6 py-4">
+        <a asp-controller="Project" asp-action="Index"
+           class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
+    </div>
+</div>

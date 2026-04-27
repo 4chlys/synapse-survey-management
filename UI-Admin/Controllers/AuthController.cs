@@ -85,7 +85,10 @@ public class AuthController(
     private async Task<IActionResult> RedirectAfterLogin(string email)
     {
         var user = await userManager.FindByEmailAsync(email);
-        var roles = await userManager.GetRolesAsync(user!);
+        if (user is null)
+            return RedirectToAction(nameof(Login));
+
+        var roles = await userManager.GetRolesAsync(user);
         if (roles.Contains("SystemAdmin"))
             return RedirectToAction("Index", "Platform");
         if (roles.Contains("ProjectPlatformAdmin"))
