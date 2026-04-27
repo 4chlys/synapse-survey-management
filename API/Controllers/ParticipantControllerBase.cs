@@ -24,7 +24,7 @@ public abstract class ParticipantControllerBase(
 
     protected async Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default)
     {
-        var project = await projectManager.GetProjectByIdForUpdateAsync(projectId);
+        var project = await projectManager.GetProjectByIdWithQuestionnaireForUpdateAsync(projectId);
         if (project is null)
             throw new KeyNotFoundException($"Project {projectId} not found.");
         return await participantManager.AddParticipantAsync(project, ct);

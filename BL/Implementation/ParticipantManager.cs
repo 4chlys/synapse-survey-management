@@ -13,6 +13,7 @@ public class ParticipantManager(
         var participant = new Participant
         {
             Project = project,
+            Questionnaire = project.Questionnaire,
             CreatedAt = DateTime.UtcNow
         };
         var created = await participantRepository.CreateAsync(participant);
