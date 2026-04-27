@@ -8,6 +8,7 @@ public class Participant : IHasCreatedAt
     public DateTime CreatedAt { get; set; }
     public Guid SessionToken { get; set; } = Guid.NewGuid();
     public bool HasSubmitted { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public string Email { get; set; }
     public Project Project { get; set; }
     public Questionnaire Questionnaire { get; set; }

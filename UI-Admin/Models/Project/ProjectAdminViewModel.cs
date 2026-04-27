@@ -10,6 +10,7 @@ public class ProjectAdminViewModel
     public string FormType { get; set; }
     public string OrganisationName { get; set; }
     public string OrganisationLogoUrl { get; set; }
+    public int PlatformId { get; set; }
     public string Introduction { get; set; }
     public string AiAssistance { get; set; } = "ProActive";
     public bool RequestContactInfo { get; set; }

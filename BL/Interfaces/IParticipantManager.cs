@@ -10,4 +10,6 @@ public interface IParticipantManager
     Task<bool> HasParticipantSubmittedAsync(Guid sessionToken);
     Task MarkAsSubmittedAsync(Guid sessionToken, CancellationToken ct = default);
     Task SaveContactInfoAsync(int participantId, string email, CancellationToken ct = default);
+    Task<int> CountCompletionsByProjectAsync(int projectId);
+    Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30);
 }
