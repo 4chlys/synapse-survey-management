@@ -18,11 +18,10 @@ public class IdeaSupportController(
     IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager, projectManager)
 {
-
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponseDto>> Chat(
         int projectId,
-        [FromBody] IdeaSupportChatRequestDto dto,
+        IdeaSupportChatRequestDto dto,
         CancellationToken ct)
     {
         var (_, error) = await GetParticipantAsync(projectId);
@@ -45,7 +44,7 @@ public class IdeaSupportController(
                 return BadRequest(new IdeaSupportChatResponseDto
                 {
                     AssistantMessage = validation.Reason,
-                    Phase            = "Error",
+                    Phase = "Error",
                 });
         }
 
@@ -54,30 +53,36 @@ public class IdeaSupportController(
         Project project = null;
         if (isFirstTurn)
         {
-            try { project = await GetProjectByIdReadOnlyAsync(projectId); }
-            catch { /* intentionally swallowed — greeting still works without project text */ }
+            try
+            {
+                project = await GetProjectByIdReadOnlyAsync(projectId);
+            }
+            catch
+            {
+                /* intentionally swallowed — greeting still works without project text */
+            }
         }
 
-        var projectName         = project?.OrganisationName ?? string.Empty;
+        var projectName = project?.OrganisationName ?? string.Empty;
         var projectIntroduction = project?.Introduction?.Text ?? string.Empty;
         if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
 
         var request = new IdeaSupportChatRequest
         {
-            History             = dto.History
-                                    .Select(h => new IdeaSupportChatMessage
-                                    {
-                                        Role    = h.Role,
-                                        Content = h.Content,
-                                    })
-                                    .ToList(),
-            UserMessage         = dto.UserMessage ?? string.Empty,
-            ProjectName         = projectName,
+            History = dto.History
+                .Select(h => new IdeaSupportChatMessage
+                {
+                    Role = h.Role,
+                    Content = h.Content,
+                })
+                .ToList(),
+            UserMessage = dto.UserMessage ?? string.Empty,
+            ProjectName = projectName,
             ProjectIntroduction = projectIntroduction,
-            CategoryName        = category.Name,
+            CategoryName = category.Name,
             CategoryDescription = category.Description ?? string.Empty,
-            IsFirstTurn         = isFirstTurn,
+            IsFirstTurn = isFirstTurn,
         };
 
         var reply = await ideaSupportService.ChatAsync(request, ct);
@@ -85,15 +90,15 @@ public class IdeaSupportController(
         return Ok(new IdeaSupportChatResponseDto
         {
             AssistantMessage = reply.AssistantMessage,
-            SuggestedDraft   = reply.SuggestedDraft,
-            Phase            = reply.Phase.ToString(),
+            SuggestedDraft = reply.SuggestedDraft,
+            Phase = reply.Phase.ToString(),
         });
     }
 
     [HttpPost("refine")]
     public async Task<ActionResult<IdeaSupportRefineResponseDto>> Refine(
         int projectId,
-        [FromBody] IdeaSupportRefineRequestDto dto,
+        IdeaSupportRefineRequestDto dto,
         CancellationToken ct)
     {
         var (_, error) = await GetParticipantAsync(projectId);

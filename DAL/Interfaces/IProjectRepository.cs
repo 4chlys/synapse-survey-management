@@ -13,4 +13,6 @@ public interface IProjectRepository : IRepository<Project>
     Task<Project> ReadByIdWithEmojisForUpdateAsync(int projectId);
 
     Task<Project> ReadByIdWithEmojisReadOnlyAsync(int projectId);
+
+    Task<bool> DeleteWithRelationsAsync(int projectId);
 }

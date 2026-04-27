@@ -28,4 +28,8 @@ public interface IIdeaRepository : IRepository<Idea>
     Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId);
 
     Task<bool> AnyExistByParticipantAsync(int participantId);
+
+    // Description of the participant's most recent idea in this category, used as
+    // the anchor for similar/different/diverse embedding sorts. Null = no idea yet.
+    Task<string> ReadMostRecentDescriptionByCategoryAndParticipantAsync(int categoryId, int participantId);
 }

@@ -1,6 +1,9 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Pgvector;
+using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -26,6 +29,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.HasPostgresExtension("vector");
 
         // Project
         builder.Entity<Project>(e =>
@@ -163,6 +167,35 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(c => c.Idea)
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            var embeddingComparer = new ValueComparer<float[]>(
+                (a, b) => (a == null && b == null) || (a != null && b != null && a.SequenceEqual(b)),
+                a => a == null ? 0 : a.Aggregate(0, (acc, v) => HashCode.Combine(acc, v.GetHashCode())),
+                a => a == null ? null : (float[])a.Clone());
+
+            if (Database.IsNpgsql())
+            {
+                // Native pgvector column — Pgvector wraps float[] via Vector internally.
+                // Dimensions must match the embedding model (gemini-embedding-001 = 3072).
+                e.Property(i => i.Embedding)
+                    .HasColumnType("vector(3072)")
+                    .HasConversion(
+                        new ValueConverter<float[], Vector>(
+                            v => v == null ? null : new Vector(v),
+                            v => v == null ? null : v.Memory.ToArray()))
+                    .Metadata.SetValueComparer(embeddingComparer);
+            }
+            else
+            {
+                // SQLite (dev): store as JSON text. No vector index, in-memory sort only.
+                e.Property(i => i.Embedding)
+                    .HasConversion(
+                        new ValueConverter<float[], string>(
+                            v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                            v => JsonSerializer.Deserialize<float[]>(v, (JsonSerializerOptions)null)))
+                    .HasColumnType("TEXT")
+                    .Metadata.SetValueComparer(embeddingComparer);
+            }
         });
 
         // Project-Emoji many-to-many (implicit join table)

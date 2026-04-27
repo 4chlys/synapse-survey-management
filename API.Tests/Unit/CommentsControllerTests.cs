@@ -73,7 +73,7 @@ public class CommentsControllerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _controller.RemoveIconComment(ProjectId, IdeaId, new AddIconCommentDto { EmojiId = EmojiId }, ct);
+        await _controller.RemoveIconComment(ProjectId, IdeaId, EmojiId, ct);
 
         // Assert
         _commentManager.VerifyAll();
@@ -107,7 +107,7 @@ public class CommentsControllerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _controller.RemoveCommentEmoji(ProjectId, IdeaId, CommentId, new AddIconCommentDto { EmojiId = EmojiId }, ct);
+        await _controller.RemoveCommentEmoji(ProjectId, IdeaId, CommentId, EmojiId, ct);
 
         // Assert
         _commentManager.VerifyAll();
