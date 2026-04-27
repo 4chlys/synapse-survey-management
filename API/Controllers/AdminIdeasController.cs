@@ -47,6 +47,7 @@ public class AdminIdeasController(
                 IdeaId        = i.IdeaId,
                 Description   = i.Description,
                 CategoryName  = i.CategoryName,
+                CategoryId    = i.CategoryId,
                 ReactionCount = i.ReactionCount,
                 CreatedAt     = i.CreatedAt,
                 Status        = i.Status.ToString()

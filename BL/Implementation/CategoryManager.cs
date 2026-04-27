@@ -60,6 +60,7 @@ public class CategoryManager(
             IdeaId: i.IdeaId,
             Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
             CategoryName: i.Category.Name,
+            CategoryId: i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(),
             CreatedAt: i.CreatedAt,
             Status: i.Status
@@ -94,6 +95,7 @@ public class CategoryManager(
             IdeaId:        i.IdeaId,
             Description:   i.Description,
             CategoryName:  i.Category.Name,
+            CategoryId:    i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(),
             CreatedAt:     i.CreatedAt,
             Status:        i.Status

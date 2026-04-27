@@ -6,6 +6,7 @@ public record IdeaFeedItem(
     int IdeaId,
     string Description,
     string CategoryName,
+    int CategoryId,
     int ReactionCount,
     DateTime CreatedAt,
     ModerationStatus Status);
