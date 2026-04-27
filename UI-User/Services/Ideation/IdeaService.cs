@@ -7,15 +7,20 @@ namespace SynapseEnqueteManagement.UI.User.Services.Ideation;
 public class IdeaService(HttpClient httpClient, ISessionService sessionService)
     : AuthenticatedApiService(httpClient, sessionService)
 {
-    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId, int page = 1, string sort = null)
+    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int projectId, int categoryId, string sort = null, int page = 1)
     {
         var url = $"api/projects/{projectId}/categories/{categoryId}/ideas?page={page}";
-        if (sort is not null) url += $"&sort={sort}";
+        if (sort is not null) url += $"&sort={Uri.EscapeDataString(sort)}";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
-        var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<IdeaViewModel>>();
-        return paged?.Items ?? new List<IdeaViewModel>();
+        var body = await response.Content.ReadFromJsonAsync<ApiIndexResponse>();
+        return new IdeaIndexResult
+        {
+            Ideas = body?.Items ?? new List<IdeaViewModel>(),
+            ResolvedSort = body?.ResolvedSort ?? sort,
+            HasOwnIdeas = body?.HasOwnIdeas ?? false
+        };
     }
 
     public async Task<CreateIdeaResultViewModel> CreateIdeaAsync(
@@ -78,5 +83,11 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         public int PageSize { get; set; }
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
+    }
+
+    private class ApiIndexResponse : ApiPagedResult<IdeaViewModel>
+    {
+        public string ResolvedSort { get; set; }
+        public bool HasOwnIdeas { get; set; }
     }
 }

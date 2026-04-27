@@ -7,3 +7,4 @@ global using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 global using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 global using SynapseEnqueteManagement.BL.Interfaces;
 global using SynapseEnqueteManagement.BL;
+global using SynapseEnqueteManagement.BL.Sorting.Embeddings;
