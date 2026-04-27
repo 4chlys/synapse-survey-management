@@ -130,9 +130,11 @@
 
                 <div>
                     <label class="block text-xs mb-1">Introductie</label>
-                    <textarea asp-for="Introduction" rows="7"
-                              placeholder="Schrijf een korte introductie van je project voor de deelnemers"
-                              class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none resize-none"></textarea>
+                    <div class="w-2/3">
+                        <div id="intro-editor" class="bg-gray-900 text-white text-xs"
+                             style="min-height: 160px;">@Html.Raw(Model.Introduction)</div>
+                    </div>
+                    <input type="hidden" asp-for="Introduction" id="Introduction" />
                     <span asp-validation-for="Introduction" class="text-red-400 text-xs"></span>
                 </div>
 

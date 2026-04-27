@@ -1,3 +1,6 @@
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+
 import { toast, bindDirtyTracking } from './lib/notify';
 
 function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
@@ -116,6 +119,30 @@ document.addEventListener('DOMContentLoaded', () => {
     btnOff?.addEventListener('click', () => setContactOptIn(false));
     btnOn?.addEventListener('click', () => setContactOptIn(true));
     if (contactOptInInput) setContactOptIn(contactOptInInput.dataset.initial === 'true');
+
+    // Quill rich text editor for Introduction
+    const editorEl = document.getElementById('intro-editor');
+    const introInput = document.getElementById('Introduction') as HTMLInputElement | null;
+    if (editorEl && introInput) {
+        const quill = new Quill(editorEl, {
+            theme: 'snow',
+            placeholder: 'Schrijf een korte introductie van je project voor de deelnemers',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Sync editor content to hidden input on form submit
+        editorEl.closest('form')?.addEventListener('submit', () => {
+            const html = quill.root.innerHTML;
+            introInput.value = html === '<p><br></p>' ? '' : html;
+        });
+    }
 
     let sectionIndex = parseInt(sectionsList?.dataset.initialCount ?? '0', 10);
     addSectionBtn?.addEventListener('click', () => {
