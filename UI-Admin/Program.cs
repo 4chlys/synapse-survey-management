@@ -12,6 +12,8 @@ builder.Services.AddControllersWithViews(options =>
         Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
 });
 
+builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection(nameof(AdminSettings)));
+
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7128";
 var apiKey = builder.Configuration["ApiKey"]
              ?? throw new InvalidOperationException("ApiKey is not configured.");

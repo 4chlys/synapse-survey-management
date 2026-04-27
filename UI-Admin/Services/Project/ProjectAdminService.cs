@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
@@ -51,5 +52,21 @@ public class ProjectAdminService(HttpClient httpClient)
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
+    public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)
+    {
+        var response = await httpClient.GetAsync($"api/projects/by-shortform/{Uri.EscapeDataString(shortForm)}");
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return true;
+        if (!response.IsSuccessStatusCode)
+            return true;
+        var dto = await response.Content.ReadFromJsonAsync<ShortFormLookup>();
+        return dto?.ProjectId == excludeProjectId;
+    }
+
+    private sealed class ShortFormLookup
+    {
+        public int ProjectId { get; set; }
     }
 }

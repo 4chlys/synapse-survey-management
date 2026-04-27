@@ -1,9 +1,12 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
+@using Microsoft.Extensions.Options
+@inject IOptions<SynapseEnqueteManagement.UI.Admin.AdminSettings> AdminSettingsOptions
 @model CreateProjectViewModel
 @{
     ViewData["Title"] = "Admin - Project aanmaken";
     Layout = "_Layout";
     var project = ViewData["Project"] as ProjectAdminViewModel;
+    var participantDomain = AdminSettingsOptions.Value.ParticipantDomain;
 }
 
 <div class="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -46,13 +49,14 @@
                            readonly="@(project != null && project.ProjectState != "Draft" ? "readonly" : null)"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
                     <span asp-validation-for="ShortForm" class="text-red-400 text-xs"></span>
+                    <span id="shortform-availability-msg" class="text-red-400 text-xs block"></span>
                     @if (project != null && project.ProjectState != "Draft")
                     {
                         <p class="text-xs text-gray-500 mt-1">Vergrendeld omdat dit project gepubliceerd is.</p>
                     }
                     else
                     {
-                        <p class="text-xs text-gray-500 mt-1">Gebruikt voor de deelnemers-URL: &lt;shortform&gt;.synapse-ip.xyz. Laat leeg om automatisch in te vullen vanuit de projectnaam.</p>
+                        <p class="text-xs text-gray-500 mt-1">Gebruikt voor de deelnemers-URL: &lt;shortform&gt;.@participantDomain. Laat leeg om automatisch in te vullen vanuit de projectnaam.</p>
                     }
                 </div>
 

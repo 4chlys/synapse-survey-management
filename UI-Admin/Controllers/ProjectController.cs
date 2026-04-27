@@ -175,6 +175,16 @@ public class ProjectController(
         return Ok(new { url = $"/uploads/{fileName}" });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> CheckShortForm(string shortForm, int? projectId)
+    {
+        if (string.IsNullOrWhiteSpace(shortForm))
+            return Json(new { available = true });
+
+        var available = await projectService.IsShortFormAvailableAsync(shortForm, projectId);
+        return Json(new { available });
+    }
+
     public async Task<IActionResult> Dashboard(int projectId)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
