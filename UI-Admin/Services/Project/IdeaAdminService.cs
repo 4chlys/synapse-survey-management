@@ -22,7 +22,7 @@ public class IdeaAdminService(HttpClient httpClient)
         var url = $"api/admin/projects/{projectId}/ideas?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrWhiteSpace(search))    url += $"&search={Uri.EscapeDataString(search)}";
         if (categoryId.HasValue)                   url += $"&categoryId={categoryId}";
-        if (!string.IsNullOrWhiteSpace(status))    url += $"&status={status}";
+        if (!string.IsNullOrWhiteSpace(status))    url += $"&status={Uri.EscapeDataString(status)}";
 
         var response = await httpClient.GetAsync(url);
         if (!response.IsSuccessStatusCode)
