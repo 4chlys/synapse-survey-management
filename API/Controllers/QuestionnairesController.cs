@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -10,13 +11,15 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/questionnaire")]
 public class QuestionnairesController(
     IQuestionnaireManager questionnaireManager,
-    IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    ISurveyFlowManager surveyFlowManager,
+    IParticipantManager participantManager,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
     public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
@@ -27,7 +30,7 @@ public class QuestionnairesController(
     [HttpGet("questions")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int projectId)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
@@ -38,34 +41,40 @@ public class QuestionnairesController(
 
     [HttpPost("questions")]
     public async Task<ActionResult<QuestionDto>> AddQuestion(int projectId,
-        [FromBody] CreateQuestionDto dto)
+        CreateQuestionDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
-        var question = await questionnaireManager.AddQuestionAsync(projectId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
-        if (question is null)
-            return NotFound();
+        try
+        {
+            var question = await questionnaireManager.AddQuestionAsync(projectId,
+                dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
+                dto.ParentQuestionId, dto.ParentTriggerValue, dto.EndingAnswers?.ToList(), ct);
+            if (question is null)
+                return NotFound();
 
-        return Created(string.Empty, MapToDto(question));
+            return Created(string.Empty, MapToDto(question));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPut("questions/{questionId}")]
-    public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody]
-        UpdateQuestionDto dto)
+    public async Task<IActionResult> UpdateQuestion(int projectId, int questionId, UpdateQuestionDto dto,
+        CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
+        if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
+            return NotFound();
+
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
-            dto.Text, format, dto.IsMandatory, dto.AnswerChoices, dto.SectionId);
+            dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
+            dto.EndingAnswers?.ToList(), ct);
         if (!success)
             return NotFound();
 
@@ -73,13 +82,37 @@ public class QuestionnairesController(
     }
 
     [HttpDelete("questions/{questionId}")]
-    public async Task<IActionResult> DeleteQuestion(int questionId)
+    public async Task<IActionResult> DeleteQuestion(int projectId, int questionId, CancellationToken ct)
     {
-        var success = await questionnaireManager.DeleteQuestionAsync(questionId);
+        if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
+            return NotFound();
+
+        var success = await questionnaireManager.DeleteQuestionAsync(questionId, ct);
         if (!success)
             return NotFound();
 
         return NoContent();
+    }
+
+    [HttpPut("questions/{questionId}/location")]
+    public async Task<ActionResult<QuestionDto>> MoveQuestion(int projectId, int questionId, MoveQuestionDto dto,
+        CancellationToken ct)
+    {
+        if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
+            return NotFound();
+
+        try
+        {
+            var moved = await questionnaireManager.MoveQuestionAsync(
+                questionId, dto.ParentQuestionId, dto.ParentTriggerValue, dto.Position, ct);
+            if (moved is null)
+                return NotFound();
+            return Ok(MapToDto(moved));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet("next-question")]
@@ -88,7 +121,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var nextQuestion = await questionnaireManager.GetNextQuestionAsync(currentQuestionId, participant.ParticipantId);
+        var nextQuestion = await surveyFlowManager.GetNextQuestionAsync(currentQuestionId, participant.ParticipantId);
         return Ok(new { questionId = nextQuestion?.QuestionId });
     }
 
@@ -98,7 +131,8 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var prevQuestion = await questionnaireManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
+        var prevQuestion =
+            await surveyFlowManager.GetPreviousQuestionAsync(currentQuestionId, participant.ParticipantId);
         return Ok(new { questionId = prevQuestion?.QuestionId });
     }
 
@@ -108,7 +142,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var resumeQuestion = await questionnaireManager.GetResumeQuestionAsync(projectId, participant.ParticipantId);
+        var resumeQuestion = await surveyFlowManager.GetResumeQuestionAsync(projectId, participant.ParticipantId);
         return Ok(new { questionId = resumeQuestion?.QuestionId });
     }
 
@@ -118,7 +152,7 @@ public class QuestionnairesController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var path = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
+        var path = await surveyFlowManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
         return Ok(new { questionIds = path });
     }
 
@@ -144,12 +178,9 @@ public class QuestionnairesController(
             AnswerChoices = question.AnswerChoices.ToList(),
             IsMandatory = question.IsMandatory,
             Position = question.Position,
-            BranchRules = question.BranchRules.Select(br => new BranchRuleDto
-            {
-                TriggerValue = br.TriggerValue,
-                TargetQuestionId = br.SkipToEnd ? null : br.TargetQuestion?.QuestionId,
-                SkipToEnd = br.SkipToEnd
-            }).ToList(),
+            ParentQuestionId = question.ParentQuestion?.QuestionId,
+            ParentTriggerValue = question.ParentTriggerValue,
+            EndingAnswers = question.EndingAnswers.Select(e => e.Value).ToList(),
             SectionName = question.Section?.Name,
             SectionId = question.Section?.SectionId
         };

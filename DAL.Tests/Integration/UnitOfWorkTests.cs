@@ -11,7 +11,7 @@ public class UnitOfWorkTests : IDisposable
     {
         // Arrange
         await using var context = _db.NewContext();
-        var repository = new Repository(context);
+        var repository = new Repository<Emoji>(context);
         var uow = new UnitOfWork(context);
         await repository.CreateAsync(TestEntities.NewEmoji());
 
@@ -28,7 +28,7 @@ public class UnitOfWorkTests : IDisposable
     {
         // Arrange
         await using var context = _db.NewContext();
-        var repository = new Repository(context);
+        var repository = new Repository<Emoji>(context);
         var uow = new UnitOfWork(context);
         await repository.CreateAsync(TestEntities.NewEmoji("👍", "thumbsup"));
         await repository.CreateAsync(TestEntities.NewEmoji("❤️", "heart"));
@@ -45,7 +45,7 @@ public class UnitOfWorkTests : IDisposable
     {
         // Arrange
         await using var context = _db.NewContext();
-        var repository = new Repository(context);
+        var repository = new Repository<Emoji>(context);
         var uow = new UnitOfWork(context);
 
         // Act
@@ -63,7 +63,7 @@ public class UnitOfWorkTests : IDisposable
     {
         // Arrange
         await using var context = _db.NewContext();
-        var repository = new Repository(context);
+        var repository = new Repository<Emoji>(context);
         var uow = new UnitOfWork(context);
 
         // Act
@@ -121,7 +121,7 @@ public class UnitOfWorkTests : IDisposable
     {
         // Arrange
         await using var context = _db.NewContext();
-        var repository = new Repository(context);
+        var repository = new Repository<Emoji>(context);
         var uow = new UnitOfWork(context);
         await repository.CreateAsync(TestEntities.NewEmoji());
         using var cts = new CancellationTokenSource();

@@ -42,6 +42,24 @@ Het script doet automatisch:
 - Global HTTPS Load Balancer + SSL
 - Cloud Logging + uptime checks
 
+## Stap 3.5 – pgvector extensie installeren
+
+Na bootstrap, vóór de eerste deployment:
+
+```bash
+gcloud sql connect mvp-postgres --user=mvp-user --database=mvp-db --project=<PROJECT_ID>
+```
+
+Voer in de psql prompt uit:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+Vereist omdat `Idea.Embedding` een `vector(3072)` kolom gebruikt. `EnsureCreated` mislukt zonder deze extensie.
+
+**Verificatie:** `\dx` in psql moet `vector` tonen.
+
 ## Stap 4 – DNS records instellen
 
 Na het script zie je het Load Balancer IP. Stel bij je domeinregistrar in:

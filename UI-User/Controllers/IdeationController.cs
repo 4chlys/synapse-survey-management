@@ -17,30 +17,33 @@ public class IdeationController(
     ParticipantService participantService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
+    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse")
     {
-        var projectTask = projectApiService.GetProjectAsync(projectId);
-        var emojisTask = emojiService.GetEmojisAsync(projectId);
+        var projectTask  = projectApiService.GetProjectAsync(projectId);
+        var emojisTask   = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var ideasTask = ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
+        var indexTask    = ideaService.GetIdeasIndexAsync(projectId, categoryId, sort);
 
-        await Task.WhenAll(projectTask, emojisTask, categoryTask, ideasTask);
+        await Task.WhenAll(projectTask, emojisTask, categoryTask, indexTask);
 
-        var project = await projectTask;
         var category = await categoryTask;
         if (category == null) return NotFound();
+
+        var project = await projectTask;
+        var index   = await indexTask;
 
         this.SetLayoutData(project, projectId, showModerationPopup: true);
 
         return View(new IdeaIndexViewModel
         {
-            ProjectId = projectId,
-            CategoryId = categoryId,
-            Category = category,
-            Ideas = await ideasTask,
-            Emojis = await emojisTask,
-            ShowContactInfoPopup = contactInfo,
-            RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false)
+            ProjectId            = projectId,
+            CategoryId           = categoryId,
+            Category             = category,
+            Ideas                = index.Ideas,
+            Emojis               = await emojisTask,
+            ShowContactInfoPopup = contactInfo && (project?.RequestContactInfo ?? false),
+            CurrentSort          = index.ResolvedSort,
+            HasOwnIdeas          = index.HasOwnIdeas
         });
     }
 
@@ -102,7 +105,7 @@ public class IdeationController(
         var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
         if (!result.Success) return PartialView("_ModerationPopup");
 
-        if (result.IsFirstIdea)
+        if (result.ShouldAskForContactInfo)
             return RedirectToAction("Index", new { projectId, categoryId, contactInfo = true });
 
         return RedirectToAction("Index", new { projectId, categoryId });

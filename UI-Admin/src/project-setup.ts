@@ -1,3 +1,8 @@
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+
+import { toast, bindDirtyTracking } from './lib/notify';
+
 function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
     return new Promise((resolve) => {
         const img = new Image();
@@ -16,6 +21,13 @@ function compressImage(file: File, maxWidth: number, quality: number): Promise<B
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const mainForm = document.querySelector<HTMLFormElement>('form[method="post"]');
+    if (mainForm) {
+        bindDirtyTracking(mainForm);
+        if (new URLSearchParams(window.location.search).get('saved') === '1')
+            toast('Opgeslagen', 'success');
+    }
+
     const btnChat = document.getElementById('btn-chat') as HTMLButtonElement | null;
     const btnScroll = document.getElementById('btn-scroll') as HTMLButtonElement | null;
     const interactionModeInput = document.getElementById('InteractionMode') as HTMLInputElement | null;
@@ -107,6 +119,30 @@ document.addEventListener('DOMContentLoaded', () => {
     btnOff?.addEventListener('click', () => setContactOptIn(false));
     btnOn?.addEventListener('click', () => setContactOptIn(true));
     if (contactOptInInput) setContactOptIn(contactOptInInput.dataset.initial === 'true');
+
+    // Quill rich text editor for Introduction
+    const editorEl = document.getElementById('intro-editor');
+    const introInput = document.getElementById('Introduction') as HTMLInputElement | null;
+    if (editorEl && introInput) {
+        const quill = new Quill(editorEl, {
+            theme: 'snow',
+            placeholder: 'Schrijf een korte introductie van je project voor de deelnemers',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Sync editor content to hidden input on form submit
+        editorEl.closest('form')?.addEventListener('submit', () => {
+            const html = quill.root.innerHTML;
+            introInput.value = html === '<p><br></p>' ? '' : html;
+        });
+    }
 
     let sectionIndex = parseInt(sectionsList?.dataset.initialCount ?? '0', 10);
     addSectionBtn?.addEventListener('click', () => {

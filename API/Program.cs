@@ -1,7 +1,11 @@
+using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Sorting;
+using SynapseEnqueteManagement.BL.Sorting.Embeddings;
+using SynapseEnqueteManagement.BL.Embeddings;
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.VertexAI.Extensions;
+using Microsoft.Extensions.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
@@ -16,6 +20,8 @@ using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
+using SynapseEnqueteManagement.DAL.Implementation;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -46,7 +52,7 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseNpgsql(connStr));
+    builder.Services.AddDbContext<SynapseEnqueteContext>(options => options.UseNpgsql(connStr, o => o.UseVector()));
 }
 else
 {
@@ -54,7 +60,16 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
-builder.Services.AddScoped<IRepository, Repository>();
+builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
+builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<ISectionRepository, SectionRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Sort strategies (singleton — stateless)
@@ -65,6 +80,16 @@ builder.Services.AddSingleton<ISortStrategyFactory<Idea>>(sp =>
 builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrategy<TextComment>>();
 builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
     new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
+
+// Embedding-based sort strategies (in-memory; not expressible as SQL ORDER BY)
+builder.Services.AddSingleton<IEmbeddingSortStrategy, SimilarSortStrategy>();
+builder.Services.AddSingleton<IEmbeddingSortStrategy, DifferentSortStrategy>();
+builder.Services.AddSingleton<IEmbeddingSortStrategy, DiverseSortStrategy>();
+builder.Services.AddSingleton<IEmbeddingSortStrategyFactory, EmbeddingSortStrategyFactory>();
+
+// IEmbeddingService is registered below inside/after the Vertex-AI block: the
+// real backing IEmbeddingGenerator<string, Embedding<float>> only exists when
+// useAi=true, so Mock is the fallback when AI is disabled.
 
 // Response validators (OCP: add new formats by registering a new IResponseValidator)
 builder.Services.AddSingleton<IResponseValidator, OpenResponseValidator>();
@@ -77,6 +102,10 @@ builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactor
 builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 
 // Registering BL
+var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
+var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
+builder.Services.AddScoped<IShortFormService>(sp =>
+    new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -85,7 +114,8 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
-builder.Services.AddScoped<ISectionManager, SectionManager>();
+builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
+builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 
 // AI configuration
 //
@@ -120,6 +150,7 @@ if (useAi)
                     ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
     var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
     var model = builder.Configuration["VertexAi:Model"] ?? "gemini-2.5-flash-lite";
+    var embeddingModel = builder.Configuration["VertexAi:EmbeddingModel"] ?? "gemini-embedding-001";
     var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
     var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
@@ -134,10 +165,21 @@ if (useAi)
     builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
+
+    // Embedding generator — same PredictionServiceClientBuilder, different model
+    // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so
+    // swapping Vertex for OpenAI/Ollama later means registering a different
+    // IEmbeddingGenerator here; nothing in BL changes.
+    var embeddingModelResource = EndpointName.FormatProjectLocationPublisherModel(
+        projectId, location, "google", embeddingModel);
+    var embeddingGenerator = await predictionBuilder.BuildIEmbeddingGeneratorAsync(embeddingModelResource);
+    builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(embeddingGenerator);
+    builder.Services.AddSingleton<IEmbeddingService, AiEmbeddingService>();
 }
 else
 {
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
+    builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
@@ -151,20 +193,31 @@ var app = builder.Build();
 // Database initialisation & seeding
 // Retry loop: needed for Cloud Run cold starts where the postgres sidecar
 // is not yet ready when the API boots (race condition).
+// Scope is recreated per attempt so a failed attempt's stale ChangeTracker
+// can't leak into the next attempt's SaveChanges.
 {
-    using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
-    var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
     const int maxRetries = 10;
     const int delayMs = 3000;
 
     for (int attempt = 1; attempt <= maxRetries; attempt++)
     {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
+        var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
         try
         {
             context.CreateDatabase(deleteIfExists);
             DummyDataSeeder.Seed(context);
+
+            var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
+            var ideasNeedingEmbeddings = await context.Set<Idea>()
+                .Where(i => i.Embedding == null)
+                .ToListAsync();
+            foreach (var idea in ideasNeedingEmbeddings)
+                idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description);
+            if (ideasNeedingEmbeddings.Count > 0)
+                await context.SaveChangesAsync();
             break;
         }
         catch (Exception ex) when (attempt < maxRetries)

@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.BL.Sorting;
 
@@ -6,7 +5,8 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class CommentManagerTests
 {
-    private readonly Mock<IRepository> _repository = new(MockBehavior.Strict);
+    private readonly Mock<ICommentRepository> _commentRepository = new(MockBehavior.Strict);
+    private readonly Mock<IIdeaRepository> _ideaRepository = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly Mock<ISortStrategyFactory<TextComment>> _sortFactory = new();
     private readonly CommentManager _manager;
@@ -19,7 +19,7 @@ public class CommentManagerTests
 
     public CommentManagerTests()
     {
-        _manager = new CommentManager(_repository.Object, _uow.Object, NullLogger<CommentManager>.Instance, _sortFactory.Object);
+        _manager = new CommentManager(_commentRepository.Object, _ideaRepository.Object, _uow.Object, NullLogger<CommentManager>.Instance, _sortFactory.Object);
     }
 
     private Idea IdeaInProject() => new()
@@ -47,11 +47,11 @@ public class CommentManagerTests
     public async Task AddTextCommentAsync_HappyPath_CreatesCommentAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Idea>(IdeaId, It.IsAny<Expression<Func<Idea, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(IdeaId))
             .ReturnsAsync(IdeaInProject())
             .Verifiable(Times.Exactly(1));
-        _repository.Setup(r => r.CreateAsync(It.IsAny<TextComment>(), It.IsAny<Expression<Func<TextComment, bool>>>()))
-            .ReturnsAsync((TextComment c, Expression<Func<TextComment, bool>> _) => c)
+        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>()))
+            .ReturnsAsync((TextComment c) => c)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -62,7 +62,8 @@ public class CommentManagerTests
 
         // Assert
         Assert.Equal("hello", created.Text);
-        _repository.VerifyAll();
+        _ideaRepository.VerifyAll();
+        _commentRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -70,7 +71,7 @@ public class CommentManagerTests
     public async Task AddTextCommentAsync_IdeaNotInProject_ThrowsAndDoesNotSave()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Idea>(IdeaId, It.IsAny<Expression<Func<Idea, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(IdeaId))
             .ReturnsAsync((Idea)null)
             .Verifiable(Times.Exactly(1));
 
@@ -78,7 +79,7 @@ public class CommentManagerTests
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _manager.AddTextCommentAsync(IdeaId, ProjectId, "hello", ModerationStatus.Approved, _participant));
 
-        _repository.VerifyAll();
+        _ideaRepository.VerifyAll();
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -90,12 +91,10 @@ public class CommentManagerTests
     public async Task AddIconCommentAsync_HappyPath_CreatesAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Idea>(IdeaId, It.IsAny<Expression<Func<Idea, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectAndEmojisForUpdateAsync(IdeaId))
             .ReturnsAsync(IdeaInProject());
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
-            .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
-        _repository.Setup(r => r.CreateAsync(It.IsAny<IconComment>(), It.IsAny<Expression<Func<IconComment, bool>>>()))
-            .ReturnsAsync((IconComment ic, Expression<Func<IconComment, bool>> _) => ic)
+        _commentRepository.Setup(r => r.CreateIconCommentOnIdeaIfNotDuplicateAsync(It.IsAny<IconComment>()))
+            .ReturnsAsync((IconComment ic) => ic)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -108,18 +107,16 @@ public class CommentManagerTests
         Assert.NotNull(created);
         Assert.Equal(EmojiId, created.EmojiId);
         _uow.VerifyAll();
-        _repository.Verify(r => r.CreateAsync(It.IsAny<IconComment>(), It.IsAny<Expression<Func<IconComment, bool>>>()), Times.Once);
+        _commentRepository.VerifyAll();
     }
 
     [Fact]
     public async Task AddIconCommentAsync_DuplicateDetected_ReturnsNullWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<Idea>(IdeaId, It.IsAny<Expression<Func<Idea, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectAndEmojisForUpdateAsync(IdeaId))
             .ReturnsAsync(IdeaInProject());
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
-            .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
-        _repository.Setup(r => r.CreateAsync(It.IsAny<IconComment>(), It.IsAny<Expression<Func<IconComment, bool>>>()))
+        _commentRepository.Setup(r => r.CreateIconCommentOnIdeaIfNotDuplicateAsync(It.IsAny<IconComment>()))
             .ReturnsAsync((IconComment)null)
             .Verifiable(Times.Exactly(1));
 
@@ -128,7 +125,7 @@ public class CommentManagerTests
 
         // Assert
         Assert.Null(created);
-        _repository.Verify(r => r.CreateAsync(It.IsAny<IconComment>(), It.IsAny<Expression<Func<IconComment, bool>>>()), Times.Once);
+        _commentRepository.VerifyAll();
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -138,7 +135,7 @@ public class CommentManagerTests
         // Arrange — idea's project has no matching emoji
         var idea = IdeaInProject();
         idea.Category.Project.Emojis.Clear();
-        _repository.Setup(r => r.ReadByIdAsync<Idea>(IdeaId, It.IsAny<Expression<Func<Idea, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectAndEmojisForUpdateAsync(IdeaId))
             .ReturnsAsync(idea);
 
         // Act + Assert
@@ -156,7 +153,7 @@ public class CommentManagerTests
     public async Task RemoveIconCommentAsync_HappyPath_DeletesAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.DeleteAsync(It.IsAny<Expression<Func<IconComment, bool>>>()))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnIdeaAsync(IdeaId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(true)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -168,7 +165,7 @@ public class CommentManagerTests
 
         // Assert
         Assert.True(removed);
-        _repository.VerifyAll();
+        _commentRepository.VerifyAll();
         _uow.VerifyAll();
     }
 
@@ -176,7 +173,7 @@ public class CommentManagerTests
     public async Task RemoveIconCommentAsync_NotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.DeleteAsync(It.IsAny<Expression<Func<IconComment, bool>>>()))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnIdeaAsync(IdeaId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(false)
             .Verifiable(Times.Exactly(1));
 
@@ -185,7 +182,7 @@ public class CommentManagerTests
 
         // Assert
         Assert.False(removed);
-        _repository.VerifyAll();
+        _commentRepository.VerifyAll();
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -197,12 +194,10 @@ public class CommentManagerTests
     public async Task AddCommentReactionAsync_HappyPath_CreatesAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<TextComment>(CommentId, It.IsAny<Expression<Func<TextComment, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _commentRepository.Setup(r => r.ReadTextCommentByIdWithProjectAndEmojisForUpdateAsync(CommentId))
             .ReturnsAsync(TextCommentInProject());
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
-            .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
-        _repository.Setup(r => r.CreateAsync(It.IsAny<IconComment>(), It.IsAny<Expression<Func<IconComment, bool>>>()))
-            .ReturnsAsync((IconComment ic, Expression<Func<IconComment, bool>> _) => ic)
+        _commentRepository.Setup(r => r.CreateIconCommentOnTextCommentIfNotDuplicateAsync(It.IsAny<IconComment>()))
+            .ReturnsAsync((IconComment ic) => ic)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -220,7 +215,7 @@ public class CommentManagerTests
     public async Task AddCommentReactionAsync_CommentNotInProject_ThrowsWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<TextComment>(CommentId, It.IsAny<Expression<Func<TextComment, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _commentRepository.Setup(r => r.ReadTextCommentByIdWithProjectAndEmojisForUpdateAsync(CommentId))
             .ReturnsAsync((TextComment)null);
 
         // Act + Assert
@@ -234,11 +229,9 @@ public class CommentManagerTests
     public async Task AddCommentReactionAsync_DuplicateDetected_ReturnsNullWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.ReadByIdAsync<TextComment>(CommentId, It.IsAny<Expression<Func<TextComment, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _commentRepository.Setup(r => r.ReadTextCommentByIdWithProjectAndEmojisForUpdateAsync(CommentId))
             .ReturnsAsync(TextCommentInProject());
-        _repository.Setup(r => r.ReadByIdAsync<Emoji>(EmojiId, It.IsAny<Expression<Func<Emoji, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
-            .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
-        _repository.Setup(r => r.CreateAsync(It.IsAny<IconComment>(), It.IsAny<Expression<Func<IconComment, bool>>>()))
+        _commentRepository.Setup(r => r.CreateIconCommentOnTextCommentIfNotDuplicateAsync(It.IsAny<IconComment>()))
             .ReturnsAsync((IconComment)null);
 
         // Act
@@ -257,7 +250,7 @@ public class CommentManagerTests
     public async Task RemoveCommentReactionAsync_HappyPath_DeletesAndSavesOnce()
     {
         // Arrange
-        _repository.Setup(r => r.DeleteAsync(It.IsAny<Expression<Func<IconComment, bool>>>()))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnTextCommentAsync(CommentId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(true);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -275,7 +268,7 @@ public class CommentManagerTests
     public async Task RemoveCommentReactionAsync_NotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _repository.Setup(r => r.DeleteAsync(It.IsAny<Expression<Func<IconComment, bool>>>()))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnTextCommentAsync(CommentId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(false);
 
         // Act
@@ -296,10 +289,10 @@ public class CommentManagerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _repository.Setup(r => r.ReadByIdAsync<Idea>(IdeaId, It.IsAny<Expression<Func<Idea, object>>[]>(), It.IsAny<string[]>(), It.IsAny<bool>()))
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(IdeaId))
             .ReturnsAsync(IdeaInProject());
-        _repository.Setup(r => r.CreateAsync(It.IsAny<TextComment>(), It.IsAny<Expression<Func<TextComment, bool>>>()))
-            .ReturnsAsync((TextComment c, Expression<Func<TextComment, bool>> _) => c);
+        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>()))
+            .ReturnsAsync((TextComment c) => c);
         _uow.Setup(u => u.SaveChangesAsync(ct))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

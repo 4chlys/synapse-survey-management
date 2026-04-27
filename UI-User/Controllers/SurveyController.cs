@@ -44,7 +44,6 @@ public class SurveyController(
             {
                 // null = participant not found in DB, stale cookie
                 sessionService.ClearToken(projectId);
-                Console.WriteLine("Session cleared");
             }
             else
             {

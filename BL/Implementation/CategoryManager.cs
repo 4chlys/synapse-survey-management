@@ -1,75 +1,81 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class CategoryManager(IRepository repository, IUnitOfWork uow) : ICategoryManager
+public class CategoryManager(
+    ICategoryRepository categoryRepository,
+    IUnitOfWork uow) : ICategoryManager
 {
-    public async Task<IEnumerable<Category>> GetCategoriesAsync(int projectId)
-    {
-        return await repository.ReadAsync<Category>(
-            filters: [c => c.Project.ProjectId == projectId]
-        );
-    }
-    public async Task<Category> CreateCategoryAsync(int projectId, string name,
-        string description)
-    {
-        var project = await repository.ReadByIdAsync<Project>(projectId, tracked: true);
-        if (project is null) return null;
+    public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
+        => categoryRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
+    public Task<IEnumerable<Category>> GetCategoriesWithIdeasForProjectReadOnlyAsync(int projectId)
+        => categoryRepository.ReadAllWithIdeasByProjectReadOnlyAsync(projectId);
+
+    public Task<Category> GetCategoryByIdReadOnlyAsync(int id)
+        => categoryRepository.ReadByIdReadOnlyAsync(id);
+
+    public Task<Category> GetCategoryByIdWithProjectReadOnlyAsync(int categoryId)
+        => categoryRepository.ReadByIdWithProjectReadOnlyAsync(categoryId);
+
+    public async Task<Category> CreateCategoryAsync(Project project, string name, string description, CancellationToken ct = default)
+    {
         var category = new Category
         {
             Name = name,
             Description = description,
             Project = project
         };
-        var created = await repository.CreateAsync(category);
-        await uow.SaveChangesAsync();
+        EntityValidator.Validate(category);
+        var created = await categoryRepository.CreateAsync(category);
+        await uow.SaveChangesAsync(ct);
         return created;
     }
 
-    public async Task<bool> UpdateCategoryAsync(int categoryId, string name, string
-        description)
+    public async Task<bool> UpdateCategoryAsync(int categoryId, string name, string description, CancellationToken ct = default)
     {
-        var category = await repository.ReadByIdAsync<Category>(categoryId);
+        var category = await categoryRepository.ReadByIdForUpdateAsync(categoryId);
         if (category is null) return false;
 
+        EntityValidator.ValidateProperty(category, name, nameof(Category.Name));
+        EntityValidator.ValidateProperty(category, description, nameof(Category.Description));
         category.Name = name;
         category.Description = description;
-        repository.Update(category);
-        await uow.SaveChangesAsync();
+        categoryRepository.Update(category);
+        await uow.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<bool> DeleteCategoryAsync(int categoryId)
+    public async Task<bool> DeleteCategoryAsync(int categoryId, CancellationToken ct = default)
     {
-        var result = await repository.DeleteByIdAsync<Category>(categoryId);
-        if (result) await uow.SaveChangesAsync();
+        var result = await categoryRepository.DeleteByIdAsync(categoryId);
+        if (result) await uow.SaveChangesAsync(ct);
         return result;
     }
 
-    public async Task<Category> GetCategoryByIdAsync(int id)
+    public async Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, int count = 10)
     {
-        return await repository.ReadByIdAsync<Category>(id);
+        var ideas = await categoryRepository.ReadLatestIdeasAsync(projectId, count);
+        return ideas.Select(i => new IdeaFeedItem(
+            IdeaId: i.IdeaId,
+            Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
+            CategoryName: i.Category.Name,
+            ReactionCount: i.Comments.OfType<IconComment>().Count(),
+            CreatedAt: i.CreatedAt
+        )).ToList();
     }
 
-    public async Task<int> GetIdeaCountAsync(int categoryId)
+    public async Task<ModerationQueueResult> GetModerationQueueAsync(int projectId)
     {
-        return await repository.CountAsync<Idea>(
-            filters: [i => i.Category.CategoryId == categoryId]
+        var counts = await categoryRepository.ReadModerationQueueAsync(projectId);
+        return new ModerationQueueResult(
+            Approved: counts.GetValueOrDefault(ModerationStatus.Approved, 0),
+            Declined: counts.GetValueOrDefault(ModerationStatus.Declined, 0),
+            Flagged: counts.GetValueOrDefault(ModerationStatus.Flagged, 0),
+            Unflagged: counts.GetValueOrDefault(ModerationStatus.Unflagged, 0)
         );
-    }
-
-    public async Task<Dictionary<int, int>> GetIdeaCountsByCategoryAsync(IEnumerable<int> categoryIds)
-    {
-        var ids = categoryIds.ToHashSet();
-        var ideas = await repository.ReadAsync<Idea>(
-            filters: [i => ids.Contains(i.Category.CategoryId)],
-            includeStrings: ["Category"]);
-
-        return ideas
-            .GroupBy(i => i.Category.CategoryId)
-            .ToDictionary(g => g.Key, g => g.Count());
     }
 }

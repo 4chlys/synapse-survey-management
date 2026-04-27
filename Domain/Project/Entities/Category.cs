@@ -10,7 +10,7 @@ public class Category
 
     [MaxLength(1000)] public string Description { get; set; }
 
-    public Project Project { get; set; }
+    [Required] public Project Project { get; set; }
 
     public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
 }

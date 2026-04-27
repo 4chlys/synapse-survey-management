@@ -11,8 +11,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class CommentSupportController(
     IAiCommentSupportService commentSupportService,
     IInputValidationService inputValidation,
-    IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    IParticipantManager participantManager, IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("chat")]
     public async Task<ActionResult<CommentSupportChatResponseDto>> Chat(

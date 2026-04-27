@@ -11,16 +11,14 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}")]
 public class ResponsesController(
-    IQuestionnaireManager questionnaireManager,
     IParticipantManager participantManager,
-    IResponseManager responseManager)
-    : ParticipantControllerBase(participantManager)
+    IResponseManager responseManager,
+    ISubmissionManager submissionManager,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
-    /// <summary>
-    /// Saves optional contact info (email / phone) for the current participant.
-    /// </summary>
     [HttpPatch("participants/me/contact")]
-    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto, CancellationToken ct)
+    public async Task<ActionResult> SaveContactInfo(int projectId, SaveContactInfoDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
@@ -29,95 +27,47 @@ public class ResponsesController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Creates an anonymous participant and returns a session token.
-    /// </summary>
     [HttpPost("participants")]
     public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
     {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var participant = await AddParticipantAsync(questionnaire, projectId, ct);
-
+        var participant = await AddParticipantAsync(projectId, ct);
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 
-    /// <summary>
-    /// Submits the survey for a participant who saved responses incrementally.
-    /// Computes the visible path, validates mandatory answers, commits visible responses,
-    /// and marks the participant as submitted.
-    /// </summary>
     [HttpPost("submit")]
     public async Task<ActionResult> Submit(int projectId, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var visiblePath = await questionnaireManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
-        var visibleSet = visiblePath.ToHashSet();
-
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
-        var answeredPairs = responses.Select(r => (r.Question.QuestionId, r.Value));
-
-        try
-        {
-            questionnaireManager.ValidateMandatoryAnswers(questionnaire, answeredPairs, visibleSet);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-
-        await responseManager.CommitResponsesAsync(participant.ParticipantId, visibleSet, ct);
-        await MarkAsSubmittedAsync(participant.SessionToken, ct);
-
+        await submissionManager.SubmitAsync(projectId, participant, ct);
         return Ok();
     }
 
-    /// <summary>
-    /// Upserts a single response. Saves with IsCommitted = false (interim save).
-    /// </summary>
     [HttpPost("responses")]
-    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto, CancellationToken ct)
+    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, CreateResponseDto createDto,
+        CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        var question = await questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
-        if (question is null)
-            return NotFound($"Question with id {createDto.QuestionId} not found.");
-
-        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.Value, question, participant, ct);
+        var response =
+            await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
         var dto = MapToDto(response);
         return Created(string.Empty, dto);
     }
 
-    /// <summary>
-    /// Returns all responses for the current participant (for resume support).
-    /// </summary>
     [HttpGet("responses")]
     public async Task<ActionResult<IEnumerable<ResponseDto>>> GetResponses(int projectId)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var responses = await responseManager.GetResponsesForParticipantAsync(participant.ParticipantId);
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant);
         var dtos = responses.Select(MapToDto).ToList();
         return Ok(dtos);
     }
 
-    /// <summary>
-    /// Check if a participant (by token) has already submitted.
-    /// </summary>
     [HttpGet("participants/me")]
     public async Task<ActionResult> GetParticipantStatus(int projectId)
     {

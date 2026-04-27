@@ -5,9 +5,11 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 
 public interface IIdeaManager
 {
-    Task<PagedResult<Idea>> GetOkIdeasByCategoryAsync(int categoryId, int page, int pageSize, string sortKey, int? excludeParticipantId = null);
-    Task<IEnumerable<Idea>> GetOwnIdeasByCategoryAsync(int categoryId, int participantId);
-    Task<Idea> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status, Participant participant, CancellationToken ct = default);
-    Task<Idea> GetIdeaByIdAsync(int ideaId);
-    Task<int> GetIdeaCountByParticipantAsync(int participantId);
+    Task<IdeaIndexResult> GetIdeasIndexAsync(int categoryId, int? participantId, int pageSize, int page, string sortKey, CancellationToken ct = default);
+    Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int participantId);
+    Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId);
+    Task<int?> GetIdeaAuthorParticipantIdReadOnlyAsync(int ideaId);
+    Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status, Participant participant, CancellationToken ct = default);
+    Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds);
+    Task<int> CountByCategoryAsync(int categoryId);
 }

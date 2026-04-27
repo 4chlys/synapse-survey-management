@@ -1,6 +1,10 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Pgvector;
+using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -8,6 +12,7 @@ namespace SynapseEnqueteManagement.DAL;
 public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<Response> Responses { get; set; }
@@ -20,16 +25,26 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
     public DbSet<Comment> Comments { get; set; }
-    public DbSet<BranchRule> BranchRules { get; set; }
+    public DbSet<EndingAnswer> EndingAnswers { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.HasPostgresExtension("vector");
 
         // Project
+        builder.Entity<Project>()
+            .HasIndex(p => p.ShortForm)
+            .IsUnique();
+
         builder.Entity<Project>(e =>
         {
+            e.HasOne(p => p.ProjectPlatform)
+                .WithMany()
+                .HasForeignKey(p => p.ProjectPlatformId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             e.HasOne(p => p.Questionnaire)
                 .WithOne(q => q.Project)
                 .HasForeignKey<Questionnaire>("ProjectId")
@@ -60,12 +75,6 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(q => q.Questionnaire)
                 .HasForeignKey("QuestionnaireId")
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Restrict so that Project → Participant cascade is the sole owner.
-            e.HasMany(q => q.Participants)
-                .WithOne(p => p.Questionnaire)
-                .HasForeignKey("QuestionnaireId")
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Question
@@ -92,23 +101,25 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .HasForeignKey("SectionId")
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
-        });
-        // BranchRule — two FKs to Question
-        builder.Entity<BranchRule>()
-            .HasOne(br => br.SourceQuestion)
-            .WithMany(q => q.BranchRules)
-            .HasForeignKey("SourceQuestionId")
-            .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<BranchRule>(e =>
-        {
-            e.HasOne(br => br.TargetQuestion)
-                .WithMany(q => q.IncomingBranches)
-                .HasForeignKey("TargetQuestionId")
+            e.HasOne(q => q.ParentQuestion)
+                .WithMany(q => q.Children)
+                .HasForeignKey("ParentQuestionId")
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
-            e.HasIndex("TargetQuestionId");
+            e.HasIndex("ParentQuestionId");
+        });
+
+        // EndingAnswer — rows only exist for answers that terminate the survey.
+        builder.Entity<EndingAnswer>(e =>
+        {
+            e.HasOne(ea => ea.Question)
+                .WithMany(q => q.EndingAnswers)
+                .HasForeignKey("QuestionId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex("QuestionId");
         });
 
         // Response
@@ -167,6 +178,35 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(c => c.Idea)
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            var embeddingComparer = new ValueComparer<float[]>(
+                (a, b) => (a == null && b == null) || (a != null && b != null && a.SequenceEqual(b)),
+                a => a == null ? 0 : a.Aggregate(0, (acc, v) => HashCode.Combine(acc, v.GetHashCode())),
+                a => a == null ? null : (float[])a.Clone());
+
+            if (Database.IsNpgsql())
+            {
+                // Native pgvector column — Pgvector wraps float[] via Vector internally.
+                // Dimensions must match the embedding model (gemini-embedding-001 = 3072).
+                e.Property(i => i.Embedding)
+                    .HasColumnType("vector(3072)")
+                    .HasConversion(
+                        new ValueConverter<float[], Vector>(
+                            v => v == null ? null : new Vector(v),
+                            v => v == null ? null : v.Memory.ToArray()))
+                    .Metadata.SetValueComparer(embeddingComparer);
+            }
+            else
+            {
+                // SQLite (dev): store as JSON text. No vector index, in-memory sort only.
+                e.Property(i => i.Embedding)
+                    .HasConversion(
+                        new ValueConverter<float[], string>(
+                            v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                            v => JsonSerializer.Deserialize<float[]>(v, (JsonSerializerOptions)null)))
+                    .HasColumnType("TEXT")
+                    .Metadata.SetValueComparer(embeddingComparer);
+            }
         });
 
         // Project-Emoji many-to-many (implicit join table)

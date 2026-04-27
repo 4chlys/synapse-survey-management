@@ -10,8 +10,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class SpeechToTextController(
     IAiSpeechToTextService speechToTextService,
     AiSpeechToTextConfig speechToTextConfig,
-    IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    IParticipantManager participantManager, IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("transcribe")]
     public async Task<ActionResult<SpeechToTextResponseDto>> Transcribe(

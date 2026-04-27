@@ -36,13 +36,7 @@ public class QuestionnaireApiService : IQuestionnaireApiService
             IsMandatory = q.IsMandatory,
             QuestionNumber = number++,
             TotalQuestions = total,
-            Position = q.Position,
-            BranchRules = q.BranchRules?.Select(br => new BranchRuleViewModel
-            {
-                TriggerValue = br.TriggerValue,
-                TargetQuestionId = br.TargetQuestionId,
-                SkipToEnd = br.SkipToEnd
-            }).ToList() ?? []
+            Position = q.Position
         }).ToList();
 
         return new SurveyViewModel
@@ -172,14 +166,6 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         public List<string> AnswerChoices { get; set; } = new();
         public bool IsMandatory { get; set; }
         public int Position { get; set; }
-        public List<ApiBranchRuleDto> BranchRules { get; set; } = new();
-    }
-
-    private class ApiBranchRuleDto
-    {
-        public string TriggerValue { get; set; }
-        public int? TargetQuestionId { get; set; }
-        public bool SkipToEnd { get; set; }
     }
 
     private class ParticipantStatusDto

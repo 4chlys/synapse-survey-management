@@ -148,12 +148,24 @@
                                 In behandeling
                             </span>
                         }
-                        else if (comment.IsOwnedByCurrentUser)
+                        else if (comment.IsOwnedByCurrentUser || comment.IsPostedByIdeaAuthor)
                         {
-                            <span class="inline-flex items-center gap-1 text-xs text-primary font-medium mb-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
-                                Jouw reactie
-                            </span>
+                            <div class="flex flex-wrap gap-1.5 mb-2">
+                                @if (comment.IsOwnedByCurrentUser)
+                                {
+                                    <span class="inline-flex items-center gap-1 text-xs text-primary font-medium">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+                                        Jouw reactie
+                                    </span>
+                                }
+                                @if (comment.IsPostedByIdeaAuthor)
+                                {
+                                    <span class="inline-flex items-center gap-1 text-xs text-secondary font-medium">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span>
+                                        Idee-auteur
+                                    </span>
+                                }
+                            </div>
                         }
                         <p class="text-base-content text-[15px] leading-relaxed">@comment.Text</p>
 

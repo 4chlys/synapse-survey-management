@@ -9,11 +9,12 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class CommentsController(
     ICommentManager manager,
     IParticipantManager participantManager,
-    IModerationResolver moderationResolver)
-    : ParticipantControllerBase(participantManager)
+    IModerationResolver moderationResolver,
+    IProjectManager projectManager)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("comments")]
-    public async Task<ActionResult> AddComment(int projectId, int ideaId, [FromBody] CreateCommentDto dto, CancellationToken ct)
+    public async Task<ActionResult> AddComment(int projectId, int ideaId, CreateCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -31,7 +32,8 @@ public class CommentsController(
     }
 
     [HttpPost("iconcomments")]
-    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto, CancellationToken ct)
+    public async Task<ActionResult> AddIconComment(int projectId, int ideaId, AddIconCommentDto dto,
+        CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -48,20 +50,20 @@ public class CommentsController(
         }
     }
 
-    [HttpDelete("iconcomments")]
-    public async Task<ActionResult> RemoveIconComment(int projectId, int ideaId, [FromBody] AddIconCommentDto dto, CancellationToken ct)
+    [HttpDelete("iconcomments/{emojiId}")]
+    public async Task<ActionResult> RemoveIconComment(int projectId, int ideaId, int emojiId, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveIconCommentAsync(ideaId, projectId, dto.EmojiId, participant, ct);
+        var removed = await manager.RemoveIconCommentAsync(ideaId, projectId, emojiId, participant, ct);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }
 
     [HttpPost("comments/{commentId}/emoji")]
     public async Task<ActionResult> AddCommentEmoji(int projectId, int ideaId, int commentId,
-        [FromBody] AddIconCommentDto dto, CancellationToken ct)
+        AddIconCommentDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
@@ -78,16 +80,15 @@ public class CommentsController(
         }
     }
 
-    [HttpDelete("comments/{commentId}/emoji")]
+    [HttpDelete("comments/{commentId}/emoji/{emojiId}")]
     public async Task<ActionResult> RemoveCommentEmoji(int projectId, int ideaId, int commentId,
-        [FromBody] AddIconCommentDto dto, CancellationToken ct)
+        int emojiId, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var removed = await manager.RemoveCommentReactionAsync(commentId, projectId, dto.EmojiId, participant, ct);
+        var removed = await manager.RemoveCommentReactionAsync(commentId, projectId, emojiId, participant, ct);
         if (!removed) return NotFound("Reaction not found.");
         return NoContent();
     }
-
 }
