@@ -24,7 +24,8 @@ public class ProjectController(
     DashboardAdminService dashboardService,
     IWebHostEnvironment env,
     UserManager<ApplicationUser> userManager,
-    WidgetPreferenceService widgetPreferenceService) : Controller
+    WidgetPreferenceService widgetPreferenceService,
+    IdeaAdminService ideaService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -301,6 +302,75 @@ public class ProjectController(
         ViewData["ProjectState"]  = project.ProjectState ?? "";
         ViewData["ActiveSection"] = "Dashboard";
         return View(dashboard);
+    }
+
+    public async Task<IActionResult> Ideas(
+        int projectId,
+        string? search = null,
+        int? categoryId = null,
+        string? status = null,
+        int page = 1)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName;
+        ViewData["ProjectState"]  = project.ProjectState;
+        ViewData["ActiveSection"] = "Ideeën";
+        ViewData["Title"]         = "Ideeën";
+
+        var (items, total, approved, pending, flagged) =
+            await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
+
+        var categories = await categoryService.GetCategoriesAsync(projectId);
+
+        var vm = new IdeasViewModel
+        {
+            ProjectId     = projectId,
+            ProjectName   = project.Name,
+            Search        = search,
+            CategoryId    = categoryId,
+            Status        = status,
+            Page          = page,
+            TotalCount    = total,
+            ApprovedCount = approved,
+            PendingCount  = pending,
+            FlaggedCount  = flagged,
+            Ideas         = items,
+            Categories    = categories.Select(c => new CategoryOptionViewModel
+            {
+                CategoryId = c.CategoryId,
+                Name       = c.Name
+            }).ToList()
+        };
+
+        return View(vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ApproveIdea(int projectId, int ideaId, string returnUrl)
+    {
+        await ideaService.SetStatusAsync(projectId, ideaId, "Approved");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeclineIdea(int projectId, int ideaId, string returnUrl)
+    {
+        await ideaService.SetStatusAsync(projectId, ideaId, "Declined");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> FlagIdea(int projectId, int ideaId, string returnUrl)
+    {
+        await ideaService.SetStatusAsync(projectId, ideaId, "Flagged");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
     }
 
     public async Task<IActionResult> ConfigureDashboard(int projectId)
