@@ -90,7 +90,7 @@
         <div class="flex-1"></div>
 
         <!-- Theme toggle -->
-        <button id="theme-toggle"
+        <button id="theme-toggle" type="button"
                 class="w-9 h-5 rounded-full bg-base-300 flex items-center px-0.5 transition relative"
                 aria-label="Schakel thema">
             <span id="theme-icon" class="text-xs leading-none select-none">🌙</span>
@@ -100,13 +100,13 @@
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button"
                  class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center cursor-pointer select-none">
-                @(User.Identity!.Name?.Substring(0,1).ToUpper() ?? "U")
+                @(User.Identity!.Name?.FirstOrDefault().ToString().ToUpper() ?? "U")
             </div>
             <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-xl shadow-lg w-52 p-1 mt-2 z-50">
                 <li class="px-3 py-1.5 pointer-events-none">
                     <span class="text-xs text-base-content/50 truncate block">@User.Identity.Name</span>
                 </li>
-                <div class="divider my-0.5 h-px"></div>
+                <li class="divider my-0.5"></li>
                 <li><a asp-controller="Auth" asp-action="ChangePassword" class="text-sm">Wachtwoord wijzigen</a></li>
                 <li>
                     <form asp-controller="Auth" asp-action="Logout" method="post" class="p-0">
@@ -121,7 +121,7 @@
     <div class="flex pt-14 min-h-[calc(100vh-3.5rem)]">
 
         <!-- Icon sidebar -->
-        <nav class="fixed left-0 top-14 bottom-0 w-[52px] z-30 bg-base-100 border-r border-base-300 flex flex-col items-center py-3 gap-1">
+        <nav aria-label="Hoofdnavigatie" class="fixed left-0 top-14 bottom-0 w-[52px] z-30 bg-base-100 border-r border-base-300 flex flex-col items-center py-3 gap-1">
             <!-- Projects -->
             <a asp-controller="Project" asp-action="Index"
                class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(IsNavActive("Projecten") ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
