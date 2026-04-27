@@ -514,3 +514,6 @@ deploy/config.env
 .claude/
 
 UI-Admin/.vite
+
+# Git worktrees
+.worktrees/

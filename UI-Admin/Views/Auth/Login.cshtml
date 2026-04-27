@@ -1,0 +1,36 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Auth.LoginViewModel
+@{
+    ViewData["Title"] = "Inloggen";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gray-900 flex items-center justify-center">
+    <div class="w-full max-w-sm px-6">
+        <p class="text-white text-sm font-bold text-center mb-8">Synapse Admin</p>
+
+        <form asp-action="Login" method="post" class="space-y-4">
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div>
+                <label asp-for="Email" class="block text-xs text-gray-300 mb-1">E-mailadres</label>
+                <input asp-for="Email" type="email" autocomplete="email"
+                       class="w-full bg-gray-800 border border-gray-600 text-white text-xs px-3 py-2 focus:outline-none focus:border-white" />
+                <span asp-validation-for="Email" class="text-red-400 text-xs"></span>
+            </div>
+
+            <div>
+                <label asp-for="Password" class="block text-xs text-gray-300 mb-1">Wachtwoord</label>
+                <input asp-for="Password" type="password" autocomplete="current-password"
+                       class="w-full bg-gray-800 border border-gray-600 text-white text-xs px-3 py-2 focus:outline-none focus:border-white" />
+                <span asp-validation-for="Password" class="text-red-400 text-xs"></span>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-red-400 text-xs"></div>
+
+            <button type="submit"
+                    class="w-full py-2 text-xs border border-gray-500 bg-gray-800 text-white hover:bg-gray-700 transition">
+                Inloggen
+            </button>
+        </form>
+    </div>
+</div>

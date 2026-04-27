@@ -18,6 +18,7 @@ public class IdeaSupportController(
     IParticipantManager participantManager)
     : ParticipantControllerBase(participantManager, projectManager)
 {
+
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponseDto>> Chat(
         int projectId,
@@ -53,17 +54,11 @@ public class IdeaSupportController(
         Project project = null;
         if (isFirstTurn)
         {
-            try
-            {
-                project = await GetProjectByIdReadOnlyAsync(projectId);
-            }
-            catch
-            {
-                /* intentionally swallowed — greeting still works without project text */
-            }
+            try { project = await GetProjectByIdReadOnlyAsync(projectId); }
+            catch { /* intentionally swallowed — greeting still works without project text */ }
         }
 
-        var projectName = project?.OrganisationName ?? string.Empty;
+        var projectName         = project?.ProjectPlatform?.Name ?? string.Empty;
         var projectIntroduction = project?.Introduction?.Text ?? string.Empty;
         if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
