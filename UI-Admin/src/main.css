@@ -5,3 +5,5 @@
 input[type=number].no-spinner {
     -moz-appearance: textfield;
 }
+
+@import "./quill-dark.css";
