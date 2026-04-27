@@ -24,10 +24,13 @@ public class QuestionnaireManager(
     public Task<Question> GetQuestionByIdReadOnlyAsync(int questionId)
         => questionRepository.ReadByIdReadOnlyAsync(questionId);
 
+    public Task<bool> QuestionBelongsToProjectAsync(int questionId, int projectId)
+        => questionRepository.ExistsForProjectAsync(questionId, projectId);
+
     public async Task<Question> AddQuestionAsync(int projectId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
         int? parentQuestionId = null, string parentTriggerValue = null,
-        List<string> endingAnswers = null)
+        List<string> endingAnswers = null, CancellationToken ct = default)
     {
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
@@ -70,7 +73,7 @@ public class QuestionnaireManager(
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
 
         var created = await questionRepository.CreateAsync(question);
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return created;
     }
 
@@ -79,7 +82,7 @@ public class QuestionnaireManager(
 
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
-        List<string> endingAnswers = null)
+        List<string> endingAnswers = null, CancellationToken ct = default)
     {
         var question = await questionRepository.ReadByIdWithSectionForUpdateAsync(questionId);
         if (question is null) return false;
@@ -100,19 +103,19 @@ public class QuestionnaireManager(
         }
 
         questionRepository.Update(question);
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<bool> DeleteQuestionAsync(int questionId)
+    public async Task<bool> DeleteQuestionAsync(int questionId, CancellationToken ct = default)
     {
         var result = await questionRepository.DeleteByIdAsync(questionId);
-        if (result) await uow.SaveChangesAsync();
+        if (result) await uow.SaveChangesAsync(ct);
         return result;
     }
 
     public async Task<Question> MoveQuestionAsync(int questionId, int? newParentQuestionId,
-        string newParentTriggerValue, int newPosition)
+        string newParentTriggerValue, int newPosition, CancellationToken ct = default)
     {
         var question = await questionRepository.ReadByIdWithParentChainForUpdateAsync(questionId);
         if (question is null) return null;
@@ -149,7 +152,7 @@ public class QuestionnaireManager(
         await RepackScopeAsync(questionnaireId, newParentQuestionId, newParent is null ? null : newParentTriggerValue,
             insertId: questionId, insertAt: newPosition);
 
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return question;
     }
 
@@ -197,7 +200,7 @@ public class QuestionnaireManager(
     public Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId)
         => sectionRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
-    public async Task<Section> CreateSectionAsync(int projectId, string name, string description)
+    public async Task<Section> CreateSectionAsync(int projectId, string name, string description, CancellationToken ct = default)
     {
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
@@ -209,11 +212,11 @@ public class QuestionnaireManager(
             Questionnaire = questionnaire
         };
         var created = await sectionRepository.CreateAsync(section);
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return created;
     }
 
-    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string description)
+    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string description, CancellationToken ct = default)
     {
         var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
         if (section is null) return false;
@@ -221,14 +224,14 @@ public class QuestionnaireManager(
         section.Name = name;
         section.Description = description;
         sectionRepository.Update(section);
-        await uow.SaveChangesAsync();
+        await uow.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task<bool> DeleteSectionAsync(int sectionId)
+    public async Task<bool> DeleteSectionAsync(int sectionId, CancellationToken ct = default)
     {
         var result = await sectionRepository.DeleteByIdAsync(sectionId);
-        if (result) await uow.SaveChangesAsync();
+        if (result) await uow.SaveChangesAsync(ct);
         return result;
     }
 

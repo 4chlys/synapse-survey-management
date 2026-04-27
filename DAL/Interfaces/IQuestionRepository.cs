@@ -15,4 +15,6 @@ public interface IQuestionRepository : IRepository<Question>
     Task<IEnumerable<Question>> ReadByProjectIdWithSectionAndEndingAnswersReadOnlyAsync(int projectId);
 
     Task<IEnumerable<Question>> ReadSiblingsForUpdateAsync(int? parentQuestionId, string parentTriggerValue, int questionnaireId);
+
+    Task<bool> ExistsForProjectAsync(int questionId, int projectId);
 }

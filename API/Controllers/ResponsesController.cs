@@ -18,7 +18,7 @@ public class ResponsesController(
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPatch("participants/me/contact")]
-    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto, CancellationToken ct)
+    public async Task<ActionResult> SaveContactInfo(int projectId, SaveContactInfoDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
@@ -45,15 +45,14 @@ public class ResponsesController(
     }
 
     [HttpPost("responses")]
-    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto, CancellationToken ct)
+    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, CreateResponseDto createDto,
+        CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        var response = await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
+        var response =
+            await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
         var dto = MapToDto(response);
         return Created(string.Empty, dto);
     }

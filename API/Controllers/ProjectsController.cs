@@ -11,10 +11,14 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ProjectsController(IProjectManager projectManager) : ControllerBase
 {
     private static FormType ParseFormType(string interactionMode) =>
-        Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult) ? formResult : FormType.VerticalScroll;
+        Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
+            ? formResult
+            : FormType.VerticalScroll;
 
     private static AiAssistanceType ParseAiAssistanceType(string aiAssistance) =>
-        Enum.TryParse<AiAssistanceType>(aiAssistance, ignoreCase: true, out var aiResult) ? aiResult : AiAssistanceType.ProActive;
+        Enum.TryParse<AiAssistanceType>(aiAssistance, ignoreCase: true, out var aiResult)
+            ? aiResult
+            : AiAssistanceType.ProActive;
 
     private ProjectDto MapToDto(Project p) => new()
     {
@@ -52,11 +56,8 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectDto dto)
+    public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var project = await projectManager.CreateProjectAsync(
             dto.Name,
             dto.Topic ?? string.Empty,
@@ -66,17 +67,15 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
-            dto.RequestContactInfo);
+            dto.RequestContactInfo,
+            ct);
 
         return Created(string.Empty, MapToDto(project));
     }
 
     [HttpPut("{projectId}")]
-    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, [FromBody] UpdateProjectDto dto)
+    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, UpdateProjectDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var project = await projectManager.UpdateProjectAsync(
             projectId,
             dto.Name,
@@ -87,7 +86,8 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
-            dto.RequestContactInfo);
+            dto.RequestContactInfo,
+            ct);
 
         return Ok(MapToDto(project));
     }

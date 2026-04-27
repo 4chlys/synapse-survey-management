@@ -9,7 +9,7 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 public class ModerationApiController(ModerationService moderationService) : ControllerBase
 {
     [HttpPost("regex")]
-    public async Task<ActionResult<ModerationResponse>> Regex(int projectId, [FromBody] ModerationRequest request)
+    public async Task<ActionResult<ModerationResponse>> Regex(int projectId, ModerationRequest request)
     {
         var result = await moderationService.CheckRegexAsync(projectId, request.Text, request.ContentType);
         return Ok(new
@@ -23,7 +23,7 @@ public class ModerationApiController(ModerationService moderationService) : Cont
 
     [HttpPost("ai")]
     [EnableRateLimiting("ai-moderation")]
-    public async Task<ActionResult<ModerationResponse>> Ai(int projectId, [FromBody] ModerationRequest request)
+    public async Task<ActionResult<ModerationResponse>> Ai(int projectId, ModerationRequest request)
     {
         var result = await moderationService.CheckAiAsync(projectId, request.Text, request.ContentType);
         return Ok(new
@@ -37,7 +37,7 @@ public class ModerationApiController(ModerationService moderationService) : Cont
 
     [HttpPost("suggest")]
     [EnableRateLimiting("ai-moderation")]
-    public async Task<ActionResult<SuggestResponse>> Suggest(int projectId, [FromBody] ModerationRequest request)
+    public async Task<ActionResult<SuggestResponse>> Suggest(int projectId, ModerationRequest request)
     {
         var result = await moderationService.SuggestAsync(projectId, request.Text);
         return Ok(new

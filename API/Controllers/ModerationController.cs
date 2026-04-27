@@ -28,7 +28,7 @@ public class ModerationController(
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("regex")]
-    public ActionResult<ModerationResponseDto> CheckRegex(int projectId, [FromBody] ModerationRequestDto dto)
+    public ActionResult<ModerationResponseDto> CheckRegex(int projectId, ModerationRequestDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
@@ -40,7 +40,7 @@ public class ModerationController(
     [HttpPost("ai")]
     public async Task<ActionResult<ModerationResponseDto>> CheckAi(
         int projectId,
-        [FromBody] ModerationRequestDto dto,
+        ModerationRequestDto dto,
         CancellationToken ct)
     {
         if (!TryGetParticipantToken(out _)) return Unauthorized("Participant token required.");
@@ -54,7 +54,7 @@ public class ModerationController(
     [HttpPost("suggest")]
     public async Task<ActionResult<SuggestResponseDto>> Suggest(
         int projectId,
-        [FromBody] ModerationRequestDto dto,
+        ModerationRequestDto dto,
         CancellationToken ct)
     {
         if (!TryGetParticipantToken(out _))
@@ -75,13 +75,13 @@ public class ModerationController(
     private ModerationResponseDto MapToDto(ModerationResult result, string text, int projectId)
     {
         var status = result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
-        var token  = tokenService.GenerateToken(text, status, projectId);
+        var token = tokenService.GenerateToken(text, status, projectId);
 
         return new ModerationResponseDto
         {
-            IsAcceptable    = result.IsAcceptable,
-            Reason          = result.Reason,
-            FlaggedBy       = result.FlaggedBy,
+            IsAcceptable = result.IsAcceptable,
+            Reason = result.Reason,
+            FlaggedBy = result.FlaggedBy,
             ModerationToken = token,
         };
     }

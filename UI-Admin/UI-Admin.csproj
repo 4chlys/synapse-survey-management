@@ -24,10 +24,6 @@
         <Content Include="wwwroot\dist\.vite\**" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="wwwroot\dist\" />
-    </ItemGroup>
-
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
         <Exec Command="node --version" ContinueOnError="true">
             <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
