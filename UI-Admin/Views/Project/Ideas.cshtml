@@ -21,8 +21,7 @@
         "Flagged"   => "bg-error/5",
         _           => ""
     };
-    var returnUrl = Context.Request.QueryString.ToString();
-    var ideasUrl  = Url.Action("Ideas", new {
+    var ideasUrl = Url.Action("Ideas", new {
         Model.ProjectId, Model.Search, Model.CategoryId, Model.Status, Model.Page
     });
 }
