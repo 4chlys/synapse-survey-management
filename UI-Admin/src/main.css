@@ -1,7 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "synapse-light";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(97% 0.01 277);
+  --color-base-300: oklch(91% 0.02 277);
+  --color-base-content: oklch(15% 0.04 278);
+
+  --color-primary: oklch(52% 0.22 277);
+  --color-primary-content: oklch(100% 0 0);
+
+  --color-secondary: oklch(61% 0.16 162);
+  --color-secondary-content: oklch(100% 0 0);
+
+  --color-accent: oklch(62% 0.22 37);
+  --color-accent-content: oklch(100% 0 0);
+
+  --color-neutral: oklch(47% 0.04 278);
+  --color-neutral-content: oklch(97% 0.01 277);
+
+  --color-info: oklch(61% 0.14 230);
+  --color-info-content: oklch(98% 0.01 230);
+  --color-success: oklch(61% 0.16 162);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(75% 0.16 80);
+  --color-warning-content: oklch(20% 0.05 80);
+  --color-error: oklch(62% 0.22 37);
+  --color-error-content: oklch(100% 0 0);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "synapse-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: oklch(15% 0.04 278);
+  --color-base-200: oklch(20% 0.04 278);
+  --color-base-300: oklch(27% 0.04 278);
+  --color-base-content: oklch(97% 0.01 277);
+
+  --color-primary: oklch(64% 0.22 277);
+  --color-primary-content: oklch(100% 0 0);
+
+  --color-secondary: oklch(65% 0.14 162);
+  --color-secondary-content: oklch(100% 0 0);
+
+  --color-accent: oklch(67% 0.20 37);
+  --color-accent-content: oklch(100% 0 0);
+
+  --color-neutral: oklch(55% 0.04 278);
+  --color-neutral-content: oklch(97% 0.01 277);
+
+  --color-info: oklch(65% 0.14 230);
+  --color-info-content: oklch(98% 0.01 230);
+  --color-success: oklch(65% 0.14 162);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(78% 0.14 80);
+  --color-warning-content: oklch(20% 0.05 80);
+  --color-error: oklch(67% 0.20 37);
+  --color-error-content: oklch(100% 0 0);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
 
 @source "../Views/**/*.cshtml";
 
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --topbar-h: 3.5rem;
+  --icon-sidebar-w: 52px;
+  --inner-sidebar-w: 13rem;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
 input[type=number].no-spinner {
-    -moz-appearance: textfield;
+  -moz-appearance: textfield;
+}
+input[type=number].no-spinner::-webkit-inner-spin-button,
+input[type=number].no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
