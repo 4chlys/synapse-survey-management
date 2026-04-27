@@ -1,3 +1,4 @@
+import './theme';
 import './main.css';
 import './project-index';
 import './project-setup';
