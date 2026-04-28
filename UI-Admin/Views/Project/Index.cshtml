@@ -17,7 +17,7 @@
 
     <div class="flex items-center gap-3 mb-8">
         <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@AppConstants.DefaultOrganisationLogoUrl" alt="Organisation" class="w-full h-full object-cover" />
+            <img src="@(Model.FirstOrDefault()?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Organisation" class="w-full h-full object-cover" />
         </div>
         <span class="text-white font-medium">Admin</span>
     </div>
