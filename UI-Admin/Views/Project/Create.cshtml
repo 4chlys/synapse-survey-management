@@ -3,6 +3,7 @@
     var isEdit = Model.ProjectId.HasValue;
     var projectState = ViewData["ProjectState"] as string;
     var isDraft = !isEdit || projectState == "Draft";
+    var isArchived = projectState == "Archived";
     var shortFormReadonly = isEdit && projectState != "Draft";
     ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
     ViewData["ActiveSection"] = "Instellingen";
@@ -22,7 +23,7 @@
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
-                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" maxlength="100" required />
+                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" maxlength="100" required readonly="@isArchived" />
                     <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
                 </label>
 
@@ -31,14 +32,14 @@
                     <input asp-for="ShortForm" id="project-shortform-input"
                            class="input input-bordered w-full" placeholder="automatisch ingevuld vanuit de naam"
                            maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
-                           readonly="@shortFormReadonly" />
+                           readonly="@(shortFormReadonly || isArchived)" />
                     <span asp-validation-for="ShortForm" class="label-text-alt text-error mt-1"></span>
                     <span id="shortform-availability-msg" class="label-text-alt text-warning mt-1"></span>
                 </label>
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Onderwerp</span></div>
-                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="Waar gaat dit project over?" maxlength="100" />
+                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="Waar gaat dit project over?" maxlength="100" readonly="@isArchived" />
                     <span asp-validation-for="Topic" class="label-text-alt text-error mt-1"></span>
                 </label>
 
@@ -47,7 +48,7 @@
                     <textarea asp-for="Introduction" rows="4"
                               class="textarea textarea-bordered w-full resize-none"
                               placeholder="Welkomstboodschap voor deelnemers…"
-                              maxlength="5000"></textarea>
+                              maxlength="5000" readonly="@isArchived"></textarea>
                     <span asp-validation-for="Introduction" class="label-text-alt text-error mt-1"></span>
                 </label>
 
@@ -75,13 +76,13 @@
                     <label class="form-control">
                         <div class="label"><span class="label-text font-medium">Minimumleeftijd</span></div>
                         <input asp-for="MinAge" type="number" id="min-age-input" min="0" max="120"
-                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" readonly="@isArchived" />
                         <span asp-validation-for="MinAge" class="label-text-alt text-error mt-1"></span>
                     </label>
                     <label class="form-control">
                         <div class="label"><span class="label-text font-medium">Maximumleeftijd</span></div>
                         <input asp-for="MaxAge" type="number" id="max-age-input" min="0" max="120"
-                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" readonly="@isArchived" />
                         <span asp-validation-for="MaxAge" class="label-text-alt text-error mt-1"></span>
                     </label>
                 </div>
@@ -89,12 +90,12 @@
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Afbeelding URL</span></div>
-                    <input asp-for="ImageUrl" class="input input-bordered w-full" placeholder="https://…" />
+                    <input asp-for="ImageUrl" class="input input-bordered w-full" placeholder="https://…" readonly="@isArchived" />
                 </label>
 
                 <div class="form-control">
                     <label class="label cursor-pointer justify-start gap-3">
-                        <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
+                        <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" disabled="@isArchived" />
                         <span class="label-text">Contactgegevens opvragen bij deelnemers</span>
                     </label>
                 </div>
@@ -123,9 +124,12 @@
                 }
 
                 <div class="card-actions justify-end gap-2 pt-2">
-                    <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
-                    <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
-                    <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                    <a asp-action="Index" class="btn btn-ghost">@(isArchived ? "Terug" : "Annuleren")</a>
+                    @if (!isArchived)
+                    {
+                        <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
+                        <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                    }
                 </div>
             </form>
         </div>

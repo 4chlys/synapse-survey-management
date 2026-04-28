@@ -86,6 +86,13 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction)
     {
+        if (model.ProjectId.HasValue)
+        {
+            var existingForCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
+            if (existingForCheck?.ProjectState == "Archived")
+                return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
+        }
+
         // For "next", Topic and Introduction are also required
         if (submitAction == "next")
         {
