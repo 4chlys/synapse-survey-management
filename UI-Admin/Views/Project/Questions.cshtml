@@ -10,43 +10,102 @@
     int projectId = (int)ViewData["ProjectId"];
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
     var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
-    var projectState = ViewData["ProjectState"] as string;
-    var isDraft = projectState == "Draft";
+    var projectState = ViewData["ProjectState"]?.ToString() ?? "";
+    var isLocked = projectState is "Active" or "Archived";
+    bool isNew = ViewData["IsNew"] is true;
 }
 <div class="max-w-3xl">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
 
+    @if (isLocked)
+    {
+        <div class="alert alert-warning mb-4">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Vragen kunnen niet meer worden gewijzigd.</span>
+        </div>
+    }
+
     <div id="questions-list"
-         class="mb-6"
+         class="card bg-base-100 shadow-sm mb-6"
          data-project-id="@projectId"
          data-questions-endpoint="/api/admin/projects/@projectId/questions"
          data-delete-endpoint="@Url.Action("Delete", "Question")"
          data-ai-assistance="@aiAssistance"
-         data-readonly="@(!isDraft ? "true" : "false")">
-        <p class="text-base-content/40 italic text-sm">Vragen laden…</p>
+         data-locked="@(isLocked ? "true" : "false")">
+        <p class="text-base-content/40 italic text-sm p-4">Vragen laden…</p>
     </div>
 
-    @if (isDraft)
+    @if (!isLocked)
     {
-        <div class="mb-6">
-            <button type="button" id="add-question-btn" class="btn btn-primary btn-sm">+ Vraag toevoegen</button>
+        <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card-body gap-4">
+                <h2 class="font-semibold">Vraag toevoegen</h2>
+                <form id="card-question-form" asp-action="CreateQuestion" method="post" class="flex flex-col gap-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projectId" value="@projectId" />
+                    <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                    <input type="hidden" id="card-answers-raw" name="AnswerChoicesRaw" value="" />
+                    <label class="form-control">
+                        <div class="label"><span class="label-text text-xs">Vraagtekst *</span></div>
+                        <input type="text" name="Text" class="input input-bordered input-sm w-full" required placeholder="Stel hier je vraag…" />
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="form-control">
+                            <div class="label"><span class="label-text text-xs">Type</span></div>
+                            <select id="card-format" name="QuestionFormat" class="select select-bordered select-sm w-full">
+                                <option value="Open">Open vraag</option>
+                                <option value="MultipleChoice">Meerkeuze</option>
+                                <option value="SingleChoice">Enkelvoudige keuze</option>
+                                <option value="Likert">Likert</option>
+                            </select>
+                        </label>
+                        <label class="form-control">
+                            <div class="label"><span class="label-text text-xs">Sectie</span></div>
+                            <select name="SectionId" class="select select-bordered select-sm w-full">
+                                <option value="">— geen sectie —</option>
+                                @foreach (var sec in sections)
+                                {
+                                    <option value="@sec.SectionId">@sec.Name</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+                    <div id="card-answers-section" class="hidden flex-col gap-2">
+                        <div class="label"><span class="label-text text-xs">Antwoorden *</span></div>
+                        <div id="card-answer-list" class="flex flex-col gap-1"></div>
+                        <span id="card-answers-error" class="hidden text-error text-xs">Voeg minimaal 2 antwoorden toe.</span>
+                        <button type="button" id="card-add-answer" class="btn btn-ghost btn-xs self-start">+ Antwoord toevoegen</button>
+                    </div>
+                    <label class="label cursor-pointer justify-start gap-3">
+                        <input type="checkbox" id="card-mandatory" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
+                        <span class="label-text text-sm">Verplicht</span>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-sm self-end">Toevoegen</button>
+                </form>
+            </div>
         </div>
     }
 
     <div class="flex justify-between">
-        <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-ghost btn-sm">← Instellingen</a>
-        <button type="button" id="questions-next-btn"
-                class="btn btn-primary btn-sm"
-                data-question-count="@Model.Count"
-                data-href="@Url.Action("Ideation", new { projectId })">Volgende →</button>
+        <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← Instellingen</a>
+        @if (!isLocked)
+        {
+            <button type="button" id="questions-next-btn"
+                    class="btn btn-primary btn-sm"
+                    data-question-count="@Model.Count"
+                    data-href="@Url.Action("Ideation", new { projectId, isNew })">Volgende →</button>
+        }
+        else
+        {
+            <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">Volgende →</a>
+        }
     </div>
     <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">Voeg minstens één vraag toe.</p>
 </div>
 
 @* Modal for editing a question — controlled by project-questions.ts via #questions-list event delegation *@
-@if (isDraft)
-{
-<div id="modal" class="modal hidden">
+<div id="modal" class="modal">
     <div class="modal-box w-[480px] max-w-xl">
         <div class="flex justify-between items-center mb-4">
             <span id="modal-title" class="font-bold text-base">Vraag aanmaken</span>
@@ -64,9 +123,9 @@
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
             <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+            <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
             <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
-            <input type="hidden" name="IsMandatory" value="false" />
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
 
             <label class="form-control mb-3">
@@ -120,6 +179,11 @@
                 </label>
             }
 
+            <label class="label cursor-pointer justify-start gap-3 mb-2">
+                <input type="checkbox" id="IsMandatory-cb" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
+                <span class="label-text text-sm">Verplicht</span>
+            </label>
+
             <div class="divider my-2"></div>
 
             <div class="modal-action gap-2">
@@ -132,7 +196,6 @@
         <button id="modal-backdrop-close">close</button>
     </form>
 </div>
-}
 
 @section Scripts {
     <script type="module" vite-src="~/project-questions.ts"></script>

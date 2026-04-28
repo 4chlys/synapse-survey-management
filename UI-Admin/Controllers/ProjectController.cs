@@ -41,7 +41,7 @@ public class ProjectController(
         return View(projects);
     }
 
-    public async Task<IActionResult> Create(int? projectId)
+    public async Task<IActionResult> Create(int? projectId, bool isNew = false)
     {
         if (!projectId.HasValue)
         {
@@ -51,6 +51,8 @@ public class ProjectController(
                 var platform = await platformService.GetPlatformByIdAsync(user.ProjectPlatformId.Value);
                 ViewData["Project"] = new ProjectAdminViewModel { OrganisationLogoUrl = platform?.LogoUrl };
             }
+            ViewData["IsNew"]       = true;
+            ViewData["HideSidebar"] = true;
             return View(new CreateProjectViewModel());
         }
 
@@ -80,11 +82,13 @@ public class ProjectController(
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
         ViewData["ProjectState"]  = project.ProjectState ?? "";
         ViewData["ActiveSection"] = "Instellingen";
+        ViewData["IsNew"]         = isNew;
+        ViewData["HideSidebar"]   = isNew;
         return View(model);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction)
+    public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
         // For "next", Topic and Introduction are also required
         if (submitAction == "next")
@@ -98,6 +102,8 @@ public class ProjectController(
         if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
             ModelState.AddModelError(nameof(model.MinAge), "MinLeeftijd mag niet groter zijn dan MaxLeeftijd.");
 
+        var wizardActive = isNew || !model.ProjectId.HasValue;
+
         if (!ModelState.IsValid)
         {
             if (model.ProjectId.HasValue)
@@ -109,6 +115,8 @@ public class ProjectController(
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
             ViewData["ActiveSection"] = "Instellingen";
+            ViewData["IsNew"]         = wizardActive;
+            ViewData["HideSidebar"]   = wizardActive;
             return View(model);
         }
 
@@ -117,6 +125,12 @@ public class ProjectController(
         ProjectAdminViewModel project;
         if (model.ProjectId.HasValue)
         {
+            var lockCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
+            if (IsProjectLocked(lockCheck))
+            {
+                TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+                return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
+            }
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
@@ -155,13 +169,13 @@ public class ProjectController(
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
-                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
+                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance, isNew = true });
 
-        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, saved = 1 });
+        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, isNew = wizardActive, saved = 1 });
     }
 
     public async Task<IActionResult> Questions(int projectId,
-        AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
+        AiAssistanceType aiAssistance = AiAssistanceType.ProActive, bool isNew = false)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
@@ -174,48 +188,42 @@ public class ProjectController(
         ViewData["AiAssistance"]  = aiAssistance;
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
+        ViewData["IsNew"]         = isNew;
+        ViewData["HideSidebar"]   = isNew;
         return View(questions);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
-        CreateQuestionViewModel model)
+        bool isNew, CreateQuestionViewModel model)
     {
-        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
-        if (projectForCheck?.ProjectState is "Active" or "Archived")
-            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
-
+        var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(projectForCreate))
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
+        }
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
-        var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForCreate?.Name ?? "";
-        ViewData["PlatformName"]  = projectForCreate?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForCreate?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Vragen";
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
     [HttpPost]
     public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
-        EditQuestionViewModel model)
+        bool isNew, EditQuestionViewModel model)
     {
-        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
-        if (projectForCheck?.ProjectState is "Active" or "Archived")
-            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
-
+        var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(projectForUpdate))
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
+        }
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
-        var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForUpdate?.Name ?? "";
-        ViewData["PlatformName"]  = projectForUpdate?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForUpdate?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Vragen";
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
-    public async Task<IActionResult> Ideation(int projectId)
+    public async Task<IActionResult> Ideation(int projectId, bool isNew = false)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
@@ -225,42 +233,46 @@ public class ProjectController(
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categorieën";
         ViewData["Project"]       = project;
+        ViewData["IsNew"]         = isNew;
+        ViewData["HideSidebar"]   = isNew;
         return View(categories);
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddCategory(int projectId, CategoryFormViewModel model)
+    public async Task<IActionResult> AddCategory(int projectId, bool isNew, CategoryFormViewModel model)
     {
-        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
-        if (projectForCheck?.ProjectState is "Active" or "Archived")
-            return RedirectToAction(nameof(Ideation), new { projectId });
-
+        var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(projectForAdd))
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
         if (ModelState.IsValid)
             await categoryService.CreateCategoryAsync(projectId, model.Name, model.Description ?? string.Empty);
-        var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = projectForAdd?.Name ?? "";
         ViewData["PlatformName"]  = projectForAdd?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForAdd?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categorieën";
-        return RedirectToAction(nameof(Ideation), new { projectId });
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
     [HttpPost]
-    public async Task<IActionResult> DeleteCategory(int projectId, int categoryId)
+    public async Task<IActionResult> DeleteCategory(int projectId, int categoryId, bool isNew)
     {
-        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
-        if (projectForCheck?.ProjectState is "Active" or "Archived")
-            return RedirectToAction(nameof(Ideation), new { projectId });
-
-        await categoryService.DeleteCategoryAsync(projectId, categoryId);
         var projectForDelete = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(projectForDelete))
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
+        await categoryService.DeleteCategoryAsync(projectId, categoryId);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = projectForDelete?.Name ?? "";
         ViewData["PlatformName"]  = projectForDelete?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForDelete?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categorieën";
-        return RedirectToAction(nameof(Ideation), new { projectId });
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
     [HttpPost]
@@ -325,35 +337,6 @@ public class ProjectController(
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
-    public async Task<IActionResult> Archive(int projectId)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project is null)
-            return NotFound();
-        if (project.ProjectState != "Active")
-            return RedirectToAction(nameof(Dashboard), new { projectId });
-
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
-        return View(project);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> ArchiveProject(int projectId)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project is null)
-            return NotFound();
-        if (project.ProjectState != "Active")
-            return RedirectToAction(nameof(Dashboard), new { projectId });
-
-        await projectService.UpdateProjectStateAsync(projectId, "Archived");
-        return RedirectToAction(nameof(Index));
-    }
-
     public async Task<IActionResult> Dashboard(int projectId)
     {
         var user = await userManager.GetUserAsync(User);
@@ -406,27 +389,23 @@ public class ProjectController(
 
         var vm = new IdeasViewModel
         {
-            ProjectId          = projectId,
-            ProjectName        = project.Name,
-            Search             = search,
-            CategoryId         = categoryId,
-            Status             = status,
-            Page               = page,
-            TotalCount         = total,
-            ApprovedCount      = approved,
-            PendingCount       = pending,
-            FlaggedCount       = flagged,
-            RequestContactInfo = project.RequestContactInfo,
-            Ideas              = items,
+            ProjectId     = projectId,
+            ProjectName   = project.Name,
+            Search        = search,
+            CategoryId    = categoryId,
+            Status        = status,
+            Page          = page,
+            TotalCount    = total,
+            ApprovedCount = approved,
+            PendingCount  = pending,
+            FlaggedCount  = flagged,
+            Ideas         = items,
             Categories    = categories.Select(c => new CategoryOptionViewModel
             {
                 CategoryId = c.CategoryId,
                 Name       = c.Name
             }).ToList()
         };
-
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            return PartialView("_IdeasTable", vm);
 
         return View(vm);
     }
@@ -497,4 +476,7 @@ public class ProjectController(
         ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
+
+    private static bool IsProjectLocked(ProjectAdminViewModel project) =>
+        project?.ProjectState is "Active" or "Archived";
 }

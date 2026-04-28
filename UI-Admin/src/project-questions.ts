@@ -13,16 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const textError = document.getElementById('text-error') as HTMLElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
 
-    if (new URLSearchParams(window.location.search).get('saved') === '1')
-        toast('Opgeslagen', 'success');
-
     function openModal(): void {
         resetModal();
-        modal?.classList.remove('hidden');
+        modal?.classList.add('modal-open');
     }
 
     function closeModal(): void {
-        modal?.classList.add('hidden');
+        modal?.classList.remove('modal-open');
     }
 
     const createUrl = questionForm?.action ?? '';
@@ -77,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = document.getElementById('modal-title');
         if (title) title.textContent = 'Vraag bewerken';
 
-        modal?.classList.remove('hidden');
+        modal?.classList.add('modal-open');
     }
 
     function selectType(type: string, activeBtn: HTMLElement): void {
@@ -241,5 +238,89 @@ document.addEventListener('DOMContentLoaded', () => {
         const panel = document.getElementById('ai-content');
         panel?.classList.remove('hidden');
         panel?.classList.add('flex');
+    });
+
+    // Card form: show/hide answers section + AJAX submit
+    const cardForm = document.getElementById('card-question-form') as HTMLFormElement | null;
+    const cardFormat = document.getElementById('card-format') as HTMLSelectElement | null;
+    const cardAnswersSection = document.getElementById('card-answers-section') as HTMLElement | null;
+    const cardAnswerList = document.getElementById('card-answer-list') as HTMLElement | null;
+    const cardAddAnswer = document.getElementById('card-add-answer') as HTMLButtonElement | null;
+    const cardAnswersRaw = document.getElementById('card-answers-raw') as HTMLInputElement | null;
+    const cardAnswersError = document.getElementById('card-answers-error') as HTMLElement | null;
+
+    function isCardChoice(): boolean {
+        return cardFormat?.value === 'MultipleChoice' || cardFormat?.value === 'SingleChoice';
+    }
+
+    function updateCardVisibility(): void {
+        if (!cardAnswersSection) return;
+        const show = isCardChoice();
+        cardAnswersSection.classList.toggle('hidden', !show);
+        if (show) cardAnswersSection.style.display = 'flex';
+        else cardAnswersSection.style.display = '';
+    }
+
+    function addCardAnswer(value = ''): void {
+        if (!cardAnswerList) return;
+        const row = document.createElement('div');
+        row.className = 'flex gap-2 items-center';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input input-bordered input-xs flex-1';
+        input.placeholder = 'Antwoord…';
+        input.maxLength = 500;
+        input.value = value;
+        input.addEventListener('input', () => cardAnswersError?.classList.add('hidden'));
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'btn btn-ghost btn-xs text-error';
+        del.textContent = '×';
+        del.addEventListener('click', () => row.remove());
+        row.appendChild(input);
+        row.appendChild(del);
+        cardAnswerList.appendChild(row);
+    }
+
+    cardFormat?.addEventListener('change', updateCardVisibility);
+    cardAddAnswer?.addEventListener('click', () => addCardAnswer());
+
+    cardForm?.addEventListener('submit', async (e: SubmitEvent) => {
+        e.preventDefault();
+
+        if (isCardChoice()) {
+            const inputs = Array.from(cardAnswerList?.querySelectorAll<HTMLInputElement>('input[type=text]') ?? []);
+            const values = inputs.map(i => i.value.trim()).filter(v => v);
+            if (values.length < 2) {
+                if (cardAnswersError) {
+                    cardAnswersError.textContent = 'Voeg minimaal 2 antwoorden toe.';
+                    cardAnswersError.classList.remove('hidden');
+                }
+                return;
+            }
+            cardAnswersError?.classList.add('hidden');
+            if (cardAnswersRaw) cardAnswersRaw.value = values.join('\n');
+        } else {
+            if (cardAnswersRaw) cardAnswersRaw.value = '';
+        }
+
+        try {
+            const response = await fetch(cardForm.action, {
+                method: 'POST',
+                body: new FormData(cardForm),
+            });
+            if (response.ok) {
+                cardForm.reset();
+                if (cardAnswerList) cardAnswerList.innerHTML = '';
+                cardAnswersError?.classList.add('hidden');
+                updateCardVisibility();
+                document.dispatchEvent(new CustomEvent('questions-reload'));
+                toast('Opgeslagen', 'success');
+            } else {
+                toast('Opslaan mislukt', 'error');
+            }
+        } catch {
+            toast('Opslaan mislukt', 'error');
+        }
     });
 });

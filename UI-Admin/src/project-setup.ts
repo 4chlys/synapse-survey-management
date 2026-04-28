@@ -50,7 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return min !== null && max !== null && min > max;
     }
 
-    const mainForm = document.querySelector<HTMLFormElement>('form[method="post"]');
+    const mainForm = document.getElementById('project-name-input')
+        ? document.querySelector<HTMLFormElement>('form[method="post"]')
+        : null;
     if (mainForm) {
         bindDirtyTracking(mainForm);
         if (new URLSearchParams(window.location.search).get('saved') === '1')
