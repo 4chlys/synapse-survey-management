@@ -14,76 +14,17 @@
 <div class="max-w-3xl">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
 
-    <div id="questions-list" class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body p-0 overflow-x-auto">
-            <table class="table table-sm">
-                <thead><tr><th>#</th><th>Tekst</th><th>Type</th><th>Verplicht</th><th class="w-16"></th></tr></thead>
-                <tbody>
-                    @if (!Model.Any())
-                    {
-                        <tr><td colspan="5" class="text-center text-base-content/40 py-6 italic">Nog geen vragen.</td></tr>
-                    }
-                    @{ int qIdx = 1; }
-                    @foreach (var q in Model)
-                    {
-                        <tr class="hover">
-                            <td class="text-base-content/40 text-xs">@(qIdx++)</td>
-                            <td class="max-w-xs truncate">@q.Text</td>
-                            <td><span class="badge badge-ghost badge-sm">@q.QuestionFormat</span></td>
-                            <td>@(q.IsMandatory ? "✓" : "–")</td>
-                            <td>
-                                <button type="button"
-                                        class="btn btn-ghost btn-xs question-edit-btn"
-                                        data-question-id="@q.QuestionId"
-                                        data-text="@q.Text"
-                                        data-format="@q.QuestionFormat"
-                                        data-answers="@JsonSerializer.Serialize(q.AnswerChoices)"
-                                        data-section-id="@(q.SectionId?.ToString() ?? "")">Bewerk</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    <div id="questions-list"
+         class="mb-6"
+         data-project-id="@projectId"
+         data-questions-endpoint="/api/admin/projects/@projectId/questions"
+         data-delete-endpoint="@Url.Action("Delete", "Question")"
+         data-ai-assistance="@aiAssistance">
+        <p class="text-base-content/40 italic text-sm">Vragen laden…</p>
     </div>
 
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body gap-4">
-            <h2 class="font-semibold">Vraag toevoegen</h2>
-            <form asp-action="CreateQuestion" method="post" class="flex flex-col gap-3">
-                <input type="hidden" name="projectId" value="@projectId" />
-                <input type="hidden" name="aiAssistance" value="@aiAssistance" />
-                <label class="form-control">
-                    <div class="label"><span class="label-text text-xs">Vraagtekst *</span></div>
-                    <input type="text" name="Text" class="input input-bordered input-sm w-full" required placeholder="Stel hier je vraag…" />
-                </label>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="form-control">
-                        <div class="label"><span class="label-text text-xs">Type</span></div>
-                        <select name="QuestionFormat" class="select select-bordered select-sm w-full">
-                            <option value="OpenQuestion">Open vraag</option>
-                            <option value="MultipleChoice">Meerkeuze</option>
-                            <option value="Range">Schaal</option>
-                        </select>
-                    </label>
-                    <label class="form-control">
-                        <div class="label"><span class="label-text text-xs">Sectie</span></div>
-                        <select name="SectionId" class="select select-bordered select-sm w-full">
-                            <option value="">— geen sectie —</option>
-                            @foreach (var sec in sections)
-                            {
-                                <option value="@sec.SectionId">@sec.Name</option>
-                            }
-                        </select>
-                    </label>
-                </div>
-                <label class="label cursor-pointer justify-start gap-3">
-                    <input type="checkbox" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" />
-                    <span class="label-text text-sm">Verplicht</span>
-                </label>
-                <button type="submit" class="btn btn-primary btn-sm self-end">Toevoegen</button>
-            </form>
-        </div>
+    <div class="mb-6">
+        <button type="button" id="add-question-btn" class="btn btn-primary btn-sm">+ Vraag toevoegen</button>
     </div>
 
     <div class="flex justify-between">
