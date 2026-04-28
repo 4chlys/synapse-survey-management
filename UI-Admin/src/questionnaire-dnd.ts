@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const deleteEndpoint = list.dataset.deleteEndpoint ?? '';
     const aiAssistance = list.dataset.aiAssistance ?? 'ProActive';
 
-    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId };
+    const isReadonly = list.dataset.readonly === 'true';
+    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId, readonly: isReadonly };
 
     async function reload(): Promise<void> {
         const expanded = captureExpandedIds(list!);

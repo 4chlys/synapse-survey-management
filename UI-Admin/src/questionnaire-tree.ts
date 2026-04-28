@@ -23,6 +23,7 @@ export interface RenderContext {
     deleteEndpoint: string;
     aiAssistance: string;
     projectId: number;
+    readonly: boolean;
 }
 
 type ScopeKey = string;
@@ -78,28 +79,28 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                 <div class="answer-group pl-4 border-l border-gray-700 ml-2 mt-2">
                     <div class="flex items-center gap-2 py-1 text-gray-300">
                         <span class="flex-1">↳ ${escapeHtml(trigger)}</span>
-                        <label class="text-xs text-gray-400 flex items-center gap-1">
+                        ${ctx.readonly ? '' : `<label class="text-xs text-gray-400 flex items-center gap-1">
                             <input type="checkbox"
                                    class="ending-answer-toggle"
                                    data-question-id="${q.questionId}"
                                    data-trigger-value="${escapeHtml(trigger)}"
                                    ${endsSurvey ? 'checked' : ''} />
                             Beëindig enquête
-                        </label>
+                        </label>`}
                     </div>
                     ${children.map((c) => renderCard(c, depth + 1, buckets, ctx)).join('')}
-                    <div class="drop-zone border border-dashed border-gray-600 text-gray-500 text-center py-2 my-1 text-xs"
+                    ${ctx.readonly ? '' : `<div class="drop-zone border border-dashed border-gray-600 text-gray-500 text-center py-2 my-1 text-xs"
                          data-parent-id="${q.questionId}"
                          data-parent-trigger="${escapeHtml(trigger)}">
                         Sleep hier om een subvraag aan dit antwoord toe te voegen
-                    </div>
+                    </div>`}
                 </div>`;
         }).join('')
         : '';
 
     return `
         <div class="question-card border border-gray-500 bg-gray-900 mb-2"
-             draggable="true"
+             draggable="${!ctx.readonly}"
              data-question-id="${q.questionId}"
              data-format="${escapeHtml(q.questionFormat)}"
              data-parent-id="${q.parentQuestionId ?? ''}"
@@ -108,14 +109,14 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
              style="margin-left:${depth * 16}px">
 
             <div class="flex items-stretch">
-                <span class="question-grip px-2 py-3 cursor-move text-gray-400 select-none" title="Versleep om te verplaatsen">⠿</span>
+                ${ctx.readonly ? '' : `<span class="question-grip px-2 py-3 cursor-move text-gray-400 select-none" title="Versleep om te verplaatsen">⠿</span>`}
                 <button type="button"
                         class="question-toggle flex-1 px-3 py-3 text-left flex justify-between items-center hover:bg-gray-800 transition"
                         data-question-id="${q.questionId}">
                     <span>${escapeHtml(q.text)} <span class="text-gray-500 ml-2">[${escapeHtml(q.questionFormat)}]</span>${q.sectionName ? ` <span class="text-gray-400 ml-2 italic">${escapeHtml(q.sectionName)}</span>` : ''}</span>
                     <span id="arrow-${q.questionId}" class="text-gray-300 ml-2">${arrow}</span>
                 </button>
-                <button type="button"
+                ${ctx.readonly ? '' : `<button type="button"
                         class="question-edit-btn border-l border-gray-500 px-3 text-gray-400 hover:text-white hover:bg-gray-700 transition"
                         data-question-id="${q.questionId}"
                         data-text="${escapeHtml(q.text)}"
@@ -127,7 +128,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                     <input type="hidden" name="__RequestVerificationToken" value="${getAntiforgeryToken()}" />
                     <button type="submit"
                             class="border-l border-gray-500 px-3 text-gray-400 hover:text-white hover:bg-red-800 transition h-full">✕</button>
-                </form>
+                </form>`}
             </div>
 
             ${canBranch ? `<div id="answers-${q.questionId}" class="${panelHidden}">${answerGroups}</div>` : ''}
@@ -143,8 +144,9 @@ export function renderTree(list: HTMLElement, questions: Question[], ctx: Render
     const topLevel = buckets.get(scopeKey(null, null)) ?? [];
 
     if (topLevel.length === 0) {
-        list.innerHTML = `
-            <p class="text-gray-500 mb-4">Nog geen vragen toegevoegd.</p>
+        list.innerHTML = ctx.readonly
+            ? `<p class="text-gray-500 mb-4">Nog geen vragen toegevoegd.</p>`
+            : `<p class="text-gray-500 mb-4">Nog geen vragen toegevoegd.</p>
             <div class="drop-zone promote-zone border border-dashed border-gray-500 text-gray-400 text-center py-3 my-3 text-xs"
                  data-parent-id=""
                  data-parent-trigger="">
@@ -154,7 +156,7 @@ export function renderTree(list: HTMLElement, questions: Question[], ctx: Render
     }
 
     const cards = topLevel.map((q) => renderCard(q, 0, buckets, ctx)).join('');
-    list.innerHTML = `${cards}
+    list.innerHTML = ctx.readonly ? cards : `${cards}
         <div class="drop-zone promote-zone border border-dashed border-gray-500 text-gray-400 text-center py-3 my-3 text-xs"
              data-parent-id=""
              data-parent-trigger="">

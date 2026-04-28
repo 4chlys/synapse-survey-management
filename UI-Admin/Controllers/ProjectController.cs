@@ -181,6 +181,10 @@ public class ProjectController(
     public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
         CreateQuestionViewModel model)
     {
+        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
+        if (projectForCheck?.ProjectState is "Active" or "Archived")
+            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
@@ -196,6 +200,10 @@ public class ProjectController(
     public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
         EditQuestionViewModel model)
     {
+        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
+        if (projectForCheck?.ProjectState is "Active" or "Archived")
+            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
         var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
@@ -223,6 +231,10 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> AddCategory(int projectId, CategoryFormViewModel model)
     {
+        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
+        if (projectForCheck?.ProjectState is "Active" or "Archived")
+            return RedirectToAction(nameof(Ideation), new { projectId });
+
         if (ModelState.IsValid)
             await categoryService.CreateCategoryAsync(projectId, model.Name, model.Description ?? string.Empty);
         var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
@@ -237,6 +249,10 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> DeleteCategory(int projectId, int categoryId)
     {
+        var projectForCheck = await projectService.GetProjectByIdAsync(projectId);
+        if (projectForCheck?.ProjectState is "Active" or "Archived")
+            return RedirectToAction(nameof(Ideation), new { projectId });
+
         await categoryService.DeleteCategoryAsync(projectId, categoryId);
         var projectForDelete = await projectService.GetProjectByIdAsync(projectId);
         ViewData["ProjectId"]     = projectId;
