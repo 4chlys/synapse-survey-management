@@ -22,7 +22,7 @@ WORKDIR /src
 COPY . .
 
 WORKDIR /src/UI-Admin
-RUN pnpm run build
+RUN pnpm exec vite build
 WORKDIR /src
 
 RUN dotnet publish "UI-Admin/UI-Admin.csproj" -c Release -o /app/publish
