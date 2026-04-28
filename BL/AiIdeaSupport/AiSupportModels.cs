@@ -66,6 +66,9 @@ public sealed class IdeaSupportChatRequest
     /// <summary>Optional description of the category for richer context.</summary>
     public string CategoryDescription { get; init; } = string.Empty;
 
+    /// <summary>Age range of the project's target audience (e.g. "14–24"). Null falls back to the platform default.</summary>
+    public string AgeRange { get; init; }
+
     /// <summary>
     /// True when this is the very first user turn.
     /// The service will inject the context prompt before the history.

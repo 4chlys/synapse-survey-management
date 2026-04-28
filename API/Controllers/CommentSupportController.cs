@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.CommentSupport;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -38,6 +39,10 @@ public class CommentSupportController(
         var isFirstTurn = string.IsNullOrWhiteSpace(dto.UserMessage)
                           && dto.History.Count == 0;
 
+        Project project = null;
+        try { project = await GetProjectByIdReadOnlyAsync(projectId); }
+        catch { /* intentionally swallowed */ }
+
         var request = new CommentSupportRequest
         {
             IdeaText     = dto.IdeaText,
@@ -50,6 +55,7 @@ public class CommentSupportController(
                              })
                              .ToList(),
             UserMessage  = dto.UserMessage ?? string.Empty,
+            AgeRange     = FormatAgeRange(project?.MinAge, project?.MaxAge),
             IsFirstTurn  = isFirstTurn,
         };
 
@@ -62,4 +68,12 @@ public class CommentSupportController(
             IsFinal          = reply.IsFinal,
         });
     }
+
+    private static string FormatAgeRange(int? minAge, int? maxAge) => (minAge, maxAge) switch
+    {
+        (null, null)       => null,
+        (var min, null)    => $"{min}+",
+        (null, var max)    => $"0–{max}",
+        (var min, var max) => $"{min}–{max}",
+    };
 }

@@ -24,7 +24,8 @@ public sealed class AiConfig
 /// <summary>Platform identity tokens used for prompt substitution across all features.</summary>
 public sealed class PlatformConfig
 {
-    [JsonPropertyName("name")]     public string Name     { get; init; } = "Synapse";
-    [JsonPropertyName("language")] public string Language { get; init; } = "nl";
-    [JsonPropertyName("country")]  public string Country  { get; init; } = "België";
+    [JsonPropertyName("name")]      public string Name      { get; init; } = "Synapse";
+    [JsonPropertyName("language")]  public string Language  { get; init; } = "nl";
+    [JsonPropertyName("country")]   public string Country   { get; init; } = "België";
+    [JsonPropertyName("age_range")] public string AgeRange  { get; init; } = "12–30";
 }

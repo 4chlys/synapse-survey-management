@@ -53,9 +53,12 @@ public sealed class GoogleVertexAiCommentSupportService(
 
     private List<ChatMessage> BuildMessages(CommentSupportRequest request)
     {
+        var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
+        var systemPrompt = config.SystemPrompt.Replace("{age_range}", ageRange, StringComparison.OrdinalIgnoreCase);
+
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, config.SystemPrompt)
+            new(ChatRole.System, systemPrompt)
         };
 
         if (request.IsFirstTurn)
@@ -85,7 +88,12 @@ public sealed class GoogleVertexAiCommentSupportService(
 
     private CommentSupportReply ParseAiReply(string raw)
     {
-        var json = CodeFenceRe.Replace(raw, string.Empty).Trim();
+        var cleaned = CodeFenceRe.Replace(raw, string.Empty).Trim();
+
+        // Extract the JSON object even when the model adds a preamble (e.g. "model\n{...}").
+        var start = cleaned.IndexOf('{');
+        var end   = cleaned.LastIndexOf('}');
+        var json  = start >= 0 && end > start ? cleaned[start..(end + 1)] : cleaned;
 
         try
         {

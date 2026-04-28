@@ -88,12 +88,16 @@ public static class AiConfigLoader
             .Replace("{language}",      p.Language, StringComparison.OrdinalIgnoreCase)
             .Replace("{country}",       p.Country,  StringComparison.OrdinalIgnoreCase);
 
+        // Moderation has no per-request project context, so bake the platform default in at load time.
+        string SubWithAge(string s) => string.IsNullOrEmpty(s) ? s : Sub(s)
+            .Replace("{age_range}", p.AgeRange, StringComparison.OrdinalIgnoreCase);
+
         var m = config.Moderation;
         var substitutedModeration = new ModerationConfig
         {
             UseAi                   = m.UseAi,
-            ModerationPrompt        = Sub(m.ModerationPrompt),
-            CommentModerationPrompt = Sub(m.CommentModerationPrompt),
+            ModerationPrompt        = SubWithAge(m.ModerationPrompt),
+            CommentModerationPrompt = SubWithAge(m.CommentModerationPrompt),
             RewritePrompt           = Sub(m.RewritePrompt),
             BannedWords             = m.BannedWords,
             RegexPatterns           = m.RegexPatterns,
@@ -102,10 +106,12 @@ public static class AiConfigLoader
         var i = config.IdeaSupport;
         var substitutedIdeaSupport = new AiIdeaSupportConfig
         {
-            SystemPrompt    = Sub(i.SystemPrompt),
-            ContextPrompt   = Sub(i.ContextPrompt),
-            RefinePrompt    = Sub(i.RefinePrompt),
-            MaxHistoryTurns = i.MaxHistoryTurns,
+            SystemPrompt          = Sub(i.SystemPrompt),   // {age_range} substituted per-request
+            ContextPrompt         = Sub(i.ContextPrompt),
+            RefinePrompt          = Sub(i.RefinePrompt),
+            MaxHistoryTurns       = i.MaxHistoryTurns,
+            MaxIntroductionLength = i.MaxIntroductionLength,
+            DefaultAgeRange       = p.AgeRange,
         };
 
         var s = config.SpeechToText;
@@ -118,9 +124,10 @@ public static class AiConfigLoader
         var c = config.CommentSupport;
         var substitutedCommentSupport = new AiCommentSupportConfig
         {
-            SystemPrompt    = Sub(c.SystemPrompt),
+            SystemPrompt    = Sub(c.SystemPrompt),         // {age_range} substituted per-request
             ContextPrompt   = Sub(c.ContextPrompt),
             FallbackMessage = c.FallbackMessage,
+            DefaultAgeRange = p.AgeRange,
         };
 
         return new AiConfig
