@@ -22,7 +22,8 @@ public class ProjectManager(
         => projectRepository.ReadByIdForUpdateAsync(projectId);
 
     public Task<Project> GetProjectByIdWithQuestionnaireForUpdateAsync(int projectId)
-    => projectRepository.ReadByIdWithQuestionnaireForUpdateAsync(projectId);
+        => projectRepository.ReadByIdWithQuestionnaireForUpdateAsync(projectId);
+
     public async Task<IEnumerable<Emoji>> GetEmojisForProjectAsync(int projectId)
     {
         var project = await projectRepository.ReadByIdWithEmojisReadOnlyAsync(projectId);

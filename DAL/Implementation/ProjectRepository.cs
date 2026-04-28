@@ -36,9 +36,9 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
     public Task<Project> ReadByIdWithQuestionnaireForUpdateAsync(int projectId)
-    => Context.Set<Project>()
-        .Include(p => p.Questionnaire)
-        .FirstOrDefaultAsync(p=> p.ProjectId == projectId);
+        => Context.Set<Project>()
+            .Include(p => p.Questionnaire)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
     public Task<bool> ExistsByShortFormAsync(string shortForm, int? excludeProjectId = null)
         => Context.Set<Project>()

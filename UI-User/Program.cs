@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Middleware;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Moderation;
+using SynapseEnqueteManagement.UI.User.Services.SpeechToText;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
@@ -66,6 +67,10 @@ builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IdeaSupportService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<CommentSupportService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<SpeechToTextService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddMemoryCache();
 
@@ -79,6 +84,24 @@ builder.Services.AddRateLimiter(options =>
             {
                 Window      = TimeSpan.FromMinutes(1),
                 PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-comment-support", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-stt", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
                 QueueLimit  = 0,
             }));
     options.AddPolicy("participant-creation", context =>
