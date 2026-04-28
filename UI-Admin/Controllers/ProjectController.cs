@@ -325,6 +325,35 @@ public class ProjectController(
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
+    public async Task<IActionResult> Archive(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null)
+            return NotFound();
+        if (project.ProjectState != "Active")
+            return RedirectToAction(nameof(Dashboard), new { projectId });
+
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project.ProjectState ?? "";
+        ViewData["ActiveSection"] = "Dashboard";
+        return View(project);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ArchiveProject(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null)
+            return NotFound();
+        if (project.ProjectState != "Active")
+            return RedirectToAction(nameof(Dashboard), new { projectId });
+
+        await projectService.UpdateProjectStateAsync(projectId, "Archived");
+        return RedirectToAction(nameof(Index));
+    }
+
     public async Task<IActionResult> Dashboard(int projectId)
     {
         var user = await userManager.GetUserAsync(User);
