@@ -176,7 +176,7 @@ deploy-test:
       echo "Test UI available at: $UI_URL"
     - |
       UI_DOMAIN=$(echo "$UI_URL" | sed 's|https://||')
-      gcloud run deploy mvp-admin-test --image="${IMAGE_ADMIN}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=1 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*,SystemAdmin__Email=admin@synapse.local,SystemAdmin__Password=REDACTED Source=/tmp/admin.db;Foreign Keys=False"
+      gcloud run deploy mvp-admin-test --image="${IMAGE_ADMIN}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=1 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*,SystemAdmin__Email=admin@synapse.local,SystemAdmin__Password=REDACTED Source=/tmp/admin.db;Foreign Keys=False,Vite__Base=/dist/"
     - |
       ADMIN_URL=$(gcloud run services describe mvp-admin-test --region="${REGION}" --format="value(status.url)")
       echo "Test Admin available at: $ADMIN_URL"
