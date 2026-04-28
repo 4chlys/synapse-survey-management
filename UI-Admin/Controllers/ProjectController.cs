@@ -77,6 +77,9 @@ public class ProjectController(
                 ModelState.AddModelError(nameof(model.Introduction), "Introductie is verplicht.");
         }
 
+        if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
+            ModelState.AddModelError(nameof(model.MinAge), "MinLeeftijd mag niet groter zijn dan MaxLeeftijd.");
+
         if (!ModelState.IsValid)
             return View(model);
 
@@ -204,7 +207,7 @@ public class ProjectController(
         await using var stream = System.IO.File.Create(filePath);
         await file.CopyToAsync(stream);
 
-        return Ok(new { url = $"/uploads/{fileName}" });
+        return Ok(new { url = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}" });
     }
 
     [HttpGet]

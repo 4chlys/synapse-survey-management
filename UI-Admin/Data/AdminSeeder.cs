@@ -1,4 +1,3 @@
-// UI-Admin/Data/AdminSeeder.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

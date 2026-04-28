@@ -63,7 +63,7 @@ public class CategoryManager(
             IdeaId: i.IdeaId,
             Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
             CategoryName: i.Category.Name,
-            ReactionCount: i.Comments.OfType<IconComment>().Count(),
+            ReactionCount: i.Comments.OfType<IconComment>().Count(ic => ic.TextComment == null),
             CreatedAt: i.CreatedAt
         )).ToList();
     }

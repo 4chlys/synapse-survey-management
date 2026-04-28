@@ -1,4 +1,3 @@
-// UI-Admin/Data/AdminDbContextFactory.cs
 // Used only at design time (dotnet ef migrations) — not loaded at runtime.
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;

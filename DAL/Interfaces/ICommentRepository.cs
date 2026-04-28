@@ -22,7 +22,7 @@ public interface ICommentRepository : IRepository<Comment>
 
     Task<IconComment> CreateIconCommentOnTextCommentIfNotDuplicateAsync(IconComment iconComment);
 
-    Task<bool> DeleteIconCommentOnIdeaAsync(int ideaId, int emojiId, int participantId);
+    Task<bool> DeleteIconCommentOnIdeaAsync(int ideaId, int projectId, int emojiId, int participantId);
 
-    Task<bool> DeleteIconCommentOnTextCommentAsync(int commentId, int emojiId, int participantId);
+    Task<bool> DeleteIconCommentOnTextCommentAsync(int commentId, int projectId, int emojiId, int participantId);
 }

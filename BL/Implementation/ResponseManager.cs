@@ -12,9 +12,6 @@ public class ResponseManager(
 {
     public async Task<Response> AddResponseAsync(int questionId, string value, Participant participant, CancellationToken ct = default)
     {
-        if (value?.Length > 500)
-            throw new ArgumentException("Response must not exceed 500 characters.", nameof(value));
-
         var question = await questionRepository.ReadByIdForUpdateAsync(questionId)
                        ?? throw new KeyNotFoundException($"Question {questionId} not found.");
 
@@ -22,6 +19,7 @@ public class ResponseManager(
         validator.Validate(value, question);
 
         var response = new Response { Value = value, Question = question, Participant = participant, CreatedAt = DateTime.UtcNow };
+        EntityValidator.Validate(response);
         var created = await responseRepository.CreateAsync(response);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -29,9 +27,6 @@ public class ResponseManager(
 
     public async Task<Response> UpdateOrCreateResponseAsync(int questionId, string value, Participant participant, CancellationToken ct = default)
     {
-        if (value?.Length > 500)
-            throw new ArgumentException("Response must not exceed 500 characters.", nameof(value));
-
         var question = await questionRepository.ReadByIdForUpdateAsync(questionId)
                        ?? throw new KeyNotFoundException($"Question {questionId} not found.");
 
@@ -42,6 +37,7 @@ public class ResponseManager(
 
         if (existing is not null)
         {
+            EntityValidator.ValidateProperty(existing, value, nameof(Response.Value));
             existing.Value = value;
             existing.IsCommitted = false;
             responseRepository.Update(existing);
@@ -57,6 +53,7 @@ public class ResponseManager(
             CreatedAt = DateTime.UtcNow,
             IsCommitted = false
         };
+        EntityValidator.Validate(response);
         var created = await responseRepository.CreateAsync(response);
         await uow.SaveChangesAsync(ct);
         return created;

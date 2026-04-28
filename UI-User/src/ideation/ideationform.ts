@@ -1,6 +1,7 @@
 import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
 
 const MIN_LENGTH = 2;
+const MAX_LENGTH: Record<'idea' | 'comment', number> = { idea: 1000, comment: 500 };
 
 export function wireIdeationForm(
     form: HTMLFormElement,
@@ -20,6 +21,13 @@ export function wireIdeationForm(
         }
 
         const text = textarea.value.trim();
+
+        if (text.length > MAX_LENGTH[contentType]) {
+            textarea.setCustomValidity(`Maximaal ${MAX_LENGTH[contentType]} tekens toegestaan.`);
+            textarea.reportValidity();
+            return;
+        }
+        textarea.setCustomValidity('');
 
         if (text.length < MIN_LENGTH) {
             tokenInput.value = '';

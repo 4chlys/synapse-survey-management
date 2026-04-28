@@ -57,21 +57,21 @@ public class DummyDataSeeder
         var platformSynapse = new ProjectPlatform
         {
             Name = "Synapse",
-            LogoUrl = "https://synapse-ip.xyz/uploads/logos/logo_synapse.jpg",
+            LogoUrl = "/uploads/logos/logo_synapse.jpg",
             WebsiteUrl = "https://synapse-ip.xyz",
             CreatedAt = DateTime.UtcNow
         };
         var platformFitLife = new ProjectPlatform
         {
             Name = "FitLife Gym",
-            LogoUrl = "https://www.fitlife.com/uploads/logos/logo_fitlife.png",
+            LogoUrl = "/uploads/logos/logo_fitlife.png",
             WebsiteUrl = "https://www.fitlife.com",
             CreatedAt = DateTime.UtcNow
         };
         var platformEendracht = new ProjectPlatform
         {
             Name = "FC Eendracht",
-            LogoUrl = "https://www.fceendracht.be/uploads/logos/logo_eendracht.png",
+            LogoUrl = "/uploads/logos/logo_eendracht.png",
             WebsiteUrl = "https://www.fceendracht.be",
             CreatedAt = DateTime.UtcNow
         };

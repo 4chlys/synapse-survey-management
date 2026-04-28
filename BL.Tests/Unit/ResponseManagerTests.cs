@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ResponseManagerTests
@@ -126,7 +128,7 @@ public class ResponseManagerTests
         var tooLong = new string('x', 501);
 
         // Act + Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<ValidationException>(() =>
             _manager.AddResponseAsync(_question.QuestionId, tooLong, _participant));
 
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

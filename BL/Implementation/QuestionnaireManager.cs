@@ -45,6 +45,7 @@ public class QuestionnaireManager(
             parent = await questionRepository.ReadByIdWithSectionForUpdateAsync(parentQuestionId.Value);
             if (parent is null)
                 throw new ValidationException($"Parent question {parentQuestionId} not found.");
+            EntityValidator.ValidateProperty(new Question(), parentTriggerValue, nameof(Question.ParentTriggerValue));
             ValidateParentTrigger(parent, parentTriggerValue);
         }
         else if (!string.IsNullOrEmpty(parentTriggerValue))
@@ -70,7 +71,10 @@ public class QuestionnaireManager(
         };
         if (endingAnswers is not null)
             foreach (var value in endingAnswers)
+            {
+                EntityValidator.ValidateProperty(new EndingAnswer(), value, nameof(EndingAnswer.Value));
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
+            }
         EntityValidator.Validate(question);
         var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync(ct);
@@ -100,7 +104,10 @@ public class QuestionnaireManager(
         {
             question.EndingAnswers.Clear();
             foreach (var value in endingAnswers)
+            {
+                EntityValidator.ValidateProperty(new EndingAnswer(), value, nameof(EndingAnswer.Value));
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
+            }
         }
 
         questionRepository.Update(question);

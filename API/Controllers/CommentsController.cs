@@ -37,17 +37,9 @@ public class CommentsController(
     {
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
-
-        try
-        {
-            var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant, ct);
-            if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
-            return Ok(new CreatedIconCommentDto { CommentId = iconComment.CommentId, EmojiId = iconComment.EmojiId });
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound("The requested resource was not found.");
-        }
+        var iconComment = await manager.AddIconCommentAsync(ideaId, projectId, dto.EmojiId, participant, ct);
+        if (iconComment == null) return Conflict("Participant already reacted with this emoji.");
+        return Ok(new CreatedIconCommentDto { CommentId = iconComment.CommentId, EmojiId = iconComment.Emoji.EmojiId });
     }
 
     [HttpDelete("iconcomments/{emojiId}")]
@@ -72,7 +64,7 @@ public class CommentsController(
         {
             var reaction = await manager.AddCommentReactionAsync(commentId, projectId, dto.EmojiId, participant, ct);
             if (reaction == null) return Conflict("Participant already reacted with this emoji.");
-            return Ok(new CreatedIconCommentDto { CommentId = reaction.CommentId, EmojiId = reaction.EmojiId });
+            return Ok(new CreatedIconCommentDto { CommentId = reaction.CommentId, EmojiId = reaction.Emoji.EmojiId });
         }
         catch (KeyNotFoundException)
         {

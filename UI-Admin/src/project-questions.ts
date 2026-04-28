@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input.type = 'text';
         input.className = 'answer-input flex-1 bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 focus:outline-none';
         input.placeholder = 'Antwoord...';
+        input.maxLength = 500;
         input.addEventListener('input', () => answersError?.classList.add('hidden'));
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
@@ -143,6 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
         if (!textArea?.value.trim()) {
             e.preventDefault();
+            if (textError) textError.textContent = 'Dit veld moet ingevuld zijn.';
+            textError?.classList.remove('hidden');
+            valid = false;
+        } else if ((textArea?.value.trim().length ?? 0) > 500) {
+            e.preventDefault();
+            if (textError) textError.textContent = 'Vraagtekst mag maximaal 500 tekens bevatten.';
             textError?.classList.remove('hidden');
             valid = false;
         } else {

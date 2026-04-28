@@ -74,10 +74,10 @@
                   class="flex gap-2">
                 <input type="hidden" name="projectId" value="@projectId" />
                 <input type="text" name="Name" id="cat-name"
-                       placeholder="Naam *"
+                       placeholder="Naam *" required maxlength="100"
                        class="flex-1 bg-gray-800 border border-gray-500 text-white px-3 py-2 focus:outline-none" />
                 <input type="text" name="Description" id="cat-description"
-                       placeholder="Beschrijving (optioneel)"
+                       placeholder="Beschrijving (optioneel)" maxlength="1000"
                        class="flex-[2] bg-gray-800 border border-gray-500 text-white px-3 py-2 focus:outline-none" />
                 <button type="submit"
                         class="border border-gray-400 px-4 py-2 hover:bg-gray-700 whitespace-nowrap">
