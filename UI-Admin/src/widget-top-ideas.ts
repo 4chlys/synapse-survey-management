@@ -1,4 +1,4 @@
-import { POLL_INTERVAL_MS } from './dashboard';
+import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
 
 interface IdeaMetric {
     description: string;
@@ -17,9 +17,7 @@ export function initTopIdeasWidget(el: HTMLElement): () => void {
 
     async function fetch_and_render(): Promise<void> {
         try {
-            const res = await fetch(url);
-            if (!res.ok) return;
-            const data: DashboardData = await res.json();
+            const data = await fetchJson<DashboardData>(url);
 
             el.innerHTML = '<p class="text-xs text-gray-400 mb-2">Top ideeën</p>';
             if (data.topIdeas.length === 0) {

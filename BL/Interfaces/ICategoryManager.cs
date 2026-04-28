@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 
 namespace SynapseEnqueteManagement.BL.Interfaces;
 
@@ -14,6 +15,7 @@ public interface ICategoryManager
     Task<bool> UpdateCategoryAsync(int categoryId, string name, string description, CancellationToken ct = default);
     Task<bool> DeleteCategoryAsync(int categoryId, CancellationToken ct = default);
 
+    Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, int topCount = 5);
     Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, int count = 10);
     Task<ModerationQueueResult> GetModerationQueueAsync(int projectId);
 

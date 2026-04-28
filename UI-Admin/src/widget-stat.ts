@@ -1,4 +1,4 @@
-import { POLL_INTERVAL_MS } from './dashboard';
+import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
 
 interface DashboardStats {
     viewCount: number;
@@ -34,9 +34,7 @@ export function initStatWidget(el: HTMLElement): () => void {
 
     async function fetch_and_render(): Promise<void> {
         try {
-            const res = await fetch(url);
-            if (!res.ok) return;
-            const stats: DashboardStats = await res.json();
+            const stats = await fetchJson<DashboardStats>(url);
             renderStat(el, type, formatValue(type, stats));
         } catch {
             // ignore network errors during polling

@@ -41,7 +41,7 @@ public class ProjectController(
         return View(projects);
     }
 
-    public async Task<IActionResult> Create(int? projectId)
+    public async Task<IActionResult> Create(int? projectId, bool isNew = false)
     {
         if (!projectId.HasValue)
         {
@@ -51,6 +51,8 @@ public class ProjectController(
                 var platform = await platformService.GetPlatformByIdAsync(user.ProjectPlatformId.Value);
                 ViewData["Project"] = new ProjectAdminViewModel { OrganisationLogoUrl = platform?.LogoUrl };
             }
+            ViewData["IsNew"]       = true;
+            ViewData["HideSidebar"] = true;
             return View(new CreateProjectViewModel());
         }
 
@@ -80,11 +82,13 @@ public class ProjectController(
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
         ViewData["ProjectState"]  = project.ProjectState ?? "";
         ViewData["ActiveSection"] = "Instellingen";
+        ViewData["IsNew"]         = isNew;
+        ViewData["HideSidebar"]   = isNew;
         return View(model);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction)
+    public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
         // For "next", Topic and Introduction are also required
         if (submitAction == "next")
@@ -98,6 +102,8 @@ public class ProjectController(
         if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
             ModelState.AddModelError(nameof(model.MinAge), "MinLeeftijd mag niet groter zijn dan MaxLeeftijd.");
 
+        var wizardActive = isNew || !model.ProjectId.HasValue;
+
         if (!ModelState.IsValid)
         {
             if (model.ProjectId.HasValue)
@@ -109,6 +115,8 @@ public class ProjectController(
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
             ViewData["ActiveSection"] = "Instellingen";
+            ViewData["IsNew"]         = wizardActive;
+            ViewData["HideSidebar"]   = wizardActive;
             return View(model);
         }
 
@@ -163,7 +171,7 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions),
                 new { projectId = project.ProjectId, aiAssistance = model.AiAssistance, isNew = true });
 
-        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, saved = 1 });
+        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, isNew = wizardActive, saved = 1 });
     }
 
     public async Task<IActionResult> Questions(int projectId,

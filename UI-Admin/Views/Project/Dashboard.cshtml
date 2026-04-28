@@ -8,11 +8,21 @@
 <div class="max-w-6xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="font-heading font-bold text-2xl text-base-content">Dashboard</h1>
-        <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
-           class="btn btn-outline btn-sm gap-1.5">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-            Widgets instellen
-        </a>
+        <div class="flex items-center gap-2">
+            @if (ViewData["ProjectState"] as string == "Active")
+            {
+                <a asp-action="Archive" asp-route-projectId="@Model.ProjectId"
+                   class="btn btn-outline btn-warning btn-sm gap-1.5">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                    Archiveren
+                </a>
+            }
+            <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
+               class="btn btn-outline btn-sm gap-1.5">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+                Widgets instellen
+            </a>
+        </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         @for (var i = 0; i < Model.WidgetLayout.Length; i++)

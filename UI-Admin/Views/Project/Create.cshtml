@@ -4,9 +4,9 @@
     var projectState = (string)(ViewData["ProjectState"] ?? "");
     var isLocked = isEdit && projectState is "Active" or "Archived";
     var shortFormReadonly = isEdit && projectState != "Draft";
+    bool isNew = ViewData["IsNew"] is true;
     ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
     ViewData["ActiveSection"] = "Instellingen";
-    ViewData["HideSidebar"]   = true;
     Layout = "_Layout";
 }
 
@@ -28,6 +28,7 @@
             <form asp-action="Create" method="post" class="flex flex-col gap-5">
                 @Html.AntiForgeryToken()
                 @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
+                <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                 <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
 
                 <label class="form-control">
