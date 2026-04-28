@@ -33,6 +33,7 @@
                     <input asp-for="Name"
                            id="project-name-input"
                            placeholder="Voer de naam van je project in"
+                           required maxlength="100"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
                     <span asp-validation-for="Name" class="text-red-400 text-xs"></span>
                 </div>
@@ -42,6 +43,7 @@
                     <input asp-for="ShortForm"
                            id="project-shortform-input"
                            placeholder="automatisch ingevuld vanuit de naam"
+                           maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
                            readonly="@(project != null && project.ProjectState != "Draft" ? "readonly" : null)"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
                     <span asp-validation-for="ShortForm" class="text-red-400 text-xs"></span>
@@ -86,14 +88,18 @@
                 <div>
                     <label class="block text-xs mb-1">Leeftijdsbereik <span class="text-gray-500">(optioneel)</span></label>
                     <div class="flex items-center gap-2">
-                        <input asp-for="MinAge" type="number" placeholder="Min" min="1"
+                        <input asp-for="MinAge" type="number" placeholder="Min" min="0" max="120"
+                               id="min-age-input"
                                class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none no-spinner"
                                />
                         <span class="text-gray-400 text-xs">—</span>
-                        <input asp-for="MaxAge" type="number" placeholder="Max" min="1"
+                        <input asp-for="MaxAge" type="number" placeholder="Max" min="0" max="120"
+                               id="max-age-input"
                                class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none no-spinner"
                                />
                     </div>
+                    <span id="age-range-error" class="hidden text-red-400 text-xs mt-1 block">MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</span>
+                    <span asp-validation-for="MinAge" class="text-red-400 text-xs mt-1 block"></span>
                 </div>
 
                 <div>
@@ -124,6 +130,7 @@
                     <label class="block text-xs mb-1">Onderwerp</label>
                     <input asp-for="Topic"
                            placeholder="Wat is het onderwerp van je project?"
+                           maxlength="100"
                            class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
                     <span asp-validation-for="Topic" class="text-red-400 text-xs"></span>
                 </div>
@@ -133,6 +140,7 @@
                     <div class="w-2/3">
                         <div id="intro-editor" class="bg-gray-900 text-white text-xs"
                              style="min-height: 160px;">@Html.Raw(Model.Introduction)</div>
+                        <p id="intro-char-count" class="text-xs text-gray-500 mt-1 text-right">0 / 5000</p>
                     </div>
                     <input type="hidden" asp-for="Introduction" id="Introduction" />
                     <span asp-validation-for="Introduction" class="text-red-400 text-xs"></span>
@@ -144,7 +152,7 @@
                         @for (int i = 0; i < Model.Sections.Count; i++)
                         {
                             <div class="flex items-center gap-1">
-                                <input name="Sections[@i]" type="text" value="@Model.Sections[i]"
+                                <input name="Sections[@i]" type="text" value="@Model.Sections[i]" maxlength="20"
                                        class="flex-1 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 focus:outline-none" />
                                 <button type="button" data-remove-section
                                         class="text-gray-500 hover:text-white text-xs px-1">✕</button>

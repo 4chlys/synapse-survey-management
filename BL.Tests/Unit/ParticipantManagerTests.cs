@@ -17,7 +17,7 @@ public class ParticipantManagerTests
     public async Task AddParticipantAsync_HappyPath_CreatesAndSavesOnce()
     {
         // Arrange
-        var project = new Project { ProjectId = 10 };
+        var project = new Project { ProjectId = 10, Questionnaire = new Questionnaire() };
         _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
             .ReturnsAsync((Participant p) => p)
             .Verifiable(Times.Exactly(1));
@@ -48,7 +48,7 @@ public class ParticipantManagerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _manager.AddParticipantAsync(new Project(), ct);
+        await _manager.AddParticipantAsync(new Project { Questionnaire = new Questionnaire() }, ct);
 
         // Assert
         _uow.VerifyAll();

@@ -16,6 +16,7 @@ public class ParticipantManager(
             Questionnaire = project.Questionnaire,
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.Validate(participant);
         var created = await participantRepository.CreateAsync(participant);
         await uow.SaveChangesAsync(ct);
         return created;

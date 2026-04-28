@@ -136,7 +136,7 @@ public class IdeasController(
             .GroupBy(r => r.Emoji.Symbol)
             .Select(g => new IconCommentDto
             {
-                EmojiId = g.First().EmojiId,
+                EmojiId = g.First().Emoji.EmojiId,
                 Symbol = g.Key,
                 Count = g.Count(),
                 PostedByCurrentUser = participantId.HasValue &&

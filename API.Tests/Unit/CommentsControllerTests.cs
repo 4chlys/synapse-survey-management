@@ -52,7 +52,7 @@ public class CommentsControllerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         _commentManager.Setup(c => c.AddIconCommentAsync(IdeaId, ProjectId, EmojiId, _participant, ct))
-            .ReturnsAsync(new IconComment { EmojiId = EmojiId })
+            .ReturnsAsync(new IconComment { Emoji = new Emoji { EmojiId = EmojiId } })
             .Verifiable(Times.Exactly(1));
 
         // Act
@@ -86,7 +86,7 @@ public class CommentsControllerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         _commentManager.Setup(c => c.AddCommentReactionAsync(CommentId, ProjectId, EmojiId, _participant, ct))
-            .ReturnsAsync(new IconComment { EmojiId = EmojiId })
+            .ReturnsAsync(new IconComment { Emoji = new Emoji { EmojiId = EmojiId } })
             .Verifiable(Times.Exactly(1));
 
         // Act

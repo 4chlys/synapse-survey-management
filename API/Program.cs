@@ -96,7 +96,15 @@ builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
 builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
 
 // Storage
-builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IStorageService, LocalStorageService>();
+}
+else
+{
+    builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
+}
 
 // Registering BL
 var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
@@ -194,8 +202,12 @@ var app = builder.Build();
 
         try
         {
-            context.CreateDatabase(deleteIfExists);
-            DummyDataSeeder.Seed(context);
+            bool isNewDatabase = context.CreateDatabase(deleteIfExists);
+            if (isNewDatabase)
+            {
+                var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+                DummyDataSeeder.Seed(context, apiBaseUrl);
+            }
 
             var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             var ideasNeedingEmbeddings = await context.Set<Idea>()
@@ -225,6 +237,7 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseStaticFiles();
 app.UseHttpLogging();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();

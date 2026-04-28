@@ -132,6 +132,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseHttpLogging();
+app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthorization();

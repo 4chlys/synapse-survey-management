@@ -1,5 +1,3 @@
-// UI-Admin/Data/AdminDbContext.cs
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;

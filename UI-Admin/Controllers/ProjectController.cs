@@ -12,7 +12,9 @@ using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
+using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
+using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -23,7 +25,8 @@ public class ProjectController(
     CategoryAdminService categoryService,
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
-    IWebHostEnvironment env,
+    UploadAdminService uploadService,
+    PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager,
     WidgetPreferenceService widgetPreferenceService,
     IOptions<AdminSettings> adminSettings) : Controller
@@ -39,7 +42,15 @@ public class ProjectController(
     public async Task<IActionResult> Create(int? projectId)
     {
         if (!projectId.HasValue)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user?.ProjectPlatformId is not null)
+            {
+                var platform = await platformService.GetPlatformByIdAsync(user.ProjectPlatformId.Value);
+                ViewData["Project"] = new ProjectAdminViewModel { OrganisationLogoUrl = platform?.LogoUrl };
+            }
             return View(new CreateProjectViewModel());
+        }
 
         var project = await projectService.GetProjectByIdAsync(projectId.Value);
         if (project is null)
@@ -76,6 +87,9 @@ public class ProjectController(
             if (string.IsNullOrWhiteSpace(model.Introduction))
                 ModelState.AddModelError(nameof(model.Introduction), "Introductie is verplicht.");
         }
+
+        if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
+            ModelState.AddModelError(nameof(model.MinAge), "MinLeeftijd mag niet groter zijn dan MaxLeeftijd.");
 
         if (!ModelState.IsValid)
             return View(model);
@@ -190,21 +204,15 @@ public class ProjectController(
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "Geen bestand ontvangen." });
 
-        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-        var ext = Path.GetExtension(file.FileName);
-        if (!allowedExtensions.Contains(ext))
-            return BadRequest(new { error = "Bestandstype niet toegestaan." });
-
-        var uploadsDir = Path.Combine(env.WebRootPath, "uploads");
-        Directory.CreateDirectory(uploadsDir);
-
-        var fileName = $"{Guid.NewGuid()}{ext}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        await using var stream = System.IO.File.Create(filePath);
-        await file.CopyToAsync(stream);
-
-        return Ok(new { url = $"/uploads/{fileName}" });
+        try
+        {
+            var url = await uploadService.UploadImageAsync(file);
+            return Ok(new { url });
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(502, new { error = "Uploaden mislukt." });
+        }
     }
 
     [HttpGet]

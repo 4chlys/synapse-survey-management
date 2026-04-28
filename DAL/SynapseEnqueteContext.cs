@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Pgvector;
-using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
@@ -228,7 +227,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         {
             e.HasOne(ic => ic.Emoji)
                 .WithMany()
-                .HasForeignKey(ic => ic.EmojiId)
+                .HasForeignKey("EmojiId")
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Optional: an IconComment can be a reaction on a TextComment.

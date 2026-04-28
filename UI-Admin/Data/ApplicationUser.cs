@@ -1,4 +1,3 @@
-// UI-Admin/Data/ApplicationUser.cs
 using Microsoft.AspNetCore.Identity;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 

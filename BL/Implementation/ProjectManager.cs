@@ -63,10 +63,17 @@ public class ProjectManager(
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.ValidateProperty(project, name, nameof(Project.Name));
+        EntityValidator.ValidateProperty(project, topic, nameof(Project.Topic));
+        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
         EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
         EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
+        if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
+            throw new ValidationException("MinAge must not be greater than MaxAge.");
         if (!string.IsNullOrEmpty(introduction))
+        {
+            EntityValidator.ValidateProperty(new Introduction(), introduction, nameof(Introduction.Text));
             project.Introduction = new Introduction { Text = introduction };
+        }
 
         var created = await projectRepository.CreateAsync(project);
         await uow.SaveChangesAsync();
@@ -94,8 +101,12 @@ public class ProjectManager(
         }
 
         EntityValidator.ValidateProperty(project, name, nameof(Project.Name));
+        EntityValidator.ValidateProperty(project, topic, nameof(Project.Topic));
+        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
         EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
         EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
+        if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
+            throw new ValidationException("MinAge must not be greater than MaxAge.");
         project.Name = name;
         project.Topic = topic;
         project.ImageUrl = imageUrl;
@@ -105,13 +116,18 @@ public class ProjectManager(
         project.MaxAge = maxAge;
         project.RequestContactInfo = requestContactInfo;
 
-        if (project.Introduction is null)
+        if (string.IsNullOrEmpty(introduction))
         {
-            if (!string.IsNullOrEmpty(introduction))
-                project.Introduction = new Introduction { Text = introduction };
+            project.Introduction = null;
+        }
+        else if (project.Introduction is null)
+        {
+            EntityValidator.ValidateProperty(new Introduction(), introduction, nameof(Introduction.Text));
+            project.Introduction = new Introduction { Text = introduction };
         }
         else
         {
+            EntityValidator.ValidateProperty(project.Introduction, introduction, nameof(Introduction.Text));
             project.Introduction.Text = introduction;
         }
 
