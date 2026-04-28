@@ -74,10 +74,12 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Soort enquête</span></div>
+                        <select asp-for="InteractionMode" class="select select-bordered w-full" disabled="@(!isDraft)">
                         <div class="label"><span class="label-text font-medium">Formuliertype</span></div>
                         <select asp-for="InteractionMode" class="select select-bordered w-full">
                             <option value="VerticalScroll">Verticaal scrollen</option>
-                            <option value="Paginated">Paginering</option>
+                            <option value="Paginated">Chat</option>
                         </select>
                     </label>
                     <label class="form-control">
