@@ -53,14 +53,24 @@
                     <span asp-validation-for="Topic" class="label-text-alt text-error mt-1"></span>
                 </label>
 
-                <label class="form-control">
+                <div class="form-control">
                     <div class="label"><span class="label-text font-medium">Introductietekst</span></div>
-                    <textarea asp-for="Introduction" rows="4"
-                              class="textarea textarea-bordered w-full resize-none"
-                              placeholder="Welkomstboodschap voor deelnemers…"
-                              maxlength="5000"></textarea>
-                    <span asp-validation-for="Introduction" class="label-text-alt text-error mt-1"></span>
-                </label>
+                    @if (isLocked)
+                    {
+                        <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
+                            @Html.Raw(Model.Introduction)
+                        </div>
+                    }
+                    else
+                    {
+                        <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
+                    }
+                    <input type="hidden" asp-for="Introduction" id="Introduction" />
+                    <div class="flex justify-between mt-1">
+                        <span asp-validation-for="Introduction" class="label-text-alt text-error"></span>
+                        <span id="intro-char-count" class="label-text-alt text-gray-500"></span>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
@@ -96,10 +106,26 @@
                 </div>
                 <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</span>
 
-                <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">Afbeelding URL</span></div>
-                    <input asp-for="ImageUrl" class="input input-bordered w-full" placeholder="https://…" />
-                </label>
+                <div class="form-control">
+                    <div class="label"><span class="label-text font-medium">Afbeelding</span></div>
+                    <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative mb-2 overflow-hidden bg-base-200">
+                        <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                        </svg>
+                        <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
+                             class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
+                    </div>
+                    @if (!isLocked)
+                    {
+                        <div class="flex gap-2">
+                            <button type="button" id="browse-btn" class="btn btn-outline btn-sm">Bladeren</button>
+                        </div>
+                        <input type="file" id="image-file-input" accept="image/*" class="hidden" />
+                    }
+                    <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
+                    <span asp-validation-for="ImageUrl" class="label-text-alt text-error mt-1"></span>
+                </div>
 
                 <div class="form-control">
                     <label class="label cursor-pointer justify-start gap-3">
