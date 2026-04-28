@@ -42,7 +42,7 @@
     </Target>
 
     <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
-        <Exec Command="pnpm run build" />
+        <Exec Command="pnpm exec vite build" />
     </Target>
 
 </Project>

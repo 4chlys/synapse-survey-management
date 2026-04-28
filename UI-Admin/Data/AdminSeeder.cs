@@ -1,6 +1,7 @@
 // UI-Admin/Data/AdminSeeder.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 
 namespace SynapseEnqueteManagement.UI.Admin.Data;
 
@@ -51,7 +52,15 @@ public class AdminSeeder(
 
     private async Task EnsurePlatformAdminsAsync()
     {
-        var platforms = await db.ProjectPlatforms.ToListAsync();
+        List<ProjectPlatform> platforms;
+        try
+        {
+            platforms = await db.ProjectPlatforms.ToListAsync();
+        }
+        catch (Exception)
+        {
+            return;
+        }
 
         foreach (var platform in platforms)
         {

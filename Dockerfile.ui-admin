@@ -1,0 +1,33 @@
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g pnpm
+
+WORKDIR /src
+COPY ["UI-Admin/UI-Admin.csproj", "UI-Admin/"]
+COPY ["Domain/Domain.csproj", "Domain/"]
+RUN dotnet restore "UI-Admin/UI-Admin.csproj"
+
+COPY ["UI-Admin/package.json", "UI-Admin/"]
+COPY ["UI-Admin/pnpm-lock.yaml", "UI-Admin/"]
+WORKDIR /src/UI-Admin
+RUN pnpm install
+WORKDIR /src
+
+COPY . .
+
+WORKDIR /src/UI-Admin
+RUN pnpm exec vite build
+WORKDIR /src
+
+RUN dotnet publish "UI-Admin/UI-Admin.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "SynapseEnqueteManagement.UI.Admin.dll"]
