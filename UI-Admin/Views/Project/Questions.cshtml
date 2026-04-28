@@ -10,6 +10,8 @@
     int projectId = (int)ViewData["ProjectId"];
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
     var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
+    var projectState = ViewData["ProjectState"] as string;
+    var isDraft = projectState == "Draft";
 }
 <div class="max-w-3xl">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
@@ -19,13 +21,17 @@
          data-project-id="@projectId"
          data-questions-endpoint="/api/admin/projects/@projectId/questions"
          data-delete-endpoint="@Url.Action("Delete", "Question")"
-         data-ai-assistance="@aiAssistance">
+         data-ai-assistance="@aiAssistance"
+         data-readonly="@(!isDraft ? "true" : "false")">
         <p class="text-base-content/40 italic text-sm">Vragen laden…</p>
     </div>
 
-    <div class="mb-6">
-        <button type="button" id="add-question-btn" class="btn btn-primary btn-sm">+ Vraag toevoegen</button>
-    </div>
+    @if (isDraft)
+    {
+        <div class="mb-6">
+            <button type="button" id="add-question-btn" class="btn btn-primary btn-sm">+ Vraag toevoegen</button>
+        </div>
+    }
 
     <div class="flex justify-between">
         <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-ghost btn-sm">← Instellingen</a>
@@ -38,6 +44,8 @@
 </div>
 
 @* Modal for editing a question — controlled by project-questions.ts via #questions-list event delegation *@
+@if (isDraft)
+{
 <div id="modal" class="modal hidden">
     <div class="modal-box w-[480px] max-w-xl">
         <div class="flex justify-between items-center mb-4">
@@ -124,6 +132,7 @@
         <button id="modal-backdrop-close">close</button>
     </form>
 </div>
+}
 
 @section Scripts {
     <script type="module" vite-src="~/project-questions.ts"></script>

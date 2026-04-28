@@ -81,7 +81,8 @@ public class CategoryManager(
             CategoryId: i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(ic => ic.TextComment == null),
             CreatedAt: i.CreatedAt,
-            Status: i.Status
+            Status: i.Status,
+            ParticipantEmail: i.Participant?.Email
         )).ToList();
     }
 
@@ -115,7 +116,8 @@ public class CategoryManager(
             CategoryId:    i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(),
             CreatedAt:     i.CreatedAt,
-            Status:        i.Status
+            Status:        i.Status,
+            ParticipantEmail: i.Participant?.Email
         )).ToList();
 
         return (items, total, approved, pending, flagged);

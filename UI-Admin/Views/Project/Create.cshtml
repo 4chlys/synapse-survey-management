@@ -1,7 +1,9 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @{
     var isEdit = Model.ProjectId.HasValue;
-    var shortFormReadonly = isEdit && (string)ViewData["ProjectState"] != "Draft";
+    var projectState = ViewData["ProjectState"] as string;
+    var isDraft = !isEdit || projectState == "Draft";
+    var shortFormReadonly = isEdit && projectState != "Draft";
     ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
     ViewData["ActiveSection"] = "Instellingen";
     Layout = "_Layout";
@@ -52,18 +54,20 @@
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
                         <div class="label"><span class="label-text font-medium">Formuliertype</span></div>
-                        <select asp-for="InteractionMode" class="select select-bordered w-full">
+                        <select asp-for="InteractionMode" class="select select-bordered w-full" disabled="@(!isDraft)">
                             <option value="VerticalScroll">Verticaal scrollen</option>
                             <option value="Paginated">Paginering</option>
                         </select>
+                        @if (!isDraft) { <input type="hidden" asp-for="InteractionMode" /> }
                     </label>
                     <label class="form-control">
                         <div class="label"><span class="label-text font-medium">AI-assistentie</span></div>
-                        <select asp-for="AiAssistance" class="select select-bordered w-full">
+                        <select asp-for="AiAssistance" class="select select-bordered w-full" disabled="@(!isDraft)">
                             <option value="ProActive">Pro-actief</option>
                             <option value="AskFirst">Op aanvraag</option>
                             <option value="Never">Nooit</option>
                         </select>
+                        @if (!isDraft) { <input type="hidden" asp-for="AiAssistance" /> }
                     </label>
                 </div>
 
@@ -102,15 +106,21 @@
                     {
                         <div class="flex gap-2 items-center section-row">
                             <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
-                                   class="input input-bordered input-sm flex-1" placeholder="Sectienaam" />
-                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>
+                                   class="input input-bordered input-sm flex-1" placeholder="Sectienaam" readonly="@(!isDraft)" />
+                            @if (isDraft)
+                            {
+                                <button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>
+                            }
                         </div>
                     }
                 </div>
-                <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                    Sectie toevoegen
-                </button>
+                @if (isDraft)
+                {
+                    <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                        Sectie toevoegen
+                    </button>
+                }
 
                 <div class="card-actions justify-end gap-2 pt-2">
                     <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
@@ -124,17 +134,20 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script type="module">
-        let idx = @(Model.Sections?.Count ?? 0);
-        document.getElementById('add-section').addEventListener('click', () => {
-            const row = document.createElement('div');
-            row.className = 'flex gap-2 items-center section-row';
-            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
-            document.getElementById('sections-container').appendChild(row);
-            idx++;
-        });
-        document.getElementById('sections-container').addEventListener('click', e => {
-            if (e.target.classList.contains('remove-section')) e.target.closest('.section-row').remove();
-        });
-    </script>
+    @if (isDraft)
+    {
+        <script type="module">
+            let idx = @(Model.Sections?.Count ?? 0);
+            document.getElementById('add-section').addEventListener('click', () => {
+                const row = document.createElement('div');
+                row.className = 'flex gap-2 items-center section-row';
+                row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
+                document.getElementById('sections-container').appendChild(row);
+                idx++;
+            });
+            document.getElementById('sections-container').addEventListener('click', e => {
+                if (e.target.classList.contains('remove-section')) e.target.closest('.section-row').remove();
+            });
+        </script>
+    }
 }

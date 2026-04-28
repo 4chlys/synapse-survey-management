@@ -50,7 +50,8 @@ public class AdminIdeasController(
                 CategoryId    = i.CategoryId,
                 ReactionCount = i.ReactionCount,
                 CreatedAt     = i.CreatedAt,
-                Status        = i.Status.ToString()
+                Status        = i.Status.ToString(),
+                ParticipantEmail = i.ParticipantEmail
             }).ToList()
         });
     }

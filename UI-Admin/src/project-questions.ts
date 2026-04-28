@@ -1,9 +1,7 @@
 import { toast } from './lib/notify';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const modalMaybe = document.getElementById('modal') as HTMLDivElement | null;
-    if (!modalMaybe) return;
-    const modal: HTMLDivElement = modalMaybe;
+    const modal = document.getElementById('modal') as HTMLDivElement | null;
 
     const questionForm = document.getElementById('question-form') as HTMLFormElement | null;
     const questionsList = document.getElementById('questions-list') as HTMLDivElement | null;
@@ -20,11 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openModal(): void {
         resetModal();
-        modal.classList.remove('hidden');
+        modal?.classList.remove('hidden');
     }
 
     function closeModal(): void {
-        modal.classList.add('hidden');
+        modal?.classList.add('hidden');
     }
 
     const createUrl = questionForm?.action ?? '';
@@ -79,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = document.getElementById('modal-title');
         if (title) title.textContent = 'Vraag bewerken';
 
-        modal.classList.remove('hidden');
+        modal?.classList.remove('hidden');
     }
 
     function selectType(type: string, activeBtn: HTMLElement): void {
@@ -125,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addQuestionBtn?.addEventListener('click', openModal);
     modalClose?.addEventListener('click', closeModal);
     modalCancel?.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
     document.querySelectorAll<HTMLElement>('.type-btn').forEach(btn => {
         btn.addEventListener('click', () => selectType(btn.dataset.type ?? '', btn));
