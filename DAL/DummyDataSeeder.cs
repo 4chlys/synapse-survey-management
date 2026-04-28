@@ -43,9 +43,12 @@ public class DummyDataSeeder
         return idea;
     }
 
-    public static void Seed(SynapseEnqueteContext context)
+    public static void Seed(SynapseEnqueteContext context, string apiBaseUrl)
     {
         if (context.Projects.Any()) return;
+
+        string LogoUrl(string fileName) =>
+            apiBaseUrl is not null ? $"{apiBaseUrl}/uploads/logos/{fileName}" : null;
 
         _heart = new Emoji { Symbol = "❤️", Name = "heart" };
         _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup" };
@@ -57,21 +60,21 @@ public class DummyDataSeeder
         var platformSynapse = new ProjectPlatform
         {
             Name = "Synapse",
-            LogoUrl = "/uploads/logos/logo_synapse.jpg",
+            LogoUrl = LogoUrl("logo_synapse.jpg"),
             WebsiteUrl = "https://synapse-ip.xyz",
             CreatedAt = DateTime.UtcNow
         };
         var platformFitLife = new ProjectPlatform
         {
             Name = "FitLife Gym",
-            LogoUrl = "/uploads/logos/logo_fitlife.png",
+            LogoUrl = LogoUrl("logo_fitlife.png"),
             WebsiteUrl = "https://www.fitlife.com",
             CreatedAt = DateTime.UtcNow
         };
         var platformEendracht = new ProjectPlatform
         {
             Name = "FC Eendracht",
-            LogoUrl = "/uploads/logos/logo_eendracht.png",
+            LogoUrl = LogoUrl("logo_eendracht.png"),
             WebsiteUrl = "https://www.fceendracht.be",
             CreatedAt = DateTime.UtcNow
         };
