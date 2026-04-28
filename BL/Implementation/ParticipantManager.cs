@@ -13,8 +13,10 @@ public class ParticipantManager(
         var participant = new Participant
         {
             Project = project,
+            Questionnaire = project.Questionnaire,
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.Validate(participant);
         var created = await participantRepository.CreateAsync(participant);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -74,6 +76,7 @@ public class ParticipantManager(
         var participant = await participantRepository.ReadByIdForUpdateAsync(participantId);
         if (participant is null)
             throw new KeyNotFoundException($"Participant with id {participantId} not found.");
+        EntityValidator.ValidateProperty(participant, email, nameof(Participant.Email));
         participant.Email = email;
         participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);

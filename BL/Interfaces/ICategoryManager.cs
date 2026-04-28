@@ -18,7 +18,7 @@ public interface ICategoryManager
     Task<ModerationQueueResult> GetModerationQueueAsync(int projectId);
 
     Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
-        GetIdeasPagedAsync(int projectId, string? search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20);
+        GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20);
 
     Task SetIdeaModerationStatusAsync(int ideaId, ModerationStatus status, int? projectId = null);
 }

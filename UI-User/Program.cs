@@ -2,8 +2,10 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
+using SynapseEnqueteManagement.UI.User.Middleware;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Moderation;
+using SynapseEnqueteManagement.UI.User.Services.SpeechToText;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
@@ -65,6 +67,12 @@ builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IdeaSupportService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<CommentSupportService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<SpeechToTextService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+
+builder.Services.AddMemoryCache();
 
 // Rate limiting — per real client IP, applied only to expensive AI moderation endpoints
 builder.Services.AddRateLimiter(options =>
@@ -76,6 +84,24 @@ builder.Services.AddRateLimiter(options =>
             {
                 Window      = TimeSpan.FromMinutes(1),
                 PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-comment-support", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-stt", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
                 QueueLimit  = 0,
             }));
     options.AddPolicy("participant-creation", context =>
@@ -114,6 +140,8 @@ forwardedHeadersOptions.KnownNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
+app.UseMiddleware<ProjectShortFormResolverMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseViteDevelopmentServer();
@@ -127,6 +155,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseHttpLogging();
+app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthorization();
@@ -138,7 +167,10 @@ app.MapControllerRoute(
     pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
-app.MapGet("/", () => Results.Redirect("/1"));
 
 app.Run();

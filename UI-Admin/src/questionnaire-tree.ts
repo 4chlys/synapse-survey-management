@@ -112,7 +112,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                 <button type="button"
                         class="question-toggle flex-1 px-3 py-3 text-left flex justify-between items-center hover:bg-gray-800 transition"
                         data-question-id="${q.questionId}">
-                    <span>${escapeHtml(q.text)} <span class="text-gray-500 ml-2">[${escapeHtml(q.questionFormat)}]</span></span>
+                    <span>${escapeHtml(q.text)} <span class="text-gray-500 ml-2">[${escapeHtml(q.questionFormat)}]</span>${q.sectionName ? ` <span class="text-gray-400 ml-2 italic">${escapeHtml(q.sectionName)}</span>` : ''}</span>
                     <span id="arrow-${q.questionId}" class="text-gray-300 ml-2">${arrow}</span>
                 </button>
                 <button type="button"
@@ -121,7 +121,8 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                         data-text="${escapeHtml(q.text)}"
                         data-format="${escapeHtml(q.questionFormat)}"
                         data-answers='${escapeHtml(JSON.stringify(q.answerChoices))}'
-                        data-section-id="${q.sectionId ?? ''}">✎</button>
+                        data-section-id="${q.sectionId ?? ''}"
+                        data-is-mandatory="${q.isMandatory}">✎</button>
                 <form method="post" action="${escapeHtml(deleteUrl)}">
                     <input type="hidden" name="__RequestVerificationToken" value="${getAntiforgeryToken()}" />
                     <button type="submit"

@@ -49,17 +49,14 @@ public class IdeaSupportController(
                 });
         }
 
-        // Fetch project to give the AI introduction context on the opening turn.
-        // Non-fatal: a DB error here must not block the greeting; continue without context.
+        // Fetch project for introduction context (first turn) and age range (every turn).
+        // Non-fatal: a DB error here must not block the response; continue without context.
         Project project = null;
-        if (isFirstTurn)
-        {
-            try { project = await GetProjectByIdReadOnlyAsync(projectId); }
-            catch { /* intentionally swallowed — greeting still works without project text */ }
-        }
+        try { project = await GetProjectByIdReadOnlyAsync(projectId); }
+        catch { /* intentionally swallowed */ }
 
-        var projectName         = project?.ProjectPlatform?.Name ?? string.Empty;
-        var projectIntroduction = project?.Introduction?.Text ?? string.Empty;
+        var projectName         = isFirstTurn ? (project?.ProjectPlatform?.Name ?? string.Empty) : string.Empty;
+        var projectIntroduction = isFirstTurn ? (project?.Introduction?.Text ?? string.Empty) : string.Empty;
         if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
 
@@ -72,12 +69,13 @@ public class IdeaSupportController(
                     Content = h.Content,
                 })
                 .ToList(),
-            UserMessage = dto.UserMessage ?? string.Empty,
-            ProjectName = projectName,
+            UserMessage         = dto.UserMessage ?? string.Empty,
+            ProjectName         = projectName,
             ProjectIntroduction = projectIntroduction,
-            CategoryName = category.Name,
+            CategoryName        = category.Name,
             CategoryDescription = category.Description ?? string.Empty,
-            IsFirstTurn = isFirstTurn,
+            AgeRange            = FormatAgeRange(project?.MinAge, project?.MaxAge),
+            IsFirstTurn         = isFirstTurn,
         };
 
         var reply = await ideaSupportService.ChatAsync(request, ct);
@@ -89,6 +87,14 @@ public class IdeaSupportController(
             Phase = reply.Phase.ToString(),
         });
     }
+
+    private static string FormatAgeRange(int? minAge, int? maxAge) => (minAge, maxAge) switch
+    {
+        (null, null)       => null,
+        (var min, null)    => $"{min}+",
+        (null, var max)    => $"0–{max}",
+        (var min, var max) => $"{min}–{max}",
+    };
 
     [HttpPost("refine")]
     public async Task<ActionResult<IdeaSupportRefineResponseDto>> Refine(

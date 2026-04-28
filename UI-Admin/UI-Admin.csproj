@@ -32,6 +32,28 @@
         <Content Include="wwwroot\dist\.vite\**" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\dist\dashboard-DzeeJh_7.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\main-D4-fcwMZ.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\main-DwHU14a7.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\project-ideation-B2-CvKx1.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\project-questions-BXb0jtsT.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\project-setup-DXnHK_zV.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\questionnaire-dnd-Dm6p3-yW.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\questionnaire-tree-CaOLIR3S.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-idea-feed-CIeCnDT4.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-moderation-queue-nWCLUmnb.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-stat-jjgOrdO4.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-survey-distribution-Dc-L75LY.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-timeline--I1Qg07u.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-categories-Dpuo07rK.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-ideas-UoK_jxyw.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\uploads\" />
+    </ItemGroup>
+
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
         <Exec Command="node --version" ContinueOnError="true">
             <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
@@ -42,7 +64,7 @@
     </Target>
 
     <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
-        <Exec Command="pnpm run build" />
+        <Exec Command="pnpm exec vite build" />
     </Target>
 
 </Project>

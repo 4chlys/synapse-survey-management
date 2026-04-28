@@ -51,7 +51,7 @@ public class CommentManager(
             Participant = participant,
             CreatedAt = DateTime.UtcNow
         };
-
+        EntityValidator.Validate(comment);
         var created = (TextComment)await commentRepository.CreateAsync(comment);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -75,10 +75,11 @@ public class CommentManager(
         var iconComment = new IconComment
         {
             Idea = idea,
-            EmojiId = emojiId,
+            Emoji = idea.Category.Project.Emojis.First(e => e.EmojiId == emojiId),
             Participant = participant,
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.Validate(iconComment);
 
         var created = await commentRepository.CreateIconCommentOnIdeaIfNotDuplicateAsync(iconComment);
         if (created == null) return null;
@@ -88,7 +89,7 @@ public class CommentManager(
 
     public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        var removed = await commentRepository.DeleteIconCommentOnIdeaAsync(ideaId, emojiId, participant.ParticipantId);
+        var removed = await commentRepository.DeleteIconCommentOnIdeaAsync(ideaId, projectId, emojiId, participant.ParticipantId);
         if (!removed) return false;
         await uow.SaveChangesAsync(ct);
         return true;
@@ -102,8 +103,9 @@ public class CommentManager(
             logger.LogWarning("TextComment {CommentId} not found in project {ProjectId}", commentId, projectId);
             throw new KeyNotFoundException($"TextComment {commentId} not found in project {projectId}");
         }
+        var emoji = comment.Idea.Category.Project.Emojis.FirstOrDefault(e => e.EmojiId == emojiId);
 
-        if (comment.Idea.Category.Project.Emojis.All(e => e.EmojiId != emojiId))
+        if (emoji == null)
         {
             logger.LogWarning("Emoji {EmojiId} not enabled for project {ProjectId}", emojiId, projectId);
             throw new KeyNotFoundException($"Emoji {emojiId} not enabled for project {projectId}");
@@ -111,11 +113,13 @@ public class CommentManager(
 
         var reaction = new IconComment
         {
-            EmojiId = emojiId,
+            Emoji = emoji,
+            Idea = comment.Idea,
             TextComment = comment,
             Participant = participant,
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.Validate(reaction);
 
         var created = await commentRepository.CreateIconCommentOnTextCommentIfNotDuplicateAsync(reaction);
         if (created == null) return null;
@@ -125,7 +129,7 @@ public class CommentManager(
 
     public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        var removed = await commentRepository.DeleteIconCommentOnTextCommentAsync(commentId, emojiId, participant.ParticipantId);
+        var removed = await commentRepository.DeleteIconCommentOnTextCommentAsync(commentId, projectId, emojiId, participant.ParticipantId);
         if (!removed) return false;
         await uow.SaveChangesAsync(ct);
         return true;

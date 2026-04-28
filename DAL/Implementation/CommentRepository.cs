@@ -68,7 +68,7 @@ public class CommentRepository(DbContext context) : Repository<Comment>(context)
     {
         var exists = await Context.Set<Comment>().OfType<IconComment>()
             .AnyAsync(ic => ic.Participant.ParticipantId == iconComment.Participant.ParticipantId
-                            && ic.EmojiId == iconComment.EmojiId
+                            && ic.Emoji == iconComment.Emoji
                             && ic.Idea.IdeaId == iconComment.Idea.IdeaId
                             && ic.TextComment == null);
         if (exists) return null;
@@ -80,31 +80,33 @@ public class CommentRepository(DbContext context) : Repository<Comment>(context)
     {
         var exists = await Context.Set<Comment>().OfType<IconComment>()
             .AnyAsync(ic => ic.Participant.ParticipantId == iconComment.Participant.ParticipantId
-                            && ic.EmojiId == iconComment.EmojiId
+                            && ic.Emoji == iconComment.Emoji
                             && ic.TextComment.CommentId == iconComment.TextComment.CommentId);
         if (exists) return null;
         await Context.Set<Comment>().AddAsync(iconComment);
         return iconComment;
     }
 
-    public async Task<bool> DeleteIconCommentOnIdeaAsync(int ideaId, int emojiId, int participantId)
+    public async Task<bool> DeleteIconCommentOnIdeaAsync(int ideaId, int projectId, int emojiId, int participantId)
     {
         var entity = await Context.Set<Comment>().OfType<IconComment>()
             .FirstOrDefaultAsync(ic => ic.Participant.ParticipantId == participantId
-                                       && ic.EmojiId == emojiId
+                                       && ic.Emoji.EmojiId == emojiId
                                        && ic.Idea.IdeaId == ideaId
+                                       && ic.Idea.Category.Project.ProjectId == projectId
                                        && ic.TextComment == null);
         if (entity is null) return false;
         Context.Set<Comment>().Remove(entity);
         return true;
     }
 
-    public async Task<bool> DeleteIconCommentOnTextCommentAsync(int commentId, int emojiId, int participantId)
+    public async Task<bool> DeleteIconCommentOnTextCommentAsync(int commentId, int projectId, int emojiId, int participantId)
     {
         var entity = await Context.Set<Comment>().OfType<IconComment>()
             .FirstOrDefaultAsync(ic => ic.Participant.ParticipantId == participantId
-                                       && ic.EmojiId == emojiId
-                                       && ic.TextComment.CommentId == commentId);
+                                       && ic.Emoji.EmojiId == emojiId
+                                       && ic.TextComment.CommentId == commentId
+                                       && ic.Idea.Category.Project.ProjectId == projectId);
         if (entity is null) return false;
         Context.Set<Comment>().Remove(entity);
         return true;

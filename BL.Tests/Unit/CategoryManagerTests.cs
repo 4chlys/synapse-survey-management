@@ -33,7 +33,7 @@ public class CategoryManagerTests
     public async Task SetIdeaModerationStatusAsync_IdeaNotFound_Throws()
     {
         _categoryRepo.Setup(r => r.ReadIdeaByIdForUpdateAsync(99, It.IsAny<int?>()))
-            .ReturnsAsync((Idea?)null)
+            .ReturnsAsync((Idea)null)
             .Verifiable(Times.Once());
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>

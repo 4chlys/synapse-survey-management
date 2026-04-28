@@ -11,11 +11,14 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
@@ -96,9 +99,21 @@ builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
 builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
 
 // Storage
-builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IStorageService, LocalStorageService>();
+}
+else
+{
+    builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
+}
 
 // Registering BL
+var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
+var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
+builder.Services.AddScoped<IShortFormService>(sp =>
+    new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -118,7 +133,11 @@ builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 //
 // To apply changes to ai-config.json, restart the API.
 builder.Services.AddSingleton(aiConfig);
+builder.Services.AddSingleton(aiConfig.Moderation);
+builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
+builder.Services.AddSingleton(aiConfig.CommentSupport);
+builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -148,8 +167,12 @@ if (useAi)
     var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
     builder.Services.AddChatClient(chatClient);
+
+    // All AI features share the same IChatClient.
     builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
 
     // Embedding generator — same PredictionServiceClientBuilder, different model
     // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so
@@ -166,6 +189,8 @@ else
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
     builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
@@ -190,8 +215,12 @@ var app = builder.Build();
 
         try
         {
-            context.CreateDatabase(deleteIfExists);
-            DummyDataSeeder.Seed(context);
+            bool isNewDatabase = context.CreateDatabase(deleteIfExists);
+            if (isNewDatabase)
+            {
+                var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+                DummyDataSeeder.Seed(context, apiBaseUrl);
+            }
 
             var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             var ideasNeedingEmbeddings = await context.Set<Idea>()
@@ -221,6 +250,7 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseStaticFiles();
 app.UseHttpLogging();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();

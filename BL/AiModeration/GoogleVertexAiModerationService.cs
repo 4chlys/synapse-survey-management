@@ -14,7 +14,7 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 public sealed class GoogleVertexAiModerationService(
     IChatClient chatClient,
     ILogger<GoogleVertexAiModerationService> logger,
-    AiConfig config,
+    ModerationConfig config,
     IRegexModerationService regex) : IAiModerationService
 {
     private static readonly Regex CodeFenceRe =
@@ -23,7 +23,7 @@ public sealed class GoogleVertexAiModerationService(
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
     };
 
     public async Task<ModerationResult> CheckWithAiAsync(
@@ -37,7 +37,7 @@ public sealed class GoogleVertexAiModerationService(
         var regexResult = regex.Check(text, contentType);
         if (!regexResult.IsAcceptable) return regexResult;
 
-        if (!config.Moderation.UseAi) return ModerationResult.Acceptable();
+        if (!config.UseAi) return ModerationResult.Acceptable();
 
         try
         {
@@ -64,11 +64,11 @@ public sealed class GoogleVertexAiModerationService(
         {
             var messages = new List<ChatMessage>
             {
-                new(ChatRole.System, config.Moderation.RewritePrompt),
-                new(ChatRole.User, text),
+                new(ChatRole.System, config.RewritePrompt),
+                new(ChatRole.User,   text),
             };
 
-            var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var response   = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -95,17 +95,17 @@ public sealed class GoogleVertexAiModerationService(
         CancellationToken ct)
     {
         var prompt = contentType == "comment"
-            ? config.Moderation.CommentModerationPrompt
-            : config.Moderation.ModerationPrompt;
+            ? config.CommentModerationPrompt
+            : config.ModerationPrompt;
 
         var messages = new List<ChatMessage>
         {
             new(ChatRole.System, prompt),
-            new(ChatRole.User, text),
+            new(ChatRole.User,   text),
         };
 
         var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-        var rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+        var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawJson))
         {
@@ -138,7 +138,7 @@ public sealed class GoogleVertexAiModerationService(
 
     private sealed class ModerationVerdict
     {
-        [JsonPropertyName("acceptable")] public bool Acceptable { get; set; }
-        [JsonPropertyName("reason")]     public string Reason   { get; set; }
+        [JsonPropertyName("acceptable")] public bool   Acceptable { get; set; }
+        [JsonPropertyName("reason")]     public string Reason     { get; set; }
     }
 }

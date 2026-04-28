@@ -56,7 +56,7 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .ToDictionaryAsync(g => g.Key, g => g.Count());
 
     public async Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
-        int projectId, string? search, int? categoryId, ModerationStatus? status,
+        int projectId, string search, int? categoryId, ModerationStatus? status,
         int page, int pageSize)
     {
         var query = Context.Set<Idea>()
@@ -82,7 +82,7 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
         return (items, total);
     }
 
-    public async Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null)
+    public async Task<Idea> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null)
         => await Context.Set<Idea>()
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId
                 && (projectId == null || i.Category.Project.ProjectId == projectId));

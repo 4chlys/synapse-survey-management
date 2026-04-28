@@ -5,6 +5,6 @@ namespace SynapseEnqueteManagement.API.DTOs.Project;
 public class SaveContactInfoDto
 {
     [EmailAddress]
-    [StringLength(254)]
+    [MaxLength(200)]
     public string Email { get; set; }
 }

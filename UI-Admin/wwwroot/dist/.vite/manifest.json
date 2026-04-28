@@ -1,30 +1,44 @@
 {
+  "_notify-B7m20lt3.js": {
+    "file": "notify-B7m20lt3.js",
+    "name": "notify"
+  },
+  "_questionnaire-tree-CPjK5PFY.js": {
+    "file": "questionnaire-tree-CPjK5PFY.js",
+    "name": "questionnaire-tree"
+  },
+  "_quill-CfZ7kyuK.css": {
+    "file": "quill-CfZ7kyuK.css",
+    "src": "_quill-CfZ7kyuK.css"
+  },
+  "_quill.snow-DOZA1zD1.js": {
+    "file": "quill.snow-DOZA1zD1.js",
+    "name": "quill.snow",
+    "css": [
+      "quill-CfZ7kyuK.css"
+    ]
+  },
   "dashboard.ts": {
-    "file": "dashboard-Dadk5tQN.js",
+    "file": "dashboard-DUf6Wf84.js",
     "name": "dashboard",
     "src": "dashboard.ts",
     "isEntry": true,
     "imports": [
-      "widget-stat.ts",
-      "widget-survey-distribution.ts"
+      "widget-idea-feed.ts"
     ]
   },
   "main.ts": {
-    "file": "main-AXFSw85n.js",
+    "file": "main-7XQ5AuUh.js",
     "name": "main",
     "src": "main.ts",
     "isEntry": true,
     "imports": [
-      "theme.ts",
-      "project-index.ts",
-      "project-setup.ts",
-      "project-questions.ts",
-      "questionnaire-dnd.ts",
-      "project-ideation.ts",
-      "questionnaire-tree.ts"
+      "_quill.snow-DOZA1zD1.js",
+      "_notify-B7m20lt3.js",
+      "_questionnaire-tree-CPjK5PFY.js"
     ],
     "css": [
-      "main-Cx3sDuO-.css"
+      "main-BEhodjKp.css"
     ]
   },
   "project-ideation.ts": {
@@ -40,28 +54,42 @@
     "isEntry": true
   },
   "project-questions.ts": {
-    "file": "project-questions-BXb0jtsT.js",
+    "file": "project-questions-BsSXIvO3.js",
     "name": "project-questions",
     "src": "project-questions.ts",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_notify-B7m20lt3.js"
+    ]
   },
   "project-setup.ts": {
-    "file": "project-setup-DXnHK_zV.js",
+    "file": "project-setup-_otpN8Xu.js",
     "name": "project-setup",
     "src": "project-setup.ts",
+    "isEntry": true,
+    "imports": [
+      "_quill.snow-DOZA1zD1.js",
+      "_notify-B7m20lt3.js"
+    ]
+  },
+  "project-shortform-autofill.ts": {
+    "file": "project-shortform-autofill-BYxwZNiC.js",
+    "name": "project-shortform-autofill",
+    "src": "project-shortform-autofill.ts",
     "isEntry": true
   },
   "questionnaire-dnd.ts": {
-    "file": "questionnaire-dnd-Dm6p3-yW.js",
+    "file": "questionnaire-dnd-xORYsLqY.js",
     "name": "questionnaire-dnd",
     "src": "questionnaire-dnd.ts",
     "isEntry": true,
     "imports": [
-      "questionnaire-tree.ts"
+      "_questionnaire-tree-CPjK5PFY.js",
+      "_notify-B7m20lt3.js"
     ]
   },
   "questionnaire-tree.ts": {
-    "file": "questionnaire-tree-CaOLIR3S.js",
+    "file": "questionnaire-tree-l0sNRNKZ.js",
     "name": "questionnaire-tree",
     "src": "questionnaire-tree.ts",
     "isEntry": true
@@ -73,68 +101,60 @@
     "isEntry": true
   },
   "widget-idea-feed.ts": {
-    "file": "widget-idea-feed-CdyJKEum.js",
+    "file": "widget-idea-feed-CvXctVSo.js",
     "name": "widget-idea-feed",
     "src": "widget-idea-feed.ts",
-    "isEntry": true,
-    "imports": [
-      "widget-stat.ts",
-      "widget-survey-distribution.ts"
-    ]
+    "isEntry": true
   },
   "widget-moderation-queue.ts": {
-    "file": "widget-moderation-queue-BNAn-UVu.js",
+    "file": "widget-moderation-queue-DKc8Wq3R.js",
     "name": "widget-moderation-queue",
     "src": "widget-moderation-queue.ts",
     "isEntry": true,
     "imports": [
-      "widget-stat.ts",
-      "widget-survey-distribution.ts"
+      "widget-idea-feed.ts"
     ]
   },
   "widget-stat.ts": {
-    "file": "widget-stat-C2hKp57u.js",
+    "file": "widget-stat-DKc8Wq3R.js",
     "name": "widget-stat",
     "src": "widget-stat.ts",
     "isEntry": true,
     "imports": [
-      "widget-survey-distribution.ts"
+      "widget-idea-feed.ts"
     ]
   },
   "widget-survey-distribution.ts": {
-    "file": "widget-survey-distribution-Dc-L75LY.js",
+    "file": "widget-survey-distribution-l0sNRNKZ.js",
     "name": "widget-survey-distribution",
     "src": "widget-survey-distribution.ts",
     "isEntry": true
   },
   "widget-timeline.ts": {
-    "file": "widget-timeline-B-rXsFpC.js",
+    "file": "widget-timeline-SeEoX4NA.js",
     "name": "widget-timeline",
     "src": "widget-timeline.ts",
     "isEntry": true,
     "imports": [
-      "widget-stat.ts",
-      "widget-survey-distribution.ts"
+      "widget-idea-feed.ts"
     ]
   },
   "widget-top-categories.ts": {
-    "file": "widget-top-categories-C-Dkio-l.js",
+    "file": "widget-top-categories-D-8uOm01.js",
     "name": "widget-top-categories",
     "src": "widget-top-categories.ts",
     "isEntry": true,
     "imports": [
-      "widget-stat.ts",
-      "widget-survey-distribution.ts"
+      "widget-idea-feed.ts"
     ]
   },
   "widget-top-ideas.ts": {
-    "file": "widget-top-ideas-CQ7gkXk6.js",
+    "file": "widget-top-ideas-DKc8Wq3R.js",
     "name": "widget-top-ideas",
     "src": "widget-top-ideas.ts",
     "isEntry": true,
     "imports": [
-      "widget-stat.ts",
-      "widget-survey-distribution.ts"
+      "widget-idea-feed.ts"
     ]
   }
 }

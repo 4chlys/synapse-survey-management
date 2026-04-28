@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
@@ -11,7 +12,9 @@ using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
+using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
+using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -22,10 +25,12 @@ public class ProjectController(
     CategoryAdminService categoryService,
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
-    IWebHostEnvironment env,
+    UploadAdminService uploadService,
+    PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager,
     WidgetPreferenceService widgetPreferenceService,
-    IdeaAdminService ideaService) : Controller
+    IdeaAdminService ideaService,
+    IOptions<AdminSettings> adminSettings) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -39,7 +44,15 @@ public class ProjectController(
     public async Task<IActionResult> Create(int? projectId)
     {
         if (!projectId.HasValue)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user?.ProjectPlatformId is not null)
+            {
+                var platform = await platformService.GetPlatformByIdAsync(user.ProjectPlatformId.Value);
+                ViewData["Project"] = new ProjectAdminViewModel { OrganisationLogoUrl = platform?.LogoUrl };
+            }
             return View(new CreateProjectViewModel());
+        }
 
         var project = await projectService.GetProjectByIdAsync(projectId.Value);
         if (project is null)
@@ -50,6 +63,7 @@ public class ProjectController(
         {
             ProjectId = projectId,
             Name = project.Name,
+            ShortForm = project.ShortForm,
             Topic = project.Topic,
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
@@ -81,6 +95,9 @@ public class ProjectController(
                 ModelState.AddModelError(nameof(model.Introduction), "Introductie is verplicht.");
         }
 
+        if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
+            ModelState.AddModelError(nameof(model.MinAge), "MinLeeftijd mag niet groter zijn dan MaxLeeftijd.");
+
         if (!ModelState.IsValid)
         {
             if (model.ProjectId.HasValue)
@@ -102,7 +119,8 @@ public class ProjectController(
         {
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge, model.ContactOptIn);
+                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                model.ContactOptIn, model.ShortForm);
         }
         else
         {
@@ -115,7 +133,8 @@ public class ProjectController(
                 model.Name, model.Topic, model.Introduction,
                 model.ImageUrl, model.InteractionMode, model.AiAssistance,
                 model.MinAge, model.MaxAge, model.ContactOptIn,
-                platformId: user.ProjectPlatformId.Value);
+                platformId: user.ProjectPlatformId.Value,
+                shortForm: model.ShortForm);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -135,12 +154,14 @@ public class ProjectController(
                 await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty);
 
         if (submitAction == "next")
-            return RedirectToAction(nameof(Questions), new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
+            return RedirectToAction(nameof(Questions),
+                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance });
 
-        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId });
+        return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, saved = 1 });
     }
 
-    public async Task<IActionResult> Questions(int projectId, AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
+    public async Task<IActionResult> Questions(int projectId,
+        AiAssistanceType aiAssistance = AiAssistanceType.ProActive)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
@@ -157,7 +178,8 @@ public class ProjectController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance, CreateQuestionViewModel model)
+    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
+        CreateQuestionViewModel model)
     {
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
@@ -167,11 +189,12 @@ public class ProjectController(
         ViewData["PlatformName"]  = projectForCreate?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForCreate?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Vragen";
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance, EditQuestionViewModel model)
+    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
+        EditQuestionViewModel model)
     {
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
@@ -181,7 +204,7 @@ public class ProjectController(
         ViewData["PlatformName"]  = projectForUpdate?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForUpdate?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Vragen";
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance });
+        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, saved = 1 });
     }
 
     public async Task<IActionResult> Ideation(int projectId)
@@ -231,29 +254,33 @@ public class ProjectController(
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "Geen bestand ontvangen." });
 
-        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-        var ext = Path.GetExtension(file.FileName);
-        if (!allowedExtensions.Contains(ext))
-            return BadRequest(new { error = "Bestandstype niet toegestaan." });
+        try
+        {
+            var url = await uploadService.UploadImageAsync(file);
+            return Ok(new { url });
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(502, new { error = "Uploaden mislukt." });
+        }
+    }
 
-        var uploadsDir = Path.Combine(env.WebRootPath, "uploads");
-        Directory.CreateDirectory(uploadsDir);
+    [HttpGet]
+    public async Task<IActionResult> CheckShortForm(string shortForm, int? projectId)
+    {
+        if (string.IsNullOrWhiteSpace(shortForm))
+            return Json(new { available = true });
 
-        var fileName = $"{Guid.NewGuid()}{ext}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        await using var stream = System.IO.File.Create(filePath);
-        await file.CopyToAsync(stream);
-
-        return Ok(new { url = $"/uploads/{fileName}" });
+        var available = await projectService.IsShortFormAvailableAsync(shortForm, projectId);
+        return Json(new { available });
     }
 
     [HttpPost]
-    public async Task<IActionResult> DeleteProject(int projectId)
-    {
-        await projectService.DeleteProjectAsync(projectId);
-        return RedirectToAction(nameof(Index));
-    }
+        public async Task<IActionResult> DeleteProject(int projectId)
+        {
+            await projectService.DeleteProjectAsync(projectId);
+            return RedirectToAction(nameof(Index));
+        }
 
     public async Task<IActionResult> Activate(int projectId)
     {
@@ -295,6 +322,9 @@ public class ProjectController(
 
         dashboard.WidgetLayout = layout;
         dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
+        var participantDomain = adminSettings.Value.ParticipantDomain;
+        var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
+        dashboard.SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}";
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;
@@ -306,9 +336,9 @@ public class ProjectController(
 
     public async Task<IActionResult> Ideas(
         int projectId,
-        string? search = null,
+        string search = null,
         int? categoryId = null,
-        string? status = null,
+        string status = null,
         int page = 1)
     {
         var user = await userManager.GetUserAsync(User);

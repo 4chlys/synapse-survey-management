@@ -104,9 +104,12 @@ public sealed class GoogleVertexAiIdeaSupportService(
     /// </summary>
     private List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
     {
+        var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
+        var systemPrompt = config.SystemPrompt.Replace("{age_range}", ageRange, StringComparison.OrdinalIgnoreCase);
+
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, config.SystemPrompt)
+            new(ChatRole.System, systemPrompt)
         };
 
         if (request.IsFirstTurn && !string.IsNullOrWhiteSpace(request.CategoryName))
@@ -122,6 +125,12 @@ public sealed class GoogleVertexAiIdeaSupportService(
                     StringComparison.OrdinalIgnoreCase);
 
             messages.Add(new ChatMessage(ChatRole.System, ctx));
+        }
+        else if (!string.IsNullOrWhiteSpace(request.CategoryName))
+        {
+            messages.Add(new ChatMessage(ChatRole.System,
+                $"Herinnering: de categorie voor deze sessie is '{request.CategoryName}'. " +
+                $"Gebruik altijd deze naam — verzin NOOIT een andere categorienaam."));
         }
 
         var history = request.History.Count > config.MaxHistoryTurns * 2
@@ -160,7 +169,12 @@ public sealed class GoogleVertexAiIdeaSupportService(
     /// </summary>
     private IdeaSupportChatReply ParseAiReply(string raw)
     {
-        var json = CodeFenceRe.Replace(raw, string.Empty).Trim();
+        var cleaned = CodeFenceRe.Replace(raw, string.Empty).Trim();
+
+        // Extract the JSON object even when the model adds a preamble (e.g. "model\n{...}").
+        var start = cleaned.IndexOf('{');
+        var end   = cleaned.LastIndexOf('}');
+        var json  = start >= 0 && end > start ? cleaned[start..(end + 1)] : cleaned;
 
         try
         {

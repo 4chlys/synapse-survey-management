@@ -105,7 +105,7 @@ public class CommentManagerTests
 
         // Assert
         Assert.NotNull(created);
-        Assert.Equal(EmojiId, created.EmojiId);
+        Assert.Equal(EmojiId, created.Emoji.EmojiId);
         _uow.VerifyAll();
         _commentRepository.VerifyAll();
     }
@@ -153,7 +153,7 @@ public class CommentManagerTests
     public async Task RemoveIconCommentAsync_HappyPath_DeletesAndSavesOnce()
     {
         // Arrange
-        _commentRepository.Setup(r => r.DeleteIconCommentOnIdeaAsync(IdeaId, EmojiId, _participant.ParticipantId))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnIdeaAsync(IdeaId, ProjectId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(true)
             .Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -173,7 +173,7 @@ public class CommentManagerTests
     public async Task RemoveIconCommentAsync_NotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _commentRepository.Setup(r => r.DeleteIconCommentOnIdeaAsync(IdeaId, EmojiId, _participant.ParticipantId))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnIdeaAsync(IdeaId, ProjectId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(false)
             .Verifiable(Times.Exactly(1));
 
@@ -250,7 +250,7 @@ public class CommentManagerTests
     public async Task RemoveCommentReactionAsync_HappyPath_DeletesAndSavesOnce()
     {
         // Arrange
-        _commentRepository.Setup(r => r.DeleteIconCommentOnTextCommentAsync(CommentId, EmojiId, _participant.ParticipantId))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnTextCommentAsync(CommentId, ProjectId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(true);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -268,7 +268,7 @@ public class CommentManagerTests
     public async Task RemoveCommentReactionAsync_NotFound_ReturnsFalseWithoutSaving()
     {
         // Arrange
-        _commentRepository.Setup(r => r.DeleteIconCommentOnTextCommentAsync(CommentId, EmojiId, _participant.ParticipantId))
+        _commentRepository.Setup(r => r.DeleteIconCommentOnTextCommentAsync(CommentId, ProjectId, EmojiId, _participant.ParticipantId))
             .ReturnsAsync(false);
 
         // Act

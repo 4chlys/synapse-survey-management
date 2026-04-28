@@ -14,9 +14,9 @@ public class AdminIdeasController(
     [HttpGet]
     public async Task<ActionResult<IdeaPageDto>> GetIdeas(
         int projectId,
-        [FromQuery] string? search = null,
+        [FromQuery] string search = null,
         [FromQuery] int? categoryId = null,
-        [FromQuery] string? status = null,
+        [FromQuery] string status = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {

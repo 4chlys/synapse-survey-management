@@ -35,6 +35,21 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
             .Include(p => p.Emojis)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
+    public Task<Project> ReadByIdWithQuestionnaireForUpdateAsync(int projectId)
+        => Context.Set<Project>()
+            .Include(p => p.Questionnaire)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
+    public Task<bool> ExistsByShortFormAsync(string shortForm, int? excludeProjectId = null)
+        => Context.Set<Project>()
+            .AnyAsync(p => p.ShortForm == shortForm
+                           && (excludeProjectId == null || p.ProjectId != excludeProjectId));
+
+    public Task<Project> ReadByShortFormReadOnlyAsync(string shortForm)
+        => Context.Set<Project>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ShortForm == shortForm);
+
     public async Task<IEnumerable<Project>> ReadAllWithPlatformReadOnlyAsync(int? platformId = null)
     {
         IQueryable<Project> query = Context.Set<Project>()

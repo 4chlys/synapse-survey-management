@@ -1,20 +1,15 @@
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
 /// <summary>
-/// Provides the list of banned words sourced from the loaded <see cref="AiConfig"/>.
-///
-/// Previously this was a static list of hardcoded strings. It is now a thin adapter
-/// so the rest of the moderation pipeline (<see cref="GoogleVertexAiModerationService"/>,
-/// <see cref="RegexModerationPatterns"/>) can continue to call the same shape
-/// while the data comes from ai-config.json.
+/// Provides the list of banned words sourced from <see cref="ModerationConfig"/>.
 /// </summary>
 public sealed class BannedWordList
 {
     private readonly IReadOnlyList<(string Word, string Reason)> _entries;
 
-    public BannedWordList(AiConfig config)
+    public BannedWordList(ModerationConfig config)
     {
-        _entries = config.Moderation.BannedWords
+        _entries = config.BannedWords
             .Where(e => !string.IsNullOrWhiteSpace(e.Word))
             .Select(e => (e.Word.ToLowerInvariant().Trim(), e.Reason))
             .ToList()

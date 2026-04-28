@@ -18,8 +18,8 @@ public interface ICategoryRepository : IRepository<Category>
     Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId);
 
     Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
-        int projectId, string? search, int? categoryId, ModerationStatus? status,
+        int projectId, string search, int? categoryId, ModerationStatus? status,
         int page, int pageSize);
 
-    Task<Idea?> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null);
+    Task<Idea> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null);
 }

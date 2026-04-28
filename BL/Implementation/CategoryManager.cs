@@ -29,6 +29,7 @@ public class CategoryManager(
             Description = description,
             Project = project
         };
+        EntityValidator.Validate(category);
         var created = await categoryRepository.CreateAsync(category);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -39,6 +40,8 @@ public class CategoryManager(
         var category = await categoryRepository.ReadByIdForUpdateAsync(categoryId);
         if (category is null) return false;
 
+        EntityValidator.ValidateProperty(category, name, nameof(Category.Name));
+        EntityValidator.ValidateProperty(category, description, nameof(Category.Description));
         category.Name = name;
         category.Description = description;
         categoryRepository.Update(category);
@@ -61,7 +64,7 @@ public class CategoryManager(
             Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
             CategoryName: i.Category.Name,
             CategoryId: i.Category.CategoryId,
-            ReactionCount: i.Comments.OfType<IconComment>().Count(),
+            ReactionCount: i.Comments.OfType<IconComment>().Count(ic => ic.TextComment == null),
             CreatedAt: i.CreatedAt,
             Status: i.Status
         )).ToList();
@@ -79,7 +82,7 @@ public class CategoryManager(
     }
 
     public async Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
-        GetIdeasPagedAsync(int projectId, string? search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20)
+        GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20)
     {
         var (ideas, total) = await categoryRepository.ReadIdeasPagedAsync(
             projectId, search, categoryId, status, page, pageSize);

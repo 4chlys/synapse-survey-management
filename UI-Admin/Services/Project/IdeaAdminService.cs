@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
@@ -17,7 +16,7 @@ public class IdeaAdminService(HttpClient httpClient)
     }
 
     public async Task<(List<IdeaRowViewModel> Items, int Total, int Approved, int Pending, int Flagged)>
-        GetIdeasAsync(int projectId, string? search, int? categoryId, string? status, int page, int pageSize = 20)
+        GetIdeasAsync(int projectId, string search, int? categoryId, string status, int page, int pageSize = 20)
     {
         var url = $"api/admin/projects/{projectId}/ideas?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrWhiteSpace(search))    url += $"&search={Uri.EscapeDataString(search)}";

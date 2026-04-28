@@ -1,9 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.BL.Implementation;
+
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ProjectManagerTests
 {
     private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
+    private readonly Mock<IShortFormService> _shortFormService = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ProjectManager _manager;
 
@@ -12,8 +16,145 @@ public class ProjectManagerTests
 
     public ProjectManagerTests()
     {
-        _manager = new ProjectManager(_projectRepository.Object, _emojiRepository.Object, _uow.Object);
+        _manager = new ProjectManager(
+            _projectRepository.Object,
+            _emojiRepository.Object,
+            _shortFormService.Object,
+            _uow.Object);
     }
+
+    #region CreateProjectAsync
+
+    [Fact]
+    public async Task CreateProjectAsync_BlankShortForm_AutofillsFromName()
+    {
+        // Arrange
+        _shortFormService.Setup(s => s.Normalize("My Project")).Returns("my-project");
+        _shortFormService.Setup(s => s.IsValid("my-project")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("my-project")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("my-project", null)).ReturnsAsync("my-project");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>()))
+            .ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.CreateProjectAsync(
+            "My Project", string.Empty, string.Empty, string.Empty,
+            FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, platformId: 1, shortForm: null);
+
+        // Assert
+        Assert.Equal("my-project", result.ShortForm);
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_ReservedShortForm_ThrowsValidationException()
+    {
+        // Arrange
+        _shortFormService.Setup(s => s.IsValid("admin")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("admin")).Returns(true);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _manager.CreateProjectAsync(
+                "Admin", string.Empty, string.Empty, string.Empty,
+                FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, platformId: 1, shortForm: "admin"));
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_InvalidShortForm_ThrowsValidationException()
+    {
+        // Arrange
+        _shortFormService.Setup(s => s.IsValid("INVALID FORM")).Returns(false);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _manager.CreateProjectAsync(
+                "Test", string.Empty, string.Empty, string.Empty,
+                FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, platformId: 1, shortForm: "INVALID FORM"));
+    }
+
+    #endregion
+
+    #region UpdateProjectAsync
+
+    [Fact]
+    public async Task UpdateProjectAsync_ShortFormChangeInDraft_UpdatesShortForm()
+    {
+        // Arrange
+        var project = new Project
+        {
+            ProjectId = ProjectId,
+            ShortForm = "old-form",
+            ProjectState = ProjectState.Draft
+        };
+        _projectRepository.Setup(r => r.ReadByIdWithIntroductionForUpdateAsync(ProjectId))
+            .ReturnsAsync(project);
+        _shortFormService.Setup(s => s.IsValid("new-form")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("new-form")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("new-form", ProjectId)).ReturnsAsync("new-form");
+        _projectRepository.Setup(r => r.Update(project));
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.UpdateProjectAsync(
+            ProjectId, "Name", string.Empty, string.Empty, string.Empty,
+            FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, shortForm: "new-form");
+
+        // Assert
+        Assert.Equal("new-form", result.ShortForm);
+    }
+
+    [Fact]
+    public async Task UpdateProjectAsync_ShortFormChangeInActive_ThrowsValidationException()
+    {
+        // Arrange
+        var project = new Project
+        {
+            ProjectId = ProjectId,
+            ShortForm = "old-form",
+            ProjectState = ProjectState.Active
+        };
+        _projectRepository.Setup(r => r.ReadByIdWithIntroductionForUpdateAsync(ProjectId))
+            .ReturnsAsync(project);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _manager.UpdateProjectAsync(
+                ProjectId, "Name", string.Empty, string.Empty, string.Empty,
+                FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, shortForm: "changed-form"));
+    }
+
+    [Fact]
+    public async Task UpdateProjectAsync_SameShortFormInActive_DoesNotThrow()
+    {
+        // Arrange
+        var project = new Project
+        {
+            ProjectId = ProjectId,
+            ShortForm = "same-form",
+            ProjectState = ProjectState.Active
+        };
+        _projectRepository.Setup(r => r.ReadByIdWithIntroductionForUpdateAsync(ProjectId))
+            .ReturnsAsync(project);
+        _projectRepository.Setup(r => r.Update(project));
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act — passing the same shortform should not throw
+        var result = await _manager.UpdateProjectAsync(
+            ProjectId, "Name", string.Empty, string.Empty, string.Empty,
+            FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, shortForm: "same-form");
+
+        // Assert
+        Assert.Equal("same-form", result.ShortForm);
+    }
+
+    #endregion
 
     #region EnableEmojiForProjectAsync
 

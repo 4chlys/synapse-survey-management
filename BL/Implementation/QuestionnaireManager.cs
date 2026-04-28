@@ -45,6 +45,7 @@ public class QuestionnaireManager(
             parent = await questionRepository.ReadByIdWithSectionForUpdateAsync(parentQuestionId.Value);
             if (parent is null)
                 throw new ValidationException($"Parent question {parentQuestionId} not found.");
+            EntityValidator.ValidateProperty(new Question(), parentTriggerValue, nameof(Question.ParentTriggerValue));
             ValidateParentTrigger(parent, parentTriggerValue);
         }
         else if (!string.IsNullOrEmpty(parentTriggerValue))
@@ -70,8 +71,11 @@ public class QuestionnaireManager(
         };
         if (endingAnswers is not null)
             foreach (var value in endingAnswers)
+            {
+                EntityValidator.ValidateProperty(new EndingAnswer(), value, nameof(EndingAnswer.Value));
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
-
+            }
+        EntityValidator.Validate(question);
         var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -87,6 +91,7 @@ public class QuestionnaireManager(
         var question = await questionRepository.ReadByIdWithSectionForUpdateAsync(questionId);
         if (question is null) return false;
 
+        EntityValidator.ValidateProperty(question, text, nameof(Question.Text));
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
@@ -99,7 +104,10 @@ public class QuestionnaireManager(
         {
             question.EndingAnswers.Clear();
             foreach (var value in endingAnswers)
+            {
+                EntityValidator.ValidateProperty(new EndingAnswer(), value, nameof(EndingAnswer.Value));
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
+            }
         }
 
         questionRepository.Update(question);
@@ -211,6 +219,7 @@ public class QuestionnaireManager(
             Description = description,
             Questionnaire = questionnaire
         };
+        EntityValidator.Validate(section);
         var created = await sectionRepository.CreateAsync(section);
         await uow.SaveChangesAsync(ct);
         return created;
@@ -221,6 +230,8 @@ public class QuestionnaireManager(
         var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
         if (section is null) return false;
 
+        EntityValidator.ValidateProperty(section, name, nameof(Section.Name));
+        EntityValidator.ValidateProperty(section, description, nameof(Section.Description));
         section.Name = name;
         section.Description = description;
         sectionRepository.Update(section);

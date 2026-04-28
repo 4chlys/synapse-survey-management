@@ -48,7 +48,7 @@ public class ResponsesControllerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         var project = new Project { ProjectId = ProjectId };
-        _projectManager.Setup(p => p.GetProjectByIdForUpdateAsync(ProjectId))
+        _projectManager.Setup(p => p.GetProjectByIdWithQuestionnaireForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
         _participantManager.Setup(p => p.AddParticipantAsync(project, ct))
             .ReturnsAsync(new Participant { SessionToken = Guid.NewGuid() })
