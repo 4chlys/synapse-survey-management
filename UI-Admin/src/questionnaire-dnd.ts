@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     list.addEventListener('dragend', () => {
         dragged?.classList.remove('opacity-50');
         dragged = null;
-        document.querySelectorAll('.drop-zone.active').forEach((z) => z.classList.remove('active', 'bg-gray-700'));
+        document.querySelectorAll('.drop-zone.active').forEach((z) => z.classList.remove('active', 'bg-base-200'));
     });
 
     list.addEventListener('dragover', (e) => {
@@ -121,19 +121,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-        zone.classList.add('active', 'bg-gray-700');
+        zone.classList.add('active', 'bg-base-200');
     });
 
     list.addEventListener('dragleave', (e) => {
         const zone = (e.target as HTMLElement).closest<HTMLElement>('.drop-zone');
-        zone?.classList.remove('active', 'bg-gray-700');
+        zone?.classList.remove('active', 'bg-base-200');
     });
 
     list.addEventListener('drop', async (e) => {
         const zone = (e.target as HTMLElement).closest<HTMLElement>('.drop-zone');
         if (!zone || !dragged) return;
         e.preventDefault();
-        zone.classList.remove('active', 'bg-gray-700');
+        zone.classList.remove('active', 'bg-base-200');
 
         const questionId = parseInt(dragged.dataset.questionId ?? '0', 10);
         const parentIdStr = zone.dataset.parentId ?? '';

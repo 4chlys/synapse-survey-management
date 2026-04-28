@@ -19,8 +19,13 @@ export function initTopCategoriesWidget(el: HTMLElement): () => void {
     const url = `${apiBase}/api/projects/${projectId}/dashboard`;
 
     const canvas = document.createElement('canvas');
-    el.innerHTML = '<p class="text-xs text-gray-400 mb-2">Top categorieën</p>';
+    el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Top categorieën</p>';
     el.appendChild(canvas);
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'synapse-dark';
+    const labelColor = isDark ? '#d1d5db' : '#374151';
+    const tickColor = isDark ? '#9ca3af' : '#6b7280';
+    const gridColor = isDark ? '#374151' : '#e5e7eb';
 
     const chart = new Chart(canvas, {
         type: 'bar',
@@ -31,10 +36,10 @@ export function initTopCategoriesWidget(el: HTMLElement): () => void {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#d1d5db', font: { size: 10 } } } },
+            plugins: { legend: { labels: { color: labelColor, font: { size: 10 } } } },
             scales: {
-                x: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#374151' } },
-                y: { ticks: { color: '#9ca3af', font: { size: 9 } }, grid: { color: '#374151' } },
+                x: { ticks: { color: tickColor, font: { size: 9 } }, grid: { color: gridColor } },
+                y: { ticks: { color: tickColor, font: { size: 9 } }, grid: { color: gridColor } },
             },
         },
     });

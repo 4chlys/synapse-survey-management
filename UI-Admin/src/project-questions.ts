@@ -81,8 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const formatInput = document.getElementById('QuestionFormat') as HTMLInputElement | null;
         if (formatInput) formatInput.value = type;
 
-        document.querySelectorAll<HTMLElement>('.type-btn').forEach(b => b.classList.remove('bg-gray-600'));
-        activeBtn.classList.add('bg-gray-600');
+        document.querySelectorAll<HTMLElement>('.type-btn').forEach(b => {
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-ghost');
+        });
+        activeBtn.classList.remove('btn-ghost');
+        activeBtn.classList.add('btn-primary');
 
         document.querySelectorAll<HTMLElement>('.type-selected-label').forEach(l => l.classList.add('hidden'));
         activeBtn.parentElement?.querySelector<HTMLElement>('.type-selected-label')?.classList.remove('hidden');
@@ -103,13 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
         row.className = 'flex items-center gap-2';
         const input = document.createElement('input');
         input.type = 'text';
-        input.className = 'answer-input flex-1 bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 focus:outline-none';
+        input.className = 'answer-input input input-bordered input-xs flex-1';
         input.placeholder = 'Antwoord...';
         input.maxLength = 500;
         input.addEventListener('input', () => answersError?.classList.add('hidden'));
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'text-gray-400 hover:text-white text-base px-1';
+        removeBtn.className = 'btn btn-ghost btn-xs text-base-content/50';
         removeBtn.textContent = '×';
         removeBtn.addEventListener('click', () => row.remove());
         row.appendChild(input);

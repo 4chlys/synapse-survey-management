@@ -19,23 +19,23 @@ export function initModerationQueueWidget(el: HTMLElement): () => void {
             const q: ModerationQueue = await res.json();
 
             el.innerHTML = `
-                <p class="text-xs text-gray-400 mb-3">Moderatiestatus</p>
+                <p class="text-xs text-base-content/50 mb-3">Moderatiestatus</p>
                 <div class="grid grid-cols-2 gap-2 text-center">
-                    <div class="bg-gray-700 rounded p-2">
-                        <p id="modq-approved-${projectId}" class="text-lg font-bold text-green-400"></p>
-                        <p class="text-xs text-gray-400">Goedgekeurd</p>
+                    <div class="bg-base-200 rounded p-2">
+                        <p id="modq-approved-${projectId}" class="text-lg font-bold text-success"></p>
+                        <p class="text-xs text-base-content/50">Goedgekeurd</p>
                     </div>
-                    <div class="bg-gray-700 rounded p-2">
-                        <p id="modq-unflagged-${projectId}" class="text-lg font-bold text-yellow-400"></p>
-                        <p class="text-xs text-gray-400">Nieuw</p>
+                    <div class="bg-base-200 rounded p-2">
+                        <p id="modq-unflagged-${projectId}" class="text-lg font-bold text-warning"></p>
+                        <p class="text-xs text-base-content/50">Nieuw</p>
                     </div>
-                    <div class="bg-gray-700 rounded p-2">
-                        <p id="modq-flagged-${projectId}" class="text-lg font-bold text-red-400"></p>
-                        <p class="text-xs text-gray-400">Gemarkeerd</p>
+                    <div class="bg-base-200 rounded p-2">
+                        <p id="modq-flagged-${projectId}" class="text-lg font-bold text-error"></p>
+                        <p class="text-xs text-base-content/50">Gemarkeerd</p>
                     </div>
-                    <div class="bg-gray-700 rounded p-2">
-                        <p id="modq-declined-${projectId}" class="text-lg font-bold text-gray-400"></p>
-                        <p class="text-xs text-gray-400">Afgewezen</p>
+                    <div class="bg-base-200 rounded p-2">
+                        <p id="modq-declined-${projectId}" class="text-lg font-bold text-base-content/60"></p>
+                        <p class="text-xs text-base-content/50">Afgewezen</p>
                     </div>
                 </div>
             `;
