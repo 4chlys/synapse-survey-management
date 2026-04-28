@@ -1,5 +1,5 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
-import { POLL_INTERVAL_MS } from './dashboard';
+import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 
@@ -41,9 +41,7 @@ export function initTopCategoriesWidget(el: HTMLElement): () => void {
 
     async function fetch_and_render(): Promise<void> {
         try {
-            const res = await fetch(url);
-            if (!res.ok) return;
-            const data: DashboardData = await res.json();
+            const data = await fetchJson<DashboardData>(url);
             (chart.data.labels as string[]) = data.topCategories.map(c => c.name);
             (chart.data.datasets[0].data as number[]) = data.topCategories.map(c => c.ideaCount);
             (chart.data.datasets[1].data as number[]) = data.topCategories.map(c => c.totalReactions);

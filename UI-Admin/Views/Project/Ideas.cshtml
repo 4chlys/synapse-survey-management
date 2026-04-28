@@ -2,28 +2,6 @@
 @{
     ViewData["Title"] = "Ideeën";
     Layout = "_Layout";
-
-    string StatusBadge(string s) => s switch {
-        "Approved"  => "badge-success",
-        "Declined"  => "badge-error",
-        "Flagged"   => "badge-warning",
-        _           => "badge-ghost"
-    };
-    string StatusLabel(string s) => s switch {
-        "Approved"  => "Goedgekeurd",
-        "Declined"  => "Afgewezen",
-        "Flagged"   => "Gemarkeerd",
-        "Unflagged" => "Nieuw",
-        _           => s
-    };
-    string RowBg(string s) => s switch {
-        "Unflagged" => "bg-warning/5",
-        "Flagged"   => "bg-error/5",
-        _           => ""
-    };
-    var ideasUrl = Url.Action("Ideas", new {
-        Model.ProjectId, Model.Search, Model.CategoryId, Model.Status, Model.Page
-    });
 }
 
 <div class="max-w-6xl">
@@ -43,7 +21,8 @@
 
     <!-- Filter bar -->
     <form method="get" asp-action="Ideas" asp-route-projectId="@Model.ProjectId"
-          class="flex flex-wrap gap-2 mb-5 items-center">
+          class="flex flex-wrap gap-2 mb-5 items-center"
+          data-ideas-filter>
         <label class="input input-bordered input-sm flex items-center gap-2 flex-1 min-w-48">
             <svg class="text-base-content/40" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
             <input type="search" name="search" value="@Model.Search"
@@ -83,124 +62,12 @@
         @if (!string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status))
         {
             <a asp-action="Ideas" asp-route-projectId="@Model.ProjectId"
-               class="btn btn-ghost btn-sm">Wissen</a>
+               class="btn btn-ghost btn-sm" data-clear-filter>Wissen</a>
         }
     </form>
 
-    <!-- Ideas table -->
-    <div class="card bg-base-100 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr class="bg-base-200">
-                        <th class="w-auto">Idee</th>
-                        <th class="w-28">Categorie</th>
-                        <th class="w-32">Status</th>
-                        <th class="w-12 text-center">👍</th>
-                        <th class="w-28">Acties</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.Ideas.Any())
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center text-base-content/40 py-10 italic">
-                                Geen ideeën gevonden@(!string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status) ? " voor deze filters" : "").
-                            </td>
-                        </tr>
-                    }
-                    @foreach (var idea in Model.Ideas)
-                    {
-                        <tr class="hover @RowBg(idea.Status)">
-                            <td class="max-w-xs">
-                                <p class="font-medium text-sm leading-snug line-clamp-2">@idea.Description</p>
-                                <p class="text-xs text-base-content/40 mt-0.5">@idea.CreatedAt.ToString("dd MMM yyyy")</p>
-                            </td>
-                            <td>
-                                <span class="badge badge-ghost badge-sm">@idea.CategoryName</span>
-                            </td>
-                            <td>
-                                <span class="badge @StatusBadge(idea.Status) badge-sm">@StatusLabel(idea.Status)</span>
-                            </td>
-                            <td class="text-center font-semibold text-sm">@idea.ReactionCount</td>
-                            <td>
-                                <div class="flex gap-1">
-                                    @if (idea.Status != "Approved")
-                                    {
-                                        <form asp-action="ApproveIdea" method="post" class="inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                            <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                            <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                            <button type="submit" class="btn btn-success btn-xs" title="Goedkeuren">✓</button>
-                                        </form>
-                                    }
-                                    @if (idea.Status != "Declined")
-                                    {
-                                        <form asp-action="DeclineIdea" method="post" class="inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                            <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                            <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                            <button type="submit" class="btn btn-error btn-xs" title="Afwijzen">✕</button>
-                                        </form>
-                                    }
-                                    @if (idea.Status != "Flagged")
-                                    {
-                                        <form asp-action="FlagIdea" method="post" class="inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                            <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                            <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                            <button type="submit" class="btn btn-warning btn-xs btn-outline" title="Markeren">⚑</button>
-                                        </form>
-                                    }
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    <!-- Ideas table + pagination -->
+    <div id="ideas-results">
+        @await Html.PartialAsync("_IdeasTable", Model)
     </div>
-
-    <!-- Pagination -->
-    @if (Model.TotalPages > 1)
-    {
-        <div class="flex justify-between items-center mt-4">
-            <span class="text-sm text-base-content/50">Pagina @Model.Page van @Model.TotalPages</span>
-            <div class="join">
-                @if (Model.Page > 1)
-                {
-                    <a asp-action="Ideas"
-                       asp-route-projectId="@Model.ProjectId"
-                       asp-route-search="@Model.Search"
-                       asp-route-categoryId="@Model.CategoryId"
-                       asp-route-status="@Model.Status"
-                       asp-route-page="@(Model.Page - 1)"
-                       class="join-item btn btn-sm">←</a>
-                }
-                @for (int p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
-                {
-                    <a asp-action="Ideas"
-                       asp-route-projectId="@Model.ProjectId"
-                       asp-route-search="@Model.Search"
-                       asp-route-categoryId="@Model.CategoryId"
-                       asp-route-status="@Model.Status"
-                       asp-route-page="@p"
-                       class="join-item btn btn-sm @(p == Model.Page ? "btn-primary" : "")">@p</a>
-                }
-                @if (Model.Page < Model.TotalPages)
-                {
-                    <a asp-action="Ideas"
-                       asp-route-projectId="@Model.ProjectId"
-                       asp-route-search="@Model.Search"
-                       asp-route-categoryId="@Model.CategoryId"
-                       asp-route-status="@Model.Status"
-                       asp-route-page="@(Model.Page + 1)"
-                       class="join-item btn btn-sm">→</a>
-                }
-            </div>
-        </div>
-    }
 </div>

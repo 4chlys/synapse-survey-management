@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -54,6 +55,20 @@ public class CategoryManager(
         var result = await categoryRepository.DeleteByIdAsync(categoryId);
         if (result) await uow.SaveChangesAsync(ct);
         return result;
+    }
+
+    public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, int topCount = 5)
+    {
+        var categoriesTask = categoryRepository.ReadTopCategoriesAsync(projectId, topCount);
+        var ideasTask = categoryRepository.ReadTopIdeasAsync(projectId, topCount);
+        await Task.WhenAll(categoriesTask, ideasTask);
+
+        var ideas = (await ideasTask).Select(i => i with
+        {
+            Description = i.Description.Length > 100 ? i.Description[..100] + "…" : i.Description
+        }).ToList();
+
+        return new DashboardMetrics(await categoriesTask, ideas);
     }
 
     public async Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, int count = 10)

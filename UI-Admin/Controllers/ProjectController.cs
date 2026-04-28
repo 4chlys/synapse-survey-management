@@ -379,6 +379,9 @@ public class ProjectController(
             }).ToList()
         };
 
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return PartialView("_IdeasTable", vm);
+
         return View(vm);
     }
 
