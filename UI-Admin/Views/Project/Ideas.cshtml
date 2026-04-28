@@ -155,6 +155,16 @@
                                             <button type="submit" class="btn btn-warning btn-xs btn-outline" title="Markeren">⚑</button>
                                         </form>
                                     }
+                                    @if (Model.RequestContactInfo && !string.IsNullOrEmpty(idea.ParticipantEmail))
+                                    {
+                                        <a href="mailto:@idea.ParticipantEmail"
+                                           class="btn btn-info btn-xs"
+                                           title="E-mail versturen">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
+                                            </svg>
+                                        </a>
+                                    }
                                 </div>
                             </td>
                         </tr>

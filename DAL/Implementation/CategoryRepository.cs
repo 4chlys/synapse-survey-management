@@ -63,6 +63,7 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .AsNoTracking()
             .Include(i => i.Category)
             .Include(i => i.Comments)
+            .Include(i => i.Participant)
             .Where(i => i.Category.Project.ProjectId == projectId);
 
         if (!string.IsNullOrWhiteSpace(search))
