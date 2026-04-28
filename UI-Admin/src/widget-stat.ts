@@ -21,8 +21,8 @@ function formatValue(type: string, stats: DashboardStats): string {
 
 function renderStat(el: HTMLElement, type: string, value: string): void {
     el.innerHTML = `
-        <p class="text-3xl font-bold text-white">${value}</p>
-        <p class="text-xs text-gray-400 mt-1">${LABELS[type] ?? type}</p>
+        <p class="text-3xl font-bold text-base-content">${value}</p>
+        <p class="text-xs text-base-content/50 mt-1">${LABELS[type] ?? type}</p>
     `;
 }
 
