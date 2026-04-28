@@ -1,9 +1,12 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @{
     var isEdit = Model.ProjectId.HasValue;
-    var shortFormReadonly = isEdit && (string)ViewData["ProjectState"] != "Draft";
+    var projectState = (string)(ViewData["ProjectState"] ?? "");
+    var isLocked = isEdit && projectState is "Active" or "Archived";
+    var shortFormReadonly = isEdit && projectState != "Draft";
     ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
     ViewData["ActiveSection"] = "Instellingen";
+    ViewData["HideSidebar"]   = true;
     Layout = "_Layout";
 }
 
@@ -12,11 +15,20 @@
         @(isEdit ? "Project bewerken" : "Nieuw project")
     </h1>
 
+    @if (isLocked)
+    {
+        <div class="alert alert-warning mb-4">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Instellingen kunnen niet meer worden gewijzigd.</span>
+        </div>
+    }
+
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-5">
             <form asp-action="Create" method="post" class="flex flex-col gap-5">
                 @Html.AntiForgeryToken()
                 @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
+                <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
@@ -113,10 +125,22 @@
                 </button>
 
                 <div class="card-actions justify-end gap-2 pt-2">
-                    <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
-                    <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
-                    <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                    @if (!isLocked)
+                    {
+                        <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
+                        <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
+                        <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" class="btn btn-ghost">Terug</a>
+                        @if (Model.ProjectId.HasValue)
+                        {
+                            <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende →</a>
+                        }
+                    }
                 </div>
+                </fieldset>
             </form>
         </div>
     </div>

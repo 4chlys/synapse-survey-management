@@ -74,8 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const questionsEndpoint = list.dataset.questionsEndpoint ?? '';
     const deleteEndpoint = list.dataset.deleteEndpoint ?? '';
     const aiAssistance = list.dataset.aiAssistance ?? 'ProActive';
+    const locked = list.dataset.locked === 'true';
 
-    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId };
+    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId, locked };
 
     async function reload(): Promise<void> {
         const expanded = captureExpandedIds(list!);
@@ -83,12 +84,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             const questions = await fetchQuestions(questionsEndpoint);
             renderTree(list!, questions, ctx);
             applyExpandedIds(list!, expanded);
+            const nextBtn = document.getElementById('questions-next-btn') as HTMLButtonElement | null;
+            if (nextBtn) nextBtn.dataset.questionCount = String(questions.length);
         } catch (err) {
             list!.innerHTML = `<p class="text-red-400 text-sm">Kon vragen niet laden: ${String(err)}</p>`;
         }
     }
 
     await reload();
+
+    document.addEventListener('questions-reload', () => { void reload(); });
+
+    if (locked) return;
 
     let dragged: HTMLElement | null = null;
 
