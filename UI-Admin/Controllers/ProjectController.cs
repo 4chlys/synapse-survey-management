@@ -361,17 +361,18 @@ public class ProjectController(
 
         var vm = new IdeasViewModel
         {
-            ProjectId     = projectId,
-            ProjectName   = project.Name,
-            Search        = search,
-            CategoryId    = categoryId,
-            Status        = status,
-            Page          = page,
-            TotalCount    = total,
-            ApprovedCount = approved,
-            PendingCount  = pending,
-            FlaggedCount  = flagged,
-            Ideas         = items,
+            ProjectId          = projectId,
+            ProjectName        = project.Name,
+            Search             = search,
+            CategoryId         = categoryId,
+            Status             = status,
+            Page               = page,
+            TotalCount         = total,
+            ApprovedCount      = approved,
+            PendingCount       = pending,
+            FlaggedCount       = flagged,
+            RequestContactInfo = project.RequestContactInfo,
+            Ideas              = items,
             Categories    = categories.Select(c => new CategoryOptionViewModel
             {
                 CategoryId = c.CategoryId,

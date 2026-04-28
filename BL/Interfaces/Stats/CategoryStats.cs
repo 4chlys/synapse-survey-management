@@ -9,5 +9,6 @@ public record IdeaFeedItem(
     int CategoryId,
     int ReactionCount,
     DateTime CreatedAt,
-    ModerationStatus Status);
+    ModerationStatus Status,
+    string ParticipantEmail);
 public record ModerationQueueResult(int Approved, int Declined, int Flagged, int Unflagged);
