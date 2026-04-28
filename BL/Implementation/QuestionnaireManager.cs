@@ -95,7 +95,23 @@ public class QuestionnaireManager(
         question.Text = text;
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
-        question.AnswerChoices = answerChoices ?? new List<string>();
+
+        // Migrate child questions and ending-answers when an answer is renamed
+        // in place. Pair old → new by position; children & ending markers reference
+        // answers by text, so a rename without remap orphans them.
+        var oldChoices = question.AnswerChoices.ToList();
+        var newChoices = answerChoices ?? new List<string>();
+        var pairCount = Math.Min(oldChoices.Count, newChoices.Count);
+        for (var i = 0; i < pairCount; i++)
+        {
+            if (oldChoices[i] == newChoices[i]) continue;
+            foreach (var child in question.Children.Where(c => c.ParentTriggerValue == oldChoices[i]))
+                child.ParentTriggerValue = newChoices[i];
+            foreach (var ending in question.EndingAnswers.Where(e => e.Value == oldChoices[i]))
+                ending.Value = newChoices[i];
+        }
+        question.AnswerChoices = newChoices;
+
         question.Section = sectionId.HasValue
             ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
             : null;
