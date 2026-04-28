@@ -1,6 +1,7 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @{
     var isEdit = Model.ProjectId.HasValue;
+    var shortFormReadonly = isEdit && (string)ViewData["ProjectState"] != "Draft";
     ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
     ViewData["ActiveSection"] = "Instellingen";
     Layout = "_Layout";
@@ -19,13 +20,23 @@
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
-                    <input asp-for="Name" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" />
+                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" maxlength="100" required />
                     <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
                 </label>
 
                 <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Shortform</span></div>
+                    <input asp-for="ShortForm" id="project-shortform-input"
+                           class="input input-bordered w-full" placeholder="automatisch ingevuld vanuit de naam"
+                           maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
+                           readonly="@shortFormReadonly" />
+                    <span asp-validation-for="ShortForm" class="label-text-alt text-error mt-1"></span>
+                    <span id="shortform-availability-msg" class="label-text-alt text-warning mt-1"></span>
+                </label>
+
+                <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Onderwerp</span></div>
-                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="Waar gaat dit project over?" />
+                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="Waar gaat dit project over?" maxlength="100" />
                     <span asp-validation-for="Topic" class="label-text-alt text-error mt-1"></span>
                 </label>
 
@@ -33,7 +44,8 @@
                     <div class="label"><span class="label-text font-medium">Introductietekst</span></div>
                     <textarea asp-for="Introduction" rows="4"
                               class="textarea textarea-bordered w-full resize-none"
-                              placeholder="Welkomstboodschap voor deelnemers…"></textarea>
+                              placeholder="Welkomstboodschap voor deelnemers…"
+                              maxlength="5000"></textarea>
                     <span asp-validation-for="Introduction" class="label-text-alt text-error mt-1"></span>
                 </label>
 
@@ -58,13 +70,18 @@
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
                         <div class="label"><span class="label-text font-medium">Minimumleeftijd</span></div>
-                        <input asp-for="MinAge" type="number" class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                        <input asp-for="MinAge" type="number" id="min-age-input" min="0" max="120"
+                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                        <span asp-validation-for="MinAge" class="label-text-alt text-error mt-1"></span>
                     </label>
                     <label class="form-control">
                         <div class="label"><span class="label-text font-medium">Maximumleeftijd</span></div>
-                        <input asp-for="MaxAge" type="number" class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                        <input asp-for="MaxAge" type="number" id="max-age-input" min="0" max="120"
+                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                        <span asp-validation-for="MaxAge" class="label-text-alt text-error mt-1"></span>
                     </label>
                 </div>
+                <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</span>
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Afbeelding URL</span></div>
@@ -84,7 +101,7 @@
                     @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                     {
                         <div class="flex gap-2 items-center section-row">
-                            <input type="text" name="Sections[@i]" value="@Model.Sections![i]"
+                            <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
                                    class="input input-bordered input-sm flex-1" placeholder="Sectienaam" />
                             <button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>
                         </div>
@@ -112,7 +129,7 @@
         document.getElementById('add-section').addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'flex gap-2 items-center section-row';
-            row.innerHTML = `<input type="text" name="Sections[${idx}]" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
+            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
             document.getElementById('sections-container').appendChild(row);
             idx++;
         });
