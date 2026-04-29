@@ -10,7 +10,7 @@ spec:
       annotations:
         autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "3"
-        run.googleapis.com/container-dependencies: '{"mvp-api":["postgres"],"mvp-admin":["postgres"]}'
+        run.googleapis.com/container-dependencies: '{"mvp-api":["postgres"],"mvp-admin":["postgres"],"nginx":["mvp-api","mvp-admin"]}'
     spec:
       containers:
 
@@ -54,6 +54,13 @@ spec:
             limits:
               memory: 512Mi
               cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
 
         # -- Sidecar: UI-Admin (port 8082) -------------------------------------
         - name: mvp-admin
@@ -91,6 +98,12 @@ spec:
             limits:
               memory: 256Mi
               cpu: "0.5"
+          startupProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
 
         # -- Sidecar: PostgreSQL with pgvector ----------------------------------
         - name: postgres
