@@ -11,6 +11,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.15.17",
+    "daisyui": "^5.5.19",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   },

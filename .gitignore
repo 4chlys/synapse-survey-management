@@ -1,5 +1,4 @@
 # Secrets
-.env
 vertexai-key.json
 
 # Documentatie
@@ -494,19 +493,24 @@ $RECYCLE.BIN/
 
 # manually by Casper
 CLAUDE.md
-start.bat
+start_ui-admin.bat
+start_ui-user.bat
 stop.bat
 CasperContext/
 
 # manually by Romeo
 start.sh
+.superpowers/
+docs/
 
 # manually by Jonas
 JonasAssignment/
 UI-Admin/wwwroot/uploads/
-UI-*/wwwroot/*.js
-UI-*/wwwroot/*.css
-UI-*/wwwroot/.vite
+UI-User/wwwroot/*.js
+UI-Admin/wwwroot/*.js
+UI-Admin/wwwroot/*.css
+UI-Admin/wwwroot/.vite
+UI-User/wwwroot/.vite
 UI-*/.vite
 UI-*/wwwroot/dist
 cicd-key.json

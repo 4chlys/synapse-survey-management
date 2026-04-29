@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
+using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
 [Route("api/admin/projects/{projectId:int}/questions")]
-public class QuestionsApiController(QuestionAdminService questionService) : ControllerBase
+public class QuestionsApiController(QuestionAdminService questionService, ProjectAdminService projectService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<List<QuestionViewModel>>> GetQuestions(int projectId)
@@ -18,6 +19,9 @@ public class QuestionsApiController(QuestionAdminService questionService) : Cont
     [HttpPut("{questionId:int}/location")]
     public async Task<ActionResult> Move(int projectId, int questionId, MoveRequest request)
     {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState is "Active" or "Archived")
+            return StatusCode(403, "Project is locked");
         try
         {
             await questionService.MoveQuestionAsync(projectId, questionId,
@@ -33,6 +37,9 @@ public class QuestionsApiController(QuestionAdminService questionService) : Cont
     [HttpPut("{questionId:int}/ending-answers")]
     public async Task<ActionResult> UpdateEndingAnswers(int projectId, int questionId, EndingAnswersRequest request)
     {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState is "Active" or "Archived")
+            return StatusCode(403, "Project is locked");
         var questions = await questionService.GetQuestionsAsync(projectId);
         var question = questions.FirstOrDefault(q => q.QuestionId == questionId);
         if (question is null) return NotFound();

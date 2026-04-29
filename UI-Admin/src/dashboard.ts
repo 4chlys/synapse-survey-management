@@ -39,3 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export { POLL_INTERVAL_MS };
+
+const inflightRequests = new Map<string, Promise<unknown>>();
+
+export function fetchJson<T>(url: string): Promise<T> {
+    if (!inflightRequests.has(url)) {
+        const p = fetch(url)
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<T>; })
+            .finally(() => inflightRequests.delete(url));
+        inflightRequests.set(url, p);
+    }
+    return inflightRequests.get(url) as Promise<T>;
+}

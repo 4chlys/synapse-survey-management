@@ -7,7 +7,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
-[Authorize(Roles = "ProjectPlatformAdmin")]
+[Authorize(Roles = "SystemAdmin,ProjectPlatformAdmin")]
 public class AdminController(
     PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager) : Controller

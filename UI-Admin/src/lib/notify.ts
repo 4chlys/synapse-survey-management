@@ -15,9 +15,9 @@ export function toast(message: string, kind: 'success' | 'error', durationMs = 2
     const container = getContainer();
     const chip = document.createElement('div');
     const colorClass = kind === 'success'
-        ? 'bg-gray-800 border-gray-500 text-white'
-        : 'bg-red-900 border-red-500 text-white';
-    chip.className = `border px-4 py-2 text-xs transition-opacity duration-300 ${colorClass}`;
+        ? 'bg-base-100 border-base-300 text-base-content'
+        : 'bg-error border-error text-error-content';
+    chip.className = `border rounded-lg px-4 py-2 text-xs shadow-md transition-opacity duration-300 ${colorClass}`;
     chip.textContent = message;
     container.appendChild(chip);
 

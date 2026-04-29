@@ -10,6 +10,9 @@ spec:
       annotations:
         autoscaling.knative.dev/minScale: "0"   # scale-to-zero
         autoscaling.knative.dev/maxScale: "3"
+        # Admin must not start until the API has finished EnsureDeleted/Created
+        # and is serving — otherwise both would race against the same Postgres.
+        run.googleapis.com/container-dependencies: '{"mvp-admin": ["mvp-api"]}'
     spec:
       containers:
 
@@ -35,6 +38,8 @@ spec:
               value: synapse-test-pw
             - name: ApiKey
               value: dev-api-key-synapse-2026
+            - name: ADMIN_INTERNAL_URL
+              value: "http://127.0.0.1:8081"
           resources:
             limits:
               memory: 512Mi
@@ -46,6 +51,43 @@ spec:
             initialDelaySeconds: 20      # increased to give postgres more headroom
             periodSeconds: 5
             failureThreshold: 10
+
+        # -- Sidecar container: UI-Admin ----------------------------------------
+        # Reachable through the API container's YARP forwarder for any path
+        # outside /api/* and /health. Shares the postgres sidecar via localhost.
+        - name: mvp-admin
+          image: IMAGE_ADMIN_PLACEHOLDER
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8081
+            - name: DB_HOST
+              value: "127.0.0.1"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: synapse-test
+            - name: DB_USER
+              value: synapse-user
+            - name: DB_PASSWORD
+              value: synapse-test-pw
+            - name: ApiBaseUrl
+              value: "http://127.0.0.1:8080"
+            - name: ApiKey
+              value: dev-api-key-synapse-2026
+            - name: AllowedHosts
+              value: "*"
+            - name: SystemAdmin__Email
+              value: admin@synapse.local
+            - name: SystemAdmin__Password
+              value: Admin1234!
+            - name: Vite__Base
+              value: /dist/
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
 
         # -- Sidecar container: PostgreSQL --------------------------------------
         - name: postgres

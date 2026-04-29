@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
+using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
+using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
-public class QuestionController(QuestionAdminService questionService) : Controller
+public class QuestionController(QuestionAdminService questionService, ProjectAdminService projectService) : Controller
 {
     public async Task<IActionResult> Index(int projectId)
     {
@@ -73,6 +75,12 @@ public class QuestionController(QuestionAdminService questionService) : Controll
     [HttpPost]
     public async Task<IActionResult> Delete(int projectId, int questionId, AiAssistanceType aiAssistance)
     {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState is "Active" or "Archived")
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
+        }
         await questionService.DeleteQuestionAsync(projectId, questionId);
         return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
     }

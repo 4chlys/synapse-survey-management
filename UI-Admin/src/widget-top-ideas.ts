@@ -1,4 +1,4 @@
-import { POLL_INTERVAL_MS } from './dashboard';
+import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
 
 interface IdeaMetric {
     description: string;
@@ -17,14 +17,12 @@ export function initTopIdeasWidget(el: HTMLElement): () => void {
 
     async function fetch_and_render(): Promise<void> {
         try {
-            const res = await fetch(url);
-            if (!res.ok) return;
-            const data: DashboardData = await res.json();
+            const data = await fetchJson<DashboardData>(url);
 
-            el.innerHTML = '<p class="text-xs text-gray-400 mb-2">Top ideeën</p>';
+            el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Top ideeën</p>';
             if (data.topIdeas.length === 0) {
                 const empty = document.createElement('p');
-                empty.className = 'text-gray-500 text-xs';
+                empty.className = 'text-base-content/40 text-xs';
                 empty.textContent = 'Nog geen ideeën';
                 el.appendChild(empty);
                 return;
@@ -32,14 +30,14 @@ export function initTopIdeasWidget(el: HTMLElement): () => void {
 
             data.topIdeas.forEach((idea, i) => {
                 const row = document.createElement('div');
-                row.className = 'flex gap-2 py-1 border-b border-gray-700';
+                row.className = 'flex gap-2 py-1 border-b border-base-300';
 
                 const rank = document.createElement('span');
-                rank.className = 'text-gray-500 text-xs w-4';
+                rank.className = 'text-base-content/40 text-xs w-4';
                 rank.textContent = String(i + 1);
 
                 const desc = document.createElement('span');
-                desc.className = 'text-gray-200 text-xs flex-1';
+                desc.className = 'text-base-content text-xs flex-1';
                 desc.textContent = idea.description;
 
                 const reactions = document.createElement('span');

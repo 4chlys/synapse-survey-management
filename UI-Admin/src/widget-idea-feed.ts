@@ -19,10 +19,10 @@ export function initIdeaFeedWidget(el: HTMLElement): () => void {
             if (!res.ok) return;
             const items: IdeaFeedItem[] = await res.json();
 
-            el.innerHTML = '<p class="text-xs text-gray-400 mb-2">Nieuwste ideeën</p>';
+            el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Nieuwste ideeën</p>';
             if (items.length === 0) {
                 const empty = document.createElement('p');
-                empty.className = 'text-gray-500 text-xs';
+                empty.className = 'text-base-content/40 text-xs';
                 empty.textContent = 'Nog geen ideeën';
                 el.appendChild(empty);
                 return;
@@ -32,17 +32,17 @@ export function initIdeaFeedWidget(el: HTMLElement): () => void {
                 const time = new Date(item.createdAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 
                 const row = document.createElement('div');
-                row.className = 'py-1 border-b border-gray-700';
+                row.className = 'py-1 border-b border-base-300';
 
                 const top = document.createElement('div');
                 top.className = 'flex justify-between items-start gap-1';
 
                 const descSpan = document.createElement('span');
-                descSpan.className = 'text-gray-200 text-xs flex-1';
+                descSpan.className = 'text-base-content text-xs flex-1';
                 descSpan.textContent = item.description;
 
                 const timeSpan = document.createElement('span');
-                timeSpan.className = 'text-gray-500 text-xs whitespace-nowrap';
+                timeSpan.className = 'text-base-content/40 text-xs whitespace-nowrap';
                 timeSpan.textContent = time;
 
                 const catSpan = document.createElement('span');

@@ -50,6 +50,10 @@
       <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-ideas-UoK_jxyw.js" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="wwwroot\dist\.vite\" />
+    </ItemGroup>
+
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
         <Exec Command="node --version" ContinueOnError="true">
             <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
