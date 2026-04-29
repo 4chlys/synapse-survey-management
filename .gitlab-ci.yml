@@ -229,7 +229,7 @@ deploy-test:
       sed -i "s|PARTICIPANT_DOMAIN_PLACEHOLDER|${UI_DOMAIN}|g" cloudrun-test-api.yaml
       gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
   only:
-    - development #reverse
+    - fix/test-deployment-multicontainer #reverse
   environment:
     name: test
 
