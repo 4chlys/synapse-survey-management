@@ -9,9 +9,10 @@ services:
 
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
-  IMAGE_API: "gcr.io/${PROJECT_ID}/mvp-app"
-  IMAGE_UI:  "gcr.io/${PROJECT_ID}/mvp-ui"
+  IMAGE_API:   "gcr.io/${PROJECT_ID}/mvp-app"
+  IMAGE_UI:    "gcr.io/${PROJECT_ID}/mvp-ui"
   IMAGE_ADMIN: "gcr.io/${PROJECT_ID}/mvp-admin"
+  IMAGE_NGINX: "gcr.io/${PROJECT_ID}/mvp-nginx"
   IMAGE_TAG: "${CI_COMMIT_SHA}"
   ZONE:      "europe-west1-b"
 
@@ -25,6 +26,19 @@ stages:
   before_script:
     - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
 
+build-nginx:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false -t "${IMAGE_NGINX}:${IMAGE_TAG}" -f Dockerfile.nginx .
+    - docker save "${IMAGE_NGINX}:${IMAGE_TAG}" | gzip > nginx-image.tar.gz
+  artifacts:
+    paths:
+      - nginx-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - fix/test-deployment-multicontainer
+
 build-api:
   stage: build
   <<: *gcr_login
@@ -36,7 +50,7 @@ build-api:
       - api-image.tar.gz
     expire_in: 1 hour
   only:
-    - development
+    - fix/test-deployment-multicontainer
     - main
 
 build-ui:
@@ -50,7 +64,7 @@ build-ui:
       - ui-image.tar.gz
     expire_in: 1 hour
   only:
-    - development
+    - fix/test-deployment-multicontainer
     - main
 
 build-admin:
@@ -64,7 +78,7 @@ build-admin:
       - admin-image.tar.gz
     expire_in: 1 hour
   only:
-    - development
+    - fix/test-deployment-multicontainer
     - main
 
 scan-api:
@@ -82,7 +96,7 @@ scan-api:
     expire_in: 1 week
   allow_failure: false
   only:
-    - development
+    - fix/test-deployment-multicontainer
     - main
 
 scan-ui:
@@ -100,8 +114,9 @@ scan-ui:
     expire_in: 1 week
   allow_failure: false
   only:
-    - development
+    - fix/test-deployment-multicontainer
     - main
+
 scan-admin:
   stage: scan
   image:
@@ -117,8 +132,25 @@ scan-admin:
     expire_in: 1 week
   allow_failure: false
   only:
-    - development
+    - fix/test-deployment-multicontainer
     - main
+
+scan-nginx:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-nginx.json --input nginx-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input nginx-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-nginx.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
+  only:
+    - fix/test-deployment-multicontainer
 
 push-dev:
   stage: push
@@ -127,11 +159,13 @@ push-dev:
     - docker load < api-image.tar.gz
     - docker load < ui-image.tar.gz
     - docker load < admin-image.tar.gz
+    - docker load < nginx-image.tar.gz
     - docker push "${IMAGE_API}:${IMAGE_TAG}"
     - docker push "${IMAGE_UI}:${IMAGE_TAG}"
     - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    - docker push "${IMAGE_NGINX}:${IMAGE_TAG}"
   only:
-    - development #reverse
+    - fix/test-deployment-multicontainer #reverse
 
 push-prod:
   stage: push
@@ -163,23 +197,37 @@ deploy-test:
       - gcloud auth login --cred-file=gcp-wif-test.json
       - gcloud config set project "${PROJECT_ID}"
   script:
+    # 1. Deploy combined service first: nginx + API + admin + postgres
+    - sed -i "s|IMAGE_NGINX_PLACEHOLDER|${IMAGE_NGINX}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
     - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
+    - sed -i "s|IMAGE_ADMIN_PLACEHOLDER|${IMAGE_ADMIN}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
-    - gcloud run services add-iam-policy-binding mvp-api-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
+    - gcloud run services add-iam-policy-binding mvp-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
     - |
-      API_URL=$(gcloud run services describe mvp-api-test --region="${REGION}" --format="value(status.url)")
-      echo "API URL: $API_URL"
+      COMBINED_URL=$(gcloud run services describe mvp-test --region="${REGION}" --format="value(status.url)")
+      COMBINED_DOMAIN=$(echo "$COMBINED_URL" | sed 's|https://||')
+      echo "Combined service URL: $COMBINED_URL"
+
+    # 2. Deploy UI-User with the combined service URL as ApiBaseUrl
     - |
-      gcloud run deploy mvp-ui-test --image="${IMAGE_UI}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=3 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*"
+      gcloud run deploy mvp-ui-test \
+        --image="${IMAGE_UI}:${IMAGE_TAG}" \
+        --region="${REGION}" \
+        --allow-unauthenticated \
+        --port=8080 \
+        --min-instances=0 \
+        --max-instances=3 \
+        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${COMBINED_URL},ApiKey=REDACTED,AllowedHosts=*"
     - |
       UI_URL=$(gcloud run services describe mvp-ui-test --region="${REGION}" --format="value(status.url)")
-      echo "Test UI available at: $UI_URL"
+      echo "Test Admin + API at: $COMBINED_URL"
+      echo "Test UI-User at:     $UI_URL"
+
+    # 3. Patch admin with UI-User domain (for participant cookie validation)
     - |
       UI_DOMAIN=$(echo "$UI_URL" | sed 's|https://||')
-      gcloud run deploy mvp-admin-test --image="${IMAGE_ADMIN}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=1 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*,SystemAdmin__Email=admin@synapse.local,SystemAdmin__Password=REDACTED Source=/tmp/admin.db;Foreign Keys=False,Vite__Base=/dist/"
-    - |
-      ADMIN_URL=$(gcloud run services describe mvp-admin-test --region="${REGION}" --format="value(status.url)")
-      echo "Test Admin available at: $ADMIN_URL"
+      sed -i "s|PARTICIPANT_DOMAIN_PLACEHOLDER|${UI_DOMAIN}|g" cloudrun-test-api.yaml
+      gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
   only:
     - development #reverse
   environment:
