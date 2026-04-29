@@ -130,6 +130,21 @@ public static class AiConfigLoader
             DefaultAgeRange = p.AgeRange,
         };
 
+        var s = config.SpeechToText;
+        var substitutedSpeechToText = new AiSpeechToTextConfig
+        {
+            TranscriptionPrompt = Sub(s.TranscriptionPrompt),
+            MaxAudioSizeBytes   = s.MaxAudioSizeBytes,
+        };
+
+        var c = config.CommentSupport;
+        var substitutedCommentSupport = new AiCommentSupportConfig
+        {
+            SystemPrompt    = Sub(c.SystemPrompt),
+            ContextPrompt   = Sub(c.ContextPrompt),
+            FallbackMessage = c.FallbackMessage,
+        };
+
         return new AiConfig
         {
             Platform       = config.Platform,

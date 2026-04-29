@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const textError = document.getElementById('text-error') as HTMLElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
 
+    if (new URLSearchParams(window.location.search).get('saved') === '1')
+        toast('Opgeslagen', 'success');
+
     function openModal(): void {
         resetModal();
         modal?.classList.add('modal-open');
