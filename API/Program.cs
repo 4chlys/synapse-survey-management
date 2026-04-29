@@ -262,7 +262,14 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseHttpLogging();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
-app.UseMiddleware<ApiKeyMiddleware>();
+if (!string.IsNullOrEmpty(adminInternalUrl))
+    // Test deploy only: API + admin share a Cloud Run service. Gate /api/*
+    // with the key; let other paths fall through to the YARP forwarder.
+    app.UseWhen(
+        ctx => ctx.Request.Path.StartsWithSegments("/api"),
+        branch => branch.UseMiddleware<ApiKeyMiddleware>());
+else
+    app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 
 app.MapGet("/health", async (SynapseEnqueteContext db) =>
