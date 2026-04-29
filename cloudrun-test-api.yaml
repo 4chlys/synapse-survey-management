@@ -26,9 +26,9 @@ spec:
           startupProbe:
             tcpSocket:
               port: 8080
-            initialDelaySeconds: 2
+            initialDelaySeconds: 1
             periodSeconds: 2
-            failureThreshold: 10
+            failureThreshold: 15
 
         # -- Sidecar: .NET API (port 8081) -------------------------------------
         - name: mvp-api
@@ -54,13 +54,6 @@ spec:
             limits:
               memory: 512Mi
               cpu: "1"
-          startupProbe:
-            httpGet:
-              path: /health
-              port: 8081
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 24
 
         # -- Sidecar: UI-Admin (port 8082) -------------------------------------
         - name: mvp-admin
@@ -70,7 +63,6 @@ spec:
               value: Production
             - name: ASPNETCORE_URLS
               value: http://+:8082
-            # Shares the same postgres sidecar as the API
             - name: DB_HOST
               value: "127.0.0.1"
             - name: DB_PORT
@@ -81,7 +73,6 @@ spec:
               value: synapse-user
             - name: DB_PASSWORD
               value: synapse-test-pw
-            # Internal call to API — no TLS needed
             - name: ApiBaseUrl
               value: http://127.0.0.1:8081
             - name: ApiKey
@@ -100,12 +91,6 @@ spec:
             limits:
               memory: 256Mi
               cpu: "0.5"
-          startupProbe:
-            tcpSocket:
-              port: 8082
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 24
 
         # -- Sidecar: PostgreSQL with pgvector ----------------------------------
         - name: postgres
