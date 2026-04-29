@@ -103,8 +103,11 @@ spec:
               value: /tmp/pgdata
           resources:
             limits:
-              memory: 256Mi
-              cpu: "0.5"
+              # /tmp is tmpfs and counts against this limit, so PGDATA eats
+              # into working memory. 256Mi caused 30s+ query times under
+              # combined API+admin load; 1Gi gives postgres headroom.
+              memory: 1Gi
+              cpu: "1"
           startupProbe:
             tcpSocket:
               port: 5432
