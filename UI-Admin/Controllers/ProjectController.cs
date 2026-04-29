@@ -134,7 +134,8 @@ public class ProjectController(
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
-                model.ContactOptIn, model.ShortForm);
+                model.ContactOptIn, model.ShortForm,
+                lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests);
         }
         else
         {
