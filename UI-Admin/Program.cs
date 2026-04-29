@@ -104,13 +104,30 @@ builder.Services.AddViteServices();
 var app = builder.Build();
 
 // Apply Identity migrations + seed roles and system admin
-using (var scope = app.Services.CreateScope())
+// Retry loop for Cloud Run cold starts where postgres sidecar may not be ready yet.
 {
-    var adminDb = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
-    await adminDb.Database.MigrateAsync();
+    const int maxRetries = 10;
+    const int delayMs = 3000;
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
-    var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
-    await seeder.SeedAsync();
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var adminDb = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
+            await adminDb.Database.MigrateAsync();
+            var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
+            await seeder.SeedAsync();
+            break;
+        }
+        catch (Exception ex) when (attempt < maxRetries)
+        {
+            startupLogger.LogWarning("Admin DB not ready (attempt {Attempt}/{Max}): {Message}. Retrying in {Delay}ms...",
+                attempt, maxRetries, ex.Message, delayMs);
+            await Task.Delay(delayMs);
+        }
+    }
 }
 
 if (app.Environment.IsDevelopment())
