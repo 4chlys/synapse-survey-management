@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -56,6 +57,20 @@ public class CategoryManager(
         return result;
     }
 
+    public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, int topCount = 5)
+    {
+        var categoriesTask = categoryRepository.ReadTopCategoriesAsync(projectId, topCount);
+        var ideasTask = categoryRepository.ReadTopIdeasAsync(projectId, topCount);
+        await Task.WhenAll(categoriesTask, ideasTask);
+
+        var ideas = (await ideasTask).Select(i => i with
+        {
+            Description = i.Description.Length > 100 ? i.Description[..100] + "…" : i.Description
+        }).ToList();
+
+        return new DashboardMetrics(await categoriesTask, ideas);
+    }
+
     public async Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, int count = 10)
     {
         var ideas = await categoryRepository.ReadLatestIdeasAsync(projectId, count);
@@ -63,8 +78,11 @@ public class CategoryManager(
             IdeaId: i.IdeaId,
             Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
             CategoryName: i.Category.Name,
+            CategoryId: i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(ic => ic.TextComment == null),
-            CreatedAt: i.CreatedAt
+            CreatedAt: i.CreatedAt,
+            Status: i.Status,
+            ParticipantEmail: i.Participant?.Email
         )).ToList();
     }
 
@@ -77,5 +95,39 @@ public class CategoryManager(
             Flagged: counts.GetValueOrDefault(ModerationStatus.Flagged, 0),
             Unflagged: counts.GetValueOrDefault(ModerationStatus.Unflagged, 0)
         );
+    }
+
+    public async Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
+        GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20)
+    {
+        var (ideas, total) = await categoryRepository.ReadIdeasPagedAsync(
+            projectId, search, categoryId, status, page, pageSize);
+
+        // Global counts (unfiltered) for summary bar — single GROUP BY query
+        var queue    = await categoryRepository.ReadModerationQueueAsync(projectId);
+        var approved = queue.GetValueOrDefault(ModerationStatus.Approved, 0);
+        var pending  = queue.GetValueOrDefault(ModerationStatus.Unflagged, 0);
+        var flagged  = queue.GetValueOrDefault(ModerationStatus.Flagged, 0);
+
+        var items = ideas.Select(i => new IdeaFeedItem(
+            IdeaId:        i.IdeaId,
+            Description:   i.Description,
+            CategoryName:  i.Category.Name,
+            CategoryId:    i.Category.CategoryId,
+            ReactionCount: i.Comments.OfType<IconComment>().Count(),
+            CreatedAt:     i.CreatedAt,
+            Status:        i.Status,
+            ParticipantEmail: i.Participant?.Email
+        )).ToList();
+
+        return (items, total, approved, pending, flagged);
+    }
+
+    public async Task SetIdeaModerationStatusAsync(int ideaId, ModerationStatus status, int? projectId = null)
+    {
+        var idea = await categoryRepository.ReadIdeaByIdForUpdateAsync(ideaId, projectId)
+            ?? throw new KeyNotFoundException($"Idea {ideaId} not found.");
+        idea.Status = status;
+        await uow.SaveChangesAsync();
     }
 }

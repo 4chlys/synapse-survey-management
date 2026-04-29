@@ -26,6 +26,9 @@ public sealed class CommentSupportRequest
     /// <summary>The user's latest message. Empty on the opening turn.</summary>
     public string UserMessage { get; init; } = string.Empty;
 
+    /// <summary>Age range of the project's target audience (e.g. "14–24"). Null falls back to the platform default.</summary>
+    public string AgeRange { get; init; }
+
     /// <summary>True when this is the very first turn (AI generates the summary/greeting).</summary>
     public bool IsFirstTurn { get; init; }
 }

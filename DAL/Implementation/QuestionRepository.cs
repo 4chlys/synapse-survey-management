@@ -33,6 +33,7 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
         => Context.Set<Question>()
             .Include(q => q.Section)
             .Include(q => q.EndingAnswers)
+            .Include(q => q.Children)
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
 
     public async Task<Question> ReadByIdWithParentChainForUpdateAsync(int questionId)

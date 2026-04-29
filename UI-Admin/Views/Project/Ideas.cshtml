@@ -1,0 +1,73 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasViewModel
+@{
+    ViewData["Title"] = "Ideeën";
+    Layout = "_Layout";
+}
+
+<div class="w-full">
+
+    <!-- Header + summary badges -->
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+            <h1 class="font-heading font-bold text-2xl text-base-content">Ideeën</h1>
+            <p class="text-sm text-base-content/50 mt-0.5">@Model.TotalCount ideeën in dit project</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="badge badge-success gap-1">✓ @Model.ApprovedCount goedgekeurd</span>
+            <span class="badge badge-warning gap-1">⏳ @Model.PendingCount nieuw</span>
+            <span class="badge badge-error gap-1">⚑ @Model.FlaggedCount gemarkeerd</span>
+        </div>
+    </div>
+
+    <!-- Filter bar -->
+    <form method="get" asp-action="Ideas" asp-route-projectId="@Model.ProjectId"
+          class="flex flex-wrap gap-2 mb-5 items-center"
+          data-ideas-filter>
+        <label class="input input-bordered input-sm flex items-center gap-2 flex-1 min-w-48">
+            <svg class="text-base-content/40" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" name="search" value="@Model.Search"
+                   placeholder="Zoek op beschrijving…" class="grow" />
+        </label>
+
+        <select name="categoryId" class="select select-bordered select-sm min-w-40"
+                onchange="this.form.submit()">
+            <option value="">Alle categorieën</option>
+            @foreach (var cat in Model.Categories)
+            {
+                if (Model.CategoryId == cat.CategoryId)
+                {
+                    <option value="@cat.CategoryId" selected>@cat.Name</option>
+                }
+                else
+                {
+                    <option value="@cat.CategoryId">@cat.Name</option>
+                }
+            }
+        </select>
+
+        <select name="status" class="select select-bordered select-sm min-w-36"
+                onchange="this.form.submit()">
+            <option value="">Alle statussen</option>
+            @if (Model.Status == "Unflagged") { <option value="Unflagged" selected>Nieuw</option> }
+            else { <option value="Unflagged">Nieuw</option> }
+            @if (Model.Status == "Approved") { <option value="Approved" selected>Goedgekeurd</option> }
+            else { <option value="Approved">Goedgekeurd</option> }
+            @if (Model.Status == "Flagged") { <option value="Flagged" selected>Gemarkeerd</option> }
+            else { <option value="Flagged">Gemarkeerd</option> }
+            @if (Model.Status == "Declined") { <option value="Declined" selected>Afgewezen</option> }
+            else { <option value="Declined">Afgewezen</option> }
+        </select>
+
+        <button type="submit" class="btn btn-primary btn-sm">Zoeken</button>
+        @if (!string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status))
+        {
+            <a asp-action="Ideas" asp-route-projectId="@Model.ProjectId"
+               class="btn btn-ghost btn-sm" data-clear-filter>Wissen</a>
+        }
+    </form>
+
+    <!-- Ideas table + pagination -->
+    <div id="ideas-results">
+        @await Html.PartialAsync("_IdeasTable", Model)
+    </div>
+</div>

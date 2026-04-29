@@ -1,193 +1,191 @@
-@using SynapseEnqueteManagement.UI.Admin.Models.Project
-@using Microsoft.Extensions.Options
-@inject IOptions<SynapseEnqueteManagement.UI.Admin.AdminSettings> AdminSettingsOptions
-@model CreateProjectViewModel
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @{
-    ViewData["Title"] = "Admin - Project aanmaken";
+    var isEdit = Model.ProjectId.HasValue;
+    var projectState = (string)(ViewData["ProjectState"] ?? "");
+    var isLocked = isEdit && projectState is "Active" or "Archived";
+    var shortFormReadonly = isEdit && projectState != "Draft";
+    bool isNew = ViewData["IsNew"] is true;
+    ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
+    ViewData["ActiveSection"] = "Instellingen";
     Layout = "_Layout";
-    var project = ViewData["Project"] as ProjectAdminViewModel;
-    var participantDomain = AdminSettingsOptions.Value.ParticipantDomain;
 }
 
-<div class="min-h-screen bg-gray-900 text-white flex flex-col">
+<div class="max-w-2xl">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">
+        @(isEdit ? "Project bewerken" : "Nieuw project")
+    </h1>
 
-    <div class="flex items-center gap-2 px-6 pt-4">
-        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Organisatie" class="w-full h-full object-cover" />
+    @if (isLocked)
+    {
+        <div class="alert alert-warning mb-4">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Instellingen kunnen niet meer worden gewijzigd.</span>
         </div>
-        <span class="text-xs">Admin</span>
-    </div>
+    }
 
-    <form asp-action="Create" method="post" class="flex-1 flex flex-col px-6 pt-4 pb-6">
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <form asp-action="Create" method="post" class="flex flex-col gap-5">
+                @Html.AntiForgeryToken()
+                @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
+                <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
 
-        <input type="hidden" asp-for="ProjectId" />
-        <p class="text-xs font-bold mb-4 text-center">Project aanmaken</p>
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
+                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" maxlength="100" required />
+                    <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
+                </label>
 
-        <div class="grid grid-cols-2 gap-4 flex-1 pl-32">
-
-            @* Left column *@
-            <div class="space-y-5">
-
-                <div>
-                    <label class="block text-xs mb-1">Projectnaam</label>
-                    <input asp-for="Name"
-                           id="project-name-input"
-                           placeholder="Voer de naam van je project in"
-                           required maxlength="100"
-                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
-                    <span asp-validation-for="Name" class="text-red-400 text-xs"></span>
-                </div>
-
-                <div>
-                    <label class="block text-xs mb-1">URL-shortform</label>
-                    <input asp-for="ShortForm"
-                           id="project-shortform-input"
-                           placeholder="automatisch ingevuld vanuit de naam"
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Shortform</span></div>
+                    <input asp-for="ShortForm" id="project-shortform-input"
+                           class="input input-bordered w-full" placeholder="automatisch ingevuld vanuit de naam"
                            maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
-                           readonly="@(project != null && project.ProjectState != "Draft" ? "readonly" : null)"
-                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
-                    <span asp-validation-for="ShortForm" class="text-red-400 text-xs"></span>
-                    <span id="shortform-availability-msg" class="text-red-400 text-xs block"></span>
-                    @if (project != null && project.ProjectState != "Draft")
+                           readonly="@shortFormReadonly" />
+                    <span asp-validation-for="ShortForm" class="label-text-alt text-error mt-1"></span>
+                    <span id="shortform-availability-msg" class="label-text-alt text-warning mt-1"></span>
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Onderwerp</span></div>
+                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="Waar gaat dit project over?" maxlength="100" />
+                    <span asp-validation-for="Topic" class="label-text-alt text-error mt-1"></span>
+                </label>
+
+                <div class="form-control">
+                    <div class="label"><span class="label-text font-medium">Introductietekst</span></div>
+                    @if (isLocked)
                     {
-                        <p class="text-xs text-gray-500 mt-1">Vergrendeld omdat dit project gepubliceerd is.</p>
+                        <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
+                            @Html.Raw(Model.Introduction)
+                        </div>
                     }
                     else
                     {
-                        <p class="text-xs text-gray-500 mt-1">Gebruikt voor de deelnemers-URL: &lt;shortform&gt;.@participantDomain. Laat leeg om automatisch in te vullen vanuit de projectnaam.</p>
+                        <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
+                    }
+                    <input type="hidden" asp-for="Introduction" id="Introduction" />
+                    <div class="flex justify-between mt-1">
+                        <span asp-validation-for="Introduction" class="label-text-alt text-error"></span>
+                        <span id="intro-char-count" class="label-text-alt text-gray-500"></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Soort enquête</span></div>
+                        <select asp-for="InteractionMode" class="select select-bordered w-full">
+                            <option value="VerticalScroll">Verticaal scrollen</option>
+                            <option value="Paginated">Chat</option>
+                        </select>
+                    </label>
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">AI-assistentie</span></div>
+                        <select asp-for="AiAssistance" class="select select-bordered w-full">
+                            <option value="ProActive">Pro-actief</option>
+                            <option value="AskFirst">Op aanvraag</option>
+                            <option value="Never">Nooit</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Minimumleeftijd</span></div>
+                        <input asp-for="MinAge" type="number" id="min-age-input" min="0" max="120"
+                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                        <span asp-validation-for="MinAge" class="label-text-alt text-error mt-1"></span>
+                    </label>
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Maximumleeftijd</span></div>
+                        <input asp-for="MaxAge" type="number" id="max-age-input" min="0" max="120"
+                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                        <span asp-validation-for="MaxAge" class="label-text-alt text-error mt-1"></span>
+                    </label>
+                </div>
+                <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</span>
+
+                <div class="form-control">
+                    <div class="label"><span class="label-text font-medium">Afbeelding</span></div>
+                    <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative mb-2 overflow-hidden bg-base-200">
+                        <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                        </svg>
+                        <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
+                             class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
+                    </div>
+                    @if (!isLocked)
+                    {
+                        <div class="flex gap-2">
+                            <button type="button" id="browse-btn" class="btn btn-outline btn-sm">Bladeren</button>
+                        </div>
+                        <input type="file" id="image-file-input" accept="image/*" class="hidden" />
+                    }
+                    <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
+                    <span asp-validation-for="ImageUrl" class="label-text-alt text-error mt-1"></span>
+                </div>
+
+                <div class="form-control">
+                    <label class="label cursor-pointer justify-start gap-3">
+                        <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
+                        <span class="label-text">Contactgegevens opvragen bij deelnemers</span>
+                    </label>
+                </div>
+
+                <div class="divider my-0">Secties</div>
+
+                <div id="sections-container" class="flex flex-col gap-2">
+                    @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
+                    {
+                        <div class="flex gap-2 items-center section-row">
+                            <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
+                                   class="input input-bordered input-sm flex-1" placeholder="Sectienaam" />
+                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>
+                        </div>
                     }
                 </div>
+                <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    Sectie toevoegen
+                </button>
 
-                <div>
-                    <label class="block text-xs mb-1">Interactiemodus</label>
-                    <div class="flex">
-                        <button type="button" id="btn-chat"
-                                class="px-5 py-1 text-xs border border-gray-500 text-white">Chat</button>
-                        <button type="button" id="btn-scroll"
-                                class="px-5 py-1 text-xs border border-gray-500 text-white border-l-0">Scroll</button>
-                    </div>
-                    <input type="hidden" asp-for="InteractionMode" id="InteractionMode"
-                           data-initial="@Model.InteractionMode" />
-                </div>
-
-                <div>
-                    <label class="block text-xs mb-1">AI-assistentie</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-1 text-xs cursor-pointer">
-                            <input type="radio" asp-for="AiAssistance" value="ProActive" /> Pro-actief
-                        </label>
-                        <label class="flex items-center gap-1 text-xs cursor-pointer">
-                            <input type="radio" asp-for="AiAssistance" value="AskFirst" /> Eerst vragen
-                        </label>
-                        <label class="flex items-center gap-1 text-xs cursor-pointer">
-                            <input type="radio" asp-for="AiAssistance" value="Never" /> Nooit
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs mb-1">Leeftijdsbereik <span class="text-gray-500">(optioneel)</span></label>
-                    <div class="flex items-center gap-2">
-                        <input asp-for="MinAge" type="number" placeholder="Min" min="0" max="120"
-                               id="min-age-input"
-                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none no-spinner"
-                               />
-                        <span class="text-gray-400 text-xs">—</span>
-                        <input asp-for="MaxAge" type="number" placeholder="Max" min="0" max="120"
-                               id="max-age-input"
-                               class="w-20 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 text-center focus:outline-none appearance-none no-spinner"
-                               />
-                    </div>
-                    <span id="age-range-error" class="hidden text-red-400 text-xs mt-1 block">MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</span>
-                    <span asp-validation-for="MinAge" class="text-red-400 text-xs mt-1 block"></span>
-                </div>
-
-                <div>
-                    <label class="block text-xs mb-1">Afbeelding</label>
-                    <div id="image-preview-box" class="border border-dashed border-gray-500 w-44 h-36 relative mb-2 overflow-hidden">
-                        <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="#6B7280" stroke-width="1" />
-                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="#6B7280" stroke-width="1" />
-                        </svg>
-                        <img id="image-preview" src="" alt="" class="absolute inset-0 w-full h-full object-cover hidden" />
-                    </div>
-                    <div class="flex gap-2">
-                        <button type="button"
-                                class="px-4 py-1 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Genereren</button>
-                        <button type="button" id="browse-btn"
-                                class="px-4 py-1 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Bladeren</button>
-                    </div>
-                    <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
-                    <input type="file" id="image-file-input" accept="image/*" class="hidden" />
-                </div>
-
-            </div>
-
-            @* Right column *@
-            <div class="space-y-5">
-
-                <div>
-                    <label class="block text-xs mb-1">Onderwerp</label>
-                    <input asp-for="Topic"
-                           placeholder="Wat is het onderwerp van je project?"
-                           maxlength="100"
-                           class="w-2/3 bg-gray-900 border border-gray-500 text-white text-xs italic px-3 py-2 focus:outline-none" />
-                    <span asp-validation-for="Topic" class="text-red-400 text-xs"></span>
-                </div>
-
-                <div>
-                    <label class="block text-xs mb-1">Introductie</label>
-                    <div class="w-2/3">
-                        <div id="intro-editor" class="bg-gray-900 text-white text-xs"
-                             style="min-height: 160px;">@Html.Raw(Model.Introduction)</div>
-                        <p id="intro-char-count" class="text-xs text-gray-500 mt-1 text-right">0 / 5000</p>
-                    </div>
-                    <input type="hidden" asp-for="Introduction" id="Introduction" />
-                    <span asp-validation-for="Introduction" class="text-red-400 text-xs"></span>
-                </div>
-
-                <div>
-                    <label class="block text-xs mb-2">Secties <span class="text-gray-500">(optioneel)</span></label>
-                    <div id="sections-list" class="space-y-2 mb-1" data-initial-count="@Model.Sections.Count">
-                        @for (int i = 0; i < Model.Sections.Count; i++)
+                <div class="card-actions justify-end gap-2 pt-2">
+                    @if (!isLocked)
+                    {
+                        <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
+                        <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
+                        <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" class="btn btn-ghost">Terug</a>
+                        @if (Model.ProjectId.HasValue)
                         {
-                            <div class="flex items-center gap-1">
-                                <input name="Sections[@i]" type="text" value="@Model.Sections[i]" maxlength="20"
-                                       class="flex-1 bg-gray-900 border border-gray-500 text-white text-xs px-3 py-1 focus:outline-none" />
-                                <button type="button" data-remove-section
-                                        class="text-gray-500 hover:text-white text-xs px-1">✕</button>
-                            </div>
+                            <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende →</a>
                         }
-                    </div>
-                    <button type="button" id="add-section-btn"
-                            class="text-xs text-gray-300 hover:text-white">+ Toevoegen</button>
+                    }
                 </div>
-
-                <div>
-                    <label class="block text-xs mb-1">Contacttoestemming na idee-inzending</label>
-                    <div class="flex">
-                        <button type="button" id="btn-off"
-                                class="px-5 py-1 text-xs border border-gray-500 text-white">UIT</button>
-                        <button type="button" id="btn-on"
-                                class="px-5 py-1 text-xs border border-gray-500 text-white border-l-0">AAN</button>
-                    </div>
-                    <input type="hidden" asp-for="ContactOptIn" id="ContactOptIn"
-                           data-initial="@Model.ContactOptIn.ToString().ToLower()" />
-                </div>
-
-            </div>
+                </fieldset>
+            </form>
         </div>
-
-        <div class="flex justify-between mt-8">
-            <a asp-controller="Project" asp-action="Index"
-               class="px-6 py-2 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Afsluiten</a>
-            <div class="flex gap-3">
-                <button type="submit" name="submitAction" value="save"
-                        class="px-6 py-2 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Opslaan</button>
-                <button type="submit" name="submitAction" value="next"
-                        class="px-6 py-2 text-xs border border-gray-500 bg-gray-900 text-white hover:bg-gray-800">Volgende →</button>
-            </div>
-        </div>
-
-    </form>
+    </div>
 </div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script type="module">
+        let idx = @(Model.Sections?.Count ?? 0);
+        document.getElementById('add-section').addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center section-row';
+            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
+            document.getElementById('sections-container').appendChild(row);
+            idx++;
+        });
+        document.getElementById('sections-container').addEventListener('click', e => {
+            if (e.target.classList.contains('remove-section')) e.target.closest('.section-row').remove();
+        });
+    </script>
+}

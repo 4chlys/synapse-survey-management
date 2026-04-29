@@ -1,44 +1,47 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model IEnumerable<PlatformViewModel>
 @{
-    ViewData["Title"] = "Platformen";
+    ViewData["Title"] = "Platform";
+    ViewData["ActiveSection"] = "Platform";
     Layout = "_Layout";
 }
 
-<div class="min-h-screen bg-gray-900 text-white p-8">
+<h1 class="font-heading font-bold text-2xl text-base-content mb-6">Platform</h1>
 
-    <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-semibold">Platformen</h1>
-        <a asp-controller="Platform" asp-action="Create"
-           class="border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:text-white hover:border-gray-400 transition">
-            + Nieuw platform
-        </a>
-    </div>
+<div class="flex items-center justify-between mb-6">
+    <div></div>
+    <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm">
+        + Nieuw platform
+    </a>
+</div>
 
-    @if (!Model.Any())
-    {
-        <div class="bg-gray-800 p-6 text-center text-gray-400 text-sm">
+@if (!Model.Any())
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body text-center text-base-content/60 text-sm">
             Geen platformen gevonden.
         </div>
-    }
-    else
-    {
-        <div class="bg-gray-800 overflow-hidden">
-            <table class="w-full text-sm">
+    </div>
+}
+else
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body p-0 overflow-x-auto">
+            <table class="table table-sm">
                 <thead>
-                    <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wide">
-                        <th class="text-left px-5 py-3">Naam</th>
-                        <th class="text-left px-5 py-3">Logo</th>
-                        <th class="text-left px-5 py-3">Website</th>
-                        <th class="px-5 py-3"></th>
+                    <tr>
+                        <th>Naam</th>
+                        <th>Logo</th>
+                        <th>Website</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var platform in Model)
                     {
-                        <tr class="border-b border-gray-700 hover:bg-gray-750 transition">
-                            <td class="px-5 py-4 text-white">@platform.Name</td>
-                            <td class="px-5 py-4">
+                        <tr class="hover">
+                            <td class="text-base-content">@platform.Name</td>
+                            <td>
                                 @if (!string.IsNullOrEmpty(platform.LogoUrl))
                                 {
                                     <img src="@platform.LogoUrl" alt="@platform.Name logo"
@@ -46,32 +49,32 @@
                                 }
                                 else
                                 {
-                                    <span class="text-gray-500 text-xs italic">—</span>
+                                    <span class="text-base-content/60 text-xs italic">—</span>
                                 }
                             </td>
-                            <td class="px-5 py-4">
+                            <td>
                                 @if (!string.IsNullOrEmpty(platform.WebsiteUrl))
                                 {
                                     <a href="@platform.WebsiteUrl" target="_blank"
-                                       class="text-gray-300 hover:text-white transition underline underline-offset-2">
+                                       class="text-base-content/60 hover:text-base-content transition underline underline-offset-2">
                                         @platform.WebsiteUrl
                                     </a>
                                 }
                                 else
                                 {
-                                    <span class="text-gray-500 text-xs italic">—</span>
+                                    <span class="text-base-content/60 text-xs italic">—</span>
                                 }
                             </td>
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-3 justify-end">
+                            <td>
+                                <div class="flex items-center gap-2 justify-end">
                                     <a asp-controller="Platform" asp-action="Edit"
                                        asp-route-id="@platform.ProjectPlatformId"
-                                       class="border border-gray-600 px-3 py-1 text-xs text-gray-300 hover:text-white hover:border-gray-400 transition">
+                                       class="btn btn-ghost btn-sm">
                                         Bewerken
                                     </a>
                                     <a asp-controller="Platform" asp-action="Detail"
                                        asp-route-id="@platform.ProjectPlatformId"
-                                       class="border border-gray-600 px-3 py-1 text-xs text-gray-300 hover:text-white hover:border-gray-400 transition">
+                                       class="btn btn-ghost btn-sm">
                                         Details
                                     </a>
                                 </div>
@@ -81,6 +84,5 @@
                 </tbody>
             </table>
         </div>
-    }
-
-</div>
+    </div>
+}

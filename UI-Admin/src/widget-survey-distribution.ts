@@ -5,16 +5,16 @@ export function initSurveyDistributionWidget(el: HTMLElement): void {
 
     // Build structure with innerHTML for trusted static markup only
     el.innerHTML = `
-        <p class="text-xs text-gray-400 mb-2">Survey-link</p>
+        <p class="text-xs text-base-content/50 mb-2">Survey-link</p>
         <div id="url-row-${projectId}" class="flex items-center gap-2 mb-3">
-            <span id="url-text-${projectId}" class="text-gray-200 text-xs break-all flex-1"></span>
+            <span id="url-text-${projectId}" class="text-base-content text-xs break-all flex-1"></span>
             <button id="copy-btn-${projectId}"
-                class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap transition">
+                class="btn btn-ghost btn-xs whitespace-nowrap">
                 Kopieer
             </button>
         </div>
         <img id="qr-img-${projectId}" alt="QR code" class="rounded mb-2" width="160" height="160" />
-        <a id="qr-link-${projectId}" download="qr-code.png" class="text-xs text-gray-400 hover:text-white underline">
+        <a id="qr-link-${projectId}" download="qr-code.png" class="text-xs text-base-content/50 hover:text-base-content underline">
             QR downloaden
         </a>
     `;

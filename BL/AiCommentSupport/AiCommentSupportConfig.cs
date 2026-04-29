@@ -21,6 +21,12 @@ public sealed class AiCommentSupportConfig
     [JsonPropertyName("context_prompt")]
     public string ContextPrompt { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Platform-level default age range used when the project has no MinAge/MaxAge configured.
+    /// Set by <see cref="AiConfigLoader"/> from <c>platform.age_range</c>; not a JSON field.
+    /// </summary>
+    public string DefaultAgeRange { get; init; } = "12–30";
+
     /// <summary>User-facing message returned when the AI call fails.</summary>
     [JsonPropertyName("fallback_message")]
     public string FallbackMessage { get; init; } =

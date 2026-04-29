@@ -42,6 +42,12 @@ public sealed class AiIdeaSupportConfig
     [JsonPropertyName("max_introduction_length")]
     public int MaxIntroductionLength { get; init; } = 1200;
 
+    /// <summary>
+    /// Platform-level default age range used when the project has no MinAge/MaxAge configured.
+    /// Set by <see cref="AiConfigLoader"/> from <c>platform.age_range</c>; not a JSON field.
+    /// </summary>
+    public string DefaultAgeRange { get; init; } = "12–30";
+
     /// <summary>User-facing message returned when the AI call fails or produces no output.</summary>
     [JsonPropertyName("fallback_message")]
     public string FallbackMessage { get; init; } =

@@ -1,1 +1,0 @@
-document.addEventListener("DOMContentLoaded",()=>{const e=document.getElementById("save-btn");if(!e)return;const t=document.getElementById("categories-error");e.addEventListener("click",()=>{if(parseInt(e.dataset.projectCount??"0",10)<1){t==null||t.classList.remove("hidden");return}t==null||t.classList.add("hidden"),window.location.href=e.dataset.href??"/"})});

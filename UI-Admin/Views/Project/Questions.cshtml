@@ -1,185 +1,202 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Question
+@using SynapseEnqueteManagement.UI.Admin.Models.Enums
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
 @using SynapseEnqueteManagement.UI.Admin.Models.Section
+@using System.Text.Json
 @model List<QuestionViewModel>
 @{
-    ViewData["Title"] = "Project vragen";
+    ViewData["Title"] = "Vragen";
     Layout = "_Layout";
     int projectId = (int)ViewData["ProjectId"];
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
-    var project = ViewData["Project"] as ProjectAdminViewModel;
     var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
-    bool showLeft = aiAssistance != "Never";
+    var projectState = ViewData["ProjectState"]?.ToString() ?? "";
+    var isLocked = projectState is "Active" or "Archived";
+    bool isNew = ViewData["IsNew"] is true;
 }
+<div class="w-full">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
 
-<div class="min-h-screen bg-gray-900 text-white flex flex-col text-xs">
-
-    @* Header *@
-    <div class="flex items-center gap-2 px-6 pt-4">
-        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-            <img src="@(project?.OrganisationLogoUrl ?? AppConstants.DefaultOrganisationLogoUrl)" alt="Org" class="w-full h-full object-cover" />
+    @if (isLocked)
+    {
+        <div class="alert alert-warning mb-4">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Vragen kunnen niet meer worden gewijzigd.</span>
         </div>
-        <span>Admin</span>
+    }
+
+    <div id="questions-list"
+         class="card bg-base-100 shadow-sm mb-6"
+         data-project-id="@projectId"
+         data-questions-endpoint="/api/admin/projects/@projectId/questions"
+         data-delete-endpoint="@Url.Action("Delete", "Question")"
+         data-ai-assistance="@aiAssistance"
+         data-locked="@(isLocked ? "true" : "false")">
+        <p class="text-base-content/40 italic text-sm p-4">Vragen laden…</p>
     </div>
 
-    @* Main content *@
-    <div class="flex flex-1 gap-4 px-6 pt-3 pb-2 overflow-hidden">
+    @if (!isLocked)
+    {
+        <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card-body gap-4">
+                <h2 class="font-semibold">Vraag toevoegen</h2>
+                <form id="card-question-form" asp-action="CreateQuestion" method="post" class="flex flex-col gap-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projectId" value="@projectId" />
+                    <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                    <input type="hidden" id="card-answers-raw" name="AnswerChoicesRaw" value="" />
+                    <label class="form-control">
+                        <div class="label"><span class="label-text text-xs">Vraagtekst *</span></div>
+                        <input type="text" name="Text" class="input input-bordered input-sm w-full" required placeholder="Stel hier je vraag…" />
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="form-control">
+                            <div class="label"><span class="label-text text-xs">Type</span></div>
+                            <select id="card-format" name="QuestionFormat" class="select select-bordered select-sm w-full">
+                                <option value="Open">Open vraag</option>
+                                <option value="MultipleChoice">Meerkeuze</option>
+                                <option value="SingleChoice">Enkelvoudige keuze</option>
+                                <option value="Likert">Likert</option>
+                            </select>
+                        </label>
+                        <label class="form-control">
+                            <div class="label"><span class="label-text text-xs">Sectie</span></div>
+                            <select name="SectionId" class="select select-bordered select-sm w-full">
+                                <option value="">— geen sectie —</option>
+                                @foreach (var sec in sections)
+                                {
+                                    <option value="@sec.SectionId">@sec.Name</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+                    <div id="card-answers-section" class="hidden flex-col gap-2">
+                        <div class="label"><span class="label-text text-xs">Antwoorden *</span></div>
+                        <div id="card-answer-list" class="flex flex-col gap-1"></div>
+                        <span id="card-answers-error" class="hidden text-error text-xs">Voeg minimaal 2 antwoorden toe.</span>
+                        <button type="button" id="card-add-answer" class="btn btn-ghost btn-xs self-start">+ Antwoord toevoegen</button>
+                    </div>
+                    <label class="label cursor-pointer justify-start gap-3">
+                        <input type="checkbox" id="card-mandatory" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
+                        <span class="label-text text-sm">Verplicht</span>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-sm self-end">Toevoegen</button>
+                </form>
+            </div>
+        </div>
+    }
 
-        @if (showLeft)
+    <div class="flex justify-between">
+        <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← Instellingen</a>
+        @if (!isLocked)
         {
-            @* AI left panel *@
-            <div class="w-64 flex-shrink-0 border border-gray-500 flex flex-col p-3 overflow-y-auto">
-                <p class="font-bold text-center mb-3">AI Assistent</p>
-
-                @if (aiAssistance == "AskFirst")
-                {
-                    @* Ask-first mode: show prompt until user clicks Ja *@
-                    <div id="ask-first-prompt" class="flex flex-col items-center gap-3 mt-4">
-                        <p class="text-center text-gray-300">AI-assistentie nodig?</p>
-                        <button type="button" id="ask-first-ja"
-                                class="border border-gray-500 px-6 py-2 hover:bg-gray-700">Ja</button>
-                    </div>
-                    <div id="ai-content" class="hidden flex-col flex-1 gap-2">
-                        <div class="self-start bg-gray-800 border border-gray-600 rounded px-3 py-2 max-w-[85%]">
-                            Kan ik je helpen met Vraag 1?
-                        </div>
-                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-4 py-1 mt-1 text-gray-500 cursor-not-allowed opacity-50">Herformuleer</button>
-                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer antwoord</button>
-                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer subvraag</button>
-                    </div>
-                }
-                else
-                {
-                    @* Pro-active mode: always visible *@
-                    <div class="flex flex-col gap-2">
-                        <div class="self-start bg-gray-800 border border-gray-600 rounded px-3 py-2 max-w-[85%]">
-                            Kan ik je helpen met Vraag 1?
-                        </div>
-                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-4 py-1 mt-1 text-gray-500 cursor-not-allowed opacity-50">Herformuleer</button>
-                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer antwoord</button>
-                        <button type="button" disabled title="Binnenkort beschikbaar" class="self-center border border-gray-600 px-3 py-1 text-gray-500 cursor-not-allowed opacity-50">Genereer subvraag</button>
-                    </div>
-                }
-            </div>
-        }
-
-        @* Questions panel *@
-        <div class="flex-1 border border-gray-500 flex flex-col p-4 overflow-y-auto">
-
-            @Html.AntiForgeryToken()
-            <div id="questions-list"
-                 data-project-id="@projectId"
-                 data-ai-assistance="@aiAssistance"
-                 data-questions-endpoint="@($"/api/admin/projects/{projectId}/questions")"
-                 data-delete-endpoint="@Url.Action("Delete", "Question")">
-                <p class="text-gray-500 text-sm">Vragen worden geladen...</p>
-            </div>
-
-            <button type="button" id="add-question-btn"
-                    class="text-gray-400 hover:text-white mt-4 text-left w-fit">+ Vraag toevoegen</button>
-        </div>
-    </div>
-
-    @* Bottom buttons *@
-    <div class="flex justify-between items-center px-6 py-4">
-        <div class="flex items-center gap-3">
-            <a asp-controller="Project" asp-action="Index"
-               class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Afsluiten</a>
-            <a asp-controller="Project" asp-action="Create" asp-route-projectId="@projectId"
-               class="border border-gray-500 px-6 py-2 hover:bg-gray-800">← Vorige</a>
-        </div>
-        <div class="flex items-center gap-3">
-            <span id="questions-next-error" class="hidden text-red-400">Voeg minimaal 1 vraag toe.</span>
             <button type="button" id="questions-next-btn"
+                    class="btn btn-primary btn-sm"
                     data-question-count="@Model.Count"
-                    data-href="@Url.Action("Ideation", "Project", new { projectId })"
-                    class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Volgende →</button>
-        </div>
+                    data-href="@Url.Action("Ideation", new { projectId, isNew })">Volgende →</button>
+        }
+        else
+        {
+            <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">Volgende →</a>
+        }
     </div>
+    <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">Voeg minstens één vraag toe.</p>
 </div>
 
-@* Modal for adding a question *@
-<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div class="bg-gray-900 border border-gray-500 w-[480px] p-6 text-white">
-
+@* Modal for editing a question — controlled by project-questions.ts via #questions-list event delegation *@
+<div id="modal" class="modal">
+    <div class="modal-box w-[480px] max-w-xl">
         <div class="flex justify-between items-center mb-4">
-            <span id="modal-title" class="font-bold text-sm">Vraag aanmaken</span>
-            <button type="button" id="modal-close" class="text-gray-400 hover:text-white text-lg leading-none">×</button>
+            <span id="modal-title" class="font-bold text-base">Vraag aanmaken</span>
+            <button type="button" id="modal-close" class="btn btn-ghost btn-sm btn-circle">×</button>
         </div>
 
+        @Html.AntiForgeryToken()
         <form id="question-form"
               asp-controller="Project" asp-action="CreateQuestion"
               data-update-url="@Url.Action("UpdateQuestion", "Project")"
+              data-questions-endpoint="@($"/api/admin/projects/{projectId}/questions")"
+              data-delete-endpoint="@Url.Action("Delete", "Question")"
+              data-project-id="@projectId"
+              data-ai-assistance="@aiAssistance"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
             <input type="hidden" name="aiAssistance" value="@aiAssistance" />
+            <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
             <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
 
-            <label class="block mb-1">Vraagtekst</label>
-            <textarea name="Text" id="QuestionText" rows="3" required maxlength="500"
-                      class="w-full bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 resize-none focus:outline-none"
-                      placeholder="Vul je vraag in..."></textarea>
-            <span id="text-error" class="hidden text-red-400 text-xs mt-1 mb-2 block">Dit veld moet ingevuld zijn.</span>
+            <label class="form-control mb-3">
+                <div class="label"><span class="label-text text-xs">Vraagtekst</span></div>
+                <textarea name="Text" id="QuestionText" rows="3"
+                          class="textarea textarea-bordered textarea-sm w-full resize-none"
+                          placeholder="Vul je vraag in..."></textarea>
+                <span id="text-error" class="hidden text-error text-xs mt-1">Dit veld moet ingevuld zijn.</span>
+            </label>
 
-            <label class="block mb-2 mt-3">Vraagtype</label>
-            <div class="flex gap-2 mb-4">
-                <div class="flex flex-col items-center gap-1">
-                    <button type="button" class="type-btn bg-gray-600 border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="MultipleChoice">MCQ</button>
-                    <span class="type-selected-label text-gray-400 italic text-xs">(geselecteerd)</span>
+            <label class="form-control mb-4">
+                <div class="label"><span class="label-text text-xs">Vraagtype</span></div>
+                <div class="flex gap-2">
+                    <div class="flex flex-col items-center gap-1">
+                        <button type="button" class="type-btn btn btn-sm btn-primary" data-type="MultipleChoice">MCQ</button>
+                        <span class="type-selected-label text-base-content/40 italic text-xs">(geselecteerd)</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="SingleChoice">SCQ</button>
+                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">(geselecteerd)</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="Open">Open</button>
+                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">(geselecteerd)</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="Likert">Likert</button>
+                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">(geselecteerd)</span>
+                    </div>
                 </div>
-                <div class="flex flex-col items-center gap-1">
-                    <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="SingleChoice">SCQ</button>
-                    <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
-                </div>
-                <div class="flex flex-col items-center gap-1">
-                    <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="Open">Open</button>
-                    <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
-                </div>
-                <div class="flex flex-col items-center gap-1">
-                    <button type="button" class="type-btn border border-gray-400 px-4 py-1 hover:bg-gray-700" data-type="Likert">Likert</button>
-                    <span class="type-selected-label text-gray-400 italic text-xs hidden">(geselecteerd)</span>
-                </div>
-            </div>
+            </label>
 
-            <div class="flex items-center gap-2 mb-3">
-                <input type="hidden" name="IsMandatory" value="false" />
-                <input type="checkbox" name="IsMandatory" id="IsMandatory-cb" value="true" />
-                <label for="IsMandatory-cb" class="text-xs cursor-pointer">Verplicht</label>
-            </div>
-
-            <div id="answers-section">
-                <label class="block mb-2">Antwoorden</label>
+            <div id="answers-section" class="mb-4">
+                <label class="label"><span class="label-text text-xs">Antwoorden</span></label>
                 <div id="answer-list" class="space-y-2 mb-2"></div>
-                <span id="answers-error" class="hidden text-red-400 text-xs mb-2 block"></span>
-                <button type="button" id="add-answer-btn"
-                        class="text-gray-400 hover:text-white">+ Antwoord toevoegen</button>
+                <span id="answers-error" class="hidden text-error text-xs mb-2 block"></span>
+                <button type="button" id="add-answer-btn" class="btn btn-ghost btn-xs">+ Antwoord toevoegen</button>
             </div>
 
             @if (sections.Any())
             {
-                <div class="mt-4">
-                    <label class="block mb-2">Sectie (optioneel)</label>
-                    <select name="SectionId" id="SectionId"
-                            class="w-full bg-gray-800 border border-gray-500 text-white text-xs px-3 py-2 focus:outline-none">
+                <label class="form-control mb-4">
+                    <div class="label"><span class="label-text text-xs">Sectie (optioneel)</span></div>
+                    <select name="SectionId" id="SectionId" class="select select-bordered select-sm w-full">
                         <option value="">— Geen sectie —</option>
                         @foreach (var sec in sections)
                         {
                             <option value="@sec.SectionId">@sec.Name</option>
                         }
                     </select>
-                </div>
+                </label>
             }
 
-            <hr class="border-gray-600 mt-4 mb-4" />
+            <label class="label cursor-pointer justify-start gap-3 mb-2">
+                <input type="checkbox" id="IsMandatory-cb" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
+                <span class="label-text text-sm">Verplicht</span>
+            </label>
 
-            <div class="flex justify-end gap-3">
-                <button type="button" id="modal-cancel"
-                        class="border border-gray-500 px-6 py-2 hover:bg-gray-800">Annuleer</button>
-                <button type="submit"
-                        class="border border-gray-400 px-6 py-2 hover:bg-gray-700">OK</button>
+            <div class="divider my-2"></div>
+
+            <div class="modal-action gap-2">
+                <button type="button" id="modal-cancel" class="btn btn-ghost btn-sm">Annuleer</button>
+                <button type="submit" class="btn btn-primary btn-sm">OK</button>
             </div>
         </form>
     </div>
+    <form method="dialog" class="modal-backdrop">
+        <button id="modal-backdrop-close">close</button>
+    </form>
 </div>
+
+@section Scripts {
+    <script type="module" vite-src="~/project-questions.ts"></script>
+}
