@@ -27,14 +27,7 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<AdminDbContext>(opt =>
-        opt.UseNpgsql(connStr)
-           // Migrations were generated against SQLite, so Npgsql's snapshot of
-           // the same model differs and EF Core 9 treats that as a fatal
-           // PendingModelChangesWarning. The migration operations themselves
-           // are provider-agnostic, so applying them on Postgres is safe.
-           .ConfigureWarnings(b => b.Ignore(
-               Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+    builder.Services.AddDbContext<AdminDbContext>(opt => opt.UseNpgsql(connStr));
 }
 else
 {

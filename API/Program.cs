@@ -22,7 +22,6 @@ using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
-using Yarp.ReverseProxy.Forwarder;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -197,14 +196,6 @@ else
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
 // Re-enable if a browser-based client ever needs direct API access.
 
-// Reverse proxy for the test deployment: when admin runs as a sidecar in this
-// Cloud Run service, ADMIN_INTERNAL_URL is set and unmatched requests are
-// forwarded to it. Without the env var nothing is registered, so local dev
-// is unaffected.
-var adminInternalUrl = Environment.GetEnvironmentVariable("ADMIN_INTERNAL_URL");
-if (!string.IsNullOrEmpty(adminInternalUrl))
-    builder.Services.AddHttpForwarder();
-
 var app = builder.Build();
 
 // Database initialisation & seeding
@@ -262,14 +253,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseHttpLogging();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
-if (!string.IsNullOrEmpty(adminInternalUrl))
-    // Test deploy only: API + admin share a Cloud Run service. Gate /api/*
-    // with the key; let other paths fall through to the YARP forwarder.
-    app.UseWhen(
-        ctx => ctx.Request.Path.StartsWithSegments("/api"),
-        branch => branch.UseMiddleware<ApiKeyMiddleware>());
-else
-    app.UseMiddleware<ApiKeyMiddleware>();
+app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
 
 app.MapGet("/health", async (SynapseEnqueteContext db) =>
@@ -286,10 +270,4 @@ app.MapGet("/health", async (SynapseEnqueteContext db) =>
 });
 
 app.MapControllers();
-
-// Forward anything that didn't match an API endpoint to the admin sidecar.
-// More specific endpoints (controllers, /health) win over the catch-all.
-if (!string.IsNullOrEmpty(adminInternalUrl))
-    app.MapForwarder("/{**catch-all}", adminInternalUrl);
-
 app.Run();

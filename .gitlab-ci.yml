@@ -164,19 +164,22 @@ deploy-test:
       - gcloud config set project "${PROJECT_ID}"
   script:
     - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
-    - sed -i "s|IMAGE_ADMIN_PLACEHOLDER|${IMAGE_ADMIN}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
     - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
     - gcloud run services add-iam-policy-binding mvp-api-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
     - |
       API_URL=$(gcloud run services describe mvp-api-test --region="${REGION}" --format="value(status.url)")
-      echo "API + Admin URL: $API_URL  (admin reachable on /, API on /api)"
+      echo "API URL: $API_URL"
     - |
       gcloud run deploy mvp-ui-test --image="${IMAGE_UI}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=3 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*"
     - |
       UI_URL=$(gcloud run services describe mvp-ui-test --region="${REGION}" --format="value(status.url)")
-      UI_DOMAIN=$(echo "$UI_URL" | sed 's|https://||')
       echo "Test UI available at: $UI_URL"
-      gcloud run services update mvp-api-test --region="${REGION}" --container=mvp-admin --update-env-vars="AdminSettings__ParticipantDomain=${UI_DOMAIN}"
+    - |
+      UI_DOMAIN=$(echo "$UI_URL" | sed 's|https://||')
+      gcloud run deploy mvp-admin-test --image="${IMAGE_ADMIN}:${IMAGE_TAG}" --region="${REGION}" --allow-unauthenticated --port=8080 --min-instances=0 --max-instances=1 --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${API_URL},ApiKey=REDACTED,AllowedHosts=*,SystemAdmin__Email=admin@synapse.local,SystemAdmin__Password=REDACTED Source=/tmp/admin.db;Foreign Keys=False,Vite__Base=/dist/"
+    - |
+      ADMIN_URL=$(gcloud run services describe mvp-admin-test --region="${REGION}" --format="value(status.url)")
+      echo "Test Admin available at: $ADMIN_URL"
   only:
     - development #reverse
   environment:
