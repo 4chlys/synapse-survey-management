@@ -37,7 +37,7 @@ build-nginx:
       - nginx-image.tar.gz
     expire_in: 1 hour
   only:
-    - fix/test-deployment-multicontainer
+    - development
 
 build-api:
   stage: build
@@ -50,7 +50,7 @@ build-api:
       - api-image.tar.gz
     expire_in: 1 hour
   only:
-    - fix/test-deployment-multicontainer
+    - development
     - main
 
 build-ui:
@@ -64,7 +64,7 @@ build-ui:
       - ui-image.tar.gz
     expire_in: 1 hour
   only:
-    - fix/test-deployment-multicontainer
+    - development
     - main
 
 build-admin:
@@ -78,7 +78,7 @@ build-admin:
       - admin-image.tar.gz
     expire_in: 1 hour
   only:
-    - fix/test-deployment-multicontainer
+    - development
     - main
 
 scan-api:
@@ -96,7 +96,7 @@ scan-api:
     expire_in: 1 week
   allow_failure: false
   only:
-    - fix/test-deployment-multicontainer
+    - development
     - main
 
 scan-ui:
@@ -114,7 +114,7 @@ scan-ui:
     expire_in: 1 week
   allow_failure: false
   only:
-    - fix/test-deployment-multicontainer
+    - development
     - main
 
 scan-admin:
@@ -132,7 +132,7 @@ scan-admin:
     expire_in: 1 week
   allow_failure: false
   only:
-    - fix/test-deployment-multicontainer
+    - development
     - main
 
 scan-nginx:
@@ -150,7 +150,7 @@ scan-nginx:
     expire_in: 1 week
   allow_failure: false
   only:
-    - fix/test-deployment-multicontainer
+    - development
 
 push-dev:
   stage: push
@@ -165,7 +165,7 @@ push-dev:
     - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
     - docker push "${IMAGE_NGINX}:${IMAGE_TAG}"
   only:
-    - fix/test-deployment-multicontainer #reverse
+    - development #reverse
 
 push-prod:
   stage: push
@@ -229,7 +229,7 @@ deploy-test:
       sed -i "s|PARTICIPANT_DOMAIN_PLACEHOLDER|${UI_DOMAIN}|g" cloudrun-test-api.yaml
       gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
   only:
-    - fix/test-deployment-multicontainer #reverse
+    - development #reverse
   environment:
     name: test
 
