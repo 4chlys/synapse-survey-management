@@ -10,7 +10,7 @@ spec:
       annotations:
         autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "3"
-        run.googleapis.com/container-dependencies: '{"mvp-api":["postgres"],"mvp-admin":["postgres"],"nginx":["mvp-api","mvp-admin"]}'
+        run.googleapis.com/container-dependencies: '{"mvp-api":["postgres"],"mvp-admin":["postgres"]}'
     spec:
       containers:
 
