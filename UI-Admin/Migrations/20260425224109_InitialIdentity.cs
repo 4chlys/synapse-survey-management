@@ -49,12 +49,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AspNetUsers_ProjectPlatforms_ProjectPlatformId",
-                        column: x => x.ProjectPlatformId,
-                        principalTable: "ProjectPlatforms",
-                        principalColumn: "ProjectPlatformId",
-                        onDelete: ReferentialAction.SetNull);
+                    // FK to ProjectPlatforms intentionally omitted: that table is owned by
+                    // SynapseEnqueteContext and may not exist when admin migrations run.
                 });
 
             migrationBuilder.CreateTable(
