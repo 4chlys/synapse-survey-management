@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using SynapseEnqueteManagement.UI.Admin;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
@@ -27,13 +28,17 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<AdminDbContext>(opt => opt.UseNpgsql(connStr));
+    builder.Services.AddDbContext<AdminDbContext>(opt => opt
+        .UseNpgsql(connStr)
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 }
 else
 {
     var connStr = builder.Configuration.GetConnectionString("AdminDb")
                   ?? "Data Source=../API/SynapseEnquete.db";
-    builder.Services.AddDbContext<AdminDbContext>(opt => opt.UseSqlite(connStr));
+    builder.Services.AddDbContext<AdminDbContext>(opt => opt
+        .UseSqlite(connStr)
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 }
 
 // Identity
