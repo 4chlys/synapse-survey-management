@@ -32,4 +32,8 @@ public class UpdateProjectDto
     [Range(0, 120)] public int? MaxAge { get; set; }
 
     public bool RequestContactInfo { get; set; }
+
+    [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
+    public bool ExtraIdeasReplaceExisting { get; set; } = false;
+    [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
 }

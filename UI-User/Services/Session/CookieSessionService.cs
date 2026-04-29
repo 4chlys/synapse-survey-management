@@ -42,4 +42,27 @@ public class CookieSessionService : ISessionService
         var cookieName = CookiePrefix + projectId;
         _httpContextAccessor.HttpContext?.Response.Cookies.Delete(cookieName);
     }
+
+    public int GetIdeaRefreshCount(int projectId, int categoryId)
+    {
+        var cookieName = $"IdeaRefresh_{projectId}_{categoryId}";
+        if (_httpContextAccessor.HttpContext?.Request.Cookies.TryGetValue(cookieName, out var value) == true
+            && int.TryParse(value, out var count))
+            return count;
+        return 0;
+    }
+
+    public void IncrementIdeaRefreshCount(int projectId, int categoryId)
+    {
+        var cookieName = $"IdeaRefresh_{projectId}_{categoryId}";
+        var current = GetIdeaRefreshCount(projectId, categoryId);
+        var isHttps = _httpContextAccessor.HttpContext?.Request.IsHttps ?? false;
+        _httpContextAccessor.HttpContext?.Response.Cookies.Append(cookieName, (current + 1).ToString(), new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = SameSiteMode.Lax,
+            MaxAge = TimeSpan.FromDays(365)
+        });
+    }
 }

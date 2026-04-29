@@ -33,7 +33,7 @@ public class ProjectManager(
     public Task<Project> GetProjectByShortFormAsync(string shortForm)
         => projectRepository.ReadByShortFormReadOnlyAsync(shortForm);
 
-    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null)
+    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
     {
         var candidate = string.IsNullOrWhiteSpace(shortForm)
             ? shortFormService.Normalize(name)
@@ -59,6 +59,9 @@ public class ProjectManager(
             MinAge = minAge,
             MaxAge = maxAge,
             RequestContactInfo = requestContactInfo,
+            IdeaPageSize = ideaPageSize,
+            ExtraIdeasReplaceExisting = extraIdeasReplaceExisting,
+            MaxExtraIdeaRequests = maxExtraIdeaRequests,
             ProjectState = ProjectState.Draft,
             Questionnaire = new Questionnaire(),
             CreatedAt = DateTime.UtcNow
@@ -81,7 +84,7 @@ public class ProjectManager(
         return created;
     }
 
-    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null)
+    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
     {
         var project = await projectRepository.ReadByIdWithIntroductionForUpdateAsync(projectId);
         if (project is null)
@@ -116,6 +119,9 @@ public class ProjectManager(
         project.MinAge = minAge;
         project.MaxAge = maxAge;
         project.RequestContactInfo = requestContactInfo;
+        project.IdeaPageSize = ideaPageSize;
+        project.ExtraIdeasReplaceExisting = extraIdeasReplaceExisting;
+        project.MaxExtraIdeaRequests = maxExtraIdeaRequests;
 
         if (string.IsNullOrEmpty(introduction))
         {

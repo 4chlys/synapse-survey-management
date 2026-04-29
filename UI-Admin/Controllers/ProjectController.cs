@@ -239,6 +239,25 @@ public class ProjectController(
     }
 
     [HttpPost]
+    public async Task<IActionResult> SaveIdeationSettings(int projectId, bool isNew, int ideaPageSize, bool extraIdeasReplaceExisting, int maxExtraIdeaRequests)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(project))
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
+
+        await projectService.UpdateProjectAsync(
+            projectId, project.Name, project.Topic, project.Introduction,
+            project.ProjectImage, project.FormType, project.AiAssistance,
+            project.MinAge, project.MaxAge, project.RequestContactInfo,
+            project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests);
+
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
+    }
+
+    [HttpPost]
     public async Task<IActionResult> AddCategory(int projectId, bool isNew, CategoryFormViewModel model)
     {
         var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
