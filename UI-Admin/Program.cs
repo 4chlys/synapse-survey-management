@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using SynapseEnqueteManagement.UI.Admin;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
@@ -27,13 +28,17 @@ if (!string.IsNullOrEmpty(dbHost))
                   $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
                   $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
                   $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
-    builder.Services.AddDbContext<AdminDbContext>(opt => opt.UseNpgsql(connStr));
+    builder.Services.AddDbContext<AdminDbContext>(opt => opt
+        .UseNpgsql(connStr)
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 }
 else
 {
     var connStr = builder.Configuration.GetConnectionString("AdminDb")
                   ?? "Data Source=../API/SynapseEnquete.db";
-    builder.Services.AddDbContext<AdminDbContext>(opt => opt.UseSqlite(connStr));
+    builder.Services.AddDbContext<AdminDbContext>(opt => opt
+        .UseSqlite(connStr)
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 }
 
 // Identity
@@ -104,13 +109,30 @@ builder.Services.AddViteServices();
 var app = builder.Build();
 
 // Apply Identity migrations + seed roles and system admin
-using (var scope = app.Services.CreateScope())
+// Retry loop for Cloud Run cold starts where postgres sidecar may not be ready yet.
 {
-    var adminDb = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
-    await adminDb.Database.MigrateAsync();
+    const int maxRetries = 10;
+    const int delayMs = 3000;
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
-    var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
-    await seeder.SeedAsync();
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var adminDb = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
+            await adminDb.Database.MigrateAsync();
+            var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
+            await seeder.SeedAsync();
+            break;
+        }
+        catch (Exception ex) when (attempt < maxRetries)
+        {
+            startupLogger.LogWarning("Admin DB not ready (attempt {Attempt}/{Max}): {Message}. Retrying in {Delay}ms...",
+                attempt, maxRetries, ex.Message, delayMs);
+            await Task.Delay(delayMs);
+        }
+    }
 }
 
 if (app.Environment.IsDevelopment())

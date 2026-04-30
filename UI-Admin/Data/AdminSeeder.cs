@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 
 namespace SynapseEnqueteManagement.UI.Admin.Data;
@@ -8,7 +9,8 @@ public class AdminSeeder(
     RoleManager<IdentityRole> roleManager,
     UserManager<ApplicationUser> userManager,
     IConfiguration configuration,
-    AdminDbContext db)
+    AdminDbContext db,
+    ILogger<AdminSeeder> logger)
 {
     public async Task SeedAsync()
     {
@@ -56,17 +58,24 @@ public class AdminSeeder(
         {
             platforms = await db.ProjectPlatforms.ToListAsync();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Failed to load ProjectPlatforms during admin seeding");
             return;
         }
+
+        logger.LogInformation("Seeding platform admins for {Count} platforms", platforms.Count);
 
         foreach (var platform in platforms)
         {
             var slug = platform.Name.ToLower().Replace(" ", "").Replace(".", "");
             var email = $"admin@{slug}.com";
 
-            if (await userManager.FindByEmailAsync(email) is not null) continue;
+            if (await userManager.FindByEmailAsync(email) is not null)
+            {
+                logger.LogInformation("Platform admin {Email} already exists — skipping", email);
+                continue;
+            }
 
             var user = new ApplicationUser
             {
@@ -78,10 +87,21 @@ public class AdminSeeder(
 
             var result = await userManager.CreateAsync(user, "Admin1234!");
             if (!result.Succeeded)
-                throw new InvalidOperationException(
-                    $"Failed to seed ProjectPlatformAdmin for '{platform.Name}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            {
+                logger.LogError("Failed to seed ProjectPlatformAdmin for '{Platform}': {Errors}",
+                    platform.Name, string.Join(", ", result.Errors.Select(e => e.Description)));
+                continue;
+            }
 
-            await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+            var roleResult = await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+            if (!roleResult.Succeeded)
+            {
+                logger.LogError("Failed to add ProjectPlatformAdmin role to '{Email}': {Errors}",
+                    email, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                continue;
+            }
+
+            logger.LogInformation("Seeded platform admin {Email} for platform {Platform}", email, platform.Name);
         }
     }
 }
