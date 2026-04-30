@@ -36,7 +36,7 @@ mig_status() {
   local mig="$1"
   local size
   size=$(gcloud compute instance-groups managed describe "${mig}" \
-    --zone="${REGION}" --project="${PROJECT_ID}" \
+    --region="${REGION}" --project="${PROJECT_ID}" \
     --format="value(targetSize)" 2>/dev/null || echo "?")
   echo "${size}"
 }
@@ -44,7 +44,7 @@ mig_status() {
 set_mig_size() {
   local mig="$1" size="$2"
   gcloud compute instance-groups managed resize "${mig}" \
-    --size="${size}" --zone="${REGION}" --project="${PROJECT_ID}" --quiet
+    --size="${size}" --region="${REGION}" --project="${PROJECT_ID}" --quiet
 }
 
 show_status() {
