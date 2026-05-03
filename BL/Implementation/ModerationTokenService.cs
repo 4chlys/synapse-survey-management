@@ -94,6 +94,47 @@ public class ModerationTokenService(string secret, ILogger<ModerationTokenServic
         }
     }
 
+    public string GenerateImageToken(byte[] imageBytes, int projectId)
+    {
+        var imageHash = Convert.ToBase64String(SHA256.HashData(imageBytes));
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var payload = $"image|{projectId}|{imageHash}|{timestamp}";
+        var hmac = ComputeHmac(payload);
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{payload}|{hmac}"));
+    }
+
+    public bool ValidateImageToken(string token, int projectId)
+    {
+        try
+        {
+            if (_consumedTokens.ContainsKey(token)) return false;
+
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
+            var parts = decoded.Split('|');
+            if (parts.Length != 5) return false;
+            if (parts[0] != "image") return false;
+            if (!int.TryParse(parts[1], out var tokenProjectId) || tokenProjectId != projectId) return false;
+            if (!long.TryParse(parts[3], out var timestamp)) return false;
+            var hmac = parts[4];
+
+            var payload = $"image|{parts[1]}|{parts[2]}|{parts[3]}";
+            if (!CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(ComputeHmac(payload)),
+                    Encoding.UTF8.GetBytes(hmac)))
+                return false;
+
+            var age = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - timestamp;
+            if (age > DefaultMaxAge.TotalSeconds || age < 0) return false;
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to validate image moderation token");
+            return false;
+        }
+    }
+
     private static string ComputeTextHash(string text)
     {
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(text));
