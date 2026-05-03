@@ -1,5 +1,6 @@
 import { wireIdeationForm } from './ideationform';
 import { wireModerationField } from './moderation';
+import { wireIdeaImageField } from './ideaimage';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
 
@@ -27,6 +28,7 @@ export function initIdeation(): void {
 
     if (createForm && projectId != null && categoryId) {
         wireIdeationForm(createForm, 'description', projectId, 'idea');
+        wireIdeaImageField(createForm, projectId);
         if (descriptionEl) {
             wireModerationField(descriptionEl, projectId);
         }

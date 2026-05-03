@@ -4,6 +4,7 @@ public class IdeaDto
 {
     public int IdeaId { get; set; }
     public string Description { get; set; }
+    public string ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public int CommentsCount { get; set; }
     public bool IsOwnedByCurrentUser { get; set; }

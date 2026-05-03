@@ -10,4 +10,5 @@ public class AdminIdeaDto
     public int ReactionCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public string ParticipantEmail { get; set; }
+    public string ImageUrl { get; set; }
 }

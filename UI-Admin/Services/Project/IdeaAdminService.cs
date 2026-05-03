@@ -40,4 +40,11 @@ public class IdeaAdminService(HttpClient httpClient)
             new { Status = status });
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task RemoveIdeaImageAsync(int projectId, int ideaId)
+    {
+        var response = await httpClient.DeleteAsync(
+            $"api/admin/projects/{projectId}/ideas/{ideaId}/image");
+        response.EnsureSuccessStatusCode();
+    }
 }

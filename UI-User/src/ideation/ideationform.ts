@@ -1,4 +1,5 @@
 import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
+import {uploadSelectedImage} from './ideaimage';
 
 const MIN_LENGTH = 2;
 const MAX_LENGTH: Record<'idea' | 'comment', number> = { idea: 1000, comment: 500 };
@@ -38,10 +39,20 @@ export function wireIdeationForm(
         const originalLabel = submitBtn?.textContent ?? 'Plaatsen';
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Controleren...';
+            submitBtn.textContent = 'Uploaden...';
         }
 
         try {
+            // Upload image first (ideas only; comments have no image)
+            if (contentType === 'idea') {
+                const imageResult = await uploadSelectedImage(form, projectId);
+                if (!imageResult.ok) {
+                    return; // error already rendered in the image error slot
+                }
+            }
+
+            if (submitBtn) submitBtn.textContent = 'Controleren...';
+
             const result = await callModerationAi(text, projectId, contentType);
 
             if (result.isAcceptable) {

@@ -48,7 +48,13 @@
                 {
                     <tr class="hover @RowBg(idea.Status)">
                         <td class="max-w-xs">
-                            <p class="font-medium text-sm leading-snug line-clamp-2">@idea.Description</p>
+                            @if (!string.IsNullOrEmpty(idea.ImageUrl))
+                            {
+                                <a href="@idea.ImageUrl" target="_blank" class="inline-block mr-2 align-middle">
+                                    <img src="@idea.ImageUrl" alt="" class="w-12 h-12 object-cover rounded-md inline-block" />
+                                </a>
+                            }
+                            <p class="font-medium text-sm leading-snug line-clamp-2 inline">@idea.Description</p>
                             <p class="text-xs text-base-content/40 mt-0.5">@idea.CreatedAt.ToString("dd MMM yyyy")</p>
                         </td>
                         <td>
@@ -88,6 +94,17 @@
                                         <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
                                         <button type="submit" class="btn btn-warning btn-xs btn-outline" title="Markeren">⚑</button>
+                                    </form>
+                                }
+                                @if (!string.IsNullOrEmpty(idea.ImageUrl))
+                                {
+                                    <form asp-action="RemoveIdeaImage" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                        <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                                        <input type="hidden" name="returnUrl" value="@ideasUrl" />
+                                        <button type="submit" class="btn btn-ghost btn-xs" title="Afbeelding verwijderen"
+                                                onclick="return confirm('Afbeelding verwijderen?');">🖼✕</button>
                                     </form>
                                 }
                             </div>

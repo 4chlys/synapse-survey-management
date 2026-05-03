@@ -27,11 +27,19 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         int projectId,
         int categoryId,
         string description,
-        string moderationToken = null)
+        string moderationToken = null,
+        string imageUrl = null,
+        string imageModerationToken = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas");
-        request.Content = JsonContent.Create(new { Description = description, ModerationToken = moderationToken });
+        request.Content = JsonContent.Create(new
+        {
+            Description = description,
+            ModerationToken = moderationToken,
+            ImageUrl = imageUrl,
+            ImageModerationToken = imageModerationToken,
+        });
 
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);

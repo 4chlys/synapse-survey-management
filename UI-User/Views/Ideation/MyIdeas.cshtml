@@ -54,6 +54,11 @@
 
                     <p class="text-base-content text-sm leading-relaxed pr-6">@idea.Description</p>
 
+                    @if (!string.IsNullOrEmpty(idea.ImageUrl))
+                    {
+                        <img src="@idea.ImageUrl" alt="" class="mt-3 rounded-xl max-h-64 w-full object-cover" />
+                    }
+
                     @if (idea.Emojis.Any())
                     {
                         <div class="flex gap-2 mt-4 items-center flex-wrap">

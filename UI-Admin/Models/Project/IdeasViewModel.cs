@@ -29,6 +29,7 @@ public class IdeaRowViewModel
     public int ReactionCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public string ParticipantEmail { get; set; }
+    public string ImageUrl { get; set; }
 }
 
 public class CategoryOptionViewModel

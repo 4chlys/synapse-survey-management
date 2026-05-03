@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -15,7 +17,10 @@ public class IdeasController(
     ICommentManager commentManager,
     IParticipantManager participantManager,
     IModerationResolver moderationResolver,
-    IProjectManager projectManager)
+    IProjectManager projectManager,
+    IStorageService storageService,
+    IModerationTokenService moderationTokenService,
+    ILogger<IdeasController> logger)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
@@ -50,7 +55,22 @@ public class IdeasController(
         if (error is not null) return error;
 
         var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
-        var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant, ct);
+
+        string permanentImageUrl = null;
+        if (!string.IsNullOrEmpty(dto.ImageUrl))
+        {
+            if (string.IsNullOrEmpty(dto.ImageModerationToken)
+                || !moderationTokenService.ValidateImageToken(dto.ImageModerationToken, projectId))
+            {
+                logger.LogWarning("Invalid or missing image moderation token for project {ProjectId}", projectId);
+                return BadRequest(new { error = "Ongeldige afbeeldingstoken." });
+            }
+
+            permanentImageUrl = await storageService.PromoteAsync(dto.ImageUrl);
+        }
+
+        var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant,
+            permanentImageUrl, ct);
 
         return Created(string.Empty, new CreateIdeaResultDto
         {
@@ -113,6 +133,7 @@ public class IdeasController(
     {
         IdeaId = i.IdeaId,
         Description = i.Description,
+        ImageUrl = i.ImageUrl,
         CreatedAt = i.CreatedAt,
         CommentsCount = i.Comments.OfType<TextComment>().Count(),
         IsOwnedByCurrentUser = participantId.HasValue && i.Participant?.ParticipantId == participantId.Value,
