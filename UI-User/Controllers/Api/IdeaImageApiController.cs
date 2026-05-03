@@ -33,6 +33,12 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
         if (!result.IsSuccess)
             return UnprocessableEntity(new { reason = result.Reason });
 
-        return Ok(new { url = result.Url, imageModerationToken = result.ImageModerationToken });
+        return Ok(new
+        {
+            url = result.Url,
+            imageModerationToken = result.ImageModerationToken,
+            isAcceptable = result.IsAcceptable,
+            reason = result.Reason
+        });
     }
 }

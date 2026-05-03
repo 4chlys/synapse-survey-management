@@ -14,25 +14,23 @@ public class IdeaImageService(HttpClient httpClient) : IIdeaImageService
 
         var response = await httpClient.PostAsync($"api/upload/idea-image?projectId={projectId}", content, ct);
 
-        if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
-        {
-            var err = await response.Content.ReadFromJsonAsync<RejectionBody>(cancellationToken: ct);
-            return IdeaImageUploadResult.Rejected(err?.Reason ?? "De afbeelding is niet toegestaan.");
-        }
-
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<UploadBody>(cancellationToken: ct);
-        return IdeaImageUploadResult.Success(result!.Url, result.ImageModerationToken);
+
+        if (result!.IsAcceptable)
+            return IdeaImageUploadResult.Success(result.Url, result.ImageModerationToken);
+
+        return IdeaImageUploadResult.AiRejected(
+            result.Url,
+            result.ImageModerationToken,
+            result.Reason ?? "De afbeelding is niet toegestaan.");
     }
 
     private sealed class UploadBody
     {
         public string Url { get; set; }
         public string ImageModerationToken { get; set; }
-    }
-
-    private sealed class RejectionBody
-    {
+        public bool IsAcceptable { get; set; }
         public string Reason { get; set; }
     }
 }

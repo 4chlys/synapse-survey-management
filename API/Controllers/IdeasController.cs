@@ -59,14 +59,22 @@ public class IdeasController(
         string permanentImageUrl = null;
         if (!string.IsNullOrEmpty(dto.ImageUrl))
         {
-            if (string.IsNullOrEmpty(dto.ImageModerationToken)
-                || !moderationTokenService.ValidateImageToken(dto.ImageModerationToken, projectId))
+            var imageStatus = string.IsNullOrEmpty(dto.ImageModerationToken)
+                ? null
+                : moderationTokenService.ValidateImageToken(dto.ImageModerationToken, projectId);
+
+            if (imageStatus is null)
             {
                 logger.LogWarning("Invalid or missing image moderation token for project {ProjectId}", projectId);
                 return BadRequest(new { error = "Ongeldige afbeeldingstoken." });
             }
 
             permanentImageUrl = await storageService.PromoteAsync(dto.ImageUrl);
+
+            // A Flagged image means the AI rejected it but the user chose to submit anyway.
+            // Override text status so an admin must review the idea before it becomes visible.
+            if (imageStatus == ModerationStatus.Flagged)
+                status = ModerationStatus.Flagged;
         }
 
         var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant,

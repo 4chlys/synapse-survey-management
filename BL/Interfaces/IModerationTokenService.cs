@@ -8,9 +8,9 @@ public interface IModerationTokenService
     ModerationStatus? ValidateToken(string text, string token, int projectId, TimeSpan? maxAge = null);
     void ConsumeToken(string token);
 
-    /// <summary>Issues a token bound to the SHA-256 hash of the image bytes.</summary>
-    string GenerateImageToken(byte[] imageBytes, int projectId);
+    /// <summary>Issues a token bound to the SHA-256 hash of the image bytes, encoding the AI moderation result.</summary>
+    string GenerateImageToken(byte[] imageBytes, int projectId, ModerationStatus status = ModerationStatus.Approved);
 
-    /// <summary>Returns true if the token is valid, not expired, and scoped to the correct project.</summary>
-    bool ValidateImageToken(string token, int projectId);
+    /// <summary>Returns the moderation status embedded in the token, or null if the token is invalid/expired.</summary>
+    ModerationStatus? ValidateImageToken(string token, int projectId);
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -54,14 +55,20 @@ public class UploadsController(
         var bytes = ms.ToArray();
 
         var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct);
-        if (!modResult.IsAcceptable)
-            return UnprocessableEntity(new { reason = modResult.Reason });
+        var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
+        // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
         // Images land in tmp/ideas/ so orphaned uploads are cleaned up by GCS lifecycle rules.
         var tmpUrl = await storageService.UploadAsync(file, "tmp/ideas");
-        var imageModerationToken = moderationTokenService.GenerateImageToken(bytes, projectId);
+        var imageModerationToken = moderationTokenService.GenerateImageToken(bytes, projectId, imageStatus);
 
-        return Ok(new IdeaImageUploadResultDto { Url = tmpUrl, ImageModerationToken = imageModerationToken });
+        return Ok(new IdeaImageUploadResultDto
+        {
+            Url = tmpUrl,
+            ImageModerationToken = imageModerationToken,
+            IsAcceptable = modResult.IsAcceptable,
+            Reason = modResult.IsAcceptable ? null : modResult.Reason
+        });
     }
 }
 
@@ -74,4 +81,6 @@ public class IdeaImageUploadResultDto
 {
     public string Url { get; set; }
     public string ImageModerationToken { get; set; }
+    public bool IsAcceptable { get; set; }
+    public string Reason { get; set; }
 }
