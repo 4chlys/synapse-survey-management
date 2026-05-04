@@ -17,5 +17,5 @@ public sealed class AiImageGenerationConfig
     public string AspectRatio { get; init; } = "16:9";
 
     [JsonPropertyName("model")]
-    public string Model { get; init; } = "imagen-4.0-ultra-generate-001";
+    public string Model { get; init; } = "gemini-2.5-flash-image";
 }

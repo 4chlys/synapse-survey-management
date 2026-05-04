@@ -164,9 +164,9 @@
     "max_history_turns": 10
   },
   "image_generation": {
-    "prompt": "Genereer een moderne, abstracte en visueel aantrekkelijke headerafbeelding voor een jongerenparticipatieproject genaamd '{project_name}'. De afbeelding moet kleurrijk en professioneel zijn, geschikt als projectbanner. Geen tekst in de afbeelding.",
+    "prompt": "Genereer een moderne, visueel aantrekkelijke realistische headerafbeelding voor een jongerenparticipatieproject. Het centrale visuele onderwerp van de afbeelding is: '{project_name}'.  Zorg ervoor dat dit onderwerp duidelijk en herkenbaar in beeld wordt gebracht, maar doe dit in een creatieve, gestileerde en professionele stijl (niet fotorealistisch, maar artistiek). Gebruik een levendig en kleurrijk palet. De compositie is bedoeld als een brede projectbanner. Belangrijk: genereer absoluut geen tekst, letters of logo's in de afbeelding. Gebruik de aspect raitio 16:9.",
     "aspect_ratio": "16:9",
-    "model": "imagen-4.0-ultra-generate-001"
+    "model": "gemini-2.5-flash-image"
   },
   "fuzzy": {
     "min_skeleton_length": 3,

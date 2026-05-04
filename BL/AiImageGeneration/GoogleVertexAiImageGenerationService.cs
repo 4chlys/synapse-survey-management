@@ -1,7 +1,5 @@
 using Google.Cloud.AIPlatform.V1;
 using Microsoft.Extensions.Logging;
-using Value = Google.Protobuf.WellKnownTypes.Value;
-using Struct = Google.Protobuf.WellKnownTypes.Struct;
 
 namespace SynapseEnqueteManagement.BL.AiImageGeneration;
 
@@ -17,35 +15,47 @@ public sealed class GoogleVertexAiImageGenerationService(
         {
             var prompt = config.Prompt.Replace("{project_name}", projectName);
 
-            var instance = Value.ForStruct(new Struct
+            var request = new GenerateContentRequest
             {
-                Fields = { ["prompt"] = Value.ForString(prompt) }
-            });
-
-            var parameters = Value.ForStruct(new Struct
-            {
-                Fields =
+                Model = modelResource,
+                Contents =
                 {
-                    ["aspectRatio"] = Value.ForString(config.AspectRatio),
+                    new Content
+                    {
+                        Role = "USER",
+                        Parts = { new Part { Text = prompt } }
+                    }
+                },
+                GenerationConfig = new GenerationConfig
+                {
+                    ResponseModalities =
+                    {
+                        GenerationConfig.Types.Modality.Image,
+                        GenerationConfig.Types.Modality.Text
+                    }
                 }
-            });
+            };
 
-            var response = await predictionClient.PredictAsync(
-                modelResource, [instance], parameters, ct);
+            var response = await predictionClient.GenerateContentAsync(request, ct);
 
-            if (response.Predictions is null || response.Predictions.Count == 0)
+            if (response.Candidates is null || response.Candidates.Count == 0)
             {
-                logger.LogWarning("[ImageGeneration] Imagen returned no predictions for project '{Name}'", projectName);
+                logger.LogWarning("[ImageGeneration] Gemini returned no candidates for project '{Name}'", projectName);
                 return ImageGenerationResult.Failed("Afbeelding kon niet worden gegenereerd.");
             }
 
-            var prediction = response.Predictions[0].StructValue;
-            var base64 = prediction.Fields["bytesBase64Encoded"].StringValue;
-            var mimeType = prediction.Fields.TryGetValue("mimeType", out var mt)
-                ? mt.StringValue
-                : "image/png";
+            foreach (var part in response.Candidates[0].Content.Parts)
+            {
+                if (part.InlineData is { } inlineData && inlineData.MimeType.StartsWith("image/"))
+                {
+                    return ImageGenerationResult.Success(
+                        inlineData.Data.ToByteArray(),
+                        inlineData.MimeType);
+                }
+            }
 
-            return ImageGenerationResult.Success(Convert.FromBase64String(base64), mimeType);
+            logger.LogWarning("[ImageGeneration] Gemini response contained no image data for project '{Name}'", projectName);
+            return ImageGenerationResult.Failed("Afbeelding kon niet worden gegenereerd.");
         }
         catch (OperationCanceledException)
         {

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
@@ -88,6 +89,7 @@ public class ProjectController(
     }
 
     [HttpPost]
+    [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
         // For "next", Topic and Introduction are also required
