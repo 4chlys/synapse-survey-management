@@ -109,6 +109,8 @@ else
     builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 }
 
+builder.Services.AddSingleton<IExportService, ExportService>();
+
 // Registering BL
 var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
 var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
