@@ -179,6 +179,14 @@ public class ProjectManager(
         await uow.SaveChangesAsync();
     }
 
+    public async Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId)
+            ?? throw new ArgumentException($"Project {projectId} not found.", nameof(projectId));
+        project.AiAssistance = mode;
+        await uow.SaveChangesAsync();
+    }
+
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
