@@ -179,6 +179,108 @@ public class ProjectManager(
         await uow.SaveChangesAsync();
     }
 
+    public async Task<Project> DuplicateProjectAsync(int sourceProjectId, string newName, int platformId, string newShortForm = null, CancellationToken ct = default)
+    {
+        var src = await projectRepository.ReadByIdForDuplicationReadOnlyAsync(sourceProjectId);
+        if (src is null)
+            throw new KeyNotFoundException($"Project {sourceProjectId} not found.");
+
+        if (src.ProjectPlatformId != platformId)
+            throw new UnauthorizedAccessException("Source project belongs to a different platform.");
+
+        var candidate = string.IsNullOrWhiteSpace(newShortForm)
+            ? shortFormService.Normalize(newName)
+            : newShortForm;
+
+        if (!shortFormService.IsValid(candidate))
+            throw new ValidationException($"'{candidate}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
+
+        if (shortFormService.IsReserved(candidate))
+            throw new ValidationException($"'{candidate}' is a reserved shortform and cannot be used.");
+
+        var uniqueShortForm = await shortFormService.EnsureUniqueAsync(candidate);
+
+        var copy = new Project
+        {
+            Name = newName,
+            ShortForm = uniqueShortForm,
+            Topic = src.Topic,
+            ImageUrl = src.ImageUrl,
+            FormType = src.FormType,
+            AiAssistance = src.AiAssistance,
+            MinAge = src.MinAge,
+            MaxAge = src.MaxAge,
+            RequestContactInfo = src.RequestContactInfo,
+            IdeaPageSize = src.IdeaPageSize,
+            ExtraIdeasReplaceExisting = src.ExtraIdeasReplaceExisting,
+            MaxExtraIdeaRequests = src.MaxExtraIdeaRequests,
+            CommentPageSize = src.CommentPageSize,
+            ProjectPlatformId = platformId,
+            ProjectState = ProjectState.Draft,
+            CreatedAt = DateTime.UtcNow,
+            ViewCount = 0,
+        };
+
+        EntityValidator.ValidateProperty(copy, newName, nameof(Project.Name));
+
+        if (src.Introduction is not null)
+            copy.Introduction = new Introduction { Text = src.Introduction.Text };
+
+        copy.Questionnaire = new Questionnaire();
+
+        if (src.Questionnaire is not null)
+        {
+            var sectionMap = new Dictionary<int, Section>();
+            var questionMap = new Dictionary<int, Question>();
+
+            foreach (var srcSection in src.Questionnaire.Sections)
+            {
+                var newSection = new Section { Name = srcSection.Name, Description = srcSection.Description };
+                sectionMap[srcSection.SectionId] = newSection;
+                copy.Questionnaire.Sections.Add(newSection);
+            }
+
+            foreach (var srcQ in src.Questionnaire.Questions)
+            {
+                var newQ = new Question
+                {
+                    Text = srcQ.Text,
+                    QuestionFormat = srcQ.QuestionFormat,
+                    IsMandatory = srcQ.IsMandatory,
+                    AnswerChoices = srcQ.AnswerChoices.ToList(),
+                    Position = srcQ.Position,
+                    ParentTriggerValue = srcQ.ParentTriggerValue,
+                    Section = srcQ.Section is not null ? sectionMap[srcQ.Section.SectionId] : null,
+                };
+                foreach (var ea in srcQ.EndingAnswers)
+                    newQ.EndingAnswers.Add(new EndingAnswer { Value = ea.Value });
+                questionMap[srcQ.QuestionId] = newQ;
+                copy.Questionnaire.Questions.Add(newQ);
+            }
+
+            // Second pass: remap parent-child links using new entity instances
+            foreach (var srcQ in src.Questionnaire.Questions)
+            {
+                if (srcQ.ParentQuestion is not null && questionMap.TryGetValue(srcQ.ParentQuestion.QuestionId, out var newParent))
+                    questionMap[srcQ.QuestionId].ParentQuestion = newParent;
+            }
+        }
+
+        foreach (var srcCat in src.Categories)
+            copy.Categories.Add(new Category { Name = srcCat.Name, Description = srcCat.Description });
+
+        foreach (var srcEmoji in src.Emojis)
+        {
+            var tracked = await emojiRepository.ReadByIdForUpdateAsync(srcEmoji.EmojiId);
+            if (tracked is not null)
+                copy.Emojis.Add(tracked);
+        }
+
+        await projectRepository.CreateAsync(copy);
+        await uow.SaveChangesAsync(ct);
+        return copy;
+    }
+
     public async Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
