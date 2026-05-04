@@ -74,7 +74,7 @@ public class AdminIdeasController(
     }
 
     [HttpPatch("{ideaId:int}/status")]
-    public async Task<IActionResult> SetStatus(int projectId, int ideaId, [FromBody] SetIdeaStatusDto dto)
+    public async Task<IActionResult> SetStatus(int projectId, int ideaId, SetIdeaStatusDto dto)
     {
         if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
             return NotFound();

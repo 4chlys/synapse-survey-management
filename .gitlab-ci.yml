@@ -230,10 +230,11 @@ deploy-test:
       echo "Test Admin + API at: $COMBINED_URL"
       echo "Test UI-User at:     $UI_URL"
 
-    # 3. Patch admin with UI-User domain (for participant cookie validation)
+    # 3. Patch admin with UI-User domain + API with its own public URL (for seeder logo URLs)
     - |
       UI_DOMAIN=$(echo "$UI_URL" | sed 's|https://||')
       sed -i "s|PARTICIPANT_DOMAIN_PLACEHOLDER|${UI_DOMAIN}|g" cloudrun-test-api.yaml
+      sed -i "s|COMBINED_URL_PLACEHOLDER|${COMBINED_URL}|g" cloudrun-test-api.yaml
       gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
   only:
     - development #reverse

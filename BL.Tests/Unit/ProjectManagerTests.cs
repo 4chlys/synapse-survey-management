@@ -260,6 +260,116 @@ public class ProjectManagerTests
 
     #endregion
 
+    #region DuplicateProjectAsync
+
+    [Fact]
+    public async Task DuplicateProjectAsync_HappyPath_CopiesGraphAndRemapsParentQuestion()
+    {
+        // Arrange
+        const int srcId = 10;
+        const int platformId = 5;
+        const int emojiId = 42;
+
+        var srcSection = new Section { SectionId = 1, Name = "Sectie 1", Description = "desc" };
+        var srcParent = new Question { QuestionId = 101, Text = "Parent?", QuestionFormat = QuestionFormat.Open, IsMandatory = true, AnswerChoices = new List<string>(), Position = 1 };
+        var srcChild  = new Question { QuestionId = 102, Text = "Child?",  QuestionFormat = QuestionFormat.MultipleChoice, IsMandatory = false, AnswerChoices = new List<string> { "A", "B" }, Position = 2, Section = srcSection, ParentQuestion = srcParent, ParentTriggerValue = "yes" };
+        srcChild.EndingAnswers.Add(new EndingAnswer { Value = "end" });
+
+        var srcEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
+        var srcCat   = new Category { CategoryId = 9, Name = "Cat A", Description = "cat desc" };
+
+        var source = new Project
+        {
+            ProjectId = srcId,
+            ProjectPlatformId = platformId,
+            Name = "Source",
+            ShortForm = "source",
+            Topic = "T",
+            ImageUrl = "img.png",
+            FormType = FormType.VerticalScroll,
+            AiAssistance = AiAssistanceType.ProActive,
+            IdeaPageSize = 5,
+            MaxExtraIdeaRequests = 3,
+            CommentPageSize = 20,
+            Introduction = new Introduction { Text = "Intro text" },
+            Questionnaire = new Questionnaire
+            {
+                Sections = new List<Section> { srcSection },
+                Questions = new List<Question> { srcParent, srcChild },
+            },
+            Categories = new List<Category> { srcCat },
+            Emojis = new List<Emoji> { srcEmoji },
+        };
+
+        var trackedEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
+
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
+        _shortFormService.Setup(s => s.Normalize("New Project")).Returns("new-project");
+        _shortFormService.Setup(s => s.IsValid("new-project")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("new-project")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("new-project", null)).ReturnsAsync("new-project");
+        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(emojiId)).ReturnsAsync(trackedEmoji);
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.DuplicateProjectAsync(srcId, "New Project", platformId);
+
+        // Assert
+        Assert.Equal("New Project", result.Name);
+        Assert.Equal("new-project", result.ShortForm);
+        Assert.Equal(ProjectState.Draft, result.ProjectState);
+        Assert.Equal(0, result.ViewCount);
+        Assert.Equal("Intro text", result.Introduction.Text);
+
+        Assert.Single(result.Questionnaire.Sections);
+        Assert.Equal("Sectie 1", result.Questionnaire.Sections.First().Name);
+
+        Assert.Equal(2, result.Questionnaire.Questions.Count);
+        var newParent = result.Questionnaire.Questions.First(q => q.Position == 1);
+        var newChild  = result.Questionnaire.Questions.First(q => q.Position == 2);
+
+        // Parent-child remap: child's ParentQuestion must point to the NEW parent, not the source
+        Assert.Same(newParent, newChild.ParentQuestion);
+        Assert.NotSame(srcParent, newChild.ParentQuestion);
+
+        Assert.Equal("yes", newChild.ParentTriggerValue);
+        Assert.Single(newChild.EndingAnswers);
+        Assert.Equal("end", newChild.EndingAnswers.First().Value);
+        Assert.Same(result.Questionnaire.Sections.First(), newChild.Section);
+
+        Assert.Single(result.Categories);
+        Assert.Equal("Cat A", result.Categories.First().Name);
+
+        Assert.Single(result.Emojis);
+        Assert.Same(trackedEmoji, result.Emojis.First());
+    }
+
+    [Fact]
+    public async Task DuplicateProjectAsync_CrossTenantSource_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        var source = new Project { ProjectId = 1, ProjectPlatformId = 99 };
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(1)).ReturnsAsync(source);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _manager.DuplicateProjectAsync(1, "X", platformId: 7));
+    }
+
+    [Fact]
+    public async Task DuplicateProjectAsync_SourceNotFound_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(999)).ReturnsAsync((Project)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _manager.DuplicateProjectAsync(999, "X", platformId: 1));
+    }
+
+    #endregion
+
     #region DisableEmojiForProjectAsync
 
     [Fact]

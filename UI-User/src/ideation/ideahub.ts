@@ -28,7 +28,7 @@ export function initIdeation(): void {
 
     if (createForm && projectId != null && categoryId) {
         wireIdeationForm(createForm, 'description', projectId, 'idea');
-        wireIdeaImageField(createForm, projectId);
+        wireIdeaImageField(createForm);
         if (descriptionEl) {
             wireModerationField(descriptionEl, projectId);
         }

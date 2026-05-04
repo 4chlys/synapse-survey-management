@@ -16,7 +16,7 @@ public class SpeechToTextController(
     [HttpPost("transcribe")]
     public async Task<ActionResult<SpeechToTextResponseDto>> Transcribe(
         int projectId,
-        [FromBody] SpeechToTextRequestDto dto,
+        SpeechToTextRequestDto dto,
         CancellationToken ct)
     {
         var (_, error) = await GetParticipantAsync(projectId);

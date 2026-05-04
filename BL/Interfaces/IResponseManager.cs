@@ -9,4 +9,5 @@ public interface IResponseManager
     Task CommitResponsesAsync(int participantId, HashSet<int> visibleQuestionIds, CancellationToken ct = default);
     Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(int participantId);
     Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(Participant participant);
+    Task RemoveAllAsync(Participant participant, CancellationToken ct = default);
 }

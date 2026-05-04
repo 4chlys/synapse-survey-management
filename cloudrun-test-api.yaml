@@ -50,6 +50,8 @@ spec:
               value: synapse-test-pw
             - name: ApiKey
               value: dev-api-key-synapse-2026
+            - name: ApiBaseUrl
+              value: COMBINED_URL_PLACEHOLDER
           resources:
             limits:
               memory: 512Mi
