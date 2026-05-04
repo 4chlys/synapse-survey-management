@@ -14,7 +14,8 @@
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
 }
-<div class="w-full">
+<div class="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+<div class="flex flex-col gap-4">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
 
     @if (isLocked)
@@ -102,6 +103,39 @@
         }
     </div>
     <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">Voeg minstens één vraag toe.</p>
+</div>
+
+<div id="qs-chat-panel" class="flex flex-col gap-3">
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold text-sm">AI Ondersteuning</h2>
+                <select id="qs-mode-select"
+                        class="select select-bordered select-xs w-auto"
+                        data-prev="@aiAssistance">
+                    <option value="ProActive"  @(aiAssistance == "ProActive"  ? "selected" : "")>Pro-actief</option>
+                    <option value="AskFirst"   @(aiAssistance == "AskFirst"   ? "selected" : "")>Vraag eerst</option>
+                    <option value="Never"      @(aiAssistance == "Never"      ? "selected" : "")>Nooit</option>
+                </select>
+            </div>
+
+            <div id="qs-messages"
+                 class="flex flex-col gap-3 overflow-y-auto max-h-[480px] min-h-[200px]">
+            </div>
+
+            <div id="qs-input-area" class="flex flex-col gap-2 @(aiAssistance == "Never" ? "hidden" : "")">
+                <textarea id="qs-input"
+                          rows="2"
+                          class="textarea textarea-bordered textarea-sm w-full resize-none"
+                          placeholder="Stel een vraag over jouw enquête…"></textarea>
+                <button id="qs-btn-send" type="button"
+                        class="btn btn-primary btn-sm self-end">
+                    Versturen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 
 @* Modal for editing a question — controlled by project-questions.ts via #questions-list event delegation *@
@@ -199,4 +233,5 @@
 
 @section Scripts {
     <script type="module" vite-src="~/project-questions.ts"></script>
+    <script type="module" vite-src="~/questionsupportchat.ts"></script>
 }
