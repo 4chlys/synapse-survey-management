@@ -22,7 +22,7 @@ function compressImage(file: File, maxWidth: number, quality: number): Promise<B
     });
 }
 
-export function wireIdeaImageField(form: HTMLFormElement, projectId: number): void {
+export function wireIdeaImageField(form: HTMLFormElement): void {
     const container = form.querySelector<HTMLElement>('[data-image-upload]');
     if (!container) return;
 
