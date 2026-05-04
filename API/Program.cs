@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Sorting;
@@ -246,6 +247,11 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+});
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
