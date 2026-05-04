@@ -14,4 +14,5 @@ public interface IQuestionnaireApiService
     Task<string> StartSessionAsync(int projectId);
     Task<List<int>> GetVisiblePathAsync(int projectId, string participantToken);
     Task SubmitAsync(int projectId, string participantToken);
+    Task RemoveAllResponsesAsync(int projectId, string participantToken);
 }

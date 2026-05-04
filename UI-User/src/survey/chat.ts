@@ -1,4 +1,4 @@
-import { startSession, saveResponse, getNextQuestion, getResumeQuestion, submitSurvey } from './api';
+import { startSession, saveResponse, getNextQuestion, getResumeQuestion, submitSurvey, removeAllResponses } from './api';
 
 const enum Fmt {
     Open = 1,
@@ -18,6 +18,12 @@ interface QuestionData {
     position: number;
 }
 
+interface QuestionEntry {
+    qid: number;
+    sysBubble: HTMLElement;
+    ansBubble: HTMLElement | null;
+}
+
 interface Ctx {
     projectId: number;
     questions: QuestionData[];
@@ -25,11 +31,16 @@ interface Ctx {
     existingResponses: Record<string, string>;
     hasSession: boolean;
     messagesEl: HTMLElement;
-    chipsRow: HTMLElement;
     inputRow: HTMLElement;
     inputEl: HTMLTextAreaElement;
     sendBtn: HTMLButtonElement;
     rootEl: HTMLElement;
+    backBtn: HTMLButtonElement;
+    restartBtn: HTMLButtonElement;
+    questionStack: QuestionEntry[];
+    activeChips: HTMLElement | null;
+    confirmBubble: HTMLElement | null;
+    openHandlers: { send: () => void; key: (e: KeyboardEvent) => void } | null;
 }
 
 const SYSTEM_BUBBLE_CLASS =
@@ -39,6 +50,11 @@ const USER_BUBBLE_CLASS =
 const CHIP_BASE_CLASS =
     'rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm text-base-content cursor-pointer transition-all hover:border-primary hover:bg-primary/10 active:scale-95 focus:outline-none focus:border-primary';
 const CHIP_SELECTED_CLASS = 'border-primary bg-primary/15';
+const CHIPS_WRAPPER_CLASS =
+    'flex flex-wrap gap-2 z-10 ' +
+    'max-sm:fixed max-sm:bottom-[72px] max-sm:left-0 max-sm:right-0 max-sm:px-4 max-sm:py-2 max-sm:bg-base-100 max-sm:border-t max-sm:border-base-300 ' +
+    'sm:self-start sm:max-w-[80%] sm:mt-1';
+const MESSAGES_MOBILE_CHIP_PAD = 'max-sm:pb-28';
 
 function scrollToBottom(ctx: Ctx): void {
     requestAnimationFrame(() => {
@@ -77,12 +93,19 @@ function showInput(ctx: Ctx): void {
 
 function hideInput(ctx: Ctx): void {
     ctx.inputRow.classList.add('hidden');
+    if (ctx.openHandlers) {
+        ctx.sendBtn.removeEventListener('click', ctx.openHandlers.send);
+        ctx.inputEl.removeEventListener('keydown', ctx.openHandlers.key);
+        ctx.openHandlers = null;
+    }
 }
 
-function clearChips(ctx: Ctx): void {
-    ctx.chipsRow.innerHTML = '';
-    ctx.chipsRow.classList.add('hidden');
-    ctx.chipsRow.classList.remove('flex');
+function removeActiveChips(ctx: Ctx): void {
+    if (ctx.activeChips) {
+        ctx.activeChips.remove();
+        ctx.activeChips = null;
+    }
+    ctx.messagesEl.classList.remove(MESSAGES_MOBILE_CHIP_PAD);
 }
 
 interface ChipsOptions {
@@ -92,9 +115,15 @@ interface ChipsOptions {
 }
 
 function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
-    ctx.chipsRow.innerHTML = '';
-    ctx.chipsRow.classList.remove('hidden');
-    ctx.chipsRow.classList.add('flex');
+    removeActiveChips(ctx);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = CHIPS_WRAPPER_CLASS;
+    wrapper.setAttribute('role', 'group');
+    wrapper.setAttribute('aria-label', 'Keuze opties');
+
+    ctx.activeChips = wrapper;
+    ctx.messagesEl.classList.add(MESSAGES_MOBILE_CHIP_PAD);
 
     const selected = new Set<string>();
     let confirmBtn: HTMLButtonElement | null = null;
@@ -109,7 +138,7 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
 
         btn.addEventListener('click', () => {
             if (!opts.multi) {
-                clearChips(ctx);
+                removeActiveChips(ctx);
                 opts.onSelect?.(item);
                 return;
             }
@@ -125,7 +154,7 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
             updateConfirm();
         });
 
-        ctx.chipsRow.appendChild(btn);
+        wrapper.appendChild(btn);
         return btn;
     });
 
@@ -137,16 +166,17 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
             confirmBtn.textContent = 'Bevestig';
             confirmBtn.addEventListener('click', () => {
                 const values = Array.from(selected);
-                clearChips(ctx);
+                removeActiveChips(ctx);
                 opts.onConfirm?.(values);
             });
-            ctx.chipsRow.appendChild(confirmBtn);
+            wrapper.appendChild(confirmBtn);
         } else if (selected.size === 0 && confirmBtn) {
             confirmBtn.remove();
             confirmBtn = null;
         }
     }
 
+    ctx.messagesEl.appendChild(wrapper);
     requestAnimationFrame(() => buttons[0]?.focus());
     scrollToBottom(ctx);
 }
@@ -164,7 +194,10 @@ async function ensureSession(ctx: Ctx): Promise<void> {
 }
 
 async function recordAnswer(ctx: Ctx, q: QuestionData, value: string, displayLabel: string): Promise<void> {
-    appendUserBubble(ctx, displayLabel);
+    const ansBubble = appendUserBubble(ctx, displayLabel);
+    const top = ctx.questionStack[ctx.questionStack.length - 1];
+    if (top && top.qid === q.questionId) top.ansBubble = ansBubble;
+
     try {
         await ensureSession(ctx);
         await saveResponse(ctx.projectId, q.questionId, value);
@@ -172,6 +205,7 @@ async function recordAnswer(ctx: Ctx, q: QuestionData, value: string, displayLab
         appendSystemBubble(ctx, 'Er ging iets mis bij het opslaan. Probeer opnieuw.');
         return;
     }
+    updateBackBtn(ctx);
     await advance(ctx, q.questionId);
 }
 
@@ -202,21 +236,22 @@ function renderQuestion(ctx: Ctx, index: number): void {
         return;
     }
 
-    appendSystemBubble(ctx, q.text);
+    const sysBubble = appendSystemBubble(ctx, q.text);
+    ctx.questionStack.push({ qid: q.questionId, sysBubble, ansBubble: null });
+    updateBackBtn(ctx);
 
     const prior = ctx.existingResponses[String(q.questionId)];
     if (prior !== undefined && prior !== null && prior !== '') {
-        appendUserBubble(ctx, prior);
-        // Auto-advance via local sequencing on resume — no API call needed,
-        // server-side resume already pointed us at the right question.
-        const nextIndex = index + 1;
-        renderQuestion(ctx, nextIndex);
+        const ansBubble = appendUserBubble(ctx, prior);
+        const top = ctx.questionStack[ctx.questionStack.length - 1];
+        top.ansBubble = ansBubble;
+        renderQuestion(ctx, index + 1);
         return;
     }
 
     switch (q.format) {
         case Fmt.Open:
-            hideChipsForOpen(ctx);
+            removeActiveChips(ctx);
             showInput(ctx);
             bindOpenSend(ctx, q);
             break;
@@ -251,34 +286,35 @@ function renderQuestion(ctx: Ctx, index: number): void {
     }
 }
 
-function hideChipsForOpen(ctx: Ctx): void {
-    clearChips(ctx);
-}
-
 function bindOpenSend(ctx: Ctx, q: QuestionData): void {
-    const handler = async (): Promise<void> => {
+    const send = (): void => {
         const value = ctx.inputEl.value.trim();
         if (!value) return;
         ctx.inputEl.disabled = true;
         ctx.sendBtn.disabled = true;
-        ctx.sendBtn.removeEventListener('click', handler);
-        ctx.inputEl.removeEventListener('keydown', keyHandler);
-        hideInput(ctx);
-        await recordAnswer(ctx, q, value, value);
+        if (ctx.openHandlers) {
+            ctx.sendBtn.removeEventListener('click', ctx.openHandlers.send);
+            ctx.inputEl.removeEventListener('keydown', ctx.openHandlers.key);
+            ctx.openHandlers = null;
+        }
+        ctx.inputRow.classList.add('hidden');
+        void recordAnswer(ctx, q, value, value);
     };
-    const keyHandler = (e: KeyboardEvent): void => {
+    const key = (e: KeyboardEvent): void => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            void handler();
+            send();
         }
     };
-    ctx.sendBtn.addEventListener('click', handler);
-    ctx.inputEl.addEventListener('keydown', keyHandler);
+    ctx.openHandlers = { send, key };
+    ctx.sendBtn.addEventListener('click', send);
+    ctx.inputEl.addEventListener('keydown', key);
 }
 
 function renderConfirm(ctx: Ctx): void {
     hideInput(ctx);
-    appendSystemBubble(ctx, 'Klaar om in te sturen?');
+    ctx.confirmBubble = appendSystemBubble(ctx, 'Klaar om in te sturen?');
+    updateBackBtn(ctx);
     showChips(ctx, ['Verstuur'], {
         multi: false,
         onSelect: async () => {
@@ -296,11 +332,70 @@ function renderConfirm(ctx: Ctx): void {
 
 function renderDone(ctx: Ctx): void {
     hideInput(ctx);
-    clearChips(ctx);
+    removeActiveChips(ctx);
+    ctx.backBtn.disabled = true;
     appendSystemBubble(ctx, 'Bedankt voor je deelname!');
     setTimeout(() => {
         window.location.href = `/${ctx.projectId}/Category`;
     }, 800);
+}
+
+function updateBackBtn(ctx: Ctx): void {
+    const hasAnswered = ctx.questionStack.some((e) => e.ansBubble !== null);
+    ctx.backBtn.disabled = !hasAnswered && ctx.confirmBubble === null;
+}
+
+function goBack(ctx: Ctx): void {
+    // Confirm step: remove confirm bubble + its chips, then revisit last answered question
+    if (ctx.confirmBubble) {
+        ctx.confirmBubble.remove();
+        ctx.confirmBubble = null;
+        removeActiveChips(ctx);
+    } else {
+        // Pop the currently-pending (unanswered) question
+        const pending = ctx.questionStack.pop();
+        if (!pending) return;
+        pending.sysBubble.remove();
+        if (pending.ansBubble) pending.ansBubble.remove();
+        removeActiveChips(ctx);
+        hideInput(ctx);
+    }
+
+    // Pop the last answered entry to re-render fresh for editing
+    const last = ctx.questionStack.pop();
+    if (!last) {
+        updateBackBtn(ctx);
+        renderQuestion(ctx, 0);
+        return;
+    }
+    last.sysBubble.remove();
+    if (last.ansBubble) last.ansBubble.remove();
+
+    delete ctx.existingResponses[String(last.qid)];
+    const idx = ctx.questionIndexById.get(last.qid);
+    if (idx !== undefined) {
+        renderQuestion(ctx, idx);
+    }
+    updateBackBtn(ctx);
+}
+
+async function doRestart(ctx: Ctx): Promise<void> {
+    const ok = window.confirm('Wil je de enquête opnieuw beginnen? Je antwoorden gaan verloren.');
+    if (!ok) return;
+    ctx.restartBtn.disabled = true;
+    try {
+        if (ctx.hasSession) await removeAllResponses(ctx.projectId);
+    } catch {
+        ctx.restartBtn.disabled = false;
+        appendSystemBubble(ctx, 'Herstart mislukt. Probeer opnieuw.');
+        return;
+    }
+    window.location.reload();
+}
+
+function wireToolbar(ctx: Ctx): void {
+    ctx.backBtn.addEventListener('click', () => goBack(ctx));
+    ctx.restartBtn.addEventListener('click', () => void doRestart(ctx));
 }
 
 async function startFlow(ctx: Ctx): Promise<void> {
@@ -310,22 +405,14 @@ async function startFlow(ctx: Ctx): Promise<void> {
             if (resumeId !== null && resumeId !== undefined) {
                 const idx = ctx.questionIndexById.get(resumeId);
                 if (idx !== undefined) {
-                    // Replay prior answers up to the resume index so user sees history.
-                    for (let i = 0; i < idx; i++) {
-                        const q = ctx.questions[i];
-                        appendSystemBubble(ctx, q.text);
-                        const prior = ctx.existingResponses[String(q.questionId)];
-                        if (prior) appendUserBubble(ctx, prior);
-                    }
-                    renderQuestion(ctx, idx);
+                    renderQuestion(ctx, 0);
                     return;
                 }
             }
         } catch {
-            /* fall through to fresh start */
+            /* fall through */
         }
     }
-
     renderQuestion(ctx, 0);
 }
 
@@ -334,11 +421,12 @@ export function initChat(): void {
     if (!root) return;
 
     const messagesEl = document.getElementById('chat-messages');
-    const chipsRow = document.getElementById('chat-chips-row');
     const inputRow = document.getElementById('chat-input-row');
     const inputEl = document.getElementById('chat-input') as HTMLTextAreaElement | null;
     const sendBtn = document.getElementById('chat-send') as HTMLButtonElement | null;
-    if (!messagesEl || !chipsRow || !inputRow || !inputEl || !sendBtn) return;
+    const backBtn = document.getElementById('chat-back') as HTMLButtonElement | null;
+    const restartBtn = document.getElementById('chat-restart') as HTMLButtonElement | null;
+    if (!messagesEl || !inputRow || !inputEl || !sendBtn || !backBtn || !restartBtn) return;
 
     const projectId = parseInt(root.dataset.projectId ?? '0', 10);
     const hasSession = root.dataset.hasSession === 'true';
@@ -356,11 +444,16 @@ export function initChat(): void {
         existingResponses,
         hasSession,
         messagesEl,
-        chipsRow,
         inputRow,
         inputEl,
         sendBtn,
         rootEl: root,
+        backBtn,
+        restartBtn,
+        questionStack: [],
+        activeChips: null,
+        confirmBubble: null,
+        openHandlers: null,
     };
 
     inputEl.addEventListener('input', () => {
@@ -368,5 +461,6 @@ export function initChat(): void {
         inputEl.style.height = `${Math.min(inputEl.scrollHeight, 128)}px`;
     });
 
+    wireToolbar(ctx);
     void startFlow(ctx);
 }
