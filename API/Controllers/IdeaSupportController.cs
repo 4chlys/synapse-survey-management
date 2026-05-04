@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.IdeaSupport;
+using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.AiSupport;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -63,18 +65,14 @@ public class IdeaSupportController(
         var request = new IdeaSupportChatRequest
         {
             History = dto.History
-                .Select(h => new IdeaSupportChatMessage
-                {
-                    Role = h.Role,
-                    Content = h.Content,
-                })
+                .Select(h => new AiSupportMessage(h.Role, h.Content))
                 .ToList(),
             UserMessage         = dto.UserMessage ?? string.Empty,
             ProjectName         = projectName,
             ProjectIntroduction = projectIntroduction,
             CategoryName        = category.Name,
             CategoryDescription = category.Description ?? string.Empty,
-            AgeRange            = FormatAgeRange(project?.MinAge, project?.MaxAge),
+            AgeRange            = AiSupportHelpers.FormatAgeRange(project?.MinAge, project?.MaxAge),
             IsFirstTurn         = isFirstTurn,
         };
 
@@ -87,14 +85,6 @@ public class IdeaSupportController(
             Phase = reply.Phase.ToString(),
         });
     }
-
-    private static string FormatAgeRange(int? minAge, int? maxAge) => (minAge, maxAge) switch
-    {
-        (null, null)       => null,
-        (var min, null)    => $"{min}+",
-        (null, var max)    => $"0–{max}",
-        (var min, var max) => $"{min}–{max}",
-    };
 
     [HttpPost("refine")]
     public async Task<ActionResult<IdeaSupportRefineResponseDto>> Refine(
