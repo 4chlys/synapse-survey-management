@@ -120,6 +120,17 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         return Ok(MapToDto(project));
     }
 
+    [HttpPost("{projectId:int}/copy")]
+    public async Task<ActionResult<ProjectDto>> CopyProject(int projectId, [FromBody] CopyProjectDto dto, CancellationToken ct)
+    {
+        var source = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (source is null) return NotFound();
+        if (source.ProjectPlatformId != dto.PlatformId) return Forbid();
+
+        var copy = await projectManager.DuplicateProjectAsync(projectId, dto.NewName, dto.PlatformId, dto.NewShortForm, ct);
+        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, MapToDto(copy));
+    }
+
     [HttpDelete("{projectId}")]
     public async Task<IActionResult> DeleteProject(int projectId)
     {

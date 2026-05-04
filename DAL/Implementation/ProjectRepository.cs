@@ -62,6 +62,18 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
         return await query.ToListAsync();
     }
 
+    public Task<Project> ReadByIdForDuplicationReadOnlyAsync(int projectId)
+        => Context.Set<Project>()
+            .AsNoTracking()
+            .Include(p => p.Introduction)
+            .Include(p => p.Emojis)
+            .Include(p => p.Categories)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Sections)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.EndingAnswers)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.Section)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.ParentQuestion)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
     public async Task<bool> DeleteWithRelationsAsync(int projectId)
     {
         var project = await Context.Set<Project>()

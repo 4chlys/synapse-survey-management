@@ -50,6 +50,14 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
     
+    public async Task<ProjectAdminViewModel> CopyProjectAsync(int projectId, string newName, int platformId, string newShortForm = null)
+    {
+        var payload = new { NewName = newName, NewShortForm = newShortForm, PlatformId = platformId };
+        var response = await httpClient.PostAsJsonAsync($"api/projects/{projectId}/copy", payload);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
     public async Task DeleteProjectAsync(int projectId)
     {
         var response = await httpClient.DeleteAsync($"api/projects/{projectId}");
