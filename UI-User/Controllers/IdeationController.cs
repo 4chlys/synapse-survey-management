@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
@@ -16,6 +17,9 @@ public class IdeationController(
     EmojiService emojiService,
     IProjectApiService projectApiService,
     ParticipantService participantService,
+    IWebHostEnvironment env,
+    IConfiguration configuration,
+    ILogger<IdeationController> logger,
     ISessionService sessionService)
     : Controller
 {
@@ -151,9 +155,19 @@ public class IdeationController(
         int projectId,
         int categoryId,
         string description,
-        string moderationToken = null)
+        string moderationToken = null,
+        string imageUrl = null,
+        string imageModerationToken = null)
     {
-        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
+        if (!string.IsNullOrEmpty(imageUrl) && !IsAllowedImageUrl(imageUrl))
+        {
+            logger.LogWarning("Rejected imageUrl {Url} for project {ProjectId} — fails origin check", imageUrl, projectId);
+            imageUrl = null;
+            imageModerationToken = null;
+        }
+
+        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken,
+            imageUrl, imageModerationToken);
         if (!result.Success) return PartialView("_ModerationPopup");
 
         if (result.ShouldAskForContactInfo)
@@ -248,5 +262,26 @@ public class IdeationController(
         }
 
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
+    }
+
+    private bool IsAllowedImageUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+
+        if (env.IsDevelopment())
+        {
+            var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)) return false;
+            return (uri.Scheme == "https" || uri.Scheme == "http")
+                && string.Equals(uri.Host, apiUri.Host, StringComparison.OrdinalIgnoreCase)
+                && uri.AbsolutePath.StartsWith("/uploads/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        var bucket = configuration["GcsBucket"]
+                     ?? Environment.GetEnvironmentVariable("GCS_BUCKET")
+                     ?? "synapse-assets-prod";
+        return uri.Scheme == "https"
+            && string.Equals(uri.Host, "storage.googleapis.com", StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith($"/{bucket}/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
     }
 }

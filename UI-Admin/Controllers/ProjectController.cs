@@ -480,6 +480,13 @@ public class ProjectController(
         return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> RemoveIdeaImage(int projectId, int ideaId, string returnUrl)
+    {
+        await ideaService.RemoveIdeaImageAsync(projectId, ideaId);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+    }
+
     public async Task<IActionResult> ConfigureDashboard(int projectId)
     {
         var user = await userManager.GetUserAsync(User);

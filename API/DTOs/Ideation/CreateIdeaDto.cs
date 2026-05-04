@@ -14,4 +14,7 @@ public class CreateIdeaDto
     /// the server runs moderation again.
     /// </summary>
     public string ModerationToken { get; set; }
+
+    [MaxLength(500)] public string ImageUrl { get; set; }
+    public string ImageModerationToken { get; set; }
 }

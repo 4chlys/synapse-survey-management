@@ -94,6 +94,48 @@ public class ModerationTokenService(string secret, ILogger<ModerationTokenServic
         }
     }
 
+    public string GenerateImageToken(byte[] imageBytes, int projectId, ModerationStatus status = ModerationStatus.Approved)
+    {
+        var imageHash = Convert.ToBase64String(SHA256.HashData(imageBytes));
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var payload = $"image|{projectId}|{imageHash}|{(byte)status}|{timestamp}";
+        var hmac = ComputeHmac(payload);
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{payload}|{hmac}"));
+    }
+
+    public ModerationStatus? ValidateImageToken(string token, int projectId)
+    {
+        try
+        {
+            if (_consumedTokens.ContainsKey(token)) return null;
+
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
+            var parts = decoded.Split('|');
+            if (parts.Length != 6) return null;
+            if (parts[0] != "image") return null;
+            if (!int.TryParse(parts[1], out var tokenProjectId) || tokenProjectId != projectId) return null;
+            if (!byte.TryParse(parts[3], out var statusByte)) return null;
+            if (!long.TryParse(parts[4], out var timestamp)) return null;
+            var hmac = parts[5];
+
+            var payload = $"image|{parts[1]}|{parts[2]}|{parts[3]}|{parts[4]}";
+            if (!CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(ComputeHmac(payload)),
+                    Encoding.UTF8.GetBytes(hmac)))
+                return null;
+
+            var age = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - timestamp;
+            if (age > DefaultMaxAge.TotalSeconds || age < 0) return null;
+
+            return (ModerationStatus)statusByte;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to validate image moderation token");
+            return null;
+        }
+    }
+
     private static string ComputeTextHash(string text)
     {
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(text));

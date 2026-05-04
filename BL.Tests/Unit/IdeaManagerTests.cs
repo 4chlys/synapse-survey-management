@@ -105,7 +105,7 @@ public class IdeaManagerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, ct);
+        await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, ct: ct);
 
         // Assert
         _uow.VerifyAll();

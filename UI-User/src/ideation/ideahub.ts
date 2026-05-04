@@ -1,5 +1,6 @@
 import { wireIdeationForm } from './ideationform';
 import { wireModerationField } from './moderation';
+import { wireIdeaImageField } from './ideaimage';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
 
@@ -27,6 +28,7 @@ export function initIdeation(): void {
 
     if (createForm && projectId != null && categoryId) {
         wireIdeationForm(createForm, 'description', projectId, 'idea');
+        wireIdeaImageField(createForm, projectId);
         if (descriptionEl) {
             wireModerationField(descriptionEl, projectId);
         }
@@ -138,6 +140,29 @@ export function initIdeation(): void {
         }
     });
 
+    // Image lightbox
+    const lightbox    = document.getElementById('image-lightbox');
+    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+
+    function openLightbox(src: string): void {
+        if (!lightbox || !lightboxImg) return;
+        lightboxImg.src = src;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+    }
+
+    function closeLightbox(): void {
+        if (!lightbox) return;
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+    }
+
+    lightbox?.addEventListener('click', () => closeLightbox());
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
     // Button delegation
     document.addEventListener('click', (e: MouseEvent) => {
         const target = (e.target as Element).closest<HTMLElement>('[data-action]');
@@ -233,6 +258,17 @@ export function initIdeation(): void {
                 commentFormEl?.classList.add('hidden');
                 break;
 
+            case 'open-image': {
+                e.preventDefault();
+                openLightbox((target as HTMLImageElement).src);
+                break;
+            }
+
+            case 'close-image': {
+                e.preventDefault();
+                closeLightbox();
+                break;
+            }
             case 'refresh-ideas':
                 e.preventDefault();
                 handleRefreshIdeas();

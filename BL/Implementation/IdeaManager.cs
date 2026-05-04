@@ -102,7 +102,7 @@ public class IdeaManager(
     }
 
     public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
-        Participant participant, CancellationToken ct = default)
+        Participant participant, string imageUrl = null, CancellationToken ct = default)
     {
         var category = await categoryRepository.ReadByIdWithProjectForUpdateAsync(categoryId);
         if (category == null || category.Project?.ProjectId != projectId)
@@ -112,7 +112,7 @@ public class IdeaManager(
         }
 
         var hadPriorIdeas = await ideaRepository.AnyExistByParticipantAsync(participant.ParticipantId);
-        
+
         float[] embedding = null;
         try
         {
@@ -127,6 +127,7 @@ public class IdeaManager(
         {
             Status = status,
             Description = description,
+            ImageUrl = imageUrl,
             Category = category,
             Participant = participant,
             Embedding = embedding,
@@ -138,6 +139,20 @@ public class IdeaManager(
 
         var shouldAskForContactInfo = !hadPriorIdeas && category.Project.RequestContactInfo;
         return new AddIdeaResult(created.IdeaId, shouldAskForContactInfo);
+    }
+
+    public async Task<string> RemoveIdeaImageAsync(int ideaId, int projectId, CancellationToken ct = default)
+    {
+        var idea = await ideaRepository.ReadByIdWithProjectForUpdateAsync(ideaId);
+        if (idea == null || idea.Category?.Project?.ProjectId != projectId)
+            throw new KeyNotFoundException($"Idea {ideaId} not found in project {projectId}.");
+
+        var oldUrl = idea.ImageUrl;
+        if (string.IsNullOrEmpty(oldUrl)) return null;
+
+        idea.ImageUrl = null;
+        await uow.SaveChangesAsync(ct);
+        return oldUrl;
     }
 
     public Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)

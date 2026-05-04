@@ -13,6 +13,9 @@ public sealed class MockModerationService(IRegexModerationService regex) : IAiMo
         string contentType = "idea")
         => Task.FromResult(regex.Check(text, contentType));
 
+    public Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default)
+        => Task.FromResult(ModerationResult.Acceptable());
+
     public Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
         => Task.FromResult<string>(null);
 }

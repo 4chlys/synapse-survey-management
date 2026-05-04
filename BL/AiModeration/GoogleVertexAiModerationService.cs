@@ -56,6 +56,61 @@ public sealed class GoogleVertexAiModerationService(
         }
     }
 
+    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default)
+    {
+        if (!config.UseAi) return ModerationResult.Acceptable();
+
+        try
+        {
+            var imageContent = new DataContent(new ReadOnlyMemory<byte>(imageBytes), mimeType);
+            var message = new ChatMessage(ChatRole.User,
+            [
+                imageContent,
+                new TextContent(config.ImageModerationPrompt),
+            ]);
+
+            var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
+            var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                logger.LogWarning("[ImageModeration] Vertex AI returned empty response; failing closed.");
+                return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+            }
+
+            rawJson = CodeFenceRe.Replace(rawJson, string.Empty).Trim();
+
+            ModerationVerdict verdict;
+            try
+            {
+                verdict = JsonSerializer.Deserialize<ModerationVerdict>(rawJson, JsonOpts)
+                          ?? throw new JsonException("Null deserialization");
+            }
+            catch (JsonException ex)
+            {
+                logger.LogWarning(ex, "[ImageModeration] Non-JSON response; failing closed. Raw: {Raw}",
+                    rawJson.Length > 200 ? rawJson[..200] : rawJson);
+                return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+            }
+
+            return verdict.Acceptable
+                ? ModerationResult.Acceptable()
+                : ModerationResult.RejectedByAi(
+                    string.IsNullOrWhiteSpace(verdict.Reason)
+                        ? "De afbeelding is niet toegestaan op dit platform."
+                        : verdict.Reason);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[ImageModeration] Vertex AI call failed; failing closed.");
+            return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+        }
+    }
+
     public async Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
