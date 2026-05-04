@@ -263,4 +263,3 @@ deploy-production:
   environment:
     name: production
     
-docker stop mvp-ui && docker rm mvp-ui && docker run -d --name mvp-ui --restart always -p 80:8080 -e ASPNETCORE_ENVIRONMENT=Production -e ASPNETCORE_URLS=http://+:8080 -e AllowedHosts=* -e ApiBaseUrl=https://api.synapse-ip.xyz -e "ApiKey=REDACTED" gcr.io/synapse-ip-j2/mvp-ui:latest
