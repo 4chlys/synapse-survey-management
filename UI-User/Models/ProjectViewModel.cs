@@ -10,4 +10,6 @@ public class ProjectViewModel
     public string OrganisationWebsiteUrl { get; set; } = string.Empty;
     public string Introduction { get; set; } = string.Empty;
     public bool RequestContactInfo { get; set; }
+    public bool ExtraIdeasReplaceExisting { get; set; }
+    public int MaxExtraIdeaRequests { get; set; } = 3;
 }

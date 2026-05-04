@@ -233,6 +233,11 @@ export function initIdeation(): void {
                 commentFormEl?.classList.add('hidden');
                 break;
 
+            case 'refresh-ideas':
+                e.preventDefault();
+                handleRefreshIdeas();
+                break;
+
             case 'toggle-emoji-picker': {
                 e.preventDefault();
                 e.stopPropagation();
@@ -246,6 +251,117 @@ export function initIdeation(): void {
             }
         }
     });
+}
+
+// Refresh ideas logic
+interface IdeaResponse {
+    ideaId: number;
+    description: string;
+    commentsCount: number;
+    isOwnedByCurrentUser: boolean;
+    isFlagged: boolean;
+    emojis: EmojiReaction[];
+}
+
+interface LoadIdeasResponse {
+    ideas: IdeaResponse[];
+    remaining: number;
+}
+
+async function handleRefreshIdeas(): Promise<void> {
+    const list = document.getElementById('ideas-list');
+    const btn = document.getElementById('refresh-ideas-btn');
+    const counter = document.getElementById('refresh-ideas-counter');
+    if (!list || !btn) return;
+
+    if (btn.hasAttribute('disabled')) return;
+
+    const projectId = list.dataset.projectId;
+    const categoryId = list.dataset.categoryId;
+    const sort = list.dataset.sort ?? 'diverse';
+    const replace = list.dataset.replace === 'true';
+    const maxExtra = parseInt(list.dataset.maxExtra ?? '3', 10);
+    let currentPage = parseInt(list.dataset.currentPage ?? '1', 10);
+
+    currentPage++;
+    list.dataset.currentPage = currentPage.toString();
+
+    try {
+        const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}`;
+        const response = await fetch(url);
+        if (!response.ok) return;
+
+        const data: LoadIdeasResponse = await response.json();
+
+        if (counter) counter.textContent = `${data.remaining}/${maxExtra}`;
+
+        if (data.remaining <= 0) {
+            btn.classList.add('btn-disabled');
+            btn.setAttribute('disabled', 'true');
+        }
+
+        if (data.ideas.length === 0) return;
+
+        const html = data.ideas.map(idea => renderIdeaCard(idea, projectId!, categoryId!)).join('');
+
+        if (replace) {
+            list.querySelectorAll(':scope > a').forEach(el => el.remove());
+        }
+
+        list.insertAdjacentHTML('beforeend', html);
+    } catch {
+        // Silently fail
+    }
+}
+
+function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: string): string {
+    const borderClass = idea.isFlagged
+        ? 'bg-warning/5 border-warning/30 hover:border-warning/50'
+        : idea.isOwnedByCurrentUser
+            ? 'bg-primary/5 border-primary/20 hover:border-primary/40'
+            : 'bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm';
+
+    let statusLabel = '';
+    if (idea.isFlagged) {
+        statusLabel = `<span class="inline-flex items-center gap-1 text-xs text-warning font-medium mb-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-warning inline-block"></span>
+            In behandeling
+        </span>`;
+    } else if (idea.isOwnedByCurrentUser) {
+        statusLabel = `<span class="inline-flex items-center gap-1 text-xs text-primary font-medium mb-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+            Jouw idee
+        </span>`;
+    }
+
+    const emojiHtml = idea.emojis.map(emoji => {
+        const btnClass = emoji.postedByCurrentUser
+            ? 'bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20'
+            : 'bg-base-200 border border-base-300 text-base-content/70 hover:bg-base-300';
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold ${btnClass} min-h-8">
+            <span class="text-base leading-none">${emoji.symbol}</span>
+            <span class="leading-none font-semibold">${emoji.count}</span>
+        </span>`;
+    }).join('');
+
+    return `<a href="/${projectId}/Ideation/Detail?categoryId=${categoryId}&ideaId=${idea.ideaId}"
+       class="block relative rounded-xl border p-5 transition-all duration-150 active:scale-[0.99] ${borderClass}">
+        <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-neutral/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <span class="text-xs font-bold text-base-content tabular-nums">${idea.commentsCount}</span>
+        </div>
+        ${statusLabel}
+        <p class="text-base-content text-sm leading-relaxed pr-8">${escapeHtml(idea.description)}</p>
+        ${emojiHtml ? `<div class="flex gap-2 mt-4 items-center flex-wrap">${emojiHtml}</div>` : ''}
+    </a>`;
+}
+
+function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Submit a comment that came from the AI chat

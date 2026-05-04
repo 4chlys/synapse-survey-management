@@ -1,4 +1,5 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Category
+@using SynapseEnqueteManagement.UI.Admin.Models.Project
 @model List<CategoryViewModel>
 @{
     ViewData["Title"] = "Categorieën";
@@ -7,17 +8,60 @@
     var projectState = ViewData["ProjectState"]?.ToString() ?? "";
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
+    var project = ViewData["Project"] as ProjectAdminViewModel;
 }
 <div class="max-w-2xl">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Categorieën</h1>
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Ideation</h1>
 
     @if (isLocked)
     {
         <div class="alert alert-warning mb-4">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Categorieën kunnen niet meer worden gewijzigd.</span>
+            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Instellingen kunnen niet meer worden gewijzigd.</span>
         </div>
     }
+
+    <div class="card bg-base-100 shadow-sm mb-6">
+        <div class="card-body gap-4">
+            <h2 class="font-semibold text-base-content">Instellingen</h2>
+            <form asp-action="SaveIdeationSettings" method="post" class="flex flex-col gap-4">
+                <input type="hidden" name="projectId" value="@projectId" />
+                <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                <label class="form-control w-full max-w-xs">
+                    <div class="label"><span class="label-text text-xs">Maximum aantal getoonde ideeën</span></div>
+                    <input type="number" name="ideaPageSize" min="1" max="100" value="@(project?.IdeaPageSize ?? 5)" class="input input-bordered input-sm w-full" @(isLocked ? "disabled" : "") />
+                </label>
+                <label class="form-control w-full max-w-xs">
+                    <div class="label"><span class="label-text text-xs">Extra ideeën gedrag</span></div>
+                    @{
+                        var replaceExisting = project?.ExtraIdeasReplaceExisting ?? false;
+                    }
+                    <select name="extraIdeasReplaceExisting" class="select select-bordered select-sm w-full" @(isLocked ? "disabled" : "")>
+                        @if (!replaceExisting)
+                        {
+                            <option value="false" selected>Aanvullen (toevoegen aan bestaande)</option>
+                            <option value="true">Vervangen (bestaande vervangen)</option>
+                        }
+                        else
+                        {
+                            <option value="false">Aanvullen (toevoegen aan bestaande)</option>
+                            <option value="true" selected>Vervangen (bestaande vervangen)</option>
+                        }
+                    </select>
+                </label>
+                <label class="form-control w-full max-w-xs">
+                    <div class="label"><span class="label-text text-xs">Maximaal aantal keer extra opvragen</span></div>
+                    <input type="number" name="maxExtraIdeaRequests" min="0" max="50" value="@(project?.MaxExtraIdeaRequests ?? 3)" class="input input-bordered input-sm w-full" @(isLocked ? "disabled" : "") />
+                </label>
+                @if (!isLocked)
+                {
+                    <div><button type="submit" class="btn btn-primary btn-sm">Opslaan</button></div>
+                }
+            </form>
+        </div>
+    </div>
+
+    <h2 class="font-heading font-bold text-xl text-base-content mb-4">Categorieën</h2>
 
     <div class="card bg-base-100 shadow-sm mb-6">
         <div class="card-body p-0 overflow-x-auto">
