@@ -133,12 +133,13 @@ public static class AiConfigLoader
 
         return new AiConfig
         {
-            Platform       = config.Platform,
-            Moderation     = substitutedModeration,
-            IdeaSupport    = substitutedIdeaSupport,
-            CommentSupport = substitutedCommentSupport,
-            SpeechToText   = substitutedSpeechToText,
-            Fuzzy          = config.Fuzzy,
+            Platform        = config.Platform,
+            Moderation      = substitutedModeration,
+            IdeaSupport     = substitutedIdeaSupport,
+            CommentSupport  = substitutedCommentSupport,
+            SpeechToText    = substitutedSpeechToText,
+            ImageGeneration = config.ImageGeneration,
+            Fuzzy           = config.Fuzzy,
         };
     }
 }

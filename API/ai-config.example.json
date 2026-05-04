@@ -163,6 +163,11 @@
     "refine_prompt": "Herschrijf het volgende idee voor beleidsmakers. Pas deze vier controles toe:\n1. Vervang vage woorden door specifieke voorbeelden (bv. 'meer hulp' → 'een begeleider op school').\n2. Gebruik actieve werkwoorden (bv. 'er moet gekeken worden' → 'de gemeente moet controleren').\n3. Schrap herhaling — elk punt één keer.\n4. Behoud de stem en bedoeling van de schrijver volledig — voeg geen argumenten toe die niet in het origineel staan.\n\nVerbeter ook spelling en grammatica. Schrijf in het {language}.\n\nAls het idee niet te verbeteren is of puur misbruik bevat, antwoord dan met EXACT de vier letters NULL, geen aanhalingstekens, geen punt, geen uitleg.\n\nGeef ALLEEN de herschreven tekst terug, geen uitleg.\n\nOrigineel idee:\n{draft}",
     "max_history_turns": 10
   },
+  "image_generation": {
+    "prompt": "Genereer een moderne, visueel aantrekkelijke realistische headerafbeelding voor een jongerenparticipatieproject. Het centrale visuele onderwerp van de afbeelding is: '{project_name}'.  Zorg ervoor dat dit onderwerp duidelijk en herkenbaar in beeld wordt gebracht, maar doe dit in een creatieve, gestileerde en professionele stijl (niet fotorealistisch, maar artistiek). Gebruik een levendig en kleurrijk palet. De compositie is bedoeld als een brede projectbanner. Belangrijk: genereer absoluut geen tekst, letters of logo's in de afbeelding. Gebruik de aspect raitio 16:9.",
+    "aspect_ratio": "16:9",
+    "model": "gemini-2.5-flash-image"
+  },
   "fuzzy": {
     "min_skeleton_length": 3,
     "levenshtein_thresholds": {

@@ -274,6 +274,17 @@ export function initIdeation(): void {
                 handleRefreshIdeas();
                 break;
 
+            case 'copy-idea': {
+                e.preventDefault();
+                e.stopPropagation();
+                const description = target.dataset.ideaDescription ?? '';
+                createFormEl?.classList.remove('hidden');
+                if (descriptionEl) descriptionEl.value = description;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                descriptionEl?.focus();
+                break;
+            }
+
             case 'toggle-emoji-picker': {
                 e.preventDefault();
                 e.stopPropagation();
@@ -390,6 +401,16 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         </div>
         ${statusLabel}
         <p class="text-base-content text-sm leading-relaxed pr-8">${escapeHtml(idea.description)}</p>
+        <div class="mt-3">
+            <button type="button" data-action="copy-idea"
+                    data-idea-description="${escapeAttr(idea.description)}"
+                    class="inline-flex items-center gap-1.5 text-xs text-base-content/50 hover:text-primary transition-colors cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Gebruiken als startpunt
+            </button>
+        </div>
         ${emojiHtml ? `<div class="flex gap-2 mt-4 items-center flex-wrap">${emojiHtml}</div>` : ''}
     </a>`;
 }
@@ -398,6 +419,15 @@ function escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function escapeAttr(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 // Submit a comment that came from the AI chat

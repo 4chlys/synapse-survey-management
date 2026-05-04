@@ -19,6 +19,17 @@ public class GoogleCloudStorageService(ILogger<GoogleCloudStorageService> logger
         return $"https://storage.googleapis.com/{_bucketName}/{objectName}";
     }
 
+    public async Task<string> UploadBytesAsync(byte[] data, string folder, string fileName, string contentType)
+    {
+        var storage = await StorageClient.CreateAsync();
+        var objectName = $"{folder}/{Guid.NewGuid()}/{fileName}";
+
+        using var stream = new MemoryStream(data);
+        await storage.UploadObjectAsync(_bucketName, objectName, contentType, stream);
+
+        return $"https://storage.googleapis.com/{_bucketName}/{objectName}";
+    }
+
     public async Task<string> PromoteAsync(string tmpUrl)
     {
         // GCS URL shape: https://storage.googleapis.com/{bucket}/tmp/{rest}

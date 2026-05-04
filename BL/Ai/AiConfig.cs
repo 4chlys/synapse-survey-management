@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 
@@ -18,6 +19,7 @@ public sealed class AiConfig
     [JsonPropertyName("idea_support")]     public AiIdeaSupportConfig     IdeaSupport    { get; init; } = new();
     [JsonPropertyName("comment_support")]  public AiCommentSupportConfig  CommentSupport { get; init; } = new();
     [JsonPropertyName("speech_to_text")]   public AiSpeechToTextConfig    SpeechToText   { get; init; } = new();
+    [JsonPropertyName("image_generation")] public AiImageGenerationConfig ImageGeneration { get; init; } = new();
     [JsonPropertyName("fuzzy")]            public FuzzyConfig             Fuzzy          { get; init; } = new();
 }
 
