@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class CreateQuestionDto
@@ -21,4 +23,14 @@ public class CreateQuestionDto
     public string ParentTriggerValue { get; set; }
 
     public ICollection<string> EndingAnswers { get; set; } = new List<string>();
+
+    [MaxLength(500)]
+    public string MediaUrl { get; set; }
+
+    public QuestionMediaType? MediaType { get; set; }
+
+    public bool MediaIsEmbed { get; set; }
+
+    [MaxLength(2000)]
+    public string MediaText { get; set; }
 }

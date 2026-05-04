@@ -13,11 +13,17 @@ public interface IQuestionnaireManager
     Task<Question> AddQuestionAsync(int projectId, string text, QuestionFormat format,
         bool isMandatory, List<string> answerChoices, int? sectionId = null,
         int? parentQuestionId = null, string parentTriggerValue = null,
-        List<string> endingAnswers = null, CancellationToken ct = default);
+        List<string> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null,
+        bool mediaIsEmbed = false, string mediaText = null,
+        CancellationToken ct = default);
     Task<IEnumerable<Question>> GetQuestionsForProjectAsync(int projectId);
     Task<bool> UpdateQuestionAsync(int questionId, string text, QuestionFormat format,
         bool isMandatory, List<string> answerChoices, int? sectionId = null,
-        List<string> endingAnswers = null, CancellationToken ct = default);
+        List<string> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null,
+        bool mediaIsEmbed = false, string mediaText = null,
+        CancellationToken ct = default);
     Task<bool> DeleteQuestionAsync(int questionId, CancellationToken ct = default);
     Task<Question> MoveQuestionAsync(int questionId, int? newParentQuestionId,
         string newParentTriggerValue, int newPosition, CancellationToken ct = default);

@@ -205,7 +205,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -220,7 +223,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
