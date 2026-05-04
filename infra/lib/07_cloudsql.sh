@@ -8,8 +8,7 @@ create_cloud_sql() {
     --tier=db-f1-micro \
     --region="${REGION}" \
     --no-assign-ip \
-    --network=default \
-    --database-flags=cloudsql.enable_pgvector=on \
+    --network="projects/${PROJECT_ID}/global/networks/default" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   echo "  - database aanmaken: mvp-db"

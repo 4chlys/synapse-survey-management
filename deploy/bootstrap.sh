@@ -155,9 +155,9 @@ create_secrets_with_values() {
 }
 create_secrets_with_values
 
-create_cloud_sql
 create_vpc_peering
 create_firewall_rules
+create_cloud_sql
 create_instance_templates
 create_migs
 create_storage_bucket

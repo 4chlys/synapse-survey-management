@@ -1,6 +1,8 @@
 #!/bin/bash
 # MIG instance templates + Managed Instance Groups + autoscalers
 
+_INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 _create_template() {
   local name="$1"
   local machine_type="$2"
@@ -10,9 +12,9 @@ _create_template() {
     --machine-type="${machine_type}" \
     --image-family=cos-stable \
     --image-project=cos-cloud \
-    --tags=mig-instance \
+    --tags=allow-health-check \
     --scopes=cloud-platform \
-    --metadata-from-file "startup-script=${SCRIPT_DIR}/${startup_script}" \
+    --metadata-from-file "startup-script=${_INFRA_DIR}/${startup_script}" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "    (al aanwezig, overgeslagen)"
 }
 
@@ -34,12 +36,12 @@ _create_mig() {
     --max-num-replicas="${max_replicas}" \
     --target-cpu-utilization=0.70 \
     --zone="${ZONE}" \
-    --project="${PROJECT_ID}"
+    --project="${PROJECT_ID}" 2>/dev/null || echo "    (autoscaling al ingesteld)"
 
   gcloud compute instance-groups managed set-named-ports "${name}" \
     --named-ports="http:$([ "${name}" = "synapse-api-mig" ] && echo 8080 || echo 80)" \
     --zone="${ZONE}" \
-    --project="${PROJECT_ID}"
+    --project="${PROJECT_ID}" 2>/dev/null || echo "    (named ports al ingesteld)"
 }
 
 create_instance_templates() {
