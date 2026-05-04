@@ -31,6 +31,17 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
             .CountAsync(p => EF.Property<int>(p, "ProjectId") == projectId
                              && p.CompletedAt.HasValue);
 
+    public Task<List<string>> ReadEmailsByProjectIdReadOnlyAsync(int projectId)
+        => Context.Set<Participant>()
+            .AsNoTracking()
+            .Where(p => EF.Property<int>(p, "ProjectId") == projectId
+                        && p.Email != null
+                        && p.Email != "")
+            .Select(p => p.Email)
+            .Distinct()
+            .OrderBy(e => e)
+            .ToListAsync();
+
     public async Task<List<(DateTime Date, bool IsCompletion)>> ReadTimelineAsync(int projectId, int days)
     {
         var cutoff = DateTime.UtcNow.AddDays(-days);

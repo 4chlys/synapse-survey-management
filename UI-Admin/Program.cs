@@ -95,6 +95,8 @@ builder.Services.AddHttpClient<StatsProxyService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IdeaAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<ParticipantAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<UploadAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
