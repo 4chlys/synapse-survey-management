@@ -14,4 +14,6 @@ public interface IParticipantRepository : IRepository<Participant>
 
     Task<int> CountCompletionsByProjectAsync(int projectId);
     Task<List<(DateTime Date, bool IsCompletion)>> ReadTimelineAsync(int projectId, int days);
+
+    Task<List<string>> ReadEmailsByProjectIdReadOnlyAsync(int projectId);
 }

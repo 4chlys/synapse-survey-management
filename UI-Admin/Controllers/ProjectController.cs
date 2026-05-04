@@ -31,6 +31,7 @@ public class ProjectController(
     UserManager<ApplicationUser> userManager,
     WidgetPreferenceService widgetPreferenceService,
     IdeaAdminService ideaService,
+    ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings) : Controller
 {
     public async Task<IActionResult> Index()
@@ -491,6 +492,20 @@ public class ProjectController(
         };
 
         return View(vm);
+    }
+
+    public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+
+        var normalized = (format ?? "csv").Trim().ToLowerInvariant();
+        if (normalized is not ("csv" or "txt" or "xlsx"))
+            return BadRequest("Ongeldig formaat.");
+
+        var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
+        return File(bytes, contentType, fileName);
     }
 
     [HttpPost]
