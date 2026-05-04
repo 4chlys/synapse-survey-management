@@ -336,7 +336,7 @@ function renderDone(ctx: Ctx): void {
     ctx.backBtn.disabled = true;
     appendSystemBubble(ctx, 'Bedankt voor je deelname!');
     setTimeout(() => {
-        window.location.href = `/${ctx.projectId}/Category`;
+        window.location.href = `/${ctx.projectId}/Survey/ThankYou`;
     }, 800);
 }
 
