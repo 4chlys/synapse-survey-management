@@ -1,4 +1,6 @@
 @using System.Text.Json
+@using SynapseEnqueteManagement.UI.User.Helpers
+@using SynapseEnqueteManagement.UI.User.Models.Survey
 @model SurveyViewModel
 
 @{
@@ -44,6 +46,50 @@
 
                         @* Question text + answer area (mc, sc, open,...) *@
                         <div class="flex-1 flex flex-col gap-5 overflow-y-auto min-h-0">
+
+                            @if (question.MediaType.HasValue)
+                            {
+                                <div class="question-media shrink-0">
+                                    @if (question.MediaType == QuestionMediaType.Image)
+                                    {
+                                        <img src="@question.MediaUrl" alt=""
+                                             class="rounded-xl max-h-64 w-full object-contain bg-base-200" />
+                                    }
+                                    else if (question.MediaType == QuestionMediaType.Video && question.MediaIsEmbed)
+                                    {
+                                        @if (question.MediaUrl.Contains("youtube.com/embed") || question.MediaUrl.Contains("player.vimeo.com"))
+                                        {
+                                            <div class="aspect-video rounded-xl overflow-hidden bg-black">
+                                                <iframe src="@question.MediaUrl" class="w-full h-full"
+                                                        title="Video"
+                                                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                                                        allow="accelerometer; encrypted-media; picture-in-picture"
+                                                        loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <video controls preload="metadata" class="rounded-xl max-h-64 w-full bg-black"
+                                                   src="@question.MediaUrl"></video>
+                                        }
+                                    }
+                                    else if (question.MediaType == QuestionMediaType.Video)
+                                    {
+                                        <video controls preload="metadata" class="rounded-xl max-h-64 w-full bg-black"
+                                               src="@question.MediaUrl"></video>
+                                    }
+                                    else if (question.MediaType == QuestionMediaType.Audio)
+                                    {
+                                        <audio controls preload="metadata" class="w-full" src="@question.MediaUrl"></audio>
+                                    }
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(question.MediaText))
+                            {
+                                <div class="prose prose-sm max-w-none text-base-content/80 shrink-0">
+                                    @Html.Raw(MarkdownRenderer.Render(question.MediaText))
+                                </div>
+                            }
 
                             <h2 class="font-heading text-[22px] font-semibold text-base-content leading-snug shrink-0">
                                 @question.Text
