@@ -16,6 +16,7 @@ using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
@@ -139,6 +140,7 @@ builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton(aiConfig.CommentSupport);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
+builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -175,6 +177,18 @@ if (useAi)
     builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
 
+    // Image generation — Imagen uses PredictAsync directly, not IChatClient.
+    var imagenModel = aiConfig.ImageGeneration.Model;
+    var imagenModelResource = EndpointName.FormatProjectLocationPublisherModel(
+        projectId, location, "google", imagenModel);
+    var imagenClient = await predictionBuilder.BuildAsync();
+    builder.Services.AddSingleton<IAiImageGenerationService>(sp =>
+        new GoogleVertexAiImageGenerationService(
+            imagenClient,
+            imagenModelResource,
+            sp.GetRequiredService<AiImageGenerationConfig>(),
+            sp.GetRequiredService<ILogger<GoogleVertexAiImageGenerationService>>()));
+
     // Embedding generator — same PredictionServiceClientBuilder, different model
     // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so
     // swapping Vertex for OpenAI/Ollama later means registering a different
@@ -192,6 +206,7 @@ else
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
+    builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
