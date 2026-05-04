@@ -2,7 +2,6 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using System.Threading.RateLimiting;
 using SynapseEnqueteManagement.UI.Admin;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
