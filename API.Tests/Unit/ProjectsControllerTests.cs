@@ -1,16 +1,28 @@
 using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.API.DTOs.Project;
+using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
 public class ProjectsControllerTests
 {
     private readonly Mock<IProjectManager> _projectManager = new();
+    private readonly Mock<IAiImageGenerationService> _imageGenerationService = new();
+    private readonly Mock<IStorageService> _storageService = new();
     private readonly ProjectsController _controller;
 
     public ProjectsControllerTests()
     {
-        _controller = new ProjectsController(_projectManager.Object);
+        _imageGenerationService
+            .Setup(s => s.GenerateProjectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ImageGenerationResult.Failed("disabled"));
+
+        _controller = new ProjectsController(
+            _projectManager.Object,
+            _imageGenerationService.Object,
+            _storageService.Object);
     }
 
     #region GetByShortForm
@@ -90,7 +102,7 @@ public class ProjectsControllerTests
         var dto = new CreateProjectDto { Name = "Test" };
 
         // Act
-        var result = await _controller.CreateProject(dto);
+        var result = await _controller.CreateProject(dto, CancellationToken.None);
 
         // Assert
         var created = Assert.IsType<CreatedResult>(result.Result);
@@ -115,7 +127,7 @@ public class ProjectsControllerTests
 
         // Act & Assert — middleware converts this; the controller lets it propagate
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _controller.CreateProject(dto));
+            _controller.CreateProject(dto, CancellationToken.None));
     }
 
     #endregion

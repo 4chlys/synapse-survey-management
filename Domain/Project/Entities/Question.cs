@@ -26,4 +26,9 @@ public class Question
     public ICollection<EndingAnswer> EndingAnswers { get; set; } = new List<EndingAnswer>();
 
     public ICollection<Response> Responses { get; set; } = new List<Response>();
+
+    [MaxLength(500)] public string MediaUrl { get; set; }
+    public QuestionMediaType? MediaType { get; set; }
+    public bool MediaIsEmbed { get; set; }
+    [MaxLength(2000)] public string MediaText { get; set; }
 }

@@ -34,6 +34,12 @@ bool useAi = aiConfig.Moderation.UseAi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Allow up to 30 MB request bodies (question video uploads are capped at 25 MB at the action level,
+// leaving headroom for multipart overhead). Cloud Run HTTP/1 hard-caps at 32 MB — do not raise further.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 30 * 1024 * 1024);
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
+    o => o.MultipartBodyLengthLimit = 30 * 1024 * 1024);
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
