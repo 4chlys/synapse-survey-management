@@ -140,6 +140,29 @@ export function initIdeation(): void {
         }
     });
 
+    // Image lightbox
+    const lightbox    = document.getElementById('image-lightbox');
+    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+
+    function openLightbox(src: string): void {
+        if (!lightbox || !lightboxImg) return;
+        lightboxImg.src = src;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+    }
+
+    function closeLightbox(): void {
+        if (!lightbox) return;
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+    }
+
+    lightbox?.addEventListener('click', () => closeLightbox());
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+
     // Button delegation
     document.addEventListener('click', (e: MouseEvent) => {
         const target = (e.target as Element).closest<HTMLElement>('[data-action]');
@@ -234,6 +257,18 @@ export function initIdeation(): void {
                 e.preventDefault();
                 commentFormEl?.classList.add('hidden');
                 break;
+
+            case 'open-image': {
+                e.preventDefault();
+                openLightbox((target as HTMLImageElement).src);
+                break;
+            }
+
+            case 'close-image': {
+                e.preventDefault();
+                closeLightbox();
+                break;
+            }
 
             case 'toggle-emoji-picker': {
                 e.preventDefault();

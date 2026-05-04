@@ -518,6 +518,8 @@ deploy/config.env
 .claude/
 
 UI-Admin/.vite
+API/wwwroot/uploads/ideas/
+API/wwwroot/uploads/tmp/
 
 # Git worktrees
 .worktrees/
