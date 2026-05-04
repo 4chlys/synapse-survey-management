@@ -9,6 +9,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
+using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using Vite.AspNetCore;
 
@@ -96,6 +97,8 @@ builder.Services.AddHttpClient<StatsProxyService>(ConfigureApiClient)
 builder.Services.AddHttpClient<IdeaAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<UploadAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<QuestionSupportService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
