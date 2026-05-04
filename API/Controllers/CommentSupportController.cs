@@ -18,7 +18,7 @@ public class CommentSupportController(
     [HttpPost("chat")]
     public async Task<ActionResult<CommentSupportChatResponseDto>> Chat(
         int projectId,
-        [FromBody] CommentSupportChatRequestDto dto,
+        CommentSupportChatRequestDto dto,
         CancellationToken ct)
     {
         var (_, error) = await GetParticipantAsync(projectId);

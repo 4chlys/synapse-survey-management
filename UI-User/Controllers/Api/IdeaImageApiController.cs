@@ -12,10 +12,10 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
     [
         "image/jpeg", "image/png", "image/webp", "image/gif"
     ];
-    private const long MaxFileSizeBytes = 5 * 1024 * 1024;
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
     [HttpPost("upload")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     [EnableRateLimiting("ai-image-moderation")]
     public async Task<IActionResult> Upload(int projectId, IFormFile file, CancellationToken ct)
     {
@@ -26,7 +26,7 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
             return BadRequest(new { reason = "Alleen afbeeldingen (jpeg, png, webp, gif) zijn toegestaan." });
 
         if (file.Length > MaxFileSizeBytes)
-            return BadRequest(new { reason = "De afbeelding mag maximaal 5 MB zijn." });
+            return BadRequest(new { reason = "De afbeelding mag maximaal 10 MB zijn." });
 
         var result = await ideaImageService.UploadAsync(file, projectId, ct);
 

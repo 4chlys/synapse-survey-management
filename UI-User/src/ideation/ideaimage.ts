@@ -1,4 +1,4 @@
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 function getCsrfToken(): string {
@@ -51,7 +51,7 @@ export function wireIdeaImageField(form: HTMLFormElement): void {
             return;
         }
         if (file.size > MAX_SIZE_BYTES) {
-            showError('De afbeelding mag maximaal 5 MB zijn.');
+            showError('De afbeelding mag maximaal 10 MB zijn.');
             fileInput.value = '';
             return;
         }
