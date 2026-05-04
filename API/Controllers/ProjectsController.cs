@@ -121,7 +121,7 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpPost("{projectId:int}/copy")]
-    public async Task<ActionResult<ProjectDto>> CopyProject(int projectId, [FromBody] CopyProjectDto dto, CancellationToken ct)
+    public async Task<ActionResult<ProjectDto>> CopyProject(int projectId, CopyProjectDto dto, CancellationToken ct)
     {
         var source = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
         if (source is null) return NotFound();
