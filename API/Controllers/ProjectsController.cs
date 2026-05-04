@@ -36,6 +36,9 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
         Introduction = p.Introduction?.Text ?? string.Empty,
         AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
+        IdeaPageSize = p.IdeaPageSize,
+        ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
+        MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
         MinAge = p.MinAge,
         MaxAge = p.MaxAge
     };
@@ -87,7 +90,10 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MaxAge,
             dto.RequestContactInfo,
             dto.PlatformId,
-            dto.ShortForm);
+            dto.ShortForm,
+            dto.IdeaPageSize,
+            dto.ExtraIdeasReplaceExisting,
+            dto.MaxExtraIdeaRequests);
 
         return Created(string.Empty, MapToDto(project));
     }
@@ -106,7 +112,10 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
-            dto.ShortForm);
+            dto.ShortForm,
+            dto.IdeaPageSize,
+            dto.ExtraIdeasReplaceExisting,
+            dto.MaxExtraIdeaRequests);
 
         return Ok(MapToDto(project));
     }

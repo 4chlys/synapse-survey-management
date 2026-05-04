@@ -10,4 +10,7 @@ public class IdeaIndexViewModel
     public bool ShowContactInfoPopup { get; set; }
     public string CurrentSort { get; set; } = "diverse";
     public bool HasOwnIdeas { get; set; }
+    public bool ExtraIdeasReplaceExisting { get; set; }
+    public int MaxExtraIdeaRequests { get; set; }
+    public int RemainingExtraRequests { get; set; }
 }
