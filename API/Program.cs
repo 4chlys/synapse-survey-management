@@ -68,6 +68,7 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
@@ -124,6 +125,7 @@ var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "a
 var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
 builder.Services.AddScoped<IShortFormService>(sp =>
     new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
+builder.Services.AddScoped<ILanguageManager, LanguageManager>();
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();

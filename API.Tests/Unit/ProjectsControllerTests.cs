@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Tests;
 

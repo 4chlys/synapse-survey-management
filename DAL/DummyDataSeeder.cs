@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -45,6 +46,15 @@ public class DummyDataSeeder
 
     public static void Seed(SynapseEnqueteContext context, string apiBaseUrl)
     {
+        if (!context.Languages.Any())
+        {
+            context.Languages.AddRange(
+                new Language { Code = "nl", DisplayName = "Nederlands", IsActive = true },
+                new Language { Code = "en", DisplayName = "English", IsActive = true }
+            );
+            context.SaveChanges();
+        }
+
         if (context.Projects.Any()) return;
 
         string LogoUrl(string fileName) =>

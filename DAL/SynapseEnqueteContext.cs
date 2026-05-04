@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Pgvector;
@@ -10,6 +11,7 @@ namespace SynapseEnqueteManagement.DAL;
 
 public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
 {
+    public DbSet<Language> Languages { get; set; }
     public DbSet<Project> Projects { get; set; }
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -31,6 +33,10 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     {
         base.OnModelCreating(builder);
         builder.HasPostgresExtension("vector");
+
+        // Language
+        builder.Entity<Language>()
+            .HasKey(l => l.Code);
 
         // Project
         builder.Entity<Project>()
