@@ -16,6 +16,8 @@ get_secret() {
 
 docker run -d --name mvp-ui --restart always -p 80:8080 \
   -e ASPNETCORE_ENVIRONMENT=Production \
+  -e ASPNETCORE_URLS=http://+:8080 \
+  -e AllowedHosts='*' \
   -e ApiBaseUrl=$(get_secret api-base-url) \
   -e ApiKey=$(get_secret api-key) \
   gcr.io/synapse-ip-j2/mvp-ui:latest
