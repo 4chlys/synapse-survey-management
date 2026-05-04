@@ -113,9 +113,9 @@
                 <select id="qs-mode-select"
                         class="select select-bordered select-xs w-auto"
                         data-prev="@aiAssistance">
-                    <option value="ProActive"  @(aiAssistance == "ProActive"  ? "selected" : "")>Pro-actief</option>
-                    <option value="AskFirst"   @(aiAssistance == "AskFirst"   ? "selected" : "")>Vraag eerst</option>
-                    <option value="Never"      @(aiAssistance == "Never"      ? "selected" : "")>Nooit</option>
+                    <option value="ProActive"  selected="@(aiAssistance == "ProActive"  ? "selected" : null)">Pro-actief</option>
+                    <option value="AskFirst"   selected="@(aiAssistance == "AskFirst"   ? "selected" : null)">Vraag eerst</option>
+                    <option value="Never"      selected="@(aiAssistance == "Never"      ? "selected" : null)">Nooit</option>
                 </select>
             </div>
 
