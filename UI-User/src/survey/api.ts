@@ -68,3 +68,11 @@ export async function submitSurvey(projectId: number): Promise<void> {
     });
     if (!res.ok) throw new Error('Failed to submit survey');
 }
+
+export async function removeAllResponses(projectId: number): Promise<void> {
+    const res = await fetch(`/${projectId}/api/SurveyApi/responses`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to remove responses');
+}

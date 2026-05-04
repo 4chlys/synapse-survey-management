@@ -29,4 +29,13 @@ public class ResponseRepository(DbContext context) : Repository<Response>(contex
             .Include(r => r.Question)
             .Where(r => r.Participant.ParticipantId == participantId)
             .ToListAsync();
+
+    public async Task DeleteAllByParticipantIdAsync(int participantId)
+    {
+        var rows = await Context.Set<Response>()
+            .Where(r => r.Participant.ParticipantId == participantId)
+            .ToListAsync();
+        if (rows.Count == 0) return;
+        Context.Set<Response>().RemoveRange(rows);
+    }
 }

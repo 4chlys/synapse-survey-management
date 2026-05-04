@@ -96,6 +96,17 @@ public class SurveyApiController(
         await questionnaireService.SubmitAsync(projectId, token);
         return Ok();
     }
+
+    [HttpDelete("responses")]
+    public async Task<ActionResult> RemoveAllResponses(int projectId)
+    {
+        var token = sessionService.GetToken(projectId);
+        if (string.IsNullOrWhiteSpace(token))
+            return Unauthorized();
+
+        await questionnaireService.RemoveAllResponsesAsync(projectId, token);
+        return NoContent();
+    }
 }
 
 public class SaveResponseRequest

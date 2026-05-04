@@ -57,6 +57,16 @@ public class ResponsesController(
         return Created(string.Empty, dto);
     }
 
+    [HttpDelete("responses")]
+    public async Task<ActionResult> RemoveAllResponses(int projectId, CancellationToken ct)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        await responseManager.RemoveAllAsync(participant, ct);
+        return NoContent();
+    }
+
     [HttpGet("responses")]
     public async Task<ActionResult<IEnumerable<ResponseDto>>> GetResponses(int projectId)
     {

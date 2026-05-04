@@ -158,6 +158,15 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task RemoveAllResponsesAsync(int projectId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"api/projects/{projectId}/responses");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
     private class ApiQuestionDto
     {
         public int QuestionId { get; set; }
