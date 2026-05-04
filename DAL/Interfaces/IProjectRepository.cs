@@ -21,4 +21,6 @@ public interface IProjectRepository : IRepository<Project>
     Task<IEnumerable<Project>> ReadAllWithPlatformReadOnlyAsync(int? platformId = null);
 
     Task<bool> DeleteWithRelationsAsync(int projectId);
+
+    Task<Project> ReadByIdForDuplicationReadOnlyAsync(int projectId);
 }

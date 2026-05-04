@@ -324,11 +324,43 @@ public class ProjectController(
     }
 
     [HttpPost]
-        public async Task<IActionResult> DeleteProject(int projectId)
+    public async Task<IActionResult> CopyProject(int projectId, string newName)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is not int platformId)
+            return Forbid();
+
+        var source = await projectService.GetProjectByIdAsync(projectId);
+        if (source is null || source.PlatformId != platformId)
         {
-            await projectService.DeleteProjectAsync(projectId);
+            TempData["Error"] = "Project niet gevonden of geen toegang.";
             return RedirectToAction(nameof(Index));
         }
+
+        if (string.IsNullOrWhiteSpace(newName))
+            newName = $"{source.Name} (kopie)";
+        if (newName.Length > 100)
+            newName = newName[..100];
+
+        try
+        {
+            var copy = await projectService.CopyProjectAsync(projectId, newName, platformId);
+            TempData["Success"] = "Project gekopieerd als sjabloon!";
+            return RedirectToAction(nameof(Create), new { projectId = copy.ProjectId, isNew = true });
+        }
+        catch (HttpRequestException ex)
+        {
+            TempData["Error"] = $"Kopiëren mislukt: {ex.Message}";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectService.DeleteProjectAsync(projectId);
+        return RedirectToAction(nameof(Index));
+    }
 
     public async Task<IActionResult> Activate(int projectId)
     {

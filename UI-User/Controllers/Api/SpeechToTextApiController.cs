@@ -26,7 +26,7 @@ public class SpeechToTextApiController(
     [EnableRateLimiting("ai-stt")]
     public async Task<ActionResult<SpeechToTextResponse>> Transcribe(
         int projectId,
-        [FromBody] SpeechToTextRequest body)
+        SpeechToTextRequest body)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))

@@ -17,10 +17,10 @@ public class UploadsController(
     [
         "image/jpeg", "image/png", "image/webp", "image/gif"
     ];
-    private const long MaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
     [HttpPost]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<UploadResultDto>> Upload(IFormFile file)
     {
         if (file is null || file.Length == 0)
@@ -30,14 +30,14 @@ public class UploadsController(
             return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
 
         if (file.Length > MaxFileSizeBytes)
-            return BadRequest("File exceeds the 5 MB limit.");
+            return BadRequest("File exceeds the 10 MB limit.");
 
         var url = await storageService.UploadAsync(file, "logos");
         return Ok(new UploadResultDto { Url = url });
     }
 
     [HttpPost("idea-image")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<IdeaImageUploadResultDto>> UploadIdeaImage(
         IFormFile file, [FromQuery] int projectId, CancellationToken ct)
     {
@@ -48,7 +48,7 @@ public class UploadsController(
             return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
 
         if (file.Length > MaxFileSizeBytes)
-            return BadRequest("File exceeds the 5 MB limit.");
+            return BadRequest("File exceeds the 10 MB limit.");
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms, ct);
