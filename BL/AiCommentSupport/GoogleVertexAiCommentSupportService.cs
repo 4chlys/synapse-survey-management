@@ -1,8 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
+using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
@@ -10,63 +9,21 @@ public sealed class GoogleVertexAiCommentSupportService(
     IChatClient chatClient,
     ILogger<GoogleVertexAiCommentSupportService> logger,
     AiCommentSupportConfig config)
-    : IAiCommentSupportService
+    : GoogleVertexAiSupportBase<CommentSupportRequest, CommentSupportReply>(chatClient, logger),
+      IAiCommentSupportService
 {
-    private static readonly Regex CodeFenceRe =
-        new(@"^```[a-zA-Z]*\s*|\s*```$",
-            RegexOptions.Compiled | RegexOptions.Multiline);
-
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
-    };
-
-    public async Task<CommentSupportReply> ChatAsync(
-        CommentSupportRequest request,
-        CancellationToken ct = default)
-    {
-        try
-        {
-            var messages = BuildMessages(request);
-            var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-            var raw      = response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(raw))
-                return FallbackReply();
-
-            return ParseAiReply(raw);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex,
-                "[CommentSupport] Chat call failed; returning fallback. Category: {Category}",
-                request.CategoryName);
-
-            return FallbackReply();
-        }
-    }
-
-    private List<ChatMessage> BuildMessages(CommentSupportRequest request)
+    protected override List<ChatMessage> BuildMessages(CommentSupportRequest request)
     {
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
         var systemPrompt = config.SystemPrompt.Replace("{age_range}", ageRange, StringComparison.OrdinalIgnoreCase);
 
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.System, systemPrompt)
-        };
+        var messages = new List<ChatMessage> { new(ChatRole.System, systemPrompt) };
 
         if (request.IsFirstTurn)
         {
             var ctx = config.ContextPrompt
                 .Replace("{idea_text}",     request.IdeaText,     StringComparison.OrdinalIgnoreCase)
                 .Replace("{category_name}", request.CategoryName, StringComparison.OrdinalIgnoreCase);
-
             messages.Add(new ChatMessage(ChatRole.System, ctx));
         }
 
@@ -86,14 +43,10 @@ public sealed class GoogleVertexAiCommentSupportService(
         return messages;
     }
 
-    private CommentSupportReply ParseAiReply(string raw)
+    protected override CommentSupportReply ParseRawReply(string raw, CommentSupportRequest _)
     {
-        var cleaned = CodeFenceRe.Replace(raw, string.Empty).Trim();
-
-        // Extract the JSON object even when the model adds a preamble (e.g. "model\n{...}").
-        var start = cleaned.IndexOf('{');
-        var end   = cleaned.LastIndexOf('}');
-        var json  = start >= 0 && end > start ? cleaned[start..(end + 1)] : cleaned;
+        var cleaned = StripCodeFences(raw);
+        var json    = ExtractJson(cleaned);
 
         try
         {
@@ -111,14 +64,10 @@ public sealed class GoogleVertexAiCommentSupportService(
         }
         catch (JsonException)
         {
-            return new CommentSupportReply
-            {
-                AssistantMessage = raw,
-                IsFinal          = false,
-            };
+            return new CommentSupportReply { AssistantMessage = raw, IsFinal = false };
         }
     }
 
-    private CommentSupportReply FallbackReply() =>
+    protected override CommentSupportReply FallbackReply() =>
         new() { AssistantMessage = config.FallbackMessage, IsFinal = true };
 }
