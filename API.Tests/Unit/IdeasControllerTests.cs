@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
+using SynapseEnqueteManagement.API.Services;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -9,6 +11,8 @@ public class IdeasControllerTests
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IModerationResolver> _moderationResolver = new();
     private readonly Mock<IProjectManager> _projectManager = new();
+    private readonly Mock<IStorageService> _storageService = new();
+    private readonly Mock<IModerationTokenService> _moderationTokenService = new();
     private readonly IdeasController _controller;
 
     private const int ProjectId = 1;
@@ -27,7 +31,10 @@ public class IdeasControllerTests
             _commentManager.Object,
             _participantManager.Object,
             _moderationResolver.Object,
-            _projectManager.Object);
+            _projectManager.Object,
+            _storageService.Object,
+            _moderationTokenService.Object,
+            NullLogger<IdeasController>.Instance);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -39,7 +46,7 @@ public class IdeasControllerTests
         var ct = cts.Token;
         _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct))
             .ReturnsAsync(ModerationStatus.Approved);
-        _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, ct))
+        _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, null, ct))
             .ReturnsAsync(new AddIdeaResult(42, false))
             .Verifiable(Times.Exactly(1));
 

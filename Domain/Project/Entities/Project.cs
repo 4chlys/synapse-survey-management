@@ -37,6 +37,8 @@ public class Project : IHasCreatedAt
     [Required] public ProjectState ProjectState { get; set; } = ProjectState.Draft;
     [Required] public FormType FormType { get; set; } = FormType.VerticalScroll;
     [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
+    public bool ExtraIdeasReplaceExisting { get; set; } = false;
+    [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
     [Range(1, 200)] public int CommentPageSize { get; set; } = 20;
     public bool RequestContactInfo { get; set; } = false;
 

@@ -15,6 +15,9 @@ public class ProjectAdminViewModel
     public string Introduction { get; set; }
     public string AiAssistance { get; set; } = "ProActive";
     public bool RequestContactInfo { get; set; }
+    public int IdeaPageSize { get; set; } = 5;
+    public bool ExtraIdeasReplaceExisting { get; set; }
+    public int MaxExtraIdeaRequests { get; set; } = 3;
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
 }

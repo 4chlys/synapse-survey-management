@@ -32,6 +32,10 @@ public class CreateProjectDto
 
     public bool RequestContactInfo { get; set; }
 
+    [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
+    public bool ExtraIdeasReplaceExisting { get; set; } = false;
+    [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
+
     [Range(1, int.MaxValue)]
     public int PlatformId { get; set; }
 }

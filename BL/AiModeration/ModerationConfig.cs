@@ -15,6 +15,9 @@ public sealed class ModerationConfig
     [JsonPropertyName("rewrite_prompt")]
     public string RewritePrompt { get; init; } = string.Empty;
 
+    [JsonPropertyName("image_moderation_prompt")]
+    public string ImageModerationPrompt { get; init; } = string.Empty;
+
     [JsonPropertyName("banned_words")]
     public IReadOnlyList<BannedWordEntry> BannedWords { get; init; } = [];
 

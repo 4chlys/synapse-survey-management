@@ -99,6 +99,7 @@ public static class AiConfigLoader
             ModerationPrompt        = SubWithAge(m.ModerationPrompt),
             CommentModerationPrompt = SubWithAge(m.CommentModerationPrompt),
             RewritePrompt           = Sub(m.RewritePrompt),
+            ImageModerationPrompt   = SubWithAge(m.ImageModerationPrompt),
             BannedWords             = m.BannedWords,
             RegexPatterns           = m.RegexPatterns,
         };

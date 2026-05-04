@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Middleware;
+using SynapseEnqueteManagement.UI.User.Services.IdeaImage;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Moderation;
 using SynapseEnqueteManagement.UI.User.Services.SpeechToText;
@@ -71,6 +72,8 @@ builder.Services.AddHttpClient<CommentSupportService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SpeechToTextService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IIdeaImageService, IdeaImageService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddMemoryCache();
 
@@ -96,6 +99,15 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit  = 0,
             }));
     options.AddPolicy("ai-stt", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-image-moderation", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions

@@ -9,7 +9,12 @@ public interface IIdeaManager
     Task<IEnumerable<Idea>> GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(int categoryId, int participantId);
     Task<Idea> GetIdeaByIdWithCommentsReadOnlyAsync(int ideaId);
     Task<int?> GetIdeaAuthorParticipantIdReadOnlyAsync(int ideaId);
-    Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status, Participant participant, CancellationToken ct = default);
+    Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status, Participant participant, string imageUrl = null, CancellationToken ct = default);
+    /// <summary>
+    /// Clears the idea's ImageUrl in the DB and returns the old URL so the caller can delete from storage.
+    /// Returns null if the idea had no image.
+    /// </summary>
+    Task<string> RemoveIdeaImageAsync(int ideaId, int projectId, CancellationToken ct = default);
     Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds);
     Task<int> CountByCategoryAsync(int categoryId);
 }

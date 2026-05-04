@@ -20,5 +20,7 @@ public class Idea : IHasCreatedAt
 
     [Required] public Participant Participant { get; set; }
 
+    [MaxLength(500)] public string ImageUrl { get; set; }
+
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

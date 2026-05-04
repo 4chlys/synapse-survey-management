@@ -16,6 +16,9 @@ public class ProjectDto
     public string Introduction { get; set; }
     public string AiAssistance { get; set; }
     public bool RequestContactInfo { get; set; }
+    public int IdeaPageSize { get; set; }
+    public bool ExtraIdeasReplaceExisting { get; set; }
+    public int MaxExtraIdeaRequests { get; set; }
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
 }

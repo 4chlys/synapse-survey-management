@@ -6,4 +6,6 @@ public interface ISessionService
     void SetToken(int projectId, string token);
     bool HasToken(int projectId);
     void ClearToken(int projectId);
+    int GetIdeaRefreshCount(int projectId, int categoryId);
+    void IncrementIdeaRefreshCount(int projectId, int categoryId);
 }

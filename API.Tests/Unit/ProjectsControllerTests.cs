@@ -84,7 +84,7 @@ public class ProjectsControllerTests
             .Setup(m => m.CreateProjectAsync(
                 "Test", string.Empty, string.Empty, string.Empty,
                 FormType.VerticalScroll, AiAssistanceType.ProActive,
-                null, null, false, 0, null))
+                null, null, false, 0, null, It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>()))
             .ReturnsAsync(createdProject);
 
         var dto = new CreateProjectDto { Name = "Test" };
@@ -108,7 +108,7 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                It.IsAny<int>(), "admin"))
+                It.IsAny<int>(), "admin", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>()))
             .ThrowsAsync(new ValidationException("'admin' is a reserved shortform."));
 
         var dto = new CreateProjectDto { Name = "Admin", ShortForm = "admin" };
@@ -131,7 +131,7 @@ public class ProjectsControllerTests
                 1, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                "new-form"))
+                "new-form", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>()))
             .ThrowsAsync(new ValidationException("ShortForm cannot be changed after the project has been published."));
 
         var dto = new UpdateProjectDto { Name = "Name", ShortForm = "new-form" };

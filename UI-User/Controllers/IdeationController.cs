@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Project;
+using SynapseEnqueteManagement.UI.User.Services.Session;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
@@ -14,7 +16,11 @@ public class IdeationController(
     CommentService commentService,
     EmojiService emojiService,
     IProjectApiService projectApiService,
-    ParticipantService participantService)
+    ParticipantService participantService,
+    IWebHostEnvironment env,
+    IConfiguration configuration,
+    ILogger<IdeationController> logger,
+    ISessionService sessionService)
     : Controller
 {
     public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse")
@@ -22,15 +28,44 @@ public class IdeationController(
         var projectTask  = projectApiService.GetProjectAsync(projectId);
         var emojisTask   = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var indexTask    = ideaService.GetIdeasIndexAsync(projectId, categoryId, sort);
 
-        await Task.WhenAll(projectTask, emojisTask, categoryTask, indexTask);
+        await Task.WhenAll(projectTask, emojisTask, categoryTask);
 
         var category = await categoryTask;
         if (category == null) return NotFound();
 
         var project = await projectTask;
-        var index   = await indexTask;
+        var replace = project?.ExtraIdeasReplaceExisting ?? false;
+        var maxExtra = project?.MaxExtraIdeaRequests ?? 3;
+        var used = sessionService.GetIdeaRefreshCount(projectId, categoryId);
+        var remaining = Math.Max(0, maxExtra - used);
+        var currentPage = used + 1;
+
+        // Load the right ideas based on mode and refresh history
+        var allIdeas = new List<IdeaViewModel>();
+        string resolvedSort = sort;
+        bool hasOwnIdeas = false;
+
+        if (replace)
+        {
+            // Replace mode: only show the latest page
+            var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, currentPage);
+            allIdeas.AddRange(index.Ideas);
+            resolvedSort = index.ResolvedSort;
+            hasOwnIdeas = index.HasOwnIdeas;
+        }
+        else
+        {
+            // Supplement mode: show all pages up to current
+            var pageTasks = Enumerable.Range(1, currentPage)
+                .Select(p => ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, p))
+                .ToList();
+            var results = await Task.WhenAll(pageTasks);
+            foreach (var result in results)
+                allIdeas.AddRange(result.Ideas);
+            resolvedSort = results[0].ResolvedSort;
+            hasOwnIdeas = results.Any(r => r.HasOwnIdeas);
+        }
 
         this.SetLayoutData(project, projectId, showModerationPopup: true);
 
@@ -39,11 +74,14 @@ public class IdeationController(
             ProjectId            = projectId,
             CategoryId           = categoryId,
             Category             = category,
-            Ideas                = index.Ideas,
+            Ideas                = allIdeas,
             Emojis               = await emojisTask,
             ShowContactInfoPopup = contactInfo && (project?.RequestContactInfo ?? false),
-            CurrentSort          = index.ResolvedSort,
-            HasOwnIdeas          = index.HasOwnIdeas
+            CurrentSort          = resolvedSort,
+            HasOwnIdeas          = hasOwnIdeas,
+            ExtraIdeasReplaceExisting = replace,
+            MaxExtraIdeaRequests      = maxExtra,
+            RemainingExtraRequests    = remaining
         });
     }
 
@@ -95,14 +133,41 @@ public class IdeationController(
         });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> LoadIdeas(int projectId, int categoryId, int page = 1, string sort = "diverse")
+    {
+        var project = await projectApiService.GetProjectAsync(projectId);
+        var maxExtra = project?.MaxExtraIdeaRequests ?? 3;
+        var used = sessionService.GetIdeaRefreshCount(projectId, categoryId);
+
+        if (used >= maxExtra)
+            return Json(new { ideas = Array.Empty<object>(), remaining = 0 });
+
+        sessionService.IncrementIdeaRefreshCount(projectId, categoryId);
+        var remaining = maxExtra - used - 1;
+
+        var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, page);
+        return Json(new { ideas = index.Ideas, remaining });
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateIdea(
         int projectId,
         int categoryId,
         string description,
-        string moderationToken = null)
+        string moderationToken = null,
+        string imageUrl = null,
+        string imageModerationToken = null)
     {
-        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
+        if (!string.IsNullOrEmpty(imageUrl) && !IsAllowedImageUrl(imageUrl))
+        {
+            logger.LogWarning("Rejected imageUrl {Url} for project {ProjectId} — fails origin check", imageUrl, projectId);
+            imageUrl = null;
+            imageModerationToken = null;
+        }
+
+        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken,
+            imageUrl, imageModerationToken);
         if (!result.Success) return PartialView("_ModerationPopup");
 
         if (result.ShouldAskForContactInfo)
@@ -197,5 +262,26 @@ public class IdeationController(
         }
 
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
+    }
+
+    private bool IsAllowedImageUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+
+        if (env.IsDevelopment())
+        {
+            var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)) return false;
+            return (uri.Scheme == "https" || uri.Scheme == "http")
+                && string.Equals(uri.Host, apiUri.Host, StringComparison.OrdinalIgnoreCase)
+                && uri.AbsolutePath.StartsWith("/uploads/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        var bucket = configuration["GcsBucket"]
+                     ?? Environment.GetEnvironmentVariable("GCS_BUCKET")
+                     ?? "synapse-assets-prod";
+        return uri.Scheme == "https"
+            && string.Equals(uri.Host, "storage.googleapis.com", StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith($"/{bucket}/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
     }
 }

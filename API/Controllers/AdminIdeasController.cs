@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideas;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -9,7 +10,9 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/admin/projects/{projectId:int}/ideas")]
 public class AdminIdeasController(
     ICategoryManager categoryManager,
-    IProjectManager projectManager) : ControllerBase
+    IIdeaManager ideaManager,
+    IProjectManager projectManager,
+    IStorageService storageService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IdeaPageDto>> GetIdeas(
@@ -51,9 +54,23 @@ public class AdminIdeasController(
                 ReactionCount = i.ReactionCount,
                 CreatedAt     = i.CreatedAt,
                 Status        = i.Status.ToString(),
-                ParticipantEmail = i.ParticipantEmail
+                ParticipantEmail = i.ParticipantEmail,
+                ImageUrl      = i.ImageUrl
             }).ToList()
         });
+    }
+
+    [HttpDelete("{ideaId:int}/image")]
+    public async Task<IActionResult> DeleteIdeaImage(int projectId, int ideaId, CancellationToken ct)
+    {
+        if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
+            return NotFound();
+
+        var oldUrl = await ideaManager.RemoveIdeaImageAsync(ideaId, projectId, ct);
+        if (oldUrl is not null)
+            await storageService.DeleteAsync(oldUrl);
+
+        return NoContent();
     }
 
     [HttpPatch("{ideaId:int}/status")]

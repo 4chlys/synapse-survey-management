@@ -79,3 +79,49 @@
 
     </div>
 </div>
+
+<div id="image-rejection-overlay"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+
+    <div class="relative bg-base-100 rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-5 p-6 border border-base-300">
+
+        <button id="image-rejection-btn-x" type="button" aria-label="Sluiten" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center
+            rounded-full text-neutral hover:text-base-content hover:bg-base-200
+            transition-colors cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <div class="flex items-start gap-3 pr-8">
+            <div class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-error" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0
+                    001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2
+                    2 0 00-3.42 0z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-heading font-semibold text-base-content text-base leading-snug">
+                    Je afbeelding is afgekeurd
+                </h3>
+                <p id="image-rejection-reason" class="text-neutral text-sm mt-0.5 leading-relaxed"></p>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <button id="image-rejection-btn-cancel" type="button"
+                    class="btn btn-primary w-full rounded-xl font-heading font-semibold cursor-pointer">
+                Andere afbeelding kiezen
+            </button>
+        </div>
+
+        <button id="image-rejection-btn-submit" type="button" class="w-full text-center text-xs text-neutral/40 hover:text-neutral
+            transition-colors cursor-pointer py-1">
+            Toch insturen
+        </button>
+
+    </div>
+</div>

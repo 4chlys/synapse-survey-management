@@ -1,0 +1,14 @@
+{
+  "_comment": "Apply this lifecycle rule to the GCS bucket to auto-delete orphaned tmp/ideas/ uploads after 1 day. Run: gsutil lifecycle set deploy/gcs-lifecycle-tmp-cleanup.json gs://<BUCKET>",
+  "lifecycle": {
+    "rule": [
+      {
+        "action": { "type": "Delete" },
+        "condition": {
+          "matchesPrefix": ["tmp/"],
+          "age": 1
+        }
+      }
+    ]
+  }
+}

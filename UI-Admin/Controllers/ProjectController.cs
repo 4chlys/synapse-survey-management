@@ -134,7 +134,8 @@ public class ProjectController(
             project = await projectService.UpdateProjectAsync(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
-                model.ContactOptIn, model.ShortForm);
+                model.ContactOptIn, model.ShortForm,
+                lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests);
         }
         else
         {
@@ -236,6 +237,25 @@ public class ProjectController(
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         return View(categories);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveIdeationSettings(int projectId, bool isNew, int ideaPageSize, bool extraIdeasReplaceExisting, int maxExtraIdeaRequests)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(project))
+        {
+            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
+
+        await projectService.UpdateProjectAsync(
+            projectId, project.Name, project.Topic, project.Introduction,
+            project.ProjectImage, project.FormType, project.AiAssistance,
+            project.MinAge, project.MaxAge, project.RequestContactInfo,
+            project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests);
+
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }
 
     [HttpPost]
@@ -457,6 +477,13 @@ public class ProjectController(
     public async Task<IActionResult> FlagIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Flagged");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveIdeaImage(int projectId, int ideaId, string returnUrl)
+    {
+        await ideaService.RemoveIdeaImageAsync(projectId, ideaId);
         return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
     }
 
