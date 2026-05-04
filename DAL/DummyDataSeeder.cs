@@ -136,7 +136,7 @@ public class DummyDataSeeder
         var projectActive = new Project
         {
             ProjectState = ProjectState.Active,
-            FormType = FormType.VerticalScroll,
+            FormType = FormType.Chat,
             RequestContactInfo = true,
             Questionnaire = questionnaire1,
             Name = "Mentaal Welzijn",
