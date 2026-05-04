@@ -49,20 +49,20 @@ create_url_map() {
   gcloud compute url-maps add-path-matcher synapse-url-map \
     --path-matcher-name=api-matcher \
     --default-service=synapse-api-backend \
-    --new-hosts=api.synapse-ip.xyz \
+    --new-hosts="api.${DOMAIN}" \
     --project="${PROJECT_ID}" 2>/dev/null || true
 
   gcloud compute url-maps add-path-matcher synapse-url-map \
     --path-matcher-name=admin-matcher \
     --default-service=synapse-admin-backend \
-    --new-hosts=admin.synapse-ip.xyz \
+    --new-hosts="admin.${DOMAIN}" \
     --project="${PROJECT_ID}" 2>/dev/null || true
 }
 
 create_ssl_and_proxy() {
   echo ">>> SSL certificaat + HTTPS proxy aanmaken..."
   gcloud compute ssl-certificates create synapse-ssl-cert \
-    --domains="synapse-ip.xyz,api.synapse-ip.xyz,admin.synapse-ip.xyz,*.synapse-ip.xyz" \
+    --domains="${DOMAIN},api.${DOMAIN},admin.${DOMAIN}" \
     --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-ssl-cert al aanwezig)"
 
   gcloud compute target-https-proxies create synapse-https-proxy \
