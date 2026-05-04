@@ -52,6 +52,7 @@ build-api:
   only:
     - development
     - main
+    - release/staging
 
 build-ui:
   stage: build
@@ -66,6 +67,7 @@ build-ui:
   only:
     - development
     - main
+    - release/staging
 
 build-admin:
   stage: build
@@ -80,6 +82,7 @@ build-admin:
   only:
     - development
     - main
+    - release/staging
 
 scan-api:
   stage: scan
@@ -98,6 +101,7 @@ scan-api:
   only:
     - development
     - main
+    - release/staging
 
 scan-ui:
   stage: scan
@@ -116,6 +120,7 @@ scan-ui:
   only:
     - development
     - main
+    - release/staging
 
 scan-admin:
   stage: scan
@@ -134,6 +139,7 @@ scan-admin:
   only:
     - development
     - main
+    - release/staging
 
 scan-nginx:
   stage: scan
@@ -185,6 +191,7 @@ push-prod:
     - docker push "${IMAGE_ADMIN}:latest"
   only:
     - main #reverse
+    - release/staging
 
 deploy-test:
   stage: deploy
@@ -251,6 +258,7 @@ deploy-production:
       gcloud compute instance-groups managed wait-until synapse-ui-mig --stable --zone="${ZONE}"
   only:
     - main #reverse
+    - release/staging
   when: manual
   environment:
     name: production
