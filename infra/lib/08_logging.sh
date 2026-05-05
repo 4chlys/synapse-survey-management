@@ -24,7 +24,7 @@ create_uptime_checks() {
   gcloud monitoring uptime create synapse-api-uptime \
     --display-name="Synapse API Health" \
     --resource-type=uptime-url \
-    --resource-labels="host=api.synapse-ip.xyz,project_id=${PROJECT_ID}" \
+    --resource-labels="host=api.${DOMAIN},project_id=${PROJECT_ID}" \
     --path="/health" \
     --period=5 \
     --timeout=10 \
@@ -33,7 +33,7 @@ create_uptime_checks() {
   gcloud monitoring uptime create synapse-ui-uptime \
     --display-name="Synapse UI Health" \
     --resource-type=uptime-url \
-    --resource-labels="host=synapse-ip.xyz,project_id=${PROJECT_ID}" \
+    --resource-labels="host=${DOMAIN},project_id=${PROJECT_ID}" \
     --path="/health" \
     --period=5 \
     --timeout=10 \
