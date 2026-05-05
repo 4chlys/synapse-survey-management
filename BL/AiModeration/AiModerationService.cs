@@ -7,13 +7,13 @@ using System.Text.RegularExpressions;
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
 /// <summary>
-/// AI-backed content moderation using Google Vertex AI (Gemini).
+/// AI-backed content moderation using <see cref="IChatClient"/>.
 /// Regex pre-filtering is delegated to <see cref="IRegexModerationService"/> so this
 /// class contains only AI-specific logic.
 /// </summary>
-public sealed class GoogleVertexAiModerationService(
+public sealed class AiModerationService(
     IChatClient chatClient,
-    ILogger<GoogleVertexAiModerationService> logger,
+    ILogger<AiModerationService> logger,
     ModerationConfig config,
     IRegexModerationService regex) : IAiModerationService
 {

@@ -171,11 +171,11 @@ if (useAi)
     builder.Services.AddChatClient(chatClient);
 
     // All AI features share the same IChatClient.
-    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
-    builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
-    builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
-    builder.Services.AddScoped<IAiQuestionSupportService, GoogleVertexAiQuestionSupportService>();
-    builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
+    builder.Services.AddScoped<IAiModerationService, AiModerationService>();
+    builder.Services.AddScoped<IAiIdeaSupportService, AiIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
+    builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
 
     // Embedding generator — same PredictionServiceClientBuilder, different model
     // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so

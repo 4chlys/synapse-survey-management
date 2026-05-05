@@ -5,9 +5,9 @@ using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
-public sealed class GoogleVertexAiCommentSupportService(
+public sealed class AiCommentSupportService(
     IChatClient chatClient,
-    ILogger<GoogleVertexAiCommentSupportService> logger,
+    ILogger<AiCommentSupportService> logger,
     AiCommentSupportConfig config)
     : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(chatClient, logger),
       IAiCommentSupportService

@@ -5,9 +5,9 @@ using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
-public sealed class GoogleVertexAiIdeaSupportService(
+public sealed class AiIdeaSupportService(
     IChatClient chatClient,
-    ILogger<GoogleVertexAiIdeaSupportService> logger,
+    ILogger<AiIdeaSupportService> logger,
     AiIdeaSupportConfig config)
     : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger),
       IAiIdeaSupportService
