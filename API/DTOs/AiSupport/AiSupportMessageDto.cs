@@ -4,6 +4,9 @@ namespace SynapseEnqueteManagement.API.DTOs.AiSupport;
 
 public class AiSupportMessageDto
 {
-    [Required, MaxLength(20)]   public string Role    { get; set; } = string.Empty;
-    [Required, MaxLength(2000)] public string Content { get; set; } = string.Empty;
+    [Required, RegularExpression("^(user|assistant)$", ErrorMessage = "Role must be 'user' or 'assistant'.")]
+    public string Role    { get; set; } = string.Empty;
+
+    [Required, MaxLength(2000)]
+    public string Content { get; set; } = string.Empty;
 }

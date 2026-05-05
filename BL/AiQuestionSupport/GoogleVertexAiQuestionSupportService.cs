@@ -9,7 +9,7 @@ public sealed class GoogleVertexAiQuestionSupportService(
     IChatClient chatClient,
     ILogger<GoogleVertexAiQuestionSupportService> logger,
     AiQuestionSupportConfig config)
-    : GoogleVertexAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(chatClient, logger),
+    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(chatClient, logger),
       IAiQuestionSupportService
 {
     protected override List<ChatMessage> BuildMessages(QuestionSupportChatRequest request)

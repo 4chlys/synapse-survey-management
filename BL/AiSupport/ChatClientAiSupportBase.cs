@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace SynapseEnqueteManagement.BL.AiSupport;
 
-public abstract class GoogleVertexAiSupportBase<TRequest, TReply>(
+public abstract class ChatClientAiSupportBase<TRequest, TReply>(
     IChatClient chatClient,
     ILogger logger)
     : IAiSupportService<TRequest, TReply>
@@ -26,8 +26,7 @@ public abstract class GoogleVertexAiSupportBase<TRequest, TReply>(
         try
         {
             var messages = BuildMessages(request);
-            var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-            var raw      = response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
+            var raw      = await SendSingleAsync(messages, ct);
 
             if (string.IsNullOrWhiteSpace(raw))
                 return FallbackReply();
@@ -49,6 +48,12 @@ public abstract class GoogleVertexAiSupportBase<TRequest, TReply>(
     protected abstract List<ChatMessage> BuildMessages(TRequest request);
     protected abstract TReply ParseRawReply(string raw, TRequest request);
     protected abstract TReply FallbackReply();
+
+    protected async Task<string> SendSingleAsync(List<ChatMessage> messages, CancellationToken ct)
+    {
+        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        return response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
+    }
 
     protected static string StripCodeFences(string raw) =>
         CodeFenceRe.Replace(raw, string.Empty).Trim();

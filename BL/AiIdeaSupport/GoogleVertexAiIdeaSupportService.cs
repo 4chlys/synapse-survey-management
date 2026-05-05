@@ -9,7 +9,7 @@ public sealed class GoogleVertexAiIdeaSupportService(
     IChatClient chatClient,
     ILogger<GoogleVertexAiIdeaSupportService> logger,
     AiIdeaSupportConfig config)
-    : GoogleVertexAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger),
+    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger),
       IAiIdeaSupportService
 {
     protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
@@ -99,12 +99,9 @@ public sealed class GoogleVertexAiIdeaSupportService(
         try
         {
             var prompt   = config.RefinePrompt.Replace("{draft}", draftText, StringComparison.OrdinalIgnoreCase);
-            var messages = new List<ChatMessage> { new(ChatRole.User, prompt) };
-            var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
-            var refined  = response.Messages.LastOrDefault()?.Text?.Trim();
+            var refined  = await SendSingleAsync([new(ChatRole.User, prompt)], ct);
 
-            if (string.IsNullOrWhiteSpace(refined) ||
-                refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(refined) || refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                 return new IdeaSupportRefineResult { RefinedText = null };
 
             return new IdeaSupportRefineResult { RefinedText = refined };
