@@ -147,7 +147,7 @@ export function wireQuestionMediaPanel(
             }
             const data = await res.json() as { url: string };
             if (urlHidden) urlHidden.value = data.url;
-            renderPreview(type, data.url, preview, () => {
+            renderPreview(type, data.url, preview!, () => {
                 if (urlHidden) urlHidden.value = '';
                 if (fileInput) fileInput.value = '';
                 if (preview) preview.innerHTML = '';
@@ -176,7 +176,7 @@ export function wireQuestionMediaPanel(
         } else {
             if (embedError) embedError.classList.add('hidden');
             if (urlHidden) urlHidden.value = url;
-            renderPreview(type, url, preview, () => {
+            renderPreview(type, url, preview!, () => {
                 if (urlHidden) urlHidden.value = '';
                 if (embedUrlInput) embedUrlInput.value = '';
                 if (preview) preview.innerHTML = '';
