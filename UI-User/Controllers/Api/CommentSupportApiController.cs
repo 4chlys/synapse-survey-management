@@ -18,7 +18,7 @@ public class CommentSupportApiController(
     [HttpPost("chat")]
     public async Task<ActionResult<CommentSupportChatResponse>> Chat(
         int projectId,
-        [FromBody] CommentSupportChatRequest body)
+        CommentSupportChatRequest body)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))

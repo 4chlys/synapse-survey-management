@@ -13,42 +13,56 @@ public class UploadsController(
     IAiModerationService aiModerationService,
     IModerationTokenService moderationTokenService) : ControllerBase
 {
-    private static readonly HashSet<string> AllowedContentTypes =
-    [
-        "image/jpeg", "image/png", "image/webp", "image/gif"
-    ];
-    private const long MaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private static readonly HashSet<string> AllowedImageContentTypes =
+        ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
+
+    private static readonly HashSet<string> AllowedVideoContentTypes =
+        ["video/mp4", "video/webm"];
+    private const long MaxVideoSizeBytes = 25 * 1024 * 1024; // 25 MB
+
+    private static readonly HashSet<string> AllowedAudioContentTypes =
+        ["audio/mpeg", "audio/mp4", "audio/wav", "audio/ogg", "audio/x-m4a"];
+    private const long MaxAudioSizeBytes = 20 * 1024 * 1024; // 20 MB
+
+    private static readonly Dictionary<QuestionMediaType, (HashSet<string> Types, long MaxBytes, string Folder)>
+        QuestionMediaConfig = new()
+        {
+            [QuestionMediaType.Image] = (AllowedImageContentTypes, 5 * 1024 * 1024, "questions/images"),
+            [QuestionMediaType.Video] = (AllowedVideoContentTypes, MaxVideoSizeBytes, "questions/videos"),
+            [QuestionMediaType.Audio] = (AllowedAudioContentTypes, MaxAudioSizeBytes, "questions/audios"),
+        };
 
     [HttpPost]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<UploadResultDto>> Upload(IFormFile file)
     {
         if (file is null || file.Length == 0)
             return BadRequest("No file provided.");
 
-        if (!AllowedContentTypes.Contains(file.ContentType))
+        if (!AllowedImageContentTypes.Contains(file.ContentType))
             return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
 
-        if (file.Length > MaxFileSizeBytes)
-            return BadRequest("File exceeds the 5 MB limit.");
+        if (file.Length > MaxImageSizeBytes)
+            return BadRequest("File exceeds the 10 MB limit.");
 
         var url = await storageService.UploadAsync(file, "logos");
         return Ok(new UploadResultDto { Url = url });
     }
 
     [HttpPost("idea-image")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<IdeaImageUploadResultDto>> UploadIdeaImage(
         IFormFile file, [FromQuery] int projectId, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
             return BadRequest("No file provided.");
 
-        if (!AllowedContentTypes.Contains(file.ContentType))
+        if (!AllowedImageContentTypes.Contains(file.ContentType))
             return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
 
-        if (file.Length > MaxFileSizeBytes)
-            return BadRequest("File exceeds the 5 MB limit.");
+        if (file.Length > MaxImageSizeBytes)
+            return BadRequest("File exceeds the 10 MB limit.");
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms, ct);
@@ -69,6 +83,28 @@ public class UploadsController(
             IsAcceptable = modResult.IsAcceptable,
             Reason = modResult.IsAcceptable ? null : modResult.Reason
         });
+    }
+
+    [HttpPost("question-media")]
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
+    public async Task<ActionResult<UploadResultDto>> UploadQuestionMedia(
+        IFormFile file, [FromQuery] QuestionMediaType mediaType, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest("No file provided.");
+
+        if (!QuestionMediaConfig.TryGetValue(mediaType, out var config))
+            return BadRequest("Invalid media type.");
+
+        if (!config.Types.Contains(file.ContentType))
+            return BadRequest($"File type '{file.ContentType}' is not allowed for {mediaType}.");
+
+        if (file.Length > config.MaxBytes)
+            return BadRequest($"File exceeds the {config.MaxBytes / (1024 * 1024)} MB limit for {mediaType}.");
+
+        var url = await storageService.UploadAsync(file, config.Folder);
+        return Ok(new UploadResultDto { Url = url });
     }
 }
 

@@ -21,4 +21,6 @@ public interface IProjectManager
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
     Task DeleteProjectAsync(int projectId);
     Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode);
+
+    Task<Project> DuplicateProjectAsync(int sourceProjectId, string newName, int platformId, string newShortForm = null, CancellationToken ct = default);
 }

@@ -150,6 +150,7 @@ public static class AiConfigLoader
             CommentSupport  = substitutedCommentSupport,
             QuestionSupport = substitutedQuestionSupport,
             SpeechToText    = substitutedSpeechToText,
+            ImageGeneration = config.ImageGeneration,
             Fuzzy           = config.Fuzzy,
         };
     }

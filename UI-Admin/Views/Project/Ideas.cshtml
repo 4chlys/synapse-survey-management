@@ -12,10 +12,24 @@
             <h1 class="font-heading font-bold text-2xl text-base-content">Ideeën</h1>
             <p class="text-sm text-base-content/50 mt-0.5">@Model.TotalCount ideeën in dit project</p>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2 items-center">
             <span class="badge badge-success gap-1">✓ @Model.ApprovedCount goedgekeurd</span>
             <span class="badge badge-warning gap-1">⏳ @Model.PendingCount nieuw</span>
             <span class="badge badge-error gap-1">⚑ @Model.FlaggedCount gemarkeerd</span>
+
+            <div class="dropdown dropdown-end" data-export-emails data-project-id="@Model.ProjectId">
+                <button type="button" class="btn btn-primary btn-sm gap-1.5" data-export-trigger>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                    E-mails exporteren
+                </button>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-44 p-2 shadow hidden" data-export-fallback>
+                    <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "csv" })">CSV (.csv)</a></li>
+                    <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "txt" })">Tekst (.txt)</a></li>
+                    <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -71,3 +85,53 @@
         @await Html.PartialAsync("_IdeasTable", Model)
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const root = document.querySelector('[data-export-emails]');
+            if (!root) return;
+            const projectId = root.dataset.projectId;
+            const trigger = root.querySelector('[data-export-trigger]');
+            const fallback = root.querySelector('[data-export-fallback]');
+            const baseUrl = '@Url.Action("ExportParticipantEmails", new { projectId = "__PID__" })'.replace('__PID__', projectId);
+            const types = [
+                { description: 'CSV', accept: { 'text/csv': ['.csv'] } },
+                { description: 'Tekstbestand', accept: { 'text/plain': ['.txt'] } },
+                { description: 'Excel', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }
+            ];
+            const extToFormat = { '.csv': 'csv', '.txt': 'txt', '.xlsx': 'xlsx' };
+
+            if (typeof window.showSaveFilePicker !== 'function') {
+                trigger.addEventListener('click', () => fallback.classList.toggle('hidden'));
+                return;
+            }
+
+            trigger.addEventListener('click', async () => {
+                let handle;
+                try {
+                    handle = await window.showSaveFilePicker({
+                        suggestedName: `participants-${projectId}`,
+                        types
+                    });
+                } catch (e) {
+                    if (e?.name === 'AbortError') return;
+                    console.error(e);
+                    return;
+                }
+                const name = handle.name.toLowerCase();
+                const ext = Object.keys(extToFormat).find(x => name.endsWith(x)) || '.csv';
+                const format = extToFormat[ext];
+
+                const resp = await fetch(`${baseUrl}&format=${format}`);
+                if (!resp.ok) {
+                    alert('Export mislukt.');
+                    return;
+                }
+
+                const writable = await handle.createWritable();
+                await resp.body.pipeTo(writable);
+            });
+        })();
+    </script>
+}

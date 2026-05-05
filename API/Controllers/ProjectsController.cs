@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Project;
+using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -8,7 +10,10 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects")]
-public class ProjectsController(IProjectManager projectManager) : ControllerBase
+public class ProjectsController(
+    IProjectManager projectManager,
+    IAiImageGenerationService imageGenerationService,
+    IStorageService storageService) : ControllerBase
 {
     private static FormType ParseFormType(string interactionMode) =>
         Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
@@ -77,13 +82,26 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto)
+    public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
     {
+        var imageUrl = dto.ImageUrl ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            var result = await imageGenerationService.GenerateProjectImageAsync(dto.Name, ct);
+            if (result.IsSuccess)
+            {
+                var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
+                imageUrl = await storageService.UploadBytesAsync(
+                    result.ImageBytes, "projects", $"generated{extension}", result.MimeType);
+            }
+        }
+
         var project = await projectManager.CreateProjectAsync(
             dto.Name,
             dto.Topic ?? string.Empty,
             dto.Introduction ?? string.Empty,
-            dto.ImageUrl ?? string.Empty,
+            imageUrl,
             ParseFormType(dto.InteractionMode),
             ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
@@ -118,6 +136,17 @@ public class ProjectsController(IProjectManager projectManager) : ControllerBase
             dto.MaxExtraIdeaRequests);
 
         return Ok(MapToDto(project));
+    }
+
+    [HttpPost("{projectId:int}/copy")]
+    public async Task<ActionResult<ProjectDto>> CopyProject(int projectId, CopyProjectDto dto, CancellationToken ct)
+    {
+        var source = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (source is null) return NotFound();
+        if (source.ProjectPlatformId != dto.PlatformId) return Forbid();
+
+        var copy = await projectManager.DuplicateProjectAsync(projectId, dto.NewName, dto.PlatformId, dto.NewShortForm, ct);
+        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, MapToDto(copy));
     }
 
     [HttpDelete("{projectId}")]

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Sorting;
@@ -15,6 +16,7 @@ using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
@@ -32,6 +34,12 @@ var aiConfig = AiConfigLoader.Load(tempLogger);
 bool useAi = aiConfig.Moderation.UseAi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Allow up to 30 MB request bodies (question video uploads are capped at 25 MB at the action level,
+// leaving headroom for multipart overhead). Cloud Run HTTP/1 hard-caps at 32 MB — do not raise further.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 30 * 1024 * 1024);
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
+    o => o.MultipartBodyLengthLimit = 30 * 1024 * 1024);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -110,6 +118,8 @@ else
     builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 }
 
+builder.Services.AddSingleton<IExportService, ExportService>();
+
 // Registering BL
 var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
 var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
@@ -140,6 +150,7 @@ builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton(aiConfig.CommentSupport);
 builder.Services.AddSingleton(aiConfig.QuestionSupport);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
+builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -177,6 +188,18 @@ if (useAi)
     builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
 
+    // Image generation — Imagen uses PredictAsync directly, not IChatClient.
+    var imagenModel = aiConfig.ImageGeneration.Model;
+    var imagenModelResource = EndpointName.FormatProjectLocationPublisherModel(
+        projectId, location, "google", imagenModel);
+    var imagenClient = await predictionBuilder.BuildAsync();
+    builder.Services.AddSingleton<IAiImageGenerationService>(sp =>
+        new GoogleVertexAiImageGenerationService(
+            imagenClient,
+            imagenModelResource,
+            sp.GetRequiredService<AiImageGenerationConfig>(),
+            sp.GetRequiredService<ILogger<GoogleVertexAiImageGenerationService>>()));
+
     // Embedding generator — same PredictionServiceClientBuilder, different model
     // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so
     // swapping Vertex for OpenAI/Ollama later means registering a different
@@ -195,6 +218,7 @@ else
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
+    builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
@@ -250,6 +274,11 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+});
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();

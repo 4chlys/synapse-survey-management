@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Question;
@@ -15,6 +16,10 @@ public class QuestionAdminService(HttpClient httpClient)
         public int? ParentQuestionId { get; set; }
         public string ParentTriggerValue { get; set; }
         public ICollection<string> EndingAnswers { get; set; }
+        public string MediaUrl { get; set; }
+        public QuestionMediaType? MediaType { get; set; }
+        public bool MediaIsEmbed { get; set; }
+        public string MediaText { get; set; }
     }
 
     private class MoveRequest
@@ -39,7 +44,9 @@ public class QuestionAdminService(HttpClient httpClient)
     public async Task CreateQuestionAsync(int projectId, string text, string questionFormat,
         bool isMandatory, ICollection<string> answerChoices, int? sectionId = null,
         int? parentQuestionId = null, string parentTriggerValue = null,
-        ICollection<string> endingAnswers = null)
+        ICollection<string> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null,
+        bool mediaIsEmbed = false, string mediaText = null)
     {
         var payload = new QuestionRequest
         {
@@ -50,7 +57,11 @@ public class QuestionAdminService(HttpClient httpClient)
             SectionId = sectionId,
             ParentQuestionId = parentQuestionId,
             ParentTriggerValue = parentTriggerValue,
-            EndingAnswers = endingAnswers
+            EndingAnswers = endingAnswers,
+            MediaUrl = mediaUrl,
+            MediaType = mediaType,
+            MediaIsEmbed = mediaIsEmbed,
+            MediaText = mediaText
         };
         var response = await
             httpClient.PostAsJsonAsync($"api/projects/{projectId}/questionnaire/questions",
@@ -60,7 +71,9 @@ public class QuestionAdminService(HttpClient httpClient)
 
     public async Task UpdateQuestionAsync(int projectId, int questionId, string text, string questionFormat,
         bool isMandatory, ICollection<string> answerChoices, int? sectionId = null,
-        ICollection<string> endingAnswers = null)
+        ICollection<string> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null,
+        bool mediaIsEmbed = false, string mediaText = null)
     {
         var payload = new QuestionRequest
         {
@@ -69,7 +82,11 @@ public class QuestionAdminService(HttpClient httpClient)
             IsMandatory = isMandatory,
             AnswerChoices = answerChoices,
             SectionId = sectionId,
-            EndingAnswers = endingAnswers
+            EndingAnswers = endingAnswers,
+            MediaUrl = mediaUrl,
+            MediaType = mediaType,
+            MediaIsEmbed = mediaIsEmbed,
+            MediaText = mediaText
         };
         var response = await httpClient.PutAsJsonAsync(
             $"api/projects/{projectId}/questionnaire/questions/{questionId}", payload);

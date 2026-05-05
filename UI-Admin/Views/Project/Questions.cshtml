@@ -82,6 +82,47 @@
                         <input type="checkbox" id="card-mandatory" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
                         <span class="label-text text-sm">Verplicht</span>
                     </label>
+                    <details id="card-media-section" class="mb-1">
+                        <summary class="font-semibold text-sm cursor-pointer">Ondersteunende media (optioneel)</summary>
+                        <div class="flex flex-col gap-3 mt-3">
+                            <label class="form-control">
+                                <div class="label"><span class="label-text text-xs">Mediatype</span></div>
+                                <select id="card-MediaType" name="MediaType" class="select select-bordered select-sm w-full">
+                                    <option value="">— geen media —</option>
+                                    <option value="1">Afbeelding</option>
+                                    <option value="2">Video</option>
+                                    <option value="3">Audio</option>
+                                </select>
+                            </label>
+                            <div id="card-media-source-toggle" class="hidden">
+                                <label class="label cursor-pointer justify-start gap-3">
+                                    <input type="checkbox" id="card-MediaIsEmbed" name="MediaIsEmbed" value="true" class="checkbox checkbox-sm" />
+                                    <span class="label-text text-sm">URL / link invoeren</span>
+                                </label>
+                            </div>
+                            <div id="card-media-upload-block" class="hidden flex-col gap-2">
+                                <input type="file" id="card-MediaFile" class="file-input file-input-bordered file-input-sm w-full" />
+                                <span id="card-media-upload-error" class="hidden text-error text-xs"></span>
+                                <div id="card-media-preview" class="mt-2"></div>
+                            </div>
+                            <label class="form-control hidden" id="card-media-embed-block">
+                                <div class="label"><span class="label-text text-xs" id="card-media-embed-label">URL</span></div>
+                                <input type="url" id="card-MediaEmbedUrl" class="input input-bordered input-sm w-full"
+                                       placeholder="https://..." />
+                                <span id="card-media-embed-error" class="hidden text-error text-xs mt-1"></span>
+                            </label>
+                            <input type="hidden" name="MediaUrl" id="card-MediaUrl" value="" />
+                            <label class="form-control">
+                                <div class="label">
+                                    <span class="label-text text-xs">Begeleidende tekst</span>
+                                    <span id="card-media-text-counter" class="label-text-alt text-xs">0 / 2000</span>
+                                </div>
+                                <textarea id="card-MediaText" name="MediaText" rows="3" maxlength="2000"
+                                          class="textarea textarea-bordered textarea-sm w-full resize-none"
+                                          placeholder="Korte uitleg of context bij de media..."></textarea>
+                            </label>
+                        </div>
+                    </details>
                     <button type="submit" class="btn btn-primary btn-sm self-end">Toevoegen</button>
                 </form>
             </div>
@@ -219,6 +260,54 @@
             </label>
 
             <div class="divider my-2"></div>
+
+            <details id="media-section" class="mb-2">
+                <summary class="font-semibold text-sm cursor-pointer">Ondersteunende media (optioneel)</summary>
+                <div class="flex flex-col gap-3 mt-3">
+                    <label class="form-control">
+                        <div class="label"><span class="label-text text-xs">Mediatype</span></div>
+                        <select id="MediaType" name="MediaType" class="select select-bordered select-sm w-full">
+                            <option value="">— geen media —</option>
+                            <option value="1">Afbeelding</option>
+                            <option value="2">Video</option>
+                            <option value="3">Audio</option>
+                        </select>
+                    </label>
+
+                    <div id="media-source-toggle" class="hidden">
+                        <label class="label cursor-pointer justify-start gap-3">
+                            <input type="checkbox" id="MediaIsEmbed" name="MediaIsEmbed" value="true" class="checkbox checkbox-sm" />
+                            <span class="label-text text-sm">URL / link invoeren</span>
+                        </label>
+                    </div>
+
+                    <div id="media-upload-block" class="hidden flex-col gap-2">
+                        <input type="file" id="MediaFile" class="file-input file-input-bordered file-input-sm w-full" />
+                        <progress id="media-upload-progress" class="progress progress-primary w-full hidden" max="100"></progress>
+                        <span id="media-upload-error" class="hidden text-error text-xs"></span>
+                        <div id="media-preview" class="mt-2"></div>
+                    </div>
+
+                    <label class="form-control hidden" id="media-embed-block">
+                        <div class="label"><span class="label-text text-xs" id="media-embed-label">URL</span></div>
+                        <input type="url" id="MediaEmbedUrl" class="input input-bordered input-sm w-full"
+                               placeholder="https://..." />
+                        <span id="media-embed-error" class="hidden text-error text-xs mt-1"></span>
+                    </label>
+
+                    <input type="hidden" name="MediaUrl" id="MediaUrl" value="" />
+
+                    <label class="form-control">
+                        <div class="label">
+                            <span class="label-text text-xs">Begeleidende tekst (markdown — **vet**, *cursief*, - lijst)</span>
+                            <span id="media-text-counter" class="label-text-alt text-xs">0 / 2000</span>
+                        </div>
+                        <textarea id="MediaText" name="MediaText" rows="4" maxlength="2000"
+                                  class="textarea textarea-bordered textarea-sm w-full resize-none"
+                                  placeholder="Korte uitleg of context bij de media..."></textarea>
+                    </label>
+                </div>
+            </details>
 
             <div class="modal-action gap-2">
                 <button type="button" id="modal-cancel" class="btn btn-ghost btn-sm">Annuleer</button>

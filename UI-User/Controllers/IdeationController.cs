@@ -268,15 +268,17 @@ public class IdeationController(
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
 
-        if (env.IsDevelopment())
-        {
-            var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5159";
-            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)) return false;
-            return (uri.Scheme == "https" || uri.Scheme == "http")
-                && string.Equals(uri.Host, apiUri.Host, StringComparison.OrdinalIgnoreCase)
-                && uri.AbsolutePath.StartsWith("/uploads/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
-        }
+        // Always allow uploads from the configured API origin (local dev + Cloud Run test with LocalStorage)
+        var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+        if (Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)
+            && (uri.Scheme == "https" || uri.Scheme == "http")
+            && string.Equals(uri.Authority, apiUri.Authority, StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith("/uploads/tmp/ideas/", StringComparison.OrdinalIgnoreCase))
+            return true;
 
+        if (env.IsDevelopment()) return false;
+
+        // In production, also allow GCS uploads
         var bucket = configuration["GcsBucket"]
                      ?? Environment.GetEnvironmentVariable("GCS_BUCKET")
                      ?? "synapse-assets-prod";

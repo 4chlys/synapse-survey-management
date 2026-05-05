@@ -36,7 +36,11 @@ public class QuestionnaireApiService : IQuestionnaireApiService
             IsMandatory = q.IsMandatory,
             QuestionNumber = number++,
             TotalQuestions = total,
-            Position = q.Position
+            Position = q.Position,
+            MediaUrl = q.MediaUrl,
+            MediaType = q.MediaType.HasValue ? (QuestionMediaType)q.MediaType.Value : null,
+            MediaIsEmbed = q.MediaIsEmbed,
+            MediaText = q.MediaText
         }).ToList();
 
         return new SurveyViewModel
@@ -158,6 +162,15 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task RemoveAllResponsesAsync(int projectId, string participantToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"api/projects/{projectId}/responses");
+        request.Headers.Add(TokenHeader, participantToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
     private class ApiQuestionDto
     {
         public int QuestionId { get; set; }
@@ -166,6 +179,10 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         public List<string> AnswerChoices { get; set; } = new();
         public bool IsMandatory { get; set; }
         public int Position { get; set; }
+        public string MediaUrl { get; set; }
+        public byte? MediaType { get; set; }
+        public bool MediaIsEmbed { get; set; }
+        public string MediaText { get; set; }
     }
 
     private class ParticipantStatusDto

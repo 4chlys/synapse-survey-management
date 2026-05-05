@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
@@ -30,6 +31,7 @@ public class ProjectController(
     UserManager<ApplicationUser> userManager,
     WidgetPreferenceService widgetPreferenceService,
     IdeaAdminService ideaService,
+    ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings) : Controller
 {
     public async Task<IActionResult> Index()
@@ -88,6 +90,7 @@ public class ProjectController(
     }
 
     [HttpPost]
+    [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
         // For "next", Topic and Introduction are also required
@@ -205,7 +208,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -220,7 +226,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -324,11 +333,43 @@ public class ProjectController(
     }
 
     [HttpPost]
-        public async Task<IActionResult> DeleteProject(int projectId)
+    public async Task<IActionResult> CopyProject(int projectId, string newName)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is not int platformId)
+            return Forbid();
+
+        var source = await projectService.GetProjectByIdAsync(projectId);
+        if (source is null || source.PlatformId != platformId)
         {
-            await projectService.DeleteProjectAsync(projectId);
+            TempData["Error"] = "Project niet gevonden of geen toegang.";
             return RedirectToAction(nameof(Index));
         }
+
+        if (string.IsNullOrWhiteSpace(newName))
+            newName = $"{source.Name} (kopie)";
+        if (newName.Length > 100)
+            newName = newName[..100];
+
+        try
+        {
+            var copy = await projectService.CopyProjectAsync(projectId, newName, platformId);
+            TempData["Success"] = "Project gekopieerd als sjabloon!";
+            return RedirectToAction(nameof(Create), new { projectId = copy.ProjectId, isNew = true });
+        }
+        catch (HttpRequestException ex)
+        {
+            TempData["Error"] = $"Kopiëren mislukt: {ex.Message}";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectService.DeleteProjectAsync(projectId);
+        return RedirectToAction(nameof(Index));
+    }
 
     public async Task<IActionResult> Activate(int projectId)
     {
@@ -457,6 +498,20 @@ public class ProjectController(
         };
 
         return View(vm);
+    }
+
+    public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+
+        var normalized = (format ?? "csv").Trim().ToLowerInvariant();
+        if (normalized is not ("csv" or "txt" or "xlsx"))
+            return BadRequest("Ongeldig formaat.");
+
+        var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
+        return File(bytes, contentType, fileName);
     }
 
     [HttpPost]
