@@ -14,6 +14,8 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     public DbSet<Language> Languages { get; set; }
     public DbSet<Project> Projects { get; set; }
     public DbSet<ProjectTranslation> ProjectTranslations { get; set; }
+    public DbSet<IntroductionTranslation> IntroductionTranslations { get; set; }
+    public DbSet<CategoryTranslation> CategoryTranslations { get; set; }
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
     public DbSet<Question> Questions { get; set; }
@@ -194,6 +196,29 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Introduction
+        builder.Entity<Introduction>(e =>
+        {
+            e.HasMany(i => i.Translations)
+                .WithOne(t => t.Introduction)
+                .HasForeignKey("IntroductionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // IntroductionTranslation
+        builder.Entity<IntroductionTranslation>(e =>
+        {
+            e.Property<int>("IntroductionId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("IntroductionId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Category
         builder.Entity<Category>(e =>
         {
@@ -201,6 +226,25 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(i => i.Category)
                 .HasForeignKey("CategoryId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(c => c.Translations)
+                .WithOne(t => t.Category)
+                .HasForeignKey("CategoryId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CategoryTranslation
+        builder.Entity<CategoryTranslation>(e =>
+        {
+            e.Property<int>("CategoryId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("CategoryId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Idea

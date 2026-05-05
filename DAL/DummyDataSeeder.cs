@@ -166,17 +166,39 @@ public class DummyDataSeeder
             },
             Introduction = new Introduction
             {
-                Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
-                       "Deze enquête peilt naar jouw ervaringen en ideeën rond stress, welzijn en wat de school beter kan doen. " +
-                       "Jouw antwoorden zijn anoniem en helpen ons om een betere schoolomgeving te creëren. " +
-                       "Het invullen duurt ongeveer 5 minuten."
+                Translations = new List<IntroductionTranslation>
+                {
+                    new()
+                    {
+                        Language = languageNl,
+                        Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
+                               "Deze enquête peilt naar jouw ervaringen en ideeën rond stress, welzijn en wat de school beter kan doen. " +
+                               "Jouw antwoorden zijn anoniem en helpen ons om een betere schoolomgeving te creëren. " +
+                               "Het invullen duurt ongeveer 5 minuten."
+                    },
+                    new()
+                    {
+                        Language = languageEn,
+                        Text = "Welcome to the Synapse survey on mental wellbeing at school. " +
+                               "This survey explores your experiences and ideas around stress, wellbeing, and what the school can do better. " +
+                               "Your answers are anonymous and help us create a better school environment. " +
+                               "It takes about 5 minutes to complete."
+                    },
+                }
             }
         };
 
         var participant1 = new Participant { Project = projectActive, Questionnaire = questionnaire1, HasSubmitted = true, Language = languageNl };
         projectActive.Participants.Add(participant1);
 
-        var categoryCampus = new Category { Name = "Campus welzijn", Description = "Welzijn op school" };
+        var categoryCampus = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Campus welzijn", Description = "Welzijn op school" },
+                new() { Language = languageEn, Name = "Campus wellbeing", Description = "Wellbeing at school" },
+            }
+        };
         categoryCampus.Ideas.Add(CreateIdea("Meer rustplekken op school", new[] { "Geweldig idee, daar hebben we echt nood aan!", "Misschien ook wat groen toevoegen voor een kalme sfeer?", "Een stille ruimte zonder schermen zou perfect zijn." }, 35, new[] { 12, 8, 20 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Meditatie sessies tijdens de middag", new[] { "Dit zou mij enorm helpen om de namiddag beter door te komen.", "Kan dit ook online gevolgd worden?", "Misschien ook 's ochtends voor de lessen beginnen?" }, 28, new[] { 15, 7, 18 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Anonieme klachtenbox voor leerlingen", new[] { "Eindelijk een veilige manier om problemen te melden!", "Belangrijk dat dit echt anoniem blijft.", "Wordt dit ook opgevolgd door de directie?" }, 42, new[] { 10, 22, 6 }, participant1));
@@ -188,7 +210,14 @@ public class DummyDataSeeder
         categoryCampus.Ideas.Add(CreateIdea("Gezonder aanbod in de schoolkantine", new[] { "Voeding heeft een grote invloed op hoe je je voelt.", "Minder suiker en meer fruit zou al helpen.", "De prijzen van gezonde opties moeten wel betaalbaar blijven." }, 44, new[] { 21, 9, 15 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Sportactiviteiten in de middagpauze", new[] { "Bewegen helpt enorm om stress te verminderen.", "Een pingpongtafel of basketbalring zou al genoeg zijn.", "Dit trekt ook leerlingen weg van hun telefoon." }, 50, new[] { 24, 12, 19 }, participant1));
 
-        var categoryHome = new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" };
+        var categoryHome = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" },
+                new() { Language = languageEn, Name = "Home wellbeing", Description = "Wellbeing at home and in your free time" },
+            }
+        };
         categoryHome.Ideas.Add(CreateIdea("Tips voor een goede nachtrust", new[] { "Ik slaap veel beter sinds ik mijn telefoon wegleg voor het slapengaan.", "Een vast slaapschema helpt enorm!", "Blauwe lichtfilters op je scherm helpen ook." }, 29, new[] { 14, 22, 8 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Online hulplijn voor thuisproblemen", new[] { "Dit is zo belangrijk, niet iedereen heeft steun thuis.", "Moet ook beschikbaar zijn in het weekend.", "Anoniem kunnen chatten zou de drempel verlagen." }, 46, new[] { 25, 10, 17 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Bewegingstips voor na school", new[] { "Een wandeling van 20 minuten doet al wonderen.", "Yoga is ook super relaxerend na een drukke dag!", "Fietsen naar school telt ook als beweging." }, 37, new[] { 9, 20, 13 }, participant1));
@@ -200,7 +229,14 @@ public class DummyDataSeeder
         categoryHome.Ideas.Add(CreateIdea("Vrienden betrekken bij je welzijn", new[] { "Gewoon even bellen met een vriend helpt al enorm.", "Een wandeling maken samen is beter dan chatten.", "Sociale verbinding is cruciaal voor mentale gezondheid." }, 36, new[] { 12, 23, 9 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Natuur opzoeken in je vrije tijd", new[] { "Een park of bos bezoeken werkt rustgevend.", "Zelfs een tuin of balkon met planten helpt al.", "Onderzoek toont aan dat natuur stress vermindert." }, 48, new[] { 20, 14, 7 }, participant1));
 
-        var categoryOnline = new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" };
+        var categoryOnline = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Online welzijn", Description = "Gezond omgaan met social media en online" },
+                new() { Language = languageEn, Name = "Online wellbeing", Description = "Healthy use of social media and online platforms" },
+            }
+        };
         categoryOnline.Ideas.Add(CreateIdea("Workshops over social media gebruik", new[] { "Ik zou graag leren hoe ik minder tijd op mijn telefoon spendeer.", "Dit zou verplicht moeten zijn voor alle leerlingen.", "Ook interessant voor leerkrachten en ouders." }, 39, new[] { 18, 11, 24 }, participant1));
         categoryOnline.Ideas.Add(CreateIdea("Schermtijd begrenzen via schoolapp", new[] { "Goed idee maar ouders moeten het ook steunen.", "Zou handig zijn als je zelf limieten kan instellen.", "Kan dit ook voor sociale media apart ingesteld worden?" }, 45, new[] { 7, 22, 16 }, participant1));
         categoryOnline.Ideas.Add(CreateIdea("Digitale detox dag op school organiseren", new[] { "Een dag zonder telefoon klinkt eerst eng maar achteraf super rustgevend!", "We zouden dan andere activiteiten kunnen doen zoals tekenen of sporten.", "Dit zou ook de klassfeer verbeteren." }, 30, new[] { 13, 19, 10 }, participant1));
@@ -240,10 +276,25 @@ public class DummyDataSeeder
             },
             Introduction = new Introduction
             {
-                Text = "Welkom bij de FitLife ledenbevraging! " +
-                       "We stellen deze enquête op om onze faciliteiten, lessen en diensten verder te verbeteren. " +
-                       "Jouw mening als lid is enorm waardevol voor ons. " +
-                       "Het invullen duurt slechts 3 minuten en alle antwoorden zijn volledig anoniem."
+                Translations = new List<IntroductionTranslation>
+                {
+                    new()
+                    {
+                        Language = languageNl,
+                        Text = "Welkom bij de FitLife ledenbevraging! " +
+                               "We stellen deze enquête op om onze faciliteiten, lessen en diensten verder te verbeteren. " +
+                               "Jouw mening als lid is enorm waardevol voor ons. " +
+                               "Het invullen duurt slechts 3 minuten en alle antwoorden zijn volledig anoniem."
+                    },
+                    new()
+                    {
+                        Language = languageEn,
+                        Text = "Welcome to the FitLife member survey! " +
+                               "We have set up this survey to further improve our facilities, classes and services. " +
+                               "Your opinion as a member is extremely valuable to us. " +
+                               "It only takes 3 minutes to fill in and all answers are completely anonymous."
+                    },
+                }
             }
         };
 
@@ -252,7 +303,14 @@ public class DummyDataSeeder
 
         var fitLifeEmojis = new[] { _heart, _fire };
 
-        var catFacilities = new Category { Name = "Faciliteiten", Description = "Kleedkamers, toestellen en ruimtes" };
+        var catFacilities = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Faciliteiten", Description = "Kleedkamers, toestellen en ruimtes" },
+                new() { Language = languageEn, Name = "Facilities", Description = "Changing rooms, equipment and spaces" },
+            }
+        };
         catFacilities.Ideas.Add(CreateIdea("Meer cardio toestellen in de ochtendzone", new[] { "De rijen aan de loopbanden zijn 's ochtends niet te doen.", "Misschien een reservatiesysteem voor piekuren?", "Roeiers en steppers zijn ook altijd bezet." }, 38, new[] { 14, 9, 22 }, participant2, fitLifeEmojis));
         catFacilities.Ideas.Add(CreateIdea("Sauna toevoegen aan de wellnesszone", new[] { "Dit zou het lidmaatschap zoveel meer waard maken!", "Een infraroodsauna zou ideaal zijn voor spierherstel.", "Andere gyms hebben dit al standaard." }, 45, new[] { 20, 11, 17 }, participant2, fitLifeEmojis));
         catFacilities.Ideas.Add(CreateIdea("Betere ventilatie in de gewichtszaal", new[] { "Het is veel te warm en benauwd tijdens piekuren.", "Airconditioning zou een groot verschil maken.", "Extra ventilatoren als tussenoplossing?" }, 32, new[] { 8, 19, 13 }, participant2, fitLifeEmojis));
@@ -264,7 +322,14 @@ public class DummyDataSeeder
         catFacilities.Ideas.Add(CreateIdea("Wifi verbeteren in de sporthal", new[] { "Het signaal valt constant weg terwijl ik muziek stream.", "Wifi is tegenwoordig een basisverwachting.", "Zou ook nuttig zijn voor de personal trainers." }, 44, new[] { 17, 10, 19 }, participant2, fitLifeEmojis));
         catFacilities.Ideas.Add(CreateIdea("Massagestoel toevoegen aan de relaxzone", new[] { "Na een zware training is dit de perfecte beloning.", "Zelfs een betaalde massagestoel zou ik gebruiken.", "Zou de gym onderscheiden van de concurrentie." }, 50, new[] { 24, 14, 7 }, participant2, fitLifeEmojis));
 
-        var catLessons = new Category { Name = "Lessen & Begeleiding", Description = "Groepslessen en personal training" };
+        var catLessons = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Lessen & Begeleiding", Description = "Groepslessen en personal training" },
+                new() { Language = languageEn, Name = "Classes & Coaching", Description = "Group classes and personal training" },
+            }
+        };
         catLessons.Ideas.Add(CreateIdea("Yogales toevoegen aan het weekendrooster", new[] { "In het weekend heb ik eindelijk tijd voor yoga!", "Liefst vroeg in de ochtend zodat de rest van de dag vrij is.", "Ook een meditatieklas zou geweldig zijn." }, 39, new[] { 16, 23, 9 }, participant2, fitLifeEmojis));
         catLessons.Ideas.Add(CreateIdea("Personal training sessies goedkoper maken", new[] { "Nu is het onbetaalbaar voor studenten.", "Misschien een studentenkorting invoeren?", "Duo sessies zouden ook goedkoper zijn per persoon." }, 43, new[] { 12, 19, 25 }, participant2, fitLifeEmojis));
         catLessons.Ideas.Add(CreateIdea("Online lessen streamen voor leden", new[] { "Als ik ziek ben kan ik toch nog de les volgen.", "Zou ook handig zijn voor mensen met drukke schema's.", "Opnames achteraf bekijken zou ook fijn zijn." }, 31, new[] { 8, 14, 20 }, participant2, fitLifeEmojis));
@@ -276,7 +341,14 @@ public class DummyDataSeeder
         catLessons.Ideas.Add(CreateIdea("Senior-vriendelijke lessen toevoegen", new[] { "Ouderen hebben andere noden dan jonge sporters.", "Lage impact cardio en stretching zouden perfect zijn.", "Zou ook nieuwe doelgroep aantrekken." }, 26, new[] { 20, 8, 16 }, participant2, fitLifeEmojis));
         catLessons.Ideas.Add(CreateIdea("Aqua aerobics in het zwembad", new[] { "Gewrichtsvriendelijk sporten voor iedereen.", "Ideaal voor mensen met rugklachten.", "Het zwembad wordt nu ondergecapaciteit gebruikt." }, 48, new[] { 14, 22, 10 }, participant2, fitLifeEmojis));
 
-        var catSchedule = new Category { Name = "Planning & Openingsuren", Description = "Bereikbaarheid en rooster" };
+        var catSchedule = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Planning & Openingsuren", Description = "Bereikbaarheid en rooster" },
+                new() { Language = languageEn, Name = "Schedule & Opening Hours", Description = "Accessibility and timetable" },
+            }
+        };
         catSchedule.Ideas.Add(CreateIdea("Gym ook open op zondagavond", new[] { "Zondagavond is perfect om de week voor te bereiden.", "Nu moet ik altijd wachten tot maandag.", "Zelfs maar tot 20u zou al een groot verschil maken." }, 40, new[] { 17, 11, 25 }, participant2, fitLifeEmojis));
         catSchedule.Ideas.Add(CreateIdea("App voor reservaties van toestellen", new[] { "Dan weet je op voorhand of het druk is.", "Wachtrijen zijn frustrerend na een lange werkdag.", "Zou ook de verdeling van leden over de dag verbeteren." }, 34, new[] { 9, 20, 14 }, participant2, fitLifeEmojis));
         catSchedule.Ideas.Add(CreateIdea("Vroeger openen op weekdagen", new[] { "Om 5u30 open zou mij toelaten voor het werk te sporten.", "Veel mensen willen 's ochtends vroeg trainen.", "Nu mis ik de ochtendtrein als ik eerst naar de gym ga." }, 47, new[] { 23, 12, 8 }, participant2, fitLifeEmojis));
@@ -319,7 +391,14 @@ public class DummyDataSeeder
         var participant3 = new Participant { Project = projectActive3, Questionnaire = questionnaire3, HasSubmitted = true, Language = languageNl };
         projectActive3.Participants.Add(participant3);
 
-        var catTraining = new Category { Name = "Trainingen", Description = "Kwaliteit en opbouw van de trainingen" };
+        var catTraining = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Trainingen", Description = "Kwaliteit en opbouw van de trainingen" },
+                new() { Language = languageEn, Name = "Training", Description = "Quality and structure of training sessions" },
+            }
+        };
         catTraining.Ideas.Add(CreateIdea("Videoanalyse invoeren bij de trainingen", new[] { "Profclubs doen dit al jaren, waarom wij niet?", "Zou mijn positiespel enorm verbeteren.", "Een simpele tablet met een app zou al voldoende zijn." }, 44, new[] { 18, 11, 25 }, participant3));
         catTraining.Ideas.Add(CreateIdea("Aparte trainingsgroep voor gevorderde spelers", new[] { "Nu wachten gevorderde spelers te veel op beginners.", "Iedereen traint op zijn eigen niveau, eerlijker voor iedereen.", "Zolang het de teamgeest niet schaadt, goed idee." }, 37, new[] { 13, 20, 8 }, participant3));
         catTraining.Ideas.Add(CreateIdea("Conditietraining twee keer per week", new[] { "Nu focussen we te veel op tactiek en te weinig op conditie.", "Een aparte conditietrainer zou ideaal zijn.", "Veel spelers zijn in de tweede helft uitgeput." }, 41, new[] { 9, 17, 22 }, participant3));
@@ -331,7 +410,14 @@ public class DummyDataSeeder
         catTraining.Ideas.Add(CreateIdea("Kleine groepsoefeningen meer integreren", new[] { "Rondjes lopen is saai, kleine spelvormen zijn leuker.", "Leert ook sneller samenspelen.", "Profteams trainen bijna uitsluitend zo." }, 42, new[] { 19, 8, 25 }, participant3));
         catTraining.Ideas.Add(CreateIdea("Keeperstraining apart organiseren", new[] { "De keeper wordt nu vergeten tijdens veldtrainingen.", "Een keeperscoach zou een enorm verschil maken.", "Zelfs één extra training per week zou helpen." }, 50, new[] { 23, 15, 11 }, participant3));
 
-        var catInfra = new Category { Name = "Infrastructuur", Description = "Velden, kleedkamers en materiaal" };
+        var catInfra = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Infrastructuur", Description = "Velden, kleedkamers en materiaal" },
+                new() { Language = languageEn, Name = "Infrastructure", Description = "Pitches, changing rooms and equipment" },
+            }
+        };
         catInfra.Ideas.Add(CreateIdea("Nieuw kunstgrasveld aanleggen", new[] { "Het huidige veld is in slechte staat na de winter.", "Kunstgras betekent ook spelen bij slecht weer.", "Subsidies aanvragen bij de gemeente?" }, 46, new[] { 20, 13, 9 }, participant3));
         catInfra.Ideas.Add(CreateIdea("Betere verlichting op het trainingsveld", new[] { "In de winter trainen we bijna in het donker.", "LED verlichting is energiezuinig en helder.", "Dit verhoogt ook de veiligheid tijdens avondtrainingen." }, 38, new[] { 12, 24, 17 }, participant3));
         catInfra.Ideas.Add(CreateIdea("Nieuwe ballen aanschaffen", new[] { "De huidige ballen zijn versleten en onregelmatig.", "Goede materialen motiveren spelers.", "Misschien sponsors zoeken voor nieuwe ballen?" }, 31, new[] { 8, 19, 14 }, participant3));
@@ -343,7 +429,14 @@ public class DummyDataSeeder
         catInfra.Ideas.Add(CreateIdea("Ehbo-post moderniseren", new[] { "De huidige ehbo-kit is onvolledig.", "Een defibrillator is tegenwoordig noodzakelijk.", "Zou ook het vertrouwen van ouders vergroten." }, 34, new[] { 9, 18, 22 }, participant3));
         catInfra.Ideas.Add(CreateIdea("Oefenruimte voor keeperstraining", new[] { "Nu trainen keepers tussen de veldspelers.", "Een aparte ruimte met doelen en matten zou ideaal zijn.", "Kleine investering met grote impact." }, 49, new[] { 24, 14, 8 }, participant3));
 
-        var catSocial = new Category { Name = "Sociale activiteiten", Description = "Teambuilding en clubactiviteiten" };
+        var catSocial = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Sociale activiteiten", Description = "Teambuilding en clubactiviteiten" },
+                new() { Language = languageEn, Name = "Social activities", Description = "Team building and club events" },
+            }
+        };
         catSocial.Ideas.Add(CreateIdea("Jaarlijks clubkampioenschap organiseren", new[] { "Een intern tornooi zou de teamgeest enorm boosten!", "Met een trofee en feestje achteraf!", "Families uitnodigen als supporters zou gezellig zijn." }, 45, new[] { 19, 12, 25 }, participant3));
         catSocial.Ideas.Add(CreateIdea("Teambuilding weekend plannen", new[] { "Een weekend weg versterkt de band enorm.", "Escape room of outdoor activiteit zou perfect zijn.", "Hoeft niet duur te zijn als iedereen bijdraagt." }, 38, new[] { 14, 22, 9 }, participant3));
         catSocial.Ideas.Add(CreateIdea("Clubavond voor spelers en supporters", new[] { "Een quiz of feestje zou iedereen samenbrengen.", "Nu kennen spelers en supporters elkaar nauwelijks.", "Zou ook nieuwe vrijwilligers aantrekken." }, 32, new[] { 10, 17, 21 }, participant3));
@@ -374,7 +467,14 @@ public class DummyDataSeeder
                 new() { Language = languageNl, Name = "Gearchiveerd Project", Topic = "" },
                 new() { Language = languageEn, Name = "Archived Project", Topic = "" },
             },
-            Introduction = new Introduction { Text = "Dit project is momenteel inactief." }
+            Introduction = new Introduction
+            {
+                Translations = new List<IntroductionTranslation>
+                {
+                    new() { Language = languageNl, Text = "Dit project is momenteel inactief." },
+                    new() { Language = languageEn, Text = "This project is currently inactive." },
+                }
+            }
         };
 
         var projectDraft = new Project
@@ -391,7 +491,14 @@ public class DummyDataSeeder
                 new() { Language = languageNl, Name = "Draft Project", Topic = "" },
                 new() { Language = languageEn, Name = "Draft Project", Topic = "" },
             },
-            Introduction = new Introduction { Text = "Dit project is nog in opbouw." }
+            Introduction = new Introduction
+            {
+                Translations = new List<IntroductionTranslation>
+                {
+                    new() { Language = languageNl, Text = "Dit project is nog in opbouw." },
+                    new() { Language = languageEn, Text = "This project is still under construction." },
+                }
+            }
         };
 
         context.ProjectPlatforms.AddRange(platformSynapse, platformFitLife, platformEendracht);

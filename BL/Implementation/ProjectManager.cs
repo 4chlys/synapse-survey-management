@@ -107,11 +107,20 @@ public class ProjectManager(
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
             throw new ValidationException("MinAge must not be greater than MaxAge.");
 
-        var defaultIntro = introductionList.FirstOrDefault(i => i.LanguageCode == defaultLanguageCode);
-        if (defaultIntro is not null && !string.IsNullOrEmpty(defaultIntro.Text))
+        var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
+        if (nonEmptyIntros.Count > 0)
         {
-            EntityValidator.ValidateProperty(new Introduction(), defaultIntro.Text, nameof(Introduction.Text));
-            project.Introduction = new Introduction { Text = defaultIntro.Text };
+            var intro = new Introduction();
+            foreach (var introInput in nonEmptyIntros)
+            {
+                EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
+                intro.Translations.Add(new IntroductionTranslation
+                {
+                    Language = languages[introInput.LanguageCode],
+                    Text = introInput.Text,
+                });
+            }
+            project.Introduction = intro;
         }
 
         var created = await projectRepository.CreateAsync(project);
@@ -202,22 +211,37 @@ public class ProjectManager(
             }
         }
 
-        var defaultIntro = introductionList.FirstOrDefault(i => i.LanguageCode == defaultLanguageCode);
-        var introductionText = defaultIntro?.Text;
-
-        if (string.IsNullOrEmpty(introductionText))
+        var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
+        if (nonEmptyIntros.Count == 0)
         {
             project.Introduction = null;
         }
-        else if (project.Introduction is null)
-        {
-            EntityValidator.ValidateProperty(new Introduction(), introductionText, nameof(Introduction.Text));
-            project.Introduction = new Introduction { Text = introductionText };
-        }
         else
         {
-            EntityValidator.ValidateProperty(project.Introduction, introductionText, nameof(Introduction.Text));
-            project.Introduction.Text = introductionText;
+            project.Introduction ??= new Introduction();
+
+            var inputByCodes = nonEmptyIntros.ToDictionary(i => i.LanguageCode);
+            foreach (var stale in project.Introduction.Translations
+                         .Where(t => !inputByCodes.ContainsKey(t.Language.Code)).ToList())
+                project.Introduction.Translations.Remove(stale);
+
+            foreach (var introInput in nonEmptyIntros)
+            {
+                EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
+                var existing = project.Introduction.Translations.FirstOrDefault(t => t.Language.Code == introInput.LanguageCode);
+                if (existing is null)
+                {
+                    project.Introduction.Translations.Add(new IntroductionTranslation
+                    {
+                        Language = languages[introInput.LanguageCode],
+                        Text = introInput.Text,
+                    });
+                }
+                else
+                {
+                    existing.Text = introInput.Text;
+                }
+            }
         }
 
         projectRepository.Update(project);
@@ -363,8 +387,13 @@ public class ProjectManager(
                 Topic = t.Topic,
             });
 
-        if (src.Introduction is not null)
-            copy.Introduction = new Introduction { Text = src.Introduction.Text };
+        if (src.Introduction is not null && src.Introduction.Translations.Count > 0)
+        {
+            var introCopy = new Introduction();
+            foreach (var t in src.Introduction.Translations)
+                introCopy.Translations.Add(new IntroductionTranslation { Language = t.Language, Text = t.Text });
+            copy.Introduction = introCopy;
+        }
 
         copy.Questionnaire = new Questionnaire();
 
@@ -406,7 +435,12 @@ public class ProjectManager(
         }
 
         foreach (var srcCat in src.Categories)
-            copy.Categories.Add(new Category { Name = srcCat.Name, Description = srcCat.Description });
+        {
+            var catCopy = new Category();
+            foreach (var t in srcCat.Translations)
+                catCopy.Translations.Add(new CategoryTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
+            copy.Categories.Add(catCopy);
+        }
 
         foreach (var srcEmoji in src.Emojis)
         {

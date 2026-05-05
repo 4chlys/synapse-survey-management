@@ -354,7 +354,14 @@ public class ProjectManagerTests
         srcChild.EndingAnswers.Add(new EndingAnswer { Value = "end" });
 
         var srcEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
-        var srcCat   = new Category { CategoryId = 9, Name = "Cat A", Description = "cat desc" };
+        var srcCat   = new Category
+        {
+            CategoryId = 9,
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Cat A", Description = "cat desc" },
+            }
+        };
 
         var srcNlTrans = new ProjectTranslation { Language = LanguageNl, Name = "Source", Topic = "T-nl" };
         var srcEnTrans = new ProjectTranslation { Language = LanguageEn, Name = "Source EN", Topic = "T-en" };
@@ -373,7 +380,13 @@ public class ProjectManagerTests
             DefaultLanguage = LanguageNl,
             SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
             Translations = new List<ProjectTranslation> { srcNlTrans, srcEnTrans },
-            Introduction = new Introduction { Text = "Intro text" },
+            Introduction = new Introduction
+            {
+                Translations = new List<IntroductionTranslation>
+                {
+                    new() { Language = LanguageNl, Text = "Intro text" },
+                }
+            },
             Questionnaire = new Questionnaire
             {
                 Sections = new List<Section> { srcSection },
@@ -403,7 +416,9 @@ public class ProjectManagerTests
         Assert.Equal("new-project", result.ShortForm);
         Assert.Equal(ProjectState.Draft, result.ProjectState);
         Assert.Equal(0, result.ViewCount);
-        Assert.Equal("Intro text", result.Introduction.Text);
+        Assert.NotNull(result.Introduction);
+        Assert.Single(result.Introduction.Translations);
+        Assert.Equal("Intro text", result.Introduction.Translations.First().Text);
 
         Assert.Equal(2, result.Translations.Count);
         var nlClone = result.Translations.First(t => t.Language.Code == "nl");
@@ -428,7 +443,8 @@ public class ProjectManagerTests
         Assert.Same(result.Questionnaire.Sections.First(), newChild.Section);
 
         Assert.Single(result.Categories);
-        Assert.Equal("Cat A", result.Categories.First().Name);
+        Assert.Single(result.Categories.First().Translations);
+        Assert.Equal("Cat A", result.Categories.First().Translations.First().Name);
 
         Assert.Single(result.Emojis);
         Assert.Same(trackedEmoji, result.Emojis.First());

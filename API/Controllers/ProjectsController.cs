@@ -40,6 +40,13 @@ public class ProjectsController(
     private ProjectDto MapToParticipantDto(Project p)
     {
         var t = ResolveTranslation(p);
+        var active = ActiveCulture();
+        var introText = p.Introduction?.Translations
+                            .FirstOrDefault(it => it.Language?.Code == active)?.Text
+                        ?? p.Introduction?.Translations
+                            .FirstOrDefault(it => it.Language?.Code == p.DefaultLanguage?.Code)?.Text
+                        ?? p.Introduction?.Translations.FirstOrDefault()?.Text
+                        ?? string.Empty;
         return new ProjectDto
         {
             ProjectId = p.ProjectId,
@@ -53,7 +60,7 @@ public class ProjectsController(
             ProjectImage = p.ImageUrl ?? string.Empty,
             OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
-            Introduction = p.Introduction?.Text ?? string.Empty,
+            Introduction = introText,
             AiAssistance = p.AiAssistance.ToString(),
             RequestContactInfo = p.RequestContactInfo,
             IdeaPageSize = p.IdeaPageSize,
@@ -92,7 +99,8 @@ public class ProjectsController(
             LanguageCode = t.Language?.Code,
             Name = t.Name,
             Topic = t.Topic,
-            Introduction = t.Language?.Code == p.DefaultLanguage?.Code ? p.Introduction?.Text : null,
+            Introduction = p.Introduction?.Translations
+                .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
         }).ToList(),
     };
 

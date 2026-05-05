@@ -6,4 +6,5 @@ public class CategoryDto
     public string Name { get; set; }
     public string Description { get; set; }
     public int IdeaCount { get; set; }
+    public string LanguageCode { get; set; }
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain.Project.Stats;
@@ -8,6 +9,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CategoryManager(
     ICategoryRepository categoryRepository,
+    ILanguageRepository languageRepository,
     IUnitOfWork uow) : ICategoryManager
 {
     public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
@@ -22,29 +24,65 @@ public class CategoryManager(
     public Task<Category> GetCategoryByIdWithProjectReadOnlyAsync(int categoryId)
         => categoryRepository.ReadByIdWithProjectReadOnlyAsync(categoryId);
 
-    public async Task<Category> CreateCategoryAsync(Project project, string name, string description, CancellationToken ct = default)
+    public async Task<Category> CreateCategoryAsync(Project project, IEnumerable<CategoryTranslationInput> translations, CancellationToken ct = default)
     {
-        var category = new Category
+        var translationList = translations?.ToList() ?? new List<CategoryTranslationInput>();
+        var languages = await ValidateTranslationInputsAsync(translationList, project);
+
+        var category = new Category { Project = project };
+
+        foreach (var input in translationList)
         {
-            Name = name,
-            Description = description,
-            Project = project
-        };
-        EntityValidator.Validate(category);
+            EntityValidator.ValidateProperty(new CategoryTranslation(), input.Name, nameof(CategoryTranslation.Name));
+            EntityValidator.ValidateProperty(new CategoryTranslation(), input.Description, nameof(CategoryTranslation.Description));
+            category.Translations.Add(new CategoryTranslation
+            {
+                Language = languages[input.LanguageCode],
+                Name = input.Name,
+                Description = input.Description,
+            });
+        }
+
         var created = await categoryRepository.CreateAsync(category);
         await uow.SaveChangesAsync(ct);
         return created;
     }
 
-    public async Task<bool> UpdateCategoryAsync(int categoryId, string name, string description, CancellationToken ct = default)
+    public async Task<bool> UpdateCategoryAsync(int categoryId, IEnumerable<CategoryTranslationInput> translations, CancellationToken ct = default)
     {
-        var category = await categoryRepository.ReadByIdForUpdateAsync(categoryId);
+        var category = await categoryRepository.ReadByIdWithProjectForUpdateAsync(categoryId);
         if (category is null) return false;
 
-        EntityValidator.ValidateProperty(category, name, nameof(Category.Name));
-        EntityValidator.ValidateProperty(category, description, nameof(Category.Description));
-        category.Name = name;
-        category.Description = description;
+        var translationList = translations?.ToList() ?? new List<CategoryTranslationInput>();
+        var languages = await ValidateTranslationInputsAsync(translationList, category.Project);
+
+        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
+
+        foreach (var stale in category.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
+            category.Translations.Remove(stale);
+
+        foreach (var input in translationList)
+        {
+            EntityValidator.ValidateProperty(new CategoryTranslation(), input.Name, nameof(CategoryTranslation.Name));
+            EntityValidator.ValidateProperty(new CategoryTranslation(), input.Description, nameof(CategoryTranslation.Description));
+
+            var existing = category.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
+            if (existing is null)
+            {
+                category.Translations.Add(new CategoryTranslation
+                {
+                    Language = languages[input.LanguageCode],
+                    Name = input.Name,
+                    Description = input.Description,
+                });
+            }
+            else
+            {
+                existing.Name = input.Name;
+                existing.Description = input.Description;
+            }
+        }
+
         categoryRepository.Update(category);
         await uow.SaveChangesAsync(ct);
         return true;
@@ -57,9 +95,9 @@ public class CategoryManager(
         return result;
     }
 
-    public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, int topCount = 5)
+    public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, string languageCode, string defaultLanguageCode, int topCount = 5)
     {
-        var categoriesTask = categoryRepository.ReadTopCategoriesAsync(projectId, topCount);
+        var categoriesTask = categoryRepository.ReadTopCategoriesAsync(projectId, topCount, languageCode, defaultLanguageCode);
         var ideasTask = categoryRepository.ReadTopIdeasAsync(projectId, topCount);
         await Task.WhenAll(categoriesTask, ideasTask);
 
@@ -71,13 +109,13 @@ public class CategoryManager(
         return new DashboardMetrics(await categoriesTask, ideas);
     }
 
-    public async Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, int count = 10)
+    public async Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, string languageCode, int count = 10)
     {
         var ideas = await categoryRepository.ReadLatestIdeasAsync(projectId, count);
         return ideas.Select(i => new IdeaFeedItem(
             IdeaId: i.IdeaId,
             Description: i.Description.Length > 80 ? i.Description[..80] + "…" : i.Description,
-            CategoryName: i.Category.Name,
+            CategoryName: ResolveCategoryName(i.Category, languageCode),
             CategoryId: i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(ic => ic.TextComment == null),
             CreatedAt: i.CreatedAt,
@@ -98,12 +136,11 @@ public class CategoryManager(
     }
 
     public async Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
-        GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize = 20)
+        GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, string languageCode, int pageSize = 20)
     {
         var (ideas, total) = await categoryRepository.ReadIdeasPagedAsync(
             projectId, search, categoryId, status, page, pageSize);
 
-        // Global counts (unfiltered) for summary bar — single GROUP BY query
         var queue    = await categoryRepository.ReadModerationQueueAsync(projectId);
         var approved = queue.GetValueOrDefault(ModerationStatus.Approved, 0);
         var pending  = queue.GetValueOrDefault(ModerationStatus.Unflagged, 0);
@@ -112,7 +149,7 @@ public class CategoryManager(
         var items = ideas.Select(i => new IdeaFeedItem(
             IdeaId:        i.IdeaId,
             Description:   i.Description,
-            CategoryName:  i.Category.Name,
+            CategoryName:  ResolveCategoryName(i.Category, languageCode),
             CategoryId:    i.Category.CategoryId,
             ReactionCount: i.Comments.OfType<IconComment>().Count(),
             CreatedAt:     i.CreatedAt,
@@ -130,5 +167,36 @@ public class CategoryManager(
             ?? throw new KeyNotFoundException($"Idea {ideaId} not found.");
         idea.Status = status;
         await uow.SaveChangesAsync();
+    }
+
+    private static string ResolveCategoryName(Category category, string languageCode)
+    {
+        if (category?.Translations == null) return string.Empty;
+        return category.Translations.FirstOrDefault(t => t.Language?.Code == languageCode)?.Name
+            ?? category.Translations.FirstOrDefault()?.Name
+            ?? string.Empty;
+    }
+
+    private async Task<Dictionary<string, Domain.I18n.Entities.Language>> ValidateTranslationInputsAsync(
+        ICollection<CategoryTranslationInput> translations, Project project)
+    {
+        if (translations.Count == 0)
+            throw new ValidationException("At least one translation is required.");
+
+        var codes = translations.Select(t => t.LanguageCode).ToList();
+        if (codes.Distinct().Count() != codes.Count)
+            throw new ValidationException("Translations must contain a single row per language.");
+
+        var supportedCodes = project?.SupportedLanguages?.Select(l => l.Code).ToHashSet() ?? new HashSet<string>();
+        if (supportedCodes.Count > 0 && !supportedCodes.All(codes.Contains))
+            throw new ValidationException("Every project-supported language must have a translation row.");
+
+        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
+        var byCode = resolved.ToDictionary(l => l.Code);
+        var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
+        if (missing.Count > 0)
+            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+
+        return byCode;
     }
 }

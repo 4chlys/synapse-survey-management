@@ -55,10 +55,22 @@ public class IdeaSupportController(
         try { project = await GetProjectByIdReadOnlyAsync(projectId); }
         catch { /* intentionally swallowed */ }
 
+        var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
         var projectName         = isFirstTurn ? (project?.ProjectPlatform?.Name ?? string.Empty) : string.Empty;
-        var projectIntroduction = isFirstTurn ? (project?.Introduction?.Text ?? string.Empty) : string.Empty;
+        var projectIntroduction = isFirstTurn
+            ? (project?.Introduction?.Translations
+                   .FirstOrDefault(t => t.Language?.Code == lang)?.Text
+               ?? project?.Introduction?.Translations
+                   .FirstOrDefault(t => t.Language?.Code == project?.DefaultLanguage?.Code)?.Text
+               ?? project?.Introduction?.Translations.FirstOrDefault()?.Text
+               ?? string.Empty)
+            : string.Empty;
         if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
+
+        var catTranslation = category.Translations?.FirstOrDefault(t => t.Language?.Code == lang)
+            ?? category.Translations?.FirstOrDefault();
 
         var request = new IdeaSupportChatRequest
         {
@@ -72,8 +84,8 @@ public class IdeaSupportController(
             UserMessage         = dto.UserMessage ?? string.Empty,
             ProjectName         = projectName,
             ProjectIntroduction = projectIntroduction,
-            CategoryName        = category.Name,
-            CategoryDescription = category.Description ?? string.Empty,
+            CategoryName        = catTranslation?.Name ?? string.Empty,
+            CategoryDescription = catTranslation?.Description ?? string.Empty,
             AgeRange            = FormatAgeRange(project?.MinAge, project?.MaxAge),
             IsFirstTurn         = isFirstTurn,
         };
