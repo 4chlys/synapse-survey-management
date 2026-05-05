@@ -46,13 +46,18 @@ public class DummyDataSeeder
 
     public static void Seed(SynapseEnqueteContext context, string apiBaseUrl)
     {
+        Language languageNl, languageEn;
         if (!context.Languages.Any())
         {
-            context.Languages.AddRange(
-                new Language { Code = "nl", DisplayName = "Nederlands", IsActive = true },
-                new Language { Code = "en", DisplayName = "English", IsActive = true }
-            );
+            languageNl = new Language { Code = "nl", DisplayName = "Nederlands", IsActive = true };
+            languageEn = new Language { Code = "en", DisplayName = "English", IsActive = true };
+            context.Languages.AddRange(languageNl, languageEn);
             context.SaveChanges();
+        }
+        else
+        {
+            languageNl = context.Languages.First(l => l.Code == "nl");
+            languageEn = context.Languages.First(l => l.Code == "en");
         }
 
         if (context.Projects.Any()) return;
@@ -162,7 +167,7 @@ public class DummyDataSeeder
             }
         };
 
-        var participant1 = new Participant { Project = projectActive, Questionnaire = questionnaire1, HasSubmitted = true };
+        var participant1 = new Participant { Project = projectActive, Questionnaire = questionnaire1, HasSubmitted = true, Language = languageNl };
         projectActive.Participants.Add(participant1);
 
         var categoryCampus = new Category { Name = "Campus welzijn", Description = "Welzijn op school" };
@@ -230,7 +235,7 @@ public class DummyDataSeeder
             }
         };
 
-        var participant2 = new Participant { Project = projectActive2, Questionnaire = questionnaire2, HasSubmitted = true };
+        var participant2 = new Participant { Project = projectActive2, Questionnaire = questionnaire2, HasSubmitted = true, Language = languageNl };
         projectActive2.Participants.Add(participant2);
 
         var fitLifeEmojis = new[] { _heart, _fire };
@@ -293,7 +298,7 @@ public class DummyDataSeeder
             ProjectPlatform = platformEendracht,
         };
 
-        var participant3 = new Participant { Project = projectActive3, Questionnaire = questionnaire3, HasSubmitted = true };
+        var participant3 = new Participant { Project = projectActive3, Questionnaire = questionnaire3, HasSubmitted = true, Language = languageNl };
         projectActive3.Participants.Add(participant3);
 
         var catTraining = new Category { Name = "Trainingen", Description = "Kwaliteit en opbouw van de trainingen" };
