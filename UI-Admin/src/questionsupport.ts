@@ -8,9 +8,9 @@ export interface QuestionSupportChatResponse {
 }
 
 function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>(
-        'meta[name="__RequestVerificationToken"]'
-    )?.content ?? '';
+    return document.querySelector<HTMLInputElement>(
+        'input[name="__RequestVerificationToken"]'
+    )?.value ?? '';
 }
 
 async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {

@@ -15,7 +15,19 @@ public class AuthController(
     public async Task<IActionResult> Login(string returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
+        {
+            // Guard against stale cookies (e.g. after DB reset/reseed): if the cookie
+            // references a user ID that no longer exists, sign out and show the login form.
+            // Without this check, GetUserAsync in downstream controllers returns null and
+            // redirects back here, creating an infinite redirect loop.
+            var user = await userManager.GetUserAsync(User);
+            if (user is null)
+            {
+                await signInManager.SignOutAsync();
+                return View(new LoginViewModel { ReturnUrl = returnUrl });
+            }
             return await RedirectAfterLogin(User.Identity!.Name!);
+        }
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
@@ -93,6 +105,10 @@ public class AuthController(
             return RedirectToAction("Index", "Platform");
         if (roles.Contains("ProjectPlatformAdmin"))
             return RedirectToAction("Index", "Project");
-        return Forbid();
+
+        // User exists but has no recognized role — sign out to prevent an infinite
+        // loop via AccessDeniedPath → Login → RedirectAfterLogin → Forbid → repeat.
+        await signInManager.SignOutAsync();
+        return RedirectToAction(nameof(Login));
     }
 }
