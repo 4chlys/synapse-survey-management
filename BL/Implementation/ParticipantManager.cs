@@ -6,20 +6,41 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ParticipantManager(
     IParticipantRepository participantRepository,
+    ILanguageRepository languageRepository,
     IUnitOfWork uow) : IParticipantManager
 {
-    public async Task<Participant> AddParticipantAsync(Project project, CancellationToken ct = default)
+    public async Task<Participant> AddParticipantAsync(Project project, string languageCode, CancellationToken ct = default)
     {
+        var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
+        if (language is null || !language.IsActive)
+            throw new KeyNotFoundException($"Language '{languageCode}' is not a supported active language.");
+
         var participant = new Participant
         {
             Project = project,
             Questionnaire = project.Questionnaire,
+            Language = language,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(participant);
         var created = await participantRepository.CreateAsync(participant);
         await uow.SaveChangesAsync(ct);
         return created;
+    }
+
+    public async Task SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default)
+    {
+        var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
+        if (language is null || !language.IsActive)
+            throw new KeyNotFoundException($"Language '{languageCode}' is not a supported active language.");
+
+        var participant = await participantRepository.ReadByIdForUpdateAsync(participantId);
+        if (participant is null)
+            throw new KeyNotFoundException($"Participant {participantId} not found.");
+
+        participant.Language = language;
+        participantRepository.Update(participant);
+        await uow.SaveChangesAsync(ct);
     }
 
     public Task<Participant> GetParticipantByIdReadOnlyAsync(int participantId)

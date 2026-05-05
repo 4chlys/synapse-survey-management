@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
@@ -10,6 +11,7 @@ public class Participant : IHasCreatedAt
     public bool HasSubmitted { get; set; }
     public DateTime? CompletedAt { get; set; }
     [EmailAddress] [MaxLength(200)] public string Email { get; set; }
+    public Language Language { get; set; }
     [Required] public Project Project { get; set; }
     [Required] public Questionnaire Questionnaire { get; set; }
 

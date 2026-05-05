@@ -28,9 +28,9 @@ public class ResponsesController(
     }
 
     [HttpPost("participants")]
-    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
+    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, [FromQuery] string languageCode, CancellationToken ct)
     {
-        var participant = await AddParticipantAsync(projectId, ct);
+        var participant = await AddParticipantAsync(projectId, languageCode ?? "nl", ct);
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 

@@ -144,9 +144,10 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         return result?.QuestionIds ?? [];
     }
 
-    public async Task<string> StartSessionAsync(int projectId)
+    public async Task<string> StartSessionAsync(int projectId, string languageCode)
     {
-        var response = await _httpClient.PostAsync($"api/projects/{projectId}/participants", null);
+        var response = await _httpClient.PostAsync(
+            $"api/projects/{projectId}/participants?languageCode={Uri.EscapeDataString(languageCode)}", null);
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<ApiParticipantDto>();

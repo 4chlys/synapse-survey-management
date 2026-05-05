@@ -50,15 +50,15 @@ public class ResponsesControllerTests
         var project = new Project { ProjectId = ProjectId };
         _projectManager.Setup(p => p.GetProjectByIdWithQuestionnaireForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _participantManager.Setup(p => p.AddParticipantAsync(project, ct))
+        _participantManager.Setup(p => p.AddParticipantAsync(project, "nl", ct))
             .ReturnsAsync(new Participant { SessionToken = Guid.NewGuid() })
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _controller.StartSession(ProjectId, ct);
+        await _controller.StartSession(ProjectId, null, ct);
 
         // Assert
-        _participantManager.Verify(p => p.AddParticipantAsync(project, ct), Times.Once);
+        _participantManager.Verify(p => p.AddParticipantAsync(project, "nl", ct), Times.Once);
     }
 
     [Fact]

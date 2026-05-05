@@ -22,12 +22,12 @@ public abstract class ParticipantControllerBase(
         return (participant, null);
     }
 
-    protected async Task<Participant> AddParticipantAsync(int projectId, CancellationToken ct = default)
+    protected async Task<Participant> AddParticipantAsync(int projectId, string languageCode, CancellationToken ct = default)
     {
         var project = await projectManager.GetProjectByIdWithQuestionnaireForUpdateAsync(projectId);
         if (project is null)
             throw new KeyNotFoundException($"Project {projectId} not found.");
-        return await participantManager.AddParticipantAsync(project, ct);
+        return await participantManager.AddParticipantAsync(project, languageCode, ct);
     }
 
     protected async Task<(Participant participant, ActionResult error)> GetParticipantAsync(int projectId)

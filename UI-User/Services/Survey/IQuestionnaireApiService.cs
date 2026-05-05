@@ -11,7 +11,7 @@ public interface IQuestionnaireApiService
     Task<int?> GetPreviousQuestionAsync(int projectId, int currentQuestionId, string participantToken);
     Task<int?> GetResumeQuestionAsync(int projectId, string participantToken);
     Task<Dictionary<int, string>> GetResponsesAsync(int projectId, string participantToken);
-    Task<string> StartSessionAsync(int projectId);
+    Task<string> StartSessionAsync(int projectId, string languageCode);
     Task<List<int>> GetVisiblePathAsync(int projectId, string participantToken);
     Task SubmitAsync(int projectId, string participantToken);
     Task RemoveAllResponsesAsync(int projectId, string participantToken);

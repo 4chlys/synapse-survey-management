@@ -152,6 +152,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
             e.HasIndex(p => p.SessionToken).IsUnique();
             e.HasIndex("ProjectId");
 
+            e.HasOne(p => p.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
             e.HasMany(p => p.Comments)
                 .WithOne(c => c.Participant)
                 .HasForeignKey("ParticipantId")

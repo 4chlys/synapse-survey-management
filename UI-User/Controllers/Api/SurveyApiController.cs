@@ -15,7 +15,11 @@ public class SurveyApiController(
     [EnableRateLimiting("participant-creation")]
     public async Task<ActionResult> StartSession(int projectId)
     {
-        var token = await questionnaireService.StartSessionAsync(projectId);
+        var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "nl", "en" };
+        var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var languageCode = supportedCultures.Contains(culture) ? culture : "nl";
+
+        var token = await questionnaireService.StartSessionAsync(projectId, languageCode);
         sessionService.SetToken(projectId, token);
         return Ok(new { participantToken = token });
     }

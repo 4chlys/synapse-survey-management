@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Middleware;
@@ -14,10 +16,29 @@ using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddLocalization();
+
+// TODO (step 7): load supported cultures dynamically from ILanguageManager at startup.
+var supportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(supportedCultures)
+        .AddSupportedUICultures(supportedCultures);
+
+    opts.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
+
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-});
+})
+.AddViewLocalization()
+.AddDataAnnotationsLocalization();
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -168,6 +189,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseHttpLogging();
 app.UseStaticFiles();
+app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthorization();
