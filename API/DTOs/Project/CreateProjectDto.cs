@@ -3,20 +3,10 @@ namespace SynapseEnqueteManagement.API.DTOs.Project;
 
 public class CreateProjectDto
 {
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; set; }
-
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
         ErrorMessage = "ShortForm must be lowercase alphanumeric with single hyphens.")]
     public string ShortForm { get; set; }
-
-    [MaxLength(100)]
-    public string Topic { get; set; }
-
-    [MaxLength(5000)]
-    public string Introduction { get; set; }
 
     [MaxLength(500)]
     public string ImageUrl { get; set; }
@@ -38,4 +28,8 @@ public class CreateProjectDto
 
     [Range(1, int.MaxValue)]
     public int PlatformId { get; set; }
+
+    [Required] [MaxLength(10)] public string DefaultLanguageCode { get; set; }
+    [Required] [MinLength(1)] public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+    [Required] [MinLength(1)] public ICollection<ProjectTranslationDto> Translations { get; set; } = new List<ProjectTranslationDto>();
 }

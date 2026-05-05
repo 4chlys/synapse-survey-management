@@ -154,10 +154,16 @@ public class DummyDataSeeder
             FormType = FormType.Chat,
             RequestContactInfo = true,
             Questionnaire = questionnaire1,
-            Name = "Mentaal Welzijn",
             ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
             ProjectPlatform = platformSynapse,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Mentaal Welzijn", Topic = "Welzijn op school" },
+                new() { Language = languageEn, Name = "Mental Wellbeing", Topic = "Wellbeing at school" },
+            },
             Introduction = new Introduction
             {
                 Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
@@ -222,10 +228,16 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire2,
-            Name = "Ledenbevraging",
             ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             ProjectPlatform = platformFitLife,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Ledenbevraging", Topic = "Ervaring van leden" },
+                new() { Language = languageEn, Name = "Member Survey", Topic = "Member experience" },
+            },
             Introduction = new Introduction
             {
                 Text = "Welkom bij de FitLife ledenbevraging! " +
@@ -292,10 +304,16 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire3,
-            Name = "Clubbevraging",
             ShortForm = "clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             ProjectPlatform = platformEendracht,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Clubbevraging", Topic = "De club verbeteren" },
+                new() { Language = languageEn, Name = "Club Survey", Topic = "Improving the club" },
+            },
         };
 
         var participant3 = new Participant { Project = projectActive3, Questionnaire = questionnaire3, HasSubmitted = true, Language = languageNl };
@@ -347,9 +365,15 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Archived,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
-            Name = "Gearchiveerd Project",
             ShortForm = "gearchiveerd-project",
             ProjectPlatform = platformSynapse,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Gearchiveerd Project", Topic = "" },
+                new() { Language = languageEn, Name = "Archived Project", Topic = "" },
+            },
             Introduction = new Introduction { Text = "Dit project is momenteel inactief." }
         };
 
@@ -358,9 +382,15 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Draft,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
-            Name = "Draft Project",
             ShortForm = "draft-project",
             ProjectPlatform = platformSynapse,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Draft Project", Topic = "" },
+                new() { Language = languageEn, Name = "Draft Project", Topic = "" },
+            },
             Introduction = new Introduction { Text = "Dit project is nog in opbouw." }
         };
 

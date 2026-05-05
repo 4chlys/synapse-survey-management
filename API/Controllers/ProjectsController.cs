@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
@@ -25,28 +26,82 @@ public class ProjectsController(
             ? aiResult
             : AiAssistanceType.ProActive;
 
-    private ProjectDto MapToDto(Project p) => new()
+    private static string ActiveCulture() =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
+    private static ProjectTranslation ResolveTranslation(Project p)
+    {
+        var active = ActiveCulture();
+        return p.Translations.FirstOrDefault(t => t.Language?.Code == active)
+               ?? p.Translations.FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)
+               ?? p.Translations.FirstOrDefault();
+    }
+
+    private ProjectDto MapToParticipantDto(Project p)
+    {
+        var t = ResolveTranslation(p);
+        return new ProjectDto
+        {
+            ProjectId = p.ProjectId,
+            PlatformId = p.ProjectPlatformId,
+            Name = t?.Name ?? string.Empty,
+            ShortForm = p.ShortForm ?? string.Empty,
+            Topic = t?.Topic ?? string.Empty,
+            ProjectState = p.ProjectState.ToString(),
+            FormType = p.FormType.ToString(),
+            OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
+            ProjectImage = p.ImageUrl ?? string.Empty,
+            OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
+            OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
+            Introduction = p.Introduction?.Text ?? string.Empty,
+            AiAssistance = p.AiAssistance.ToString(),
+            RequestContactInfo = p.RequestContactInfo,
+            IdeaPageSize = p.IdeaPageSize,
+            ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
+            MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
+            MinAge = p.MinAge,
+            MaxAge = p.MaxAge,
+            LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
+            DefaultLanguageCode = p.DefaultLanguage?.Code,
+            SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+        };
+    }
+
+    private AdminProjectDto MapToAdminDto(Project p) => new()
     {
         ProjectId = p.ProjectId,
         PlatformId = p.ProjectPlatformId,
-        Name = p.Name ?? string.Empty,
         ShortForm = p.ShortForm ?? string.Empty,
-        Topic = p.Topic ?? string.Empty,
         ProjectState = p.ProjectState.ToString(),
         FormType = p.FormType.ToString(),
         OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
         ProjectImage = p.ImageUrl ?? string.Empty,
         OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
-        Introduction = p.Introduction?.Text ?? string.Empty,
         AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
         IdeaPageSize = p.IdeaPageSize,
         ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
         MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
         MinAge = p.MinAge,
-        MaxAge = p.MaxAge
+        MaxAge = p.MaxAge,
+        DefaultLanguageCode = p.DefaultLanguage?.Code,
+        SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+        Translations = p.Translations.Select(t => new ProjectTranslationDto
+        {
+            LanguageCode = t.Language?.Code,
+            Name = t.Name,
+            Topic = t.Topic,
+            Introduction = t.Language?.Code == p.DefaultLanguage?.Code ? p.Introduction?.Text : null,
+        }).ToList(),
     };
+
+    private static IEnumerable<ProjectTranslationInput> MapTranslations(ICollection<ProjectTranslationDto> dtos) =>
+        dtos.Select(t => new ProjectTranslationInput(t.LanguageCode, t.Name, t.Topic ?? string.Empty));
+
+    private static IEnumerable<IntroductionTranslationInput> MapIntroductions(ICollection<ProjectTranslationDto> dtos) =>
+        dtos.Where(t => !string.IsNullOrEmpty(t.Introduction))
+            .Select(t => new IntroductionTranslationInput(t.LanguageCode, t.Introduction));
 
     [HttpGet("{projectId}")]
     public async Task<ActionResult<ProjectDto>> GetProject(int projectId)
@@ -55,7 +110,7 @@ public class ProjectsController(
         if (project is null)
             return NotFound();
 
-        return Ok(MapToDto(project));
+        return Ok(MapToParticipantDto(project));
     }
 
     [HttpGet]
@@ -63,7 +118,7 @@ public class ProjectsController(
         [FromQuery] int? platformId = null)
     {
         var projects = await projectManager.GetAllProjectsAsync(platformId);
-        return Ok(projects.Select(MapToDto));
+        return Ok(projects.Select(MapToParticipantDto));
     }
 
     [HttpGet("by-shortform/{shortForm}")]
@@ -82,13 +137,17 @@ public class ProjectsController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
+    public async Task<ActionResult<AdminProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
     {
         var imageUrl = dto.ImageUrl ?? string.Empty;
+        var defaultName = dto.Translations
+            .FirstOrDefault(t => t.LanguageCode == dto.DefaultLanguageCode)?.Name
+            ?? dto.Translations.FirstOrDefault()?.Name
+            ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
-            var result = await imageGenerationService.GenerateProjectImageAsync(dto.Name, ct);
+            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, ct);
             if (result.IsSuccess)
             {
                 var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
@@ -98,9 +157,10 @@ public class ProjectsController(
         }
 
         var project = await projectManager.CreateProjectAsync(
-            dto.Name,
-            dto.Topic ?? string.Empty,
-            dto.Introduction ?? string.Empty,
+            MapTranslations(dto.Translations),
+            MapIntroductions(dto.Translations),
+            dto.DefaultLanguageCode,
+            dto.SupportedLanguageCodes,
             imageUrl,
             ParseFormType(dto.InteractionMode),
             ParseAiAssistanceType(dto.AiAssistance),
@@ -113,17 +173,18 @@ public class ProjectsController(
             dto.ExtraIdeasReplaceExisting,
             dto.MaxExtraIdeaRequests);
 
-        return Created(string.Empty, MapToDto(project));
+        return Created(string.Empty, MapToAdminDto(project));
     }
 
     [HttpPut("{projectId}")]
-    public async Task<ActionResult<ProjectDto>> UpdateProject(int projectId, UpdateProjectDto dto)
+    public async Task<ActionResult<AdminProjectDto>> UpdateProject(int projectId, UpdateProjectDto dto)
     {
         var project = await projectManager.UpdateProjectAsync(
             projectId,
-            dto.Name,
-            dto.Topic ?? string.Empty,
-            dto.Introduction ?? string.Empty,
+            MapTranslations(dto.Translations),
+            MapIntroductions(dto.Translations),
+            dto.DefaultLanguageCode,
+            dto.SupportedLanguageCodes,
             dto.ImageUrl ?? string.Empty,
             ParseFormType(dto.InteractionMode),
             ParseAiAssistanceType(dto.AiAssistance),
@@ -135,18 +196,19 @@ public class ProjectsController(
             dto.ExtraIdeasReplaceExisting,
             dto.MaxExtraIdeaRequests);
 
-        return Ok(MapToDto(project));
+        return Ok(MapToAdminDto(project));
     }
 
     [HttpPost("{projectId:int}/copy")]
-    public async Task<ActionResult<ProjectDto>> CopyProject(int projectId, CopyProjectDto dto, CancellationToken ct)
+    public async Task<ActionResult<AdminProjectDto>> CopyProject(int projectId, CopyProjectDto dto, CancellationToken ct)
     {
         var source = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
         if (source is null) return NotFound();
         if (source.ProjectPlatformId != dto.PlatformId) return Forbid();
 
-        var copy = await projectManager.DuplicateProjectAsync(projectId, dto.NewName, dto.PlatformId, dto.NewShortForm, ct);
-        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, MapToDto(copy));
+        var copy = await projectManager.DuplicateProjectAsync(
+            projectId, MapTranslations(dto.Translations), dto.PlatformId, dto.NewShortForm, ct);
+        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, MapToAdminDto(copy));
     }
 
     [HttpDelete("{projectId}")]
@@ -157,12 +219,12 @@ public class ProjectsController(
     }
 
     [HttpPatch("{projectId}/state")]
-    public async Task<ActionResult<ProjectDto>> UpdateProjectState(int projectId, UpdateProjectStateDto dto)
+    public async Task<ActionResult<AdminProjectDto>> UpdateProjectState(int projectId, UpdateProjectStateDto dto)
     {
         if (!Enum.TryParse<ProjectState>(dto.State, ignoreCase: true, out var newState))
             return BadRequest(new { error = "Invalid project state." });
 
         var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
-        return Ok(MapToDto(project));
+        return Ok(MapToAdminDto(project));
     }
 }

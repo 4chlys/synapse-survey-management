@@ -13,6 +13,7 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
 {
     public DbSet<Language> Languages { get; set; }
     public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectTranslation> ProjectTranslations { get; set; }
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
     public DbSet<Question> Questions { get; set; }
@@ -71,6 +72,35 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(p => p.Project)
                 .HasForeignKey("ProjectId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(p => p.DefaultLanguage)
+                .WithMany()
+                .HasForeignKey("DefaultLanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasMany(p => p.SupportedLanguages)
+                .WithMany()
+                .UsingEntity(j => j.ToTable("ProjectLanguage"));
+
+            e.HasMany(p => p.Translations)
+                .WithOne(t => t.Project)
+                .HasForeignKey("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ProjectTranslation
+        builder.Entity<ProjectTranslation>(e =>
+        {
+            e.Property<int>("ProjectId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("ProjectId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Questionnaire

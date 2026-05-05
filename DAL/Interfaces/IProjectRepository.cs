@@ -23,4 +23,10 @@ public interface IProjectRepository : IRepository<Project>
     Task<bool> DeleteWithRelationsAsync(int projectId);
 
     Task<Project> ReadByIdForDuplicationReadOnlyAsync(int projectId);
+
+    Task<Project> ReadByIdWithTranslationsReadOnlyAsync(int projectId);
+
+    Task<Project> ReadByIdWithTranslationsAndLanguagesForUpdateAsync(int projectId);
+
+    Task<ProjectTranslation> ReadTranslationForUpdateAsync(int projectId, string languageCode);
 }

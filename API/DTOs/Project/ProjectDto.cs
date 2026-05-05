@@ -21,4 +21,8 @@ public class ProjectDto
     public int MaxExtraIdeaRequests { get; set; }
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
+
+    public string LanguageCode { get; set; }
+    public string DefaultLanguageCode { get; set; }
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 }
