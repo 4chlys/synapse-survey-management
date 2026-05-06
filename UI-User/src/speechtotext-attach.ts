@@ -57,7 +57,6 @@ export function attachSpeechToText(
     if (existing) return existing;
 
     const config = { ...DEFAULT_OPTS, ...opts };
-    const anchor = opts.statusAnchor ?? button.parentElement ?? document.body;
 
     let recorder:   SpeechRecorder | null = null;
     let panel:      ReturnType<typeof createStatusPanel> | null = null;
@@ -83,7 +82,7 @@ export function attachSpeechToText(
         isStarting = true;
 
         button.classList.add('stt-active');
-        panel = createStatusPanel(anchor, () => void finish('user'), () => cancel());
+        panel = createStatusPanel(button, opts.statusAnchor, () => void finish('user'), () => cancel());
         panel.setState('requesting');
 
         recorder = new SpeechRecorder({
@@ -257,13 +256,14 @@ function messageForStartError(reason: SpeechErrorReason): string {
 type PanelState = 'requesting' | 'recording' | 'transcribing';
 
 function createStatusPanel(
-    anchor: HTMLElement,
+    button: HTMLButtonElement,
+    statusAnchor: HTMLElement | undefined,
     onStop:   () => void,
     onCancel: () => void,
 ) {
     const el = document.createElement('div');
     el.className =
-        'stt-panel z-40 mt-2 rounded-2xl border border-base-300 bg-base-100 shadow-md ' +
+        'stt-panel z-40 rounded-2xl border border-base-300 bg-base-100 shadow-md ' +
         'px-3 py-2 flex items-center gap-3 text-xs text-base-content';
     el.setAttribute('role',      'status');
     el.setAttribute('aria-live', 'polite');
@@ -292,7 +292,16 @@ function createStatusPanel(
     stopBtn.addEventListener('click',   onStop);
     cancelBtn.addEventListener('click', onCancel);
 
-    anchor.appendChild(el);
+    let wrapper: HTMLDivElement | null = null;
+    if (statusAnchor) {
+        statusAnchor.appendChild(el);
+    } else {
+        wrapper = document.createElement('div');
+        wrapper.className = 'stt-wrapper flex items-center gap-2';
+        button.insertAdjacentElement('beforebegin', wrapper);
+        wrapper.appendChild(button);
+        wrapper.appendChild(el);
+    }
 
     let dismissTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -348,7 +357,12 @@ function createStatusPanel(
             if (dismissTimer != null) { clearTimeout(dismissTimer); dismissTimer = null; }
             stopBtn.removeEventListener('click',   onStop);
             cancelBtn.removeEventListener('click', onCancel);
-            el.remove();
+            if (wrapper) {
+                wrapper.insertAdjacentElement('beforebegin', button);
+                wrapper.remove();
+            } else {
+                el.remove();
+            }
         },
     };
 }
