@@ -20,6 +20,7 @@ public interface IProjectManager
     Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
     Task DeleteProjectAsync(int projectId);
+    Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode);
 
     Task<Project> DuplicateProjectAsync(int sourceProjectId, string newName, int platformId, string newShortForm = null, CancellationToken ct = default);
 }

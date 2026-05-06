@@ -17,6 +17,7 @@ using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
+using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
@@ -147,6 +148,7 @@ builder.Services.AddSingleton(aiConfig.Moderation);
 builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton(aiConfig.CommentSupport);
+builder.Services.AddSingleton(aiConfig.QuestionSupport);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton<BannedWordList>();
@@ -180,10 +182,11 @@ if (useAi)
     builder.Services.AddChatClient(chatClient);
 
     // All AI features share the same IChatClient.
-    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
-    builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
-    builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
-    builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
+    builder.Services.AddScoped<IAiModerationService, AiModerationService>();
+    builder.Services.AddScoped<IAiIdeaSupportService, AiIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
+    builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -213,6 +216,7 @@ else
     builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
+    builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
 }

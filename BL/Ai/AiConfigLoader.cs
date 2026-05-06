@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 
 namespace SynapseEnqueteManagement.BL.Ai;
@@ -113,6 +114,7 @@ public static class AiConfigLoader
             MaxHistoryTurns       = i.MaxHistoryTurns,
             MaxIntroductionLength = i.MaxIntroductionLength,
             DefaultAgeRange       = p.AgeRange,
+            FallbackMessage       = i.FallbackMessage,
         };
 
         var s = config.SpeechToText;
@@ -131,12 +133,22 @@ public static class AiConfigLoader
             DefaultAgeRange = p.AgeRange,
         };
 
+        var q = config.QuestionSupport;
+        var substitutedQuestionSupport = new AiQuestionSupportConfig
+        {
+            SystemPrompt    = Sub(q.SystemPrompt),         // {age_range} substituted per-request
+            ContextPrompt   = Sub(q.ContextPrompt),
+            FallbackMessage = q.FallbackMessage,
+            DefaultAgeRange = p.AgeRange,
+        };
+
         return new AiConfig
         {
             Platform        = config.Platform,
             Moderation      = substitutedModeration,
             IdeaSupport     = substitutedIdeaSupport,
             CommentSupport  = substitutedCommentSupport,
+            QuestionSupport = substitutedQuestionSupport,
             SpeechToText    = substitutedSpeechToText,
             ImageGeneration = config.ImageGeneration,
             Fuzzy           = config.Fuzzy,

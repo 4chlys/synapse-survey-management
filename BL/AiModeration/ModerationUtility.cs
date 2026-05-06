@@ -10,7 +10,7 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 ///
 /// The fuzzy-matching thresholds (min skeleton length, Levenshtein buckets) that
 /// were previously hardcoded are now read from <see cref="AiConfig"/> and passed
-/// in by the caller (<see cref="GoogleVertexAiModerationService"/>).
+/// in by the caller (<see cref="AiModerationService"/>).
 /// </summary>
 public static class ModerationUtility
 {

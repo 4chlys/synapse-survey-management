@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.CommentSupport;
+using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
+using SynapseEnqueteManagement.BL.AiSupport;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -24,7 +26,6 @@ public class CommentSupportController(
         var (_, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        // Validate the user's comment draft before sending to the AI.
         if (!string.IsNullOrWhiteSpace(dto.UserMessage))
         {
             var validation = inputValidation.Validate(dto.UserMessage);
@@ -47,15 +48,11 @@ public class CommentSupportController(
         {
             IdeaText     = dto.IdeaText,
             CategoryName = dto.CategoryName,
-            History      = dto.History
-                             .Select(h => new CommentSupportMessage
-                             {
-                                 Role    = h.Role,
-                                 Content = h.Content,
-                             })
-                             .ToList(),
+            History = dto.History
+                .Select(h => new AiSupportMessage(h.Role, h.Content))
+                .ToList(),
             UserMessage  = dto.UserMessage ?? string.Empty,
-            AgeRange     = FormatAgeRange(project?.MinAge, project?.MaxAge),
+            AgeRange     = AiSupportHelpers.FormatAgeRange(project?.MinAge, project?.MaxAge),
             IsFirstTurn  = isFirstTurn,
         };
 
@@ -68,12 +65,4 @@ public class CommentSupportController(
             IsFinal          = reply.IsFinal,
         });
     }
-
-    private static string FormatAgeRange(int? minAge, int? maxAge) => (minAge, maxAge) switch
-    {
-        (null, null)       => null,
-        (var min, null)    => $"{min}+",
-        (null, var max)    => $"0–{max}",
-        (var min, var max) => $"{min}–{max}",
-    };
 }
