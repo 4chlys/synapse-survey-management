@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_ID="${PROJECT_ID:-synapse-ip-j2}"
 REGION="${REGION:-europe-west1}"
 ZONE="${ZONE:-europe-west1-b}"
-GCS_BUCKET="${GCS_BUCKET:-synapse-assets-prod}"
+GCS_BUCKET="${GCS_BUCKET:-synapse-ip-j2-assets-prod}"
 CICD_SA="synapse-cicd@${PROJECT_ID}.iam.gserviceaccount.com"
 CICD_SA_PROD="synapse-cicd-prod@${PROJECT_ID}.iam.gserviceaccount.com"
 
@@ -24,24 +24,39 @@ source "${SCRIPT_DIR}/lib/09_armor.sh"
 
 # ── Bevestiging ─────────────────────────────────────────────────
 echo "======================================================"
-echo " WAARSCHUWING: Dit verwijdert ALLE Synapse infra!"
+echo " WAARSCHUWING: Dit verwijdert ALLE Synapse infra! (parallel)"
 echo " Project: ${PROJECT_ID}"
 echo "======================================================"
 read -r -p "Typ 'ja' om te bevestigen: " confirm
 [ "${confirm}" = "ja" ] || { echo "Afgebroken."; exit 1; }
 
-# ── Teardown (omgekeerde volgorde van setup) ────────────────────
+# ── Teardown (parallel waar mogelijk) ──────────────────────────
 echo ""
+
+# 1. Cloud Armor en Load Balancer eerst (backends hangen eraan)
 destroy_cloud_armor
 destroy_uptime_checks
 destroy_loadbalancer
-destroy_migs
-destroy_instance_templates
-destroy_cloud_sql
-destroy_storage_bucket
-destroy_firewall_rules
-destroy_vpc_peering
-destroy_secrets
+
+# 2. MIGs, SQL, Storage, VPC en Secrets zijn nu onafhankelijk — parallel verwijderen
+( destroy_migs && destroy_instance_templates ) &
+PID_MIGS=$!
+
+( destroy_cloud_sql ) &
+PID_SQL=$!
+
+( destroy_storage_bucket ) &
+PID_BUCKET=$!
+
+( destroy_firewall_rules && destroy_vpc_peering ) &
+PID_VPC=$!
+
+( destroy_secrets ) &
+PID_SECRETS=$!
+
+# 3. Wacht tot alles verwijderd is
+wait $PID_MIGS $PID_SQL $PID_BUCKET $PID_VPC $PID_SECRETS
+
 # destroy_service_account       # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
 # destroy_prod_service_account  # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
 

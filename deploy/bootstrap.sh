@@ -140,36 +140,49 @@ source "${INFRA_DIR}/lib/09_armor.sh"
 
 # ── Stap 6: Setup uitvoeren ────────────────────────────────────
 echo ""
-echo -e "${BOLD}── Setup starten ──────────────────────────────${RESET}"
+echo -e "${BOLD}── Setup starten (Parallel) ─────────────────────────${RESET}"
 
+# 1. APIs moeten eerst actief zijn
 enable_apis
-create_service_account
-assign_iam_roles
 
-create_secrets_with_values() {
-  echo ">>> Secrets aanmaken met echte waarden..."
-  _create_secret "db-password"  "${DB_PASSWORD}"
-  _create_secret "api-key"      "${API_KEY}"
-  _create_secret "db-host"      "PENDING"
-  _create_secret "api-base-url" "https://api.${DOMAIN}"
-}
-create_secrets_with_values
+# 2. Start parallelle processen
+( create_service_account && assign_iam_roles ) &
+PID_IAM=$!
 
-create_vpc_peering
-create_firewall_rules
-create_cloud_sql
-create_instance_templates
-create_migs
-create_storage_bucket
-create_health_checks
+export API_BASE_URL="https://api.${DOMAIN}"
+( create_secrets ) &
+PID_SECRETS=$!
+
+( create_storage_bucket ) &
+PID_BUCKET=$!
+
+( create_health_checks ) &
+PID_HC=$!
+
+( create_instance_templates && create_migs ) &
+PID_MIGS=$!
+
+# Cloud SQL duurt het langst. Start dit proces en laat de rest niet onnodig wachten.
+( create_vpc_peering && create_firewall_rules && create_cloud_sql ) &
+PID_SQL=$!
+
+# 3. Wacht op MIGs en Health Checks (nodig voor Load Balancer)
+wait $PID_MIGS $PID_HC
+
+# 4. Configureer Load Balancer en Backend componenten
 create_backend_services
 create_url_map
 create_ssl_and_proxy
 reserve_static_ip
 create_forwarding_rules
+create_cloud_armor
+
+# 5. Overige configuraties
 setup_logging_iam
 create_uptime_checks
-create_cloud_armor
+
+# 6. Wacht tot ook Cloud SQL en de rest helemaal klaar is
+wait $PID_SQL $PID_IAM $PID_SECRETS $PID_BUCKET
 
 # ── Stap 7: LB IP ophalen ──────────────────────────────────────
 LB_IP=$(gcloud compute addresses describe synapse-lb-ip \
@@ -182,6 +195,9 @@ DB_HOST=$(gcloud sql instances describe mvp-postgres \
 if [[ "${DB_HOST}" != "PENDING" ]]; then
   update_secret "db-host" "${DB_HOST}"
 fi
+
+# pgvector extensie automatisch activeren
+enable_pgvector
 
 # ── Stap 8: Samenvatting ───────────────────────────────────────
 echo ""
@@ -205,11 +221,6 @@ echo "     GCP Console → Billing → Budgets & alerts"
 echo ""
 echo "  4. GitLab CI/CD variabelen instellen:"
 echo "     PROJECT_ID, REGION, ZONE, GCR_SERVICE_ACCOUNT_KEY, GCP_SERVICE_ACCOUNT_KEY"
-echo ""
-echo "  5. pgvector extensie activeren in de database:"
-echo "     gcloud sql connect mvp-postgres --user=mvp-user --database=mvp-db --project=${PROJECT_ID}"
-echo "     Voer in de psql prompt uit:"
-echo "       CREATE EXTENSION IF NOT EXISTS vector;"
 echo ""
 echo -e "  Je app wordt bereikbaar op: ${BOLD}https://${DOMAIN}${RESET}"
 echo ""
