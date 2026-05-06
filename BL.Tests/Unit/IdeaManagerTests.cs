@@ -145,6 +145,87 @@ public class IdeaManagerTests
     }
 
     [Fact]
+    public async Task GetIdeasIndexAsync_CrossLanguageFalse_FilterAppliedEvenWhenShowAllTrue()
+    {
+        // Arrange
+        _ideaRepository.Setup(r => r.ReadProjectFlagsForCategoryReadOnlyAsync(CategoryId))
+            .ReturnsAsync((false, "nl"));
+        _ideaRepository.Setup(r => r.ReadMostRecentDescriptionByCategoryAndParticipantAsync(CategoryId, 1))
+            .ReturnsAsync((string)null);
+        _embeddingSortFactory.Setup(f => f.IsEmbeddingKey(It.IsAny<string>())).Returns(false);
+        var strategy = new Mock<ISortStrategy<Idea>>();
+        strategy.Setup(s => s.DbOrderBy).Returns(q => q.OrderBy(i => i.IdeaId));
+        strategy.Setup(s => s.Randomize).Returns(false);
+        _sortFactory.Setup(f => f.Get(It.IsAny<string>())).Returns(strategy.Object);
+        _ideaRepository.Setup(r => r.CountVisibleByCategoryAsync(CategoryId, "nl")).ReturnsAsync(0).Verifiable();
+        _ideaRepository.Setup(r => r.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            CategoryId, It.IsAny<Func<IQueryable<Idea>, IOrderedQueryable<Idea>>>(), false, 0, 5, "nl"))
+            .ReturnsAsync(new List<Idea>()).Verifiable();
+
+        // Act
+        await _manager.GetIdeasIndexAsync(CategoryId, 1, 5, 1, "diverse", "nl", showAllLanguages: true);
+
+        // Assert — filter is "nl", not null, because AllowCrossLanguageIdeas is false
+        _ideaRepository.Verify(r => r.CountVisibleByCategoryAsync(CategoryId, "nl"), Times.Once);
+        _ideaRepository.Verify(r => r.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            CategoryId, It.IsAny<Func<IQueryable<Idea>, IOrderedQueryable<Idea>>>(), false, 0, 5, "nl"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetIdeasIndexAsync_CrossLanguageTrue_ShowAllFalse_FilteredToParticipantLanguage()
+    {
+        // Arrange
+        _ideaRepository.Setup(r => r.ReadProjectFlagsForCategoryReadOnlyAsync(CategoryId))
+            .ReturnsAsync((true, "nl"));
+        _ideaRepository.Setup(r => r.ReadMostRecentDescriptionByCategoryAndParticipantAsync(CategoryId, 1))
+            .ReturnsAsync((string)null);
+        _embeddingSortFactory.Setup(f => f.IsEmbeddingKey(It.IsAny<string>())).Returns(false);
+        var strategy = new Mock<ISortStrategy<Idea>>();
+        strategy.Setup(s => s.DbOrderBy).Returns(q => q.OrderBy(i => i.IdeaId));
+        strategy.Setup(s => s.Randomize).Returns(false);
+        _sortFactory.Setup(f => f.Get(It.IsAny<string>())).Returns(strategy.Object);
+        _ideaRepository.Setup(r => r.CountVisibleByCategoryAsync(CategoryId, "en")).ReturnsAsync(0).Verifiable();
+        _ideaRepository.Setup(r => r.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            CategoryId, It.IsAny<Func<IQueryable<Idea>, IOrderedQueryable<Idea>>>(), false, 0, 5, "en"))
+            .ReturnsAsync(new List<Idea>()).Verifiable();
+
+        // Act
+        await _manager.GetIdeasIndexAsync(CategoryId, 1, 5, 1, "diverse", "en", showAllLanguages: false);
+
+        // Assert — filter is participant's language "en"
+        _ideaRepository.Verify(r => r.CountVisibleByCategoryAsync(CategoryId, "en"), Times.Once);
+        _ideaRepository.Verify(r => r.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            CategoryId, It.IsAny<Func<IQueryable<Idea>, IOrderedQueryable<Idea>>>(), false, 0, 5, "en"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetIdeasIndexAsync_CrossLanguageTrue_ShowAllTrue_NoFilter()
+    {
+        // Arrange
+        _ideaRepository.Setup(r => r.ReadProjectFlagsForCategoryReadOnlyAsync(CategoryId))
+            .ReturnsAsync((true, "nl"));
+        _ideaRepository.Setup(r => r.ReadMostRecentDescriptionByCategoryAndParticipantAsync(CategoryId, 1))
+            .ReturnsAsync((string)null);
+        _embeddingSortFactory.Setup(f => f.IsEmbeddingKey(It.IsAny<string>())).Returns(false);
+        var strategy = new Mock<ISortStrategy<Idea>>();
+        strategy.Setup(s => s.DbOrderBy).Returns(q => q.OrderBy(i => i.IdeaId));
+        strategy.Setup(s => s.Randomize).Returns(false);
+        _sortFactory.Setup(f => f.Get(It.IsAny<string>())).Returns(strategy.Object);
+        _ideaRepository.Setup(r => r.CountVisibleByCategoryAsync(CategoryId, null)).ReturnsAsync(0).Verifiable();
+        _ideaRepository.Setup(r => r.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            CategoryId, It.IsAny<Func<IQueryable<Idea>, IOrderedQueryable<Idea>>>(), false, 0, 5, null))
+            .ReturnsAsync(new List<Idea>()).Verifiable();
+
+        // Act
+        await _manager.GetIdeasIndexAsync(CategoryId, 1, 5, 1, "diverse", "en", showAllLanguages: true);
+
+        // Assert — no filter (null) because AllowCrossLanguageIdeas is true and showAllLanguages is true
+        _ideaRepository.Verify(r => r.CountVisibleByCategoryAsync(CategoryId, null), Times.Once);
+        _ideaRepository.Verify(r => r.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
+            CategoryId, It.IsAny<Func<IQueryable<Idea>, IOrderedQueryable<Idea>>>(), false, 0, 5, null), Times.Once);
+    }
+
+    [Fact]
     public async Task AddIdeaAsync_StampsParticipantLanguageOnIdea()
     {
         // Arrange

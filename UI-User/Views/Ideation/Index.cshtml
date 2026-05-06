@@ -1,4 +1,5 @@
 @model IdeaIndexViewModel
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer L
 @{
     ViewData["Title"] = Model.Category.Name;
 }
@@ -163,6 +164,15 @@
             </a>
         }
     </div>
+
+    @* Language filter toggle — only rendered when project allows cross-language ideas *@
+    @if (Model.AllowCrossLanguageIdeas)
+    {
+        <div class="w-full flex items-center gap-3 mb-4">
+            <input type="checkbox" id="show-all-languages-toggle" class="toggle toggle-primary toggle-sm" />
+            <label for="show-all-languages-toggle" class="text-sm text-base-content/70 cursor-pointer">@L["ShowAllLanguages"]</label>
+        </div>
+    }
 
     @* Ideas list *@
     <div id="ideas-list" class="w-full flex flex-col gap-3 mb-4"

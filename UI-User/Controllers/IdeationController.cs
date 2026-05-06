@@ -23,7 +23,7 @@ public class IdeationController(
     ISessionService sessionService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse")
+    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse", bool showAllLanguages = false)
     {
         var projectTask  = projectApiService.GetProjectAsync(projectId);
         var emojisTask   = emojiService.GetEmojisAsync(projectId);
@@ -36,10 +36,12 @@ public class IdeationController(
 
         var project = await projectTask;
         var replace = project?.ExtraIdeasReplaceExisting ?? false;
+        var allowCross = project?.AllowCrossLanguageIdeas ?? false;
         var maxExtra = project?.MaxExtraIdeaRequests ?? 3;
         var used = sessionService.GetIdeaRefreshCount(projectId, categoryId);
         var remaining = Math.Max(0, maxExtra - used);
         var currentPage = used + 1;
+        var effectiveShowAll = allowCross && showAllLanguages;
 
         // Load the right ideas based on mode and refresh history
         var allIdeas = new List<IdeaViewModel>();
@@ -49,7 +51,7 @@ public class IdeationController(
         if (replace)
         {
             // Replace mode: only show the latest page
-            var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, currentPage);
+            var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, currentPage, effectiveShowAll);
             allIdeas.AddRange(index.Ideas);
             resolvedSort = index.ResolvedSort;
             hasOwnIdeas = index.HasOwnIdeas;
@@ -58,7 +60,7 @@ public class IdeationController(
         {
             // Supplement mode: show all pages up to current
             var pageTasks = Enumerable.Range(1, currentPage)
-                .Select(p => ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, p))
+                .Select(p => ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, p, effectiveShowAll))
                 .ToList();
             var results = await Task.WhenAll(pageTasks);
             foreach (var result in results)
@@ -81,7 +83,8 @@ public class IdeationController(
             HasOwnIdeas          = hasOwnIdeas,
             ExtraIdeasReplaceExisting = replace,
             MaxExtraIdeaRequests      = maxExtra,
-            RemainingExtraRequests    = remaining
+            RemainingExtraRequests    = remaining,
+            AllowCrossLanguageIdeas   = allowCross
         });
     }
 
@@ -134,7 +137,7 @@ public class IdeationController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> LoadIdeas(int projectId, int categoryId, int page = 1, string sort = "diverse")
+    public async Task<IActionResult> LoadIdeas(int projectId, int categoryId, int page = 1, string sort = "diverse", bool showAllLanguages = false)
     {
         var project = await projectApiService.GetProjectAsync(projectId);
         var maxExtra = project?.MaxExtraIdeaRequests ?? 3;
@@ -146,7 +149,8 @@ public class IdeationController(
         sessionService.IncrementIdeaRefreshCount(projectId, categoryId);
         var remaining = maxExtra - used - 1;
 
-        var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, page);
+        var effectiveShowAll = (project?.AllowCrossLanguageIdeas ?? false) && showAllLanguages;
+        var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, page, effectiveShowAll);
         return Json(new { ideas = index.Ideas, remaining });
     }
 

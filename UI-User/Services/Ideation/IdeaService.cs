@@ -7,10 +7,11 @@ namespace SynapseEnqueteManagement.UI.User.Services.Ideation;
 public class IdeaService(HttpClient httpClient, ISessionService sessionService)
     : AuthenticatedApiService(httpClient, sessionService)
 {
-    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int projectId, int categoryId, string sort = null, int page = 1)
+    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int projectId, int categoryId, string sort = null, int page = 1, bool showAllLanguages = false)
     {
         var url = $"api/projects/{projectId}/categories/{categoryId}/ideas?page={page}";
         if (sort is not null) url += $"&sort={Uri.EscapeDataString(sort)}";
+        if (showAllLanguages) url += "&showAllLanguages=true";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);

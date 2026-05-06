@@ -39,6 +39,31 @@ public class IdeasControllerTests
     }
 
     [Fact]
+    public async Task GetIdeasByCategory_ForwardsShowAllLanguagesToManager()
+    {
+        // Arrange
+        var expectedResult = new IdeaIndexResult
+        {
+            Items = new List<Idea>(),
+            Page = 1,
+            PageSize = 5,
+            TotalCount = 0,
+            ResolvedSort = "diverse",
+            HasOwnIdeas = false
+        };
+        _ideaManager
+            .Setup(m => m.GetIdeasIndexAsync(CategoryId, _participant.ParticipantId, 5, 1, null, null, true, default))
+            .ReturnsAsync(expectedResult)
+            .Verifiable(Times.Exactly(1));
+
+        // Act
+        await _controller.GetIdeasByCategory(ProjectId, CategoryId, showAllLanguages: true);
+
+        // Assert
+        _ideaManager.VerifyAll();
+    }
+
+    [Fact]
     public async Task CreateIdea_ForwardsCancellationTokenToIdeaManager()
     {
         // Arrange

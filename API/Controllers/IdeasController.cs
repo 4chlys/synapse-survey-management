@@ -28,13 +28,14 @@ public class IdeasController(
         int projectId, int categoryId,
         [FromQuery][Range(1, int.MaxValue)] int page = 1,
         [FromQuery] string sort = null,
+        [FromQuery] bool? showAllLanguages = null,
         CancellationToken ct = default)
     {
-        var participantId = await ResolveParticipantIdAsync();
+        var (participantId, participantLanguageCode) = await ResolveParticipantWithLanguageAsync();
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var pageSize = project?.IdeaPageSize ?? 5;
 
-        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, ct);
+        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, participantLanguageCode, showAllLanguages ?? false, ct);
 
         return Ok(new IdeaIndexResponseDto
         {
@@ -135,6 +136,13 @@ public class IdeasController(
         if (!TryGetParticipantToken(out var token)) return null;
         var p = await GetParticipantByTokenAsync(token);
         return p?.ParticipantId;
+    }
+
+    private async Task<(int? participantId, string participantLanguageCode)> ResolveParticipantWithLanguageAsync()
+    {
+        if (!TryGetParticipantToken(out var token)) return (null, null);
+        var p = await GetParticipantByTokenAsync(token);
+        return (p?.ParticipantId, p?.Language?.Code);
     }
 
     private static IdeaDto MapIdeaToDto(Idea i, int? participantId) => new()

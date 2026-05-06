@@ -13,6 +13,7 @@ interface EmojiReaction {
 
 export function initIdeation(): void {
     const projectId = getProjectId();
+    const showAllToggle = document.getElementById('show-all-languages-toggle') as HTMLInputElement | null;
 
     const createFormEl    = document.getElementById('createForm');
     const createForm      = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
@@ -271,7 +272,7 @@ export function initIdeation(): void {
             }
             case 'refresh-ideas':
                 e.preventDefault();
-                handleRefreshIdeas();
+                handleRefreshIdeas(showAllToggle);
                 break;
 
             case 'copy-idea': {
@@ -298,6 +299,14 @@ export function initIdeation(): void {
             }
         }
     });
+
+    showAllToggle?.addEventListener('change', async () => {
+        const list = document.getElementById('ideas-list');
+        if (!list) return;
+        list.dataset.currentPage = '0';
+        list.querySelectorAll(':scope > a').forEach(el => el.remove());
+        await handleRefreshIdeas(showAllToggle);
+    });
 }
 
 // Refresh ideas logic
@@ -315,7 +324,7 @@ interface LoadIdeasResponse {
     remaining: number;
 }
 
-async function handleRefreshIdeas(): Promise<void> {
+async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<void> {
     const list = document.getElementById('ideas-list');
     const btn = document.getElementById('refresh-ideas-btn');
     const counter = document.getElementById('refresh-ideas-counter');
@@ -333,9 +342,11 @@ async function handleRefreshIdeas(): Promise<void> {
     currentPage++;
     list.dataset.currentPage = currentPage.toString();
 
+    const showAll = toggle?.checked ?? false;
+
     try {
-        const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}`;
-        const response = await fetch(url);
+        const showAllParam = showAll ? '&showAllLanguages=true' : '';
+        const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}${showAllParam}`;
         if (!response.ok) return;
 
         const data: LoadIdeasResponse = await response.json();
