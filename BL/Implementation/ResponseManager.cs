@@ -88,4 +88,7 @@ public class ResponseManager(
         await responseRepository.DeleteAllByParticipantIdAsync(participant.ParticipantId);
         await uow.SaveChangesAsync(ct);
     }
+
+    public Task<IEnumerable<Response>> GetCommittedResponsesForProjectReadOnlyAsync(int projectId)
+        => responseRepository.ReadCommittedByProjectWithQuestionReadOnlyAsync(projectId);
 }

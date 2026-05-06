@@ -25,7 +25,7 @@
 
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-5">
-            <form asp-action="Create" method="post" class="flex flex-col gap-5">
+            <form id="project-form" asp-action="Create" method="post" class="flex flex-col gap-5">
                 @Html.AntiForgeryToken()
                 @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
                 <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
@@ -151,24 +151,43 @@
                     Sectie toevoegen
                 </button>
 
-                <div class="card-actions justify-end gap-2 pt-2">
-                    @if (!isLocked)
-                    {
-                        <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
-                        <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
-                        <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
-                    }
-                    else
-                    {
-                        <a asp-action="Index" class="btn btn-ghost">Terug</a>
-                        @if (Model.ProjectId.HasValue)
-                        {
-                            <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende →</a>
-                        }
-                    }
-                </div>
                 </fieldset>
             </form>
+
+            @if (isLocked && Model.ProjectId.HasValue)
+            {
+                <div class="divider my-0">Exporteren</div>
+
+                <div class="dropdown">
+                    <button type="button" tabindex="0" class="btn btn-outline btn-sm gap-1.5">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                        </svg>
+                        Exporteer ruwe data
+                    </button>
+                    <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-44 p-2 shadow mt-1">
+                        <li><a href="@Url.Action("ExportRawData", new { projectId = Model.ProjectId, format = "csv" })">CSV (.csv)</a></li>
+                        <li><a href="@Url.Action("ExportRawData", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
+                    </ul>
+                </div>
+            }
+
+            <div class="card-actions justify-end gap-2 pt-2">
+                @if (!isLocked)
+                {
+                    <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
+                    <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
+                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-ghost">Terug</a>
+                    @if (Model.ProjectId.HasValue)
+                    {
+                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende →</a>
+                    }
+                }
+            </div>
         </div>
     </div>
 </div>

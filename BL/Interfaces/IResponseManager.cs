@@ -10,4 +10,5 @@ public interface IResponseManager
     Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(int participantId);
     Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(Participant participant);
     Task RemoveAllAsync(Participant participant, CancellationToken ct = default);
+    Task<IEnumerable<Response>> GetCommittedResponsesForProjectReadOnlyAsync(int projectId);
 }

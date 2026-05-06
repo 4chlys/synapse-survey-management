@@ -514,6 +514,24 @@ public class ProjectController(
         return File(bytes, contentType, fileName);
     }
 
+    public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx")
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+        if (project.ProjectState is not ("Active" or "Archived"))
+            return BadRequest("Export is enkel beschikbaar voor actieve of gearchiveerde projecten.");
+
+        var normalized = (format ?? "xlsx").Trim().ToLowerInvariant();
+        if (normalized is not ("csv" or "xlsx"))
+            return BadRequest("Ongeldig formaat.");
+
+        var (bytes, contentType, fileName) = await participantService.ExportRawDataAsync(projectId, normalized);
+        return File(bytes, contentType, fileName);
+    }
+
     [HttpPost]
     public async Task<IActionResult> ApproveIdea(int projectId, int ideaId, string returnUrl)
     {

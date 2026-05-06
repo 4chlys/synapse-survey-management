@@ -38,4 +38,13 @@ public class ResponseRepository(DbContext context) : Repository<Response>(contex
         if (rows.Count == 0) return;
         Context.Set<Response>().RemoveRange(rows);
     }
+
+    public async Task<IEnumerable<Response>> ReadCommittedByProjectWithQuestionReadOnlyAsync(int projectId)
+        => await Context.Set<Response>()
+            .AsNoTracking()
+            .Include(r => r.Question)
+            .Where(r => r.IsCommitted && r.Question.Questionnaire.Project.ProjectId == projectId)
+            .OrderBy(r => r.Question.Position)
+            .ThenBy(r => r.ResponseId)
+            .ToListAsync();
 }
