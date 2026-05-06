@@ -30,6 +30,18 @@ create_cloud_sql() {
   echo "  TIP: update_secret db-host ${db_host}"
 }
 
+enable_pgvector() {
+  echo ">>> pgvector extensie activeren in mvp-db..."
+  PGPASSWORD="${DB_PASSWORD:-CHANGEME}" gcloud sql connect mvp-postgres \
+    --user=mvp-user \
+    --database=mvp-db \
+    --project="${PROJECT_ID}" \
+    --quiet <<< "CREATE EXTENSION IF NOT EXISTS vector;" \
+    2>/dev/null \
+    && echo "  pgvector actief." \
+    || echo "  ⚠️  pgvector activeren mislukt — controleer of de instantie bereikbaar is."
+}
+
 destroy_cloud_sql() {
   echo ">>> Cloud SQL instantie verwijderen: mvp-postgres..."
   gcloud sql instances delete mvp-postgres \

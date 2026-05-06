@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_ID="${PROJECT_ID:-synapse-ip-j2}"
 REGION="${REGION:-europe-west1}"
 ZONE="${ZONE:-europe-west1-b}"
-GCS_BUCKET="${GCS_BUCKET:-synapse-assets-prod}"
+GCS_BUCKET="${GCS_BUCKET:-synapse-ip-j2-assets-prod}"
 PROJECT_NUMBER="${PROJECT_NUMBER:-667656673282}"
 CICD_SA="synapse-cicd@${PROJECT_ID}.iam.gserviceaccount.com"
 CICD_SA_PROD="synapse-cicd-prod@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -36,6 +36,7 @@ assign_prod_iam_roles
 
 create_secrets
 create_cloud_sql
+enable_pgvector
 
 create_vpc_peering
 create_firewall_rules

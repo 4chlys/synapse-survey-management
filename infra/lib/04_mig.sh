@@ -55,7 +55,7 @@ create_migs() {
   echo ">>> Managed Instance Groups aanmaken..."
   _create_mig "synapse-api-mig"   "synapse-api-template"   1 5
   _create_mig "synapse-ui-mig"    "synapse-ui-template"    1 5
-  _create_mig "synapse-admin-mig" "synapse-admin-template" 0 1
+  _create_mig "synapse-admin-mig" "synapse-admin-template" 1 1
 }
 
 destroy_migs() {

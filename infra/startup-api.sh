@@ -11,7 +11,7 @@ docker stop mvp-api 2>/dev/null; docker rm mvp-api 2>/dev/null
 
 get_secret() {
   curl -s "https://secretmanager.googleapis.com/v1/projects/synapse-ip-j2/secrets/$1/versions/latest:access" \
-    -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)['payload']['data']).decode())"
+    -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)['payload']['data']).decode())" | tr -d '\r'
 }
 
 docker run -d --name mvp-api --restart always -p 8080:8080 \
@@ -23,4 +23,5 @@ docker run -d --name mvp-api --restart always -p 8080:8080 \
   -e DB_USER=mvp-user \
   -e DB_PASSWORD=$(get_secret db-password) \
   -e ApiKey=$(get_secret api-key) \
+  -e GCS_BUCKET=$(get_secret gcs-bucket) \
   gcr.io/synapse-ip-j2/mvp-app:latest
