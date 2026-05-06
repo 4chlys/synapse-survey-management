@@ -404,7 +404,9 @@ public class ProjectManager(
 
             foreach (var srcSection in src.Questionnaire.Sections)
             {
-                var newSection = new Section { Name = srcSection.Name, Description = srcSection.Description };
+                var newSection = new Section();
+                foreach (var t in srcSection.Translations)
+                    newSection.Translations.Add(new SectionTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
                 sectionMap[srcSection.SectionId] = newSection;
                 copy.Questionnaire.Sections.Add(newSection);
             }
@@ -413,16 +415,22 @@ public class ProjectManager(
             {
                 var newQ = new Question
                 {
-                    Text = srcQ.Text,
                     QuestionFormat = srcQ.QuestionFormat,
                     IsMandatory = srcQ.IsMandatory,
-                    AnswerChoices = srcQ.AnswerChoices.ToList(),
+                    AnswerChoiceCount = srcQ.AnswerChoiceCount,
+                    ChoiceIndex = srcQ.ChoiceIndex,
                     Position = srcQ.Position,
-                    ParentTriggerValue = srcQ.ParentTriggerValue,
                     Section = srcQ.Section is not null ? sectionMap[srcQ.Section.SectionId] : null,
                 };
+                foreach (var t in srcQ.Translations)
+                    newQ.Translations.Add(new QuestionTranslation { Language = t.Language, Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
                 foreach (var ea in srcQ.EndingAnswers)
-                    newQ.EndingAnswers.Add(new EndingAnswer { Value = ea.Value });
+                {
+                    var newEa = new EndingAnswer { Question = newQ };
+                    foreach (var t in ea.Translations)
+                        newEa.Translations.Add(new EndingAnswerTranslation { Language = t.Language, Value = t.Value });
+                    newQ.EndingAnswers.Add(newEa);
+                }
                 questionMap[srcQ.QuestionId] = newQ;
                 copy.Questionnaire.Questions.Add(newQ);
             }

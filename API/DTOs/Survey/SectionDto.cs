@@ -1,4 +1,4 @@
-﻿namespace SynapseEnqueteManagement.API.DTOs.Survey;
+namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class SectionDto
 {

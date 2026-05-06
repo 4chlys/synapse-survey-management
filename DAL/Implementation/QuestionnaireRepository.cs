@@ -28,4 +28,20 @@ public class QuestionnaireRepository(DbContext context) : Repository<Questionnai
             .Include(q => q.Questions).ThenInclude(qu => qu.EndingAnswers)
             .Include(q => q.Questions).ThenInclude(qu => qu.ParentQuestion)
             .FirstOrDefaultAsync(q => q.Questions.Any(qu => qu.QuestionId == questionId));
+
+    public Task<Questionnaire> ReadByProjectIdWithQuestionsAndTranslationsReadOnlyAsync(int projectId)
+        => Context.Set<Questionnaire>()
+            .AsNoTrackingWithIdentityResolution()
+            .Include(q => q.Questions).ThenInclude(qu => qu.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.Questions).ThenInclude(qu => qu.EndingAnswers).ThenInclude(ea => ea.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.Questions).ThenInclude(qu => qu.ParentQuestion)
+            .FirstOrDefaultAsync(q => q.Project.ProjectId == projectId);
+
+    public Task<Questionnaire> ReadByQuestionIdWithQuestionsAndTranslationsReadOnlyAsync(int questionId)
+        => Context.Set<Questionnaire>()
+            .AsNoTrackingWithIdentityResolution()
+            .Include(q => q.Questions).ThenInclude(qu => qu.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.Questions).ThenInclude(qu => qu.EndingAnswers).ThenInclude(ea => ea.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.Questions).ThenInclude(qu => qu.ParentQuestion)
+            .FirstOrDefaultAsync(q => q.Questions.Any(qu => qu.QuestionId == questionId));
 }

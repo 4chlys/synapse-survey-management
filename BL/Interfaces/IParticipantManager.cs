@@ -15,4 +15,5 @@ public interface IParticipantManager
     Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30);
 
     Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId);
+    Task<string> GetParticipantLanguageCodeAsync(int participantId);
 }

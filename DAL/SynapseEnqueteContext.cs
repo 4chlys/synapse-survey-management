@@ -25,6 +25,9 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     public DbSet<Category> Categories { get; set; }
     public DbSet<Introduction> Introductions { get; set; }
     public DbSet<Section> Sections { get; set; }
+    public DbSet<SectionTranslation> SectionTranslations { get; set; }
+    public DbSet<QuestionTranslation> QuestionTranslations { get; set; }
+    public DbSet<EndingAnswerTranslation> EndingAnswerTranslations { get; set; }
     public DbSet<Emoji> Emojis { get; set; }
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
@@ -117,20 +120,6 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         // Question
         builder.Entity<Question>(e =>
         {
-            // Serialize the list of answer choices as a JSON array in a TEXT column.
-            e.Property(q => q.AnswerChoices)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
-                         ?? new List<string>()
-                )
-                .HasColumnType("TEXT")
-                .Metadata.SetValueComparer(new ValueComparer<ICollection<string>>(
-                    (c1, c2) => c1.SequenceEqual(c2),
-                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                    c => c.ToList()
-                ));
-
             e.HasIndex("QuestionnaireId");
 
             e.HasOne(q => q.Section)
@@ -146,6 +135,60 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex("ParentQuestionId");
+
+            e.HasMany(q => q.Translations)
+                .WithOne(t => t.Question)
+                .HasForeignKey("QuestionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // QuestionTranslation
+        builder.Entity<QuestionTranslation>(e =>
+        {
+            e.Property<int>("QuestionId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("QuestionId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.Property(t => t.AnswerChoices)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
+                         ?? new List<string>()
+                )
+                .HasColumnType("TEXT")
+                .Metadata.SetValueComparer(new ValueComparer<ICollection<string>>(
+                    (c1, c2) => c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()
+                ));
+        });
+
+        // Section translations
+        builder.Entity<Section>(e =>
+        {
+            e.HasMany(s => s.Translations)
+                .WithOne(t => t.Section)
+                .HasForeignKey("SectionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SectionTranslation>(e =>
+        {
+            e.Property<int>("SectionId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("SectionId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // EndingAnswer — rows only exist for answers that terminate the survey.
@@ -157,6 +200,24 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex("QuestionId");
+
+            e.HasMany(ea => ea.Translations)
+                .WithOne(t => t.EndingAnswer)
+                .HasForeignKey("EndingAnswerId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<EndingAnswerTranslation>(e =>
+        {
+            e.Property<int>("EndingAnswerId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("EndingAnswerId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Response

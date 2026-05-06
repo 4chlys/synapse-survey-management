@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.UI.User.Services.Survey;
 
 public interface IQuestionnaireApiService
 {
-    Task<SurveyViewModel> GetSurveyAsync(int projectId);
+    Task<SurveyViewModel> GetSurveyAsync(int projectId, string languageCode = null);
     Task<bool> HasParticipantRespondedAsync(int projectId, string participantToken);
     Task<string> SaveResponseAsync(int projectId, int questionId, string value, string participantToken);
     Task<int?> GetNextQuestionAsync(int projectId, int currentQuestionId, string participantToken);

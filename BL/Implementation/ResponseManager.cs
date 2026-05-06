@@ -12,7 +12,7 @@ public class ResponseManager(
 {
     public async Task<Response> AddResponseAsync(int questionId, string value, Participant participant, CancellationToken ct = default)
     {
-        var question = await questionRepository.ReadByIdForUpdateAsync(questionId)
+        var question = await questionRepository.ReadByIdWithTranslationsForUpdateAsync(questionId)
                        ?? throw new KeyNotFoundException($"Question {questionId} not found.");
 
         var validator = validatorFactory.GetValidator(question.QuestionFormat);
@@ -27,7 +27,7 @@ public class ResponseManager(
 
     public async Task<Response> UpdateOrCreateResponseAsync(int questionId, string value, Participant participant, CancellationToken ct = default)
     {
-        var question = await questionRepository.ReadByIdForUpdateAsync(questionId)
+        var question = await questionRepository.ReadByIdWithTranslationsForUpdateAsync(questionId)
                        ?? throw new KeyNotFoundException($"Question {questionId} not found.");
 
         var validator = validatorFactory.GetValidator(question.QuestionFormat);

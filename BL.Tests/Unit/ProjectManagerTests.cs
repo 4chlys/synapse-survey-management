@@ -348,10 +348,39 @@ public class ProjectManagerTests
         const int platformId = 5;
         const int emojiId = 42;
 
-        var srcSection = new Section { SectionId = 1, Name = "Sectie 1", Description = "desc" };
-        var srcParent = new Question { QuestionId = 101, Text = "Parent?", QuestionFormat = QuestionFormat.Open, IsMandatory = true, AnswerChoices = new List<string>(), Position = 1 };
-        var srcChild  = new Question { QuestionId = 102, Text = "Child?",  QuestionFormat = QuestionFormat.MultipleChoice, IsMandatory = false, AnswerChoices = new List<string> { "A", "B" }, Position = 2, Section = srcSection, ParentQuestion = srcParent, ParentTriggerValue = "yes" };
-        srcChild.EndingAnswers.Add(new EndingAnswer { Value = "end" });
+        var srcSection = new Section
+        {
+            SectionId = 1,
+            Translations = new List<SectionTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Sectie 1", Description = "desc" }
+            }
+        };
+        var srcParent = new Question
+        {
+            QuestionId = 101, QuestionFormat = QuestionFormat.Open, IsMandatory = true,
+            AnswerChoiceCount = 0, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = LanguageNl, Text = "Parent?", AnswerChoices = new List<string>() }
+            }
+        };
+        var srcChild = new Question
+        {
+            QuestionId = 102, QuestionFormat = QuestionFormat.MultipleChoice, IsMandatory = false,
+            AnswerChoiceCount = 2, ChoiceIndex = 0, Position = 2, Section = srcSection, ParentQuestion = srcParent,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = LanguageNl, Text = "Child?", AnswerChoices = new List<string> { "A", "B" } }
+            }
+        };
+        srcChild.EndingAnswers.Add(new EndingAnswer
+        {
+            Translations = new List<EndingAnswerTranslation>
+            {
+                new() { Language = LanguageNl, Value = "end" }
+            }
+        });
 
         var srcEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
         var srcCat   = new Category
@@ -427,7 +456,7 @@ public class ProjectManagerTests
         Assert.Equal("New Project EN", enClone.Name);
 
         Assert.Single(result.Questionnaire.Sections);
-        Assert.Equal("Sectie 1", result.Questionnaire.Sections.First().Name);
+        Assert.Equal("Sectie 1", result.Questionnaire.Sections.First().Translations.First(t => t.Language.Code == "nl").Name);
 
         Assert.Equal(2, result.Questionnaire.Questions.Count);
         var newParent = result.Questionnaire.Questions.First(q => q.Position == 1);
@@ -437,9 +466,9 @@ public class ProjectManagerTests
         Assert.Same(newParent, newChild.ParentQuestion);
         Assert.NotSame(srcParent, newChild.ParentQuestion);
 
-        Assert.Equal("yes", newChild.ParentTriggerValue);
+        Assert.Equal(0, newChild.ChoiceIndex);
         Assert.Single(newChild.EndingAnswers);
-        Assert.Equal("end", newChild.EndingAnswers.First().Value);
+        Assert.Equal("end", newChild.EndingAnswers.First().Translations.First().Value);
         Assert.Same(result.Questionnaire.Sections.First(), newChild.Section);
 
         Assert.Single(result.Categories);

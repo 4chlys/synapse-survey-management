@@ -11,4 +11,6 @@ public interface IQuestionnaireRepository : IRepository<Questionnaire>
     Task<Questionnaire> ReadByProjectIdForUpdateAsync(int projectId);
 
     Task<Questionnaire> ReadByQuestionIdWithQuestionsReadOnlyAsync(int questionId);
+    Task<Questionnaire> ReadByProjectIdWithQuestionsAndTranslationsReadOnlyAsync(int projectId);
+    Task<Questionnaire> ReadByQuestionIdWithQuestionsAndTranslationsReadOnlyAsync(int questionId);
 }

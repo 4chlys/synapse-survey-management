@@ -12,4 +12,5 @@ public class ProjectViewModel
     public bool RequestContactInfo { get; set; }
     public bool ExtraIdeasReplaceExisting { get; set; }
     public int MaxExtraIdeaRequests { get; set; } = 3;
+    public string DefaultLanguageCode { get; set; } = "nl";
 }

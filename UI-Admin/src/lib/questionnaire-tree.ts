@@ -10,10 +10,11 @@ export interface Question {
     text: string;
     questionFormat: string;
     answerChoices: string[];
+    answerChoiceCount: number;
     isMandatory: boolean;
     position: number;
     parentQuestionId: number | null;
-    parentTriggerValue: string | null;
+    choiceIndex: number | null;
     endingAnswers: string[];
     sectionName: string | null;
     sectionId: number | null;
@@ -32,17 +33,17 @@ export interface RenderContext {
 
 type ScopeKey = string;
 
-function scopeKey(parentId: number | null, trigger: string | null): ScopeKey {
-    return `${parentId ?? ''}|${trigger ?? ''}`;
+function scopeKey(parentId: number | null, choiceIndex: number | null): ScopeKey {
+    return `${parentId ?? ''}|${choiceIndex ?? ''}`;
 }
 
-// Bucket all questions by their (parent, trigger) scope. Each bucket is
+// Bucket all questions by their (parent, choiceIndex) scope. Each bucket is
 // sorted by Position. Done once per render; the recursive walk below is
 // then O(N) total lookups instead of O(N × children) scans.
 function bucketByScope(questions: Question[]): Map<ScopeKey, Question[]> {
     const buckets = new Map<ScopeKey, Question[]>();
     for (const q of questions) {
-        const key = scopeKey(q.parentQuestionId, q.parentTriggerValue);
+        const key = scopeKey(q.parentQuestionId, q.choiceIndex);
         const arr = buckets.get(key);
         if (arr) arr.push(q);
         else buckets.set(key, [q]);
@@ -51,12 +52,15 @@ function bucketByScope(questions: Question[]): Map<ScopeKey, Question[]> {
     return buckets;
 }
 
-function triggerValuesFor(q: Question): string[] {
+// Returns [choiceIndex, displayLabel] pairs for question types that support branching.
+// Likert uses synthetic 0-based indices with "1"-"N" labels.
+function choiceEntriesFor(q: Question): Array<[number, string]> {
     if (q.questionFormat === 'SingleChoice' || q.questionFormat === 'MultipleChoice') {
-        return q.answerChoices;
+        return q.answerChoices.map((text, idx) => [idx, text]);
     }
     if (q.questionFormat === 'Likert') {
-        return Array.from({ length: 10 }, (_, i) => String(i + 1));
+        const count = q.answerChoiceCount > 0 ? q.answerChoiceCount : 10;
+        return Array.from({ length: count }, (_, i) => [i, String(i + 1)]);
     }
     return [];
 }
@@ -79,8 +83,8 @@ function mediaBadge(q: Question): string {
 }
 
 function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[]>, ctx: RenderContext): string {
-    const triggers = triggerValuesFor(q);
-    const canBranch = triggers.length > 0;
+    const entries = choiceEntriesFor(q);
+    const canBranch = entries.length > 0;
     const arrow = canBranch ? (depth === 0 ? 'v' : '>') : '';
     const panelHidden = depth === 0 ? '' : 'hidden';
 
@@ -98,13 +102,13 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
            </label>`;
 
     const answerGroups = canBranch
-        ? triggers.map((trigger) => {
-            const children = buckets.get(scopeKey(q.questionId, trigger)) ?? [];
+        ? entries.map(([idx, trigger]) => {
+            const children = buckets.get(scopeKey(q.questionId, idx)) ?? [];
             const endsSurvey = q.endingAnswers.includes(trigger);
             const dropZone = ctx.locked ? '' : `
                     <div class="drop-zone border border-dashed border-base-content/25 text-base-content/40 text-center py-2 my-1 text-xs"
                          data-parent-id="${q.questionId}"
-                         data-parent-trigger="${escapeHtml(trigger)}">
+                         data-parent-choice-index="${idx}">
                         Sleep hier om een subvraag aan dit antwoord toe te voegen
                     </div>`;
             return `
@@ -150,7 +154,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
              data-question-id="${q.questionId}"
              data-format="${escapeHtml(q.questionFormat)}"
              data-parent-id="${q.parentQuestionId ?? ''}"
-             data-parent-trigger="${escapeHtml(q.parentTriggerValue ?? '')}"
+             data-parent-choice-index="${q.choiceIndex ?? ''}"
              data-position="${q.position}"
              style="margin-left:${depth * 16}px">
 
@@ -177,7 +181,7 @@ function getAntiforgeryToken(): string {
 const promoteDropZone = `
     <div class="drop-zone promote-zone border border-dashed border-base-content/25 text-base-content/50 text-center py-3 my-3 text-xs rounded-lg"
          data-parent-id=""
-         data-parent-trigger="">
+         data-parent-choice-index="">
         Sleep een subvraag hierheen om er een hoofdvraag van te maken
     </div>`;
 

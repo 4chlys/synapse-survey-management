@@ -96,17 +96,61 @@ public class DummyDataSeeder
 
         // Project 1: Synapse
         var questionnaire1 = new Questionnaire();
-        var q1Stress = new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false, Position = 1 };
-        var q1Welzijn = new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true, Position = 2 };
-        var q1Likert = new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?", IsMandatory = true, Position = 3 };
-        var q1Open = new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?", IsMandatory = true, Position = 4 };
+        var q1Stress = new Question
+        {
+            QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 5, IsMandatory = false, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" } },
+                new() { Language = languageEn, Text = "Which factors cause you the most stress?", AnswerChoices = new List<string> { "Exams", "Little free time", "Deadlines", "Social pressure", "Home situation" } }
+            }
+        };
+        var q1Welzijn = new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 3, IsMandatory = true, Position = 2,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" } },
+                new() { Language = languageEn, Text = "How do you experience your mental wellbeing at school over the past month?", AnswerChoices = new List<string> { "Good", "Neutral", "Bad" } }
+            }
+        };
+        var q1Likert = new Question
+        {
+            QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?" },
+                new() { Language = languageEn, Text = "On a scale of 1 to 10, how much school stress do you experience?" }
+            }
+        };
+        var q1Open = new Question
+        {
+            QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 4,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?" },
+                new() { Language = languageEn, Text = "What do you think the school could concretely do to improve the mental wellbeing of students?" }
+            }
+        };
         questionnaire1.Questions.Add(q1Stress);
         questionnaire1.Questions.Add(q1Welzijn);
         questionnaire1.Questions.Add(q1Likert);
         questionnaire1.Questions.Add(q1Open);
 
         // "Goed" → survey ends immediately for students who feel fine.
-        q1Welzijn.EndingAnswers.Add(new EndingAnswer { Question = q1Welzijn, Value = "Goed" });
+        q1Welzijn.EndingAnswers.Add(new EndingAnswer
+        {
+            Question = q1Welzijn,
+            Translations = new List<EndingAnswerTranslation>
+            {
+                new() { Language = languageNl, Value = "Goed" },
+                new() { Language = languageEn, Value = "Good" }
+            }
+        });
 
         // "Slecht" → drill down with two sub-questions; the first has its own
         // recursive child to exercise nested branching.
@@ -114,32 +158,46 @@ public class DummyDataSeeder
         {
             QuestionFormat = QuestionFormat.SingleChoice,
             Questionnaire = questionnaire1,
-            Text = "Wil je graag praten met een vertrouwenspersoon op school?",
-            AnswerChoices = new List<string> { "Ja", "Nee" },
+            AnswerChoiceCount = 2,
             IsMandatory = true,
             Position = 1,
             ParentQuestion = q1Welzijn,
-            ParentTriggerValue = "Slecht"
+            ChoiceIndex = 2, // "Slecht" is at index 2 in q1Welzijn choices
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wil je graag praten met een vertrouwenspersoon op school?", AnswerChoices = new List<string> { "Ja", "Nee" } },
+                new() { Language = languageEn, Text = "Would you like to talk to a trusted person at school?", AnswerChoices = new List<string> { "Yes", "No" } }
+            }
         };
         var q1WelzijnSlechtWho = new Question
         {
             QuestionFormat = QuestionFormat.Open,
             Questionnaire = questionnaire1,
-            Text = "Wie zou je graag willen spreken en waarover?",
+            AnswerChoiceCount = 0,
             IsMandatory = false,
             Position = 1,
             ParentQuestion = q1WelzijnSlechtFollowup,
-            ParentTriggerValue = "Ja"
+            ChoiceIndex = 0, // "Ja" is at index 0 in q1WelzijnSlechtFollowup choices
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wie zou je graag willen spreken en waarover?" },
+                new() { Language = languageEn, Text = "Who would you like to speak to and about what?" }
+            }
         };
         var q1WelzijnSlechtSupport = new Question
         {
             QuestionFormat = QuestionFormat.Open,
             Questionnaire = questionnaire1,
-            Text = "Wat kunnen wij concreet doen om je beter te laten voelen?",
+            AnswerChoiceCount = 0,
             IsMandatory = false,
             Position = 2,
             ParentQuestion = q1Welzijn,
-            ParentTriggerValue = "Slecht"
+            ChoiceIndex = 2, // "Slecht" is at index 2 in q1Welzijn choices
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat kunnen wij concreet doen om je beter te laten voelen?" },
+                new() { Language = languageEn, Text = "What can we concretely do to make you feel better?" }
+            }
         };
         q1Welzijn.Children.Add(q1WelzijnSlechtFollowup);
         q1Welzijn.Children.Add(q1WelzijnSlechtSupport);
@@ -254,10 +312,46 @@ public class DummyDataSeeder
 
         // Project 2: FitLife Gym
         var questionnaire2 = new Questionnaire();
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false, Position = 1 });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true, Position = 2 });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?", IsMandatory = true, Position = 3 });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?", IsMandatory = false, Position = 4 });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 5, IsMandatory = false, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" } },
+                new() { Language = languageEn, Text = "Which aspects of our service do you value most?", AnswerChoices = new List<string> { "Customer service", "Value for money", "Speed", "Ease of use", "Product range" } }
+            }
+        });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 4, IsMandatory = true, Position = 2,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" } },
+                new() { Language = languageEn, Text = "How satisfied are you overall with our service?", AnswerChoices = new List<string> { "Very satisfied", "Satisfied", "Neutral", "Dissatisfied" } }
+            }
+        });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?" },
+                new() { Language = languageEn, Text = "On a scale of 1 to 10, how likely are you to recommend us?" }
+            }
+        });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 0, IsMandatory = false, Position = 4,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?" },
+                new() { Language = languageEn, Text = "What can we do to improve your experience?" }
+            }
+        });
 
         var projectActive2 = new Project
         {
@@ -366,10 +460,46 @@ public class DummyDataSeeder
 
         // Project 3: FC Eendracht
         var questionnaire3 = new Questionnaire();
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false, Position = 1 });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true, Position = 2 });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?", IsMandatory = true, Position = 3 });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3, Text = "Wat zou jij veranderen aan de club als je de kans had?", IsMandatory = false, Position = 4 });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 5, IsMandatory = false, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" } },
+                new() { Language = languageEn, Text = "Which aspects of the club do you want to improve?", AnswerChoices = new List<string> { "Training", "Infrastructure", "Communication", "Social activities", "Match schedule" } }
+            }
+        });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 4, IsMandatory = true, Position = 2,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" } },
+                new() { Language = languageEn, Text = "How do you rate the general atmosphere in the club?", AnswerChoices = new List<string> { "Excellent", "Good", "Average", "Poor" } }
+            }
+        });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?" },
+                new() { Language = languageEn, Text = "On a scale of 1 to 10, how satisfied are you with the training sessions?" }
+            }
+        });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 0, IsMandatory = false, Position = 4,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat zou jij veranderen aan de club als je de kans had?" },
+                new() { Language = languageEn, Text = "What would you change about the club if you had the chance?" }
+            }
+        });
 
         var projectActive3 = new Project
         {
