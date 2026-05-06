@@ -1,4 +1,5 @@
 import './main.css';
+import './i18n';
 import { initTheme } from './theme';
 import { initSurvey } from './survey/init';
 import { initChat } from './survey/chat';

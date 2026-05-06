@@ -16,7 +16,7 @@ using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddLocalization();
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
 
 // TODO (step 7): load supported cultures dynamically from ILanguageManager at startup.
 var supportedCultures = new[] { "nl", "en" };
