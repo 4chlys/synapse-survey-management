@@ -43,6 +43,18 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+var apiSupportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(apiSupportedCultures)
+        .AddSupportedUICultures(apiSupportedCultures);
+    opts.RequestCultureProviders =
+    [
+        new Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -283,6 +295,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseHttpLogging();
+app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();

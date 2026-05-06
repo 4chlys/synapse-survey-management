@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.API.DTOs.Participants;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 
@@ -93,5 +94,63 @@ public class ResponsesControllerTests
 
         // Assert
         _participantManager.Verify(p => p.SaveContactInfoAsync(_participant.ParticipantId, "a@b.c", ct), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetLanguage_KnownActiveCode_Returns204AndCallsManager()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        var ct = cts.Token;
+        _participantManager.Setup(p => p.SetLanguageAsync(_participant.ParticipantId, "en", ct))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Exactly(1));
+
+        // Act
+        var result = await _controller.SetLanguage(ProjectId, new SetParticipantLanguageDto { LanguageCode = "en" }, ct);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _participantManager.VerifyAll();
+    }
+
+    [Fact]
+    public async Task SetLanguage_UnknownCode_ManagerThrows_Returns400()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        var ct = cts.Token;
+        _participantManager.Setup(p => p.SetLanguageAsync(_participant.ParticipantId, "xx", ct))
+            .ThrowsAsync(new KeyNotFoundException("Language 'xx' is not a supported active language."));
+
+        // Act
+        var result = await _controller.SetLanguage(ProjectId, new SetParticipantLanguageDto { LanguageCode = "xx" }, ct);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task SetLanguage_NoTokenHeader_Returns401()
+    {
+        // Arrange
+        var controllerWithoutToken = new ResponsesController(
+            _participantManager.Object,
+            _responseManager.Object,
+            _submissionManager.Object,
+            _projectManager.Object);
+        controllerWithoutToken.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+
+        // Act
+        var result = await controllerWithoutToken.SetLanguage(
+            ProjectId,
+            new SetParticipantLanguageDto { LanguageCode = "en" },
+            CancellationToken.None);
+
+        // Assert
+        Assert.IsType<UnauthorizedObjectResult>(result);
     }
 }

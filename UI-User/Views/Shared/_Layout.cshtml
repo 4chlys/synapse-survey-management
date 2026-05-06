@@ -76,14 +76,17 @@
             <div class="flex items-center justify-end gap-2 shrink-0">
 
                 @* Language switcher — POST to CultureController to set the cookie *@
+                @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
                 <form asp-controller="Culture" asp-action="SetCulture" method="post"
                       class="flex items-center gap-1"
                       aria-label="@Shared["LanguageMenu_Switch"]">
                     <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
                     @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
                     {
+                        var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
                         <button type="submit" name="culture" value="@c.Name"
-                                class="text-xs font-medium text-neutral hover:text-primary transition-colors uppercase cursor-pointer">
+                                class="text-xs font-medium @(isActive ? "text-primary underline underline-offset-2" : "text-neutral hover:text-primary") transition-colors uppercase cursor-pointer"
+                                aria-current="@(isActive ? "true" : "false")">
                             @c.TwoLetterISOLanguageName
                         </button>
                     }

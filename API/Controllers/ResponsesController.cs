@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.DTOs.Participants;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -17,6 +18,23 @@ public class ResponsesController(
     IProjectManager projectManager)
     : ParticipantControllerBase(participantManager, projectManager)
 {
+    [HttpPatch("participants/me/language")]
+    public async Task<ActionResult> SetLanguage(int projectId, SetParticipantLanguageDto dto, CancellationToken ct)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
+        try
+        {
+            await SetParticipantLanguageAsync(participant.ParticipantId, dto.LanguageCode, ct);
+        }
+        catch (KeyNotFoundException)
+        {
+            return BadRequest("Unknown or inactive language code.");
+        }
+        return NoContent();
+    }
+
     [HttpPatch("participants/me/contact")]
     public async Task<ActionResult> SaveContactInfo(int projectId, SaveContactInfoDto dto, CancellationToken ct)
     {

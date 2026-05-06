@@ -13,8 +13,12 @@ using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
 using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
+using SynapseEnqueteManagement.UI.User.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTransient<CultureForwardingHandler>();
+builder.Services.ConfigureHttpClientDefaults(b => b.AddHttpMessageHandler<CultureForwardingHandler>());
 
 builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
 

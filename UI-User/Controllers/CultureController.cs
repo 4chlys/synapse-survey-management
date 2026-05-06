@@ -1,18 +1,24 @@
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SynapseEnqueteManagement.UI.User.Services.Project;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
-public class CultureController : Controller
+public class CultureController(
+    IOptions<RequestLocalizationOptions> localizationOptions,
+    ParticipantService participantService,
+    ILogger<CultureController> logger) : Controller
 {
-    // TODO (step 7): load supported cultures dynamically from ILanguageManager instead of hardcoding.
-    private static readonly HashSet<string> _supported =
-        new(StringComparer.OrdinalIgnoreCase) { "nl", "en" };
+    private const string CookiePrefix = "ParticipantToken_";
 
     [HttpPost]
-    public IActionResult SetCulture(string culture, string returnUrl)
+    public async Task<IActionResult> SetCulture(string culture, string returnUrl)
     {
-        if (!_supported.Contains(culture))
+        var supported = localizationOptions.Value.SupportedUICultures
+            .Select(c => c.Name);
+
+        if (!supported.Contains(culture, StringComparer.OrdinalIgnoreCase))
             return BadRequest();
 
         Response.Cookies.Append(
@@ -25,6 +31,24 @@ public class CultureController : Controller
                 SameSite = SameSiteMode.Lax,
                 Secure = Request.IsHttps
             });
+
+        foreach (var cookieKey in Request.Cookies.Keys)
+        {
+            if (!cookieKey.StartsWith(CookiePrefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!int.TryParse(cookieKey[CookiePrefix.Length..], out var projectId))
+                continue;
+
+            try
+            {
+                await participantService.SetLanguageAsync(projectId, culture);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to persist language '{Culture}' for project {ProjectId}.", culture, projectId);
+            }
+        }
 
         return LocalRedirect(returnUrl ?? "/");
     }

@@ -17,4 +17,15 @@ public class ParticipantService(HttpClient httpClient, ISessionService sessionSe
 
         await HttpClient.SendAsync(request);
     }
+
+    public async Task SetLanguageAsync(int projectId, string languageCode)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch,
+            $"api/projects/{projectId}/participants/me/language");
+        request.Content = JsonContent.Create(new { LanguageCode = languageCode });
+
+        AddTokenHeader(request, projectId);
+
+        await HttpClient.SendAsync(request);
+    }
 }
