@@ -255,8 +255,10 @@ deploy-production:
     - |
       gcloud compute instance-groups managed rolling-action replace synapse-api-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
       gcloud compute instance-groups managed rolling-action replace synapse-ui-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-admin-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
       gcloud compute instance-groups managed wait-until synapse-api-mig --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-ui-mig --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-admin-mig --stable --zone="${ZONE}"
   only:
     - main #reverse
     - release/staging
