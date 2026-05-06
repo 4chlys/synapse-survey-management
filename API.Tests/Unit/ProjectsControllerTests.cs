@@ -10,7 +10,9 @@ public class ProjectsControllerTests
 
     public ProjectsControllerTests()
     {
-        _controller = new ProjectsController(_projectManager.Object);
+        var imageGen = new Mock<SynapseEnqueteManagement.BL.AiImageGeneration.IAiImageGenerationService>();
+        var storage  = new Mock<SynapseEnqueteManagement.API.Services.IStorageService>();
+        _controller = new ProjectsController(_projectManager.Object, imageGen.Object, storage.Object);
     }
 
     #region GetByShortForm
@@ -90,7 +92,7 @@ public class ProjectsControllerTests
         var dto = new CreateProjectDto { Name = "Test" };
 
         // Act
-        var result = await _controller.CreateProject(dto);
+        var result = await _controller.CreateProject(dto, CancellationToken.None);
 
         // Assert
         var created = Assert.IsType<CreatedResult>(result.Result);
@@ -115,7 +117,7 @@ public class ProjectsControllerTests
 
         // Act & Assert — middleware converts this; the controller lets it propagate
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _controller.CreateProject(dto));
+            _controller.CreateProject(dto, CancellationToken.None));
     }
 
     #endregion

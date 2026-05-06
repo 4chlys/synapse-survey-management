@@ -5,6 +5,7 @@ import { initTopIdeasWidget } from './widget-top-ideas';
 import { initSurveyDistributionWidget } from './widget-survey-distribution';
 import { initIdeaFeedWidget } from './widget-idea-feed';
 import { initModerationQueueWidget } from './widget-moderation-queue';
+import { initSocialMediaWidget } from './widget-social-media';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -20,6 +21,7 @@ const widgetRegistry: Record<string, WidgetInit> = {
     SurveyDistribution: initSurveyDistributionWidget,
     IdeaFeed: initIdeaFeedWidget,
     ModerationQueue: initModerationQueueWidget,
+    SocialMediaPost: initSocialMediaWidget,
 };
 
 document.addEventListener('DOMContentLoaded', () => {

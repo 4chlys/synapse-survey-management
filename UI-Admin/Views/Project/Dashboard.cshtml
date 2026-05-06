@@ -29,11 +29,12 @@
         {
             var widgetType = Model.WidgetLayout[i];
             var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
+            var isTall  = widgetType is "SocialMediaPost";
             <div data-widget="@widgetType"
                  data-project-id="@Model.ProjectId"
                  data-api-base="@Model.ApiBaseUrl"
                  data-survey-url="@Model.SurveyUrl"
-                 class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : "min-h-28")">
+                 class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : isTall ? "min-h-96" : "min-h-28")">
                 <p class="text-base-content/30 text-xs">Laden…</p>
             </div>
         }

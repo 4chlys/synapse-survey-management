@@ -1,0 +1,82 @@
+using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.DTOs.SocialMedia;
+using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
+using SynapseEnqueteManagement.BL.Interfaces;
+
+namespace SynapseEnqueteManagement.API.Controllers;
+
+[ApiController]
+[Route("api/projects/{projectId:int}/social")]
+public class SocialMediaController(
+    ISocialPostGenerator generator,
+    IProjectManager projectManager,
+    IParticipantManager participantManager,
+    ICategoryManager categoryManager,
+    IAiImageGenerationService imageGenerator,
+    IStorageService storage) : ControllerBase
+{
+    [HttpPost("generate")]
+    public async Task<ActionResult<GenerateSocialPostResponseDto>> Generate(
+        int projectId, [FromBody] GenerateSocialPostRequestDto dto, CancellationToken ct)
+    {
+        if (!Enum.TryParse<SocialPlatform>(dto.Platform, ignoreCase: true, out var platform))
+            return BadRequest(new { error = "Invalid platform. Use LinkedIn, Facebook, or Instagram." });
+
+        var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
+        if (project is null) return NotFound();
+
+        var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
+        var metrics         = await categoryManager.GetDashboardMetricsAsync(projectId);
+        var completionRate  = project.ViewCount > 0
+            ? Math.Round((double)completionCount / project.ViewCount * 100, 1) : 0d;
+
+        var intro = System.Text.RegularExpressions.Regex
+            .Replace(project.Introduction?.Text ?? "", "<[^>]+>", "");
+
+        var stats = new SocialPostStats(
+            project.ViewCount,
+            completionCount,
+            completionRate,
+            metrics.TopIdeas.Take(3).Select(i => i.Description).ToList(),
+            metrics.TopCategories.Take(3).Select(c => c.Name).ToList());
+
+        var request = new SocialPostRequest(
+            platform,
+            project.Name,
+            project.Topic ?? "",
+            intro,
+            project.ProjectPlatform?.Name ?? "",
+            dto.UserDescription,
+            stats);
+
+        var reply = await generator.GenerateAsync(request, ct);
+
+        return Ok(new GenerateSocialPostResponseDto
+        {
+            Copy              = reply.Copy,
+            SuggestedHashtags = reply.SuggestedHashtags.ToList(),
+            CharacterCount    = reply.CharacterCount,
+            Platform          = platform.ToString(),
+        });
+    }
+
+    [HttpPost("image")]
+    public async Task<ActionResult<GenerateSocialImageResponseDto>> GenerateImage(
+        int projectId, CancellationToken ct)
+    {
+        var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (project is null) return NotFound();
+
+        var result = await imageGenerator.GenerateProjectImageAsync(project.Name, ct);
+        if (!result.IsSuccess)
+            return StatusCode(502, new { error = result.ErrorMessage });
+
+        var ext = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
+        var url = await storage.UploadBytesAsync(
+            result.ImageBytes, "social", $"{Guid.NewGuid():N}{ext}", result.MimeType);
+
+        return Ok(new GenerateSocialImageResponseDto { ImageUrl = url });
+    }
+}

@@ -100,6 +100,8 @@ builder.Services.AddHttpClient<ParticipantAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<UploadAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<SocialMediaProxyService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
 

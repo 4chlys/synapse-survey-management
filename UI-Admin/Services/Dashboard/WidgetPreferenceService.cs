@@ -16,7 +16,8 @@ public class WidgetPreferenceService(AdminDbContext db)
     [
         "ViewCount", "CompletionCount", "CompletionRate",
         "ParticipationTimeline", "TopCategories", "TopIdeas",
-        "SurveyDistribution", "IdeaFeed", "ModerationQueue"
+        "SurveyDistribution", "IdeaFeed", "ModerationQueue",
+        "SocialMediaPost"
     ];
 
     public async Task<string[]> GetLayoutAsync(string userId, int projectId)

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 
 namespace SynapseEnqueteManagement.BL.Ai;
@@ -131,6 +132,21 @@ public static class AiConfigLoader
             DefaultAgeRange = p.AgeRange,
         };
 
+        var sm = config.SocialMedia;
+        PlatformPostConfig SubPlatform(PlatformPostConfig pc) => new()
+        {
+            SystemPrompt       = Sub(pc.SystemPrompt),
+            UserPromptTemplate = Sub(pc.UserPromptTemplate),
+            MaxChars           = pc.MaxChars,
+        };
+        var substitutedSocialMedia = new SocialMediaConfig
+        {
+            LinkedIn        = SubPlatform(sm.LinkedIn),
+            Facebook        = SubPlatform(sm.Facebook),
+            Instagram       = SubPlatform(sm.Instagram),
+            FallbackMessage = sm.FallbackMessage,
+        };
+
         return new AiConfig
         {
             Platform        = config.Platform,
@@ -139,6 +155,7 @@ public static class AiConfigLoader
             CommentSupport  = substitutedCommentSupport,
             SpeechToText    = substitutedSpeechToText,
             ImageGeneration = config.ImageGeneration,
+            SocialMedia     = substitutedSocialMedia,
             Fuzzy           = config.Fuzzy,
         };
     }

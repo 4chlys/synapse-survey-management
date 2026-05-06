@@ -17,6 +17,7 @@ using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
@@ -143,6 +144,7 @@ builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton(aiConfig.CommentSupport);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
+builder.Services.AddSingleton(aiConfig.SocialMedia);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -178,6 +180,7 @@ if (useAi)
     builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
+    builder.Services.AddScoped<ISocialPostGenerator, GoogleVertexAiSocialPostGenerator>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -209,6 +212,7 @@ else
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
+    builder.Services.AddSingleton<ISocialPostGenerator, MockSocialPostGenerator>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.

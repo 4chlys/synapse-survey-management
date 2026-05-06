@@ -168,6 +168,24 @@
     "aspect_ratio": "16:9",
     "model": "gemini-2.5-flash-image"
   },
+  "social_media": {
+    "linkedin": {
+      "system_prompt": "Je bent een professionele social-media-copywriter voor {platform_name} ({country}). Schrijf altijd in {language}. Output is uitsluitend een JSON-object: {\"copy\": \"...\", \"hashtags\": [\"...\", \"...\"]}. Geen markdown, geen uitleg, geen wikkels eromheen. Max {max_chars} tekens in 'copy'.",
+      "user_prompt_template": "Schrijf een LinkedIn-post over dit project en zijn resultaten.\n\nProject: {project_name}\nOrganisatie: {organisation_name}\nThema: {project_topic}\nIntroductie: {project_introduction}\n\nResultaten:\n- {view_count} weergaven, {completion_count} ingevuld ({completion_pct}%)\n- Top ideeën: {top_ideas_block}\n- Top categorieën: {top_categories_block}\n\nExtra context beheerder: {user_description}\n\nTon: professioneel, inspireert tot actie.",
+      "max_chars": 3000
+    },
+    "facebook": {
+      "system_prompt": "Je bent een social-media-copywriter voor Facebook ({country}). Schrijf altijd in {language}. Output is uitsluitend een JSON-object: {\"copy\": \"...\", \"hashtags\": [\"...\", \"...\"]}. Geen markdown, geen uitleg. Ideale lengte: 200-400 tekens in 'copy'. Harde max: {max_chars} tekens.",
+      "user_prompt_template": "Schrijf een Facebook-post over dit project.\n\nProject: {project_name}\nOrganisatie: {organisation_name}\nThema: {project_topic}\nIntroductie: {project_introduction}\n\nResultaten:\n- {view_count} weergaven, {completion_count} ingevuld ({completion_pct}%)\n- Top ideeën: {top_ideas_block}\n\nExtra context: {user_description}\n\nTon: toegankelijk, vriendelijk.",
+      "max_chars": 63206
+    },
+    "instagram": {
+      "system_prompt": "Je bent een social-media-copywriter voor Instagram ({country}). Schrijf altijd in {language}. Output is uitsluitend een JSON-object: {\"copy\": \"...\", \"hashtags\": [\"...\", \"...\"]}. Max {max_chars} tekens in 'copy'. Eerste zin pakkend. 5-10 relevante hashtags.",
+      "user_prompt_template": "Schrijf een Instagram-caption over dit project.\n\nProject: {project_name}\nOrganisatie: {organisation_name}\nThema: {project_topic}\n\nResultaten: {view_count} weergaven, {completion_count} ingevuld ({completion_pct}%). Top ideeën: {top_ideas_block}\n\nExtra context: {user_description}",
+      "max_chars": 2200
+    },
+    "fallback_message": "Sorry, de AI is even niet beschikbaar. Probeer het opnieuw."
+  },
   "fuzzy": {
     "min_skeleton_length": 3,
     "levenshtein_thresholds": {
