@@ -25,6 +25,7 @@ public class CreateProjectDto
     [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
     public bool ExtraIdeasReplaceExisting { get; set; } = false;
     [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
+    public bool AllowCrossLanguageIdeas { get; set; } = false;
 
     [Range(1, int.MaxValue)]
     public int PlatformId { get; set; }

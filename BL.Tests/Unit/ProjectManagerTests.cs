@@ -63,12 +63,37 @@ public class ProjectManagerTests
             defaultLanguageCode: "en",
             supportedLanguageCodes: new[] { "nl", "en" },
             string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
-            null, null, false, platformId: 1, shortForm: null);
+            null, null, false, platformId: 1, shortForm: null,
+            allowCrossLanguageIdeas: true);
 
         // Assert
         Assert.Equal("my-project", result.ShortForm);
         Assert.Equal("en", result.DefaultLanguage.Code);
         Assert.Equal(2, result.Translations.Count);
+        Assert.True(result.AllowCrossLanguageIdeas);
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_AllowCrossLanguageIdeasFalse_DefaultsToFalse()
+    {
+        // Arrange
+        _shortFormService.Setup(s => s.Normalize("Naam")).Returns("naam");
+        _shortFormService.Setup(s => s.IsValid("naam")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("naam")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("naam", null)).ReturnsAsync("naam");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act — omit allowCrossLanguageIdeas to verify default is false
+        var result = await _manager.CreateProjectAsync(
+            Translations(("nl", "Naam")),
+            NoIntroductions(),
+            "nl", new[] { "nl" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, platformId: 1);
+
+        // Assert
+        Assert.False(result.AllowCrossLanguageIdeas);
     }
 
     [Fact]
@@ -184,10 +209,12 @@ public class ProjectManagerTests
             NoIntroductions(),
             "nl", new[] { "nl" },
             string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
-            null, null, false, shortForm: "new-form");
+            null, null, false, shortForm: "new-form",
+            allowCrossLanguageIdeas: true);
 
         // Assert
         Assert.Equal("new-form", result.ShortForm);
+        Assert.True(result.AllowCrossLanguageIdeas);
     }
 
     [Fact]
@@ -477,6 +504,46 @@ public class ProjectManagerTests
 
         Assert.Single(result.Emojis);
         Assert.Same(trackedEmoji, result.Emojis.First());
+    }
+
+    [Fact]
+    public async Task DuplicateProjectAsync_ClonesAllowCrossLanguageIdeas()
+    {
+        // Arrange
+        const int srcId = 20;
+        const int platformId = 5;
+
+        var source = new Project
+        {
+            ProjectId = srcId,
+            ProjectPlatformId = platformId,
+            ShortForm = "source",
+            AllowCrossLanguageIdeas = true,
+            DefaultLanguage = LanguageNl,
+            SupportedLanguages = new List<Language> { LanguageNl },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Clone Me", Topic = "T" }
+            },
+            Questionnaire = new Questionnaire(),
+            Categories = new List<Category>(),
+            Emojis = new List<Emoji>(),
+        };
+
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
+        _shortFormService.Setup(s => s.Normalize("Clone Me")).Returns("clone-me");
+        _shortFormService.Setup(s => s.IsValid("clone-me")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("clone-me")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("clone-me", null)).ReturnsAsync("clone-me");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.DuplicateProjectAsync(srcId,
+            Translations(("nl", "Clone Me")), platformId);
+
+        // Assert
+        Assert.True(result.AllowCrossLanguageIdeas);
     }
 
     [Fact]

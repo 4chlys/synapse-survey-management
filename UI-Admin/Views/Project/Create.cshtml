@@ -151,6 +151,19 @@
                     Sectie toevoegen
                 </button>
 
+                </fieldset>
+
+                @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
+                {
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-3">
+                            <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
+                            <span class="label-text">Meertalige ideeën toestaan</span>
+                        </label>
+                        <span class="label-text-alt">Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</span>
+                    </div>
+                }
+
                 <div class="card-actions justify-end gap-2 pt-2">
                     @if (!isLocked)
                     {
@@ -167,7 +180,6 @@
                         }
                     }
                 </div>
-                </fieldset>
             </form>
         </div>
     </div>

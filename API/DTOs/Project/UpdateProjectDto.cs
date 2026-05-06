@@ -26,6 +26,7 @@ public class UpdateProjectDto
     [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
     public bool ExtraIdeasReplaceExisting { get; set; } = false;
     [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
+    public bool AllowCrossLanguageIdeas { get; set; } = false;
 
     [Required] [MaxLength(10)] public string DefaultLanguageCode { get; set; }
     [Required] [MinLength(1)] public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();

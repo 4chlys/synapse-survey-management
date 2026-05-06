@@ -46,7 +46,8 @@ public class ProjectManager(
         string imageUrl, FormType formType, AiAssistanceType aiAssistance,
         int? minAge, int? maxAge, bool requestContactInfo, int platformId,
         string shortForm = null, int ideaPageSize = 5,
-        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
+        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
+        bool allowCrossLanguageIdeas = false)
     {
         var translationList = translations?.ToList() ?? new List<ProjectTranslationInput>();
         var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
@@ -77,6 +78,7 @@ public class ProjectManager(
             MinAge = minAge,
             MaxAge = maxAge,
             RequestContactInfo = requestContactInfo,
+            AllowCrossLanguageIdeas = allowCrossLanguageIdeas,
             IdeaPageSize = ideaPageSize,
             ExtraIdeasReplaceExisting = extraIdeasReplaceExisting,
             MaxExtraIdeaRequests = maxExtraIdeaRequests,
@@ -136,7 +138,8 @@ public class ProjectManager(
         string imageUrl, FormType formType, AiAssistanceType aiAssistance,
         int? minAge, int? maxAge, bool requestContactInfo,
         string shortForm = null, int ideaPageSize = 5,
-        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
+        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
+        bool allowCrossLanguageIdeas = false)
     {
         var project = await projectRepository.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(projectId);
         if (project is null)
@@ -173,6 +176,7 @@ public class ProjectManager(
         project.MinAge = minAge;
         project.MaxAge = maxAge;
         project.RequestContactInfo = requestContactInfo;
+        project.AllowCrossLanguageIdeas = allowCrossLanguageIdeas;
         project.IdeaPageSize = ideaPageSize;
         project.ExtraIdeasReplaceExisting = extraIdeasReplaceExisting;
         project.MaxExtraIdeaRequests = maxExtraIdeaRequests;
@@ -365,6 +369,7 @@ public class ProjectManager(
             MinAge = src.MinAge,
             MaxAge = src.MaxAge,
             RequestContactInfo = src.RequestContactInfo,
+            AllowCrossLanguageIdeas = src.AllowCrossLanguageIdeas,
             IdeaPageSize = src.IdeaPageSize,
             ExtraIdeasReplaceExisting = src.ExtraIdeasReplaceExisting,
             MaxExtraIdeaRequests = src.MaxExtraIdeaRequests,

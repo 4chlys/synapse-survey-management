@@ -20,4 +20,6 @@ public class ProjectAdminViewModel
     public int MaxExtraIdeaRequests { get; set; } = 3;
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
+    public bool AllowCrossLanguageIdeas { get; set; }
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 }

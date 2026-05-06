@@ -211,6 +211,7 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Active,
             FormType = FormType.Chat,
             RequestContactInfo = true,
+            AllowCrossLanguageIdeas = true,
             Questionnaire = questionnaire1,
             ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
@@ -357,6 +358,7 @@ public class DummyDataSeeder
         {
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
+            AllowCrossLanguageIdeas = false,
             Questionnaire = questionnaire2,
             ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",

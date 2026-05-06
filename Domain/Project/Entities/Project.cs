@@ -40,6 +40,7 @@ public class Project : IHasCreatedAt
     [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
     [Range(1, 200)] public int CommentPageSize { get; set; } = 20;
     public bool RequestContactInfo { get; set; } = false;
+    public bool AllowCrossLanguageIdeas { get; set; } = false;
 
     public Questionnaire Questionnaire { get; set; }
 

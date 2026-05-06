@@ -23,7 +23,8 @@ public interface IProjectManager
         string imageUrl, FormType formType, AiAssistanceType aiAssistance,
         int? minAge, int? maxAge, bool requestContactInfo, int platformId,
         string shortForm = null, int ideaPageSize = 5,
-        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3);
+        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
+        bool allowCrossLanguageIdeas = false);
 
     Task<Project> UpdateProjectAsync(int projectId,
         IEnumerable<ProjectTranslationInput> translations,
@@ -33,7 +34,8 @@ public interface IProjectManager
         string imageUrl, FormType formType, AiAssistanceType aiAssistance,
         int? minAge, int? maxAge, bool requestContactInfo,
         string shortForm = null, int ideaPageSize = 5,
-        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3);
+        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
+        bool allowCrossLanguageIdeas = false);
 
     Task<Project> GetProjectByShortFormAsync(string shortForm);
     Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null);

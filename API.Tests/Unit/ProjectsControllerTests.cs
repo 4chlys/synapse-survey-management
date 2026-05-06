@@ -170,7 +170,7 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
-                It.IsAny<bool>(), It.IsAny<int>()))
+                It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>()))
             .ReturnsAsync(created);
 
         var dto = new CreateProjectDto
@@ -198,6 +198,49 @@ public class ProjectsControllerTests
     }
 
     [Fact]
+    public async Task CreateProject_AllowCrossLanguageIdeas_PassedThroughToManager()
+    {
+        // Arrange — setup only matches when the flag is true, verifying pass-through
+        var created = BilingualProject(id: 8);
+        created.AllowCrossLanguageIdeas = true;
+        _projectManager
+            .Setup(m => m.CreateProjectAsync(
+                It.IsAny<IEnumerable<ProjectTranslationInput>>(),
+                It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
+                It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<bool>(), It.IsAny<int>(), true))
+            .ReturnsAsync(created);
+
+        var dto = new CreateProjectDto
+        {
+            DefaultLanguageCode = "nl",
+            SupportedLanguageCodes = new[] { "nl", "en" },
+            Translations = new List<ProjectTranslationDto> { new() { LanguageCode = "nl", Name = "X" }, new() { LanguageCode = "en", Name = "Y" } },
+            PlatformId = 1,
+            AllowCrossLanguageIdeas = true,
+        };
+
+        // Act
+        var result = await _controller.CreateProject(dto, CancellationToken.None);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedResult>(result.Result);
+        var adminDto = Assert.IsType<AdminProjectDto>(createdResult.Value);
+        Assert.True(adminDto.AllowCrossLanguageIdeas);
+        _projectManager.Verify(m => m.CreateProjectAsync(
+            It.IsAny<IEnumerable<ProjectTranslationInput>>(),
+            It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
+            It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+            It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
+            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<bool>(), It.IsAny<int>(), true), Times.Once);
+    }
+
+    [Fact]
     public async Task CreateProject_ReservedShortForm_ManagerThrows_Propagates()
     {
         // Arrange
@@ -208,7 +251,7 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                It.IsAny<int>(), "admin", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>()))
+                It.IsAny<int>(), "admin", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>()))
             .ThrowsAsync(new ValidationException("'admin' is a reserved shortform."));
 
         var dto = new CreateProjectDto
@@ -232,6 +275,48 @@ public class ProjectsControllerTests
     #region UpdateProject — ShortForm locking
 
     [Fact]
+    public async Task UpdateProject_AllowCrossLanguageIdeas_PassedThroughToManager()
+    {
+        // Arrange — setup only matches when the flag is true, verifying pass-through
+        var updated = BilingualProject(id: 1);
+        updated.AllowCrossLanguageIdeas = true;
+        _projectManager
+            .Setup(m => m.UpdateProjectAsync(
+                1,
+                It.IsAny<IEnumerable<ProjectTranslationInput>>(),
+                It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
+                It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
+                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true))
+            .ReturnsAsync(updated);
+
+        var dto = new UpdateProjectDto
+        {
+            DefaultLanguageCode = "nl",
+            SupportedLanguageCodes = new[] { "nl", "en" },
+            Translations = new List<ProjectTranslationDto> { new() { LanguageCode = "nl", Name = "Naam" }, new() { LanguageCode = "en", Name = "Name" } },
+            AllowCrossLanguageIdeas = true,
+        };
+
+        // Act
+        var result = await _controller.UpdateProject(1, dto);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var adminDto = Assert.IsType<AdminProjectDto>(ok.Value);
+        Assert.True(adminDto.AllowCrossLanguageIdeas);
+        _projectManager.Verify(m => m.UpdateProjectAsync(
+            1,
+            It.IsAny<IEnumerable<ProjectTranslationInput>>(),
+            It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
+            It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+            It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
+            It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true), Times.Once);
+    }
+
+    [Fact]
     public async Task UpdateProject_ShortFormChangeInActive_ManagerThrows_Propagates()
     {
         // Arrange
@@ -243,7 +328,7 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                "new-form", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>()))
+                "new-form", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>()))
             .ThrowsAsync(new ValidationException("ShortForm cannot be changed after the project has been published."));
 
         var dto = new UpdateProjectDto

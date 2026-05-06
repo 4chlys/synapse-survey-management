@@ -63,6 +63,7 @@ public class ProjectsController(
             Introduction = introText,
             AiAssistance = p.AiAssistance.ToString(),
             RequestContactInfo = p.RequestContactInfo,
+            AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
             IdeaPageSize = p.IdeaPageSize,
             ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
             MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
@@ -87,6 +88,7 @@ public class ProjectsController(
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
         AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
+        AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
         IdeaPageSize = p.IdeaPageSize,
         ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
         MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
@@ -179,7 +181,8 @@ public class ProjectsController(
             dto.ShortForm,
             dto.IdeaPageSize,
             dto.ExtraIdeasReplaceExisting,
-            dto.MaxExtraIdeaRequests);
+            dto.MaxExtraIdeaRequests,
+            dto.AllowCrossLanguageIdeas);
 
         return Created(string.Empty, MapToAdminDto(project));
     }
@@ -202,7 +205,8 @@ public class ProjectsController(
             dto.ShortForm,
             dto.IdeaPageSize,
             dto.ExtraIdeasReplaceExisting,
-            dto.MaxExtraIdeaRequests);
+            dto.MaxExtraIdeaRequests,
+            dto.AllowCrossLanguageIdeas);
 
         return Ok(MapToAdminDto(project));
     }
