@@ -1,19 +1,13 @@
 /**
  * speechtotext.ts
  *
- * Speech-to-text framework using the browser's MediaRecorder API and the
- * Gemini-powered backend transcription endpoint.
- *
- * Usage:
- *   const recorder = new SpeechRecorder();
- *   await recorder.start();
- *   // ... user speaks ...
- *   const blob = await recorder.stop();
- *   const result = await transcribeAudio(blob, projectId);
- *   if (result.transcript) textarea.value = result.transcript;
+ * Browser MediaRecorder wrapper + transcription API client.
+ * UI/state-machine glue lives in speechtotext-attach.ts.
  */
 
-// ─── Types ────────────────────────────────��───────────────────────��───────────
+import { getCsrfToken, fetchWithTimeout } from './ideation/ai-support-base';
+
+// --- Types -------------------------------------------------------------------
 
 export interface TranscribeResult {
     transcript: string | null;
@@ -21,42 +15,73 @@ export interface TranscribeResult {
     isSuccess: boolean;
 }
 
-// ─── MIME type resolution ─────────────────────────────────────────────────────
+/** Why start() failed in a way the UI can map to a user message. */
+export type SpeechErrorReason =
+    | 'permission-denied'
+    | 'no-microphone'
+    | 'unsupported'
+    | 'unknown';
+
+export class SpeechStartError extends Error {
+    constructor(public readonly reason: SpeechErrorReason, message: string) {
+        super(message);
+        this.name = 'SpeechStartError';
+    }
+}
+
+// --- MIME type resolution ----------------------------------------------------
 
 /**
  * Returns the best supported audio MIME type for MediaRecorder in this browser.
- * Prefers WebM/Opus (Chrome, Edge, Firefox) then falls back to OGG/Opus and MP4.
+ * Prefers WebM/Opus (Chrome, Edge, Firefox) then falls back to OGG/Opus
+ * and explicit MP4/AAC for Safari.
  */
 function getSupportedMimeType(): string {
+    if (typeof MediaRecorder === 'undefined') return '';
     const candidates = [
         'audio/webm;codecs=opus',
         'audio/webm',
         'audio/ogg;codecs=opus',
         'audio/ogg',
+        'audio/mp4;codecs=mp4a.40.2',
         'audio/mp4',
     ];
     for (const type of candidates) {
         if (MediaRecorder.isTypeSupported(type)) return type;
     }
-    return ''; // browser will pick its own default
+    return '';
 }
 
-// ─── SpeechRecorder ───────────────────────────────────────────────────────────
+// --- SpeechRecorder ----------------------------------------------------------
+
+export interface SpeechRecorderOptions {
+    /**
+     * Optional callback receiving a normalised RMS level (0-1) about every
+     * 100 ms while recording. Used for VAD silence detection and level meters.
+     */
+    onLevel?: (rms: number) => void;
+}
 
 /**
- * Wraps the browser MediaRecorder API into a simple start/stop interface.
+ * Wraps the browser MediaRecorder API into a simple start/stop interface,
+ * with optional Web Audio level metering for silence detection.
  *
  * Call `start()` to request microphone access and begin recording.
  * Call `stop()` to end the recording and receive the audio as a Blob.
  * Call `release()` to stop the mic stream without a recording (e.g. on cancel).
- *
- * The instance can be reused for multiple recordings.
  */
 export class SpeechRecorder {
     private _mediaRecorder: MediaRecorder | null = null;
     private _chunks: Blob[] = [];
     private _stream: MediaStream | null = null;
     private _mimeType = '';
+
+    private _audioCtx: AudioContext | null = null;
+    private _analyser: AnalyserNode | null = null;
+    private _source: MediaStreamAudioSourceNode | null = null;
+    private _levelTimer: ReturnType<typeof setInterval> | null = null;
+
+    constructor(private readonly _options: SpeechRecorderOptions = {}) {}
 
     /** Whether a recording is currently in progress. */
     get isRecording(): boolean {
@@ -65,12 +90,27 @@ export class SpeechRecorder {
 
     /**
      * Requests microphone permission and starts recording.
-     * Throws if permission is denied or MediaRecorder is unavailable.
+     * Throws SpeechStartError on permission/support issues so the UI can
+     * show the right Dutch message.
      */
     async start(): Promise<void> {
         if (this.isRecording) return;
 
-        this._stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (typeof MediaRecorder === 'undefined' ||
+            !navigator.mediaDevices?.getUserMedia) {
+            throw new SpeechStartError(
+                'unsupported',
+                'MediaRecorder or getUserMedia is unavailable in this browser.',
+            );
+        }
+
+        try {
+            this._stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+            const reason = mapGetUserMediaError(err);
+            throw new SpeechStartError(reason, (err as Error)?.message ?? 'getUserMedia failed');
+        }
+
         this._mimeType = getSupportedMimeType();
         this._chunks = [];
 
@@ -83,12 +123,13 @@ export class SpeechRecorder {
             if (e.data.size > 0) this._chunks.push(e.data);
         });
 
+        this._setupLevelMetering();
         this._mediaRecorder.start(250); // collect data every 250 ms
     }
 
     /**
      * Stops the current recording and returns the collected audio as a Blob.
-     * Also stops and releases the microphone stream.
+     * Also stops and releases the microphone stream and audio analyser.
      */
     stop(): Promise<Blob> {
         return new Promise((resolve, reject) => {
@@ -101,7 +142,7 @@ export class SpeechRecorder {
                 const mimeType = this._mimeType || 'audio/webm';
                 const blob = new Blob(this._chunks, { type: mimeType });
                 this._chunks = [];
-                this._releaseStream();
+                this._teardown();
                 resolve(blob);
             }, { once: true });
 
@@ -115,32 +156,77 @@ export class SpeechRecorder {
      */
     release(): void {
         if (this._mediaRecorder?.state === 'recording') {
-            this._mediaRecorder.stop();
+            try { this._mediaRecorder.stop(); } catch { /* ignore */ }
         }
-        this._releaseStream();
+        this._teardown();
         this._chunks = [];
     }
 
-    private _releaseStream(): void {
+    private _setupLevelMetering(): void {
+        if (!this._options.onLevel || !this._stream) return;
+        try {
+            const Ctor: typeof AudioContext =
+                window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+            if (!Ctor) return;
+            this._audioCtx = new Ctor();
+            this._source = this._audioCtx.createMediaStreamSource(this._stream);
+            this._analyser = this._audioCtx.createAnalyser();
+            this._analyser.fftSize = 1024;
+            this._source.connect(this._analyser);
+
+            const buf = new Uint8Array(this._analyser.fftSize);
+            this._levelTimer = setInterval(() => {
+                if (!this._analyser) return;
+                this._analyser.getByteTimeDomainData(buf);
+                let sumSquares = 0;
+                for (let i = 0; i < buf.length; i++) {
+                    const v = (buf[i] - 128) / 128; // -1..1
+                    sumSquares += v * v;
+                }
+                const rms = Math.sqrt(sumSquares / buf.length);
+                this._options.onLevel?.(rms);
+            }, 100);
+        } catch {
+            // Web Audio not available — VAD will be disabled, recorder still works.
+            this._teardownAnalyser();
+        }
+    }
+
+    private _teardown(): void {
+        this._teardownAnalyser();
         this._stream?.getTracks().forEach(t => t.stop());
         this._stream = null;
     }
+
+    private _teardownAnalyser(): void {
+        if (this._levelTimer != null) {
+            clearInterval(this._levelTimer);
+            this._levelTimer = null;
+        }
+        try { this._source?.disconnect(); } catch { /* ignore */ }
+        try { this._analyser?.disconnect(); } catch { /* ignore */ }
+        this._source = null;
+        this._analyser = null;
+        if (this._audioCtx && this._audioCtx.state !== 'closed') {
+            this._audioCtx.close().catch(() => { /* ignore */ });
+        }
+        this._audioCtx = null;
+    }
 }
 
-// ─── API client ───────────────────────────────────────────────────────────────
-
-function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>(
-        'meta[name="__RequestVerificationToken"]',
-    )?.content ?? '';
+function mapGetUserMediaError(err: unknown): SpeechErrorReason {
+    const name = (err as { name?: string })?.name ?? '';
+    if (name === 'NotAllowedError' || name === 'SecurityError') return 'permission-denied';
+    if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'no-microphone';
+    if (name === 'NotSupportedError') return 'unsupported';
+    return 'unknown';
 }
+
+// --- API client --------------------------------------------------------------
 
 /**
  * Converts an audio Blob to base64 and sends it to the transcription endpoint.
- *
- * @param audioBlob  - The audio blob produced by SpeechRecorder.stop().
- * @param projectId  - The current project ID (used to build the API path).
- * @returns Resolved TranscribeResult — never rejects; errors are returned inline.
+ * Resolved TranscribeResult — never rejects; errors are returned inline.
  */
 export async function transcribeAudio(
     audioBlob: Blob,
@@ -154,7 +240,7 @@ export async function transcribeAudio(
         const base64 = await blobToBase64(audioBlob);
         const mimeType = audioBlob.type || 'audio/webm;codecs=opus';
 
-        const response = await fetch(
+        const response = await fetchWithTimeout(
             `/${projectId}/api/SpeechToTextApi/transcribe`,
             {
                 method:  'POST',
@@ -174,6 +260,14 @@ export async function transcribeAudio(
             };
         }
 
+        if (response.status === 413) {
+            return {
+                isSuccess:    false,
+                transcript:   null,
+                errorMessage: 'Opname te lang. Probeer een korter fragment.',
+            };
+        }
+
         if (!response.ok) {
             return {
                 isSuccess:    false,
@@ -182,8 +276,7 @@ export async function transcribeAudio(
             };
         }
 
-        const data = await response.json() as TranscribeResult;
-        return data;
+        return await response.json() as TranscribeResult;
     } catch {
         return {
             isSuccess:    false,
@@ -193,14 +286,14 @@ export async function transcribeAudio(
     }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────���──
+// --- Helpers -----------------------------------------------------------------
 
 function blobToBase64(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
             const dataUrl = reader.result as string;
-            // Strip the "data:audio/webm;base64," prefix — API expects raw base64.
+            // Strip the "data:audio/webm;base64," prefix; API expects raw base64.
             resolve(dataUrl.split(',')[1] ?? '');
         };
         reader.onerror = () => reject(reader.error);
