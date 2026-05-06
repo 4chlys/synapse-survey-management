@@ -32,6 +32,8 @@
         @await Html.PartialAsync("_ModerationPopup")
     }
 
+    @if (ViewData["HideNavbar"] is not true)
+    {
     <header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300" style="height: var(--header-h)">
         <div class="h-full max-w-2xl mx-auto px-6 flex items-center justify-between gap-4">
 
@@ -80,8 +82,9 @@
 
         </div>
     </header>
+    }
 
-    <main class="pt-16">
+    <main class="@(ViewData["HideNavbar"] is true ? "" : "pt-16")">
         @RenderBody()
     </main>
 

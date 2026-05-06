@@ -3,6 +3,7 @@ namespace SynapseEnqueteManagement.UI.User.Models;
 public class ProjectViewModel
 {
     public int ProjectId { get; set; }
+    public string Name { get; set; } = string.Empty;
     public string ProjectState { get; set; } = string.Empty;
     public string FormType { get; set; } = "VerticalScroll";
     public string OrganisationName { get; set; } = string.Empty;

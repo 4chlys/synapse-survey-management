@@ -2,67 +2,145 @@
 
 @{
     ViewData["Title"] = Model.OrganisationName;
-    ViewData["SurveyTitle"] = Model.OrganisationName;
+    ViewData["HideNavbar"] = true;
+
+    var cards = new[]
+    {
+        new { Left = "4%",  Dur = "18s", Delay = "-9s",  Rot = "-3deg", Width = "w-52" },
+        new { Left = "18%", Dur = "22s", Delay = "-5s",  Rot = "2deg",  Width = "w-56" },
+        new { Left = "34%", Dur = "19s", Delay = "-15s", Rot = "-1deg", Width = "w-48" },
+        new { Left = "50%", Dur = "24s", Delay = "-12s", Rot = "3deg",  Width = "w-60" },
+        new { Left = "64%", Dur = "20s", Delay = "-6s",  Rot = "-2deg", Width = "w-52" },
+        new { Left = "78%", Dur = "23s", Delay = "-18s", Rot = "1deg",  Width = "w-56" },
+        new { Left = "88%", Dur = "17s", Delay = "-8s",  Rot = "-4deg", Width = "w-44" },
+    };
+
+    var questions = new[]
+    {
+        new { Q = "Hoe tevreden bent u over onze service?", Type = "likert" },
+        new { Q = "Wat is uw voorkeur voor contact?",       Type = "choice" },
+        new { Q = "Hoe vaak gebruikt u dit platform?",      Type = "choice" },
+        new { Q = "Geef uw mening over de gebruiksgemak.",  Type = "likert" },
+        new { Q = "Welke functie gebruikt u het meest?",    Type = "choice" },
+        new { Q = "Hoe waardeert u de ondersteuning?",      Type = "likert" },
+        new { Q = "Wat kunnen wij verbeteren?",             Type = "open"   },
+    };
 }
 
-<div class="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-6 page-enter">
-    <div class="w-full max-w-xs">
+@* Dark overlay — dims background so content floats *@
+<div class="fixed inset-0 bg-black/35 z-[1] pointer-events-none" aria-hidden="true"></div>
 
-        <div class="bg-base-100 rounded-2xl shadow-md border border-base-300 overflow-hidden">
+@* Animated background — floating survey card mockups *@
+<div class="fixed inset-0 overflow-hidden z-0 pointer-events-none" aria-hidden="true">
+    @for (int i = 0; i < cards.Length; i++)
+    {
+        var c = cards[i];
+        var q = questions[i % questions.Length];
+        <div class="landing-bg-card @c.Width"
+             style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
+            <div class="rounded-2xl border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
 
-            @* Accent strip *@
-            <div class="h-1 accent-strip w-full"></div>
-
-            <div class="px-8 pt-10 pb-8 flex flex-col items-center text-center">
-
-                @* Logo -> only shown when a real URL is provided *@
+                @* Org identity *@
                 @if (!string.IsNullOrEmpty(Model.OrganisationLogoUrl))
                 {
-                    <div class="mb-5">
-                        <img src="@Model.OrganisationLogoUrl" alt="@Model.OrganisationName" class="h-12 object-contain" />
-                    </div>
+                    <img src="@Model.OrganisationLogoUrl" alt="" class="h-4 w-auto object-contain opacity-40 self-start" />
+                }
+                else
+                {
+                    <span class="text-[10px] font-semibold tracking-widest text-base-content/30 uppercase">@Model.OrganisationName</span>
                 }
 
-                @* Organisation name *@
-                <h2 class="font-heading text-2xl font-bold text-base-content leading-tight mb-2">
-                    @Model.OrganisationName
-                </h2>
+                @* Question *@
+                <p class="text-xs font-medium text-base-content/50 leading-snug">@q.Q</p>
 
-                @* Divider *@
-                <div class="w-6 h-px bg-primary/40 rounded-full mb-6"></div>
+                @* Answer mockup *@
+                @if (q.Type == "likert")
+                {
+                    <div class="flex gap-1.5 items-center">
+                        @for (int d = 1; d <= 5; d++)
+                        {
+                            <div class="h-5 w-5 rounded-full border border-base-300/60 @(d == 3 ? "bg-primary/30 border-primary/50" : "bg-base-200/50")"></div>
+                        }
+                    </div>
+                }
+                else if (q.Type == "choice")
+                {
+                    foreach (var opt in new[] { "44px", "56px", "36px" })
+                    {
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 w-3 rounded-full border border-base-300/60 bg-base-200/50"></div>
+                            <div class="h-2 rounded-full bg-base-content/20" style="width: @opt"></div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="rounded-lg border border-base-300/50 bg-base-200/30 h-10 w-full"></div>
+                }
 
-                @* Introduction text *@
-                <div class="w-full text-left mb-8">
-                    <p class="text-base text-base-content/85 leading-relaxed">
-                        @(string.IsNullOrEmpty(Model.Introduction)
-                            ? $"Neem deel aan de bevraging van {Model.OrganisationName}"
-                            : Model.Introduction)
-                    </p>
+                @* Progress bar *@
+                <div class="h-1 w-full rounded-full bg-base-300/40 mt-1">
+                    <div class="h-1 rounded-full bg-primary/40" style="width: @(35 + i * 9)%"></div>
                 </div>
+            </div>
+        </div>
+    }
+</div>
 
-                @* CTA *@
+<div class="min-h-screen flex flex-col px-8 py-6 page-enter relative z-10">
+
+    @* Transparent header: org name left, theme toggle right *@
+    <div class="flex items-center justify-between w-full max-w-3xl mx-auto">
+        <div class="flex items-center gap-3">
+            <span class="font-heading font-semibold text-base-content/70 text-sm tracking-wide">
+                @Model.OrganisationName
+            </span>
+        </div>
+
+        @* Toggle switch *@
+        <button id="theme-toggle" aria-label="Toggle dark mode"
+                class="relative inline-flex items-center w-14 h-7 rounded-full border border-base-300 bg-base-200 transition-colors cursor-pointer focus:outline-none hover:border-primary/50">
+            <span class="sr-only">Toggle theme</span>
+            <span class="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
+                <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning hidden" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </span>
+        </button>
+    </div>
+
+    @* Main hero — fills remaining height *@
+    <div class="flex-1 flex flex-col justify-center w-full max-w-3xl mx-auto gap-12 py-16">
+
+        @* Project title — left border accent *@
+        <div class="border-l-4 border-primary pl-6">
+            <p class="text-sm font-medium text-primary/70 uppercase tracking-widest mb-2">@Model.OrganisationName</p>
+            <h1 class="font-heading text-4xl sm:text-5xl font-bold text-base-content leading-tight">
+                @(string.IsNullOrEmpty(Model.Name) ? Model.OrganisationName : Model.Name)
+            </h1>
+        </div>
+
+        @* CTA — left on desktop, centered on mobile *@
+        <div class="flex justify-center sm:justify-start">
+            <span class="btn-travel-wrap">
                 <a asp-controller="Survey" asp-action="Index" asp-route-projectId="@Model.ProjectId"
-                       class="btn btn-primary w-full rounded-xl font-heading font-semibold text-base py-4 h-auto">
+                   class="btn btn-primary rounded-2xl font-heading font-semibold text-base px-10 py-4 h-auto gap-2 shadow-md hover:shadow-lg transition-shadow">
                     Start enquête
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                          stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                 </a>
-
-            </div>
+            </span>
         </div>
 
-        @* Website link below card *@
-        @if (!string.IsNullOrEmpty(Model.OrganisationWebsiteUrl))
-        {
-            <div class="text-center mt-5">
-                <a href="@Model.OrganisationWebsiteUrl" target="_blank" rel="noopener noreferrer"
-                       class="text-xs text-neutral/70 hover:text-primary transition-colors">
-                    @Model.OrganisationWebsiteUrl
-                </a>
-            </div>
-        }
-
     </div>
+
 </div>
