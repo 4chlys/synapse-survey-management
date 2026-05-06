@@ -25,38 +25,49 @@ source "${SCRIPT_DIR}/lib/09_armor.sh"
 
 # ── Setup ───────────────────────────────────────────────────────
 echo "======================================================"
-echo " Synapse GCP Setup — project: ${PROJECT_ID}"
+echo " Synapse GCP Setup — project: ${PROJECT_ID} (Parallel)"
 echo "======================================================"
 
+# 1. APIs moeten eerst actief zijn (sequentieel)
 enable_apis
-create_service_account
-assign_iam_roles
-create_prod_service_account
-assign_prod_iam_roles
 
-create_secrets
-create_cloud_sql
-enable_pgvector
+# 2. Start parallelle processen
+( create_service_account && assign_iam_roles && create_prod_service_account && assign_prod_iam_roles ) &
+PID_IAM=$!
 
-create_vpc_peering
-create_firewall_rules
+( create_secrets ) &
+PID_SECRETS=$!
 
-create_instance_templates
-create_migs
+( create_storage_bucket ) &
+PID_BUCKET=$!
 
-create_storage_bucket
+( create_health_checks ) &
+PID_HC=$!
 
-create_cloud_armor
+( create_instance_templates && create_migs ) &
+PID_MIGS=$!
 
-create_health_checks
+# Cloud SQL duurt het langst. Start dit proces en laat de rest niet onnodig wachten.
+( create_vpc_peering && create_firewall_rules && create_cloud_sql && enable_pgvector ) &
+PID_SQL=$!
+
+# 3. Wacht op MIGs en Health Checks (nodig voor Load Balancer)
+wait $PID_MIGS $PID_HC
+
+# 4. Configureer Load Balancer en Backend componenten
 create_backend_services
+create_cloud_armor
 create_url_map
 create_ssl_and_proxy
 reserve_static_ip
 create_forwarding_rules
 
+# 5. Overige configuraties
 setup_logging_iam
 create_uptime_checks
+
+# 6. Wacht tot ook Cloud SQL en de rest helemaal klaar is
+wait $PID_SQL $PID_IAM $PID_SECRETS $PID_BUCKET
 
 echo ""
 echo "======================================================"

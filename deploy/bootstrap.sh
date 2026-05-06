@@ -145,7 +145,7 @@ echo -e "${BOLD}── Setup starten (Parallel) ──────────�
 # 1. APIs moeten eerst actief zijn
 enable_apis
 
-# 2. Start parallelle processen
+# 2. Start parallelle processen (zonder MIGs — die starten pas na Cloud SQL)
 ( create_service_account && assign_iam_roles ) &
 PID_IAM=$!
 
@@ -159,34 +159,15 @@ PID_BUCKET=$!
 ( create_health_checks ) &
 PID_HC=$!
 
-( create_instance_templates && create_migs ) &
-PID_MIGS=$!
+( create_instance_templates ) &
+PID_TEMPLATES=$!
 
-# Cloud SQL duurt het langst. Start dit proces en laat de rest niet onnodig wachten.
+# Cloud SQL duurt het langst
 ( create_vpc_peering && create_firewall_rules && create_cloud_sql ) &
 PID_SQL=$!
 
-# 3. Wacht op MIGs en Health Checks (nodig voor Load Balancer)
-wait $PID_MIGS $PID_HC
-
-# 4. Configureer Load Balancer en Backend componenten
-create_backend_services
-create_url_map
-create_ssl_and_proxy
-reserve_static_ip
-create_forwarding_rules
-create_cloud_armor
-
-# 5. Overige configuraties
-setup_logging_iam
-create_uptime_checks
-
-# 6. Wacht tot ook Cloud SQL en de rest helemaal klaar is
-wait $PID_SQL $PID_IAM $PID_SECRETS $PID_BUCKET
-
-# ── Stap 7: LB IP ophalen ──────────────────────────────────────
-LB_IP=$(gcloud compute addresses describe synapse-lb-ip \
-  --global --format="value(address)" --project="${PROJECT_ID}")
+# 3. Wacht op ALLES voor MIGs starten (secrets en Cloud SQL moeten klaar zijn)
+wait $PID_SQL $PID_IAM $PID_SECRETS $PID_BUCKET $PID_TEMPLATES $PID_HC
 
 # db-host secret updaten met het echte Cloud SQL privaat IP
 DB_HOST=$(gcloud sql instances describe mvp-postgres \
@@ -198,6 +179,25 @@ fi
 
 # pgvector extensie automatisch activeren
 enable_pgvector
+
+# 4. MIGs aanmaken — nu pas, zodat VMs booten met correcte secrets
+create_migs
+
+# 5. Load Balancer en backends (MIGs moeten bestaan)
+create_backend_services
+create_url_map
+create_ssl_and_proxy
+reserve_static_ip
+create_forwarding_rules
+create_cloud_armor
+
+# 6. Overige configuraties
+setup_logging_iam
+create_uptime_checks
+
+# LB IP ophalen
+LB_IP=$(gcloud compute addresses describe synapse-lb-ip \
+  --global --format="value(address)" --project="${PROJECT_ID}")
 
 # ── Stap 8: Samenvatting ───────────────────────────────────────
 echo ""
