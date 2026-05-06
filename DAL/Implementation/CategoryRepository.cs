@@ -136,6 +136,7 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Include(i => i.Category).ThenInclude(c => c.Translations).ThenInclude(t => t.Language)
             .Include(i => i.Comments)
             .Include(i => i.Participant)
+            .Include(i => i.Language)
             .Where(i => i.Category.Project.ProjectId == projectId);
 
         if (!string.IsNullOrWhiteSpace(search))

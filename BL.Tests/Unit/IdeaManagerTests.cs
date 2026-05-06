@@ -143,4 +143,26 @@ public class IdeaManagerTests
         _categoryRepository.VerifyAll();
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task AddIdeaAsync_StampsParticipantLanguageOnIdea()
+    {
+        // Arrange
+        var language = new Language { Code = "nl" };
+        var participant = new Participant { ParticipantId = 1, Language = language };
+        var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = false } };
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>())).ReturnsAsync(false);
+        Idea captured = null;
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .Callback<Idea>(i => captured = i)
+            .ReturnsAsync((Idea i) => i);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, participant);
+
+        // Assert
+        Assert.Same(language, captured.Language);
+    }
 }

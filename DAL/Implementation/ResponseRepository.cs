@@ -27,6 +27,7 @@ public class ResponseRepository(DbContext context) : Repository<Response>(contex
         => await Context.Set<Response>()
             .AsNoTracking()
             .Include(r => r.Question)
+            .Include(r => r.Language)
             .Where(r => r.Participant.ParticipantId == participantId)
             .ToListAsync();
 

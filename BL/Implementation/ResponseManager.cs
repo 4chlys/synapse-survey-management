@@ -18,7 +18,14 @@ public class ResponseManager(
         var validator = validatorFactory.GetValidator(question.QuestionFormat);
         validator.Validate(value, question);
 
-        var response = new Response { Value = value, Question = question, Participant = participant, CreatedAt = DateTime.UtcNow };
+        var response = new Response
+        {
+            Value = value,
+            Question = question,
+            Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            CreatedAt = DateTime.UtcNow
+        };
         EntityValidator.Validate(response);
         var created = await responseRepository.CreateAsync(response);
         await uow.SaveChangesAsync(ct);
@@ -50,6 +57,7 @@ public class ResponseManager(
             Value = value,
             Question = question,
             Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow,
             IsCommitted = false
         };

@@ -49,6 +49,7 @@ public class CommentManager(
             ModerationStatus = status,
             Text = text,
             Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(comment);
@@ -77,6 +78,7 @@ public class CommentManager(
             Idea = idea,
             Emoji = idea.Category.Project.Emojis.First(e => e.EmojiId == emojiId),
             Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(iconComment);
@@ -117,6 +119,7 @@ public class CommentManager(
             Idea = comment.Idea,
             TextComment = comment,
             Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(reaction);

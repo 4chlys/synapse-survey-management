@@ -233,6 +233,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .HasForeignKey("ParticipantId")
                 .OnDelete(DeleteBehavior.Cascade);
 
+            e.HasOne(r => r.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Supports "which participants answered this question?" queries.
             e.HasIndex("QuestionId", "ParticipantId");
             e.HasIndex("ParticipantId");
@@ -325,6 +331,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
 
+            e.HasOne(i => i.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
             var embeddingComparer = new ValueComparer<float[]>(
                 (a, b) => (a == null && b == null) || (a != null && b != null && a.SequenceEqual(b)),
                 a => a == null ? 0 : a.Aggregate(0, (acc, v) => HashCode.Combine(acc, v.GetHashCode())),
@@ -367,6 +379,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
             e.HasDiscriminator<string>("CommentType")
                 .HasValue<TextComment>("TextComment")
                 .HasValue<IconComment>("IconComment");
+
+            e.HasOne(c => c.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // IconComment

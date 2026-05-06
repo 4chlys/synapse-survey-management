@@ -131,6 +131,7 @@ public class IdeaManager(
             Category = category,
             Participant = participant,
             Embedding = embedding,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(idea);

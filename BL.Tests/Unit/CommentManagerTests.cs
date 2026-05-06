@@ -305,4 +305,28 @@ public class CommentManagerTests
     }
 
     #endregion
+
+    #region Language stamping
+
+    [Fact]
+    public async Task AddTextCommentAsync_StampsParticipantLanguageOnComment()
+    {
+        // Arrange
+        var language = new Language { Code = "en" };
+        var participant = new Participant { ParticipantId = 7, Language = language };
+        _ideaRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(IdeaId)).ReturnsAsync(IdeaInProject());
+        Comment captured = null;
+        _commentRepository.Setup(r => r.CreateAsync(It.IsAny<TextComment>()))
+            .Callback<Comment>(c => captured = c)
+            .ReturnsAsync((TextComment c) => c);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.AddTextCommentAsync(IdeaId, ProjectId, "hello", ModerationStatus.Approved, participant);
+
+        // Assert
+        Assert.Same(language, captured.Language);
+    }
+
+    #endregion
 }

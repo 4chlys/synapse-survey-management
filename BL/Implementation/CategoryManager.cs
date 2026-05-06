@@ -155,7 +155,8 @@ public class CategoryManager(
             CreatedAt:     i.CreatedAt,
             Status:        i.Status,
             ParticipantEmail: i.Participant?.Email,
-            ImageUrl:      i.ImageUrl
+            ImageUrl:      i.ImageUrl,
+            LanguageCode:  i.Language?.Code
         )).ToList();
 
         return (items, total, approved, pending, flagged);

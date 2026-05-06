@@ -146,6 +146,7 @@ public class IdeasController(
         CommentsCount = i.Comments.OfType<TextComment>().Count(),
         IsOwnedByCurrentUser = participantId.HasValue && i.Participant?.ParticipantId == participantId.Value,
         IsFlagged = i.Status == ModerationStatus.Flagged,
+        LanguageCode = i.Language?.Code,
         Emojis = GroupEmojiReactions(i.Comments.OfType<IconComment>(), participantId)
     };
 
@@ -157,6 +158,7 @@ public class IdeasController(
         IsOwnedByCurrentUser = participantId.HasValue && c.Participant?.ParticipantId == participantId.Value,
         IsPostedByIdeaAuthor = ideaAuthorParticipantId.HasValue && c.Participant?.ParticipantId == ideaAuthorParticipantId.Value,
         IsFlagged = c.ModerationStatus == ModerationStatus.Flagged,
+        LanguageCode = c.Language?.Code,
         Emojis = GroupEmojiReactions(c.EmojiReactions.Where(r => r.Emoji != null), participantId)
     };
 

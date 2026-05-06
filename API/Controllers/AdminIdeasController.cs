@@ -57,7 +57,8 @@ public class AdminIdeasController(
                 CreatedAt     = i.CreatedAt,
                 Status        = i.Status.ToString(),
                 ParticipantEmail = i.ParticipantEmail,
-                ImageUrl      = i.ImageUrl
+                ImageUrl      = i.ImageUrl,
+                LanguageCode  = i.LanguageCode
             }).ToList()
         });
     }

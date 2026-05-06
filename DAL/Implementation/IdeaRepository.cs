@@ -35,7 +35,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
 
     public async Task<Idea> ReadByIdWithCommentsAndParticipantReadOnlyAsync(int ideaId)
     {
-        var idea = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant))
+        var idea = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant).Include(i => i.Language))
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
         if (idea != null) ExcludeReactions([idea]);
         return idea;
@@ -73,7 +73,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         int skip,
         int take)
     {
-        var query = WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant))
+        var query = WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant).Include(i => i.Language))
             .Where(i => i.Category.CategoryId == categoryId
                         && i.Status != ModerationStatus.Flagged
                         && i.Status != ModerationStatus.Declined);
@@ -103,7 +103,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
 
     public async Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId)
     {
-        var ideas = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant))
+        var ideas = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant).Include(i => i.Language))
             .Where(i => i.Category.CategoryId == categoryId
                         && i.Participant.ParticipantId == participantId
                         && i.Status != ModerationStatus.Declined)

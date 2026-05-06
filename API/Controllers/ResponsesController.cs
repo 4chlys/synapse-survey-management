@@ -95,7 +95,8 @@ public class ResponsesController(
             ResponseId = response.ResponseId,
             Value = response.Value,
             QuestionId = response.Question?.QuestionId ?? 0,
-            ParticipantId = response.Participant?.ParticipantId ?? 0
+            ParticipantId = response.Participant?.ParticipantId ?? 0,
+            LanguageCode = response.Language?.Code
         };
     }
 }
