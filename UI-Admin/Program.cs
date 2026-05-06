@@ -150,6 +150,8 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapStaticAssets();
+app.MapGet("/health", () => Results.Ok("healthy"));
+
 app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Project}/{action=Index}/{id?}")
