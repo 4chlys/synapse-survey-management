@@ -101,10 +101,14 @@
                 <label class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2 block">
                     Jouw idee
                 </label>
-                <textarea name="description" required maxlength="1000" rows="4" class="w-full px-4 py-3 border border-base-300 rounded-xl bg-base-100
+                <textarea id="idea-description-input" name="description" required maxlength="1000" rows="4" class="w-full px-4 py-3 border border-base-300 rounded-xl bg-base-100
                 text-base-content text-sm placeholder:text-base-content/40
                 focus:border-primary focus:outline-none resize-none transition-colors"
                           placeholder="Leg jouw idee uit..."></textarea>
+                <div class="mt-2 flex justify-end">
+                    <partial name="_MicButton"
+                             model='new MicButtonModel(TargetSelector: "#idea-description-input", SizeClass: "w-9 h-9")' />
+                </div>
             </div>
 
             @* Image upload *@
