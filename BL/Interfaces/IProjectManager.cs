@@ -45,6 +45,7 @@ public interface IProjectManager
     Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
     Task DeleteProjectAsync(int projectId);
+    Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode);
 
     Task<Project> DuplicateProjectAsync(int sourceProjectId,
         IEnumerable<ProjectTranslationInput> translations,

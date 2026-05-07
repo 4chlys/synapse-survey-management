@@ -12,6 +12,7 @@
 
 import { CommentSupportSession } from './commentsupport';
 import { t } from '../i18n';
+import { escapeHtml, renderMarkdown, setupAutoGrow } from './ai-support-base';
 
 // DOM references
 
@@ -50,10 +51,7 @@ function ensureRefs(): boolean {
     skipBtn?.addEventListener('click', handleSkip);
     sendBtn.addEventListener('click', () => { void handleSend(); });
 
-    inputEl.addEventListener('input', () => {
-        inputEl!.style.height = 'auto';
-        inputEl!.style.height = `${Math.min(inputEl!.scrollHeight, 128)}px`;
-    });
+    setupAutoGrow(inputEl);
 
     inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -350,22 +348,3 @@ function scrollToBottom(): void {
     });
 }
 
-// Text helpers
-
-function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g,  '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#39;');
-}
-
-function renderMarkdown(text: string): string {
-    let safe = escapeHtml(text);
-    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    safe = safe.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-    safe = safe.replace(/`([^`]+)`/g, '<code class="bg-base-300 rounded px-1 text-xs font-mono">$1</code>');
-    safe = safe.replace(/\n/g, '<br>');
-    return safe;
-}

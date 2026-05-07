@@ -10,6 +10,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
+using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using Vite.AspNetCore;
 
@@ -100,6 +101,8 @@ builder.Services.AddHttpClient<ParticipantAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<UploadAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<QuestionSupportService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IQuestionMediaService, QuestionMediaService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
@@ -175,9 +178,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseRouting();
 app.UseStaticFiles();
 app.UseRateLimiter();

@@ -332,9 +332,9 @@ public class AiModerationServiceTests
             .Setup(r => r.Check(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(ModerationResult.Acceptable());
 
-        var sut = new GoogleVertexAiModerationService(
+        var sut = new AiModerationService(
             mockChat.Object,
-            NullLogger<GoogleVertexAiModerationService>.Instance,
+            NullLogger<AiModerationService>.Instance,
             config,
             mockRegex.Object);
 

@@ -51,6 +51,8 @@
                       class="flex-1 resize-none rounded-2xl border border-base-300 bg-base-100
                              px-4 py-3 text-sm focus:outline-none focus:border-primary
                              transition-colors max-h-32 overflow-y-auto"></textarea>
+            <partial name="_MicButton"
+                     model='new MicButtonModel(TargetSelector: "#chat-input", SizeClass: "w-10 h-10")' />
             <button id="chat-send" type="button" aria-label="@L["SendAriaLabel"]"
                     class="shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center
                            hover:opacity-90 active:scale-95 transition-all cursor-pointer

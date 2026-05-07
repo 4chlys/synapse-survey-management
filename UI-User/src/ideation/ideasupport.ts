@@ -1,9 +1,6 @@
-// Types
+import { AiSupportSessionBase, AiSupportMessage, getCsrfToken, fetchWithTimeout } from './ai-support-base';
 
-export interface IdeaSupportMessage {
-    role: 'user' | 'assistant';
-    content: string;
-}
+export type { AiSupportMessage as IdeaSupportMessage };
 
 export interface IdeaSupportChatResponse {
     assistantMessage: string;
@@ -18,28 +15,6 @@ export interface IdeaSupportRefineResponse {
     refinedText: string | null;
 }
 
-// CSRF
-
-function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>(
-        'meta[name="__RequestVerificationToken"]'
-    )?.content ?? '';
-}
-
-// Low-level fetch with timeout
-
-const FETCH_TIMEOUT_MS = 30_000;
-
-async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-        return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-        clearTimeout(id);
-    }
-}
-
 /**
  * Send a single chat turn to the MVC proxy endpoint.
  *
@@ -52,7 +27,7 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
 export async function sendIdeaSupportMessage(
     projectId: number,
     categoryId: number,
-    history: IdeaSupportMessage[],
+    history: AiSupportMessage[],
     userMessage: string,
     signal?: AbortSignal,
 ): Promise<IdeaSupportChatResponse> {
@@ -66,10 +41,7 @@ export async function sendIdeaSupportMessage(
         signal,
     });
 
-    if (!res.ok) {
-        throw new Error(`IdeaSupport chat returned HTTP ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error(`IdeaSupport chat returned HTTP ${res.status}`);
     return res.json() as Promise<IdeaSupportChatResponse>;
 }
 
@@ -89,7 +61,6 @@ export async function refineIdeaDraft(
             },
             body: JSON.stringify({ draftText }),
         });
-
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<IdeaSupportRefineResponse>;
     } catch (err) {
@@ -100,19 +71,14 @@ export async function refineIdeaDraft(
 
 // IdeaSupportSession
 
-export class IdeaSupportSession {
-    private readonly _projectId: number;
+export class IdeaSupportSession extends AiSupportSessionBase {
+    private readonly _projectId:  number;
     private readonly _categoryId: number;
-    private readonly _history: IdeaSupportMessage[] = [];
-    private _abortController: AbortController | null = null;
 
     constructor(projectId: number, categoryId: number) {
+        super();
         this._projectId  = projectId;
         this._categoryId = categoryId;
-    }
-
-    get history(): readonly IdeaSupportMessage[] {
-        return this._history;
     }
 
     /**
@@ -136,23 +102,11 @@ export class IdeaSupportSession {
             this._abortController.signal,
         );
 
-        if (userMessage.trim()) {
-            this._history.push({ role: 'user',      content: userMessage });
-            this._history.push({ role: 'assistant', content: reply.assistantMessage });
-        } else if (reply.assistantMessage) {
-            this._history.push({ role: 'assistant', content: reply.assistantMessage });
-        }
-
+        this.appendTurn(userMessage, reply.assistantMessage);
         return reply;
     }
-    
+
     async refineDraft(draftText: string): Promise<IdeaSupportRefineResponse> {
         return refineIdeaDraft(this._projectId, draftText);
-    }
-
-    reset(): void {
-        this._history.length = 0;
-        this._abortController?.abort();
-        this._abortController = null;
     }
 }
