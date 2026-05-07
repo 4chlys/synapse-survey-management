@@ -1,3 +1,4 @@
+@inject IViewLocalizer L
 @* AI Idea Support Chat Overlay
    Mobile  : bottom-sheet anchored to the viewport bottom.
    Desktop : centred modal with generous max-width and rounded corners.
@@ -28,16 +29,16 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm font-heading font-semibold text-base-content leading-none">Ideeënassistent</p>
-                    <p class="text-xs text-primary mt-0.5">Stel je idee samen met AI</p>
+                    <p class="text-sm font-heading font-semibold text-base-content leading-none">@L["HeaderTitle"]</p>
+                    <p class="text-xs text-primary mt-0.5">@L["HeaderSubtitle"]</p>
                 </div>
             </div>
             <div class="flex items-center gap-1">
                 @* Switch to traditional form *@
                 <button id="idea-support-btn-switch"
                         type="button"
-                        aria-label="Zelf schrijven"
-                        title="Overschakelen naar formulier"
+                        aria-label="@L["SwitchToForm"]"
+                        title="@L["SwitchToFormTitle"]"
                         class="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full text-xs
                                font-medium text-base-content/60 border border-base-300
                                hover:text-base-content hover:bg-base-200 transition-colors">
@@ -47,13 +48,13 @@
                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
                                  m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
-                    <span>Zelf schrijven</span>
+                    <span>@L["SwitchToForm"]</span>
                 </button>
 
                 @* Close *@
                 <button id="idea-support-btn-close"
                         type="button"
-                        aria-label="Sluiten"
+                        aria-label="@L["CloseAriaLabel"]"
                         class="w-8 h-8 flex items-center justify-center rounded-full text-base-content/40
                                hover:text-base-content hover:bg-base-200 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
@@ -73,7 +74,7 @@
         <div id="idea-support-draft-banner"
              class="hidden mx-4 mb-3 rounded-2xl border-2 border-primary/30 bg-primary/10 p-4 flex-shrink-0">
             <p class="text-xs font-semibold text-primary uppercase tracking-wide mb-1.5">
-                Jouw idee
+                @L["DraftBannerHeading"]
             </p>
             <p id="idea-support-draft-text"
                class="text-sm text-base-content leading-relaxed"></p>
@@ -82,13 +83,13 @@
                         type="button"
                         class="flex-1 py-2 rounded-xl bg-primary text-primary-content text-sm font-semibold
                                hover:bg-primary/90 active:scale-95 transition-all cursor-pointer">
-                    Dit indienen
+                    @L["UseDraftButton"]
                 </button>
                 <button id="idea-support-btn-refine-draft"
                         type="button"
                         class="flex-1 py-2 rounded-xl border-2 border-base-300 text-base-content/70 text-sm font-medium
                                hover:bg-base-200 active:scale-95 transition-all cursor-pointer">
-                    Verfijnen
+                    @L["RefineDraftButton"]
                 </button>
             </div>
         </div>
@@ -99,7 +100,7 @@
                 <textarea id="idea-support-input"
                           rows="1"
                           maxlength="1000"
-                          placeholder="Typ hier je bericht..."
+                          placeholder="@L["InputPlaceholder"]"
                           class="flex-1 px-4 py-3 border-2 border-base-300 rounded-2xl bg-base-100
                                  text-base-content placeholder:text-base-content/40
                                  focus:border-primary focus:outline-none resize-none
@@ -108,7 +109,7 @@
                                  disabled:opacity-50 disabled:cursor-not-allowed"></textarea>
                 <button id="idea-support-btn-send"
                         type="button"
-                        aria-label="Versturen"
+                        aria-label="@L["SendAriaLabel"]"
                         class="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center
                                text-primary-content hover:bg-primary/90 active:scale-95 transition-all
                                disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
@@ -120,7 +121,7 @@
                 </button>
             </div>
             <p class="text-xs text-base-content/40 mt-2 text-center leading-relaxed">
-                De assistent helpt je om je idee te verwoorden — jij beslist wat er ingediend wordt.
+                @L["FooterNote"]
             </p>
         </div>
 

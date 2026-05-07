@@ -18,4 +18,67 @@
   <data name="SubmissionLanguageLabel" xml:space="preserve">
     <value>Indienen als</value>
   </data>
+  <data name="ModeSelectHeading" xml:space="preserve">
+    <value>Hoe wil je jouw idee toevoegen?</value>
+  </data>
+  <data name="AiOptionTitle" xml:space="preserve">
+    <value>Met AI-assistent</value>
+  </data>
+  <data name="AiOptionSubtitle" xml:space="preserve">
+    <value>Wij helpen je idee te formuleren</value>
+  </data>
+  <data name="ManualOptionTitle" xml:space="preserve">
+    <value>Zelf schrijven</value>
+  </data>
+  <data name="ManualOptionSubtitle" xml:space="preserve">
+    <value>Typ je idee direct in het formulier</value>
+  </data>
+  <data name="NewIdeaButton" xml:space="preserve">
+    <value>Nieuw idee plaatsen</value>
+  </data>
+  <data name="YourIdeaLabel" xml:space="preserve">
+    <value>Jouw idee</value>
+  </data>
+  <data name="IdeaPlaceholder" xml:space="preserve">
+    <value>Leg jouw idee uit...</value>
+  </data>
+  <data name="AddImageButton" xml:space="preserve">
+    <value>📎 Afbeelding toevoegen</value>
+  </data>
+  <data name="PostButton" xml:space="preserve">
+    <value>Plaatsen</value>
+  </data>
+  <data name="CancelButton" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="SortDiverse" xml:space="preserve">
+    <value>Divers</value>
+  </data>
+  <data name="SortSimilar" xml:space="preserve">
+    <value>Gelijkaardig</value>
+  </data>
+  <data name="SortDifferent" xml:space="preserve">
+    <value>Anders</value>
+  </data>
+  <data name="EmptyState" xml:space="preserve">
+    <value>Nog geen ideeën — wees de eerste!</value>
+  </data>
+  <data name="FlaggedBadge" xml:space="preserve">
+    <value>In behandeling</value>
+  </data>
+  <data name="CopyIdeaButton" xml:space="preserve">
+    <value>Gebruiken als startpunt</value>
+  </data>
+  <data name="RefreshIdeasButton" xml:space="preserve">
+    <value>Nieuwe ideeën zien</value>
+  </data>
+  <data name="BackNavLabel" xml:space="preserve">
+    <value>Terug</value>
+  </data>
+  <data name="MyIdeasNavLabel" xml:space="preserve">
+    <value>Mijn ideeën</value>
+  </data>
+  <data name="CloseNavLabel" xml:space="preserve">
+    <value>Afsluiten</value>
+  </data>
 </root>

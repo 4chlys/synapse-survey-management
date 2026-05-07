@@ -1,7 +1,7 @@
 @model IdeaDetailViewModel
 @inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer L
 @{
-    ViewData["Title"] = "Idee";
+    ViewData["Title"] = L["Title"];
 }
 
 <div class="max-w-2xl mx-auto px-6 pt-10 pb-32 min-h-[calc(100dvh-64px)] page-enter">
@@ -95,7 +95,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round"
                                   d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        @Model.Idea.CommentsCount reacties
+                        @Model.Idea.CommentsCount @L["CommentsLabel"]
                     </span>
                 </div>
             </div>
@@ -111,7 +111,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            Reageer op dit idee
+            @L["ReactButton"]
         </button>
     </div>
 
@@ -121,7 +121,7 @@
         @* Section label *@
         <div class="flex items-center gap-3 mb-4">
             <p class="text-[12px] font-bold text-base-content/90 uppercase tracking-widest">
-                Reacties (@Model.Comments.Count)
+                @L["CommentsSectionLabel"] (@Model.Comments.Count)
             </p>
             <div class="flex-1 h-px bg-base-300"></div>
         </div>
@@ -136,7 +136,7 @@
                               d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                 </div>
-                <p class="text-base-content/60 text-sm">Nog geen reacties. Wees de eerste!</p>
+                <p class="text-base-content/60 text-sm">@L["NoCommentsState"]</p>
             </div>
         }
         else
@@ -152,7 +152,7 @@
                         {
                             <span class="inline-flex items-center gap-1 text-xs text-warning font-medium mb-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-warning inline-block"></span>
-                                In behandeling
+                                @L["FlaggedBadge"]
                             </span>
                         }
                         else if (comment.IsOwnedByCurrentUser || comment.IsPostedByIdeaAuthor)
@@ -162,14 +162,14 @@
                                 {
                                     <span class="inline-flex items-center gap-1 text-xs text-primary font-medium">
                                         <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
-                                        Jouw reactie
+                                        @L["OwnCommentBadge"]
                                     </span>
                                 }
                                 @if (comment.IsPostedByIdeaAuthor)
                                 {
                                     <span class="inline-flex items-center gap-1 text-xs text-secondary font-medium">
                                         <span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span>
-                                        Idee-auteur
+                                        @L["IdeaAuthorBadge"]
                                     </span>
                                 }
                             </div>
@@ -258,7 +258,7 @@
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
             </svg>
-            <span class="text-[11px] font-medium">Terug</span>
+            <span class="text-[11px] font-medium">@L["BackNavLabel"]</span>
         </a>
 
         <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
@@ -268,7 +268,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            <span class="text-[11px] font-medium">Afsluiten</span>
+            <span class="text-[11px] font-medium">@L["CloseNavLabel"]</span>
         </a>
 
     </div>
@@ -284,7 +284,7 @@
         <div class="w-10 h-1 bg-base-300 rounded-full mx-auto mb-5"></div>
 
         <p class="text-sm font-heading font-semibold text-base-content mb-4">
-            Hoe wil je reageren?
+            @L["CommentModeHeading"]
         </p>
 
         <div class="flex flex-col gap-3">
@@ -302,9 +302,9 @@
                     </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-base-content">Met AI hulp</p>
+                    <p class="text-sm font-semibold text-base-content">@L["AiCommentOptionTitle"]</p>
                     <p class="text-xs text-base-content/60 mt-0.5 leading-relaxed">
-                        AI vat het idee samen en geeft snel feedback op jouw reactie.
+                        @L["AiCommentOptionSubtitle"]
                     </p>
                 </div>
             </button>
@@ -322,9 +322,9 @@
                     </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-base-content">Direct plaatsen</p>
+                    <p class="text-sm font-semibold text-base-content">@L["ManualCommentOptionTitle"]</p>
                     <p class="text-xs text-base-content/60 mt-0.5 leading-relaxed">
-                        Schrijf en verstuur je reactie zelf, zonder AI hulp.
+                        @L["ManualCommentOptionSubtitle"]
                     </p>
                 </div>
             </button>
@@ -358,15 +358,15 @@
                 <textarea name="text" rows="2" required maxlength="500" class="flex-1 px-4 py-3 border border-base-300 rounded-xl bg-base-100
                 text-base-content text-[15px] placeholder:text-base-content/40
                 focus:border-primary focus:outline-none resize-none transition-colors"
-                          placeholder="Schrijf een reactie..."></textarea>
+                          placeholder="@L["CommentPlaceholder"]"></textarea>
                 <div class="flex flex-col gap-2">
                     <button type="submit"
                             class="btn btn-primary rounded-xl text-sm font-heading font-semibold px-4 py-2.5 cursor-pointer">
-                        Plaatsen
+                        @L["PostCommentButton"]
                     </button>
                     <button type="button" data-action="hide-comment-form"
                             class="px-4 py-2.5 rounded-xl border border-base-300 text-base-content/70 text-sm font-semibold hover:bg-base-200 transition-colors cursor-pointer">
-                        Annuleren
+                        @L["CancelCommentButton"]
                     </button>
                 </div>
             </div>

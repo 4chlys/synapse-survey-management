@@ -2,9 +2,10 @@
 @using SynapseEnqueteManagement.UI.User.Helpers
 @using SynapseEnqueteManagement.UI.User.Models.Survey
 @model SurveyViewModel
+@inject IViewLocalizer L
 
 @{
-    ViewData["Title"] = "Enquête";
+    ViewData["Title"] = L["Title"];
     ViewData["SurveyTitle"] = Model.Title;
 }
 
@@ -40,7 +41,7 @@
                             </span>
                             @if (question.IsMandatory)
                             {
-                                <span class="w-1.5 h-1.5 rounded-full bg-accent inline-block" title="Verplicht"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-accent inline-block" title="@L["Mandatory"]"></span>
                             }
                         </div>
 
@@ -156,8 +157,8 @@
                                 {
                                     <div class="px-1">
                                         <div class="flex justify-between text-[13px] text-base-content/70 mb-4 font-medium">
-                                            <span>Helemaal oneens</span>
-                                            <span>Helemaal eens</span>
+                                            <span>@L["LikertDisagree"]</span>
+                                            <span>@L["LikertAgree"]</span>
                                         </div>
                                         <input type="range" name="q_@question.QuestionId" min="1" max="10" value="5"
                                                class="w-full accent-[oklch(52%_0.22_277)] cursor-pointer h-2" />
@@ -175,7 +176,7 @@
                                 {
                                     <div>
                                         <textarea name="q_@question.QuestionId" rows="5" maxlength="500"
-                                                  placeholder="Typ hier je antwoord..." class="w-full border border-base-300 rounded-xl px-5 py-4 text-[15px] text-base-content bg-base-100
+                                                  placeholder="@L["AnswerPlaceholder"]" class="w-full border border-base-300 rounded-xl px-5 py-4 text-[15px] text-base-content bg-base-100
                                         placeholder:text-base-content/35 focus:outline-none focus:border-primary
                                         resize-none transition-colors leading-relaxed"></textarea>
                                         <p class="text-xs text-base-content/40 text-right mt-1.5 textarea-counter">0 / 500</p>
@@ -187,16 +188,16 @@
 
                         @* navigation *@
                         <div class="flex items-center justify-between shrink-0">
-                            <p class="text-[13px] text-base-content/50">Swipe of druk ↓ voor volgende</p>
+                            <p class="text-[13px] text-base-content/50">@L["SwipeHint"]</p>
                             <div class="flex gap-2">
-                                <button type="button" aria-label="Vorige vraag"
+                                <button type="button" aria-label="@L["PrevQuestion"]"
                                         class="btn-prev w-9 h-9 rounded-full bg-base-200 border border-base-300 flex items-center justify-center shadow-sm hover:border-primary hover:text-primary active:scale-95 transition-all disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content" fill="none"
                                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
                                     </svg>
                                 </button>
-                                <button type="button" aria-label="Volgende vraag"
+                                <button type="button" aria-label="@L["NextQuestion"]"
                                         class="btn-next w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-md hover:opacity-90 active:scale-95 transition-all cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content" fill="none"
                                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -225,16 +226,16 @@
                             </svg>
                         </div>
                         <div>
-                            <h2 class="font-heading text-2xl font-bold text-base-content mb-2">Klaar!</h2>
+                            <h2 class="font-heading text-2xl font-bold text-base-content mb-2">@L["SubmitSlideHeading"]</h2>
                             <p class="text-base-content/75 text-sm leading-relaxed max-w-55">
-                                Controleer je antwoorden en stuur ze in.
+                                @L["SubmitSlideDescription"]
                             </p>
                         </div>
                     </div>
 
                     <button type="submit"
                             class="btn btn-primary w-full max-w-xs rounded-xl font-heading font-semibold py-4 h-auto text-base">
-                        Antwoorden versturen
+                        @L["SubmitAnswers"]
                     </button>
 
                 </div>
