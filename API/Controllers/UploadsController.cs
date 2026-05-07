@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiModeration;
@@ -68,7 +69,7 @@ public class UploadsController(
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.

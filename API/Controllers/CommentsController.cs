@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -34,7 +35,7 @@ public class CommentsController(
 
         try
         {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant, submissionLanguageCode, ct);
             return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }

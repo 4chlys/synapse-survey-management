@@ -1,4 +1,6 @@
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.BL.Sorting.Embeddings;
@@ -296,5 +298,54 @@ public class IdeaManagerTests
 
         // Assert
         Assert.Equal("nl", captured.Language?.Code);
+    }
+}
+
+public class AiModerationServiceTests
+{
+    [Fact]
+    public async Task CheckWithAiAsync_RespondInLanguageEn_PromptContainsEnNotPlaceholder()
+    {
+        // Arrange — platform language "nl", participant language "en"
+        var config = new ModerationConfig
+        {
+            UseAi           = true,
+            DefaultLanguage = "nl",
+            ModerationPrompt =
+                "Assess content. Respond: { \"acceptable\": false, \"reason\": \"<reason in {response_language}>\" }",
+        };
+
+        IEnumerable<ChatMessage> capturedMessages = null;
+        var mockChat = new Mock<IChatClient>();
+        mockChat
+            .Setup(c => c.GetResponseAsync(
+                It.IsAny<IEnumerable<ChatMessage>>(),
+                It.IsAny<ChatOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<IEnumerable<ChatMessage>, ChatOptions, CancellationToken>(
+                (msgs, _, _) => capturedMessages = msgs.ToList())
+            .ReturnsAsync(new ChatResponse(
+                [new ChatMessage(ChatRole.Assistant, "{\"acceptable\":true}")]));
+
+        var mockRegex = new Mock<IRegexModerationService>();
+        mockRegex
+            .Setup(r => r.Check(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(ModerationResult.Acceptable());
+
+        var sut = new GoogleVertexAiModerationService(
+            mockChat.Object,
+            NullLogger<GoogleVertexAiModerationService>.Instance,
+            config,
+            mockRegex.Object);
+
+        // Act
+        await sut.CheckWithAiAsync("some idea text", respondInLanguage: "en");
+
+        // Assert — "{response_language}" replaced with "en" (not left as placeholder, not "nl")
+        Assert.NotNull(capturedMessages);
+        var systemPrompt = capturedMessages.First(m => m.Role == ChatRole.System).Text;
+        Assert.Contains("en", systemPrompt);
+        Assert.DoesNotContain("{response_language}", systemPrompt);
+        Assert.DoesNotContain("<reason in nl>", systemPrompt);
     }
 }

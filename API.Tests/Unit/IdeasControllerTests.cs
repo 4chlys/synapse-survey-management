@@ -69,7 +69,7 @@ public class IdeasControllerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct))
+        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct, It.IsAny<string>()))
             .ReturnsAsync(ModerationStatus.Approved);
         _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, null, null, ct))
             .ReturnsAsync(new AddIdeaResult(42, false))

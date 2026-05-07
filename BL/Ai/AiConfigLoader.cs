@@ -96,6 +96,7 @@ public static class AiConfigLoader
         var substitutedModeration = new ModerationConfig
         {
             UseAi                   = m.UseAi,
+            DefaultLanguage         = p.Language,
             ModerationPrompt        = SubWithAge(m.ModerationPrompt),
             CommentModerationPrompt = SubWithAge(m.CommentModerationPrompt),
             RewritePrompt           = Sub(m.RewritePrompt),

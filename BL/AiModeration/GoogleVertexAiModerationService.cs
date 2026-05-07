@@ -29,7 +29,8 @@ public sealed class GoogleVertexAiModerationService(
     public async Task<ModerationResult> CheckWithAiAsync(
         string text,
         CancellationToken ct = default,
-        string contentType = "idea")
+        string contentType = "idea",
+        string respondInLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text))
             return ModerationResult.Acceptable();
@@ -41,7 +42,7 @@ public sealed class GoogleVertexAiModerationService(
 
         try
         {
-            return await CallModerationAsync(text, contentType, ct);
+            return await CallModerationAsync(text, contentType, respondInLanguage, ct);
         }
         catch (OperationCanceledException)
         {
@@ -56,17 +57,20 @@ public sealed class GoogleVertexAiModerationService(
         }
     }
 
-    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default)
+    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (!config.UseAi) return ModerationResult.Acceptable();
 
         try
         {
+            var imagePrompt = config.ImageModerationPrompt
+                .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+
             var imageContent = new DataContent(new ReadOnlyMemory<byte>(imageBytes), mimeType);
             var message = new ChatMessage(ChatRole.User,
             [
                 imageContent,
-                new TextContent(config.ImageModerationPrompt),
+                new TextContent(imagePrompt),
             ]);
 
             var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
@@ -111,15 +115,18 @@ public sealed class GoogleVertexAiModerationService(
         }
     }
 
-    public async Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
+    public async Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         try
         {
+            var rewritePrompt = config.RewritePrompt
+                .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+
             var messages = new List<ChatMessage>
             {
-                new(ChatRole.System, config.RewritePrompt),
+                new(ChatRole.System, rewritePrompt),
                 new(ChatRole.User,   text),
             };
 
@@ -147,11 +154,15 @@ public sealed class GoogleVertexAiModerationService(
     private async Task<ModerationResult> CallModerationAsync(
         string text,
         string contentType,
+        string respondInLanguage,
         CancellationToken ct)
     {
-        var prompt = contentType == "comment"
+        var rawPrompt = contentType == "comment"
             ? config.CommentModerationPrompt
             : config.ModerationPrompt;
+
+        var prompt = rawPrompt
+            .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
         var messages = new List<ChatMessage>
         {
