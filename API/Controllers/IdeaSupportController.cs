@@ -87,6 +87,7 @@ public class IdeaSupportController(
             CategoryName        = catTranslation?.Name ?? string.Empty,
             CategoryDescription = catTranslation?.Description ?? string.Empty,
             AgeRange            = FormatAgeRange(project?.MinAge, project?.MaxAge),
+            Language            = lang,
             IsFirstTurn         = isFirstTurn,
         };
 
@@ -117,7 +118,8 @@ public class IdeaSupportController(
         var (_, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var result = await ideaSupportService.RefineAsync(dto.DraftText, ct);
+        var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var result = await ideaSupportService.RefineAsync(dto.DraftText, lang, ct);
         return Ok(new IdeaSupportRefineResponseDto { RefinedText = result.RefinedText });
     }
 }

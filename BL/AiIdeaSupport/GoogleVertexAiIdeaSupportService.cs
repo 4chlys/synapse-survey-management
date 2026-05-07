@@ -58,6 +58,7 @@ public sealed class GoogleVertexAiIdeaSupportService(
 
     public async Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
+        string language,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))
@@ -65,8 +66,9 @@ public sealed class GoogleVertexAiIdeaSupportService(
 
         try
         {
-            var prompt   = config.RefinePrompt.Replace("{draft}", draftText,
-                               StringComparison.OrdinalIgnoreCase);
+            var prompt   = config.RefinePrompt
+                               .Replace("{draft}",    draftText, StringComparison.OrdinalIgnoreCase)
+                               .Replace("{language}", language,  StringComparison.OrdinalIgnoreCase);
             var messages = new List<ChatMessage> { new(ChatRole.User, prompt) };
             var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
             var refined  = response.Messages.LastOrDefault()?.Text?.Trim();
@@ -105,11 +107,19 @@ public sealed class GoogleVertexAiIdeaSupportService(
     private List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
     {
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
-        var systemPrompt = config.SystemPrompt.Replace("{age_range}", ageRange, StringComparison.OrdinalIgnoreCase);
+        var langName     = GetLanguageName(request.Language);
+        var systemPrompt = config.SystemPrompt
+            .Replace("{age_range}", ageRange,          StringComparison.OrdinalIgnoreCase)
+            .Replace("{language}",  request.Language,  StringComparison.OrdinalIgnoreCase);
 
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, systemPrompt)
+            new(ChatRole.System, systemPrompt),
+            // Explicit language instruction using the full name so it is unambiguous
+            // regardless of what language the system prompt itself is written in.
+            new(ChatRole.System,
+                $"You MUST respond in {langName} for every message in this conversation. " +
+                $"Do not use any other language."),
         };
 
         if (request.IsFirstTurn && !string.IsNullOrWhiteSpace(request.CategoryName))
@@ -122,6 +132,8 @@ public sealed class GoogleVertexAiIdeaSupportService(
                 .Replace("{category_name}",        request.CategoryName,
                     StringComparison.OrdinalIgnoreCase)
                 .Replace("{category_description}", request.CategoryDescription,
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace("{language}",             request.Language,
                     StringComparison.OrdinalIgnoreCase);
 
             messages.Add(new ChatMessage(ChatRole.System, ctx));
@@ -129,8 +141,8 @@ public sealed class GoogleVertexAiIdeaSupportService(
         else if (!string.IsNullOrWhiteSpace(request.CategoryName))
         {
             messages.Add(new ChatMessage(ChatRole.System,
-                $"Herinnering: de categorie voor deze sessie is '{request.CategoryName}'. " +
-                $"Gebruik altijd deze naam — verzin NOOIT een andere categorienaam."));
+                $"Reminder: the category for this session is '{request.CategoryName}'. " +
+                $"Always use this exact name — NEVER invent a different category name."));
         }
 
         var history = request.History.Count > config.MaxHistoryTurns * 2
@@ -207,4 +219,10 @@ public sealed class GoogleVertexAiIdeaSupportService(
 
     private IdeaSupportChatReply FallbackReply() =>
         new() { AssistantMessage = config.FallbackMessage, Phase = IdeaSupportPhase.Error };
+
+    private static string GetLanguageName(string langCode)
+    {
+        try { return System.Globalization.CultureInfo.GetCultureInfo(langCode).EnglishName; }
+        catch { return langCode; }
+    }
 }

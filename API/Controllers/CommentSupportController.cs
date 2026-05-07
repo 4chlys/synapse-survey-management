@@ -39,6 +39,8 @@ public class CommentSupportController(
         var isFirstTurn = string.IsNullOrWhiteSpace(dto.UserMessage)
                           && dto.History.Count == 0;
 
+        var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
         Project project = null;
         try { project = await GetProjectByIdReadOnlyAsync(projectId); }
         catch { /* intentionally swallowed */ }
@@ -56,6 +58,7 @@ public class CommentSupportController(
                              .ToList(),
             UserMessage  = dto.UserMessage ?? string.Empty,
             AgeRange     = FormatAgeRange(project?.MinAge, project?.MaxAge),
+            Language     = lang,
             IsFirstTurn  = isFirstTurn,
         };
 

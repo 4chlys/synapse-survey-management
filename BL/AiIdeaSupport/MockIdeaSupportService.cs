@@ -70,6 +70,7 @@ public sealed class MockIdeaSupportService : IAiIdeaSupportService
 
     public Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
+        string language,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))

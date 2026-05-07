@@ -23,5 +23,6 @@ public interface IAiIdeaSupportService
     /// </summary>
     Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
+        string language,
         CancellationToken ct = default);
 }

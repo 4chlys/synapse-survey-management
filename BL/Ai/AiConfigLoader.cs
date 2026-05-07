@@ -105,12 +105,18 @@ public static class AiConfigLoader
             RegexPatterns           = m.RegexPatterns,
         };
 
+        // IdeaSupport and CommentSupport substitute {language} per-request (participant's UI language);
+        // omit it here so it is not locked to the platform default at startup.
+        string SubNoLang(string s) => string.IsNullOrEmpty(s) ? s : s
+            .Replace("{platform_name}", p.Name,    StringComparison.OrdinalIgnoreCase)
+            .Replace("{country}",       p.Country, StringComparison.OrdinalIgnoreCase);
+
         var i = config.IdeaSupport;
         var substitutedIdeaSupport = new AiIdeaSupportConfig
         {
-            SystemPrompt          = Sub(i.SystemPrompt),   // {age_range} substituted per-request
-            ContextPrompt         = Sub(i.ContextPrompt),
-            RefinePrompt          = Sub(i.RefinePrompt),
+            SystemPrompt          = SubNoLang(i.SystemPrompt),   // {language}/{age_range} substituted per-request
+            ContextPrompt         = SubNoLang(i.ContextPrompt),  // {language} substituted per-request
+            RefinePrompt          = SubNoLang(i.RefinePrompt),   // {language} substituted per-request
             MaxHistoryTurns       = i.MaxHistoryTurns,
             MaxIntroductionLength = i.MaxIntroductionLength,
             DefaultAgeRange       = p.AgeRange,
@@ -126,8 +132,8 @@ public static class AiConfigLoader
         var c = config.CommentSupport;
         var substitutedCommentSupport = new AiCommentSupportConfig
         {
-            SystemPrompt    = Sub(c.SystemPrompt),         // {age_range} substituted per-request
-            ContextPrompt   = Sub(c.ContextPrompt),
+            SystemPrompt    = SubNoLang(c.SystemPrompt),   // {language}/{age_range} substituted per-request
+            ContextPrompt   = SubNoLang(c.ContextPrompt),  // {language} substituted per-request
             FallbackMessage = c.FallbackMessage,
             DefaultAgeRange = p.AgeRange,
         };

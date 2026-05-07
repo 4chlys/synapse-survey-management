@@ -54,18 +54,27 @@ public sealed class GoogleVertexAiCommentSupportService(
     private List<ChatMessage> BuildMessages(CommentSupportRequest request)
     {
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
-        var systemPrompt = config.SystemPrompt.Replace("{age_range}", ageRange, StringComparison.OrdinalIgnoreCase);
+        var langName     = GetLanguageName(request.Language);
+        var systemPrompt = config.SystemPrompt
+            .Replace("{age_range}", ageRange,         StringComparison.OrdinalIgnoreCase)
+            .Replace("{language}",  request.Language, StringComparison.OrdinalIgnoreCase);
 
         var messages = new List<ChatMessage>
         {
-            new(ChatRole.System, systemPrompt)
+            new(ChatRole.System, systemPrompt),
+            // Explicit language instruction using the full name so it is unambiguous
+            // regardless of what language the system prompt itself is written in.
+            new(ChatRole.System,
+                $"You MUST respond in {langName} for every message in this conversation. " +
+                $"Do not use any other language."),
         };
 
         if (request.IsFirstTurn)
         {
             var ctx = config.ContextPrompt
                 .Replace("{idea_text}",     request.IdeaText,     StringComparison.OrdinalIgnoreCase)
-                .Replace("{category_name}", request.CategoryName, StringComparison.OrdinalIgnoreCase);
+                .Replace("{category_name}", request.CategoryName, StringComparison.OrdinalIgnoreCase)
+                .Replace("{language}",      request.Language,     StringComparison.OrdinalIgnoreCase);
 
             messages.Add(new ChatMessage(ChatRole.System, ctx));
         }
@@ -121,4 +130,10 @@ public sealed class GoogleVertexAiCommentSupportService(
 
     private CommentSupportReply FallbackReply() =>
         new() { AssistantMessage = config.FallbackMessage, IsFinal = true };
+
+    private static string GetLanguageName(string langCode)
+    {
+        try { return System.Globalization.CultureInfo.GetCultureInfo(langCode).EnglishName; }
+        catch { return langCode; }
+    }
 }

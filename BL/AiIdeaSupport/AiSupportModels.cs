@@ -69,6 +69,9 @@ public sealed class IdeaSupportChatRequest
     /// <summary>Age range of the project's target audience (e.g. "14–24"). Null falls back to the platform default.</summary>
     public string AgeRange { get; init; }
 
+    /// <summary>BCP-47 two-letter language code of the participant's UI language (e.g. "nl", "en").</summary>
+    public string Language { get; init; } = "nl";
+
     /// <summary>
     /// True when this is the very first user turn.
     /// The service will inject the context prompt before the history.
