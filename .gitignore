@@ -501,7 +501,6 @@ CasperContext/
 # manually by Romeo
 start.sh
 .superpowers/
-docs/
 
 # manually by Jonas
 JonasAssignment/

@@ -15,7 +15,8 @@ public sealed class SpeechToTextService(HttpClient httpClient, ISessionService s
     public async Task<SpeechToTextResponse> TranscribeAsync(
         int projectId,
         string audioDataBase64,
-        string mimeType)
+        string mimeType,
+        string language)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Post,
@@ -25,6 +26,7 @@ public sealed class SpeechToTextService(HttpClient httpClient, ISessionService s
         {
             AudioData = audioDataBase64,
             MimeType  = mimeType,
+            Language  = language,
         });
 
         AddTokenHeader(request, projectId);
@@ -33,12 +35,12 @@ public sealed class SpeechToTextService(HttpClient httpClient, ISessionService s
         if (!response.IsSuccessStatusCode)
             return new SpeechToTextResponse
             {
-                IsSuccess    = false,
-                ErrorMessage = "Spraakherkenning is momenteel niet beschikbaar.",
+                IsSuccess = false,
+                ErrorCode = "service_unavailable",
             };
 
         return await response.Content.ReadFromJsonAsync<SpeechToTextResponse>()
-               ?? new SpeechToTextResponse { IsSuccess = false, ErrorMessage = "Onverwacht antwoord." };
+               ?? new SpeechToTextResponse { IsSuccess = false, ErrorCode = "unexpected_response" };
     }
 
     private void AddTokenHeader(HttpRequestMessage request, int projectId)

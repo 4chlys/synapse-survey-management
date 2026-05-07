@@ -4,4 +4,4 @@ public sealed record MicButtonModel(
     string TargetSelector,
     string SizeClass  = "w-10 h-10",
     string ExtraClass = "",
-    string AriaLabel  = "Spreken in plaats van typen");
+    string AriaLabel  = null);

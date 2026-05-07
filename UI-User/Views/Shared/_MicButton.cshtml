@@ -1,12 +1,16 @@
 @model SynapseEnqueteManagement.UI.User.Models.SpeechToText.MicButtonModel
+@inject IHtmlLocalizer<SharedResource> Shared
 @*
     Reusable mic button. Pair with src/speechtotext-attach.ts.
     Wires by data-stt-target="<css-selector-of-textarea>".
 *@
+@{
+    var ariaLabel = Model.AriaLabel ?? Shared["SpeechToText_MicAriaLabel"].Value;
+}
 <button type="button"
         data-stt-target="@Model.TargetSelector"
-        aria-label="@Model.AriaLabel"
-        title="@Model.AriaLabel"
+        aria-label="@ariaLabel"
+        title="@ariaLabel"
         class="@Model.SizeClass @Model.ExtraClass rounded-2xl bg-base-200 border border-base-300
                flex items-center justify-center text-base-content/70
                hover:bg-base-300 hover:text-primary active:scale-95 transition-all

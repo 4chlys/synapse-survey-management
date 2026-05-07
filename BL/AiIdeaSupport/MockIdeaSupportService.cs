@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Localization;
+
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 /// <summary>
@@ -7,26 +9,22 @@ namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 /// without requiring Vertex AI credentials, so developers can work on the
 /// front-end chat UI without any cloud dependency.
 /// </summary>
-public sealed class MockIdeaSupportService : IAiIdeaSupportService
+public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> localizer)
+    : IAiIdeaSupportService
 {
-    private static readonly string[] OpeningMessages =
+    private static readonly string[] OpeningKeys =
     [
-        "Interessant! Wat is het grootste probleem dat jouw idee oplost?",
-        "Goed dat je een idee hebt! Kun je me vertellen voor wie dit idee bedoeld is?",
-        "Vertel me meer — wat heeft je geïnspireerd om dit idee te bedenken?",
+        "Mock_Idea_Opening_1",
+        "Mock_Idea_Opening_2",
+        "Mock_Idea_Opening_3",
     ];
 
-    private static readonly string[] FollowUpMessages =
+    private static readonly string[] FollowUpKeys =
     [
-        "Dat klinkt goed. Hoe zou jij de eerste stap zetten om dit idee te realiseren?",
-        "Interessant perspectief! Wie zou er nog meer baat bij hebben?",
-        "Kun je een concreet voorbeeld geven van hoe dit werkt in de praktijk?",
-        "Wat zijn mogelijke obstakels en hoe zou je die aanpakken?",
-    ];
-
-    private static readonly string[] DraftMessages =
-    [
-        "Op basis van ons gesprek heb ik een voorstel voor je idee samengesteld:",
+        "Mock_Idea_FollowUp_1",
+        "Mock_Idea_FollowUp_2",
+        "Mock_Idea_FollowUp_3",
+        "Mock_Idea_FollowUp_4",
     ];
 
     public Task<IdeaSupportChatReply> ChatAsync(
@@ -40,31 +38,32 @@ public sealed class MockIdeaSupportService : IAiIdeaSupportService
 
         if (userTurns >= 4)
         {
-            var draftMsg = DraftMessages[0];
-            var draft    = $"Ik stel voor om {request.CategoryName.ToLowerInvariant()} te verbeteren door: {request.UserMessage.TrimEnd('.')}. " +
-                           "Dit zou een positieve impact hebben op de betrokken mensen en is haalbaar met de juiste aanpak.";
+            var draft = localizer[
+                "Mock_Idea_Draft_Body",
+                request.CategoryName.ToLowerInvariant(),
+                request.UserMessage.TrimEnd('.')].Value;
 
             return Task.FromResult(new IdeaSupportChatReply
             {
-                AssistantMessage = draftMsg,
+                AssistantMessage = localizer["Mock_Idea_Draft_Intro"].Value,
                 SuggestedDraft   = draft,
                 Phase            = IdeaSupportPhase.Draft,
             });
         }
-        
+
         if (request.IsFirstTurn || turnCount == 0)
         {
-            var idx = Math.Abs(request.CategoryName.GetHashCode()) % OpeningMessages.Length;
+            var idx = Math.Abs(request.CategoryName.GetHashCode()) % OpeningKeys.Length;
             return Task.FromResult(new IdeaSupportChatReply
             {
-                AssistantMessage = OpeningMessages[idx],
+                AssistantMessage = localizer[OpeningKeys[idx]].Value,
             });
         }
 
-        var followIdx = turnCount % FollowUpMessages.Length;
+        var followIdx = turnCount % FollowUpKeys.Length;
         return Task.FromResult(new IdeaSupportChatReply
         {
-            AssistantMessage = FollowUpMessages[followIdx],
+            AssistantMessage = localizer[FollowUpKeys[followIdx]].Value,
         });
     }
 

@@ -32,7 +32,8 @@ public class SpeechToTextController(
             return BadRequest(new SpeechToTextResponseDto
             {
                 IsSuccess    = false,
-                ErrorMessage = "Ongeldige audiodata.",
+                ErrorCode    = SpeechToTextErrorCodes.InvalidAudioData,
+                ErrorMessage = "Invalid audio data.",
             });
         }
 
@@ -41,14 +42,20 @@ public class SpeechToTextController(
             return BadRequest(new SpeechToTextResponseDto
             {
                 IsSuccess    = false,
-                ErrorMessage = "De opname is te lang. Houd het onder 30 seconden.",
+                ErrorCode    = SpeechToTextErrorCodes.TooLong,
+                ErrorMessage = "Recording exceeds the configured maximum length.",
             });
         }
+
+        var lang = string.IsNullOrWhiteSpace(dto.Language)
+            ? System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
+            : dto.Language;
 
         var request = new SpeechToTextRequest
         {
             AudioData = audioBytes,
             MimeType  = dto.MimeType,
+            Language  = lang,
         };
 
         var result = await speechToTextService.TranscribeAsync(request, ct);
@@ -57,6 +64,7 @@ public class SpeechToTextController(
         {
             IsSuccess    = result.IsSuccess,
             Transcript   = result.Transcript,
+            ErrorCode    = result.ErrorCode,
             ErrorMessage = result.ErrorMessage,
         });
     }

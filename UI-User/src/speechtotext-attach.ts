@@ -3,7 +3,7 @@
  *
  * Wires a mic <button> to a target <textarea>: handles permission flow,
  * recording, silence-VAD auto-stop, hard 60s cap, transcription, and
- * append-at-cursor insertion. UI strings are Dutch (matches project default).
+ * append-at-cursor insertion. UI strings come from window.__i18n.
  *
  * Usage:
  *   attachSpeechToText(btn, textarea, projectId);
@@ -18,6 +18,7 @@ import {
     transcribeAudio,
     type SpeechErrorReason,
 } from './speechtotext';
+import { t } from './i18n';
 
 // --- Public API --------------------------------------------------------------
 
@@ -137,7 +138,7 @@ export function attachSpeechToText(
         try {
             blob = await recorder.stop();
         } catch {
-            panel?.showError('Spraakherkenning niet beschikbaar.');
+            panel?.showError(t('speechToTextUnavailable'));
             cleanup();
             return;
         }
@@ -145,7 +146,7 @@ export function attachSpeechToText(
         const result = await transcribeAudio(blob, projectId);
 
         if (!result.isSuccess || !result.transcript) {
-            panel?.showError(result.errorMessage ?? 'Niets verstaan — probeer opnieuw.');
+            panel?.showError(result.errorMessage ?? t('speechToTextErrorNothingHeard'));
             cleanup();
             return;
         }
@@ -244,10 +245,10 @@ function insertAtCursor(target: HTMLTextAreaElement, text: string): void {
 
 function messageForStartError(reason: SpeechErrorReason): string {
     switch (reason) {
-        case 'permission-denied': return 'Geef toestemming voor de microfoon om te spreken.';
-        case 'no-microphone':     return 'Geen microfoon gevonden.';
-        case 'unsupported':       return 'Spraakherkenning werkt niet in deze browser.';
-        default:                  return 'Spraakherkenning niet beschikbaar.';
+        case 'permission-denied': return t('speechToTextErrorPermissionDenied');
+        case 'no-microphone':     return t('speechToTextErrorNoMicrophone');
+        case 'unsupported':       return t('speechToTextErrorUnsupportedBrowser');
+        default:                  return t('speechToTextUnavailable');
     }
 }
 
@@ -270,7 +271,7 @@ function createStatusPanel(
 
     el.innerHTML = `
         <span class="stt-pulse w-2 h-2 rounded-full bg-base-content/40 inline-block" aria-hidden="true"></span>
-        <span class="stt-status font-medium">Microfoon toegang nodig…</span>
+        <span class="stt-status font-medium">${t('speechToTextStatusMicAccess')}</span>
         <span class="stt-meter inline-flex items-end gap-0.5 h-3 ml-1" aria-hidden="true">
             <span class="w-1 bg-base-content/30 rounded-sm" style="height:25%"></span>
             <span class="w-1 bg-base-content/30 rounded-sm" style="height:50%"></span>
@@ -279,7 +280,7 @@ function createStatusPanel(
         </span>
         <span class="stt-timer ml-auto tabular-nums text-base-content/70">1:00</span>
         <button type="button" class="stt-stop hidden btn btn-xs btn-primary rounded-full">Stop</button>
-        <button type="button" class="stt-cancel hidden btn btn-xs btn-ghost rounded-full" aria-label="Annuleren">✕</button>
+        <button type="button" class="stt-cancel hidden btn btn-xs btn-ghost rounded-full" aria-label="${t('speechToTextCancelAriaLabel')}">✕</button>
     `;
 
     const statusEl  = q<HTMLElement>(el, '.stt-status');
@@ -309,19 +310,19 @@ function createStatusPanel(
         setState(state: PanelState): void {
             switch (state) {
                 case 'requesting':
-                    statusEl.textContent = 'Microfoon toegang nodig…';
+                    statusEl.textContent = t('speechToTextStatusMicAccess');
                     stopBtn.classList.add('hidden');
                     cancelBtn.classList.add('hidden');
                     pulse.className = 'stt-pulse w-2 h-2 rounded-full bg-base-content/40 inline-block';
                     break;
                 case 'recording':
-                    statusEl.textContent = 'Aan het opnemen';
+                    statusEl.textContent = t('speechToTextStatusRecording');
                     stopBtn.classList.remove('hidden');
                     cancelBtn.classList.remove('hidden');
                     pulse.className = 'stt-pulse w-2 h-2 rounded-full bg-error inline-block animate-pulse';
                     break;
                 case 'transcribing':
-                    statusEl.textContent = 'Spraak omzetten…';
+                    statusEl.textContent = t('speechToTextStatusTranscribing');
                     stopBtn.classList.add('hidden');
                     cancelBtn.classList.add('hidden');
                     pulse.className = 'stt-pulse w-2 h-2 rounded-full bg-base-content/40 inline-block';

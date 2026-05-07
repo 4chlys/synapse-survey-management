@@ -1,4 +1,4 @@
-import {t} from './i18n';
+import { t, currentCulture } from './i18n';
 
 /**
  * speechtotext.ts
@@ -14,7 +14,27 @@ import { getCsrfToken, fetchWithTimeout } from './ideation/ai-support-base';
 export interface TranscribeResult {
     transcript: string | null;
     errorMessage: string | null;
+    /** Machine-readable error code from the server. UI maps this to a localized message. */
+    errorCode?: string | null;
     isSuccess: boolean;
+}
+
+const SERVER_ERROR_CODE_KEYS: Record<string, keyof typeof window.__i18n.strings> = {
+    unsupported_format:  'speechToTextErrorUnsupportedFormat',
+    empty_audio:         'speechToTextEmptyRecording',
+    too_long:            'speechToTextErrorTooLong',
+    no_speech:           'speechToTextErrorNothingHeard',
+    service_unavailable: 'speechToTextUnavailable',
+    invalid_audio_data:  'speechToTextErrorInvalidAudioData',
+    unexpected_response: 'speechToTextErrorUnexpectedResponse',
+};
+
+function localizedErrorFromServer(result: TranscribeResult): TranscribeResult {
+    if (result.isSuccess || !result.errorCode) return result;
+    const key = SERVER_ERROR_CODE_KEYS[result.errorCode];
+    return key
+        ? { ...result, errorMessage: t(key) }
+        : result;
 }
 
 /** Why start() failed in a way the UI can map to a user message. */
@@ -250,7 +270,7 @@ export async function transcribeAudio(
                     'Content-Type':             'application/json',
                     'RequestVerificationToken': getCsrfToken(),
                 },
-                body: JSON.stringify({ audioData: base64, mimeType }),
+                body: JSON.stringify({ audioData: base64, mimeType, language: currentCulture().split('-')[0] }),
             },
         );
 
@@ -266,7 +286,7 @@ export async function transcribeAudio(
             return {
                 isSuccess:    false,
                 transcript:   null,
-                errorMessage: 'Opname te lang. Probeer een korter fragment.',
+                errorMessage: t('speechToTextErrorTooLong'),
             };
         }
 
@@ -278,7 +298,7 @@ export async function transcribeAudio(
             };
         }
 
-        return await response.json() as TranscribeResult;
+        return localizedErrorFromServer(await response.json() as TranscribeResult);
     } catch {
         return {
             isSuccess:    false,

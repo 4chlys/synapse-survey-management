@@ -44,6 +44,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
 
 var apiSupportedCultures = new[] { "nl", "en" };
 builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(opts =>

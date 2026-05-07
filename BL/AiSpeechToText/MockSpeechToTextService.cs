@@ -19,7 +19,9 @@ public sealed class MockSpeechToTextService : IAiSpeechToTextService
         CancellationToken ct = default)
     {
         if (request.AudioData.Length == 0)
-            return Task.FromResult(SpeechToTextResult.Failed("Geen audiodata ontvangen."));
+            return Task.FromResult(SpeechToTextResult.Failed(
+                SpeechToTextErrorCodes.EmptyAudio,
+                "No audio data received."));
 
         // Deterministic placeholder based on data length so repeated tests give stable output.
         var idx = request.AudioData.Length % PlaceholderTranscripts.Length;

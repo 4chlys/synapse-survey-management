@@ -49,6 +49,19 @@ type Strings = {
     aiChatYourComment: string;
     surveyAnswerTooLong: string;
     surveyAnswerRequired: string;
+    speechToTextErrorPermissionDenied: string;
+    speechToTextErrorNoMicrophone: string;
+    speechToTextErrorUnsupportedBrowser: string;
+    speechToTextErrorNothingHeard: string;
+    speechToTextErrorTooLong: string;
+    speechToTextStatusMicAccess: string;
+    speechToTextStatusTranscribing: string;
+    speechToTextStatusRecording: string;
+    speechToTextCancelAriaLabel: string;
+    speechToTextMicAriaLabel: string;
+    speechToTextErrorUnsupportedFormat: string;
+    speechToTextErrorInvalidAudioData: string;
+    speechToTextErrorUnexpectedResponse: string;
 };
 
 declare global {

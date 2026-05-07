@@ -168,4 +168,43 @@
   <data name="Survey_AnswerRequired" xml:space="preserve">
     <value>Geef eerst een antwoord voor je verdergaat.</value>
   </data>
+  <data name="SpeechToText_ErrorPermissionDenied" xml:space="preserve">
+    <value>Geef toestemming voor de microfoon om te spreken.</value>
+  </data>
+  <data name="SpeechToText_ErrorNoMicrophone" xml:space="preserve">
+    <value>Geen microfoon gevonden.</value>
+  </data>
+  <data name="SpeechToText_ErrorUnsupportedBrowser" xml:space="preserve">
+    <value>Spraakherkenning werkt niet in deze browser.</value>
+  </data>
+  <data name="SpeechToText_ErrorNothingHeard" xml:space="preserve">
+    <value>Niets verstaan — probeer opnieuw.</value>
+  </data>
+  <data name="SpeechToText_ErrorTooLong" xml:space="preserve">
+    <value>Opname te lang. Probeer een korter fragment.</value>
+  </data>
+  <data name="SpeechToText_StatusMicAccess" xml:space="preserve">
+    <value>Microfoon toegang nodig…</value>
+  </data>
+  <data name="SpeechToText_StatusTranscribing" xml:space="preserve">
+    <value>Spraak omzetten…</value>
+  </data>
+  <data name="SpeechToText_StatusRecording" xml:space="preserve">
+    <value>Aan het opnemen</value>
+  </data>
+  <data name="SpeechToText_CancelAriaLabel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="SpeechToText_MicAriaLabel" xml:space="preserve">
+    <value>Spreken in plaats van typen</value>
+  </data>
+  <data name="SpeechToText_ErrorUnsupportedFormat" xml:space="preserve">
+    <value>Audioformaat wordt niet ondersteund.</value>
+  </data>
+  <data name="SpeechToText_ErrorInvalidAudioData" xml:space="preserve">
+    <value>Ongeldige audiodata.</value>
+  </data>
+  <data name="SpeechToText_ErrorUnexpectedResponse" xml:space="preserve">
+    <value>Onverwacht antwoord.</value>
+  </data>
 </root>

@@ -168,4 +168,43 @@
   <data name="Survey_AnswerRequired" xml:space="preserve">
     <value>Please provide an answer before continuing.</value>
   </data>
+  <data name="SpeechToText_ErrorPermissionDenied" xml:space="preserve">
+    <value>Grant microphone permission to speak.</value>
+  </data>
+  <data name="SpeechToText_ErrorNoMicrophone" xml:space="preserve">
+    <value>No microphone found.</value>
+  </data>
+  <data name="SpeechToText_ErrorUnsupportedBrowser" xml:space="preserve">
+    <value>Speech recognition does not work in this browser.</value>
+  </data>
+  <data name="SpeechToText_ErrorNothingHeard" xml:space="preserve">
+    <value>Nothing heard — please try again.</value>
+  </data>
+  <data name="SpeechToText_ErrorTooLong" xml:space="preserve">
+    <value>Recording too long. Try a shorter fragment.</value>
+  </data>
+  <data name="SpeechToText_StatusMicAccess" xml:space="preserve">
+    <value>Microphone access needed…</value>
+  </data>
+  <data name="SpeechToText_StatusTranscribing" xml:space="preserve">
+    <value>Transcribing…</value>
+  </data>
+  <data name="SpeechToText_StatusRecording" xml:space="preserve">
+    <value>Recording</value>
+  </data>
+  <data name="SpeechToText_CancelAriaLabel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SpeechToText_MicAriaLabel" xml:space="preserve">
+    <value>Speak instead of typing</value>
+  </data>
+  <data name="SpeechToText_ErrorUnsupportedFormat" xml:space="preserve">
+    <value>Audio format is not supported.</value>
+  </data>
+  <data name="SpeechToText_ErrorInvalidAudioData" xml:space="preserve">
+    <value>Invalid audio data.</value>
+  </data>
+  <data name="SpeechToText_ErrorUnexpectedResponse" xml:space="preserve">
+    <value>Unexpected response.</value>
+  </data>
 </root>
