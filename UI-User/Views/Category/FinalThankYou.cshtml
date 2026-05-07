@@ -1,4 +1,5 @@
 @model ThankYouViewModel
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = "Bedankt";
 }
@@ -23,11 +24,10 @@
 
                 <div>
                     <h1 class="font-heading text-[28px] font-bold text-base-content mb-3 leading-tight">
-                        Bedankt voor je deelname!
+                        @L["ThankYouHeading"]
                     </h1>
                     <p class="text-[15px] text-base-content/80 leading-relaxed max-w-60 mx-auto">
-                        Jouw ideeën en reacties zijn waardevol. We nemen ze mee in het verdere proces.
-                        Je kan dit venster nu sluiten.
+                        @L["ThankYouBody"]
                     </p>
                 </div>
 

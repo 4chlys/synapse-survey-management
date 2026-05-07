@@ -1,3 +1,4 @@
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = "Project niet actief";
 }
@@ -14,10 +15,10 @@
         </div>
 
         <h1 class="font-heading text-2xl font-semibold text-base-content mb-2">
-            Dit project is niet actief
+            @L["ProjectInactiveHeading"]
         </h1>
         <p class="text-sm text-neutral leading-relaxed">
-            Dit project is momenteel niet beschikbaar. Neem contact op met de organisator voor meer informatie.
+            @L["ProjectUnavailableBody"]
         </p>
 
     </div>

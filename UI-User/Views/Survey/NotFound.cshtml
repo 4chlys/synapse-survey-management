@@ -1,3 +1,4 @@
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = "Niet gevonden";
 }
@@ -15,10 +16,10 @@
         </div>
 
         <h1 class="font-heading text-2xl font-semibold text-base-content mb-2">
-            Enquete niet gevonden
+            @L["SurveyNotFoundHeading"]
         </h1>
         <p class="text-sm text-neutral leading-relaxed">
-            Er is geen enquete beschikbaar voor dit project.
+            @L["SurveyNotFoundBody"]
         </p>
 
     </div>
