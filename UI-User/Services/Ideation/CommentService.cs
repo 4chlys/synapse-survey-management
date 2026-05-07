@@ -11,11 +11,12 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         int categoryId,
         int ideaId,
         string text,
-        string moderationToken = null)
+        string moderationToken = null,
+        string languageCode = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        request.Content = JsonContent.Create(new { Text = text, ModerationToken = moderationToken });
+        request.Content = JsonContent.Create(new { Text = text, ModerationToken = moderationToken, LanguageCode = languageCode });
 
         AddTokenHeader(request, projectId);
 

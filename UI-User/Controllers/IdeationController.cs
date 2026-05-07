@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.UI.User.Extensions;
@@ -84,7 +85,9 @@ public class IdeationController(
             ExtraIdeasReplaceExisting = replace,
             MaxExtraIdeaRequests      = maxExtra,
             RemainingExtraRequests    = remaining,
-            AllowCrossLanguageIdeas   = allowCross
+            AllowCrossLanguageIdeas   = allowCross,
+            SupportedLanguageCodes    = project?.SupportedLanguageCodes ?? new List<string>(),
+            ParticipantLanguageCode   = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
         });
     }
 
@@ -101,7 +104,8 @@ public class IdeationController(
         var idea = await ideaTask;
         if (idea == null) return NotFound();
 
-        this.SetLayoutData(await projectTask, projectId, showModerationPopup: true);
+        var project = await projectTask;
+        this.SetLayoutData(project, projectId, showModerationPopup: true);
 
         return View(new IdeaDetailViewModel
         {
@@ -110,7 +114,10 @@ public class IdeationController(
             Category = (await categoryTask)!,
             Idea = idea,
             Comments = await commentsTask,
-            Emojis = await emojisTask
+            Emojis = await emojisTask,
+            AllowCrossLanguageIdeas = project?.AllowCrossLanguageIdeas ?? false,
+            SupportedLanguageCodes  = project?.SupportedLanguageCodes ?? new List<string>(),
+            ParticipantLanguageCode = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
         });
     }
 
@@ -161,7 +168,8 @@ public class IdeationController(
         string description,
         string moderationToken = null,
         string imageUrl = null,
-        string imageModerationToken = null)
+        string imageModerationToken = null,
+        string languageCode = null)
     {
         if (!string.IsNullOrEmpty(imageUrl) && !IsAllowedImageUrl(imageUrl))
         {
@@ -171,7 +179,7 @@ public class IdeationController(
         }
 
         var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken,
-            imageUrl, imageModerationToken);
+            imageUrl, imageModerationToken, languageCode);
         if (!result.Success) return PartialView("_ModerationPopup");
 
         if (result.ShouldAskForContactInfo)
@@ -193,9 +201,10 @@ public class IdeationController(
         int categoryId,
         int ideaId,
         string text,
-        string moderationToken = null)
+        string moderationToken = null,
+        string languageCode = null)
     {
-        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationToken);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationToken, languageCode);
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }

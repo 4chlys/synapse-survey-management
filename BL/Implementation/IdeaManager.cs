@@ -107,7 +107,7 @@ public class IdeaManager(
     }
 
     public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
-        Participant participant, string imageUrl = null, CancellationToken ct = default)
+        Participant participant, string imageUrl = null, string submissionLanguageCode = null, CancellationToken ct = default)
     {
         var category = await categoryRepository.ReadByIdWithProjectForUpdateAsync(categoryId);
         if (category == null || category.Project?.ProjectId != projectId)
@@ -128,6 +128,10 @@ public class IdeaManager(
             logger.LogWarning(ex, "Failed to generate embedding for idea; storing without vector");
         }
 
+        var submissionLanguage = submissionLanguageCode != null
+            ? category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
+            : null;
+
         var idea = new Idea
         {
             Status = status,
@@ -136,7 +140,7 @@ public class IdeaManager(
             Category = category,
             Participant = participant,
             Embedding = embedding,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(idea);

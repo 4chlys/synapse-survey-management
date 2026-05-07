@@ -25,7 +25,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
 
     public Task<Idea> ReadByIdWithProjectForUpdateAsync(int ideaId)
         => Context.Set<Idea>()
-            .Include(i => i.Category).ThenInclude(c => c.Project)
+            .Include(i => i.Category).ThenInclude(c => c.Project).ThenInclude(p => p.SupportedLanguages)
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
     public Task<Idea> ReadByIdWithProjectAndEmojisForUpdateAsync(int ideaId)

@@ -298,7 +298,7 @@ public class CommentManagerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _manager.AddTextCommentAsync(IdeaId, ProjectId, "hello", ModerationStatus.Approved, _participant, ct);
+        await _manager.AddTextCommentAsync(IdeaId, ProjectId, "hello", ModerationStatus.Approved, _participant, null, ct);
 
         // Assert
         _uow.VerifyAll();

@@ -71,7 +71,7 @@ public class IdeasControllerTests
         var ct = cts.Token;
         _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct))
             .ReturnsAsync(ModerationStatus.Approved);
-        _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, null, ct))
+        _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, null, null, ct))
             .ReturnsAsync(new AddIdeaResult(42, false))
             .Verifiable(Times.Exactly(1));
 

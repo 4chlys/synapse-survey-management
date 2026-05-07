@@ -30,7 +30,8 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         string description,
         string moderationToken = null,
         string imageUrl = null,
-        string imageModerationToken = null)
+        string imageModerationToken = null,
+        string languageCode = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas");
@@ -40,6 +41,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
             ModerationToken = moderationToken,
             ImageUrl = imageUrl,
             ImageModerationToken = imageModerationToken,
+            LanguageCode = languageCode,
         });
 
         AddTokenHeader(request, projectId);

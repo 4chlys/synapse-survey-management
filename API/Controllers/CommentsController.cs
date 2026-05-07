@@ -19,10 +19,23 @@ public class CommentsController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
+        string submissionLanguageCode = null;
+        if (!string.IsNullOrEmpty(dto.LanguageCode))
+        {
+            var project = await GetProjectByIdReadOnlyAsync(projectId);
+            if (project?.AllowCrossLanguageIdeas == true)
+            {
+                if (project.SupportedLanguages.Any(l => string.Equals(l.Code, dto.LanguageCode, StringComparison.OrdinalIgnoreCase)))
+                    submissionLanguageCode = dto.LanguageCode;
+                else
+                    return BadRequest(new { error = "Invalid submission language code." });
+            }
+        }
+
         try
         {
             var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct);
-            var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant, ct);
+            var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant, submissionLanguageCode, ct);
             return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }
         catch (KeyNotFoundException)

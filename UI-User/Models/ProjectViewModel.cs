@@ -14,4 +14,5 @@ public class ProjectViewModel
     public int MaxExtraIdeaRequests { get; set; } = 3;
     public string DefaultLanguageCode { get; set; } = "nl";
     public bool AllowCrossLanguageIdeas { get; set; }
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 }

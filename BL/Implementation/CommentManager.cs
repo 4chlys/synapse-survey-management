@@ -34,7 +34,7 @@ public class CommentManager(
         };
     }
 
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant, CancellationToken ct = default)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant, string submissionLanguageCode = null, CancellationToken ct = default)
     {
         var idea = await ideaRepository.ReadByIdWithProjectForUpdateAsync(ideaId);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
@@ -43,13 +43,17 @@ public class CommentManager(
             throw new KeyNotFoundException($"Idea {ideaId} not found");
         }
 
+        var submissionLanguage = submissionLanguageCode != null
+            ? idea.Category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
+            : null;
+
         var comment = new TextComment
         {
             Idea = idea,
             ModerationStatus = status,
             Text = text,
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(comment);

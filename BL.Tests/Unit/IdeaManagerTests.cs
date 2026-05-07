@@ -246,4 +246,55 @@ public class IdeaManagerTests
         // Assert
         Assert.Same(language, captured.Language);
     }
+
+    [Fact]
+    public async Task AddIdeaAsync_WithSubmissionLanguageCode_StampsSubmissionLanguage()
+    {
+        // Arrange
+        var participantLang = new Language { Code = "nl" };
+        var submissionLang = new Language { Code = "en" };
+        var project = new Project
+        {
+            ProjectId = ProjectId,
+            RequestContactInfo = false,
+            SupportedLanguages = new List<Language> { participantLang, submissionLang }
+        };
+        var participant = new Participant { ParticipantId = 1, Language = participantLang };
+        var category = new Category { CategoryId = CategoryId, Project = project };
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>())).ReturnsAsync(false);
+        Idea captured = null;
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .Callback<Idea>(i => captured = i)
+            .ReturnsAsync((Idea i) => i);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, participant, submissionLanguageCode: "en");
+
+        // Assert
+        Assert.Equal("en", captured.Language?.Code);
+    }
+
+    [Fact]
+    public async Task AddIdeaAsync_WithNullSubmissionLanguageCode_StampsParticipantLanguage()
+    {
+        // Arrange
+        var participantLang = new Language { Code = "nl" };
+        var participant = new Participant { ParticipantId = 1, Language = participantLang };
+        var category = new Category { CategoryId = CategoryId, Project = new Project { ProjectId = ProjectId, RequestContactInfo = false } };
+        _categoryRepository.Setup(r => r.ReadByIdWithProjectForUpdateAsync(CategoryId)).ReturnsAsync(category);
+        _ideaRepository.Setup(r => r.AnyExistByParticipantAsync(It.IsAny<int>())).ReturnsAsync(false);
+        Idea captured = null;
+        _ideaRepository.Setup(r => r.CreateAsync(It.IsAny<Idea>()))
+            .Callback<Idea>(i => captured = i)
+            .ReturnsAsync((Idea i) => i);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, participant, submissionLanguageCode: null);
+
+        // Assert
+        Assert.Equal("nl", captured.Language?.Code);
+    }
 }

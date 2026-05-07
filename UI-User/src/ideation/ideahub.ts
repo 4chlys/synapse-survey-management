@@ -300,12 +300,20 @@ export function initIdeation(): void {
         }
     });
 
-    showAllToggle?.addEventListener('change', async () => {
-        const list = document.getElementById('ideas-list');
-        if (!list) return;
-        list.dataset.currentPage = '0';
-        list.querySelectorAll(':scope > a').forEach(el => el.remove());
-        await handleRefreshIdeas(showAllToggle);
+    // Restore toggle state from URL so the checkbox reflects the current filter on page load.
+    const currentParams = new URLSearchParams(window.location.search);
+    if (showAllToggle && currentParams.get('showAllLanguages') === 'true') {
+        showAllToggle.checked = true;
+    }
+
+    showAllToggle?.addEventListener('change', () => {
+        const url = new URL(window.location.href);
+        if (showAllToggle.checked) {
+            url.searchParams.set('showAllLanguages', 'true');
+        } else {
+            url.searchParams.delete('showAllLanguages');
+        }
+        window.location.href = url.toString();
     });
 }
 
@@ -347,6 +355,7 @@ async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<voi
     try {
         const showAllParam = showAll ? '&showAllLanguages=true' : '';
         const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}${showAllParam}`;
+        const response = await fetch(url);
         if (!response.ok) return;
 
         const data: LoadIdeasResponse = await response.json();

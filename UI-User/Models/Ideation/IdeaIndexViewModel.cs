@@ -14,4 +14,6 @@ public class IdeaIndexViewModel
     public int MaxExtraIdeaRequests { get; set; }
     public int RemainingExtraRequests { get; set; }
     public bool AllowCrossLanguageIdeas { get; set; }
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+    public string ParticipantLanguageCode { get; set; }
 }

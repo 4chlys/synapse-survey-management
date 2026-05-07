@@ -80,7 +80,7 @@
                 <form asp-controller="Culture" asp-action="SetCulture" method="post"
                       class="flex items-center gap-1"
                       aria-label="@Shared["LanguageMenu_Switch"]">
-                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
                     @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
                     {
                         var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);

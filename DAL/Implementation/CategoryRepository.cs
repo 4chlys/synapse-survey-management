@@ -40,7 +40,7 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
 
     public Task<Category> ReadByIdWithProjectForUpdateAsync(int categoryId)
         => Context.Set<Category>()
-            .Include(c => c.Project)
+            .Include(c => c.Project).ThenInclude(p => p.SupportedLanguages)
             .Include(c => c.Translations).ThenInclude(t => t.Language)
             .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
 

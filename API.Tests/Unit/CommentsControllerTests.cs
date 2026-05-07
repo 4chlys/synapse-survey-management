@@ -34,7 +34,7 @@ public class CommentsControllerTests
         var ct = cts.Token;
         _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct))
             .ReturnsAsync(ModerationStatus.Approved);
-        _commentManager.Setup(c => c.AddTextCommentAsync(IdeaId, ProjectId, "hi", ModerationStatus.Approved, _participant, ct))
+        _commentManager.Setup(c => c.AddTextCommentAsync(IdeaId, ProjectId, "hi", ModerationStatus.Approved, _participant, null, ct))
             .ReturnsAsync(new TextComment { CommentId = 1, Text = "hi" })
             .Verifiable(Times.Exactly(1));
 

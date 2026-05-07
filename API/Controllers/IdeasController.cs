@@ -78,8 +78,21 @@ public class IdeasController(
                 status = ModerationStatus.Flagged;
         }
 
+        string submissionLanguageCode = null;
+        if (!string.IsNullOrEmpty(dto.LanguageCode))
+        {
+            var project = await GetProjectByIdReadOnlyAsync(projectId);
+            if (project?.AllowCrossLanguageIdeas == true)
+            {
+                if (project.SupportedLanguages.Any(l => string.Equals(l.Code, dto.LanguageCode, StringComparison.OrdinalIgnoreCase)))
+                    submissionLanguageCode = dto.LanguageCode;
+                else
+                    return BadRequest(new { error = "Invalid submission language code." });
+            }
+        }
+
         var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant,
-            permanentImageUrl, ct);
+            permanentImageUrl, submissionLanguageCode, ct);
 
         return Created(string.Empty, new CreateIdeaResultDto
         {

@@ -15,4 +15,7 @@
   <data name="ShowAllLanguages" xml:space="preserve">
     <value>Show ideas in all languages</value>
   </data>
+  <data name="SubmissionLanguageLabel" xml:space="preserve">
+    <value>Submit as</value>
+  </data>
 </root>
