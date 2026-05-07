@@ -1,3 +1,5 @@
+import {t} from '../i18n';
+
 // Types
 
 export interface ModerationCallbacks {
@@ -316,7 +318,7 @@ export function wireModerationForm(
             const outcome = await showRewritePopup(
                 textarea.value,
                 suggestResult.suggestion,
-                result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
+                result.reason ?? t('contentNotAllowed'),
             );
 
             if (outcome.action === 'accepted') {

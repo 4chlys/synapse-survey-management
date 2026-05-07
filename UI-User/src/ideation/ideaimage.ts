@@ -1,3 +1,5 @@
+import {t} from '../i18n';
+
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
@@ -46,12 +48,12 @@ export function wireIdeaImageField(form: HTMLFormElement): void {
         if (!file) return;
 
         if (!ALLOWED_TYPES.has(file.type)) {
-            showError('Alleen afbeeldingen (jpeg, png, webp, gif) zijn toegestaan.');
+            showError(t('imageUploadInvalidType'));
             fileInput.value = '';
             return;
         }
         if (file.size > MAX_SIZE_BYTES) {
-            showError('De afbeelding mag maximaal 10 MB zijn.');
+            showError(t('imageUploadTooLarge'));
             fileInput.value = '';
             return;
         }
@@ -176,7 +178,7 @@ export async function uploadSelectedImage(form: HTMLFormElement, projectId: numb
 
         if (!res.ok) {
             const data = await res.json().catch(() => ({})) as { reason?: string };
-            const reason = data.reason ?? 'Het uploaden van de afbeelding is mislukt.';
+            const reason = data.reason ?? t('imageUploadFailed');
             errorEl.textContent = reason;
             errorEl.classList.remove('hidden');
             return { status: 'error', reason };
@@ -190,9 +192,9 @@ export async function uploadSelectedImage(form: HTMLFormElement, projectId: numb
             return { status: 'ok' };
         }
         // AI rejected — hidden inputs carry the Flagged token; caller decides whether to proceed
-        return { status: 'rejected', reason: data.reason ?? 'De afbeelding is niet toegestaan.' };
+        return { status: 'rejected', reason: data.reason ?? t('imageUploadNotAllowed') };
     } catch {
-        const reason = 'Het uploaden van de afbeelding is mislukt.';
+        const reason = t('imageUploadFailed');
         errorEl.textContent = reason;
         errorEl.classList.remove('hidden');
         return { status: 'error', reason };

@@ -1,4 +1,5 @@
 import { startSession, saveResponse, getNextQuestion, getResumeQuestion, submitSurvey, removeAllResponses } from './api';
+import { t } from '../i18n';
 
 const enum Fmt {
     Open = 1,
@@ -77,7 +78,7 @@ function appendUserBubble(ctx: Ctx, text: string): HTMLElement {
     const bubble = document.createElement('div');
     bubble.className = USER_BUBBLE_CLASS;
     bubble.textContent = text;
-    bubble.setAttribute('aria-label', `Jouw antwoord: ${text}`);
+    bubble.setAttribute('aria-label', t('surveyYourAnswer').replace('{text}', text));
     ctx.messagesEl.appendChild(bubble);
     scrollToBottom(ctx);
     return bubble;
@@ -120,7 +121,7 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
     const wrapper = document.createElement('div');
     wrapper.className = CHIPS_WRAPPER_CLASS;
     wrapper.setAttribute('role', 'group');
-    wrapper.setAttribute('aria-label', 'Keuze opties');
+    wrapper.setAttribute('aria-label', t('surveyChoiceOptions'));
 
     ctx.activeChips = wrapper;
     ctx.messagesEl.classList.add(MESSAGES_MOBILE_CHIP_PAD);
@@ -163,7 +164,7 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
             confirmBtn = document.createElement('button');
             confirmBtn.type = 'button';
             confirmBtn.className = `${CHIP_BASE_CLASS} bg-primary text-primary-content border-primary hover:bg-primary/90`;
-            confirmBtn.textContent = 'Bevestig';
+            confirmBtn.textContent = t('surveyConfirm');
             confirmBtn.addEventListener('click', () => {
                 const values = Array.from(selected);
                 removeActiveChips(ctx);
@@ -202,7 +203,7 @@ async function recordAnswer(ctx: Ctx, q: QuestionData, value: string, displayLab
         await ensureSession(ctx);
         await saveResponse(ctx.projectId, q.questionId, value);
     } catch {
-        appendSystemBubble(ctx, 'Er ging iets mis bij het opslaan. Probeer opnieuw.');
+        appendSystemBubble(ctx, t('surveySaveError'));
         return;
     }
     updateBackBtn(ctx);
@@ -214,7 +215,7 @@ async function advance(ctx: Ctx, currentQuestionId: number): Promise<void> {
     try {
         nextId = await getNextQuestion(ctx.projectId, currentQuestionId);
     } catch {
-        appendSystemBubble(ctx, 'Kon volgende vraag niet laden.');
+        appendSystemBubble(ctx, t('surveyLoadError'));
         return;
     }
     if (nextId === null || nextId === undefined) {
@@ -282,7 +283,7 @@ function renderQuestion(ctx: Ctx, index: number): void {
             break;
         }
         default:
-            appendSystemBubble(ctx, 'Onbekend vraagtype.');
+            appendSystemBubble(ctx, t('surveyUnknownType'));
     }
 }
 
@@ -313,15 +314,15 @@ function bindOpenSend(ctx: Ctx, q: QuestionData): void {
 
 function renderConfirm(ctx: Ctx): void {
     hideInput(ctx);
-    ctx.confirmBubble = appendSystemBubble(ctx, 'Klaar om in te sturen?');
+    ctx.confirmBubble = appendSystemBubble(ctx, t('surveyReadyToSubmit'));
     updateBackBtn(ctx);
-    showChips(ctx, ['Verstuur'], {
+    showChips(ctx, [t('submit')], {
         multi: false,
         onSelect: async () => {
             try {
                 await submitSurvey(ctx.projectId);
             } catch {
-                appendSystemBubble(ctx, 'Verzenden mislukt. Probeer opnieuw.');
+                appendSystemBubble(ctx, t('surveySubmitError'));
                 renderConfirm(ctx);
                 return;
             }
@@ -334,7 +335,7 @@ function renderDone(ctx: Ctx): void {
     hideInput(ctx);
     removeActiveChips(ctx);
     ctx.backBtn.disabled = true;
-    appendSystemBubble(ctx, 'Bedankt voor je deelname!');
+    appendSystemBubble(ctx, t('surveyDone'));
     setTimeout(() => {
         window.location.href = `/${ctx.projectId}/Survey/ThankYou`;
     }, 800);
@@ -380,14 +381,14 @@ function goBack(ctx: Ctx): void {
 }
 
 async function doRestart(ctx: Ctx): Promise<void> {
-    const ok = window.confirm('Wil je de enquête opnieuw beginnen? Je antwoorden gaan verloren.');
+    const ok = window.confirm(t('surveyRestartConfirm'));
     if (!ok) return;
     ctx.restartBtn.disabled = true;
     try {
         if (ctx.hasSession) await removeAllResponses(ctx.projectId);
     } catch {
         ctx.restartBtn.disabled = false;
-        appendSystemBubble(ctx, 'Herstart mislukt. Probeer opnieuw.');
+        appendSystemBubble(ctx, t('surveyRestartError'));
         return;
     }
     window.location.reload();

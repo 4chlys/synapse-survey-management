@@ -30,4 +30,142 @@
   <data name="LanguageMenu_Switch" xml:space="preserve">
     <value>Switch language</value>
   </data>
+  <data name="Uploading" xml:space="preserve">
+    <value>Uploading…</value>
+  </data>
+  <data name="Checking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="ContentNotAllowed" xml:space="preserve">
+    <value>This content is not allowed on this platform.</value>
+  </data>
+  <data name="MaxLengthExceeded" xml:space="preserve">
+    <value>Maximum {max} characters allowed.</value>
+  </data>
+  <data name="SubmitFallback" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+  <data name="IdeaCard_StatusFlagged" xml:space="preserve">
+    <value>Pending review</value>
+  </data>
+  <data name="IdeaCard_StatusOwnIdea" xml:space="preserve">
+    <value>Your idea</value>
+  </data>
+  <data name="IdeaCard_UseAsStartingPoint" xml:space="preserve">
+    <value>Use as starting point</value>
+  </data>
+  <data name="ImageUpload_InvalidType" xml:space="preserve">
+    <value>Only images (jpeg, png, webp, gif) are allowed.</value>
+  </data>
+  <data name="ImageUpload_TooLarge" xml:space="preserve">
+    <value>The image must be at most 10 MB.</value>
+  </data>
+  <data name="ImageUpload_Failed" xml:space="preserve">
+    <value>The image could not be uploaded.</value>
+  </data>
+  <data name="ImageUpload_NotAllowed" xml:space="preserve">
+    <value>The image is not allowed.</value>
+  </data>
+  <data name="SpeechToText_EmptyRecording" xml:space="preserve">
+    <value>Empty recording received.</value>
+  </data>
+  <data name="SpeechToText_TooManyRequests" xml:space="preserve">
+    <value>Too many requests. Please wait and try again.</value>
+  </data>
+  <data name="SpeechToText_Unavailable" xml:space="preserve">
+    <value>Speech recognition is currently unavailable.</value>
+  </data>
+  <data name="Survey_YourAnswer" xml:space="preserve">
+    <value>Your answer: {text}</value>
+  </data>
+  <data name="Survey_ChoiceOptions" xml:space="preserve">
+    <value>Choice options</value>
+  </data>
+  <data name="Survey_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Survey_SaveError" xml:space="preserve">
+    <value>Something went wrong while saving. Please try again.</value>
+  </data>
+  <data name="Survey_LoadError" xml:space="preserve">
+    <value>Could not load the next question.</value>
+  </data>
+  <data name="Survey_UnknownType" xml:space="preserve">
+    <value>Unknown question type.</value>
+  </data>
+  <data name="Survey_ReadyToSubmit" xml:space="preserve">
+    <value>Ready to submit?</value>
+  </data>
+  <data name="Survey_SubmitError" xml:space="preserve">
+    <value>Submission failed. Please try again.</value>
+  </data>
+  <data name="Survey_Done" xml:space="preserve">
+    <value>Thank you for participating!</value>
+  </data>
+  <data name="Survey_RestartConfirm" xml:space="preserve">
+    <value>Do you want to restart the survey? Your answers will be lost.</value>
+  </data>
+  <data name="Survey_RestartError" xml:space="preserve">
+    <value>Restart failed. Please try again.</value>
+  </data>
+  <data name="Survey_Submitting" xml:space="preserve">
+    <value>Submitting...</value>
+  </data>
+  <data name="Survey_SubmitAnswers" xml:space="preserve">
+    <value>Send answers</value>
+  </data>
+  <data name="AiChat_AssistantUnavailable_Idea" xml:space="preserve">
+    <value>Sorry, the assistant is temporarily unavailable. You can type and submit your idea directly below.</value>
+  </data>
+  <data name="AiChat_Error" xml:space="preserve">
+    <value>Something went wrong. Please try again.</value>
+  </data>
+  <data name="AiChat_DraftLabel" xml:space="preserve">
+    <value>Your idea — would you like to submit this?</value>
+  </data>
+  <data name="AiChat_DraftYes" xml:space="preserve">
+    <value>Yes, submit</value>
+  </data>
+  <data name="AiChat_DraftNo" xml:space="preserve">
+    <value>No, adjust</value>
+  </data>
+  <data name="AiChat_NoProblem" xml:space="preserve">
+    <value>No problem! Tell me what you want to change.</value>
+  </data>
+  <data name="AiChat_Refining" xml:space="preserve">
+    <value>Working...</value>
+  </data>
+  <data name="AiChat_RefinedText" xml:space="preserve">
+    <value>I've refined your idea a bit. See if this is better!</value>
+  </data>
+  <data name="AiChat_AlreadyGood" xml:space="preserve">
+    <value>The idea is already well-worded. Would you like to submit it as is?</value>
+  </data>
+  <data name="AiChat_RefineError" xml:space="preserve">
+    <value>Could not refine the idea. Please try again.</value>
+  </data>
+  <data name="AiChat_Refine" xml:space="preserve">
+    <value>Refine</value>
+  </data>
+  <data name="AiChat_AssistantUnavailable_Comment" xml:space="preserve">
+    <value>Sorry, the assistant is temporarily unavailable. Write your comment in the text field below.</value>
+  </data>
+  <data name="AiChat_ChooseVersion" xml:space="preserve">
+    <value>Choose which version you want to post:</value>
+  </data>
+  <data name="AiChat_YourVersion" xml:space="preserve">
+    <value>Your version</value>
+  </data>
+  <data name="AiChat_AiSuggestion" xml:space="preserve">
+    <value>AI suggestion</value>
+  </data>
+  <data name="AiChat_YourComment" xml:space="preserve">
+    <value>Your comment</value>
+  </data>
+  <data name="Survey_AnswerTooLong" xml:space="preserve">
+    <value>Your answer must be at most {max} characters.</value>
+  </data>
+  <data name="Survey_AnswerRequired" xml:space="preserve">
+    <value>Please provide an answer before continuing.</value>
+  </data>
 </root>

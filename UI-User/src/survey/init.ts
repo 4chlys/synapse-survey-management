@@ -5,6 +5,7 @@ import {updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
 import {getSubmitSlideIndex, prefillAnswers, questionIdToSlideIndex, updateQuestionCounters} from './branching';
 import {getResumeQuestion, getVisiblePath, submitSurvey} from './api';
+import {t} from '../i18n';
 
 function syncButtons(state: SurveyState): void {
     const allPrev = document.querySelectorAll<HTMLButtonElement>('.btn-prev');
@@ -115,7 +116,7 @@ export function initSurvey(): void {
         const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Bezig met verzenden...';
+            submitBtn.textContent = t('surveySubmitting');
         }
 
         try {
@@ -124,7 +125,7 @@ export function initSurvey(): void {
         } catch {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Antwoorden versturen';
+                submitBtn.textContent = t('surveySubmitAnswers');
             }
         }
     });

@@ -1,3 +1,5 @@
+import {t} from './i18n';
+
 /**
  * speechtotext.ts
  *
@@ -147,7 +149,7 @@ export async function transcribeAudio(
     projectId: number,
 ): Promise<TranscribeResult> {
     if (audioBlob.size === 0) {
-        return { isSuccess: false, transcript: null, errorMessage: 'Lege opname ontvangen.' };
+        return { isSuccess: false, transcript: null, errorMessage: t('speechToTextEmptyRecording') };
     }
 
     try {
@@ -170,7 +172,7 @@ export async function transcribeAudio(
             return {
                 isSuccess:    false,
                 transcript:   null,
-                errorMessage: 'Te veel verzoeken. Wacht even en probeer opnieuw.',
+                errorMessage: t('speechToTextTooManyRequests'),
             };
         }
 
@@ -178,7 +180,7 @@ export async function transcribeAudio(
             return {
                 isSuccess:    false,
                 transcript:   null,
-                errorMessage: 'Spraakherkenning is momenteel niet beschikbaar.',
+                errorMessage: t('speechToTextUnavailable'),
             };
         }
 
@@ -188,7 +190,7 @@ export async function transcribeAudio(
         return {
             isSuccess:    false,
             transcript:   null,
-            errorMessage: 'Spraakherkenning is momenteel niet beschikbaar.',
+            errorMessage: t('speechToTextUnavailable'),
         };
     }
 }

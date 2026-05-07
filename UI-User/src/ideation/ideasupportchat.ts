@@ -12,6 +12,7 @@
  */
 
 import { IdeaSupportSession } from './ideasupport';
+import { t } from '../i18n';
 
 //  DOM references (resolved once on first open)
 
@@ -146,9 +147,7 @@ async function fireOpeningTurn(): Promise<void> {
     } catch {
         hideLoading();
         setSendingState(false);
-        appendAssistantBubble(
-            'Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.',
-        );
+        appendAssistantBubble(t('aiChatAssistantUnavailableIdea'));
     }
 }
 
@@ -167,9 +166,7 @@ async function handleAiReply(reply: AiChatResponse): Promise<void> {
     // Guard: an empty message means the backend silently failed — show the fallback.
     if (!reply.assistantMessage?.trim()) {
         setSendingState(false);
-        appendAssistantBubble(
-            'Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.',
-        );
+        appendAssistantBubble(t('aiChatAssistantUnavailableIdea'));
         return;
     }
 
@@ -201,7 +198,7 @@ async function handleAiReply(reply: AiChatResponse): Promise<void> {
         default:
             setSendingState(false);
             appendAssistantBubble(
-                reply.assistantMessage || 'Er is iets misgegaan. Probeer het opnieuw.',
+                reply.assistantMessage || t('aiChatError'),
             );
             break;
     }
@@ -226,7 +223,7 @@ async function handleSend(): Promise<void> {
     } catch {
         hideLoading();
         setSendingState(false);
-        appendAssistantBubble('Er is iets misgegaan. Probeer het opnieuw.');
+        appendAssistantBubble(t('aiChatError'));
     }
 }
 
@@ -262,7 +259,7 @@ function showDraftConfirmation(draft: string): void {
 
     const label = document.createElement('p');
     label.className = 'text-xs font-semibold text-primary uppercase tracking-wide';
-    label.textContent = 'Jouw idee — wil je dit indienen?';
+    label.textContent = t('aiChatDraftLabel');
 
     const draftPara = document.createElement('p');
     draftPara.className = 'text-sm text-base-content leading-relaxed';
@@ -276,14 +273,14 @@ function showDraftConfirmation(draft: string): void {
     yesBtn.className =
         'flex-1 py-2 rounded-xl bg-primary text-primary-content text-sm font-semibold ' +
         'hover:bg-primary/90 active:scale-95 transition-all cursor-pointer';
-    yesBtn.textContent = 'Ja, indienen';
+    yesBtn.textContent = t('aiChatDraftYes');
 
     const noBtn = document.createElement('button');
     noBtn.type = 'button';
     noBtn.className =
         'flex-1 py-2 rounded-xl border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
         'hover:bg-base-200 active:scale-95 transition-all cursor-pointer';
-    noBtn.textContent = 'Nee, aanpassen';
+    noBtn.textContent = t('aiChatDraftNo');
 
     yesBtn.addEventListener('click', () => {
         yesBtn.disabled = true;
@@ -294,7 +291,7 @@ function showDraftConfirmation(draft: string): void {
     noBtn.addEventListener('click', () => {
         yesBtn.disabled = true;
         noBtn.disabled  = true;
-        appendAssistantBubble('Geen probleem! Vertel me wat je wil aanpassen.');
+        appendAssistantBubble(t('aiChatNoProblem'));
         setSendingState(false);
     });
 
@@ -334,21 +331,21 @@ async function handleRefineDraft(): Promise<void> {
     if (!currentDraft || !activeSession) return;
 
     setSendingState(true);
-    if (refineDraftBtn) refineDraftBtn.textContent = 'Bezig...';
+    if (refineDraftBtn) refineDraftBtn.textContent = t('aiChatRefining');
 
     try {
         const result = await activeSession.refineDraft(currentDraft);
         if (result.refinedText) {
             showDraftConfirmation(result.refinedText);
-            appendAssistantBubble('Ik heb je idee wat aangescherpt. Kijk of dit beter is!');
+            appendAssistantBubble(t('aiChatRefinedText'));
         } else {
-            appendAssistantBubble('Het idee is al goed verwoord. Wil je het zo indienen?');
+            appendAssistantBubble(t('aiChatAlreadyGood'));
         }
     } catch {
-        appendAssistantBubble('Kon het idee niet verfijnen. Probeer het opnieuw.');
+        appendAssistantBubble(t('aiChatRefineError'));
     } finally {
         setSendingState(false);
-        if (refineDraftBtn) refineDraftBtn.textContent = 'Verfijnen';
+        if (refineDraftBtn) refineDraftBtn.textContent = t('aiChatRefine');
     }
 }
 

@@ -1,5 +1,6 @@
 import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
 import {clearIdeaImageField, showImageRejectionPopup, uploadSelectedImage} from './ideaimage';
+import {t} from '../i18n';
 
 const MIN_LENGTH = 2;
 const MAX_LENGTH: Record<'idea' | 'comment', number> = { idea: 1000, comment: 500 };
@@ -24,7 +25,7 @@ export function wireIdeationForm(
         const text = textarea.value.trim();
 
         if (text.length > MAX_LENGTH[contentType]) {
-            textarea.setCustomValidity(`Maximaal ${MAX_LENGTH[contentType]} tekens toegestaan.`);
+            textarea.setCustomValidity(t('maxLengthExceeded').replace('{max}', String(MAX_LENGTH[contentType])));
             textarea.reportValidity();
             return;
         }
@@ -36,10 +37,10 @@ export function wireIdeationForm(
             return;
         }
 
-        const originalLabel = submitBtn?.textContent ?? 'Plaatsen';
+        const originalLabel = submitBtn?.textContent ?? t('submitFallback');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploaden...';
+            submitBtn.textContent = t('uploading');
         }
 
         try {
@@ -58,7 +59,7 @@ export function wireIdeationForm(
                 }
             }
 
-            if (submitBtn) submitBtn.textContent = 'Controleren...';
+            if (submitBtn) submitBtn.textContent = t('checking');
 
             const result = await callModerationAi(text, projectId, contentType);
 
@@ -73,7 +74,7 @@ export function wireIdeationForm(
             const outcome = await showRewritePopup(
                 text,
                 suggestResult.suggestion,
-                result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
+                result.reason ?? t('contentNotAllowed'),
             );
 
             if (outcome.action === 'accepted') {
