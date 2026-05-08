@@ -43,26 +43,73 @@ interface Ctx {
     openHandlers: { send: () => void; key: (e: KeyboardEvent) => void } | null;
 }
 
+// ─── Visual class constants ──────────────────────────────
 const SYSTEM_BUBBLE_CLASS =
-    'self-start max-w-[80%] rounded-2xl rounded-bl-sm bg-base-200 text-base-content px-4 py-3 text-sm leading-relaxed shadow-sm';
+    'self-start max-w-[80%] rounded-2xl rounded-tl-none ' +
+    'bg-base-100 border border-base-300/60 ' +
+    'text-base-content px-4 py-3 text-sm leading-relaxed shadow-sm chat-bubble-left';
+
 const USER_BUBBLE_CLASS =
-    'self-end max-w-[80%] rounded-2xl rounded-br-sm bg-primary text-primary-content px-4 py-3 text-sm leading-relaxed shadow-sm';
+    'self-end max-w-[80%] rounded-2xl rounded-tr-none ' +
+    'bg-primary text-primary-content px-4 py-3 text-sm leading-relaxed ' +
+    'shadow-lg shadow-primary/20 chat-bubble-right';
+
+const TYPING_BUBBLE_CLASS =
+    'self-start rounded-2xl rounded-tl-none ' +
+    'bg-base-100 border border-base-300/60 ' +
+    'px-4 py-3.5 text-base-content/50 shadow-sm chat-bubble-left flex gap-1.5 items-center';
+
 const CHIP_BASE_CLASS =
-    'rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm text-base-content cursor-pointer transition-all hover:border-primary hover:bg-primary/10 active:scale-95 focus:outline-none focus:border-primary';
-const CHIP_SELECTED_CLASS = 'border-primary bg-primary/15';
+    'rounded-full border border-base-300/70 bg-base-100/90 px-4 py-2 text-sm ' +
+    'text-base-content cursor-pointer transition-all ' +
+    'hover:border-primary hover:bg-primary/10 hover:shadow-sm ' +
+    'active:scale-95 focus:outline-none focus:border-primary chat-chip-enter';
+
+const CHIP_SELECTED_CLASS = 'border-primary bg-primary/15 shadow-sm shadow-primary/15';
+
 const CHIPS_WRAPPER_CLASS =
     'flex flex-wrap gap-2 z-10 ' +
-    'max-sm:fixed max-sm:bottom-[72px] max-sm:left-0 max-sm:right-0 max-sm:px-4 max-sm:py-2 max-sm:bg-base-100 max-sm:border-t max-sm:border-base-300 ' +
+    'max-sm:fixed max-sm:bottom-[72px] max-sm:left-0 max-sm:right-0 ' +
+    'max-sm:px-4 max-sm:py-3 max-sm:bg-base-100 ' +
+    'max-sm:border-t max-sm:border-base-300 ' +
     'sm:self-start sm:max-w-[80%] sm:mt-1';
+
 const MESSAGES_MOBILE_CHIP_PAD = 'max-sm:pb-28';
 
+// ─── Helpers ─────────────────────────────────────────────
 function scrollToBottom(ctx: Ctx): void {
     requestAnimationFrame(() => {
         ctx.messagesEl.scrollTop = ctx.messagesEl.scrollHeight;
     });
 }
 
-function appendSystemBubble(ctx: Ctx, text: string): HTMLElement {
+function updateProgress(q: QuestionData): void {
+    const fill = document.getElementById('chat-progress-fill');
+    if (!fill || q.totalQuestions <= 0) return;
+    const pct = Math.round(((q.questionNumber - 1) / q.totalQuestions) * 100);
+    fill.style.width = `${pct}%`;
+}
+
+function setProgressTo(pct: number): void {
+    const fill = document.getElementById('chat-progress-fill');
+    if (fill) fill.style.width = `${pct}%`;
+}
+
+// Async: shows typing indicator, then resolves with the real bubble element
+async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true): Promise<HTMLElement> {
+    if (withTyping) {
+        const typing = document.createElement('div');
+        typing.className = TYPING_BUBBLE_CLASS;
+        typing.innerHTML =
+            '<span class="typing-dot" aria-hidden="true"></span>' +
+            '<span class="typing-dot" aria-hidden="true"></span>' +
+            '<span class="typing-dot" aria-hidden="true"></span>';
+        ctx.messagesEl.appendChild(typing);
+        scrollToBottom(ctx);
+        await new Promise<void>(r => setTimeout(r, 460));
+        typing.remove();
+    }
+
     const bubble = document.createElement('div');
     bubble.className = SYSTEM_BUBBLE_CLASS;
     bubble.textContent = text;
@@ -128,12 +175,14 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
     const selected = new Set<string>();
     let confirmBtn: HTMLButtonElement | null = null;
 
-    const buttons: HTMLButtonElement[] = items.map((item) => {
+    const buttons: HTMLButtonElement[] = items.map((item, i) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = CHIP_BASE_CLASS;
         btn.textContent = item;
         btn.dataset.value = item;
+        // Stagger entrance animation
+        btn.style.animationDelay = `${i * 40}ms`;
         if (opts.multi) btn.setAttribute('aria-pressed', 'false');
 
         btn.addEventListener('click', () => {
@@ -162,7 +211,10 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
         if (selected.size > 0 && !confirmBtn) {
             confirmBtn = document.createElement('button');
             confirmBtn.type = 'button';
-            confirmBtn.className = `${CHIP_BASE_CLASS} bg-primary text-primary-content border-primary hover:bg-primary/90`;
+            confirmBtn.className =
+                `${CHIP_BASE_CLASS} bg-primary text-primary-content border-primary ` +
+                'hover:bg-primary/90 hover:border-primary shadow-sm shadow-primary/20';
+            confirmBtn.style.animationDelay = `${items.length * 40}ms`;
             confirmBtn.textContent = 'Bevestig';
             confirmBtn.addEventListener('click', () => {
                 const values = Array.from(selected);
@@ -202,7 +254,7 @@ async function recordAnswer(ctx: Ctx, q: QuestionData, value: string, displayLab
         await ensureSession(ctx);
         await saveResponse(ctx.projectId, q.questionId, value);
     } catch {
-        appendSystemBubble(ctx, 'Er ging iets mis bij het opslaan. Probeer opnieuw.');
+        await appendSystemBubble(ctx, 'Er ging iets mis bij het opslaan. Probeer opnieuw.', false);
         return;
     }
     updateBackBtn(ctx);
@@ -214,29 +266,31 @@ async function advance(ctx: Ctx, currentQuestionId: number): Promise<void> {
     try {
         nextId = await getNextQuestion(ctx.projectId, currentQuestionId);
     } catch {
-        appendSystemBubble(ctx, 'Kon volgende vraag niet laden.');
+        await appendSystemBubble(ctx, 'Kon volgende vraag niet laden.', false);
         return;
     }
     if (nextId === null || nextId === undefined) {
-        renderConfirm(ctx);
+        await renderConfirm(ctx);
         return;
     }
     const idx = ctx.questionIndexById.get(nextId);
     if (idx === undefined) {
-        renderConfirm(ctx);
+        await renderConfirm(ctx);
         return;
     }
-    renderQuestion(ctx, idx);
+    await renderQuestion(ctx, idx);
 }
 
-function renderQuestion(ctx: Ctx, index: number): void {
+async function renderQuestion(ctx: Ctx, index: number, withTyping = true): Promise<void> {
     const q = ctx.questions[index];
     if (!q) {
-        renderConfirm(ctx);
+        await renderConfirm(ctx);
         return;
     }
 
-    const sysBubble = appendSystemBubble(ctx, q.text);
+    updateProgress(q);
+
+    const sysBubble = await appendSystemBubble(ctx, q.text, withTyping);
     ctx.questionStack.push({ qid: q.questionId, sysBubble, ansBubble: null });
     updateBackBtn(ctx);
 
@@ -245,7 +299,8 @@ function renderQuestion(ctx: Ctx, index: number): void {
         const ansBubble = appendUserBubble(ctx, prior);
         const top = ctx.questionStack[ctx.questionStack.length - 1];
         top.ansBubble = ansBubble;
-        renderQuestion(ctx, index + 1);
+        // Replay existing responses without typing delay
+        await renderQuestion(ctx, index + 1, false);
         return;
     }
 
@@ -282,7 +337,7 @@ function renderQuestion(ctx: Ctx, index: number): void {
             break;
         }
         default:
-            appendSystemBubble(ctx, 'Onbekend vraagtype.');
+            void appendSystemBubble(ctx, 'Onbekend vraagtype.', false);
     }
 }
 
@@ -311,9 +366,10 @@ function bindOpenSend(ctx: Ctx, q: QuestionData): void {
     ctx.inputEl.addEventListener('keydown', key);
 }
 
-function renderConfirm(ctx: Ctx): void {
+async function renderConfirm(ctx: Ctx): Promise<void> {
     hideInput(ctx);
-    ctx.confirmBubble = appendSystemBubble(ctx, 'Klaar om in te sturen?');
+    setProgressTo(95);
+    ctx.confirmBubble = await appendSystemBubble(ctx, 'Klaar om in te sturen?');
     updateBackBtn(ctx);
     showChips(ctx, ['Verstuur'], {
         multi: false,
@@ -321,8 +377,8 @@ function renderConfirm(ctx: Ctx): void {
             try {
                 await submitSurvey(ctx.projectId);
             } catch {
-                appendSystemBubble(ctx, 'Verzenden mislukt. Probeer opnieuw.');
-                renderConfirm(ctx);
+                await appendSystemBubble(ctx, 'Verzenden mislukt. Probeer opnieuw.', false);
+                await renderConfirm(ctx);
                 return;
             }
             renderDone(ctx);
@@ -333,8 +389,9 @@ function renderConfirm(ctx: Ctx): void {
 function renderDone(ctx: Ctx): void {
     hideInput(ctx);
     removeActiveChips(ctx);
+    setProgressTo(100);
     ctx.backBtn.disabled = true;
-    appendSystemBubble(ctx, 'Bedankt voor je deelname!');
+    void appendSystemBubble(ctx, 'Bedankt voor je deelname!', false);
     setTimeout(() => {
         window.location.href = `/${ctx.projectId}/Survey/ThankYou`;
     }, 800);
@@ -345,14 +402,12 @@ function updateBackBtn(ctx: Ctx): void {
     ctx.backBtn.disabled = !hasAnswered && ctx.confirmBubble === null;
 }
 
-function goBack(ctx: Ctx): void {
-    // Confirm step: remove confirm bubble + its chips, then revisit last answered question
+async function goBack(ctx: Ctx): Promise<void> {
     if (ctx.confirmBubble) {
         ctx.confirmBubble.remove();
         ctx.confirmBubble = null;
         removeActiveChips(ctx);
     } else {
-        // Pop the currently-pending (unanswered) question
         const pending = ctx.questionStack.pop();
         if (!pending) return;
         pending.sysBubble.remove();
@@ -361,11 +416,10 @@ function goBack(ctx: Ctx): void {
         hideInput(ctx);
     }
 
-    // Pop the last answered entry to re-render fresh for editing
     const last = ctx.questionStack.pop();
     if (!last) {
         updateBackBtn(ctx);
-        renderQuestion(ctx, 0);
+        await renderQuestion(ctx, 0, false);
         return;
     }
     last.sysBubble.remove();
@@ -374,9 +428,15 @@ function goBack(ctx: Ctx): void {
     delete ctx.existingResponses[String(last.qid)];
     const idx = ctx.questionIndexById.get(last.qid);
     if (idx !== undefined) {
-        renderQuestion(ctx, idx);
+        // No typing indicator on back — feels snappier
+        await renderQuestion(ctx, idx, false);
     }
     updateBackBtn(ctx);
+}
+
+function wireToolbar(ctx: Ctx): void {
+    ctx.backBtn.addEventListener('click', () => void goBack(ctx));
+    ctx.restartBtn.addEventListener('click', () => void doRestart(ctx));
 }
 
 async function doRestart(ctx: Ctx): Promise<void> {
@@ -387,15 +447,10 @@ async function doRestart(ctx: Ctx): Promise<void> {
         if (ctx.hasSession) await removeAllResponses(ctx.projectId);
     } catch {
         ctx.restartBtn.disabled = false;
-        appendSystemBubble(ctx, 'Herstart mislukt. Probeer opnieuw.');
+        void appendSystemBubble(ctx, 'Herstart mislukt. Probeer opnieuw.', false);
         return;
     }
     window.location.reload();
-}
-
-function wireToolbar(ctx: Ctx): void {
-    ctx.backBtn.addEventListener('click', () => goBack(ctx));
-    ctx.restartBtn.addEventListener('click', () => void doRestart(ctx));
 }
 
 async function startFlow(ctx: Ctx): Promise<void> {
@@ -405,7 +460,7 @@ async function startFlow(ctx: Ctx): Promise<void> {
             if (resumeId !== null && resumeId !== undefined) {
                 const idx = ctx.questionIndexById.get(resumeId);
                 if (idx !== undefined) {
-                    renderQuestion(ctx, 0);
+                    await renderQuestion(ctx, 0);
                     return;
                 }
             }
@@ -413,7 +468,7 @@ async function startFlow(ctx: Ctx): Promise<void> {
             /* fall through */
         }
     }
-    renderQuestion(ctx, 0);
+    await renderQuestion(ctx, 0);
 }
 
 export function initChat(): void {

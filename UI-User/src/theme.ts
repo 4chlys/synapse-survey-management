@@ -23,13 +23,18 @@ function applyTheme(theme: string): void {
 
     const sun  = document.getElementById('icon-sun');
     const moon = document.getElementById('icon-moon');
+    const knob = document.getElementById('toggle-knob');
     if (!sun || !moon) return;
 
     if (theme === DARK) {
         sun.classList.remove('hidden');
         moon.classList.add('hidden');
+        knob?.classList.add('translate-x-7');
+        knob?.classList.remove('translate-x-0');
     } else {
         sun.classList.add('hidden');
         moon.classList.remove('hidden');
+        knob?.classList.remove('translate-x-7');
+        knob?.classList.add('translate-x-0');
     }
 }

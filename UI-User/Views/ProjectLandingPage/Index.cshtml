@@ -27,11 +27,20 @@
     };
 }
 
-@* Dark overlay — dims background so content floats *@
-<div class="fixed inset-0 bg-black/35 z-[1] pointer-events-none" aria-hidden="true"></div>
+@* Org logo watermark — centered behind hero, cards float over it *@
+@if (!string.IsNullOrEmpty(Model.OrganisationLogoUrl))
+{
+    <div class="fixed inset-0 flex items-start justify-center z-0 pointer-events-none" style="padding-top: 7vh;" aria-hidden="true">
+        <img src="@Model.OrganisationLogoUrl" alt=""
+             class="w-[320px] max-w-[40vw] object-contain opacity-[0.15] select-none" />
+    </div>
+}
 
-@* Animated background — floating survey card mockups *@
-<div class="fixed inset-0 overflow-hidden z-0 pointer-events-none" aria-hidden="true">
+@* Black overlay *@
+<div class="fixed inset-0 bg-black/5 z-[2] pointer-events-none" aria-hidden="true"></div>
+
+@* Animated background *@
+<div class="fixed inset-0 overflow-hidden z-[1] pointer-events-none" aria-hidden="true">
     @for (int i = 0; i < cards.Length; i++)
     {
         var c = cards[i];
@@ -51,7 +60,7 @@
                 }
 
                 @* Question *@
-                <p class="text-xs font-medium text-base-content/50 leading-snug">@q.Q</p>
+                <p class="text-xs font-medium text-base-content/50 leading-snug landing-card-question">@q.Q</p>
 
                 @* Answer mockup *@
                 @if (q.Type == "likert")
@@ -89,34 +98,39 @@
 
 <div class="min-h-screen flex flex-col px-8 py-6 page-enter relative z-10">
 
-    @* Transparent header: org name left, theme toggle right *@
+    @* Header *@
     <div class="flex items-center justify-between w-full max-w-3xl mx-auto">
         <div class="flex items-center gap-3">
-            <span class="font-heading font-semibold text-base-content/70 text-sm tracking-wide">
+            <span class="font-heading font-semibold text-base-content/70 text-base tracking-wide">
                 @Model.OrganisationName
             </span>
         </div>
 
         @* Toggle switch *@
         <button id="theme-toggle" aria-label="Toggle dark mode"
-                class="relative inline-flex items-center w-14 h-7 rounded-full border border-base-300 bg-base-200 transition-colors cursor-pointer focus:outline-none hover:border-primary/50">
+                class="relative inline-flex items-center w-14 h-7 rounded-full border border-base-content/20 bg-base-200 transition-colors cursor-pointer focus:outline-none">
             <span class="sr-only">Toggle theme</span>
-            <span class="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
-                <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning hidden" fill="none"
-                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/60" fill="none"
-                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
+            @* Track icons — absolutely positioned so hiding one doesn't shift the other *@
+            <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg"
+                 class="absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-warning hidden pointer-events-none" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg"
+                 class="absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-base-content/50 pointer-events-none" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            @* Sliding knob *@
+            <span id="toggle-knob"
+                  class="absolute left-1 h-5 w-5 rounded-full bg-base-content/70 shadow-sm transition-transform duration-200 pointer-events-none translate-x-0">
             </span>
         </button>
     </div>
 
-    @* Main hero — fills remaining height *@
+    @* Main hero *@
     <div class="flex-1 flex flex-col justify-center w-full max-w-3xl mx-auto gap-12 py-16">
 
         @* Project title — left border accent *@
@@ -127,7 +141,7 @@
             </h1>
         </div>
 
-        @* CTA — left on desktop, centered on mobile *@
+        @* CTA *@
         <div class="flex justify-center sm:justify-start">
             <span class="btn-travel-wrap">
                 <a asp-controller="Survey" asp-action="Index" asp-route-projectId="@Model.ProjectId"
