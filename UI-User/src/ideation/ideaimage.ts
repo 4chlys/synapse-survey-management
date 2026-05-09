@@ -1,4 +1,4 @@
-import {t} from '../i18n';
+import {t} from '../lib/i18n';
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);

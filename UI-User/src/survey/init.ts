@@ -5,7 +5,7 @@ import {updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
 import {getSubmitSlideIndex, prefillAnswers, questionIdToSlideIndex, updateQuestionCounters} from './branching';
 import {getResumeQuestion, getVisiblePath, submitSurvey} from './api';
-import {t} from '../i18n';
+import {t} from '../lib/i18n';
 
 function syncButtons(state: SurveyState): void {
     const allPrev = document.querySelectorAll<HTMLButtonElement>('.btn-prev');

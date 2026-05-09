@@ -12,7 +12,7 @@
  */
 
 import { IdeaSupportSession } from './ideasupport';
-import { t } from '../i18n';
+import { t } from '../lib/i18n';
 import { escapeHtml, renderMarkdown, setupAutoGrow } from './ai-support-base';
 
 //  DOM references (resolved once on first open)

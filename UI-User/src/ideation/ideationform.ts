@@ -1,6 +1,6 @@
 import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
 import {clearIdeaImageField, showImageRejectionPopup, uploadSelectedImage} from './ideaimage';
-import {t} from '../i18n';
+import {t} from '../lib/i18n';
 
 const MIN_LENGTH = 2;
 const MAX_LENGTH: Record<'idea' | 'comment', number> = { idea: 1000, comment: 500 };

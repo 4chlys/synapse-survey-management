@@ -3,7 +3,7 @@ import { wireModerationField } from './moderation';
 import { wireIdeaImageField } from './ideaimage';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
-import { t } from '../i18n';
+import { t } from '../lib/i18n';
 
 interface EmojiReaction {
     emojiId: number;

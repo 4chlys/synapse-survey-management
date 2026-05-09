@@ -1,5 +1,5 @@
 import { startSession, saveResponse, getNextQuestion, getResumeQuestion, submitSurvey, removeAllResponses } from './api';
-import { t } from '../i18n';
+import { t } from '../lib/i18n';
 
 const enum Fmt {
     Open = 1,
