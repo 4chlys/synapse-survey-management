@@ -10,6 +10,7 @@ public class ResponsesControllerTests
     private readonly Mock<IResponseManager> _responseManager = new();
     private readonly Mock<ISubmissionManager> _submissionManager = new();
     private readonly Mock<IProjectManager> _projectManager = new();
+    private readonly Mock<IParticipantLanguageCoordinator> _participantLanguageCoordinator = new();
     private readonly ResponsesController _controller;
 
     private const int ProjectId = 1;
@@ -21,7 +22,7 @@ public class ResponsesControllerTests
         _participant = new Participant { ParticipantId = 5, SessionToken = Guid.NewGuid(), Project = new Project { ProjectId = ProjectId } };
         _participantManager.Setup(p => p.GetParticipantBySessionTokenForUpdateAsync(_sessionToken))
             .ReturnsAsync(_participant);
-        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object, _projectManager.Object);
+        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object, _projectManager.Object, _participantLanguageCoordinator.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -97,12 +98,12 @@ public class ResponsesControllerTests
     }
 
     [Fact]
-    public async Task SetLanguage_KnownActiveCode_Returns204AndCallsManager()
+    public async Task SetLanguage_KnownActiveCode_Returns204AndCallsCoordinator()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _participantManager.Setup(p => p.SetLanguageAsync(_participant.ParticipantId, "en", ct))
+        _participantLanguageCoordinator.Setup(c => c.SwitchLanguageAsync(_participant.ParticipantId, "en", ct))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Exactly(1));
 
@@ -111,16 +112,16 @@ public class ResponsesControllerTests
 
         // Assert
         Assert.IsType<NoContentResult>(result);
-        _participantManager.VerifyAll();
+        _participantLanguageCoordinator.VerifyAll();
     }
 
     [Fact]
-    public async Task SetLanguage_UnknownCode_ManagerThrows_Returns400()
+    public async Task SetLanguage_UnknownCode_CoordinatorThrows_Returns400()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _participantManager.Setup(p => p.SetLanguageAsync(_participant.ParticipantId, "xx", ct))
+        _participantLanguageCoordinator.Setup(c => c.SwitchLanguageAsync(_participant.ParticipantId, "xx", ct))
             .ThrowsAsync(new KeyNotFoundException("Language 'xx' is not a supported active language."));
 
         // Act
@@ -138,7 +139,8 @@ public class ResponsesControllerTests
             _participantManager.Object,
             _responseManager.Object,
             _submissionManager.Object,
-            _projectManager.Object);
+            _projectManager.Object,
+            _participantLanguageCoordinator.Object);
         controllerWithoutToken.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

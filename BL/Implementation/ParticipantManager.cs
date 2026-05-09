@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -28,7 +29,7 @@ public class ParticipantManager(
         return created;
     }
 
-    public async Task SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default)
+    public async Task<Language> SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default)
     {
         var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
         if (language is null || !language.IsActive)
@@ -41,6 +42,7 @@ public class ParticipantManager(
         participant.Language = language;
         participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
+        return language;
     }
 
     public Task<Participant> GetParticipantByIdReadOnlyAsync(int participantId)
@@ -71,9 +73,6 @@ public class ParticipantManager(
 
     public Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId)
         => participantRepository.ReadEmailsByProjectIdReadOnlyAsync(projectId);
-
-    public Task<string> GetParticipantLanguageCodeAsync(int participantId)
-        => participantRepository.ReadLanguageCodeByIdReadOnlyAsync(participantId);
 
     public async Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30)
     {

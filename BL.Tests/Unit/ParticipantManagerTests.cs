@@ -162,10 +162,11 @@ public class ParticipantManagerTests
             .Verifiable(Times.Exactly(1));
 
         // Act
-        await _manager.SetLanguageAsync(1, "en");
+        var returned = await _manager.SetLanguageAsync(1, "en");
 
         // Assert
         Assert.Same(language, participant.Language);
+        Assert.Same(language, returned);
         _participantRepository.VerifyAll();
         _uow.VerifyAll();
     }

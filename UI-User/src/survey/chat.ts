@@ -239,13 +239,11 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
         if (selected.size > 0 && !confirmBtn) {
             confirmBtn = document.createElement('button');
             confirmBtn.type = 'button';
-            confirmBtn.className = `${CHIP_BASE_CLASS} bg-primary text-primary-content border-primary hover:bg-primary/90`;
-            confirmBtn.textContent = t('surveyConfirm');
             confirmBtn.className =
                 `${CHIP_BASE_CLASS} bg-primary text-primary-content border-primary ` +
                 'hover:bg-primary/90 hover:border-primary shadow-sm shadow-primary/20';
             confirmBtn.style.animationDelay = `${items.length * 40}ms`;
-            confirmBtn.textContent = 'Bevestig';
+            confirmBtn.textContent = t('surveyConfirm');
             confirmBtn.addEventListener('click', () => {
                 const values = Array.from(selected);
                 removeActiveChips(ctx);
@@ -329,8 +327,26 @@ async function renderQuestion(ctx: Ctx, index: number, withTyping = true): Promi
         const ansBubble = appendUserBubble(ctx, prior);
         const top = ctx.questionStack[ctx.questionStack.length - 1];
         top.ansBubble = ansBubble;
-        // Replay existing responses without typing delay
-        await renderQuestion(ctx, index + 1, false);
+
+        // Follow the backend's branching path during replay so questions that
+        // were skipped (because of a different earlier answer) are not shown again.
+        let nextId: number | null;
+        try {
+            nextId = await getNextQuestion(ctx.projectId, q.questionId);
+        } catch {
+            await renderConfirm(ctx);
+            return;
+        }
+        if (nextId === null || nextId === undefined) {
+            await renderConfirm(ctx);
+            return;
+        }
+        const nextIdx = ctx.questionIndexById.get(nextId);
+        if (nextIdx === undefined) {
+            await renderConfirm(ctx);
+            return;
+        }
+        await renderQuestion(ctx, nextIdx, false);
         return;
     }
 

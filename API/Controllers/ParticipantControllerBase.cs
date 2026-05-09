@@ -61,11 +61,6 @@ public abstract class ParticipantControllerBase(
         await participantManager.SaveContactInfoAsync(participantId, email, ct);
     }
 
-    protected async Task SetParticipantLanguageAsync(int participantId, string languageCode, CancellationToken ct = default)
-    {
-        await participantManager.SetLanguageAsync(participantId, languageCode, ct);
-    }
-
     protected bool TryGetParticipantToken(out Guid token)
     {
         token = Guid.Empty;

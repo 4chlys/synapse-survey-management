@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.BL.Interfaces;
@@ -5,7 +6,7 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 public interface IParticipantManager
 {
     Task<Participant> AddParticipantAsync(Project project, string languageCode, CancellationToken ct = default);
-    Task SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default);
+    Task<Language> SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default);
     Task<Participant> GetParticipantByIdReadOnlyAsync(int participantId);
     Task<Participant> GetParticipantBySessionTokenForUpdateAsync(Guid sessionToken);
     Task<bool> HasParticipantSubmittedAsync(Guid sessionToken);
@@ -15,5 +16,4 @@ public interface IParticipantManager
     Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30);
 
     Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId);
-    Task<string> GetParticipantLanguageCodeAsync(int participantId);
 }

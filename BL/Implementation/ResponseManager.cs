@@ -1,4 +1,6 @@
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -95,5 +97,69 @@ public class ResponseManager(
     {
         await responseRepository.DeleteAllByParticipantIdAsync(participant.ParticipantId);
         await uow.SaveChangesAsync(ct);
+    }
+
+    public async Task RetranslateResponsesForLanguageAsync(int participantId, Language targetLanguage, CancellationToken ct = default)
+    {
+        if (targetLanguage is null) throw new ArgumentNullException(nameof(targetLanguage));
+
+        var responses = (await responseRepository.ReadByParticipantWithQuestionTranslationsForUpdateAsync(participantId)).ToList();
+        if (responses.Count == 0) return;
+
+        var changed = false;
+        foreach (var response in responses)
+        {
+            var sourceCode = response.Language?.Code;
+            var newValue = TranslateValue(response.Value, response.Question, sourceCode, targetLanguage.Code);
+
+            if (newValue != response.Value)
+            {
+                response.Value = newValue;
+                changed = true;
+            }
+            if (response.Language?.Code != targetLanguage.Code)
+            {
+                response.Language = targetLanguage;
+                changed = true;
+            }
+            if (changed) responseRepository.Update(response);
+        }
+        if (changed) await uow.SaveChangesAsync(ct);
+    }
+
+    private static string TranslateValue(string value, Question question, string sourceLanguageCode, string targetLanguageCode)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        // Open responses are free user text and Likert is a numeric index — both are language-independent.
+        if (question.QuestionFormat == QuestionFormat.Open
+            || question.QuestionFormat == QuestionFormat.Likert) return value;
+        if (sourceLanguageCode == targetLanguageCode) return value;
+
+        var sourceChoices = ChoicesFor(question, sourceLanguageCode);
+        var targetChoices = ChoicesFor(question, targetLanguageCode);
+        if (sourceChoices.Count == 0 || targetChoices.Count == 0) return value;
+
+        if (question.QuestionFormat == QuestionFormat.SingleChoice)
+        {
+            var idx = sourceChoices.IndexOf(value);
+            return idx >= 0 && idx < targetChoices.Count ? targetChoices[idx] : value;
+        }
+
+        // MultipleChoice — values are stored as ", "-joined choice texts (see SurveyFlowManager.SplitSelected)
+        var parts = value.Split(", ", StringSplitOptions.None);
+        var translated = new List<string>(parts.Length);
+        foreach (var part in parts)
+        {
+            var idx = sourceChoices.IndexOf(part);
+            translated.Add(idx >= 0 && idx < targetChoices.Count ? targetChoices[idx] : part);
+        }
+        return string.Join(", ", translated);
+    }
+
+    private static List<string> ChoicesFor(Question question, string languageCode)
+    {
+        var translation = question.Translations.FirstOrDefault(t => t.Language?.Code == languageCode)
+                          ?? question.Translations.FirstOrDefault();
+        return translation?.AnswerChoices?.ToList() ?? new List<string>();
     }
 }

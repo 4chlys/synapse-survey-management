@@ -6,8 +6,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class SurveyFlowManager(
     IQuestionnaireManager questionnaireManager,
-    IResponseManager responseManager,
-    IParticipantManager participantManager) : ISurveyFlowManager
+    IResponseManager responseManager) : ISurveyFlowManager
 {
     public async Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId)
     {
@@ -43,8 +42,8 @@ public class SurveyFlowManager(
         var path = await ComputePathAsync(questionnaire, participantId);
         if (path.Count == 0) return null;
 
-        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
-        var answeredIds = responses.Select(r => r.Question.QuestionId).ToHashSet();
+        var resumeResponses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
+        var answeredIds = resumeResponses.Select(r => r.Question.QuestionId).ToHashSet();
 
         return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
     }
@@ -63,39 +62,23 @@ public class SurveyFlowManager(
     {
         if (questionnaire?.Questions is null || questionnaire.Questions.Count == 0) return [];
 
-        var languageCode = await participantManager.GetParticipantLanguageCodeAsync(participantId) ?? "nl";
-
         var allQuestions = questionnaire.Questions.ToList();
         var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
-        var answersById = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
-
-        // Resolve each question's translation for the participant's language (fallback to first available)
-        var translationByQId = allQuestions.ToDictionary(
-            q => q.QuestionId,
-            q => q.Translations.FirstOrDefault(t => t.Language.Code == languageCode)
-                 ?? q.Translations.FirstOrDefault());
-
-        // Resolve each ending answer's translated value for the participant's language
-        var endingValueById = allQuestions
-            .SelectMany(q => q.EndingAnswers)
-            .ToDictionary(
-                ea => ea.EndingAnswerId,
-                ea => ea.Translations.FirstOrDefault(t => t.Language.Code == languageCode)?.Value
-                      ?? ea.Translations.FirstOrDefault()?.Value);
+        // Each response carries its own source language (the participant's language at save time),
+        // so branching/ending lookups must use that language — not the participant's current one.
+        var responseByQId = responses.ToDictionary(r => r.Question.QuestionId, r => r);
 
         var path = new List<Question>();
         var visited = new HashSet<int>();
         WalkScope(parentId: null, triggerChoiceIndex: null,
-            allQuestions, answersById, translationByQId, endingValueById, path, visited);
+            allQuestions, responseByQId, path, visited);
         return path;
     }
 
     private static bool WalkScope(
         int? parentId, int? triggerChoiceIndex,
         List<Question> allQuestions,
-        Dictionary<int, string> answersById,
-        Dictionary<int, QuestionTranslation> translationByQId,
-        Dictionary<int, string> endingValueById,
+        Dictionary<int, Response> responseByQId,
         List<Question> path,
         HashSet<int> visited)
     {
@@ -109,19 +92,25 @@ public class SurveyFlowManager(
             if (!visited.Add(child.QuestionId)) continue;
             path.Add(child);
 
-            if (!answersById.TryGetValue(child.QuestionId, out var answer)) continue;
+            if (!responseByQId.TryGetValue(child.QuestionId, out var response)) continue;
 
-            var selected = SplitSelected(child.QuestionFormat, answer);
+            var selected = SplitSelected(child.QuestionFormat, response.Value);
+            var sourceLanguageCode = response.Language?.Code;
 
-            // Check if the selected answer terminates the survey (match by translated value)
+            // Check if the selected answer terminates the survey (match by translated value
+            // in the response's source language, falling back to first translation)
             if (child.EndingAnswers.Any(ea =>
-                    endingValueById.TryGetValue(ea.EndingAnswerId, out var endVal)
-                    && endVal is not null
-                    && selected.Contains(endVal)))
+                {
+                    var endVal = ea.Translations.FirstOrDefault(t => t.Language.Code == sourceLanguageCode)?.Value
+                                 ?? ea.Translations.FirstOrDefault()?.Value;
+                    return endVal is not null && selected.Contains(endVal);
+                }))
                 return true;
 
-            // Resolve selected answer strings to choice indices for branching
-            translationByQId.TryGetValue(child.QuestionId, out var translation);
+            // Resolve selected answer strings to choice indices for branching, using the
+            // response's source language so saved values map to the correct choice index.
+            var translation = child.Translations.FirstOrDefault(t => t.Language.Code == sourceLanguageCode)
+                              ?? child.Translations.FirstOrDefault();
             var choices = translation?.AnswerChoices?.ToList() ?? new List<string>();
 
             foreach (var value in selected)
@@ -140,7 +129,7 @@ public class SurveyFlowManager(
                 }
 
                 var ended = WalkScope(child.QuestionId, idx,
-                    allQuestions, answersById, translationByQId, endingValueById, path, visited);
+                    allQuestions, responseByQId, path, visited);
                 if (ended) return true;
             }
         }

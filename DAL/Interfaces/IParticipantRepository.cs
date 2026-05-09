@@ -16,5 +16,4 @@ public interface IParticipantRepository : IRepository<Participant>
     Task<List<(DateTime Date, bool IsCompletion)>> ReadTimelineAsync(int projectId, int days);
 
     Task<List<string>> ReadEmailsByProjectIdReadOnlyAsync(int projectId);
-    Task<string> ReadLanguageCodeByIdReadOnlyAsync(int participantId);
 }

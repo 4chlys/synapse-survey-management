@@ -63,11 +63,4 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
         }
         return result;
     }
-
-    public Task<string> ReadLanguageCodeByIdReadOnlyAsync(int participantId)
-        => Context.Set<Participant>()
-            .AsNoTracking()
-            .Where(p => p.ParticipantId == participantId)
-            .Select(p => EF.Property<string>(p, "LanguageCode"))
-            .FirstOrDefaultAsync();
 }

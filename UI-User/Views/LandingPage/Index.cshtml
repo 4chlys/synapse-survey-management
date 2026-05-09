@@ -27,7 +27,13 @@
         new { Q = "Welke functie gebruikt u het meest?",    Type = "choice" },
         new { Q = "Hoe waardeert u de ondersteuning?",      Type = "likert" },
         new { Q = "Wat kunnen wij verbeteren?",             Type = "open"   },
+        new { Q = "What should we do to improve?",          Type = "Open"   },
+        new { Q = "How often do you use this platform?",    Type = "choice" },
+        new { Q = "How likely are you to recommend us?",    Type = "likert" },
+        new { Q = "What aspects of our service do you value most?", Type = "choice" },
     };
+
+    var shuffledQuestions = questions.OrderBy(_ => Guid.NewGuid()).ToArray();
 }
 
 @* Org logo watermark — centered behind hero, cards float over it *@
@@ -47,7 +53,7 @@
     @for (int i = 0; i < cards.Length; i++)
     {
         var c = cards[i];
-        var q = questions[i % questions.Length];
+        var q = shuffledQuestions[i % shuffledQuestions.Length];
         <div class="landing-bg-card @c.Width"
              style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
             <div class="rounded-2xl border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">

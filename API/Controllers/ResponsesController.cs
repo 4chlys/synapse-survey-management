@@ -15,7 +15,8 @@ public class ResponsesController(
     IParticipantManager participantManager,
     IResponseManager responseManager,
     ISubmissionManager submissionManager,
-    IProjectManager projectManager)
+    IProjectManager projectManager,
+    IParticipantLanguageCoordinator participantLanguageCoordinator)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPatch("participants/me/language")]
@@ -26,7 +27,7 @@ public class ResponsesController(
 
         try
         {
-            await SetParticipantLanguageAsync(participant.ParticipantId, dto.LanguageCode, ct);
+            await participantLanguageCoordinator.SwitchLanguageAsync(participant.ParticipantId, dto.LanguageCode, ct);
         }
         catch (KeyNotFoundException)
         {
