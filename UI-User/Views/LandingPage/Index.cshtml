@@ -30,7 +30,7 @@
 @* Org logo watermark — centered behind hero, cards float over it *@
 @if (!string.IsNullOrEmpty(Model.OrganisationLogoUrl))
 {
-    <div class="fixed inset-0 flex items-start justify-center z-0 pointer-events-none" style="padding-top: 7vh;" aria-hidden="true">
+    <div class="fixed inset-0 flex items-start justify-center z-0 pointer-events-none pt-[7vh]" aria-hidden="true">
         <img src="@Model.OrganisationLogoUrl" alt=""
              class="w-[320px] max-w-[40vw] object-contain opacity-[0.15] select-none" />
     </div>

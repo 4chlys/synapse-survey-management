@@ -40,6 +40,7 @@ interface Ctx {
     questionStack: QuestionEntry[];
     activeChips: HTMLElement | null;
     confirmBubble: HTMLElement | null;
+    userTypingBubble: HTMLElement | null;
     openHandlers: { send: () => void; key: (e: KeyboardEvent) => void } | null;
 }
 
@@ -58,6 +59,11 @@ const TYPING_BUBBLE_CLASS =
     'self-start rounded-2xl rounded-tl-none ' +
     'bg-base-100 border border-base-300/60 ' +
     'px-4 py-3.5 text-base-content/50 shadow-sm chat-bubble-left flex gap-1.5 items-center';
+
+const USER_TYPING_BUBBLE_CLASS =
+    'self-end rounded-2xl rounded-tr-none ' +
+    'bg-primary text-primary-content/60 ' +
+    'px-4 py-3.5 shadow-lg shadow-primary/20 chat-bubble-right flex gap-1.5 items-center';
 
 const CHIP_BASE_CLASS =
     'rounded-full border border-base-300/70 bg-base-100/90 px-4 py-2 text-sm ' +
@@ -93,6 +99,26 @@ function updateProgress(q: QuestionData): void {
 function setProgressTo(pct: number): void {
     const fill = document.getElementById('chat-progress-fill');
     if (fill) fill.style.width = `${pct}%`;
+}
+
+function showUserTyping(ctx: Ctx): void {
+    if (ctx.userTypingBubble) return;
+    const bubble = document.createElement('div');
+    bubble.className = USER_TYPING_BUBBLE_CLASS;
+    bubble.innerHTML =
+        '<span class="typing-dot" aria-hidden="true"></span>' +
+        '<span class="typing-dot" aria-hidden="true"></span>' +
+        '<span class="typing-dot" aria-hidden="true"></span>';
+    ctx.messagesEl.appendChild(bubble);
+    ctx.userTypingBubble = bubble;
+    scrollToBottom(ctx);
+}
+
+function removeUserTyping(ctx: Ctx): void {
+    if (ctx.userTypingBubble) {
+        ctx.userTypingBubble.remove();
+        ctx.userTypingBubble = null;
+    }
 }
 
 // Async: shows typing indicator, then resolves with the real bubble element
@@ -140,6 +166,7 @@ function showInput(ctx: Ctx): void {
 
 function hideInput(ctx: Ctx): void {
     ctx.inputRow.classList.add('hidden');
+    removeUserTyping(ctx);
     if (ctx.openHandlers) {
         ctx.sendBtn.removeEventListener('click', ctx.openHandlers.send);
         ctx.inputEl.removeEventListener('keydown', ctx.openHandlers.key);
@@ -353,6 +380,7 @@ function bindOpenSend(ctx: Ctx, q: QuestionData): void {
             ctx.openHandlers = null;
         }
         ctx.inputRow.classList.add('hidden');
+        removeUserTyping(ctx);
         void recordAnswer(ctx, q, value, value);
     };
     const key = (e: KeyboardEvent): void => {
@@ -508,12 +536,18 @@ export function initChat(): void {
         questionStack: [],
         activeChips: null,
         confirmBubble: null,
+        userTypingBubble: null,
         openHandlers: null,
     };
 
     inputEl.addEventListener('input', () => {
         inputEl.style.height = 'auto';
         inputEl.style.height = `${Math.min(inputEl.scrollHeight, 128)}px`;
+        if (inputEl.value.trim()) {
+            showUserTyping(ctx);
+        } else {
+            removeUserTyping(ctx);
+        }
     });
 
     wireToolbar(ctx);
