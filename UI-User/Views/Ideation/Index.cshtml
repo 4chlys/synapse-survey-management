@@ -66,7 +66,8 @@
 <div id="ideation-page"
      class="max-w-2xl mx-auto px-6 pt-10 pb-28 min-h-[calc(100dvh-64px)] page-enter"
      data-category-id="@Model.CategoryId"
-     data-category-name="@Model.Category.Name">
+     data-category-name="@Model.Category.Name"
+     data-category-description="@Model.Category.Description">
 
     @* Page header *@
     <div class="w-full mb-8">
@@ -133,6 +134,10 @@
                     <button type="button" data-action="browse-image"
                             class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs font-semibold">
                         @L["AddImageButton"]
+                    </button>
+                    <button type="button" data-action="describe-image"
+                            class="hidden btn btn-ghost btn-sm rounded-xl border border-primary/30 text-xs font-semibold text-primary">
+                        @L["DescribeImageButton"]
                     </button>
                     <span data-image-filename class="text-xs text-base-content/50 truncate max-w-[140px]"></span>
                     <button type="button" data-action="remove-image" class="hidden text-xs text-error font-medium">✕</button>

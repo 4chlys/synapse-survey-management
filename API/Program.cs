@@ -16,6 +16,7 @@ using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
@@ -203,6 +204,7 @@ if (useAi)
     builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
+    builder.Services.AddScoped<IAiImageDescriptionService, AiImageDescriptionService>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -234,6 +236,7 @@ else
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
+    builder.Services.AddScoped<IAiImageDescriptionService, MockImageDescriptionService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
 }
 

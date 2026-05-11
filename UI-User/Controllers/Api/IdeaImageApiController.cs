@@ -41,4 +41,28 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
             reason = result.Reason
         });
     }
+
+    [HttpPost("describe")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [EnableRateLimiting("ai-image-moderation")]
+    public async Task<IActionResult> Describe(
+        IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
+        CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { reason = "Geen bestand ontvangen." });
+
+        if (!AllowedContentTypes.Contains(file.ContentType))
+            return BadRequest(new { reason = "Alleen afbeeldingen (jpeg, png, webp, gif) zijn toegestaan." });
+
+        if (file.Length > MaxFileSizeBytes)
+            return BadRequest(new { reason = "De afbeelding mag maximaal 10 MB zijn." });
+
+        var result = await ideaImageService.DescribeAsync(file, categoryName ?? "", categoryDescription ?? "", ct);
+
+        if (!result.IsSuccess)
+            return UnprocessableEntity(new { reason = result.Reason });
+
+        return Ok(new { description = result.Description });
+    }
 }
