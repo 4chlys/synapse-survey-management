@@ -185,10 +185,6 @@ builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageC
 builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton(aiConfig.Moderation);
 builder.Services.AddSingleton(aiConfig.Fuzzy);
-builder.Services.AddSingleton(aiConfig.IdeaSupport);
-builder.Services.AddSingleton(aiConfig.CommentSupport);
-builder.Services.AddSingleton(aiConfig.QuestionSupport);
-builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
