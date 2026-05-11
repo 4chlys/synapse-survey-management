@@ -1,16 +1,12 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.BL.AiSpeechToText;
 
-/// <summary>
-/// Transcribes audio via <see cref="IChatClient"/> using multimodal input.
-/// Sends audio bytes and a transcription prompt; returns the model's text response as the transcript.
-/// </summary>
 public sealed class AiSpeechToTextService(
-    IChatClient chatClient,
-    ILogger<AiSpeechToTextService> logger,
-    AiSpeechToTextConfig config) : IAiSpeechToTextService
+    AiSpeechToTextConfig config,
+    ILogger<AiSpeechToTextService> logger) : IAiSpeechToTextService
 {
     // Base MIME types accepted by Gemini multimodal audio input.
     private static readonly HashSet<string> SupportedBaseMimeTypes = new(
@@ -22,6 +18,7 @@ public sealed class AiSpeechToTextService(
 
     public async Task<SpeechToTextResult> TranscribeAsync(
         SpeechToTextRequest request,
+        ResolvedPlatformAiConfig platformConfig,
         CancellationToken ct = default)
     {
         // Strip codec parameters for the base-type check (e.g. "audio/webm;codecs=opus" → "audio/webm").
@@ -57,7 +54,7 @@ public sealed class AiSpeechToTextService(
                 new TextContent(prompt),
             ]);
 
-            var response = await chatClient.GetResponseAsync(
+            var response = await platformConfig.ChatClient.GetResponseAsync(
                 [message], cancellationToken: ct);
 
             var transcript = response.Messages.LastOrDefault()?.Text?.Trim();

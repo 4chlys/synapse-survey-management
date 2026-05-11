@@ -113,8 +113,9 @@ public class UploadsController(
         var effectiveLanguage = string.IsNullOrWhiteSpace(language)
             ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
             : language;
+        var platformConfig = await platformAiConfig.ResolveGlobalAsync(ct);
         var description = await aiImageDescriptionService.DescribeImageAsync(
-            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", platformConfig, ct);
 
         if (string.IsNullOrEmpty(description))
             return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });

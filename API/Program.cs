@@ -187,6 +187,8 @@ builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton(aiConfig.Moderation);
 builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
+builder.Services.AddSingleton(aiConfig.ImageDescription);
+builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -283,11 +285,11 @@ if (useAi)
         projectId, location, "google", imagenModel);
     var imagenClient = await predictionBuilder.BuildAsync();
     builder.Services.AddSingleton<IAiImageGenerationService>(sp =>
-        new GoogleVertexAiImageGenerationService(
+        new AiImageGenerationService(
             imagenClient,
             imagenModelResource,
             sp.GetRequiredService<AiImageGenerationConfig>(),
-            sp.GetRequiredService<ILogger<GoogleVertexAiImageGenerationService>>()));
+            sp.GetRequiredService<ILogger<AiImageGenerationService>>()));
 
     // Embedding generator — same PredictionServiceClientBuilder, different model
     // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so

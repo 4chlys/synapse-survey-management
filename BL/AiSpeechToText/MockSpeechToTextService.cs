@@ -1,3 +1,5 @@
+using SynapseEnqueteManagement.BL.Ai;
+
 namespace SynapseEnqueteManagement.BL.AiSpeechToText;
 
 /// <summary>
@@ -16,6 +18,7 @@ public sealed class MockSpeechToTextService : IAiSpeechToTextService
 
     public Task<SpeechToTextResult> TranscribeAsync(
         SpeechToTextRequest request,
+        ResolvedPlatformAiConfig platformConfig,
         CancellationToken ct = default)
     {
         if (request.AudioData.Length == 0)
