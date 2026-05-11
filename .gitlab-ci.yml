@@ -166,11 +166,9 @@ push-test:
     - docker load < api-image.tar.gz
     - docker load < ui-image.tar.gz
     - docker load < admin-image.tar.gz
-    - docker load < nginx-image.tar.gz
     - docker push "${IMAGE_API}:${IMAGE_TAG}"
     - docker push "${IMAGE_UI}:${IMAGE_TAG}"
     - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
-    - docker push "${IMAGE_NGINX}:${IMAGE_TAG}"
     # test-latest tag zodat de test-MIG startup scripts de juiste image pullen
     - docker tag "${IMAGE_API}:${IMAGE_TAG}"   "${IMAGE_API}:test-latest"
     - docker tag "${IMAGE_UI}:${IMAGE_TAG}"    "${IMAGE_UI}:test-latest"
