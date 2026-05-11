@@ -92,7 +92,7 @@ public class UploadsController(
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<ImageDescriptionResultDto>> DescribeImage(
         IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
-        CancellationToken ct)
+        [FromQuery] string language, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
             return BadRequest("No file provided.");
@@ -107,9 +107,11 @@ public class UploadsController(
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var effectiveLanguage = string.IsNullOrWhiteSpace(language)
+            ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
+            : language;
         var description = await aiImageDescriptionService.DescribeImageAsync(
-            bytes, file.ContentType, language, categoryName ?? "", categoryDescription ?? "", ct);
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
 
         if (string.IsNullOrEmpty(description))
             return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });

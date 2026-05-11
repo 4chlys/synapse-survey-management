@@ -35,6 +35,7 @@ export function wireImageDescribeButton(form: HTMLFormElement, projectId: number
         document.querySelector<HTMLElement>('[data-category-id]');
     const categoryName = pageContainer?.dataset.categoryName ?? '';
     const categoryDescription = pageContainer?.dataset.categoryDescription ?? '';
+    const languageSelect = form.querySelector<HTMLSelectElement>('select[name="languageCode"]');
 
     // Show/hide describe button based on file selection
     fileInput.addEventListener('change', () => {
@@ -64,6 +65,8 @@ export function wireImageDescribeButton(form: HTMLFormElement, projectId: number
             formData.append('file', compressedFile, compressedFile.name);
 
             const params = new URLSearchParams({categoryName, categoryDescription});
+            const selectedLanguage = languageSelect?.value ?? '';
+            if (selectedLanguage) params.set('language', selectedLanguage);
             const res = await fetch(`/${projectId}/api/IdeaImageApi/describe?${params}`, {
                 method: 'POST',
                 headers: {RequestVerificationToken: getCsrfToken()},

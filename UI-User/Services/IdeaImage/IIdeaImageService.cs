@@ -3,7 +3,7 @@ namespace SynapseEnqueteManagement.UI.User.Services.IdeaImage;
 public interface IIdeaImageService
 {
     Task<IdeaImageUploadResult> UploadAsync(IFormFile file, int projectId, CancellationToken ct = default);
-    Task<ImageDescriptionResult> DescribeAsync(IFormFile file, string categoryName, string categoryDescription, CancellationToken ct = default);
+    Task<ImageDescriptionResult> DescribeAsync(IFormFile file, string categoryName, string categoryDescription, string language, CancellationToken ct = default);
 }
 
 public class IdeaImageUploadResult
