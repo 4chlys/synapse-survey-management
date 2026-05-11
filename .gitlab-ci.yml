@@ -38,6 +38,7 @@ build-nginx:
     expire_in: 1 hour
   only:
     - development
+    - design/ui-2
 
 build-api:
   stage: build
@@ -157,6 +158,7 @@ scan-nginx:
   allow_failure: false
   only:
     - development
+    - design/ui-2
 
 push-dev:
   stage: push
@@ -172,6 +174,7 @@ push-dev:
     - docker push "${IMAGE_NGINX}:${IMAGE_TAG}"
   only:
     - development #reverse
+    - design/ui-2
 
 push-prod:
   stage: push
