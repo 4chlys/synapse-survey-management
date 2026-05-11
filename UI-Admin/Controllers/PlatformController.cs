@@ -11,20 +11,16 @@ public class PlatformController(PlatformAdminService platformService) : Controll
     public async Task<IActionResult> Index()
     {
         var platforms = await platformService.GetAllPlatformsAsync();
-        var viewModels = platforms.Select(p => new PlatformViewModel
+        return View(platforms.Select(p => new PlatformViewModel
         {
             ProjectPlatformId = p.ProjectPlatformId,
             Name = p.Name,
             LogoUrl = p.LogoUrl,
             WebsiteUrl = p.WebsiteUrl
-        }).ToList();
-        return View(viewModels);
+        }).ToList());
     }
 
-    public IActionResult Create()
-    {
-        return View(new PlatformFormViewModel());
-    }
+    public IActionResult Create() => View(new PlatformFormViewModel());
 
     [HttpPost]
     public async Task<IActionResult> Create(PlatformFormViewModel model)
@@ -32,35 +28,103 @@ public class PlatformController(PlatformAdminService platformService) : Controll
         if (!ModelState.IsValid)
             return View(model);
 
-        await platformService.CreatePlatformAsync(
+        var platform = await platformService.CreatePlatformAsync(
             model.Name,
             model.LogoUrl ?? string.Empty,
             model.WebsiteUrl ?? string.Empty);
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Dashboard), new { id = platform.ProjectPlatformId });
     }
 
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Dashboard(int id)
     {
         var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null)
-            return NotFound();
+        if (platform is null) return NotFound();
 
-        var model = new PlatformFormViewModel
-        {
-            ProjectPlatformId = platform.ProjectPlatformId,
-            Name = platform.Name,
-            LogoUrl = platform.LogoUrl,
-            WebsiteUrl = platform.WebsiteUrl
-        };
-        return View(model);
+        var admins = await platformService.GetAdminsForPlatformAsync(id);
+
+        ViewData["PlatformId"] = id;
+        ViewData["PlatformName"] = platform.Name;
+        ViewData["ActiveSection"] = "Dashboard";
+
+        return View(new PlatformDashboardViewModel(
+            platform.ProjectPlatformId,
+            platform.Name,
+            platform.LogoUrl,
+            platform.WebsiteUrl,
+            platform.CreatedAt,
+            admins.Count
+        ));
+    }
+
+    public async Task<IActionResult> Admins(int id)
+    {
+        var platform = await platformService.GetPlatformByIdAsync(id);
+        if (platform is null) return NotFound();
+
+        ViewData["PlatformId"] = id;
+        ViewData["PlatformName"] = platform.Name;
+        ViewData["ActiveSection"] = "Beheerders";
+
+        return View(await BuildAdminsViewModel(id, platform.Name));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, PlatformFormViewModel model)
+    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model)
+    {
+        var platform = await platformService.GetPlatformByIdAsync(id);
+        if (platform is null) return NotFound();
+
+        ViewData["PlatformId"] = id;
+        ViewData["PlatformName"] = platform.Name;
+        ViewData["ActiveSection"] = "Beheerders";
+
+        if (!ModelState.IsValid)
+            return View("Admins", await BuildAdminsViewModel(id, platform.Name));
+
+        var result = await platformService.AddAdminAsync(id, model.Email, model.Password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View("Admins", await BuildAdminsViewModel(id, platform.Name));
+        }
+
+        TempData["Success"] = "Beheerder toegevoegd.";
+        return RedirectToAction(nameof(Admins), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveAdmin(int id, string userId)
+    {
+        await platformService.RemoveAdminAsync(id, userId);
+        TempData["Success"] = "Beheerder verwijderd.";
+        return RedirectToAction(nameof(Admins), new { id });
+    }
+
+    public async Task<IActionResult> Settings(int id)
+    {
+        var platform = await platformService.GetPlatformByIdAsync(id);
+        if (platform is null) return NotFound();
+
+        ViewData["PlatformId"] = id;
+        ViewData["PlatformName"] = platform.Name;
+        ViewData["ActiveSection"] = "Instellingen";
+
+        return View(await BuildSettingsViewModel(id, platform));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveBasicInfo(int id, PlatformFormViewModel model)
     {
         if (!ModelState.IsValid)
-            return View(model);
+        {
+            var platform = await platformService.GetPlatformByIdAsync(id);
+            ViewData["PlatformId"] = id;
+            ViewData["PlatformName"] = platform?.Name;
+            ViewData["ActiveSection"] = "Instellingen";
+            return View("Settings", await BuildSettingsViewModel(id, platform!));
+        }
 
         await platformService.UpdatePlatformAsync(
             id,
@@ -68,53 +132,63 @@ public class PlatformController(PlatformAdminService platformService) : Controll
             model.LogoUrl ?? string.Empty,
             model.WebsiteUrl ?? string.Empty);
 
-        return RedirectToAction(nameof(Index));
+        TempData["Success"] = "Basisinformatie opgeslagen.";
+        return RedirectToAction(nameof(Settings), new { id });
     }
 
-    public async Task<IActionResult> Detail(int id)
+    [HttpPost]
+    public async Task<IActionResult> SaveConfiguration(int id, PlatformConfigurationViewModel model)
     {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
+        model.ProjectPlatformId = id;
+        await platformService.SavePlatformSettingsAsync(id, model);
+        TempData["Success"] = "Instellingen opgeslagen.";
+        return RedirectToAction(nameof(Settings), new { id });
+    }
+
+    private async Task<PlatformAdminsViewModel> BuildAdminsViewModel(int id, string platformName)
+    {
         var admins = await platformService.GetAdminsForPlatformAsync(id);
-        return View(new PlatformDetailViewModel
+        return new PlatformAdminsViewModel(
+            id,
+            platformName,
+            admins.Select(a => new AdminSummaryViewModel
+            {
+                UserId = a.Id,
+                UserName = a.UserName ?? a.Email ?? string.Empty,
+                Email = a.Email ?? string.Empty
+            }).ToList()
+        );
+    }
+
+    private async Task<PlatformSettingsViewModel> BuildSettingsViewModel(
+        int id, SynapseEnqueteManagement.BL.Domain.Platform.Entities.ProjectPlatform platform)
+    {
+        var settings = await platformService.GetPlatformSettingsAsync(id);
+        var basicInfo = new PlatformFormViewModel
         {
             ProjectPlatformId = platform.ProjectPlatformId,
             Name = platform.Name,
             LogoUrl = platform.LogoUrl,
-            WebsiteUrl = platform.WebsiteUrl,
-            Admins = admins.Select(a => new AdminSummaryViewModel
+            WebsiteUrl = platform.WebsiteUrl
+        };
+        var config = settings is not null
+            ? new PlatformConfigurationViewModel
             {
-                UserName = a.UserName,
-                Email = a.Email
-            }).ToList()
-        });
-    }
-
-    public async Task<IActionResult> AddAdmin(int id)
-    {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
-        return View(new AddAdminViewModel
-        {
-            ProjectPlatformId = id,
-            PlatformName = platform.Name
-        });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model)
-    {
-        if (!ModelState.IsValid)
-            return View(model);
-
-        var result = await platformService.AddAdminAsync(id, model.Email, model.Password);
-        if (!result.Succeeded)
-        {
-            foreach (var error in result.Errors)
-                ModelState.AddModelError(string.Empty, error.Description);
-            return View(model);
-        }
-
-        return RedirectToAction(nameof(Detail), new { id });
+                ProjectPlatformId = id,
+                ContactName = settings.ContactName,
+                ContactEmail = settings.ContactEmail,
+                BillingReference = settings.BillingReference,
+                AiAssistanceEnabled = settings.AiAssistanceEnabled,
+                IdeationEnabled = settings.IdeationEnabled,
+                MaxProjects = settings.MaxProjects,
+                MaxAdmins = settings.MaxAdmins
+            }
+            : new PlatformConfigurationViewModel
+            {
+                ProjectPlatformId = id,
+                AiAssistanceEnabled = true,
+                IdeationEnabled = true
+            };
+        return new PlatformSettingsViewModel(id, platform.Name, basicInfo, config);
     }
 }
