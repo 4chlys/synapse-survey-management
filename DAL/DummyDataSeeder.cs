@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -23,10 +24,10 @@ public class DummyDataSeeder
             comment.EmojiReactions.Add(new IconComment { Emoji = emojis[i % emojis.Length], Idea = idea, TextComment = comment, Participant = participant });
     }
 
-    private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts, Participant participant, Emoji[] emojis = null)
+    private static Idea CreateIdea(string description, string[] commentTexts, int ideaIconCount, int[] reactionCounts, Participant participant, Emoji[] emojis = null, Language language = null)
     {
         emojis ??= new[] { _heart, _thumbsup, _fire, _check };
-        var idea = new Idea { Description = description, Status = ModerationStatus.Approved, Participant = participant };
+        var idea = new Idea { Description = description, Status = ModerationStatus.Approved, Participant = participant, Language = language ?? participant.Language };
         AddIconComments(idea, ideaIconCount, emojis, participant);
         for (int i = 0; i < commentTexts.Length; i++)
         {
@@ -45,6 +46,20 @@ public class DummyDataSeeder
 
     public static void Seed(SynapseEnqueteContext context, string apiBaseUrl)
     {
+        Language languageNl, languageEn;
+        if (!context.Languages.Any())
+        {
+            languageNl = new Language { Code = "nl", DisplayName = "Nederlands", IsActive = true };
+            languageEn = new Language { Code = "en", DisplayName = "English", IsActive = true };
+            context.Languages.AddRange(languageNl, languageEn);
+            context.SaveChanges();
+        }
+        else
+        {
+            languageNl = context.Languages.First(l => l.Code == "nl");
+            languageEn = context.Languages.First(l => l.Code == "en");
+        }
+
         if (context.Projects.Any()) return;
 
         string LogoUrl(string fileName) =>
@@ -81,17 +96,61 @@ public class DummyDataSeeder
 
         // Project 1: Synapse
         var questionnaire1 = new Questionnaire();
-        var q1Stress = new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" }, IsMandatory = false, Position = 1 };
-        var q1Welzijn = new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" }, IsMandatory = true, Position = 2 };
-        var q1Likert = new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?", IsMandatory = true, Position = 3 };
-        var q1Open = new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?", IsMandatory = true, Position = 4 };
+        var q1Stress = new Question
+        {
+            QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 5, IsMandatory = false, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Welke factoren zorgen bij jou de meeste stress?", AnswerChoices = new List<string> { "Examens", "Weinig vrije tijd", "Deadlines", "Sociale druk", "Thuissituatie" } },
+                new() { Language = languageEn, Text = "Which factors cause you the most stress?", AnswerChoices = new List<string> { "Exams", "Little free time", "Deadlines", "Social pressure", "Home situation" } }
+            }
+        };
+        var q1Welzijn = new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 3, IsMandatory = true, Position = 2,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Hoe ervaar jij je mentaal welzijn op school de afgelopen maand?", AnswerChoices = new List<string> { "Goed", "Neutraal", "Slecht" } },
+                new() { Language = languageEn, Text = "How do you experience your mental wellbeing at school over the past month?", AnswerChoices = new List<string> { "Good", "Neutral", "Bad" } }
+            }
+        };
+        var q1Likert = new Question
+        {
+            QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Op een schaal van 1 tot 10, hoeveel schoolstress ervaar jij?" },
+                new() { Language = languageEn, Text = "On a scale of 1 to 10, how much school stress do you experience?" }
+            }
+        };
+        var q1Open = new Question
+        {
+            QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 4,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat zou de school volgens jou concreet kunnen doen om het mentaal welzijn van leerlingen te verbeteren?" },
+                new() { Language = languageEn, Text = "What do you think the school could concretely do to improve the mental wellbeing of students?" }
+            }
+        };
         questionnaire1.Questions.Add(q1Stress);
         questionnaire1.Questions.Add(q1Welzijn);
         questionnaire1.Questions.Add(q1Likert);
         questionnaire1.Questions.Add(q1Open);
 
         // "Goed" → survey ends immediately for students who feel fine.
-        q1Welzijn.EndingAnswers.Add(new EndingAnswer { Question = q1Welzijn, Value = "Goed" });
+        q1Welzijn.EndingAnswers.Add(new EndingAnswer
+        {
+            Question = q1Welzijn,
+            Translations = new List<EndingAnswerTranslation>
+            {
+                new() { Language = languageNl, Value = "Goed" },
+                new() { Language = languageEn, Value = "Good" }
+            }
+        });
 
         // "Slecht" → drill down with two sub-questions; the first has its own
         // recursive child to exercise nested branching.
@@ -99,32 +158,46 @@ public class DummyDataSeeder
         {
             QuestionFormat = QuestionFormat.SingleChoice,
             Questionnaire = questionnaire1,
-            Text = "Wil je graag praten met een vertrouwenspersoon op school?",
-            AnswerChoices = new List<string> { "Ja", "Nee" },
+            AnswerChoiceCount = 2,
             IsMandatory = true,
             Position = 1,
             ParentQuestion = q1Welzijn,
-            ParentTriggerValue = "Slecht"
+            ChoiceIndex = 2, // "Slecht" is at index 2 in q1Welzijn choices
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wil je graag praten met een vertrouwenspersoon op school?", AnswerChoices = new List<string> { "Ja", "Nee" } },
+                new() { Language = languageEn, Text = "Would you like to talk to a trusted person at school?", AnswerChoices = new List<string> { "Yes", "No" } }
+            }
         };
         var q1WelzijnSlechtWho = new Question
         {
             QuestionFormat = QuestionFormat.Open,
             Questionnaire = questionnaire1,
-            Text = "Wie zou je graag willen spreken en waarover?",
+            AnswerChoiceCount = 0,
             IsMandatory = false,
             Position = 1,
             ParentQuestion = q1WelzijnSlechtFollowup,
-            ParentTriggerValue = "Ja"
+            ChoiceIndex = 0, // "Ja" is at index 0 in q1WelzijnSlechtFollowup choices
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wie zou je graag willen spreken en waarover?" },
+                new() { Language = languageEn, Text = "Who would you like to speak to and about what?" }
+            }
         };
         var q1WelzijnSlechtSupport = new Question
         {
             QuestionFormat = QuestionFormat.Open,
             Questionnaire = questionnaire1,
-            Text = "Wat kunnen wij concreet doen om je beter te laten voelen?",
+            AnswerChoiceCount = 0,
             IsMandatory = false,
             Position = 2,
             ParentQuestion = q1Welzijn,
-            ParentTriggerValue = "Slecht"
+            ChoiceIndex = 2, // "Slecht" is at index 2 in q1Welzijn choices
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat kunnen wij concreet doen om je beter te laten voelen?" },
+                new() { Language = languageEn, Text = "What can we concretely do to make you feel better?" }
+            }
         };
         q1Welzijn.Children.Add(q1WelzijnSlechtFollowup);
         q1Welzijn.Children.Add(q1WelzijnSlechtSupport);
@@ -138,58 +211,101 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Active,
             FormType = FormType.Chat,
             RequestContactInfo = true,
+            AllowCrossLanguageIdeas = true,
             Questionnaire = questionnaire1,
-            Name = "Mentaal Welzijn",
             ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
             ProjectPlatform = platformSynapse,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Mentaal Welzijn", Topic = "Welzijn op school" },
+                new() { Language = languageEn, Name = "Mental Wellbeing", Topic = "Wellbeing at school" },
+            },
             Introduction = new Introduction
             {
-                Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
-                       "Deze enquête peilt naar jouw ervaringen en ideeën rond stress, welzijn en wat de school beter kan doen. " +
-                       "Jouw antwoorden zijn anoniem en helpen ons om een betere schoolomgeving te creëren. " +
-                       "Het invullen duurt ongeveer 5 minuten."
+                Translations = new List<IntroductionTranslation>
+                {
+                    new()
+                    {
+                        Language = languageNl,
+                        Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
+                               "Deze enquête peilt naar jouw ervaringen en ideeën rond stress, welzijn en wat de school beter kan doen. " +
+                               "Jouw antwoorden zijn anoniem en helpen ons om een betere schoolomgeving te creëren. " +
+                               "Het invullen duurt ongeveer 5 minuten."
+                    },
+                    new()
+                    {
+                        Language = languageEn,
+                        Text = "Welcome to the Synapse survey on mental wellbeing at school. " +
+                               "This survey explores your experiences and ideas around stress, wellbeing, and what the school can do better. " +
+                               "Your answers are anonymous and help us create a better school environment. " +
+                               "It takes about 5 minutes to complete."
+                    },
+                }
             }
         };
 
-        var participant1 = new Participant { Project = projectActive, Questionnaire = questionnaire1, HasSubmitted = true };
+        var participant1 = new Participant { Project = projectActive, Questionnaire = questionnaire1, HasSubmitted = true, Language = languageNl };
         projectActive.Participants.Add(participant1);
 
-        var categoryCampus = new Category { Name = "Campus welzijn", Description = "Welzijn op school" };
+        var categoryCampus = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Campus welzijn", Description = "Welzijn op school" },
+                new() { Language = languageEn, Name = "Campus wellbeing", Description = "Wellbeing at school" },
+            }
+        };
         categoryCampus.Ideas.Add(CreateIdea("Meer rustplekken op school", new[] { "Geweldig idee, daar hebben we echt nood aan!", "Misschien ook wat groen toevoegen voor een kalme sfeer?", "Een stille ruimte zonder schermen zou perfect zijn." }, 35, new[] { 12, 8, 20 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Meditatie sessies tijdens de middag", new[] { "Dit zou mij enorm helpen om de namiddag beter door te komen.", "Kan dit ook online gevolgd worden?", "Misschien ook 's ochtends voor de lessen beginnen?" }, 28, new[] { 15, 7, 18 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Anonieme klachtenbox voor leerlingen", new[] { "Eindelijk een veilige manier om problemen te melden!", "Belangrijk dat dit echt anoniem blijft.", "Wordt dit ook opgevolgd door de directie?" }, 42, new[] { 10, 22, 6 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Vertrouwensleerkracht meer zichtbaar maken", new[] { "Veel leerlingen weten niet eens wie ze moeten aanspreken.", "Een vast spreekuur zou handig zijn.", "Posters in de gangen zouden al helpen." }, 31, new[] { 9, 14, 25 }, participant1));
         categoryCampus.Ideas.Add(CreateIdea("Korte pauzes tussen de lessen", new[] { "Vijf minuten extra tussen de lessen zou al een groot verschil maken.", "Dit helpt ook om op tijd naar je volgend lokaal te geraken.", "Mijn concentratie zakt altijd na twee uur aan een stuk." }, 47, new[] { 20, 11, 17 }, participant1));
-        categoryCampus.Ideas.Add(CreateIdea("Workshop stressmanagement voor leerlingen", new[] { "Zou moeten verplicht zijn in het eerste jaar.", "Ik heb dit nodig gehad tijdens mijn examenperiode.", "Kunnen ouders hier ook aan deelnemen?" }, 38, new[] { 13, 19, 8 }, participant1));
-        categoryCampus.Ideas.Add(CreateIdea("Groenere schoolomgeving aanleggen", new[] { "Planten in de klaslokalen zouden de sfeer verbeteren.", "Een schooltuin als ontspanningsproject zou geweldig zijn.", "Groen kalmeert bewezen de geest." }, 26, new[] { 16, 7, 23 }, participant1));
-        categoryCampus.Ideas.Add(CreateIdea("Buddy systeem voor nieuwe leerlingen", new[] { "Ik had dit hard nodig in mijn eerste week.", "Zorgt ook voor meer verbondenheid tussen jaargroepen.", "Kan dit ook voor leerlingen met angstproblemen?" }, 33, new[] { 11, 18, 5 }, participant1));
-        categoryCampus.Ideas.Add(CreateIdea("Gezonder aanbod in de schoolkantine", new[] { "Voeding heeft een grote invloed op hoe je je voelt.", "Minder suiker en meer fruit zou al helpen.", "De prijzen van gezonde opties moeten wel betaalbaar blijven." }, 44, new[] { 21, 9, 15 }, participant1));
-        categoryCampus.Ideas.Add(CreateIdea("Sportactiviteiten in de middagpauze", new[] { "Bewegen helpt enorm om stress te verminderen.", "Een pingpongtafel of basketbalring zou al genoeg zijn.", "Dit trekt ook leerlingen weg van hun telefoon." }, 50, new[] { 24, 12, 19 }, participant1));
+        categoryCampus.Ideas.Add(CreateIdea("Stress management workshops for students", new[] { "Should be mandatory in the first year.", "I really needed this during exam period.", "Can parents also attend?" }, 38, new[] { 13, 19, 8 }, participant1, language: languageEn));
+        categoryCampus.Ideas.Add(CreateIdea("Create a greener school environment", new[] { "Plants in classrooms would really improve the atmosphere.", "A school garden as a relaxation project would be great.", "Nature is proven to calm the mind." }, 26, new[] { 16, 7, 23 }, participant1, language: languageEn));
+        categoryCampus.Ideas.Add(CreateIdea("Buddy system for new students", new[] { "I really needed this in my first week.", "Also helps build connections across year groups.", "Could this work for students with anxiety too?" }, 33, new[] { 11, 18, 5 }, participant1, language: languageEn));
+        categoryCampus.Ideas.Add(CreateIdea("Healthier options in the school cafeteria", new[] { "Food has a big impact on how you feel.", "Less sugar and more fruit would already help.", "Healthy options need to stay affordable." }, 44, new[] { 21, 9, 15 }, participant1, language: languageEn));
+        categoryCampus.Ideas.Add(CreateIdea("Sports activities during lunch break", new[] { "Exercise is incredibly effective at reducing stress.", "A ping-pong table or basketball hoop would be enough.", "This also gets students away from their phones." }, 50, new[] { 24, 12, 19 }, participant1, language: languageEn));
 
-        var categoryHome = new Category { Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" };
+        var categoryHome = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Thuis welzijn", Description = "Welzijn thuis en in je vrije tijd" },
+                new() { Language = languageEn, Name = "Home wellbeing", Description = "Wellbeing at home and in your free time" },
+            }
+        };
         categoryHome.Ideas.Add(CreateIdea("Tips voor een goede nachtrust", new[] { "Ik slaap veel beter sinds ik mijn telefoon wegleg voor het slapengaan.", "Een vast slaapschema helpt enorm!", "Blauwe lichtfilters op je scherm helpen ook." }, 29, new[] { 14, 22, 8 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Online hulplijn voor thuisproblemen", new[] { "Dit is zo belangrijk, niet iedereen heeft steun thuis.", "Moet ook beschikbaar zijn in het weekend.", "Anoniem kunnen chatten zou de drempel verlagen." }, 46, new[] { 25, 10, 17 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Bewegingstips voor na school", new[] { "Een wandeling van 20 minuten doet al wonderen.", "Yoga is ook super relaxerend na een drukke dag!", "Fietsen naar school telt ook als beweging." }, 37, new[] { 9, 20, 13 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Kookworkshop voor gezond eten thuis", new[] { "Leren koken is een levensnoodzakelijke vaardigheid.", "Gezond eten hoeft niet duur te zijn.", "Zou ook goed zijn als project voor huishoudkunde." }, 32, new[] { 16, 7, 24 }, participant1));
         categoryHome.Ideas.Add(CreateIdea("Dagboek bijhouden voor mentale rust", new[] { "Schrijven helpt om gedachten te ordenen.", "Ik doe dit al en het werkt echt!", "Kan ook digitaal via een app." }, 25, new[] { 11, 18, 6 }, participant1));
-        categoryHome.Ideas.Add(CreateIdea("Offline hobby's stimuleren", new[] { "Tekenen, muziek of knutselen geeft zoveel voldoening.", "Schermen weglegen is makkelijker als je iets anders te doen hebt.", "School kan een hobbyclub oprichten." }, 40, new[] { 22, 13, 19 }, participant1));
-        categoryHome.Ideas.Add(CreateIdea("Ouders betrekken bij welzijnsgesprekken", new[] { "Thuis support is even belangrijk als op school.", "Ouderavonden over mentaal welzijn zouden nuttig zijn.", "Niet alle ouders begrijpen de druk die leerlingen voelen." }, 27, new[] { 8, 21, 15 }, participant1));
-        categoryHome.Ideas.Add(CreateIdea("Digitale detox tips voor thuis", new[] { "Een uur per dag zonder scherm doet wonderen.", "Ik leg mijn telefoon nu in een andere kamer 's nachts.", "Apps die je schermtijd bijhouden helpen ook." }, 43, new[] { 17, 10, 25 }, participant1));
-        categoryHome.Ideas.Add(CreateIdea("Vrienden betrekken bij je welzijn", new[] { "Gewoon even bellen met een vriend helpt al enorm.", "Een wandeling maken samen is beter dan chatten.", "Sociale verbinding is cruciaal voor mentale gezondheid." }, 36, new[] { 12, 23, 9 }, participant1));
-        categoryHome.Ideas.Add(CreateIdea("Natuur opzoeken in je vrije tijd", new[] { "Een park of bos bezoeken werkt rustgevend.", "Zelfs een tuin of balkon met planten helpt al.", "Onderzoek toont aan dat natuur stress vermindert." }, 48, new[] { 20, 14, 7 }, participant1));
+        categoryHome.Ideas.Add(CreateIdea("Encourage offline hobbies", new[] { "Drawing, music or crafting gives so much satisfaction.", "Putting screens away is easier when you have something else to do.", "School could start a hobby club." }, 40, new[] { 22, 13, 19 }, participant1, language: languageEn));
+        categoryHome.Ideas.Add(CreateIdea("Involve parents in wellbeing conversations", new[] { "Home support matters just as much as school support.", "Parent evenings on mental wellbeing would be useful.", "Not all parents understand the pressure students face." }, 27, new[] { 8, 21, 15 }, participant1, language: languageEn));
+        categoryHome.Ideas.Add(CreateIdea("Digital detox tips for home", new[] { "One hour a day without a screen does wonders.", "I now put my phone in another room at night.", "Apps that track your screen time also help." }, 43, new[] { 17, 10, 25 }, participant1, language: languageEn));
+        categoryHome.Ideas.Add(CreateIdea("Involve friends in your wellbeing", new[] { "Just calling a friend already helps enormously.", "Going for a walk together is better than chatting online.", "Social connection is crucial for mental health." }, 36, new[] { 12, 23, 9 }, participant1, language: languageEn));
+        categoryHome.Ideas.Add(CreateIdea("Spend time in nature during free time", new[] { "Visiting a park or forest is very calming.", "Even a garden or balcony with plants helps.", "Research shows that nature reduces stress." }, 48, new[] { 20, 14, 7 }, participant1, language: languageEn));
 
-        var categoryOnline = new Category { Name = "Online welzijn", Description = "Gezond omgaan met social media en online" };
+        var categoryOnline = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Online welzijn", Description = "Gezond omgaan met social media en online" },
+                new() { Language = languageEn, Name = "Online wellbeing", Description = "Healthy use of social media and online platforms" },
+            }
+        };
         categoryOnline.Ideas.Add(CreateIdea("Workshops over social media gebruik", new[] { "Ik zou graag leren hoe ik minder tijd op mijn telefoon spendeer.", "Dit zou verplicht moeten zijn voor alle leerlingen.", "Ook interessant voor leerkrachten en ouders." }, 39, new[] { 18, 11, 24 }, participant1));
         categoryOnline.Ideas.Add(CreateIdea("Schermtijd begrenzen via schoolapp", new[] { "Goed idee maar ouders moeten het ook steunen.", "Zou handig zijn als je zelf limieten kan instellen.", "Kan dit ook voor sociale media apart ingesteld worden?" }, 45, new[] { 7, 22, 16 }, participant1));
         categoryOnline.Ideas.Add(CreateIdea("Digitale detox dag op school organiseren", new[] { "Een dag zonder telefoon klinkt eerst eng maar achteraf super rustgevend!", "We zouden dan andere activiteiten kunnen doen zoals tekenen of sporten.", "Dit zou ook de klassfeer verbeteren." }, 30, new[] { 13, 19, 10 }, participant1));
         categoryOnline.Ideas.Add(CreateIdea("Bewustwording over vergelijkingscultuur online", new[] { "Instagram en TikTok zorgen voor veel onzekerheid.", "Les over filters en nep-perfectie zou helpen.", "Ik vergelijk mezelf veel minder sinds ik minder scroll." }, 49, new[] { 25, 8, 20 }, participant1));
         categoryOnline.Ideas.Add(CreateIdea("Cyberpesten bespreekbaar maken op school", new[] { "Veel leerlingen durven dit niet melden.", "Een anoniem meldpunt specifiek voor online pesten.", "Leerkrachten moeten ook getraind worden hierin." }, 41, new[] { 15, 21, 9 }, participant1));
-        categoryOnline.Ideas.Add(CreateIdea("Positief gebruik van sociale media aanleren", new[] { "Sociale media kan ook inspirerend en verbindend zijn.", "Leren hoe je een gezonde online gemeenschap opbouwt.", "Verschil tussen passief scrollen en actief gebruik uitleggen." }, 34, new[] { 11, 17, 23 }, participant1));
-        categoryOnline.Ideas.Add(CreateIdea("Privacyinstellingen uitleggen aan leerlingen", new[] { "De meeste leerlingen weten niet wat ze delen.", "Een workshop over veilig internetten is broodnodig.", "Zou al in het eerste middelbaar moeten gegeven worden." }, 27, new[] { 6, 20, 14 }, participant1));
-        categoryOnline.Ideas.Add(CreateIdea("Leren omgaan met negatieve reacties online", new[] { "Hatelijke comments kunnen hard aankomen.", "Blokkeren en melden moet normaler worden.", "Emotionele weerbaarheid online aanleren is belangrijk." }, 38, new[] { 19, 12, 25 }, participant1));
-        categoryOnline.Ideas.Add(CreateIdea("Appvrije zone tijdens de pauze instellen", new[] { "Even echt present zijn met elkaar doet deugd.", "Zou ook de sociale cohesie in de klas verbeteren.", "Misschien vrijwillig eerst en dan verplicht?" }, 52, new[] { 10, 18, 7 }, participant1));
-        categoryOnline.Ideas.Add(CreateIdea("Online welzijnsplatform voor jongeren lanceren", new[] { "Een veilige online ruimte waar jongeren terecht kunnen.", "Met anonieme chat en professionele begeleiding.", "Zou ook tips en oefeningen kunnen bevatten." }, 44, new[] { 23, 9, 16 }, participant1));
+        categoryOnline.Ideas.Add(CreateIdea("Teaching positive use of social media", new[] { "Social media can also be inspiring and connecting.", "Learning how to build a healthy online community.", "Explaining the difference between passive scrolling and active use." }, 34, new[] { 11, 17, 23 }, participant1, language: languageEn));
+        categoryOnline.Ideas.Add(CreateIdea("Explaining privacy settings to students", new[] { "Most students don't know what they're sharing.", "A workshop on safe internet use is urgently needed.", "Should already be taught in the first year of secondary school." }, 27, new[] { 6, 20, 14 }, participant1, language: languageEn));
+        categoryOnline.Ideas.Add(CreateIdea("Learning to handle negative reactions online", new[] { "Hateful comments can really hurt.", "Blocking and reporting should become more normal.", "Teaching emotional resilience online is important." }, 38, new[] { 19, 12, 25 }, participant1, language: languageEn));
+        categoryOnline.Ideas.Add(CreateIdea("Phone-free zone during break time", new[] { "Being truly present with each other feels good.", "Would also improve the social atmosphere in class.", "Maybe voluntary first, then mandatory?" }, 52, new[] { 10, 18, 7 }, participant1, language: languageEn));
+        categoryOnline.Ideas.Add(CreateIdea("Launch an online wellbeing platform for youth", new[] { "A safe online space where young people can go for help.", "With anonymous chat and professional guidance.", "Could also include tips and exercises." }, 44, new[] { 23, 9, 16 }, participant1, language: languageEn));
 
         projectActive.Categories.Add(categoryCampus);
         projectActive.Categories.Add(categoryHome);
@@ -197,35 +313,100 @@ public class DummyDataSeeder
 
         // Project 2: FitLife Gym
         var questionnaire2 = new Questionnaire();
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" }, IsMandatory = false, Position = 1 });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" }, IsMandatory = true, Position = 2 });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?", IsMandatory = true, Position = 3 });
-        questionnaire2.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?", IsMandatory = false, Position = 4 });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 5, IsMandatory = false, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Welke aspecten van onze dienstverlening waardeert u het meest?", AnswerChoices = new List<string> { "Klantenservice", "Prijs-kwaliteit", "Snelheid", "Gebruiksgemak", "Productaanbod" } },
+                new() { Language = languageEn, Text = "Which aspects of our service do you value most?", AnswerChoices = new List<string> { "Customer service", "Value for money", "Speed", "Ease of use", "Product range" } }
+            }
+        });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 4, IsMandatory = true, Position = 2,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Hoe tevreden bent u overall met onze service?", AnswerChoices = new List<string> { "Zeer tevreden", "Tevreden", "Neutraal", "Ontevreden" } },
+                new() { Language = languageEn, Text = "How satisfied are you overall with our service?", AnswerChoices = new List<string> { "Very satisfied", "Satisfied", "Neutral", "Dissatisfied" } }
+            }
+        });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Op een schaal van 1 tot 10, hoe waarschijnlijk is het dat u ons aanbeveelt?" },
+                new() { Language = languageEn, Text = "On a scale of 1 to 10, how likely are you to recommend us?" }
+            }
+        });
+        questionnaire2.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire2,
+            AnswerChoiceCount = 0, IsMandatory = false, Position = 4,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat kunnen wij doen om uw ervaring te verbeteren?" },
+                new() { Language = languageEn, Text = "What can we do to improve your experience?" }
+            }
+        });
 
         var projectActive2 = new Project
         {
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
+            AllowCrossLanguageIdeas = false,
             Questionnaire = questionnaire2,
-            Name = "Ledenbevraging",
             ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             ProjectPlatform = platformFitLife,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Ledenbevraging", Topic = "Ervaring van leden" },
+                new() { Language = languageEn, Name = "Member Survey", Topic = "Member experience" },
+            },
             Introduction = new Introduction
             {
-                Text = "Welkom bij de FitLife ledenbevraging! " +
-                       "We stellen deze enquête op om onze faciliteiten, lessen en diensten verder te verbeteren. " +
-                       "Jouw mening als lid is enorm waardevol voor ons. " +
-                       "Het invullen duurt slechts 3 minuten en alle antwoorden zijn volledig anoniem."
+                Translations = new List<IntroductionTranslation>
+                {
+                    new()
+                    {
+                        Language = languageNl,
+                        Text = "Welkom bij de FitLife ledenbevraging! " +
+                               "We stellen deze enquête op om onze faciliteiten, lessen en diensten verder te verbeteren. " +
+                               "Jouw mening als lid is enorm waardevol voor ons. " +
+                               "Het invullen duurt slechts 3 minuten en alle antwoorden zijn volledig anoniem."
+                    },
+                    new()
+                    {
+                        Language = languageEn,
+                        Text = "Welcome to the FitLife member survey! " +
+                               "We have set up this survey to further improve our facilities, classes and services. " +
+                               "Your opinion as a member is extremely valuable to us. " +
+                               "It only takes 3 minutes to fill in and all answers are completely anonymous."
+                    },
+                }
             }
         };
 
-        var participant2 = new Participant { Project = projectActive2, Questionnaire = questionnaire2, HasSubmitted = true };
+        var participant2 = new Participant { Project = projectActive2, Questionnaire = questionnaire2, HasSubmitted = true, Language = languageNl };
         projectActive2.Participants.Add(participant2);
 
         var fitLifeEmojis = new[] { _heart, _fire };
 
-        var catFacilities = new Category { Name = "Faciliteiten", Description = "Kleedkamers, toestellen en ruimtes" };
+        var catFacilities = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Faciliteiten", Description = "Kleedkamers, toestellen en ruimtes" },
+                new() { Language = languageEn, Name = "Facilities", Description = "Changing rooms, equipment and spaces" },
+            }
+        };
         catFacilities.Ideas.Add(CreateIdea("Meer cardio toestellen in de ochtendzone", new[] { "De rijen aan de loopbanden zijn 's ochtends niet te doen.", "Misschien een reservatiesysteem voor piekuren?", "Roeiers en steppers zijn ook altijd bezet." }, 38, new[] { 14, 9, 22 }, participant2, fitLifeEmojis));
         catFacilities.Ideas.Add(CreateIdea("Sauna toevoegen aan de wellnesszone", new[] { "Dit zou het lidmaatschap zoveel meer waard maken!", "Een infraroodsauna zou ideaal zijn voor spierherstel.", "Andere gyms hebben dit al standaard." }, 45, new[] { 20, 11, 17 }, participant2, fitLifeEmojis));
         catFacilities.Ideas.Add(CreateIdea("Betere ventilatie in de gewichtszaal", new[] { "Het is veel te warm en benauwd tijdens piekuren.", "Airconditioning zou een groot verschil maken.", "Extra ventilatoren als tussenoplossing?" }, 32, new[] { 8, 19, 13 }, participant2, fitLifeEmojis));
@@ -237,7 +418,14 @@ public class DummyDataSeeder
         catFacilities.Ideas.Add(CreateIdea("Wifi verbeteren in de sporthal", new[] { "Het signaal valt constant weg terwijl ik muziek stream.", "Wifi is tegenwoordig een basisverwachting.", "Zou ook nuttig zijn voor de personal trainers." }, 44, new[] { 17, 10, 19 }, participant2, fitLifeEmojis));
         catFacilities.Ideas.Add(CreateIdea("Massagestoel toevoegen aan de relaxzone", new[] { "Na een zware training is dit de perfecte beloning.", "Zelfs een betaalde massagestoel zou ik gebruiken.", "Zou de gym onderscheiden van de concurrentie." }, 50, new[] { 24, 14, 7 }, participant2, fitLifeEmojis));
 
-        var catLessons = new Category { Name = "Lessen & Begeleiding", Description = "Groepslessen en personal training" };
+        var catLessons = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Lessen & Begeleiding", Description = "Groepslessen en personal training" },
+                new() { Language = languageEn, Name = "Classes & Coaching", Description = "Group classes and personal training" },
+            }
+        };
         catLessons.Ideas.Add(CreateIdea("Yogales toevoegen aan het weekendrooster", new[] { "In het weekend heb ik eindelijk tijd voor yoga!", "Liefst vroeg in de ochtend zodat de rest van de dag vrij is.", "Ook een meditatieklas zou geweldig zijn." }, 39, new[] { 16, 23, 9 }, participant2, fitLifeEmojis));
         catLessons.Ideas.Add(CreateIdea("Personal training sessies goedkoper maken", new[] { "Nu is het onbetaalbaar voor studenten.", "Misschien een studentenkorting invoeren?", "Duo sessies zouden ook goedkoper zijn per persoon." }, 43, new[] { 12, 19, 25 }, participant2, fitLifeEmojis));
         catLessons.Ideas.Add(CreateIdea("Online lessen streamen voor leden", new[] { "Als ik ziek ben kan ik toch nog de les volgen.", "Zou ook handig zijn voor mensen met drukke schema's.", "Opnames achteraf bekijken zou ook fijn zijn." }, 31, new[] { 8, 14, 20 }, participant2, fitLifeEmojis));
@@ -249,7 +437,14 @@ public class DummyDataSeeder
         catLessons.Ideas.Add(CreateIdea("Senior-vriendelijke lessen toevoegen", new[] { "Ouderen hebben andere noden dan jonge sporters.", "Lage impact cardio en stretching zouden perfect zijn.", "Zou ook nieuwe doelgroep aantrekken." }, 26, new[] { 20, 8, 16 }, participant2, fitLifeEmojis));
         catLessons.Ideas.Add(CreateIdea("Aqua aerobics in het zwembad", new[] { "Gewrichtsvriendelijk sporten voor iedereen.", "Ideaal voor mensen met rugklachten.", "Het zwembad wordt nu ondergecapaciteit gebruikt." }, 48, new[] { 14, 22, 10 }, participant2, fitLifeEmojis));
 
-        var catSchedule = new Category { Name = "Planning & Openingsuren", Description = "Bereikbaarheid en rooster" };
+        var catSchedule = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Planning & Openingsuren", Description = "Bereikbaarheid en rooster" },
+                new() { Language = languageEn, Name = "Schedule & Opening Hours", Description = "Accessibility and timetable" },
+            }
+        };
         catSchedule.Ideas.Add(CreateIdea("Gym ook open op zondagavond", new[] { "Zondagavond is perfect om de week voor te bereiden.", "Nu moet ik altijd wachten tot maandag.", "Zelfs maar tot 20u zou al een groot verschil maken." }, 40, new[] { 17, 11, 25 }, participant2, fitLifeEmojis));
         catSchedule.Ideas.Add(CreateIdea("App voor reservaties van toestellen", new[] { "Dan weet je op voorhand of het druk is.", "Wachtrijen zijn frustrerend na een lange werkdag.", "Zou ook de verdeling van leden over de dag verbeteren." }, 34, new[] { 9, 20, 14 }, participant2, fitLifeEmojis));
         catSchedule.Ideas.Add(CreateIdea("Vroeger openen op weekdagen", new[] { "Om 5u30 open zou mij toelaten voor het werk te sporten.", "Veel mensen willen 's ochtends vroeg trainen.", "Nu mis ik de ochtendtrein als ik eerst naar de gym ga." }, 47, new[] { 23, 12, 8 }, participant2, fitLifeEmojis));
@@ -267,26 +462,75 @@ public class DummyDataSeeder
 
         // Project 3: FC Eendracht
         var questionnaire3 = new Questionnaire();
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" }, IsMandatory = false, Position = 1 });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" }, IsMandatory = true, Position = 2 });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?", IsMandatory = true, Position = 3 });
-        questionnaire3.Questions.Add(new Question { QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3, Text = "Wat zou jij veranderen aan de club als je de kans had?", IsMandatory = false, Position = 4 });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.MultipleChoice, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 5, IsMandatory = false, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Welke aspecten van de club wil je verbeteren?", AnswerChoices = new List<string> { "Trainingen", "Infrastructuur", "Communicatie", "Sociale activiteiten", "Wedstrijdplanning" } },
+                new() { Language = languageEn, Text = "Which aspects of the club do you want to improve?", AnswerChoices = new List<string> { "Training", "Infrastructure", "Communication", "Social activities", "Match schedule" } }
+            }
+        });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.SingleChoice, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 4, IsMandatory = true, Position = 2,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Hoe beoordeel je de algemene sfeer in de club?", AnswerChoices = new List<string> { "Uitstekend", "Goed", "Matig", "Slecht" } },
+                new() { Language = languageEn, Text = "How do you rate the general atmosphere in the club?", AnswerChoices = new List<string> { "Excellent", "Good", "Average", "Poor" } }
+            }
+        });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Op een schaal van 1 tot 10, hoe tevreden ben je over de trainingen?" },
+                new() { Language = languageEn, Text = "On a scale of 1 to 10, how satisfied are you with the training sessions?" }
+            }
+        });
+        questionnaire3.Questions.Add(new Question
+        {
+            QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire3,
+            AnswerChoiceCount = 0, IsMandatory = false, Position = 4,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = languageNl, Text = "Wat zou jij veranderen aan de club als je de kans had?" },
+                new() { Language = languageEn, Text = "What would you change about the club if you had the chance?" }
+            }
+        });
 
         var projectActive3 = new Project
         {
             ProjectState = ProjectState.Active,
             FormType = FormType.VerticalScroll,
             Questionnaire = questionnaire3,
-            Name = "Clubbevraging",
             ShortForm = "clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             ProjectPlatform = platformEendracht,
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Clubbevraging", Topic = "De club verbeteren" },
+                new() { Language = languageEn, Name = "Club Survey", Topic = "Improving the club" },
+            },
         };
 
-        var participant3 = new Participant { Project = projectActive3, Questionnaire = questionnaire3, HasSubmitted = true };
+        var participant3 = new Participant { Project = projectActive3, Questionnaire = questionnaire3, HasSubmitted = true, Language = languageNl };
         projectActive3.Participants.Add(participant3);
 
-        var catTraining = new Category { Name = "Trainingen", Description = "Kwaliteit en opbouw van de trainingen" };
+        var catTraining = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Trainingen", Description = "Kwaliteit en opbouw van de trainingen" },
+                new() { Language = languageEn, Name = "Training", Description = "Quality and structure of training sessions" },
+            }
+        };
         catTraining.Ideas.Add(CreateIdea("Videoanalyse invoeren bij de trainingen", new[] { "Profclubs doen dit al jaren, waarom wij niet?", "Zou mijn positiespel enorm verbeteren.", "Een simpele tablet met een app zou al voldoende zijn." }, 44, new[] { 18, 11, 25 }, participant3));
         catTraining.Ideas.Add(CreateIdea("Aparte trainingsgroep voor gevorderde spelers", new[] { "Nu wachten gevorderde spelers te veel op beginners.", "Iedereen traint op zijn eigen niveau, eerlijker voor iedereen.", "Zolang het de teamgeest niet schaadt, goed idee." }, 37, new[] { 13, 20, 8 }, participant3));
         catTraining.Ideas.Add(CreateIdea("Conditietraining twee keer per week", new[] { "Nu focussen we te veel op tactiek en te weinig op conditie.", "Een aparte conditietrainer zou ideaal zijn.", "Veel spelers zijn in de tweede helft uitgeput." }, 41, new[] { 9, 17, 22 }, participant3));
@@ -298,7 +542,14 @@ public class DummyDataSeeder
         catTraining.Ideas.Add(CreateIdea("Kleine groepsoefeningen meer integreren", new[] { "Rondjes lopen is saai, kleine spelvormen zijn leuker.", "Leert ook sneller samenspelen.", "Profteams trainen bijna uitsluitend zo." }, 42, new[] { 19, 8, 25 }, participant3));
         catTraining.Ideas.Add(CreateIdea("Keeperstraining apart organiseren", new[] { "De keeper wordt nu vergeten tijdens veldtrainingen.", "Een keeperscoach zou een enorm verschil maken.", "Zelfs één extra training per week zou helpen." }, 50, new[] { 23, 15, 11 }, participant3));
 
-        var catInfra = new Category { Name = "Infrastructuur", Description = "Velden, kleedkamers en materiaal" };
+        var catInfra = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Infrastructuur", Description = "Velden, kleedkamers en materiaal" },
+                new() { Language = languageEn, Name = "Infrastructure", Description = "Pitches, changing rooms and equipment" },
+            }
+        };
         catInfra.Ideas.Add(CreateIdea("Nieuw kunstgrasveld aanleggen", new[] { "Het huidige veld is in slechte staat na de winter.", "Kunstgras betekent ook spelen bij slecht weer.", "Subsidies aanvragen bij de gemeente?" }, 46, new[] { 20, 13, 9 }, participant3));
         catInfra.Ideas.Add(CreateIdea("Betere verlichting op het trainingsveld", new[] { "In de winter trainen we bijna in het donker.", "LED verlichting is energiezuinig en helder.", "Dit verhoogt ook de veiligheid tijdens avondtrainingen." }, 38, new[] { 12, 24, 17 }, participant3));
         catInfra.Ideas.Add(CreateIdea("Nieuwe ballen aanschaffen", new[] { "De huidige ballen zijn versleten en onregelmatig.", "Goede materialen motiveren spelers.", "Misschien sponsors zoeken voor nieuwe ballen?" }, 31, new[] { 8, 19, 14 }, participant3));
@@ -310,7 +561,14 @@ public class DummyDataSeeder
         catInfra.Ideas.Add(CreateIdea("Ehbo-post moderniseren", new[] { "De huidige ehbo-kit is onvolledig.", "Een defibrillator is tegenwoordig noodzakelijk.", "Zou ook het vertrouwen van ouders vergroten." }, 34, new[] { 9, 18, 22 }, participant3));
         catInfra.Ideas.Add(CreateIdea("Oefenruimte voor keeperstraining", new[] { "Nu trainen keepers tussen de veldspelers.", "Een aparte ruimte met doelen en matten zou ideaal zijn.", "Kleine investering met grote impact." }, 49, new[] { 24, 14, 8 }, participant3));
 
-        var catSocial = new Category { Name = "Sociale activiteiten", Description = "Teambuilding en clubactiviteiten" };
+        var catSocial = new Category
+        {
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = languageNl, Name = "Sociale activiteiten", Description = "Teambuilding en clubactiviteiten" },
+                new() { Language = languageEn, Name = "Social activities", Description = "Team building and club events" },
+            }
+        };
         catSocial.Ideas.Add(CreateIdea("Jaarlijks clubkampioenschap organiseren", new[] { "Een intern tornooi zou de teamgeest enorm boosten!", "Met een trofee en feestje achteraf!", "Families uitnodigen als supporters zou gezellig zijn." }, 45, new[] { 19, 12, 25 }, participant3));
         catSocial.Ideas.Add(CreateIdea("Teambuilding weekend plannen", new[] { "Een weekend weg versterkt de band enorm.", "Escape room of outdoor activiteit zou perfect zijn.", "Hoeft niet duur te zijn als iedereen bijdraagt." }, 38, new[] { 14, 22, 9 }, participant3));
         catSocial.Ideas.Add(CreateIdea("Clubavond voor spelers en supporters", new[] { "Een quiz of feestje zou iedereen samenbrengen.", "Nu kennen spelers en supporters elkaar nauwelijks.", "Zou ook nieuwe vrijwilligers aantrekken." }, 32, new[] { 10, 17, 21 }, participant3));
@@ -332,10 +590,23 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Archived,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
-            Name = "Gearchiveerd Project",
             ShortForm = "gearchiveerd-project",
             ProjectPlatform = platformSynapse,
-            Introduction = new Introduction { Text = "Dit project is momenteel inactief." }
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Gearchiveerd Project", Topic = "" },
+                new() { Language = languageEn, Name = "Archived Project", Topic = "" },
+            },
+            Introduction = new Introduction
+            {
+                Translations = new List<IntroductionTranslation>
+                {
+                    new() { Language = languageNl, Text = "Dit project is momenteel inactief." },
+                    new() { Language = languageEn, Text = "This project is currently inactive." },
+                }
+            }
         };
 
         var projectDraft = new Project
@@ -343,10 +614,23 @@ public class DummyDataSeeder
             ProjectState = ProjectState.Draft,
             FormType = FormType.VerticalScroll,
             Questionnaire = new Questionnaire(),
-            Name = "Draft Project",
             ShortForm = "draft-project",
             ProjectPlatform = platformSynapse,
-            Introduction = new Introduction { Text = "Dit project is nog in opbouw." }
+            DefaultLanguage = languageNl,
+            SupportedLanguages = new List<Language> { languageNl, languageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = languageNl, Name = "Draft Project", Topic = "" },
+                new() { Language = languageEn, Name = "Draft Project", Topic = "" },
+            },
+            Introduction = new Introduction
+            {
+                Translations = new List<IntroductionTranslation>
+                {
+                    new() { Language = languageNl, Text = "Dit project is nog in opbouw." },
+                    new() { Language = languageEn, Text = "This project is still under construction." },
+                }
+            }
         };
 
         context.ProjectPlatforms.AddRange(platformSynapse, platformFitLife, platformEendracht);

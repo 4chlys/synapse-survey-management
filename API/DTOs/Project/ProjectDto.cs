@@ -19,6 +19,11 @@ public class ProjectDto
     public int IdeaPageSize { get; set; }
     public bool ExtraIdeasReplaceExisting { get; set; }
     public int MaxExtraIdeaRequests { get; set; }
+    public bool AllowCrossLanguageIdeas { get; set; }
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
+
+    public string LanguageCode { get; set; }
+    public string DefaultLanguageCode { get; set; }
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 }

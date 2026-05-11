@@ -44,6 +44,19 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
+
+var apiSupportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(apiSupportedCultures)
+        .AddSupportedUICultures(apiSupportedCultures);
+    opts.RequestCultureProviders =
+    [
+        new Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -69,6 +82,7 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
@@ -125,6 +139,7 @@ var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "a
 var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
 builder.Services.AddScoped<IShortFormService>(sp =>
     new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
+builder.Services.AddScoped<ILanguageManager, LanguageManager>();
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -135,6 +150,7 @@ builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
+builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
 // AI configuration
 //
@@ -285,6 +301,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseHttpLogging();
+app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();

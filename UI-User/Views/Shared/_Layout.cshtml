@@ -1,9 +1,15 @@
+@using Microsoft.AspNetCore.Localization
+@using Microsoft.Extensions.Options
+@using System.Globalization
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
+@inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
 @{
     var _theme = Context.Request.Cookies["synapse-theme"] is "synapse-dark" ? "synapse-dark" : "synapse-light";
 }
-<html lang="nl" data-theme="@_theme">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@_theme">
 
 <head>
     <meta charset="utf-8" />
@@ -15,6 +21,78 @@
     <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)" />
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@
     <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+
+    @* Server-rendered i18n blob — must come before the JS module so window.__i18n is set when i18n.ts is imported *@
+    <script>
+      window.__i18n = {
+        culture: @Json.Serialize(CultureInfo.CurrentUICulture.Name),
+        strings: @Json.Serialize(new {
+          submit = Shared["Submit"].Value,
+          cancel = Shared["Cancel"].Value,
+          back   = Shared["Back"].Value,
+          next   = Shared["Next"].Value,
+          uploading = Shared["Uploading"].Value,
+          checking = Shared["Checking"].Value,
+          contentNotAllowed = Shared["ContentNotAllowed"].Value,
+          maxLengthExceeded = Shared["MaxLengthExceeded"].Value,
+          submitFallback = Shared["SubmitFallback"].Value,
+          ideaCardStatusFlagged = Shared["IdeaCard_StatusFlagged"].Value,
+          ideaCardStatusOwnIdea = Shared["IdeaCard_StatusOwnIdea"].Value,
+          ideaCardUseAsStartingPoint = Shared["IdeaCard_UseAsStartingPoint"].Value,
+          imageUploadInvalidType = Shared["ImageUpload_InvalidType"].Value,
+          imageUploadTooLarge = Shared["ImageUpload_TooLarge"].Value,
+          imageUploadFailed = Shared["ImageUpload_Failed"].Value,
+          imageUploadNotAllowed = Shared["ImageUpload_NotAllowed"].Value,
+          speechToTextEmptyRecording = Shared["SpeechToText_EmptyRecording"].Value,
+          speechToTextTooManyRequests = Shared["SpeechToText_TooManyRequests"].Value,
+          speechToTextUnavailable = Shared["SpeechToText_Unavailable"].Value,
+          surveyYourAnswer = Shared["Survey_YourAnswer"].Value,
+          surveyChoiceOptions = Shared["Survey_ChoiceOptions"].Value,
+          surveyConfirm = Shared["Survey_Confirm"].Value,
+          surveySaveError = Shared["Survey_SaveError"].Value,
+          surveyLoadError = Shared["Survey_LoadError"].Value,
+          surveyUnknownType = Shared["Survey_UnknownType"].Value,
+          surveyReadyToSubmit = Shared["Survey_ReadyToSubmit"].Value,
+          surveySubmitError = Shared["Survey_SubmitError"].Value,
+          surveyDone = Shared["Survey_Done"].Value,
+          surveyRestartConfirm = Shared["Survey_RestartConfirm"].Value,
+          surveyRestartError = Shared["Survey_RestartError"].Value,
+          surveySubmitting = Shared["Survey_Submitting"].Value,
+          surveySubmitAnswers = Shared["Survey_SubmitAnswers"].Value,
+          aiChatAssistantUnavailableIdea = Shared["AiChat_AssistantUnavailable_Idea"].Value,
+          aiChatError = Shared["AiChat_Error"].Value,
+          aiChatDraftLabel = Shared["AiChat_DraftLabel"].Value,
+          aiChatDraftYes = Shared["AiChat_DraftYes"].Value,
+          aiChatDraftNo = Shared["AiChat_DraftNo"].Value,
+          aiChatNoProblem = Shared["AiChat_NoProblem"].Value,
+          aiChatRefining = Shared["AiChat_Refining"].Value,
+          aiChatRefinedText = Shared["AiChat_RefinedText"].Value,
+          aiChatAlreadyGood = Shared["AiChat_AlreadyGood"].Value,
+          aiChatRefineError = Shared["AiChat_RefineError"].Value,
+          aiChatRefine = Shared["AiChat_Refine"].Value,
+          aiChatAssistantUnavailableComment = Shared["AiChat_AssistantUnavailable_Comment"].Value,
+          aiChatChooseVersion = Shared["AiChat_ChooseVersion"].Value,
+          aiChatYourVersion = Shared["AiChat_YourVersion"].Value,
+          aiChatAiSuggestion = Shared["AiChat_AiSuggestion"].Value,
+          aiChatYourComment = Shared["AiChat_YourComment"].Value,
+          surveyAnswerTooLong = Shared["Survey_AnswerTooLong"].Value,
+          surveyAnswerRequired = Shared["Survey_AnswerRequired"].Value,
+          speechToTextErrorPermissionDenied = Shared["SpeechToText_ErrorPermissionDenied"].Value,
+          speechToTextErrorNoMicrophone = Shared["SpeechToText_ErrorNoMicrophone"].Value,
+          speechToTextErrorUnsupportedBrowser = Shared["SpeechToText_ErrorUnsupportedBrowser"].Value,
+          speechToTextErrorNothingHeard = Shared["SpeechToText_ErrorNothingHeard"].Value,
+          speechToTextErrorTooLong = Shared["SpeechToText_ErrorTooLong"].Value,
+          speechToTextStatusMicAccess = Shared["SpeechToText_StatusMicAccess"].Value,
+          speechToTextStatusTranscribing = Shared["SpeechToText_StatusTranscribing"].Value,
+          speechToTextStatusRecording = Shared["SpeechToText_StatusRecording"].Value,
+          speechToTextCancelAriaLabel = Shared["SpeechToText_CancelAriaLabel"].Value,
+          speechToTextMicAriaLabel = Shared["SpeechToText_MicAriaLabel"].Value,
+          speechToTextErrorUnsupportedFormat = Shared["SpeechToText_ErrorUnsupportedFormat"].Value,
+          speechToTextErrorInvalidAudioData = Shared["SpeechToText_ErrorInvalidAudioData"].Value,
+          speechToTextErrorUnexpectedResponse = Shared["SpeechToText_ErrorUnexpectedResponse"].Value
+        })
+      };
+    </script>
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
@@ -32,6 +110,8 @@
         @await Html.PartialAsync("_ModerationPopup")
     }
 
+    @if (ViewData["HideNavbar"] is not true)
+    {
     <header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300" style="height: var(--header-h)">
         <div class="h-full max-w-2xl mx-auto px-6 flex items-center justify-between gap-4">
 
@@ -44,7 +124,7 @@
             <div class="w-20 flex items-center shrink-0">
                 @if (!string.IsNullOrEmpty(logoUrl))
                 {
-                    <img src="@logoUrl" alt="Organisation logo" class="h-7 w-auto object-contain" />
+                    <img src="@logoUrl" alt="@L["OrganisationLogoAlt"]" class="h-7 w-auto object-contain" />
                 }
             </div>
 
@@ -53,17 +133,35 @@
                 @(ViewData["SurveyTitle"] ?? "SynapseIP")
             </h1>
 
-            @* Right: website link + theme toggle *@
-            <div class="w-20 flex items-center justify-end gap-2 shrink-0">
+            @* Right: language switcher + website link + theme toggle *@
+            <div class="flex items-center justify-end gap-2 shrink-0">
+
+                @* Language switcher — POST to CultureController to set the cookie *@
+                @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
+                <form asp-controller="Culture" asp-action="SetCulture" method="post"
+                      class="flex items-center gap-1"
+                      aria-label="@Shared["LanguageMenu_Switch"]">
+                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                    @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
+                    {
+                        var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
+                        <button type="submit" name="culture" value="@c.Name"
+                                class="text-xs font-medium @(isActive ? "text-primary underline underline-offset-2" : "text-neutral hover:text-primary") transition-colors uppercase cursor-pointer"
+                                aria-current="@(isActive ? "true" : "false")">
+                            @c.TwoLetterISOLanguageName
+                        </button>
+                    }
+                </form>
+
                 @if (!string.IsNullOrEmpty(websiteUrl))
                 {
                     <a href="@websiteUrl" target="_blank" rel="noopener noreferrer"
                            class="hidden sm:block text-xs text-neutral hover:text-primary transition-colors">
-                        website
+                        @L["WebsiteLink"]
                     </a>
                 }
 
-                <button id="theme-toggle" aria-label="Toggle dark mode"
+                <button id="theme-toggle" aria-label="@L["ThemeToggleLabel"]"
                         class="w-8 h-8 rounded-full flex items-center justify-center text-neutral hover:text-primary hover:bg-base-200 transition-colors cursor-pointer">
                     <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -80,8 +178,9 @@
 
         </div>
     </header>
+    }
 
-    <main class="pt-16">
+    <main class="@(ViewData["HideNavbar"] is true ? "" : "pt-16")">
         @RenderBody()
     </main>
 

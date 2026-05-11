@@ -51,21 +51,27 @@ public class AdminRawDataController(
         var responses = (await responsesTask).ToList();
         var categories = (await categoriesTask).ToList();
 
-        var safeName = SanitizeFileName(project.Name);
+        var projectName = project.Translations.FirstOrDefault()?.Name ?? project.ShortForm ?? $"project-{projectId}";
+        var safeName = SanitizeFileName(projectName);
         var sections = new List<(string Key, string Title, string[] Headers, IEnumerable<string[]> Rows)>();
 
         if (selectedTables.Contains("vragen"))
         {
             sections.Add(("vragen", "Vragen",
                 ["VraagId", "Tekst", "Type", "Verplicht", "Sectie", "Antwoordkeuzes"],
-                questions.Select(q => new[]
+                questions.Select(q =>
                 {
-                    q.QuestionId.ToString(),
-                    q.Text,
-                    q.QuestionFormat.ToString(),
-                    q.IsMandatory ? "Ja" : "Nee",
-                    q.Section?.Name ?? "",
-                    q.AnswerChoices?.Count > 0 ? string.Join(" | ", q.AnswerChoices) : ""
+                    var qt = q.Translations?.FirstOrDefault();
+                    var st = q.Section?.Translations?.FirstOrDefault();
+                    return new[]
+                    {
+                        q.QuestionId.ToString(),
+                        qt?.Text ?? "",
+                        q.QuestionFormat.ToString(),
+                        q.IsMandatory ? "Ja" : "Nee",
+                        st?.Name ?? "",
+                        qt?.AnswerChoices?.Count > 0 ? string.Join(" | ", qt.AnswerChoices) : ""
+                    };
                 })));
         }
 
@@ -87,12 +93,16 @@ public class AdminRawDataController(
         {
             sections.Add(("categorieen", "Categorieën",
                 ["CategorieId", "Naam", "Beschrijving", "AantalIdeeën"],
-                categories.Select(c => new[]
+                categories.Select(c =>
                 {
-                    c.CategoryId.ToString(),
-                    c.Name,
-                    c.Description ?? "",
-                    c.Ideas.Count.ToString()
+                    var ct = c.Translations?.FirstOrDefault();
+                    return new[]
+                    {
+                        c.CategoryId.ToString(),
+                        ct?.Name ?? "",
+                        ct?.Description ?? "",
+                        c.Ideas.Count.ToString()
+                    };
                 })));
         }
 
@@ -102,6 +112,7 @@ public class AdminRawDataController(
                 ["IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
                 categories.SelectMany(c => c.Ideas.Select(i =>
                 {
+                    var catName = c.Translations?.FirstOrDefault()?.Name ?? "";
                     var emojiReactions = i.Comments.OfType<IconComment>()
                         .Where(ic => ic.TextComment == null)
                         .ToList();
@@ -112,7 +123,7 @@ public class AdminRawDataController(
                     {
                         i.IdeaId.ToString(),
                         i.Description,
-                        c.Name,
+                        catName,
                         i.Status.ToString(),
                         i.Comments.OfType<TextComment>().Count().ToString(),
                         emojiReactions.Count.ToString(),

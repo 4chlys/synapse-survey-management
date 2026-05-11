@@ -74,7 +74,7 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">Soort enquête</span></div>
+                        <div class="label"><span class="label-text font-medium">Soort enqu&ecirc;te</span></div>
                         <select asp-for="InteractionMode" class="select select-bordered w-full">
                             <option value="VerticalScroll">Verticaal scrollen</option>
                             <option value="Paginated">Chat</option>
@@ -134,15 +134,26 @@
                     </label>
                 </div>
 
+                @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
+                {
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-3">
+                            <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
+                            <span class="label-text">Meertalige idee&euml;n toestaan</span>
+                        </label>
+                        <span class="label-text-alt">Sta toe dat deelnemers idee&euml;n in andere projecttalen zien en indienen</span>
+                    </div>
+                }
+
                 <div class="divider my-0">Secties</div>
 
-                <div id="sections-container" class="flex flex-col gap-2">
+                <div id="sections-container" class="flex flex-col gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
                     @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                     {
                         <div class="flex gap-2 items-center section-row">
                             <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
                                    class="input input-bordered input-sm flex-1" placeholder="Sectienaam" />
-                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>
+                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
                         </div>
                     }
                 </div>
@@ -224,14 +235,14 @@
                 {
                     <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
                     <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
-                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
+                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">Volgende &rarr;</button>
                 }
                 else
                 {
                     <a asp-action="Index" class="btn btn-ghost">Terug</a>
                     @if (Model.ProjectId.HasValue)
                     {
-                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende →</a>
+                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende &rarr;</a>
                     }
                 }
             </div>
@@ -241,17 +252,4 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script type="module">
-        let idx = @(Model.Sections?.Count ?? 0);
-        document.getElementById('add-section').addEventListener('click', () => {
-            const row = document.createElement('div');
-            row.className = 'flex gap-2 items-center section-row';
-            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
-            document.getElementById('sections-container').appendChild(row);
-            idx++;
-        });
-        document.getElementById('sections-container').addEventListener('click', e => {
-            if (e.target.classList.contains('remove-section')) e.target.closest('.section-row').remove();
-        });
-    </script>
 }

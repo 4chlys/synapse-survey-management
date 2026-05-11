@@ -1,4 +1,5 @@
 @model ErrorViewModel
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = "Error";
 }
@@ -14,15 +15,15 @@
             </svg>
         </div>
 
-        <h1 class="font-heading text-2xl font-semibold text-base-content mb-2">Er ging iets mis</h1>
+        <h1 class="font-heading text-2xl font-semibold text-base-content mb-2">@L["ErrorHeading"]</h1>
         <p class="text-sm text-neutral leading-relaxed mb-6">
-            Er is een fout opgetreden bij het verwerken van je aanvraag.
+            @L["ErrorBody"]
         </p>
 
         @if (Model.ShowRequestId)
         {
             <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-base-200 border border-base-300 mb-6">
-                <span class="text-xs text-neutral">Request ID:</span>
+                <span class="text-xs text-neutral">@L["RequestIdLabel"]</span>
                 <code class="text-xs font-mono text-base-content">@Model.RequestId</code>
             </div>
         }

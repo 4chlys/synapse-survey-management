@@ -1,3 +1,4 @@
+@inject IViewLocalizer L
 <div id="moderation-overlay"
      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4">
 
@@ -5,7 +6,7 @@
          class="relative bg-base-100 rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-5 p-6 border border-base-300">
 
         @* Close button *@
-        <button id="moderation-btn-x" type="button" aria-label="Sluiten" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center
+        <button id="moderation-btn-x" type="button" aria-label="@L["CloseAriaLabel"]" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center
             rounded-full text-neutral hover:text-base-content hover:bg-base-200
             transition-colors cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -26,7 +27,7 @@
             </div>
             <div>
                 <h3 class="font-heading font-semibold text-base-content text-base leading-snug">
-                    Je bericht bevat mogelijk ongepaste inhoud
+                    @L["ModerationHeading"]
                 </h3>
                 <p id="moderation-reason" class="text-neutral text-sm mt-0.5 leading-relaxed"></p>
             </div>
@@ -35,7 +36,7 @@
         @* Rewrite suggestion *@
         <div id="moderation-suggestion-block" class="flex flex-col gap-2">
             <p class="text-xs font-semibold tracking-widest uppercase text-neutral">
-                Voorgestelde herschrijving
+                @L["SuggestionLabel"]
             </p>
             <div class="rounded-xl border border-secondary/30 bg-secondary/8 px-4 py-3
                 text-sm text-base-content leading-relaxed">
@@ -46,35 +47,35 @@
         @* Block message *@
         <p id="moderation-block-message" class="hidden text-sm text-base-content leading-relaxed bg-error/8 border border-error/20
             rounded-xl px-4 py-3">
-            Je bericht kan niet worden ingediend. Pas de inhoud aan en probeer opnieuw.
+            @L["BlockMessage"]
         </p>
 
         @* Action buttons *@
         <div class="flex flex-col gap-2">
             <button id="moderation-btn-accept" type="button"
                     class="btn btn-primary w-full rounded-xl font-heading font-semibold cursor-pointer">
-                Herschrijving gebruiken
+                @L["AcceptButton"]
             </button>
 
             <button id="moderation-btn-rewrite" type="button" class="w-full py-3 rounded-xl border border-base-300
                 text-base-content text-sm font-semibold
                 hover:bg-base-200 active:scale-95
                 transition-all cursor-pointer">
-                Zelf aanpassen
+                @L["RewriteButton"]
             </button>
 
             <button id="moderation-btn-close" type="button" class="hidden w-full py-3 rounded-xl border border-base-300
                 text-base-content text-sm font-semibold
                 hover:bg-base-200 active:scale-95
                 transition-all cursor-pointer">
-                Sluiten en aanpassen
+                @L["CloseAndEditButton"]
             </button>
         </div>
 
         @* Escape hatch *@
         <button id="moderation-btn-submit-flagged" type="button" class="w-full text-center text-xs text-neutral/40 hover:text-neutral
             transition-colors cursor-pointer py-1">
-            Toch insturen
+            @L["SubmitAnywayButton"]
         </button>
 
     </div>
@@ -85,7 +86,7 @@
 
     <div class="relative bg-base-100 rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-5 p-6 border border-base-300">
 
-        <button id="image-rejection-btn-x" type="button" aria-label="Sluiten" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center
+        <button id="image-rejection-btn-x" type="button" aria-label="@L["CloseAriaLabel"]" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center
             rounded-full text-neutral hover:text-base-content hover:bg-base-200
             transition-colors cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -105,7 +106,7 @@
             </div>
             <div>
                 <h3 class="font-heading font-semibold text-base-content text-base leading-snug">
-                    Je afbeelding is afgekeurd
+                    @L["ImageRejectedHeading"]
                 </h3>
                 <p id="image-rejection-reason" class="text-neutral text-sm mt-0.5 leading-relaxed"></p>
             </div>
@@ -114,13 +115,13 @@
         <div class="flex flex-col gap-2">
             <button id="image-rejection-btn-cancel" type="button"
                     class="btn btn-primary w-full rounded-xl font-heading font-semibold cursor-pointer">
-                Andere afbeelding kiezen
+                @L["ChooseOtherImageButton"]
             </button>
         </div>
 
         <button id="image-rejection-btn-submit" type="button" class="w-full text-center text-xs text-neutral/40 hover:text-neutral
             transition-colors cursor-pointer py-1">
-            Toch insturen
+            @L["SubmitAnywayButton"]
         </button>
 
     </div>

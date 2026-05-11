@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Stats;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -32,7 +33,8 @@ public class ProjectStatsController(
         if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
             return NotFound();
 
-        var items = await categoryManager.GetIdeaFeedAsync(projectId, Math.Clamp(count, 1, 20));
+        var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var items = await categoryManager.GetIdeaFeedAsync(projectId, lang, Math.Clamp(count, 1, 20));
         return Ok(items.Select(i => new IdeaFeedItemDto
         {
             IdeaId = i.IdeaId,

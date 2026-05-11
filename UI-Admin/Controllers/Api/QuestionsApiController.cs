@@ -25,7 +25,7 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
         try
         {
             await questionService.MoveQuestionAsync(projectId, questionId,
-                request.ParentQuestionId, request.ParentTriggerValue, request.Position);
+                request.ParentQuestionId, request.ChoiceIndex, request.Position);
             return NoContent();
         }
         catch (HttpRequestException ex)
@@ -55,7 +55,7 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
     public class MoveRequest
     {
         public int? ParentQuestionId { get; set; }
-        public string ParentTriggerValue { get; set; }
+        public int? ChoiceIndex { get; set; }
         public int Position { get; set; }
     }
 

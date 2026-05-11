@@ -21,14 +21,35 @@ public sealed class IdeaSupportAiReply
 
 public sealed class IdeaSupportChatRequest
 {
-    public IReadOnlyList<AiSupportMessage> History             { get; init; } = [];
-    public string                          UserMessage         { get; init; } = string.Empty;
-    public string                          ProjectName         { get; init; } = string.Empty;
-    public string                          ProjectIntroduction { get; init; } = string.Empty;
-    public string                          CategoryName        { get; init; } = string.Empty;
-    public string                          CategoryDescription { get; init; } = string.Empty;
-    public string                          AgeRange            { get; init; }
-    public bool                            IsFirstTurn         { get; init; }
+    /// <summary>Full conversation so far (oldest first), NOT including the latest user turn.</summary>
+    public IReadOnlyList<AiSupportMessage> History { get; init; } = [];
+
+    /// <summary>The user's latest message.</summary>
+    public string UserMessage { get; init; } = string.Empty;
+
+    /// <summary>Name of the organising project / platform instance.</summary>
+    public string ProjectName { get; init; } = string.Empty;
+
+    /// <summary>Introduction text of the project — gives the AI context on purpose and expectations.</summary>
+    public string ProjectIntroduction { get; init; } = string.Empty;
+
+    /// <summary>Name of the category the user is posting in.</summary>
+    public string CategoryName { get; init; } = string.Empty;
+
+    /// <summary>Optional description of the category for richer context.</summary>
+    public string CategoryDescription { get; init; } = string.Empty;
+
+    /// <summary>Age range of the project's target audience (e.g. "14–24"). Null falls back to the platform default.</summary>
+    public string AgeRange { get; init; }
+
+    /// <summary>BCP-47 two-letter language code of the participant's UI language (e.g. "nl", "en").</summary>
+    public string Language { get; init; } = "nl";
+
+    /// <summary>
+    /// True when this is the very first user turn.
+    /// The service will inject the context prompt before the history.
+    /// </summary>
+    public bool IsFirstTurn { get; init; }
 }
 
 public sealed class IdeaSupportChatReply

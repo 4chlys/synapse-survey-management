@@ -29,11 +29,28 @@ public class QuestionSupportController(
         try { questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId); }
         catch { /* non-fatal — continue without question context */ }
 
+        var lang        = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var defaultLang = project.DefaultLanguage?.Code;
+
+        var projectDescription =
+            (project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
+             ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
+             ?? project.Introduction?.Translations.FirstOrDefault())?.Text
+            ?? string.Empty;
+
+        var existingQuestions = questions
+            .Select(q =>
+                (q.Translations.FirstOrDefault(t => t.Language?.Code == lang)
+                 ?? q.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
+                 ?? q.Translations.FirstOrDefault())?.Text)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
+
         var request = new QuestionSupportChatRequest
         {
             ProjectName        = project.ProjectPlatform?.Name ?? string.Empty,
-            ProjectDescription = project.Introduction?.Text    ?? string.Empty,
-            ExistingQuestions  = questions.Select(q => q.Text).ToList(),
+            ProjectDescription = projectDescription,
+            ExistingQuestions  = existingQuestions,
             History = dto.History
                 .Select(h => new AiSupportMessage(h.Role, h.Content))
                 .ToList(),

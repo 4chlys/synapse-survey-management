@@ -18,7 +18,7 @@ public class ResponseManagerTests
     {
         _validatorFactory.Setup(f => f.GetValidator(It.IsAny<QuestionFormat>())).Returns(_validator.Object);
         _validator.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<Question>()));
-        _questionRepository.Setup(r => r.ReadByIdForUpdateAsync(_question.QuestionId)).ReturnsAsync(_question);
+        _questionRepository.Setup(r => r.ReadByIdWithTranslationsForUpdateAsync(_question.QuestionId)).ReturnsAsync(_question);
         _manager = new ResponseManager(_responseRepository.Object, _questionRepository.Object, _uow.Object, _validatorFactory.Object);
     }
 
@@ -65,7 +65,7 @@ public class ResponseManagerTests
     public async Task AddResponseAsync_QuestionNotFound_ThrowsAndDoesNotSave()
     {
         // Arrange
-        _questionRepository.Setup(r => r.ReadByIdForUpdateAsync(999)).ReturnsAsync((Question)null);
+        _questionRepository.Setup(r => r.ReadByIdWithTranslationsForUpdateAsync(999)).ReturnsAsync((Question)null);
 
         // Act + Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
@@ -184,5 +184,26 @@ public class ResponseManagerTests
         // Assert
         _responseRepository.Verify(r => r.Update(It.IsAny<Response>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AddResponseAsync_StampsParticipantLanguageOnResponse()
+    {
+        // Arrange
+        var language = new Language { Code = "nl" };
+        var participant = new Participant { ParticipantId = 3, Language = language };
+        _questionRepository.Setup(r => r.ReadByIdWithTranslationsForUpdateAsync(_question.QuestionId))
+            .ReturnsAsync(_question);
+        Response captured = null;
+        _responseRepository.Setup(r => r.CreateAsync(It.IsAny<Response>()))
+            .Callback<Response>(r => captured = r)
+            .ReturnsAsync((Response r) => r);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.AddResponseAsync(_question.QuestionId, "value", participant);
+
+        // Assert
+        Assert.Same(language, captured.Language);
     }
 }

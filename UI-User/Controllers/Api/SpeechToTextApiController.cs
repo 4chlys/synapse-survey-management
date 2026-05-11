@@ -32,20 +32,25 @@ public class SpeechToTextApiController(
         if (string.IsNullOrWhiteSpace(token))
             return Unauthorized("Participant session required.");
 
+        var lang = string.IsNullOrWhiteSpace(body.Language)
+            ? System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
+            : body.Language;
+
         SpeechToTextResponse result;
         try
         {
             result = await speechToTextService.TranscribeAsync(
                 projectId,
                 body.AudioData,
-                body.MimeType);
+                body.MimeType,
+                lang);
         }
         catch (Exception)
         {
             return Ok(new SpeechToTextResponse
             {
-                IsSuccess    = false,
-                ErrorMessage = "Spraakherkenning is momenteel niet beschikbaar. Typ je bericht handmatig.",
+                IsSuccess = false,
+                ErrorCode = "service_unavailable",
             });
         }
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Moderation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -47,7 +48,7 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = await aiModeration.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea");
+        var result = await aiModeration.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
@@ -63,7 +64,7 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
-        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, ct);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
         string suggestionToken = null;
         if (suggestion != null)

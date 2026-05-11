@@ -36,4 +36,6 @@ public class CreateProjectViewModel
     public List<string> Sections { get; set; } = new();
 
     public bool ContactOptIn { get; set; } = true;
+    public bool AllowCrossLanguageIdeas { get; set; } = false;
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 }

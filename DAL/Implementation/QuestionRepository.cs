@@ -11,10 +11,15 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
             .AsNoTracking()
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
 
+    public Task<Question> ReadByIdWithTranslationsForUpdateAsync(int questionId)
+        => Context.Set<Question>()
+            .Include(q => q.Translations)
+            .FirstOrDefaultAsync(q => q.QuestionId == questionId);
+
     public Task<Question> ReadByIdWithEndingAnswersAndQuestionnaireReadOnlyAsync(int questionId)
         => Context.Set<Question>()
             .AsNoTracking()
-            .Include(q => q.EndingAnswers)
+            .Include(q => q.EndingAnswers).ThenInclude(ea => ea.Translations)
             .Include(q => q.Questionnaire)
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
 
@@ -23,7 +28,7 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
             .AsNoTrackingWithIdentityResolution()
             .Include(q => q.Questionnaire)
                 .ThenInclude(qn => qn.Questions)
-                .ThenInclude(qu => qu.EndingAnswers)
+                .ThenInclude(qu => qu.EndingAnswers).ThenInclude(ea => ea.Translations)
             .Include(q => q.Questionnaire)
                 .ThenInclude(qn => qn.Questions)
                 .ThenInclude(qu => qu.ParentQuestion)
@@ -31,8 +36,9 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
 
     public Task<Question> ReadByIdWithSectionForUpdateAsync(int questionId)
         => Context.Set<Question>()
-            .Include(q => q.Section)
-            .Include(q => q.EndingAnswers)
+            .Include(q => q.Section).ThenInclude(s => s.Translations)
+            .Include(q => q.Translations)
+            .Include(q => q.EndingAnswers).ThenInclude(ea => ea.Translations)
             .Include(q => q.Children)
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
 
@@ -66,20 +72,31 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
             .OrderBy(q => q.Position)
             .ToListAsync();
 
+    public async Task<IEnumerable<Question>> ReadByProjectIdWithTranslationsReadOnlyAsync(int projectId)
+        => await Context.Set<Question>()
+            .AsNoTracking()
+            .Include(q => q.Section).ThenInclude(s => s.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.EndingAnswers).ThenInclude(ea => ea.Translations).ThenInclude(t => t.Language)
+            .Include(q => q.ParentQuestion)
+            .Where(q => q.Questionnaire.Project.ProjectId == projectId)
+            .OrderBy(q => q.Position)
+            .ToListAsync();
+
     public Task<bool> ExistsForProjectAsync(int questionId, int projectId)
         => Context.Set<Question>()
             .AsNoTracking()
             .AnyAsync(q => q.QuestionId == questionId
                            && q.Questionnaire.Project.ProjectId == projectId);
 
-    public async Task<IEnumerable<Question>> ReadSiblingsForUpdateAsync(int? parentQuestionId, string parentTriggerValue, int questionnaireId)
+    public async Task<IEnumerable<Question>> ReadSiblingsForUpdateAsync(int? parentQuestionId, int? choiceIndex, int questionnaireId)
     {
         var query = Context.Set<Question>()
             .Where(q => q.Questionnaire.QuestionnaireId == questionnaireId);
 
         query = parentQuestionId.HasValue
             ? query.Where(q => q.ParentQuestion.QuestionId == parentQuestionId.Value
-                               && q.ParentTriggerValue == parentTriggerValue)
+                               && q.ChoiceIndex == choiceIndex)
             : query.Where(q => q.ParentQuestion == null);
 
         return await query.OrderBy(q => q.Position).ToListAsync();
