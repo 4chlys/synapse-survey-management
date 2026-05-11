@@ -33,18 +33,40 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
         }
     }, {passive: false});
 
-    // Touch swipe (mobile)
+    // Touch swipe (mobile) — reels-style: trigger nav mid-drag once threshold passes,
+    // so the card starts animating while the finger is still moving instead of waiting
+    // for touchend. Threshold is intentionally low (~10% of viewport height).
+    const SWIPE_TRIGGER_PX = Math.max(40, window.innerHeight * 0.1);
+    let triggered = false;
+
     container.addEventListener('touchstart', (e: TouchEvent) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
+        triggered = false;
     }, {passive: true});
 
-    container.addEventListener('touchend', (e: TouchEvent) => {
-        const deltaY = touchStartY - e.changedTouches[0].clientY;
-        const deltaX = touchStartX - e.changedTouches[0].clientX;
+    container.addEventListener('touchmove', (e: TouchEvent) => {
+        if (triggered || state.isAnimating) return;
+
+        const deltaY = touchStartY - e.touches[0].clientY;
+        const deltaX = touchStartX - e.touches[0].clientX;
+
+        // Horizontal swipe — ignore.
         if (Math.abs(deltaX) > Math.abs(deltaY)) return;
-        if (Math.abs(deltaY) < 50) return;
-        if (state.isAnimating) return;
+        if (Math.abs(deltaY) < SWIPE_TRIGGER_PX) return;
+
+        // Don't hijack swipes that start on a scrollable inner element (e.g. long answer
+        // list). Only trigger when the card itself isn't scrolled or has no overflow.
+        const target = e.target as HTMLElement | null;
+        const scrollable = target?.closest('.overflow-y-auto') as HTMLElement | null;
+        if (scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+            const atTop = scrollable.scrollTop <= 0;
+            const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+            if (deltaY > 0 && !atBottom) return;
+            if (deltaY < 0 && !atTop) return;
+        }
+
+        triggered = true;
         if (deltaY > 0) void navigateNext(state);
         else void navigatePrev(state);
     }, {passive: true});
