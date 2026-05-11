@@ -210,9 +210,11 @@ sign-prod:
     - chmod +x /usr/local/bin/cosign
     - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
   script:
-    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key "${COSIGN_PRIVATE_KEY}" --yes "${IMAGE_API}:${IMAGE_TAG}"
-    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key "${COSIGN_PRIVATE_KEY}" --yes "${IMAGE_UI}:${IMAGE_TAG}"
-    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key "${COSIGN_PRIVATE_KEY}" --yes "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    - tr -d '\r' < "${COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_API}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_UI}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    - rm -f /tmp/cosign.key
   only:
     - main
     - release/staging
