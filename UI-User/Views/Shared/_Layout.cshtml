@@ -103,8 +103,9 @@
     </environment>
 </head>
 
-@{ var lockScrollAttr = ViewData["LockScroll"] is true ? "data-lock-scroll" : ""; }
-<body class="bg-base-200 min-h-[100dvh]" @Html.Raw(lockScrollAttr)>
+<body class="bg-base-200 min-h-[100dvh]"
+      data-lock-scroll="@(ViewData["LockScroll"] is true ? "true" : null)">
+
 
     @if (ViewData["ShowModerationPopup"] is true)
     {
