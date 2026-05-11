@@ -9,6 +9,8 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.Extensions.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.API.Ai;
+using SynapseEnqueteManagement.API.Data;
 using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
@@ -82,6 +84,26 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+
+// AdminReadContext — reads PlatformSettings + SystemAiSettings from the shared DB
+if (!string.IsNullOrEmpty(dbHost))
+{
+    var adminConnStr = $"Host={dbHost};" +
+                       $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
+                       $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
+                       $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
+                       $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
+    builder.Services.AddDbContext<AdminReadContext>(opt => opt.UseNpgsql(adminConnStr));
+}
+else
+{
+    var adminConnStr = builder.Configuration.GetConnectionString("AdminDb")
+                       ?? "Data Source=../UI-Admin/SynapseEnquete.db";
+    builder.Services.AddDbContext<AdminReadContext>(opt => opt.UseSqlite(adminConnStr));
+}
+
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<PlatformAiConfigService>();
 builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
