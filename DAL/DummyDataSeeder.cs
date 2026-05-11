@@ -216,6 +216,7 @@ public class DummyDataSeeder
             ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
             ProjectPlatform = platformSynapse,
+            Theme = ProjectTheme.Default,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>
@@ -363,6 +364,7 @@ public class DummyDataSeeder
             ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             ProjectPlatform = platformFitLife,
+            Theme = ProjectTheme.Playful,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>
@@ -511,6 +513,8 @@ public class DummyDataSeeder
             ShortForm = "clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             ProjectPlatform = platformEendracht,
+            Theme = ProjectTheme.Professional,
+            PrimaryColor = "#16A34A",
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>
@@ -592,6 +596,7 @@ public class DummyDataSeeder
             Questionnaire = new Questionnaire(),
             ShortForm = "gearchiveerd-project",
             ProjectPlatform = platformSynapse,
+            Theme = ProjectTheme.Dark,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>
@@ -616,6 +621,7 @@ public class DummyDataSeeder
             Questionnaire = new Questionnaire(),
             ShortForm = "draft-project",
             ProjectPlatform = platformSynapse,
+            Theme = ProjectTheme.HighContrast,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>

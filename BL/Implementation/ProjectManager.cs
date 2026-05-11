@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -47,7 +48,10 @@ public class ProjectManager(
         int? minAge, int? maxAge, bool requestContactInfo, int platformId,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
-        bool allowCrossLanguageIdeas = false)
+        bool allowCrossLanguageIdeas = false,
+        ProjectTheme theme = ProjectTheme.Default,
+        string primaryColor = null,
+        string customCss = null)
     {
         var translationList = translations?.ToList() ?? new List<ProjectTranslationInput>();
         var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
@@ -86,6 +90,9 @@ public class ProjectManager(
             Questionnaire = new Questionnaire(),
             CreatedAt = DateTime.UtcNow,
             DefaultLanguage = languages[defaultLanguageCode],
+            Theme = theme,
+            PrimaryColor = primaryColor,
+            CustomCss = customCss,
         };
 
         foreach (var code in supportedList)
@@ -106,6 +113,18 @@ public class ProjectManager(
         EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
         EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
         EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
+        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
+        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
+        if (!string.IsNullOrEmpty(primaryColor) &&
+            !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
+            throw new ValidationException(
+                "Invalid color code. Use a hex value (e.g. #FF5733).");
+        if (!string.IsNullOrEmpty(customCss) &&
+            Regex.IsMatch(customCss,
+                @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
+                RegexOptions.IgnoreCase))
+            throw new ValidationException(
+                "Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).");
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
             throw new ValidationException("MinAge must not be greater than MaxAge.");
 
@@ -139,7 +158,10 @@ public class ProjectManager(
         int? minAge, int? maxAge, bool requestContactInfo,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
-        bool allowCrossLanguageIdeas = false)
+        bool allowCrossLanguageIdeas = false,
+        ProjectTheme theme = ProjectTheme.Default,
+        string primaryColor = null,
+        string customCss = null)
     {
         var project = await projectRepository.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(projectId);
         if (project is null)
@@ -167,6 +189,18 @@ public class ProjectManager(
         EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
         EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
         EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
+        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
+        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
+        if (!string.IsNullOrEmpty(primaryColor) &&
+            !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
+            throw new ValidationException(
+                "Invalid color code. Use a hex value (e.g. #FF5733).");
+        if (!string.IsNullOrEmpty(customCss) &&
+            Regex.IsMatch(customCss,
+                @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
+                RegexOptions.IgnoreCase))
+            throw new ValidationException(
+                "Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).");
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
             throw new ValidationException("MinAge must not be greater than MaxAge.");
 
@@ -181,6 +215,9 @@ public class ProjectManager(
         project.ExtraIdeasReplaceExisting = extraIdeasReplaceExisting;
         project.MaxExtraIdeaRequests = maxExtraIdeaRequests;
         project.DefaultLanguage = languages[defaultLanguageCode];
+        project.Theme = theme;
+        project.PrimaryColor = primaryColor;
+        project.CustomCss = customCss;
 
         var supportedSet = supportedList.ToHashSet();
         foreach (var existing in project.SupportedLanguages.Where(l => !supportedSet.Contains(l.Code)).ToList())
@@ -387,6 +424,9 @@ public class ProjectManager(
             CreatedAt = DateTime.UtcNow,
             ViewCount = 0,
             DefaultLanguage = languages[defaultCode],
+            Theme = src.Theme,
+            PrimaryColor = src.PrimaryColor,
+            CustomCss = src.CustomCss,
         };
 
         foreach (var code in supportedCodes)

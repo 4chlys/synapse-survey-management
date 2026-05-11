@@ -78,6 +78,9 @@ public class ProjectController(
             ContactOptIn = project.RequestContactInfo,
             AllowCrossLanguageIdeas = project.AllowCrossLanguageIdeas,
             SupportedLanguageCodes = project.SupportedLanguageCodes,
+            Theme = project.Theme,
+            PrimaryColor = project.PrimaryColor,
+            CustomCss = project.CustomCss,
             Sections = sections.Select(s => s.Name).ToList()
         };
         ViewData["Project"] = project;
@@ -141,7 +144,8 @@ public class ProjectController(
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
                 model.ContactOptIn, model.ShortForm,
                 lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
-                model.AllowCrossLanguageIdeas);
+                model.AllowCrossLanguageIdeas,
+                model.Theme, model.PrimaryColor, model.CustomCss);
         }
         else
         {
@@ -156,7 +160,10 @@ public class ProjectController(
                 model.MinAge, model.MaxAge, model.ContactOptIn,
                 platformId: user.ProjectPlatformId.Value,
                 shortForm: model.ShortForm,
-                allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas);
+                allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
+                theme: model.Theme,
+                primaryColor: model.PrimaryColor,
+                customCss: model.CustomCss);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -267,7 +274,8 @@ public class ProjectController(
             project.ProjectImage, project.FormType, project.AiAssistance,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
-            project.AllowCrossLanguageIdeas);
+            project.AllowCrossLanguageIdeas,
+            project.Theme, project.PrimaryColor, project.CustomCss);
 
         return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }

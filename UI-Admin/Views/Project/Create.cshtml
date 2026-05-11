@@ -1,3 +1,4 @@
+@using SynapseEnqueteManagement.BL.Domain.Project.Enums
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @{
     var isEdit = Model.ProjectId.HasValue;
@@ -163,6 +164,38 @@
                         <span class="label-text-alt">Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</span>
                     </div>
                 }
+
+                <div class="divider my-0">Stijl</div>
+
+                <div class="form-control">
+                    <label asp-for="Theme" class="label">
+                        <span class="label-text">Thema</span>
+                    </label>
+                    <select asp-for="Theme" asp-items="Html.GetEnumSelectList<ProjectTheme>()"
+                            class="select select-bordered w-full"></select>
+                    <span asp-validation-for="Theme" class="label-text-alt text-error mt-1"></span>
+                </div>
+
+                <div class="form-control">
+                    <label asp-for="PrimaryColor" class="label">
+                        <span class="label-text">Primaire kleur (optioneel)</span>
+                    </label>
+                    <input asp-for="PrimaryColor" type="text" maxlength="7"
+                           pattern="^#[0-9A-Fa-f]{6}$" placeholder="#16A34A"
+                           class="input input-bordered w-full" />
+                    <span class="label-text-alt">Hex-waarde (bv. #16A34A). Laat leeg om de themakleur te gebruiken.</span>
+                    <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
+                </div>
+
+                <div class="form-control">
+                    <label asp-for="CustomCss" class="label">
+                        <span class="label-text">Aangepaste CSS (optioneel)</span>
+                    </label>
+                    <textarea asp-for="CustomCss" rows="6"
+                              class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
+                    <span class="label-text-alt">Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</span>
+                    <span asp-validation-for="CustomCss" class="label-text-alt text-error mt-1"></span>
+                </div>
 
                 <div class="card-actions justify-end gap-2 pt-2">
                     @if (!isLocked)

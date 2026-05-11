@@ -24,7 +24,10 @@ public interface IProjectManager
         int? minAge, int? maxAge, bool requestContactInfo, int platformId,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
-        bool allowCrossLanguageIdeas = false);
+        bool allowCrossLanguageIdeas = false,
+        ProjectTheme theme = ProjectTheme.Default,
+        string primaryColor = null,
+        string customCss = null);
 
     Task<Project> UpdateProjectAsync(int projectId,
         IEnumerable<ProjectTranslationInput> translations,
@@ -35,7 +38,10 @@ public interface IProjectManager
         int? minAge, int? maxAge, bool requestContactInfo,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
-        bool allowCrossLanguageIdeas = false);
+        bool allowCrossLanguageIdeas = false,
+        ProjectTheme theme = ProjectTheme.Default,
+        string primaryColor = null,
+        string customCss = null);
 
     Task<Project> GetProjectByShortFormAsync(string shortForm);
     Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null);
