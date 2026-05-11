@@ -44,7 +44,7 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
 
     [HttpPost("describe")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    [EnableRateLimiting("ai-image-moderation")]
+    [EnableRateLimiting("ai-image-describe")]
     public async Task<IActionResult> Describe(
         IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
         CancellationToken ct)
