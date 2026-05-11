@@ -45,6 +45,9 @@
   <data name="AddImageButton" xml:space="preserve">
     <value>📎 Add image</value>
   </data>
+  <data name="DescribeImageButton" xml:space="preserve">
+    <value>Describe with AI</value>
+  </data>
   <data name="PostButton" xml:space="preserve">
     <value>Post</value>
   </data>

@@ -99,6 +99,9 @@ public class ResponseManager(
         await uow.SaveChangesAsync(ct);
     }
 
+    public Task<IEnumerable<Response>> GetCommittedResponsesForProjectReadOnlyAsync(int projectId)
+        => responseRepository.ReadCommittedByProjectWithQuestionReadOnlyAsync(projectId);
+
     public async Task RetranslateResponsesForLanguageAsync(int participantId, Language targetLanguage, CancellationToken ct = default)
     {
         if (targetLanguage is null) throw new ArgumentNullException(nameof(targetLanguage));

@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -14,7 +15,8 @@ public class UploadsController(
     IStorageService storageService,
     IAiModerationService aiModerationService,
     IModerationTokenService moderationTokenService,
-    PlatformAiConfigService platformAiConfig) : ControllerBase
+    IPlatformAiConfigService platformAiConfig,
+    IAiImageDescriptionService aiImageDescriptionService) : ControllerBase
 {
     private static readonly HashSet<string> AllowedImageContentTypes =
         ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -89,6 +91,37 @@ public class UploadsController(
         });
     }
 
+    [HttpPost("describe-image")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<ImageDescriptionResultDto>> DescribeImage(
+        IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
+        [FromQuery] string language, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest("No file provided.");
+
+        if (!AllowedImageContentTypes.Contains(file.ContentType))
+            return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
+
+        if (file.Length > MaxImageSizeBytes)
+            return BadRequest("File exceeds the 10 MB limit.");
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct);
+        var bytes = ms.ToArray();
+
+        var effectiveLanguage = string.IsNullOrWhiteSpace(language)
+            ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
+            : language;
+        var description = await aiImageDescriptionService.DescribeImageAsync(
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
+
+        if (string.IsNullOrEmpty(description))
+            return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });
+
+        return Ok(new ImageDescriptionResultDto { Description = description });
+    }
+
     [HttpPost("question-media")]
     [RequestSizeLimit(25 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
@@ -115,6 +148,11 @@ public class UploadsController(
 public class UploadResultDto
 {
     public string Url { get; set; }
+}
+
+public class ImageDescriptionResultDto
+{
+    public string Description { get; set; }
 }
 
 public class IdeaImageUploadResultDto
