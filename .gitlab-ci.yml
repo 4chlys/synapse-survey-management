@@ -271,4 +271,4 @@ deploy-production:
   when: manual
   environment:
     name: production
-    REDACTED_COSIGN_KEY
+    
