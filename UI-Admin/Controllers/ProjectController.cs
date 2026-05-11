@@ -514,7 +514,7 @@ public class ProjectController(
         return File(bytes, contentType, fileName);
     }
 
-    public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx")
+    public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx", string tables = "")
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
@@ -528,7 +528,7 @@ public class ProjectController(
         if (normalized is not ("csv" or "xlsx"))
             return BadRequest("Ongeldig formaat.");
 
-        var (bytes, contentType, fileName) = await participantService.ExportRawDataAsync(projectId, normalized);
+        var (bytes, contentType, fileName) = await participantService.ExportRawDataAsync(projectId, normalized, tables);
         return File(bytes, contentType, fileName);
     }
 

@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using ClosedXML.Excel;
 
@@ -78,6 +79,22 @@ public class ExportService : IExportService
 
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    public byte[] BuildZip(IEnumerable<(string FileName, string[] Headers, IEnumerable<string[]> Rows)> files)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+        {
+            foreach (var (fileName, headers, rows) in files)
+            {
+                var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
+                using var entryStream = entry.Open();
+                var csvBytes = BuildCsv(headers, rows);
+                entryStream.Write(csvBytes, 0, csvBytes.Length);
+            }
+        }
         return ms.ToArray();
     }
 

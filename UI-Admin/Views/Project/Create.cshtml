@@ -158,18 +158,65 @@
             {
                 <div class="divider my-0">Exporteren</div>
 
-                <div class="dropdown">
-                    <button type="button" tabindex="0" class="btn btn-outline btn-sm gap-1.5">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
-                        </svg>
-                        Exporteer ruwe data
-                    </button>
-                    <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-44 p-2 shadow mt-1">
-                        <li><a href="@Url.Action("ExportRawData", new { projectId = Model.ProjectId, format = "csv" })">CSV (.csv)</a></li>
-                        <li><a href="@Url.Action("ExportRawData", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
-                    </ul>
-                </div>
+                <button type="button" class="btn btn-outline btn-sm gap-1.5"
+                        onclick="document.getElementById('rawdata-modal').showModal()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                    Exporteer ruwe data
+                </button>
+
+                <dialog id="rawdata-modal" class="modal"
+                        data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
+                    <div class="modal-box">
+                        <h3 class="font-bold text-lg mb-4">Ruwe data exporteren</h3>
+
+                        <p class="text-sm text-base-content/60 mb-3">Selecteer de gegevens die je wilt exporteren:</p>
+
+                        <div class="form-control gap-2 mb-4">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
+                                <span class="label-text">Vragen</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
+                                <span class="label-text">Antwoorden</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
+                                <span class="label-text">Categorie&euml;n</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
+                                <span class="label-text">Idee&euml;n</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
+                                <span class="label-text">Comments</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
+                                <span class="label-text">Emoji-reacties (detail)</span>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-sm font-medium">Formaat:</span>
+                            <select id="rawdata-format" class="select select-bordered select-sm w-40">
+                                <option value="xlsx">Excel (.xlsx)</option>
+                                <option value="csv">CSV (.zip)</option>
+                            </select>
+                        </div>
+
+                        <div class="modal-action">
+                            <form method="dialog">
+                                <button class="btn btn-ghost btn-sm">Annuleren</button>
+                            </form>
+                            <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">Exporteren</button>
+                        </div>
+                    </div>
+                    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+                </dialog>
             }
 
             <div class="card-actions justify-end gap-2 pt-2">

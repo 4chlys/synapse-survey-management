@@ -14,15 +14,32 @@ public class AdminRawDataController(
     ICategoryManager categoryManager,
     IExportService exportService) : ControllerBase
 {
+    private static readonly HashSet<string> AllTables =
+        ["vragen", "antwoorden", "categorieen", "ideeen", "comments", "emojireacties"];
+
     [HttpGet("export")]
-    public async Task<IActionResult> ExportRawData(int projectId, [FromQuery] string format = "xlsx")
+    public async Task<IActionResult> ExportRawData(
+        int projectId,
+        [FromQuery] string format = "xlsx",
+        [FromQuery] string tables = "")
     {
-        if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
+        var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (project is null)
             return NotFound();
 
         var normalized = (format ?? "xlsx").Trim().ToLowerInvariant();
         if (normalized is not ("csv" or "xlsx"))
             return BadRequest(new { error = $"Ongeldig formaat '{format}'." });
+
+        var selectedTables = string.IsNullOrWhiteSpace(tables)
+            ? AllTables
+            : tables.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(t => t.ToLowerInvariant())
+                .Where(AllTables.Contains)
+                .ToHashSet();
+
+        if (selectedTables.Count == 0)
+            selectedTables = AllTables;
 
         var questionsTask = questionnaireManager.GetQuestionsForProjectAsync(projectId);
         var responsesTask = responseManager.GetCommittedResponsesForProjectReadOnlyAsync(projectId);
@@ -34,107 +51,144 @@ public class AdminRawDataController(
         var responses = (await responsesTask).ToList();
         var categories = (await categoriesTask).ToList();
 
-        var questionHeaders = new[] { "VraagId", "Tekst", "Type", "Verplicht", "Sectie", "Antwoordkeuzes" };
-        var questionRows = questions.Select(q => new[]
-        {
-            q.QuestionId.ToString(),
-            q.Text,
-            q.QuestionFormat.ToString(),
-            q.IsMandatory ? "Ja" : "Nee",
-            q.Section?.Name ?? "",
-            q.AnswerChoices?.Count > 0 ? string.Join(" | ", q.AnswerChoices) : ""
-        });
+        var safeName = SanitizeFileName(project.Name);
+        var sections = new List<(string Key, string Title, string[] Headers, IEnumerable<string[]> Rows)>();
 
-        var responseHeaders = new[] { "AntwoordId", "VraagId", "Antwoord", "Tijdstip" };
-        var responseRows = responses.Select(r => new[]
+        if (selectedTables.Contains("vragen"))
         {
-            r.ResponseId.ToString(),
-            r.Question.QuestionId.ToString(),
-            r.Value ?? "",
-            r.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
-        });
+            sections.Add(("vragen", "Vragen",
+                ["VraagId", "Tekst", "Type", "Verplicht", "Sectie", "Antwoordkeuzes"],
+                questions.Select(q => new[]
+                {
+                    q.QuestionId.ToString(),
+                    q.Text,
+                    q.QuestionFormat.ToString(),
+                    q.IsMandatory ? "Ja" : "Nee",
+                    q.Section?.Name ?? "",
+                    q.AnswerChoices?.Count > 0 ? string.Join(" | ", q.AnswerChoices) : ""
+                })));
+        }
 
-        var categoryHeaders = new[] { "CategorieId", "Naam", "Beschrijving", "AantalIdeeën" };
-        var categoryRows = categories.Select(c => new[]
+        if (selectedTables.Contains("antwoorden"))
         {
-            c.CategoryId.ToString(),
-            c.Name,
-            c.Description ?? "",
-            c.Ideas.Count.ToString()
-        });
+            sections.Add(("antwoorden", "Antwoorden",
+                ["AntwoordId", "VraagId", "GebruikerId", "Antwoord", "Tijdstip"],
+                responses.Select(r => new[]
+                {
+                    r.ResponseId.ToString(),
+                    r.Question.QuestionId.ToString(),
+                    r.Participant?.ParticipantId.ToString() ?? "",
+                    r.Value ?? "",
+                    r.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                })));
+        }
 
-        var ideaHeaders = new[] { "IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "Tijdstip" };
-        var ideaRows = categories.SelectMany(c => c.Ideas.Select(i => new[]
+        if (selectedTables.Contains("categorieen"))
         {
-            i.IdeaId.ToString(),
-            i.Description,
-            c.Name,
-            i.Status.ToString(),
-            i.Comments.OfType<TextComment>().Count().ToString(),
-            i.Comments.OfType<IconComment>().Count(ic => ic.TextComment == null).ToString(),
-            i.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
-        }));
+            sections.Add(("categorieen", "Categorieën",
+                ["CategorieId", "Naam", "Beschrijving", "AantalIdeeën"],
+                categories.Select(c => new[]
+                {
+                    c.CategoryId.ToString(),
+                    c.Name,
+                    c.Description ?? "",
+                    c.Ideas.Count.ToString()
+                })));
+        }
 
-        var commentHeaders = new[] { "CommentId", "IdeeId", "Tekst", "Status", "Tijdstip" };
-        var commentRows = categories.SelectMany(c => c.Ideas.SelectMany(i =>
-            i.Comments.OfType<TextComment>().Select(tc => new[]
-            {
-                tc.CommentId.ToString(),
-                i.IdeaId.ToString(),
-                tc.Text,
-                tc.ModerationStatus.ToString(),
-                tc.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
-            })));
+        if (selectedTables.Contains("ideeen"))
+        {
+            sections.Add(("ideeen", "Ideeën",
+                ["IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
+                categories.SelectMany(c => c.Ideas.Select(i =>
+                {
+                    var emojiReactions = i.Comments.OfType<IconComment>()
+                        .Where(ic => ic.TextComment == null)
+                        .ToList();
+                    var emojiDetails = string.Join(" | ", emojiReactions
+                        .GroupBy(ic => ic.Emoji?.Symbol ?? "?")
+                        .Select(g => $"{g.Key} x{g.Count()}"));
+                    return new[]
+                    {
+                        i.IdeaId.ToString(),
+                        i.Description,
+                        c.Name,
+                        i.Status.ToString(),
+                        i.Comments.OfType<TextComment>().Count().ToString(),
+                        emojiReactions.Count.ToString(),
+                        emojiDetails,
+                        i.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                    };
+                }))));
+        }
+
+        if (selectedTables.Contains("comments"))
+        {
+            sections.Add(("comments", "Comments",
+                ["CommentId", "IdeeId", "GebruikerId", "Tekst", "Status", "EmojiReacties", "Tijdstip"],
+                categories.SelectMany(c => c.Ideas.SelectMany(i =>
+                    i.Comments.OfType<TextComment>().Select(tc =>
+                    {
+                        var emojiDetails = string.Join(" | ", tc.EmojiReactions
+                            .GroupBy(ir => ir.Emoji?.Symbol ?? "?")
+                            .Select(g => $"{g.Key} x{g.Count()}"));
+                        return new[]
+                        {
+                            tc.CommentId.ToString(),
+                            i.IdeaId.ToString(),
+                            tc.Participant?.ParticipantId.ToString() ?? "",
+                            tc.Text,
+                            tc.ModerationStatus.ToString(),
+                            emojiDetails,
+                            tc.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                        };
+                    })))));
+        }
+
+        if (selectedTables.Contains("emojireacties"))
+        {
+            sections.Add(("emojireacties", "EmojiReacties",
+                ["ReactieId", "IdeeId", "CommentId", "GebruikerId", "Emoji", "EmojiNaam", "Tijdstip"],
+                categories.SelectMany(c => c.Ideas.SelectMany(i =>
+                    i.Comments.OfType<IconComment>().Select(ic => new[]
+                    {
+                        ic.CommentId.ToString(),
+                        i.IdeaId.ToString(),
+                        ic.TextComment?.CommentId.ToString() ?? "",
+                        ic.Participant?.ParticipantId.ToString() ?? "",
+                        ic.Emoji?.Symbol ?? "",
+                        ic.Emoji?.Name ?? "",
+                        ic.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                    })))));
+        }
 
         if (normalized == "xlsx")
         {
-            var sheets = new (string, string[], IEnumerable<string[]>)[]
-            {
-                ("Vragen", questionHeaders, questionRows),
-                ("Antwoorden", responseHeaders, responseRows),
-                ("Categorieën", categoryHeaders, categoryRows),
-                ("Ideeën", ideaHeaders, ideaRows),
-                ("Comments", commentHeaders, commentRows)
-            };
+            var sheets = sections.Select(s => (s.Title, s.Headers, s.Rows));
             var bytes = exportService.BuildXlsx(sheets);
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"rawdata-{projectId}.xlsx");
+                $"{safeName}-rawdata.xlsx");
         }
         else
         {
-            var sections = new (string Title, string[] Headers, IEnumerable<string[]> Rows)[]
+            if (sections.Count == 1)
             {
-                ("Vragen", questionHeaders, questionRows),
-                ("Antwoorden", responseHeaders, responseRows),
-                ("Categorieën", categoryHeaders, categoryRows),
-                ("Ideeën", ideaHeaders, ideaRows),
-                ("Comments", commentHeaders, commentRows)
-            };
-
-            var sb = new System.Text.StringBuilder();
-            foreach (var (title, headers, rows) in sections)
-            {
-                sb.AppendLine(string.Join(";", headers));
-                foreach (var row in rows)
-                    sb.AppendLine(string.Join(";", row.Select(EscapeCsvField)));
-                sb.AppendLine();
+                var s = sections[0];
+                var bytes = exportService.BuildCsv(s.Headers, s.Rows);
+                return File(bytes, "text/csv", $"{safeName}-{s.Key}.csv");
             }
 
-            var preamble = System.Text.Encoding.UTF8.GetPreamble();
-            var body = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-            var bytes = new byte[preamble.Length + body.Length];
-            Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
-            Buffer.BlockCopy(body, 0, bytes, preamble.Length, body.Length);
-            return File(bytes, "text/csv", $"rawdata-{projectId}.csv");
+            var zipFiles = sections.Select(s => ($"{safeName}-{s.Key}.csv", s.Headers, s.Rows));
+            var zipBytes = exportService.BuildZip(zipFiles);
+            return File(zipBytes, "application/zip", $"{safeName}-rawdata.zip");
         }
     }
 
-    private static string EscapeCsvField(string value)
+    private static string SanitizeFileName(string name)
     {
-        if (string.IsNullOrEmpty(value)) return "";
-        if (value.IndexOfAny([';', '"', '\r', '\n']) < 0) return value;
-        return $"\"{value.Replace("\"", "\"\"")}\"";
-    } 
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return sanitized.Trim().Replace(' ', '-').ToLowerInvariant();
+    }
 }
-

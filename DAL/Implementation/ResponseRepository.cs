@@ -43,6 +43,7 @@ public class ResponseRepository(DbContext context) : Repository<Response>(contex
         => await Context.Set<Response>()
             .AsNoTracking()
             .Include(r => r.Question)
+            .Include(r => r.Participant)
             .Where(r => r.IsCommitted && r.Question.Questionnaire.Project.ProjectId == projectId)
             .OrderBy(r => r.Question.Position)
             .ThenBy(r => r.ResponseId)
