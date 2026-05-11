@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Questions</value></data>
+  <data name="Heading" xml:space="preserve"><value>Questions</value></data>
+  <data name="LockedActive" xml:space="preserve"><value>This project is active. Questions can no longer be changed.</value></data>
+  <data name="LockedArchived" xml:space="preserve"><value>This project is archived. Questions can no longer be changed.</value></data>
+  <data name="LoadingQuestions" xml:space="preserve"><value>Loading questions…</value></data>
+  <data name="AddQuestionHeading" xml:space="preserve"><value>Add question</value></data>
+  <data name="QuestionTextLabel" xml:space="preserve"><value>Question text *</value></data>
+  <data name="QuestionTextPlaceholder" xml:space="preserve"><value>Ask your question here…</value></data>
+  <data name="TypeLabel" xml:space="preserve"><value>Type</value></data>
+  <data name="Type_Open" xml:space="preserve"><value>Open question</value></data>
+  <data name="Type_MultipleChoice" xml:space="preserve"><value>Multiple choice</value></data>
+  <data name="Type_SingleChoice" xml:space="preserve"><value>Single choice</value></data>
+  <data name="Type_Likert" xml:space="preserve"><value>Likert</value></data>
+  <data name="SectionLabel" xml:space="preserve"><value>Section</value></data>
+  <data name="NoSectionOption" xml:space="preserve"><value>— no section —</value></data>
+  <data name="AnswersLabel" xml:space="preserve"><value>Answers *</value></data>
+  <data name="MinTwoAnswersError" xml:space="preserve"><value>Add at least 2 answers.</value></data>
+  <data name="AddAnswerButton" xml:space="preserve"><value>Add answer</value></data>
+  <data name="MandatoryLabel" xml:space="preserve"><value>Required</value></data>
+  <data name="MediaSummary" xml:space="preserve"><value>Supporting media (optional)</value></data>
+  <data name="MediaTypeLabel" xml:space="preserve"><value>Media type</value></data>
+  <data name="NoMediaOption" xml:space="preserve"><value>— no media —</value></data>
+  <data name="Media_Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Media_Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Media_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="MediaEmbedToggle" xml:space="preserve"><value>Enter URL / link</value></data>
+  <data name="MediaTextLabel" xml:space="preserve"><value>Caption text</value></data>
+  <data name="MediaTextMarkdownLabel" xml:space="preserve"><value>Caption text (markdown — **bold**, *italic*, - list)</value></data>
+  <data name="MediaTextPlaceholder" xml:space="preserve"><value>Short explanation or context for the media...</value></data>
+  <data name="AddButton" xml:space="preserve"><value>Add</value></data>
+  <data name="SettingsLink" xml:space="preserve"><value>Settings</value></data>
+  <data name="NextLink" xml:space="preserve"><value>Next</value></data>
+  <data name="AddOneQuestionError" xml:space="preserve"><value>Add at least one question.</value></data>
+  <data name="AiSupportHeading" xml:space="preserve"><value>AI Support</value></data>
+  <data name="AiMode_ProActive" xml:space="preserve"><value>Proactive</value></data>
+  <data name="AiMode_AskFirst" xml:space="preserve"><value>Ask first</value></data>
+  <data name="AiMode_Never" xml:space="preserve"><value>Never</value></data>
+  <data name="AiInputPlaceholder" xml:space="preserve"><value>Ask a question about your survey…</value></data>
+  <data name="SendButton" xml:space="preserve"><value>Send</value></data>
+  <data name="ModalTitleCreate" xml:space="preserve"><value>Create question</value></data>
+  <data name="ModalQuestionPlaceholder" xml:space="preserve"><value>Enter your question...</value></data>
+  <data name="FieldRequiredError" xml:space="preserve"><value>This field is required.</value></data>
+  <data name="QuestionTypeLabel" xml:space="preserve"><value>Question type</value></data>
+  <data name="SelectedSuffix" xml:space="preserve"><value>(selected)</value></data>
+  <data name="SectionOptionalLabel" xml:space="preserve"><value>Section (optional)</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="OkButton" xml:space="preserve"><value>OK</value></data>
+</root>

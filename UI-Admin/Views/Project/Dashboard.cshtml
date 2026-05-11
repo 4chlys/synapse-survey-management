@@ -1,26 +1,28 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
 @model DashboardViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
 }
 <div class="w-full">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="font-heading font-bold text-2xl text-base-content">Dashboard</h1>
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
         <div class="flex items-center gap-2">
             @if (ViewData["ProjectState"] as string == "Active")
             {
                 <a asp-action="Archive" asp-route-projectId="@Model.ProjectId"
                    class="btn btn-outline btn-warning btn-sm gap-1.5">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-                    Archiveren
+                    @L["ArchiveButton"]
                 </a>
             }
             <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
                class="btn btn-outline btn-sm gap-1.5">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-                Widgets instellen
+                @L["ConfigureButton"]
             </a>
         </div>
     </div>
@@ -34,7 +36,7 @@
                  data-api-base="@Model.ApiBaseUrl"
                  data-survey-url="@Model.SurveyUrl"
                  class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : "min-h-28")">
-                <p class="text-base-content/30 text-xs">Laden…</p>
+                <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
             </div>
         }
     </div>

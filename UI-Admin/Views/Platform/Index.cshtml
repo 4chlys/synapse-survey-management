@@ -1,17 +1,18 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model IEnumerable<PlatformViewModel>
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Platform";
-    ViewData["ActiveSection"] = "Platform";
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = L["NavActive"].Value;
     Layout = "_Layout";
 }
 
-<h1 class="font-heading font-bold text-2xl text-base-content mb-6">Platform</h1>
+<h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
 
 <div class="flex items-center justify-between mb-6">
     <div></div>
     <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm">
-        + Nieuw platform
+        + @L["NewButton"]
     </a>
 </div>
 
@@ -19,7 +20,7 @@
 {
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body text-center text-base-content/60 text-sm">
-            Geen platformen gevonden.
+            @L["Empty"]
         </div>
     </div>
 }
@@ -30,9 +31,9 @@ else
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th>Naam</th>
-                        <th>Logo</th>
-                        <th>Website</th>
+                        <th>@L["TableName"]</th>
+                        <th>@L["TableLogo"]</th>
+                        <th>@L["TableWebsite"]</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -44,7 +45,7 @@ else
                             <td>
                                 @if (!string.IsNullOrEmpty(platform.LogoUrl))
                                 {
-                                    <img src="@platform.LogoUrl" alt="@platform.Name logo"
+                                    <img src="@platform.LogoUrl" alt="@platform.Name @L["LogoAltSuffix"]"
                                          class="h-8 w-auto object-contain" />
                                 }
                                 else
@@ -70,12 +71,12 @@ else
                                     <a asp-controller="Platform" asp-action="Edit"
                                        asp-route-id="@platform.ProjectPlatformId"
                                        class="btn btn-ghost btn-sm">
-                                        Bewerken
+                                        @L["EditAction"]
                                     </a>
                                     <a asp-controller="Platform" asp-action="Detail"
                                        asp-route-id="@platform.ProjectPlatformId"
                                        class="btn btn-ghost btn-sm">
-                                        Details
+                                        @L["DetailsAction"]
                                     </a>
                                 </div>
                             </td>

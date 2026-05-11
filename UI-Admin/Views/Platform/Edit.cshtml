@@ -1,7 +1,8 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model PlatformFormViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Platform bewerken";
+    ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_Layout";
 }
 
@@ -12,11 +13,11 @@
         <div class="flex items-center gap-3 mb-8">
             <a asp-controller="Platform" asp-action="Index"
                class="text-gray-400 hover:text-white transition text-sm">
-                ← Platformen
+                ← @L["BackLink"]
             </a>
         </div>
 
-        <h1 class="text-2xl font-semibold mb-6">Platform bewerken</h1>
+        <h1 class="text-2xl font-semibold mb-6">@L["Heading"]</h1>
 
         <div class="bg-gray-800 p-6">
 
@@ -30,15 +31,15 @@
                 <input type="hidden" asp-for="ProjectPlatformId" />
 
                 <div class="mb-4">
-                    <label asp-for="Name" class="block text-sm text-gray-300 mb-1">Naam</label>
+                    <label asp-for="Name" class="block text-sm text-gray-300 mb-1">@L["NameLabel"]</label>
                     <input asp-for="Name"
                            class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
-                           placeholder="Naam van het platform" />
+                           placeholder="@L["NamePlaceholder"]" />
                     <span asp-validation-for="Name" class="text-xs text-red-400 mt-1 block"></span>
                 </div>
 
                 <div class="mb-4">
-                    <label asp-for="LogoUrl" class="block text-sm text-gray-300 mb-1">Logo-URL</label>
+                    <label asp-for="LogoUrl" class="block text-sm text-gray-300 mb-1">@L["LogoLabel"]</label>
                     <input asp-for="LogoUrl"
                            class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
                            placeholder="https://..." />
@@ -46,7 +47,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <label asp-for="WebsiteUrl" class="block text-sm text-gray-300 mb-1">Website-URL</label>
+                    <label asp-for="WebsiteUrl" class="block text-sm text-gray-300 mb-1">@L["WebsiteLabel"]</label>
                     <input asp-for="WebsiteUrl"
                            class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
                            placeholder="https://..." />
@@ -56,11 +57,11 @@
                 <div class="flex items-center gap-3">
                     <button type="submit"
                             class="border border-gray-400 px-5 py-2 text-sm text-white hover:bg-gray-700 transition">
-                        Opslaan
+                        @L["SaveButton"]
                     </button>
                     <a asp-controller="Platform" asp-action="Index"
                        class="border border-gray-600 px-5 py-2 text-sm text-gray-300 hover:text-white hover:border-gray-400 transition">
-                        Annuleer
+                        @L["CancelButton"]
                     </a>
                 </div>
 

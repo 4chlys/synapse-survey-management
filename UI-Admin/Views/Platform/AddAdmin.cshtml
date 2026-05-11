@@ -1,7 +1,8 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model AddAdminViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Beheerder toevoegen";
+    ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_Layout";
 }
 
@@ -17,7 +18,7 @@
             </a>
         </div>
 
-        <h1 class="text-2xl font-semibold mb-6">Beheerder toevoegen</h1>
+        <h1 class="text-2xl font-semibold mb-6">@L["Heading"]</h1>
 
         <div class="bg-gray-800 p-6">
 
@@ -30,35 +31,35 @@
                 <input asp-for="ProjectPlatformId" type="hidden" />
 
                 <div class="mb-4">
-                    <span class="block text-sm text-gray-300 mb-1">Platform</span>
+                    <span class="block text-sm text-gray-300 mb-1">@L["PlatformLabel"]</span>
                     <p class="text-white text-sm px-3 py-2 border border-gray-700 bg-gray-900">@Model.PlatformName</p>
                 </div>
 
                 <div class="mb-4">
-                    <label asp-for="Email" class="block text-sm text-gray-300 mb-1">E-mailadres</label>
+                    <label asp-for="Email" class="block text-sm text-gray-300 mb-1">@L["EmailLabel"]</label>
                     <input asp-for="Email"
                            class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
-                           placeholder="beheerder@voorbeeld.be" />
+                           placeholder="@L["EmailPlaceholder"]" />
                     <span asp-validation-for="Email" class="text-xs text-red-400 mt-1 block"></span>
                 </div>
 
                 <div class="mb-6">
-                    <label asp-for="Password" class="block text-sm text-gray-300 mb-1">Wachtwoord</label>
+                    <label asp-for="Password" class="block text-sm text-gray-300 mb-1">@L["PasswordLabel"]</label>
                     <input asp-for="Password"
                            class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
-                           placeholder="Minimaal 6 tekens" />
+                           placeholder="@L["PasswordPlaceholder"]" />
                     <span asp-validation-for="Password" class="text-xs text-red-400 mt-1 block"></span>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <button type="submit"
                             class="border border-gray-400 px-5 py-2 text-sm text-white hover:bg-gray-700 transition">
-                        Beheerder toevoegen
+                        @L["SubmitButton"]
                     </button>
                     <a asp-controller="Platform" asp-action="Detail"
                        asp-route-id="@Model.ProjectPlatformId"
                        class="border border-gray-600 px-5 py-2 text-sm text-gray-300 hover:text-white hover:border-gray-400 transition">
-                        Annuleer
+                        @L["CancelButton"]
                     </a>
                 </div>
 

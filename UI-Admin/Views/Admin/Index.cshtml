@@ -1,5 +1,6 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model PlatformDetailViewModel
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = Model.Name;
     Layout = "_Layout";
@@ -15,7 +16,7 @@
                 <div class="flex items-center gap-4">
                     @if (!string.IsNullOrEmpty(Model.LogoUrl))
                     {
-                        <img src="@Model.LogoUrl" alt="@Model.Name logo"
+                        <img src="@Model.LogoUrl" alt="@Model.Name @L["LogoAltSuffix"]"
                              class="h-14 w-auto object-contain" />
                     }
                     <div>
@@ -29,7 +30,7 @@
                         }
                         else
                         {
-                            <span class="text-sm text-gray-500 italic">Geen website</span>
+                            <span class="text-sm text-gray-500 italic">@L["NoWebsite"]</span>
                         }
                     </div>
                 </div>
@@ -39,24 +40,24 @@
         @* Admins card *@
         <div class="bg-gray-800 p-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-base font-semibold text-white">Beheerders</h2>
+                <h2 class="text-base font-semibold text-white">@L["AdminsHeading"]</h2>
                 <a asp-controller="Admin" asp-action="Add"
                    class="border border-gray-600 px-3 py-1 text-xs text-gray-300 hover:text-white hover:border-gray-400 transition">
-                    + Beheerder toevoegen
+                    + @L["AddAdminButton"]
                 </a>
             </div>
 
             @if (Model.Admins == null || !Model.Admins.Any())
             {
-                <p class="text-sm text-gray-400 italic">Geen beheerders</p>
+                <p class="text-sm text-gray-400 italic">@L["NoAdmins"]</p>
             }
             else
             {
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wide">
-                            <th class="text-left py-2 pr-4">Gebruikersnaam</th>
-                            <th class="text-left py-2">E-mail</th>
+                            <th class="text-left py-2 pr-4">@L["TableUsername"]</th>
+                            <th class="text-left py-2">@L["TableEmail"]</th>
                         </tr>
                     </thead>
                     <tbody>

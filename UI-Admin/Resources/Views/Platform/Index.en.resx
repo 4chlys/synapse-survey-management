@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Platform</value></data>
+  <data name="NavActive" xml:space="preserve"><value>Platform</value></data>
+  <data name="Heading" xml:space="preserve"><value>Platforms</value></data>
+  <data name="NewButton" xml:space="preserve"><value>New platform</value></data>
+  <data name="Empty" xml:space="preserve"><value>No platforms found.</value></data>
+  <data name="TableName" xml:space="preserve"><value>Name</value></data>
+  <data name="TableLogo" xml:space="preserve"><value>Logo</value></data>
+  <data name="TableWebsite" xml:space="preserve"><value>Website</value></data>
+  <data name="LogoAltSuffix" xml:space="preserve"><value>logo</value></data>
+  <data name="EditAction" xml:space="preserve"><value>Edit</value></data>
+  <data name="DetailsAction" xml:space="preserve"><value>Details</value></data>
+</root>

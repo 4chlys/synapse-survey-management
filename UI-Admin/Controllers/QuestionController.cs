@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
@@ -7,7 +8,10 @@ using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
-public class QuestionController(QuestionAdminService questionService, ProjectAdminService projectService) : Controller
+public class QuestionController(
+    QuestionAdminService questionService,
+    ProjectAdminService projectService,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index(int projectId)
     {
@@ -78,7 +82,7 @@ public class QuestionController(QuestionAdminService questionService, ProjectAdm
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project?.ProjectState is "Active" or "Archived")
         {
-            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
             return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
         }
         await questionService.DeleteQuestionAsync(projectId, questionId);
