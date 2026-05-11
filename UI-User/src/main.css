@@ -104,8 +104,13 @@
   --slide-h: calc(100dvh - var(--header-h));
 }
 
-html {
-  scrollbar-gutter: stable;
+html, body {
+  /* Lock page scroll. Scrolling is delegated to inner containers (survey card list,
+     chat messages). Prevents progress bar from sliding under the fixed transparent
+     header when mobile address bar shows/hides. */
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100dvh;
 }
 
 /* iOS Safari zooms when input font-size < 16px. Force 16px on small screens
@@ -121,6 +126,11 @@ html {
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Use dvh (dynamic viewport) so body height tracks the actual visible viewport on
+     mobile. Tailwind's min-h-screen uses 100vh which equals the largest viewport
+     (address bar retracted) — when the bar is visible, body becomes taller than the
+     viewport, body scrolls, and fixed-positioned content slides under the header. */
+  min-height: 100dvh;
 }
 
 /* Strip browser-default button chrome from non-DaisyUI buttons.
