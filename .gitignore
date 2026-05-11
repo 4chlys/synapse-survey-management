@@ -515,6 +515,7 @@ UI-*/.vite
 UI-*/wwwroot/dist
 cicd-key.json
 deploy/config.env
+deploy/config.*.env
 .claude/
 
 UI-Admin/.vite

@@ -1,17 +1,44 @@
 #!/bin/bash
 set -euo pipefail
 
-# ── Configuratie ────────────────────────────────────────────────
-PROJECT_ID="${PROJECT_ID:-synapse-ip-j2}"
-REGION="${REGION:-europe-west1}"
-ZONE="${ZONE:-europe-west1-b}"
-GCS_BUCKET="${GCS_BUCKET:-synapse-ip-j2-assets-prod}"
-CICD_SA="synapse-cicd@${PROJECT_ID}.iam.gserviceaccount.com"
-CICD_SA_PROD="synapse-cicd-prod@${PROJECT_ID}.iam.gserviceaccount.com"
+# ══════════════════════════════════════════════════════════════
+#  Synapse – Destroy Script
+#  Verwijdert alle GCP resources van één omgeving.
+#
+#  Gebruik:
+#    ./infra/destroy.sh <omgeving>
+#
+#  Voorbeeld:
+#    ./infra/destroy.sh test    # verwijdert test-omgeving
+#    ./infra/destroy.sh prod    # verwijdert productie-omgeving
+# ══════════════════════════════════════════════════════════════
+
+ENV="${1:-}"
+if [[ -z "${ENV}" ]]; then
+  echo "❌ Geef een omgeving op als argument: ./destroy.sh <test|prod>"
+  exit 1
+fi
+export ENV
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/../deploy/config.${ENV}.env"
 
-# ── Lib laden ───────────────────────────────────────────────────
+# Config laden voor PROJECT_ID, REGION, ZONE
+if [[ -f "${CONFIG_FILE}" ]]; then
+  # shellcheck source=/dev/null
+  source "${CONFIG_FILE}"
+else
+  echo "⚠️  Geen config.${ENV}.env gevonden. Geef PROJECT_ID handmatig:"
+  read -r PROJECT_ID
+  REGION="${REGION:-europe-west1}"
+  ZONE="${ZONE:-europe-west1-b}"
+fi
+
+export PROJECT_ID REGION ZONE
+GCS_BUCKET="${GCS_BUCKET:-${PROJECT_ID}-assets-${ENV}}"
+export GCS_BUCKET
+
+# Lib laden
 source "${SCRIPT_DIR}/lib/01_apis_iam.sh"
 source "${SCRIPT_DIR}/lib/02_secrets.sh"
 source "${SCRIPT_DIR}/lib/03_vpc.sh"
@@ -23,23 +50,22 @@ source "${SCRIPT_DIR}/lib/08_logging.sh"
 source "${SCRIPT_DIR}/lib/09_armor.sh"
 source "${SCRIPT_DIR}/lib/10_backup.sh"
 
-# ── Bevestiging ─────────────────────────────────────────────────
 echo "======================================================"
-echo " WAARSCHUWING: Dit verwijdert ALLE Synapse infra! (parallel)"
-echo " Project: ${PROJECT_ID}"
+echo " WAARSCHUWING: Dit verwijdert ALLE Synapse '${ENV}' resources!"
+echo " Project : ${PROJECT_ID}"
+echo " Omgeving: ${ENV}"
 echo "======================================================"
 read -r -p "Typ 'ja' om te bevestigen: " confirm
 [ "${confirm}" = "ja" ] || { echo "Afgebroken."; exit 1; }
 
-# ── Teardown (parallel waar mogelijk) ──────────────────────────
 echo ""
 
-# 1. Cloud Armor en Load Balancer eerst (backends hangen eraan)
+# 1. Cloud Armor en Load Balancer eerst
 destroy_cloud_armor
 destroy_uptime_checks
 destroy_loadbalancer
 
-# 2. MIGs, SQL, Storage, VPC en Secrets zijn nu onafhankelijk — parallel verwijderen
+# 2. Omgeving-specifieke resources parallel verwijderen
 ( destroy_migs && destroy_instance_templates ) &
 PID_MIGS=$!
 
@@ -49,19 +75,15 @@ PID_SQL=$!
 ( destroy_storage_bucket && destroy_backup_bucket ) &
 PID_BUCKET=$!
 
-( destroy_firewall_rules && destroy_vpc_peering ) &
-PID_VPC=$!
-
 ( destroy_secrets ) &
 PID_SECRETS=$!
 
-# 3. Wacht tot alles verwijderd is
-wait $PID_MIGS $PID_SQL $PID_BUCKET $PID_VPC $PID_SECRETS
+wait $PID_MIGS $PID_SQL $PID_BUCKET $PID_SECRETS
 
-# destroy_service_account       # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
-# destroy_prod_service_account  # uitgecommentarieerd: SA heeft JSON key in GitLab CI/CD
+# VPC en firewall worden NIET verwijderd — die zijn project-breed en gedeeld
+# destroy_firewall_rules && destroy_vpc_peering
 
 echo ""
 echo "======================================================"
-echo " Teardown klaar."
+echo " Teardown klaar voor omgeving '${ENV}'."
 echo "======================================================"
