@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Localization;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
@@ -29,6 +30,7 @@ public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> loca
 
     public Task<IdeaSupportChatReply> ChatAsync(
         IdeaSupportChatRequest request,
+        ResolvedPlatformAiConfig platformConfig,
         CancellationToken ct = default)
     {
         var turnCount = request.History.Count;
@@ -70,6 +72,7 @@ public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> loca
     public Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
         string language,
+        ResolvedPlatformAiConfig platformConfig,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))

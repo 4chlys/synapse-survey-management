@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
@@ -12,9 +13,7 @@ namespace SynapseEnqueteManagement.BL.AiModeration;
 /// class contains only AI-specific logic.
 /// </summary>
 public sealed class AiModerationService(
-    IChatClient chatClient,
     ILogger<AiModerationService> logger,
-    ModerationConfig config,
     IRegexModerationService regex) : IAiModerationService
 {
     private static readonly Regex CodeFenceRe =
@@ -28,6 +27,7 @@ public sealed class AiModerationService(
 
     public async Task<ModerationResult> CheckWithAiAsync(
         string text,
+        ResolvedPlatformAiConfig platformConfig,
         CancellationToken ct = default,
         string contentType = "idea",
         string respondInLanguage = null)
@@ -38,11 +38,11 @@ public sealed class AiModerationService(
         var regexResult = regex.Check(text, contentType);
         if (!regexResult.IsAcceptable) return regexResult;
 
-        if (!config.UseAi) return ModerationResult.Acceptable();
+        if (!platformConfig.Moderation.UseAi) return ModerationResult.Acceptable();
 
         try
         {
-            return await CallModerationAsync(text, contentType, respondInLanguage, ct);
+            return await CallModerationAsync(text, contentType, respondInLanguage, platformConfig, ct);
         }
         catch (OperationCanceledException)
         {
@@ -57,14 +57,14 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default, string respondInLanguage = null)
     {
-        if (!config.UseAi) return ModerationResult.Acceptable();
+        if (!platformConfig.Moderation.UseAi) return ModerationResult.Acceptable();
 
         try
         {
-            var imagePrompt = config.ImageModerationPrompt
-                .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+            var imagePrompt = platformConfig.Moderation.ImageModerationPrompt
+                .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
             var imageContent = new DataContent(new ReadOnlyMemory<byte>(imageBytes), mimeType);
             var message = new ChatMessage(ChatRole.User,
@@ -73,7 +73,7 @@ public sealed class AiModerationService(
                 new TextContent(imagePrompt),
             ]);
 
-            var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
+            var response = await platformConfig.ChatClient.GetResponseAsync([message], cancellationToken: ct);
             var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(rawJson))
@@ -115,14 +115,14 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<string> SuggestRewriteAsync(string text, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         try
         {
-            var rewritePrompt = config.RewritePrompt
-                .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+            var rewritePrompt = platformConfig.Moderation.RewritePrompt
+                .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
             var messages = new List<ChatMessage>
             {
@@ -130,7 +130,7 @@ public sealed class AiModerationService(
                 new(ChatRole.User,   text),
             };
 
-            var response   = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var response   = await platformConfig.ChatClient.GetResponseAsync(messages, cancellationToken: ct);
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -155,14 +155,15 @@ public sealed class AiModerationService(
         string text,
         string contentType,
         string respondInLanguage,
+        ResolvedPlatformAiConfig platformConfig,
         CancellationToken ct)
     {
         var rawPrompt = contentType == "comment"
-            ? config.CommentModerationPrompt
-            : config.ModerationPrompt;
+            ? platformConfig.Moderation.CommentModerationPrompt
+            : platformConfig.Moderation.ModerationPrompt;
 
         var prompt = rawPrompt
-            .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+            .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
         var messages = new List<ChatMessage>
         {
@@ -170,7 +171,7 @@ public sealed class AiModerationService(
             new(ChatRole.User,   text),
         };
 
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        var response = await platformConfig.ChatClient.GetResponseAsync(messages, cancellationToken: ct);
         var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawJson))

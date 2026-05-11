@@ -1,19 +1,19 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 public sealed class AiIdeaSupportService(
-    IChatClient chatClient,
-    ILogger<AiIdeaSupportService> logger,
-    AiIdeaSupportConfig config)
-    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger),
+    ILogger<AiIdeaSupportService> logger)
+    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(logger),
       IAiIdeaSupportService
 {
-    protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
+    protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request, ResolvedPlatformAiConfig platformConfig)
     {
+        var config       = platformConfig.IdeaSupport;
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
         var langName     = GetLanguageName(request.Language);
         var systemPrompt = config.SystemPrompt
@@ -101,19 +101,20 @@ public sealed class AiIdeaSupportService(
     }
 
     protected override IdeaSupportChatReply FallbackReply() =>
-        new() { AssistantMessage = config.FallbackMessage, Phase = IdeaSupportPhase.Error };
+        new() { AssistantMessage = "Er ging iets mis. Probeer het opnieuw.", Phase = IdeaSupportPhase.Error };
 
-    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, CancellationToken ct = default)
+    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))
             return new IdeaSupportRefineResult { RefinedText = null };
 
         try
         {
+            var config   = platformConfig.IdeaSupport;
             var prompt   = config.RefinePrompt
                 .Replace("{draft}",    draftText, StringComparison.OrdinalIgnoreCase)
                 .Replace("{language}", language,  StringComparison.OrdinalIgnoreCase);
-            var refined  = await SendSingleAsync([new(ChatRole.User, prompt)], ct);
+            var refined  = await SendSingleAsync([new(ChatRole.User, prompt)], platformConfig.ChatClient, ct);
 
             if (string.IsNullOrWhiteSpace(refined) || refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                 return new IdeaSupportRefineResult { RefinedText = null };

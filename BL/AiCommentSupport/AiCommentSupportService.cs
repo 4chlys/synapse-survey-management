@@ -1,19 +1,19 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
 public sealed class AiCommentSupportService(
-    IChatClient chatClient,
-    ILogger<AiCommentSupportService> logger,
-    AiCommentSupportConfig config)
-    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(chatClient, logger),
+    ILogger<AiCommentSupportService> logger)
+    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(logger),
       IAiCommentSupportService
 {
-    protected override List<ChatMessage> BuildMessages(CommentSupportRequest request)
+    protected override List<ChatMessage> BuildMessages(CommentSupportRequest request, ResolvedPlatformAiConfig platformConfig)
     {
+        var config       = platformConfig.CommentSupport;
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
         var langName     = GetLanguageName(request.Language);
         var systemPrompt = config.SystemPrompt
@@ -81,7 +81,7 @@ public sealed class AiCommentSupportService(
     }
 
     protected override CommentSupportReply FallbackReply() =>
-        new() { AssistantMessage = config.FallbackMessage, IsFinal = true };
+        new() { AssistantMessage = "Er ging iets mis. Probeer het opnieuw.", IsFinal = true };
 
     private static string GetLanguageName(string langCode)
     {

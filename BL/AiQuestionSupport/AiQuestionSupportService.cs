@@ -1,19 +1,19 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiQuestionSupport;
 
 public sealed class AiQuestionSupportService(
-    IChatClient chatClient,
-    ILogger<AiQuestionSupportService> logger,
-    AiQuestionSupportConfig config)
-    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(chatClient, logger),
+    ILogger<AiQuestionSupportService> logger)
+    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(logger),
       IAiQuestionSupportService
 {
-    protected override List<ChatMessage> BuildMessages(QuestionSupportChatRequest request)
+    protected override List<ChatMessage> BuildMessages(QuestionSupportChatRequest request, ResolvedPlatformAiConfig platformConfig)
     {
+        var config   = platformConfig.QuestionSupport;
         var messages = new List<ChatMessage> { new(ChatRole.System, config.SystemPrompt) };
 
         if (request.IsFirstTurn)
@@ -67,5 +67,5 @@ public sealed class AiQuestionSupportService(
     }
 
     protected override QuestionSupportChatReply FallbackReply() =>
-        new() { AssistantMessage = config.FallbackMessage };
+        new() { AssistantMessage = "Er ging iets mis. Probeer het opnieuw." };
 }
