@@ -22,6 +22,17 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Include(c => c.Translations).ThenInclude(t => t.Language)
             .Include(c => c.Ideas)
                 .ThenInclude(i => i.Comments)
+                    .ThenInclude(c => ((IconComment)c).Emoji)
+            .Include(c => c.Ideas)
+                .ThenInclude(i => i.Comments)
+                    .ThenInclude(c => ((IconComment)c).TextComment)
+            .Include(c => c.Ideas)
+                .ThenInclude(i => i.Comments)
+                    .ThenInclude(c => ((TextComment)c).EmojiReactions)
+                        .ThenInclude(ir => ir.Emoji)
+            .Include(c => c.Ideas)
+                .ThenInclude(i => i.Comments)
+                    .ThenInclude(c => c.Participant)
             .ToListAsync();
 
     public Task<Category> ReadByIdReadOnlyAsync(int categoryId)

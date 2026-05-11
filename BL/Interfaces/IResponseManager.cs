@@ -12,4 +12,5 @@ public interface IResponseManager
     Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(Participant participant);
     Task RetranslateResponsesForLanguageAsync(int participantId, Language targetLanguage, CancellationToken ct = default);
     Task RemoveAllAsync(Participant participant, CancellationToken ct = default);
+    Task<IEnumerable<Response>> GetCommittedResponsesForProjectReadOnlyAsync(int projectId);
 }
