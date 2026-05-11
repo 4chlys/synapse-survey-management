@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Data;
+using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
@@ -202,24 +203,76 @@ var tokenSecret = builder.Configuration["ApiKey"]
 builder.Services.AddSingleton<IModerationTokenService>(sp =>
     new ModerationTokenService(tokenSecret, sp.GetRequiredService<ILogger<ModerationTokenService>>()));
 
-// Vertex AI (optional — controlled by use_ai in ai-config.json)
+// AI chat clients — multi-provider registry (optional — controlled by use_ai in ai-config.json)
 if (useAi)
 {
-    var projectId = builder.Configuration["VertexAi:ProjectId"]
-                    ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
-    var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
-    var model = builder.Configuration["VertexAi:Model"] ?? "gemini-2.5-flash-lite";
+    var projectId    = builder.Configuration["VertexAi:ProjectId"]
+                       ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
+    var location     = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
     var embeddingModel = builder.Configuration["VertexAi:EmbeddingModel"] ?? "gemini-embedding-001";
-    var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
+    var endpoint     = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
     var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
-    var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
-        projectId, location, "google", model);
-    var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
-    builder.Services.AddChatClient(chatClient);
+    var chatClients = new Dictionary<string, IChatClient>();
 
-    // All AI features share the same IChatClient.
+    // Vertex AI models
+    foreach (var vertexModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.VertexAi))
+    {
+        try
+        {
+            var resource = EndpointName.FormatProjectLocationPublisherModel(projectId, location, "google", vertexModel.Id);
+            var client   = await predictionBuilder.BuildIChatClientAsync(resource);
+            chatClients[vertexModel.Id] = client;
+            tempLogger.LogInformation("[AI] Registered Vertex AI model: {Model}", vertexModel.Id);
+        }
+        catch (Exception ex)
+        {
+            tempLogger.LogWarning(ex, "[AI] Failed to register Vertex AI model {Model} — skipping.", vertexModel.Id);
+        }
+    }
+
+    // OpenAI
+    var openAiKey = builder.Configuration["OpenAi:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(openAiKey))
+    {
+        foreach (var openAiModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.OpenAi))
+        {
+            var openAiClient = new OpenAI.OpenAIClient(openAiKey);
+            chatClients[openAiModel.Id] = openAiClient.GetChatClient(openAiModel.Id).AsIChatClient();
+            tempLogger.LogInformation("[AI] Registered OpenAI model: {Model}", openAiModel.Id);
+        }
+    }
+
+    // Anthropic
+    var anthropicKey = builder.Configuration["Anthropic:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(anthropicKey))
+    {
+        foreach (var anthropicModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.Anthropic))
+        {
+            var anthropicClient = new Anthropic.SDK.AnthropicClient(anthropicKey);
+            chatClients[anthropicModel.Id] = (IChatClient)anthropicClient.Messages;
+            tempLogger.LogInformation("[AI] Registered Anthropic model: {Model}", anthropicModel.Id);
+        }
+    }
+
+    // Grok (OpenAI-compatible)
+    var xaiKey = builder.Configuration["Grok:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(xaiKey))
+    {
+        foreach (var grokModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.Grok))
+        {
+            var grokClient = new OpenAI.OpenAIClient(
+                new System.ClientModel.ApiKeyCredential(xaiKey),
+                new OpenAI.OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            chatClients[grokModel.Id] = grokClient.GetChatClient(grokModel.Id).AsIChatClient();
+            tempLogger.LogInformation("[AI] Registered Grok model: {Model}", grokModel.Id);
+        }
+    }
+
+    builder.Services.AddSingleton(new ChatClientRegistry(chatClients));
+
+    // All AI features share the ChatClientRegistry.
     builder.Services.AddScoped<IAiModerationService, AiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, AiIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
@@ -250,6 +303,7 @@ if (useAi)
 }
 else
 {
+    builder.Services.AddSingleton(new ChatClientRegistry(new Dictionary<string, IChatClient>()));
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
     builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
