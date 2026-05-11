@@ -20,6 +20,7 @@ stages:
   - build
   - scan
   - push
+  - sign
   - deploy
 
 .gcr_login: &gcr_login
@@ -198,6 +199,22 @@ push-prod:
     - docker push "${IMAGE_ADMIN}:latest"
   only:
     - main #reverse
+    - release/staging
+
+sign-prod:
+  stage: sign
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl docker-cli
+    - curl -sL https://github.com/sigstore/cosign/releases/download/v2.4.1/cosign-linux-amd64 -o /usr/local/bin/cosign
+    - chmod +x /usr/local/bin/cosign
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
+  script:
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key "${COSIGN_PRIVATE_KEY}" --yes "${IMAGE_API}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key "${COSIGN_PRIVATE_KEY}" --yes "${IMAGE_UI}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key "${COSIGN_PRIVATE_KEY}" --yes "${IMAGE_ADMIN}:${IMAGE_TAG}"
+  only:
+    - main
     - release/staging
 
 deploy-test:
