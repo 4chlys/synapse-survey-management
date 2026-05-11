@@ -15,4 +15,6 @@ public interface IResponseRepository : IRepository<Response>
     Task<IEnumerable<Response>> ReadByParticipantWithQuestionReadOnlyAsync(int participantId);
 
     Task DeleteAllByParticipantIdAsync(int participantId);
+
+    Task<IEnumerable<Response>> ReadCommittedByProjectWithQuestionReadOnlyAsync(int projectId);
 }

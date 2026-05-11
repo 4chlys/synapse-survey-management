@@ -66,6 +66,12 @@
   <data name="ImageUpload_NotAllowed" xml:space="preserve">
     <value>De afbeelding is niet toegestaan.</value>
   </data>
+  <data name="ImageDescribe_Loading" xml:space="preserve">
+    <value>Afbeelding wordt omschreven…</value>
+  </data>
+  <data name="ImageDescribe_Failed" xml:space="preserve">
+    <value>De afbeelding kon niet worden omschreven. Probeer opnieuw.</value>
+  </data>
   <data name="SpeechToText_EmptyRecording" xml:space="preserve">
     <value>Lege opname ontvangen.</value>
   </data>

@@ -25,7 +25,7 @@
 
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-5">
-            <form asp-action="Create" method="post" class="flex flex-col gap-5">
+            <form id="project-form" asp-action="Create" method="post" class="flex flex-col gap-5">
                 @Html.AntiForgeryToken()
                 @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
                 <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
@@ -74,7 +74,7 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">Soort enquête</span></div>
+                        <div class="label"><span class="label-text font-medium">Soort enqu&ecirc;te</span></div>
                         <select asp-for="InteractionMode" class="select select-bordered w-full">
                             <option value="VerticalScroll">Verticaal scrollen</option>
                             <option value="Paginated">Chat</option>
@@ -134,15 +134,26 @@
                     </label>
                 </div>
 
+                @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
+                {
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-3">
+                            <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
+                            <span class="label-text">Meertalige idee&euml;n toestaan</span>
+                        </label>
+                        <span class="label-text-alt">Sta toe dat deelnemers idee&euml;n in andere projecttalen zien en indienen</span>
+                    </div>
+                }
+
                 <div class="divider my-0">Secties</div>
 
-                <div id="sections-container" class="flex flex-col gap-2">
+                <div id="sections-container" class="flex flex-col gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
                     @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                     {
                         <div class="flex gap-2 items-center section-row">
                             <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
                                    class="input input-bordered input-sm flex-1" placeholder="Sectienaam" />
-                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>
+                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
                         </div>
                     }
                 </div>
@@ -152,52 +163,93 @@
                 </button>
 
                 </fieldset>
-
-                @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
-                {
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-3">
-                            <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
-                            <span class="label-text">Meertalige ideeën toestaan</span>
-                        </label>
-                        <span class="label-text-alt">Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</span>
-                    </div>
-                }
-
-                <div class="card-actions justify-end gap-2 pt-2">
-                    @if (!isLocked)
-                    {
-                        <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
-                        <button type="submit" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
-                        <button type="submit" name="submitAction" value="next" class="btn btn-primary">Volgende →</button>
-                    }
-                    else
-                    {
-                        <a asp-action="Index" class="btn btn-ghost">Terug</a>
-                        @if (Model.ProjectId.HasValue)
-                        {
-                            <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende →</a>
-                        }
-                    }
-                </div>
             </form>
+
+            @if (isLocked && Model.ProjectId.HasValue)
+            {
+                <div class="divider my-0">Exporteren</div>
+
+                <button type="button" class="btn btn-outline btn-sm gap-1.5"
+                        onclick="document.getElementById('rawdata-modal').showModal()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                    Exporteer ruwe data
+                </button>
+
+                <dialog id="rawdata-modal" class="modal"
+                        data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
+                    <div class="modal-box">
+                        <h3 class="font-bold text-lg mb-4">Ruwe data exporteren</h3>
+
+                        <p class="text-sm text-base-content/60 mb-3">Selecteer de gegevens die je wilt exporteren:</p>
+
+                        <div class="form-control gap-2 mb-4">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
+                                <span class="label-text">Vragen</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
+                                <span class="label-text">Antwoorden</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
+                                <span class="label-text">Categorie&euml;n</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
+                                <span class="label-text">Idee&euml;n</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
+                                <span class="label-text">Comments</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
+                                <span class="label-text">Emoji-reacties (detail)</span>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-sm font-medium">Formaat:</span>
+                            <select id="rawdata-format" class="select select-bordered select-sm w-40">
+                                <option value="xlsx">Excel (.xlsx)</option>
+                                <option value="csv">CSV (.zip)</option>
+                            </select>
+                        </div>
+
+                        <div class="modal-action">
+                            <form method="dialog">
+                                <button class="btn btn-ghost btn-sm">Annuleren</button>
+                            </form>
+                            <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">Exporteren</button>
+                        </div>
+                    </div>
+                    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+                </dialog>
+            }
+
+            <div class="card-actions justify-end gap-2 pt-2">
+                @if (!isLocked)
+                {
+                    <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
+                    <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
+                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">Volgende &rarr;</button>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-ghost">Terug</a>
+                    @if (Model.ProjectId.HasValue)
+                    {
+                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende &rarr;</a>
+                    }
+                }
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script type="module">
-        let idx = @(Model.Sections?.Count ?? 0);
-        document.getElementById('add-section').addEventListener('click', () => {
-            const row = document.createElement('div');
-            row.className = 'flex gap-2 items-center section-row';
-            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
-            document.getElementById('sections-container').appendChild(row);
-            idx++;
-        });
-        document.getElementById('sections-container').addEventListener('click', e => {
-            if (e.target.classList.contains('remove-section')) e.target.closest('.section-row').remove();
-        });
-    </script>
 }
