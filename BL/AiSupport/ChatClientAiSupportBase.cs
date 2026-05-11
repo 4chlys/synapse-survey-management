@@ -3,12 +3,11 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.BL.AiSupport;
 
-public abstract class ChatClientAiSupportBase<TRequest, TReply>(
-    IChatClient chatClient,
-    ILogger logger)
+public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger)
     : IAiSupportService<TRequest, TReply>
 {
     protected static readonly Regex CodeFenceRe =
@@ -21,12 +20,12 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(
         DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public async Task<TReply> ChatAsync(TRequest request, CancellationToken ct = default)
+    public async Task<TReply> ChatAsync(TRequest request, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default)
     {
         try
         {
-            var messages = BuildMessages(request);
-            var raw      = await SendSingleAsync(messages, ct);
+            var messages = BuildMessages(request, platformConfig);
+            var raw      = await SendSingleAsync(messages, platformConfig.ChatClient, ct);
 
             if (string.IsNullOrWhiteSpace(raw))
                 return FallbackReply();
@@ -39,19 +38,18 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "[{Domain}] Chat call failed; returning fallback.",
-                GetType().Name);
+            logger.LogWarning(ex, "[{Domain}] Chat call failed; returning fallback.", GetType().Name);
             return FallbackReply();
         }
     }
 
-    protected abstract List<ChatMessage> BuildMessages(TRequest request);
+    protected abstract List<ChatMessage> BuildMessages(TRequest request, ResolvedPlatformAiConfig platformConfig);
     protected abstract TReply ParseRawReply(string raw, TRequest request);
     protected abstract TReply FallbackReply();
 
-    protected async Task<string> SendSingleAsync(List<ChatMessage> messages, CancellationToken ct)
+    protected static async Task<string> SendSingleAsync(List<ChatMessage> messages, IChatClient client, CancellationToken ct)
     {
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        var response = await client.GetResponseAsync(messages, cancellationToken: ct);
         return response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
     }
 
