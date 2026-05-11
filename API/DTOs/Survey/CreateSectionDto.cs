@@ -1,11 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class CreateSectionDto
 {
-    [Required][MaxLength(20)]
-    public string Name { get; set; }
-
-    [MaxLength(100)]
-    public string Description { get; set; }
+    [Required]
+    public ICollection<SectionTranslationDto> Translations { get; set; } = new List<SectionTranslationDto>();
 }

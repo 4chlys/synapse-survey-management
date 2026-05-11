@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
@@ -28,13 +29,14 @@ public class IdeasController(
         int projectId, int categoryId,
         [FromQuery][Range(1, int.MaxValue)] int page = 1,
         [FromQuery] string sort = null,
+        [FromQuery] bool? showAllLanguages = null,
         CancellationToken ct = default)
     {
-        var participantId = await ResolveParticipantIdAsync();
+        var (participantId, participantLanguageCode) = await ResolveParticipantWithLanguageAsync();
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var pageSize = project?.IdeaPageSize ?? 5;
 
-        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, ct);
+        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, participantLanguageCode, showAllLanguages ?? false, ct);
 
         return Ok(new IdeaIndexResponseDto
         {
@@ -54,7 +56,7 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct);
+        var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
         string permanentImageUrl = null;
         if (!string.IsNullOrEmpty(dto.ImageUrl))
@@ -77,8 +79,21 @@ public class IdeasController(
                 status = ModerationStatus.Flagged;
         }
 
+        string submissionLanguageCode = null;
+        if (!string.IsNullOrEmpty(dto.LanguageCode))
+        {
+            var project = await GetProjectByIdReadOnlyAsync(projectId);
+            if (project?.AllowCrossLanguageIdeas == true)
+            {
+                if (project.SupportedLanguages.Any(l => string.Equals(l.Code, dto.LanguageCode, StringComparison.OrdinalIgnoreCase)))
+                    submissionLanguageCode = dto.LanguageCode;
+                else
+                    return BadRequest(new { error = "Invalid submission language code." });
+            }
+        }
+
         var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant,
-            permanentImageUrl, ct);
+            permanentImageUrl, submissionLanguageCode, ct);
 
         return Created(string.Empty, new CreateIdeaResultDto
         {
@@ -137,6 +152,13 @@ public class IdeasController(
         return p?.ParticipantId;
     }
 
+    private async Task<(int? participantId, string participantLanguageCode)> ResolveParticipantWithLanguageAsync()
+    {
+        if (!TryGetParticipantToken(out var token)) return (null, null);
+        var p = await GetParticipantByTokenAsync(token);
+        return (p?.ParticipantId, p?.Language?.Code);
+    }
+
     private static IdeaDto MapIdeaToDto(Idea i, int? participantId) => new()
     {
         IdeaId = i.IdeaId,
@@ -146,6 +168,7 @@ public class IdeasController(
         CommentsCount = i.Comments.OfType<TextComment>().Count(),
         IsOwnedByCurrentUser = participantId.HasValue && i.Participant?.ParticipantId == participantId.Value,
         IsFlagged = i.Status == ModerationStatus.Flagged,
+        LanguageCode = i.Language?.Code,
         Emojis = GroupEmojiReactions(i.Comments.OfType<IconComment>(), participantId)
     };
 
@@ -157,6 +180,7 @@ public class IdeasController(
         IsOwnedByCurrentUser = participantId.HasValue && c.Participant?.ParticipantId == participantId.Value,
         IsPostedByIdeaAuthor = ideaAuthorParticipantId.HasValue && c.Participant?.ParticipantId == ideaAuthorParticipantId.Value,
         IsFlagged = c.ModerationStatus == ModerationStatus.Flagged,
+        LanguageCode = c.Language?.Code,
         Emojis = GroupEmojiReactions(c.EmojiReactions.Where(r => r.Emoji != null), participantId)
     };
 

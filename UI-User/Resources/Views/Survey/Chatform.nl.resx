@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ChatFormAriaLabel" xml:space="preserve">
+    <value>Chat formulier</value>
+  </data>
+  <data name="PreviousQuestionAriaLabel" xml:space="preserve">
+    <value>Vorige vraag</value>
+  </data>
+  <data name="RestartSurveyAriaLabel" xml:space="preserve">
+    <value>Herstart enquête</value>
+  </data>
+  <data name="ConversationHistoryAriaLabel" xml:space="preserve">
+    <value>Gespreksgeschiedenis</value>
+  </data>
+  <data name="TypeHerePlaceholder" xml:space="preserve">
+    <value>Typ hier...</value>
+  </data>
+  <data name="TypeYourAnswerAriaLabel" xml:space="preserve">
+    <value>Typ je antwoord</value>
+  </data>
+  <data name="SendAriaLabel" xml:space="preserve">
+    <value>Verstuur</value>
+  </data>
+</root>

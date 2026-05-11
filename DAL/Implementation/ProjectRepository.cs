@@ -6,22 +6,29 @@ namespace SynapseEnqueteManagement.DAL.Implementation;
 
 public class ProjectRepository(DbContext context) : Repository<Project>(context), IProjectRepository
 {
+    private static IQueryable<Project> WithLanguageGraph(IQueryable<Project> query)
+        => query
+            .Include(p => p.DefaultLanguage)
+            .Include(p => p.SupportedLanguages)
+            .Include(p => p.Translations).ThenInclude(t => t.Language);
+
     public Task<Project> ReadByIdReadOnlyAsync(int projectId)
-        => Context.Set<Project>()
-            .AsNoTracking()
-            .Include(p => p.ProjectPlatform)
+        => WithLanguageGraph(Context.Set<Project>().AsNoTracking()
+                .Include(p => p.ProjectPlatform))
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
     public Task<Project> ReadByIdWithIntroductionReadOnlyAsync(int projectId)
-        => Context.Set<Project>()
-            .AsNoTracking()
-            .Include(p => p.ProjectPlatform)
-            .Include(p => p.Introduction)
+        => WithLanguageGraph(Context.Set<Project>().AsNoTracking()
+                .Include(p => p.ProjectPlatform)
+                .Include(p => p.Introduction).ThenInclude(i => i.Translations).ThenInclude(t => t.Language))
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
     public Task<Project> ReadByIdWithIntroductionForUpdateAsync(int projectId)
         => Context.Set<Project>()
-            .Include(p => p.Introduction)
+            .Include(p => p.Introduction).ThenInclude(i => i.Translations)
+            .Include(p => p.DefaultLanguage)
+            .Include(p => p.SupportedLanguages)
+            .Include(p => p.Translations).ThenInclude(t => t.Language)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
     public Task<Project> ReadByIdWithEmojisForUpdateAsync(int projectId)
@@ -46,15 +53,14 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
                            && (excludeProjectId == null || p.ProjectId != excludeProjectId));
 
     public Task<Project> ReadByShortFormReadOnlyAsync(string shortForm)
-        => Context.Set<Project>()
-            .AsNoTracking()
+        => WithLanguageGraph(Context.Set<Project>().AsNoTracking())
             .FirstOrDefaultAsync(p => p.ShortForm == shortForm);
 
     public async Task<IEnumerable<Project>> ReadAllWithPlatformReadOnlyAsync(int? platformId = null)
     {
-        IQueryable<Project> query = Context.Set<Project>()
+        IQueryable<Project> query = WithLanguageGraph(Context.Set<Project>()
             .AsNoTracking()
-            .Include(p => p.ProjectPlatform);
+            .Include(p => p.ProjectPlatform));
 
         if (platformId.HasValue)
             query = query.Where(p => p.ProjectPlatformId == platformId.Value);
@@ -65,14 +71,37 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
     public Task<Project> ReadByIdForDuplicationReadOnlyAsync(int projectId)
         => Context.Set<Project>()
             .AsNoTracking()
-            .Include(p => p.Introduction)
+            .Include(p => p.Introduction).ThenInclude(i => i.Translations).ThenInclude(t => t.Language)
             .Include(p => p.Emojis)
-            .Include(p => p.Categories)
-            .Include(p => p.Questionnaire).ThenInclude(q => q.Sections)
-            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.EndingAnswers)
+            .Include(p => p.Categories).ThenInclude(c => c.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.DefaultLanguage)
+            .Include(p => p.SupportedLanguages)
+            .Include(p => p.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Sections).ThenInclude(s => s.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.EndingAnswers).ThenInclude(ea => ea.Translations).ThenInclude(t => t.Language)
             .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.Section)
             .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.ParentQuestion)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
+    public Task<Project> ReadByIdWithTranslationsReadOnlyAsync(int projectId)
+        => WithLanguageGraph(Context.Set<Project>().AsNoTracking())
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
+    public Task<Project> ReadByIdWithTranslationsAndLanguagesForUpdateAsync(int projectId)
+        => Context.Set<Project>()
+            .Include(p => p.DefaultLanguage)
+            .Include(p => p.SupportedLanguages)
+            .Include(p => p.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Introduction).ThenInclude(i => i.Translations).ThenInclude(t => t.Language)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
+    public Task<ProjectTranslation> ReadTranslationForUpdateAsync(int projectId, string languageCode)
+        => Context.Set<ProjectTranslation>()
+            .Include(t => t.Language)
+            .FirstOrDefaultAsync(t =>
+                EF.Property<int>(t, "ProjectId") == projectId
+                && EF.Property<string>(t, "LanguageCode") == languageCode);
 
     public async Task<bool> DeleteWithRelationsAsync(int projectId)
     {
@@ -89,6 +118,7 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
                 .ThenInclude(q => q.Questions)
                     .ThenInclude(q => q.EndingAnswers)
             .Include(p => p.Introduction)
+            .Include(p => p.Translations)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
         if (project is null)

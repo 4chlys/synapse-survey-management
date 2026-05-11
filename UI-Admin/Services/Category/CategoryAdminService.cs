@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Category;
@@ -17,19 +17,29 @@ public class CategoryAdminService(HttpClient httpClient)
                ?? new List<CategoryViewModel>();
     }
 
-    public async Task CreateCategoryAsync(int projectId, string name, string
-        description)
+    public async Task CreateCategoryAsync(int projectId, string name, string description)
     {
-        var payload = new { Name = name, Description = description };
+        var payload = new
+        {
+            Translations = new[]
+            {
+                new { LanguageCode = "nl", Name = name, Description = description }
+            }
+        };
         var response = await
             httpClient.PostAsJsonAsync($"api/projects/{projectId}/categories", payload);
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task UpdateCategoryAsync(int projectId, int categoryId, string
-        name, string description)
+    public async Task UpdateCategoryAsync(int projectId, int categoryId, string name, string description)
     {
-        var payload = new { Name = name, Description = description };
+        var payload = new
+        {
+            Translations = new[]
+            {
+                new { LanguageCode = "nl", Name = name, Description = description }
+            }
+        };
         var response = await httpClient.PutAsJsonAsync(
             $"api/projects/{projectId}/categories/{categoryId}", payload);
         response.EnsureSuccessStatusCode();

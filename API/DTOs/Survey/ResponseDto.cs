@@ -6,4 +6,5 @@ public class ResponseDto
     public string Value { get; set; }
     public int QuestionId { get; set; }
     public int ParticipantId { get; set; }
+    public string LanguageCode { get; set; }
 }

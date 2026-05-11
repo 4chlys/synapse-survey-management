@@ -6,7 +6,7 @@ public class Introduction
 {
     public int IntroductionId { get; set; }
 
-    [Required] [MaxLength(5000)] public string Text { get; set; }
-
     [Required] public Project Project { get; set; }
+
+    public ICollection<IntroductionTranslation> Translations { get; set; } = new List<IntroductionTranslation>();
 }

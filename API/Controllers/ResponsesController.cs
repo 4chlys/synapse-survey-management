@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.DTOs.Participants;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -14,9 +15,27 @@ public class ResponsesController(
     IParticipantManager participantManager,
     IResponseManager responseManager,
     ISubmissionManager submissionManager,
-    IProjectManager projectManager)
+    IProjectManager projectManager,
+    IParticipantLanguageCoordinator participantLanguageCoordinator)
     : ParticipantControllerBase(participantManager, projectManager)
 {
+    [HttpPatch("participants/me/language")]
+    public async Task<ActionResult> SetLanguage(int projectId, SetParticipantLanguageDto dto, CancellationToken ct)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
+        try
+        {
+            await participantLanguageCoordinator.SwitchLanguageAsync(participant.ParticipantId, dto.LanguageCode, ct);
+        }
+        catch (KeyNotFoundException)
+        {
+            return BadRequest("Unknown or inactive language code.");
+        }
+        return NoContent();
+    }
+
     [HttpPatch("participants/me/contact")]
     public async Task<ActionResult> SaveContactInfo(int projectId, SaveContactInfoDto dto, CancellationToken ct)
     {
@@ -28,9 +47,9 @@ public class ResponsesController(
     }
 
     [HttpPost("participants")]
-    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, CancellationToken ct)
+    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, [FromQuery] string languageCode, CancellationToken ct)
     {
-        var participant = await AddParticipantAsync(projectId, ct);
+        var participant = await AddParticipantAsync(projectId, languageCode ?? "nl", ct);
         return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
     }
 
@@ -95,7 +114,8 @@ public class ResponsesController(
             ResponseId = response.ResponseId,
             Value = response.Value,
             QuestionId = response.Question?.QuestionId ?? 0,
-            ParticipantId = response.Participant?.ParticipantId ?? 0
+            ParticipantId = response.Participant?.ParticipantId ?? 0,
+            LanguageCode = response.Language?.Code
         };
     }
 }

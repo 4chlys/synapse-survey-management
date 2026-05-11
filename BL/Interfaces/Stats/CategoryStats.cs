@@ -11,5 +11,6 @@ public record IdeaFeedItem(
     DateTime CreatedAt,
     ModerationStatus Status,
     string ParticipantEmail,
-    string ImageUrl = null);
+    string ImageUrl = null,
+    string LanguageCode = null);
 public record ModerationQueueResult(int Approved, int Declined, int Flagged, int Unflagged);

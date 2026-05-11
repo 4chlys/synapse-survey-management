@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace SynapseEnqueteManagement.DAL.Tests.Integration;
 
 public class RepositoryTests : IDisposable
@@ -11,8 +13,11 @@ public class RepositoryTests : IDisposable
     {
         // Arrange
         await using var arrangeContext = _db.NewContext();
+        var language = TestEntities.NewLanguage();
+        arrangeContext.Languages.Add(language);
+        await arrangeContext.SaveChangesAsync();
         var repository = new Repository<Project>(arrangeContext);
-        var project = TestEntities.NewProject();
+        var project = TestEntities.NewProject(language);
 
         // Act
         await repository.CreateAsync(project);
@@ -27,16 +32,20 @@ public class RepositoryTests : IDisposable
     {
         // Arrange
         await using var seedContext = _db.NewContext();
-        var project = TestEntities.NewProject("Original");
+        var language = TestEntities.NewLanguage();
+        seedContext.Languages.Add(language);
+        var project = TestEntities.NewProject(language, "Original");
         seedContext.Projects.Add(project);
         await seedContext.SaveChangesAsync();
         var projectId = project.ProjectId;
 
         await using var actContext = _db.NewContext();
-        var tracked = await actContext.Projects.FindAsync(projectId);
+        var tracked = await actContext.Projects
+            .Include(p => p.Translations)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
         if (tracked != null)
         {
-            tracked.Name = "Modified";
+            tracked.Translations.First().Name = "Modified";
             var repository = new Repository<Project>(actContext);
 
             // Act
@@ -45,8 +54,10 @@ public class RepositoryTests : IDisposable
 
         // Assert
         await using var verifyContext = _db.NewContext();
-        var stored = await verifyContext.Projects.FindAsync(projectId);
-        Assert.Equal("Original", stored?.Name);
+        var stored = await verifyContext.Projects
+            .Include(p => p.Translations)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+        Assert.Equal("Original", stored?.Translations.First().Name);
     }
 
     [Fact]

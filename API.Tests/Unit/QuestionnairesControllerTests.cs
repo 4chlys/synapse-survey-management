@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SynapseEnqueteManagement.API.Controllers;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -42,8 +43,12 @@ public class QuestionnairesControllerTests
     {
         var dto = new CreateQuestionDto
         {
-            Text = "Question",
             QuestionFormat = "Open",
+            AnswerChoiceCount = 0,
+            Translations = new List<QuestionTranslationDto>
+            {
+                new() { LanguageCode = "nl", Text = "Question", AnswerChoices = new List<string>() }
+            },
             MediaUrl = "https://example.com/img.jpg",
             MediaType = BL.Domain.Project.Enums.QuestionMediaType.Image,
             MediaIsEmbed = true
@@ -51,16 +56,18 @@ public class QuestionnairesControllerTests
 
         _questionnaireManager
             .Setup(m => m.AddQuestionAsync(
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionFormat>(),
-                It.IsAny<bool>(), It.IsAny<List<string>>(), It.IsAny<int?>(),
-                It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<List<string>>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<BL.Domain.Project.Enums.QuestionFormat>(),
+                It.IsAny<bool>(), It.IsAny<IEnumerable<QuestionTranslationInput>>(), It.IsAny<int?>(),
+                It.IsAny<int?>(), It.IsAny<int?>(),
+                It.IsAny<IEnumerable<IEnumerable<EndingAnswerTranslationInput>>>(),
                 It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionMediaType?>(),
-                It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BL.Domain.Project.Entities.Question
             {
-                QuestionId = 1, Text = "Question",
+                QuestionId = 1,
                 QuestionFormat = BL.Domain.Project.Enums.QuestionFormat.Open,
-                AnswerChoices = new List<string>(),
+                AnswerChoiceCount = 0,
+                Translations = new List<BL.Domain.Project.Entities.QuestionTranslation>(),
                 EndingAnswers = new List<BL.Domain.Project.Entities.EndingAnswer>()
             });
 
@@ -74,8 +81,12 @@ public class QuestionnairesControllerTests
     {
         var dto = new CreateQuestionDto
         {
-            Text = "Question",
             QuestionFormat = "Open",
+            AnswerChoiceCount = 0,
+            Translations = new List<QuestionTranslationDto>
+            {
+                new() { LanguageCode = "nl", Text = "Question", AnswerChoices = new List<string>() }
+            },
             MediaUrl = "https://evil.example.com/stream",
             MediaType = BL.Domain.Project.Enums.QuestionMediaType.Video,
             MediaIsEmbed = true
@@ -92,8 +103,12 @@ public class QuestionnairesControllerTests
     {
         var dto = new CreateQuestionDto
         {
-            Text = "Question",
             QuestionFormat = "Open",
+            AnswerChoiceCount = 0,
+            Translations = new List<QuestionTranslationDto>
+            {
+                new() { LanguageCode = "nl", Text = "Question", AnswerChoices = new List<string>() }
+            },
             MediaUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             MediaType = BL.Domain.Project.Enums.QuestionMediaType.Video,
             MediaIsEmbed = true
@@ -102,21 +117,23 @@ public class QuestionnairesControllerTests
         var capturedUrl = string.Empty;
         _questionnaireManager
             .Setup(m => m.AddQuestionAsync(
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionFormat>(),
-                It.IsAny<bool>(), It.IsAny<List<string>>(), It.IsAny<int?>(),
-                It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<List<string>>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<BL.Domain.Project.Enums.QuestionFormat>(),
+                It.IsAny<bool>(), It.IsAny<IEnumerable<QuestionTranslationInput>>(), It.IsAny<int?>(),
+                It.IsAny<int?>(), It.IsAny<int?>(),
+                It.IsAny<IEnumerable<IEnumerable<EndingAnswerTranslationInput>>>(),
                 It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionMediaType?>(),
-                It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<int, string, BL.Domain.Project.Enums.QuestionFormat, bool,
-                List<string>, int?, int?, string, List<string>,
-                string, BL.Domain.Project.Enums.QuestionMediaType?, bool, string, CancellationToken>(
-                (_, _, _, _, _, _, _, _, _, url, _, _, _, _) => capturedUrl = url)
+                It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Callback<int, int, BL.Domain.Project.Enums.QuestionFormat, bool,
+                IEnumerable<QuestionTranslationInput>, int?, int?, int?,
+                IEnumerable<IEnumerable<EndingAnswerTranslationInput>>,
+                string, BL.Domain.Project.Enums.QuestionMediaType?, bool, CancellationToken>(
+                (_, _, _, _, _, _, _, _, _, url, _, _, _) => capturedUrl = url)
             .ReturnsAsync(new BL.Domain.Project.Entities.Question
             {
                 QuestionId = 1,
-                Text = "Question",
                 QuestionFormat = BL.Domain.Project.Enums.QuestionFormat.Open,
-                AnswerChoices = new List<string>(),
+                AnswerChoiceCount = 0,
+                Translations = new List<BL.Domain.Project.Entities.QuestionTranslation>(),
                 EndingAnswers = new List<BL.Domain.Project.Entities.EndingAnswer>()
             });
 
@@ -138,26 +155,31 @@ public class QuestionnairesControllerTests
             .ReturnsAsync(new BL.Domain.Project.Entities.Question
             {
                 QuestionId = questionId,
-                Text = "q",
                 QuestionFormat = BL.Domain.Project.Enums.QuestionFormat.Open,
+                AnswerChoiceCount = 0,
                 MediaUrl = oldUrl,
                 MediaType = BL.Domain.Project.Enums.QuestionMediaType.Image,
                 MediaIsEmbed = false,
-                AnswerChoices = new List<string>(),
+                Translations = new List<BL.Domain.Project.Entities.QuestionTranslation>(),
                 EndingAnswers = new List<BL.Domain.Project.Entities.EndingAnswer>()
             });
         _questionnaireManager.Setup(m => m.UpdateQuestionAsync(
-            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionFormat>(),
-            It.IsAny<bool>(), It.IsAny<List<string>>(), It.IsAny<int?>(), It.IsAny<List<string>>(),
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<BL.Domain.Project.Enums.QuestionFormat>(),
+            It.IsAny<bool>(), It.IsAny<IEnumerable<QuestionTranslationInput>>(), It.IsAny<int?>(),
+            It.IsAny<IEnumerable<IEnumerable<EndingAnswerTranslationInput>>>(),
             It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionMediaType?>(),
-            It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _storageService.Setup(s => s.DeleteAsync(oldUrl)).Returns(Task.CompletedTask);
 
         var dto = new UpdateQuestionDto
         {
-            Text = "q",
             QuestionFormat = "Open",
+            AnswerChoiceCount = 0,
+            Translations = new List<QuestionTranslationDto>
+            {
+                new() { LanguageCode = "nl", Text = "q", AnswerChoices = new List<string>() }
+            },
             MediaUrl = "http://localhost/uploads/questions/images/new.jpg",
             MediaType = BL.Domain.Project.Enums.QuestionMediaType.Image,
             MediaIsEmbed = false

@@ -16,6 +16,7 @@ public class ProjectAdminService(HttpClient httpClient)
         public int? MinAge { get; set; }
         public int? MaxAge { get; set; }
         public bool RequestContactInfo { get; set; }
+        public bool AllowCrossLanguageIdeas { get; set; }
         public int IdeaPageSize { get; set; }
         public bool ExtraIdeasReplaceExisting { get; set; }
         public int MaxExtraIdeaRequests { get; set; }
@@ -42,9 +43,9 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
+    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false)
     {
-        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId };
+        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
@@ -71,9 +72,9 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
+    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false)
     {
-        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests };
+        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();

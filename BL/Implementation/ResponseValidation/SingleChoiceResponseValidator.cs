@@ -10,7 +10,10 @@ public class SingleChoiceResponseValidator : IResponseValidator
 
     public void Validate(string value, Question question)
     {
-        if (!question.AnswerChoices.Contains(value))
+        var allChoices = question.Translations?
+            .SelectMany(t => t.AnswerChoices ?? Enumerable.Empty<string>())
+            ?? Enumerable.Empty<string>();
+        if (!allChoices.Contains(value))
             throw new ArgumentException("Invalid answer: choice is not in the list.", nameof(value));
     }
 }

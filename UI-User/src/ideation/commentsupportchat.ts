@@ -11,6 +11,7 @@
  */
 
 import { CommentSupportSession } from './commentsupport';
+import { t } from '../lib/i18n';
 import { escapeHtml, renderMarkdown, setupAutoGrow } from './ai-support-base';
 
 // DOM references
@@ -119,10 +120,7 @@ async function fireOpeningTurn(): Promise<void> {
     } catch {
         hideLoading();
         setSendingState(false);
-        appendAssistantBubble(
-            'Sorry, de assistent is even niet beschikbaar. ' +
-            'Schrijf je reactie in het tekstvak hieronder.',
-        );
+        appendAssistantBubble(t('aiChatAssistantUnavailableComment'));
     }
 }
 
@@ -156,7 +154,7 @@ async function handleSend(): Promise<void> {
         hideLoading();
         setSendingState(false);
         showInput(true);
-        appendAssistantBubble('Er is iets misgegaan. Probeer het opnieuw.');
+        appendAssistantBubble(t('aiChatError'));
     }
 }
 
@@ -170,14 +168,14 @@ function showSubmitUI(suggestion: string | null): void {
         // Show two option cards
         const label = document.createElement('p');
         label.className = 'text-xs font-semibold text-primary uppercase tracking-wide px-1';
-        label.textContent = 'Kies welke versie je wil plaatsen:';
+        label.textContent = t('aiChatChooseVersion');
         wrapper.appendChild(label);
 
-        wrapper.appendChild(buildCommentCard('Jouw versie', userDraftComment ?? '', false));
-        wrapper.appendChild(buildCommentCard('Voorstel van AI', suggestion, true));
+        wrapper.appendChild(buildCommentCard(t('aiChatYourVersion'), userDraftComment ?? '', false));
+        wrapper.appendChild(buildCommentCard(t('aiChatAiSuggestion'), suggestion, true));
     } else {
         // No meaningful suggestion — just show submit button for user's own text
-        const card = buildCommentCard('Jouw reactie', userDraftComment ?? '', true);
+        const card = buildCommentCard(t('aiChatYourComment'), userDraftComment ?? '', true);
         wrapper.appendChild(card);
     }
 
@@ -208,7 +206,7 @@ function buildCommentCard(label: string, text: string, isPrimary: boolean): HTML
           'hover:bg-primary/90 active:scale-95 transition-all cursor-pointer'
         : 'w-full py-2 rounded-xl border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
           'hover:bg-base-200 active:scale-95 transition-all cursor-pointer';
-    btn.textContent = 'Plaatsen';
+    btn.textContent = t('submitFallback');
 
     btn.addEventListener('click', () => {
         btn.disabled = true;

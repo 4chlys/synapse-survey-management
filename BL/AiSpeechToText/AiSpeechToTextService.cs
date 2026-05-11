@@ -27,13 +27,19 @@ public sealed class AiSpeechToTextService(
         // Strip codec parameters for the base-type check (e.g. "audio/webm;codecs=opus" → "audio/webm").
         var baseType = request.MimeType.Split(';')[0].Trim();
         if (!SupportedBaseMimeTypes.Contains(baseType))
-            return SpeechToTextResult.Failed($"Audioformaat '{baseType}' wordt niet ondersteund.");
+            return SpeechToTextResult.Failed(
+                SpeechToTextErrorCodes.UnsupportedFormat,
+                $"Audio format '{baseType}' is not supported.");
 
         if (request.AudioData.Length == 0)
-            return SpeechToTextResult.Failed("Geen audiodata ontvangen.");
+            return SpeechToTextResult.Failed(
+                SpeechToTextErrorCodes.EmptyAudio,
+                "No audio data received.");
 
         if (request.AudioData.Length > config.MaxAudioSizeBytes)
-            return SpeechToTextResult.Failed("De opname is te lang. Houd het onder 30 seconden.");
+            return SpeechToTextResult.Failed(
+                SpeechToTextErrorCodes.TooLong,
+                "Recording exceeds the configured maximum length.");
 
         try
         {
@@ -42,10 +48,13 @@ public sealed class AiSpeechToTextService(
                 new ReadOnlyMemory<byte>(request.AudioData),
                 request.MimeType);
 
+            var prompt = config.TranscriptionPrompt
+                .Replace("{language}", GetLanguageName(request.Language), StringComparison.OrdinalIgnoreCase);
+
             var message = new ChatMessage(ChatRole.User,
             [
                 audioContent,
-                new TextContent(config.TranscriptionPrompt),
+                new TextContent(prompt),
             ]);
 
             var response = await chatClient.GetResponseAsync(
@@ -54,7 +63,9 @@ public sealed class AiSpeechToTextService(
             var transcript = response.Messages.LastOrDefault()?.Text?.Trim();
 
             if (string.IsNullOrWhiteSpace(transcript))
-                return SpeechToTextResult.Failed("Geen spraak herkend in de opname.");
+                return SpeechToTextResult.Failed(
+                    SpeechToTextErrorCodes.NoSpeech,
+                    "No speech recognised in the recording.");
 
             return SpeechToTextResult.Success(transcript);
         }
@@ -66,7 +77,14 @@ public sealed class AiSpeechToTextService(
         {
             logger.LogWarning(ex, "[SpeechToText] Transcription failed.");
             return SpeechToTextResult.Failed(
-                "Spraakherkenning is momenteel niet beschikbaar. Typ je bericht handmatig.");
+                SpeechToTextErrorCodes.ServiceUnavailable,
+                "Transcription service is currently unavailable.");
         }
+    }
+
+    private static string GetLanguageName(string langCode)
+    {
+        try { return System.Globalization.CultureInfo.GetCultureInfo(langCode).EnglishName; }
+        catch { return langCode; }
     }
 }

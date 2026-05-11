@@ -1,5 +1,6 @@
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Project niet actief";
+    ViewData["Title"] = L["Title"].Value;
 }
 
 <div class="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] page-enter px-6">
@@ -14,10 +15,10 @@
         </div>
 
         <h1 class="font-heading text-2xl font-semibold text-base-content mb-2">
-            Dit project is niet actief
+            @L["ProjectInactiveHeading"]
         </h1>
         <p class="text-sm text-neutral leading-relaxed">
-            Deze enquete is momenteel niet beschikbaar. Neem contact op met de organisator voor meer informatie.
+            @L["SurveyUnavailableBody"]
         </p>
 
     </div>
