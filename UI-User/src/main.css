@@ -147,6 +147,31 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   transform: translateY(-100%);
 }
 
+/* Vacuum-suck card on both directions */
+.survey-card {
+  transform-origin: 50% 50%;
+  transform: scale(0.18) rotate(4deg);
+  opacity: 0;
+  filter: blur(2px);
+  transition:
+    transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.45s ease,
+    filter 0.45s ease;
+  will-change: transform, opacity, filter;
+}
+
+.survey-slide.is-active .survey-card {
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+  filter: blur(0);
+}
+
+.survey-slide.is-above .survey-card {
+  transform: scale(0.18) rotate(-4deg);
+  opacity: 0;
+  filter: blur(2px);
+}
+
 .nav-scrollable {
   scrollbar-width: none;
 }

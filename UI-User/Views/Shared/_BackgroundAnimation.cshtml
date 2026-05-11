@@ -29,19 +29,23 @@
     };
 
     var shuffledQuestions = questions.OrderBy(_ => Guid.NewGuid()).ToArray();
+    var bgMobile = ViewData["BgAnimationMobile"] is true;
+    var bgHideClass = bgMobile ? "" : "hidden lg:block";
+    var bgLogoCentered = ViewData["BgLogoCentered"] is true;
+    var logoAlignClass = bgLogoCentered ? "items-center pb-0" : "items-end pb-[18vh]";
 }
 
 @if (!string.IsNullOrEmpty(orgLogoUrl))
 {
-    <div class="fixed inset-0 flex items-start justify-center z-0 pointer-events-none pt-[7vh]" aria-hidden="true">
+    <div class="fixed inset-0 flex @logoAlignClass justify-center z-0 pointer-events-none" aria-hidden="true">
         <img src="@orgLogoUrl" alt=""
              class="w-[320px] max-w-[40vw] object-contain opacity-[0.15] select-none" />
     </div>
 }
 
-<div class="fixed inset-0 bg-black/5 z-[2] pointer-events-none" aria-hidden="true"></div>
+<div class="fixed inset-0 bg-black/5 z-[2] pointer-events-none @bgHideClass" aria-hidden="true"></div>
 
-<div class="fixed inset-0 overflow-hidden z-[1] pointer-events-none" aria-hidden="true">
+<div class="fixed inset-0 overflow-hidden z-[1] pointer-events-none @bgHideClass" aria-hidden="true">
     @for (int i = 0; i < cards.Length; i++)
     {
         var c = cards[i];
