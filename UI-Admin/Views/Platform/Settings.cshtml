@@ -16,7 +16,6 @@
 
             <form asp-action="SaveBasicInfo" asp-route-id="@Model.ProjectPlatformId"
                   method="post" class="flex flex-col gap-4">
-                @Html.AntiForgeryToken()
                 <input type="hidden" name="ProjectPlatformId" value="@Model.BasicInfo.ProjectPlatformId" />
 
                 <label class="form-control">
@@ -51,7 +50,6 @@
 
             <form asp-action="SaveConfiguration" asp-route-id="@Model.ProjectPlatformId"
                   method="post" class="flex flex-col gap-5">
-                @Html.AntiForgeryToken()
                 <input type="hidden" name="ProjectPlatformId" value="@Model.Configuration.ProjectPlatformId" />
 
                 <div class="divider my-0 text-xs text-base-content/40">Feature flags</div>
