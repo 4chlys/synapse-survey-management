@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Moderation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
@@ -25,7 +26,8 @@ public class ModerationController(
     IAiModerationService aiModeration,
     IModerationTokenService tokenService,
     IParticipantManager participantManager,
-    IProjectManager projectManager)
+    IProjectManager projectManager,
+    PlatformAiConfigService platformAiConfig)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("regex")]
@@ -48,7 +50,9 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = await aiModeration.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+        var result = await aiModeration.CheckWithAiAsync(dto.Text, config, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
@@ -64,7 +68,9 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
-        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, config, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
         string suggestionToken = null;
         if (suggestion != null)

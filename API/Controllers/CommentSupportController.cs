@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.CommentSupport;
 using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
@@ -13,6 +14,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/commentsupport")]
 public class CommentSupportController(
     IAiCommentSupportService commentSupportService,
+    PlatformAiConfigService platformAiConfig,
     IInputValidationService inputValidation,
     IParticipantManager participantManager, IProjectManager projectManager)
     : ParticipantControllerBase(participantManager, projectManager)
@@ -46,6 +48,8 @@ public class CommentSupportController(
         try { project = await GetProjectByIdReadOnlyAsync(projectId); }
         catch { /* intentionally swallowed */ }
 
+        var platformConfig = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+
         var request = new CommentSupportRequest
         {
             IdeaText     = dto.IdeaText,
@@ -59,7 +63,7 @@ public class CommentSupportController(
             IsFirstTurn  = isFirstTurn,
         };
 
-        var reply = await commentSupportService.ChatAsync(request, ct);
+        var reply = await commentSupportService.ChatAsync(request, platformConfig, ct);
 
         return Ok(new CommentSupportChatResponseDto
         {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.IdeaSupport;
 using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
@@ -13,7 +14,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/ideasupport")]
 public class IdeaSupportController(
     IAiIdeaSupportService ideaSupportService,
-    AiIdeaSupportConfig ideaSupportConfig,
+    PlatformAiConfigService platformAiConfig,
     IInputValidationService inputValidation,
     ICategoryManager categoryManager,
     IProjectManager projectManager,
@@ -57,6 +58,8 @@ public class IdeaSupportController(
         try { project = await GetProjectByIdReadOnlyAsync(projectId); }
         catch { /* intentionally swallowed */ }
 
+        var platformConfig = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+
         var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
         var projectName         = isFirstTurn ? (project?.ProjectPlatform?.Name ?? string.Empty) : string.Empty;
@@ -68,8 +71,8 @@ public class IdeaSupportController(
                ?? project?.Introduction?.Translations.FirstOrDefault()?.Text
                ?? string.Empty)
             : string.Empty;
-        if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
-            projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
+        if (projectIntroduction.Length > platformConfig.IdeaSupport.MaxIntroductionLength)
+            projectIntroduction = projectIntroduction[..platformConfig.IdeaSupport.MaxIntroductionLength] + "…";
 
         var catTranslation = category.Translations?.FirstOrDefault(t => t.Language?.Code == lang)
             ?? category.Translations?.FirstOrDefault();
@@ -89,7 +92,7 @@ public class IdeaSupportController(
             IsFirstTurn         = isFirstTurn,
         };
 
-        var reply = await ideaSupportService.ChatAsync(request, ct);
+        var reply = await ideaSupportService.ChatAsync(request, platformConfig, ct);
 
         return Ok(new IdeaSupportChatResponseDto
         {
@@ -109,7 +112,8 @@ public class IdeaSupportController(
         if (error is not null) return error;
 
         var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        var result = await ideaSupportService.RefineAsync(dto.DraftText, lang, ct);
+        var platformConfig = await platformAiConfig.ResolveGlobalAsync(ct);
+        var result = await ideaSupportService.RefineAsync(dto.DraftText, lang, platformConfig, ct);
         return Ok(new IdeaSupportRefineResponseDto { RefinedText = result.RefinedText });
     }
 }

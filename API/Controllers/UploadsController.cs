@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -12,7 +13,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class UploadsController(
     IStorageService storageService,
     IAiModerationService aiModerationService,
-    IModerationTokenService moderationTokenService) : ControllerBase
+    IModerationTokenService moderationTokenService,
+    PlatformAiConfigService platformAiConfig) : ControllerBase
 {
     private static readonly HashSet<string> AllowedImageContentTypes =
         ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -69,7 +71,8 @@ public class UploadsController(
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var config = await platformAiConfig.ResolveGlobalAsync(ct);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, config, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
