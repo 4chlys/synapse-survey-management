@@ -6,9 +6,9 @@ public class PlatformSettings
     public int ProjectPlatformId { get; set; }
 
     // Contact & billing
-    public string? ContactName { get; set; }
-    public string? ContactEmail { get; set; }
-    public string? BillingReference { get; set; }
+    public string ContactName { get; set; }
+    public string ContactEmail { get; set; }
+    public string BillingReference { get; set; }
 
     // Feature flags
     public bool AiAssistanceEnabled { get; set; } = true;
