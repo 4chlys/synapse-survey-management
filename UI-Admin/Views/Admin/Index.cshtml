@@ -1,76 +1,80 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Admin
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
-@model PlatformDetailViewModel
+@model AdminListViewModel
 @{
-    ViewData["Title"] = Model.Name;
+    ViewData["Title"] = "Beheerders";
+    ViewData["ActiveSection"] = "Beheerders";
     Layout = "_Layout";
 }
 
-<div class="min-h-screen bg-gray-900 text-white p-8">
+<h1 class="font-heading font-bold text-2xl text-base-content mb-6">Beheerders</h1>
 
-    <div class="max-w-2xl">
-
-        @* Platform info card *@
-        <div class="bg-gray-800 p-6 mb-6">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-4">
-                    @if (!string.IsNullOrEmpty(Model.LogoUrl))
-                    {
-                        <img src="@Model.LogoUrl" alt="@Model.Name logo"
-                             class="h-14 w-auto object-contain" />
-                    }
-                    <div>
-                        <h1 class="text-xl font-semibold text-white">@Model.Name</h1>
-                        @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
-                        {
-                            <a href="@Model.WebsiteUrl" target="_blank"
-                               class="text-sm text-gray-400 hover:text-white transition underline underline-offset-2">
-                                @Model.WebsiteUrl
-                            </a>
-                        }
-                        else
-                        {
-                            <span class="text-sm text-gray-500 italic">Geen website</span>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @* Admins card *@
-        <div class="bg-gray-800 p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-base font-semibold text-white">Beheerders</h2>
-                <a asp-controller="Admin" asp-action="Add"
-                   class="border border-gray-600 px-3 py-1 text-xs text-gray-300 hover:text-white hover:border-gray-400 transition">
-                    + Beheerder toevoegen
-                </a>
-            </div>
-
-            @if (Model.Admins == null || !Model.Admins.Any())
+@* Platform filter *@
+<form method="get" asp-action="Index" class="flex flex-wrap gap-2 mb-6 items-center">
+    <select name="platformId" class="select select-bordered select-sm min-w-48"
+            onchange="this.form.submit()">
+        <option value="">Alle platformen</option>
+        @foreach (var platform in Model.Platforms)
+        {
+            if (Model.FilterPlatformId == platform.ProjectPlatformId)
             {
-                <p class="text-sm text-gray-400 italic">Geen beheerders</p>
+                <option value="@platform.ProjectPlatformId" selected>@platform.Name</option>
             }
             else
             {
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wide">
-                            <th class="text-left py-2 pr-4">Gebruikersnaam</th>
-                            <th class="text-left py-2">E-mail</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var admin in Model.Admins)
-                        {
-                            <tr class="border-b border-gray-700 last:border-0">
-                                <td class="py-3 pr-4 text-white">@admin.UserName</td>
-                                <td class="py-3 text-gray-300">@admin.Email</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                <option value="@platform.ProjectPlatformId">@platform.Name</option>
             }
-        </div>
+        }
+    </select>
+    @if (Model.FilterPlatformId.HasValue)
+    {
+        <a asp-action="Index" class="btn btn-ghost btn-sm">Wissen</a>
+    }
+</form>
 
+@if (!Model.Admins.Any())
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body text-center text-base-content/60 text-sm">
+            Geen beheerders gevonden.
+        </div>
     </div>
-</div>
+}
+else
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body p-0 overflow-x-auto">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Gebruikersnaam</th>
+                        <th>E-mail</th>
+                        <th>Platform</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var admin in Model.Admins)
+                    {
+                        <tr class="hover">
+                            <td class="text-base-content">@admin.UserName</td>
+                            <td class="text-base-content/60">@admin.Email</td>
+                            <td>
+                                <a asp-controller="Platform" asp-action="Dashboard"
+                                   asp-route-id="@admin.PlatformId"
+                                   class="text-base-content/60 hover:text-base-content transition text-sm underline underline-offset-2">
+                                    @admin.PlatformName
+                                </a>
+                            </td>
+                            <td>
+                                <a asp-controller="Platform" asp-action="Admins"
+                                   asp-route-id="@admin.PlatformId"
+                                   class="btn btn-ghost btn-xs">Bekijken</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
