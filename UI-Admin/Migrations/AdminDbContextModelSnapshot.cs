@@ -253,6 +253,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     b.Property<bool>("AiAssistanceEnabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AiModelName")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BillingReference")
                         .HasColumnType("TEXT");
 
@@ -260,6 +263,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ContactName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CostDashboardUrl")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IdeationEnabled")

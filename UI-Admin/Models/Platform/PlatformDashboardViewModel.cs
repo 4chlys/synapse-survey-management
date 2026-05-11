@@ -6,5 +6,9 @@ public sealed record PlatformDashboardViewModel(
     string LogoUrl,
     string WebsiteUrl,
     DateTime CreatedAt,
-    int AdminCount
+    int AdminCount,
+    int ActiveProjectCount,
+    int DraftProjectCount,
+    string AiModelName,
+    string CostDashboardUrl
 );

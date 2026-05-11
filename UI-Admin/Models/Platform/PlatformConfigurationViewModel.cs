@@ -10,4 +10,6 @@ public class PlatformConfigurationViewModel
     public bool IdeationEnabled { get; set; }
     public int? MaxProjects { get; set; }
     public int? MaxAdmins { get; set; }
+    public string AiModelName { get; set; }
+    public string CostDashboardUrl { get; set; }
 }

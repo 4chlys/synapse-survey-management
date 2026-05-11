@@ -17,4 +17,8 @@ public class PlatformSettings
     // Quotas
     public int? MaxProjects { get; set; }
     public int? MaxAdmins { get; set; }
+
+    // Monitoring
+    public string AiModelName { get; set; }
+    public string CostDashboardUrl { get; set; }
 }
