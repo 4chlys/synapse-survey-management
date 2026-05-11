@@ -30,7 +30,7 @@
                     <p class="font-semibold text-base-content">@Model.Name</p>
                     @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
                     {
-                        <a href="@Model.WebsiteUrl" target="_blank"
+                        <a href="@Model.WebsiteUrl" target="_blank" rel="noopener noreferrer"
                            class="text-sm text-base-content/60 hover:text-base-content transition underline underline-offset-2">
                             @Model.WebsiteUrl
                         </a>

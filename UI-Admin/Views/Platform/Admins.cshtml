@@ -36,7 +36,6 @@
                                     <form asp-action="RemoveAdmin" asp-route-id="@Model.ProjectPlatformId"
                                           method="post" class="inline"
                                           onsubmit="return confirm('Beheerder @admin.Email verwijderen?')">
-                                        @Html.AntiForgeryToken()
                                         <input type="hidden" name="userId" value="@admin.UserId" />
                                         <button type="submit" class="btn btn-ghost btn-xs text-error">Verwijderen</button>
                                     </form>
@@ -59,7 +58,6 @@
 
             <form asp-action="AddAdmin" asp-route-id="@Model.ProjectPlatformId"
                   method="post" class="flex flex-col gap-4">
-                @Html.AntiForgeryToken()
 
                 <label class="form-control">
                     <div class="label"><span class="label-text text-xs font-medium">E-mailadres</span></div>
