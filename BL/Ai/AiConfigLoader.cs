@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
@@ -149,16 +150,24 @@ public static class AiConfigLoader
             DefaultAgeRange = p.AgeRange,
         };
 
+        var d = config.ImageDescription;
+        var substitutedImageDescription = new AiImageDescriptionConfig
+        {
+            // {language} is substituted per-request (caller passes the effective language)
+            SystemPrompt = SubNoLang(d.SystemPrompt),
+        };
+
         return new AiConfig
         {
-            Platform        = config.Platform,
-            Moderation      = substitutedModeration,
-            IdeaSupport     = substitutedIdeaSupport,
-            CommentSupport  = substitutedCommentSupport,
-            QuestionSupport = substitutedQuestionSupport,
-            SpeechToText    = substitutedSpeechToText,
-            ImageGeneration = config.ImageGeneration,
-            Fuzzy           = config.Fuzzy,
+            Platform         = config.Platform,
+            Moderation       = substitutedModeration,
+            IdeaSupport      = substitutedIdeaSupport,
+            CommentSupport   = substitutedCommentSupport,
+            QuestionSupport  = substitutedQuestionSupport,
+            SpeechToText     = substitutedSpeechToText,
+            ImageDescription = substitutedImageDescription,
+            ImageGeneration  = config.ImageGeneration,
+            Fuzzy            = config.Fuzzy,
         };
     }
 }
