@@ -47,7 +47,7 @@ public class PlatformController(
         var summaries = new List<PlatformSummaryViewModel>();
         foreach (var platform in platforms)
         {
-            var projects = await projectService.GetAllProjectsAsync(platform.ProjectPlatformId);
+            var stats = await projectService.GetPlatformStatsAsync(platform.ProjectPlatformId);
             var settings = await platformService.GetPlatformSettingsAsync(platform.ProjectPlatformId);
             var adminCount = allAdmins.Count(a => a.ProjectPlatformId == platform.ProjectPlatformId);
 
@@ -56,8 +56,10 @@ public class PlatformController(
                 platform.Name,
                 platform.LogoUrl,
                 adminCount,
-                projects.Count(p => p.ProjectState == "Active"),
-                projects.Count(p => p.ProjectState == "Draft"),
+                stats.ActiveCount,
+                stats.DraftCount,
+                stats.ArchivedCount,
+                stats.ParticipantCount,
                 settings?.AiModelName ?? string.Empty,
                 settings?.CostDashboardUrl ?? string.Empty
             ));
@@ -73,7 +75,7 @@ public class PlatformController(
         if (platform is null) return NotFound();
 
         var admins = await platformService.GetAdminsForPlatformAsync(id);
-        var projects = await projectService.GetAllProjectsAsync(id);
+        var stats = await projectService.GetPlatformStatsAsync(id);
         var settings = await platformService.GetPlatformSettingsAsync(id);
 
         ViewData["PlatformId"] = id;
@@ -87,8 +89,10 @@ public class PlatformController(
             platform.WebsiteUrl,
             platform.CreatedAt,
             admins.Count,
-            projects.Count(p => p.ProjectState == "Active"),
-            projects.Count(p => p.ProjectState == "Draft"),
+            stats.ActiveCount,
+            stats.DraftCount,
+            stats.ArchivedCount,
+            stats.ParticipantCount,
             settings?.AiModelName ?? string.Empty,
             settings?.CostDashboardUrl ?? string.Empty
         ));

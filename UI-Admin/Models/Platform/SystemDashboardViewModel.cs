@@ -11,6 +11,8 @@ public sealed record PlatformSummaryViewModel(
     int AdminCount,
     int ActiveProjectCount,
     int DraftProjectCount,
+    int ArchivedProjectCount,
+    int ParticipantCount,
     string AiModelName,
     string CostDashboardUrl
 );
