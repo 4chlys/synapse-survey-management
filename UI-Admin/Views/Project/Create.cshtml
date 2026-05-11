@@ -33,6 +33,15 @@
                 <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
 
                 <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Taal *</span></div>
+                    <select asp-for="DefaultLanguageCode" class="select select-bordered w-full">
+                        <option value="nl">Nederlands</option>
+                        <option value="en">English</option>
+                    </select>
+                    <span asp-validation-for="DefaultLanguageCode" class="label-text-alt text-error mt-1"></span>
+                </label>
+
+                <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
                     <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" maxlength="100" required />
                     <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
@@ -177,13 +186,18 @@
                 </div>
 
                 <div class="form-control">
-                    <label asp-for="PrimaryColor" class="label">
+                    <label class="label">
                         <span class="label-text">Primaire kleur (optioneel)</span>
                     </label>
-                    <input asp-for="PrimaryColor" type="text" maxlength="7"
-                           pattern="^#[0-9A-Fa-f]{6}$" placeholder="#16A34A"
-                           class="input input-bordered w-full" />
-                    <span class="label-text-alt">Hex-waarde (bv. #16A34A). Laat leeg om de themakleur te gebruiken.</span>
+                    <div class="flex items-center gap-3">
+                        <input id="primary-color-picker" type="color" value="#16A34A"
+                               class="h-10 w-16 rounded border border-base-300 cursor-pointer disabled:opacity-50" />
+                        <label class="label cursor-pointer justify-start gap-2 py-0">
+                            <input id="use-theme-color" type="checkbox" class="checkbox checkbox-sm" />
+                            <span class="label-text">Themakleur gebruiken</span>
+                        </label>
+                    </div>
+                    <input asp-for="PrimaryColor" type="hidden" />
                     <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
                 </div>
 

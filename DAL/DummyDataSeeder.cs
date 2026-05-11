@@ -364,7 +364,7 @@ public class DummyDataSeeder
             ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             ProjectPlatform = platformFitLife,
-            Theme = ProjectTheme.Playful,
+            Theme = ProjectTheme.Professional,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>

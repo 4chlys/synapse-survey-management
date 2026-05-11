@@ -37,6 +37,11 @@ public class CreateProjectViewModel
 
     public bool ContactOptIn { get; set; } = true;
     public bool AllowCrossLanguageIdeas { get; set; } = false;
+
+    [Required]
+    [MaxLength(10)]
+    public string DefaultLanguageCode { get; set; } = "nl";
+
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 
     [MaxLength(20)]

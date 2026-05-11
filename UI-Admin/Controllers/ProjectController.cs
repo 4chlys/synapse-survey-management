@@ -77,6 +77,7 @@ public class ProjectController(
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
             AllowCrossLanguageIdeas = project.AllowCrossLanguageIdeas,
+            DefaultLanguageCode = project.DefaultLanguageCode ?? "nl",
             SupportedLanguageCodes = project.SupportedLanguageCodes,
             Theme = project.Theme,
             PrimaryColor = project.PrimaryColor,
@@ -145,7 +146,8 @@ public class ProjectController(
                 model.ContactOptIn, model.ShortForm,
                 lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
                 model.AllowCrossLanguageIdeas,
-                model.Theme, model.PrimaryColor, model.CustomCss);
+                model.Theme, model.PrimaryColor, model.CustomCss,
+                model.DefaultLanguageCode);
         }
         else
         {
@@ -163,7 +165,8 @@ public class ProjectController(
                 allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
                 theme: model.Theme,
                 primaryColor: model.PrimaryColor,
-                customCss: model.CustomCss);
+                customCss: model.CustomCss,
+                languageCode: model.DefaultLanguageCode);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -275,7 +278,8 @@ public class ProjectController(
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
             project.AllowCrossLanguageIdeas,
-            project.Theme, project.PrimaryColor, project.CustomCss);
+            project.Theme, project.PrimaryColor, project.CustomCss,
+            project.DefaultLanguageCode ?? "nl");
 
         return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }
@@ -366,7 +370,7 @@ public class ProjectController(
 
         try
         {
-            var copy = await projectService.CopyProjectAsync(projectId, newName, platformId);
+            var copy = await projectService.CopyProjectAsync(projectId, newName, platformId, languageCode: source.DefaultLanguageCode ?? "nl");
             TempData["Success"] = "Project gekopieerd als sjabloon!";
             return RedirectToAction(nameof(Create), new { projectId = copy.ProjectId, isNew = true });
         }

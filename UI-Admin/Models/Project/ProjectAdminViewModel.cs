@@ -21,6 +21,7 @@ public class ProjectAdminViewModel
     public int? MinAge { get; set; }
     public int? MaxAge { get; set; }
     public bool AllowCrossLanguageIdeas { get; set; }
+    public string DefaultLanguageCode { get; set; }
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
 
     public string Theme { get; set; } = "Default";
