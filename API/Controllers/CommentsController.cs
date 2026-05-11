@@ -13,7 +13,7 @@ public class CommentsController(
     IParticipantManager participantManager,
     IModerationResolver moderationResolver,
     IProjectManager projectManager,
-    PlatformAiConfigService platformAiConfig)
+    IPlatformAiConfigService platformAiConfig)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("comments")]

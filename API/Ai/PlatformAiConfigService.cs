@@ -11,11 +11,11 @@ using SynapseEnqueteManagement.BL.Domain.Ai;
 
 namespace SynapseEnqueteManagement.API.Ai;
 
-public sealed class PlatformAiConfigService(
+public class PlatformAiConfigService(
     AdminReadContext adminDb,
     AiConfig globalConfig,
     ChatClientRegistry registry,
-    IMemoryCache cache)
+    IMemoryCache cache) : IPlatformAiConfigService
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
 

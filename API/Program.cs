@@ -104,7 +104,7 @@ else
 }
 
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<PlatformAiConfigService>();
+builder.Services.AddScoped<IPlatformAiConfigService, PlatformAiConfigService>();
 builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();

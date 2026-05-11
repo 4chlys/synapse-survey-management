@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
+using SynapseEnqueteManagement.BL.Ai;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SynapseEnqueteManagement.UI.Admin;
@@ -120,6 +121,9 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
+
+builder.Services.AddSingleton(AiConfigLoader.Load(
+    LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();

@@ -22,7 +22,7 @@ public class IdeasController(
     IProjectManager projectManager,
     IStorageService storageService,
     IModerationTokenService moderationTokenService,
-    PlatformAiConfigService platformAiConfig,
+    IPlatformAiConfigService platformAiConfig,
     ILogger<IdeasController> logger)
     : ParticipantControllerBase(participantManager, projectManager)
 {

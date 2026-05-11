@@ -1,0 +1,120 @@
+@using SynapseEnqueteManagement.BL.Domain.Ai
+@model SynapseEnqueteManagement.UI.Admin.Models.Settings.PlatformAdminSettingsViewModel
+@{
+    ViewData["Title"] = "Instellingen";
+    ViewData["ActiveSection"] = "Instellingen";
+    Layout = "_Layout";
+}
+
+<div class="max-w-2xl">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Instellingen</h1>
+
+    @* Card 1 — Basisinformatie *@
+    <div class="card bg-base-100 shadow-sm mb-6">
+        <div class="card-body gap-4">
+            <h2 class="font-semibold text-base-content">Basisinformatie</h2>
+            <form asp-action="SaveBasicInfo" method="post" class="flex flex-col gap-4">
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Contactpersoon</span></div>
+                    <input name="ContactName" value="@Model.BasicInfo.ContactName" class="input input-bordered w-full" placeholder="Naam contactpersoon" />
+                </label>
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Contacte-mail</span></div>
+                    <input name="ContactEmail" type="email" value="@Model.BasicInfo.ContactEmail" class="input input-bordered w-full" placeholder="contact@voorbeeld.be" />
+                </label>
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Factuurreferentie</span></div>
+                    <input name="BillingReference" value="@Model.BasicInfo.BillingReference" class="input input-bordered w-full" placeholder="bijv. PO-2026-001" />
+                </label>
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Card 2 — AI-model *@
+    <div class="card bg-base-100 shadow-sm mb-6">
+        <div class="card-body gap-4">
+            <h2 class="font-semibold text-base-content">AI-model</h2>
+            @if (Model.AiSettings.AllowedModels.Count == 1)
+            {
+                <p class="text-sm text-base-content/70">Uw platform gebruikt <strong>@Model.AiSettings.AllowedModels[0].DisplayName</strong>.</p>
+            }
+            else if (Model.AiSettings.AllowedModels.Count == 0)
+            {
+                <p class="text-sm text-base-content/50">Geen AI-modellen beschikbaar. Neem contact op met de systeembeheerder.</p>
+            }
+            else
+            {
+                <form asp-action="SaveAiModel" method="post" class="flex flex-col gap-4">
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Selecteer een model</span></div>
+                        <select name="selectedModelId" class="select select-bordered w-full">
+                            @foreach (var provider in Enum.GetValues<AiProvider>())
+                            {
+                                var group = Model.AiSettings.AllowedModels.Where(m => m.Provider == provider).ToList();
+                                if (!group.Any()) continue;
+                                <optgroup label="@provider.ToString()">
+                                    @foreach (var aiModel in group)
+                                    {
+                                        <option value="@aiModel.Id" selected="@(aiModel.Id == Model.AiSettings.SelectedModelId)">@aiModel.DisplayName</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                    </label>
+                    <div class="card-actions justify-end">
+                        <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    @* Card 3 — Systeemprompts *@
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-4">
+            <h2 class="font-semibold text-base-content">Systeemprompts</h2>
+
+            <div class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span class="text-sm">
+                    <strong>Waarschuwing:</strong> de standaard systeemprompts zijn zorgvuldig ontworpen met veiligheidsmaatregelen voor jongeren. Wijzigingen kunnen de beveiliging verzwakken.
+                </span>
+            </div>
+
+            @foreach (var entry in Model.Prompts.Entries)
+            {
+                <div class="collapse collapse-arrow bg-base-200 rounded-lg">
+                    <input type="checkbox" />
+                    <div class="collapse-title font-medium text-sm flex items-center gap-2">
+                        @entry.Label
+                        @if (entry.IsOverridden)
+                        {
+                            <span class="badge badge-warning badge-xs">aangepast</span>
+                        }
+                    </div>
+                    <div class="collapse-content flex flex-col gap-3">
+                        <form asp-action="SavePromptOverride" method="post" class="flex flex-col gap-3">
+                            <input type="hidden" name="promptType" value="@entry.PromptType" />
+                            <textarea name="value" class="textarea textarea-bordered w-full font-mono text-xs" rows="8">@entry.EffectivePrompt</textarea>
+                            <div class="flex justify-end gap-2">
+                                @if (entry.IsOverridden)
+                                {
+                                    <form asp-action="ResetPrompt" method="post" class="inline">
+                                        <input type="hidden" name="promptType" value="@entry.PromptType" />
+                                        <button type="submit" class="btn btn-ghost btn-sm">Herstel standaard</button>
+                                    </form>
+                                }
+                                <button type="submit" class="btn btn-warning btn-sm">Opslaan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

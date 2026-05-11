@@ -1,6 +1,10 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiCommentSupport;
+using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.BL.Sorting.Embeddings;
@@ -333,13 +337,18 @@ public class AiModerationServiceTests
             .Returns(ModerationResult.Acceptable());
 
         var sut = new AiModerationService(
-            mockChat.Object,
             NullLogger<AiModerationService>.Instance,
-            config,
             mockRegex.Object);
 
+        var platformConfig = new ResolvedPlatformAiConfig(
+            mockChat.Object,
+            config,
+            new AiIdeaSupportConfig(),
+            new AiCommentSupportConfig(),
+            new AiQuestionSupportConfig());
+
         // Act
-        await sut.CheckWithAiAsync("some idea text", respondInLanguage: "en");
+        await sut.CheckWithAiAsync("some idea text", platformConfig, respondInLanguage: "en");
 
         // Assert — "{response_language}" replaced with "en" (not left as placeholder, not "nl")
         Assert.NotNull(capturedMessages);
