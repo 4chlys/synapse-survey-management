@@ -2,6 +2,20 @@ namespace SynapseEnqueteManagement.API.Services;
 
 public class LocalStorageService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ILogger<LocalStorageService> logger) : IStorageService
 {
+    public async Task<string> UploadBytesAsync(byte[] data, string folder, string fileName, string contentType)
+    {
+        var uploadsDir = Path.Combine(env.WebRootPath, "uploads", folder);
+        Directory.CreateDirectory(uploadsDir);
+
+        var uniqueName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+        var filePath = Path.Combine(uploadsDir, uniqueName);
+
+        await File.WriteAllBytesAsync(filePath, data);
+
+        var request = httpContextAccessor.HttpContext!.Request;
+        return $"{request.Scheme}://{request.Host}/uploads/{folder}/{uniqueName}";
+    }
+
     public async Task<string> UploadAsync(IFormFile file, string folder)
     {
         var uploadsDir = Path.Combine(env.WebRootPath, "uploads", folder);

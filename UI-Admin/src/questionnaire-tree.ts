@@ -17,6 +17,10 @@ export interface Question {
     endingAnswers: string[];
     sectionName: string | null;
     sectionId: number | null;
+    mediaUrl: string | null;
+    mediaType: number | null;
+    mediaIsEmbed: boolean;
+    mediaText: string | null;
 }
 
 export interface RenderContext {
@@ -61,6 +65,17 @@ function escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function mediaBadge(q: Question): string {
+    if (!q.mediaType) return '';
+    const types: Record<number, [string, string]> = {
+        1: ['badge-info',    '▣ Afb'],
+        2: ['badge-success', '▶ Vid'],
+        3: ['badge-warning', '♪ Aud'],
+    };
+    const [cls, label] = types[q.mediaType] ?? ['badge-ghost', 'Media'];
+    return `<span class="badge ${cls} badge-xs ml-2 font-normal align-middle" title="Heeft ondersteunende media">${label}</span>`;
 }
 
 function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[]>, ctx: RenderContext): string {
@@ -116,7 +131,11 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                         data-format="${escapeHtml(q.questionFormat)}"
                         data-answers='${escapeHtml(JSON.stringify(q.answerChoices))}'
                         data-section-id="${q.sectionId ?? ''}"
-                        data-is-mandatory="${q.isMandatory}">✎</button>`;
+                        data-is-mandatory="${q.isMandatory}"
+                        data-media-url="${escapeHtml(q.mediaUrl ?? '')}"
+                        data-media-type="${q.mediaType ?? 0}"
+                        data-media-is-embed="${q.mediaIsEmbed}"
+                        data-media-text="${escapeHtml(q.mediaText ?? '')}">✎</button>`;
 
     const deleteBtn = ctx.locked ? '' : `
                 <form method="post" action="${escapeHtml(deleteUrl)}">
@@ -140,7 +159,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                 <button type="button"
                         class="question-toggle flex-1 px-3 py-3 text-left flex justify-between items-center hover:bg-base-200 transition"
                         data-question-id="${q.questionId}">
-                    <span class="text-base-content">${escapeHtml(q.text)} <span class="text-base-content/40 ml-2">[${escapeHtml(q.questionFormat)}]</span>${q.sectionName ? ` <span class="text-base-content/50 ml-2 italic">${escapeHtml(q.sectionName)}</span>` : ''}</span>
+                    <span class="text-base-content">${escapeHtml(q.text)}${mediaBadge(q)} <span class="text-base-content/40 ml-2">[${escapeHtml(q.questionFormat)}]</span>${q.sectionName ? ` <span class="text-base-content/50 ml-2 italic">${escapeHtml(q.sectionName)}</span>` : ''}</span>
                     <span id="arrow-${q.questionId}" class="text-base-content/60 ml-2">${arrow}</span>
                 </button>
                 ${editBtn}

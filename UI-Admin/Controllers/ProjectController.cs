@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
@@ -30,6 +31,7 @@ public class ProjectController(
     UserManager<ApplicationUser> userManager,
     WidgetPreferenceService widgetPreferenceService,
     IdeaAdminService ideaService,
+    ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings) : Controller
 {
     public async Task<IActionResult> Index()
@@ -88,6 +90,7 @@ public class ProjectController(
     }
 
     [HttpPost]
+    [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
         // For "next", Topic and Introduction are also required
@@ -205,7 +208,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -220,7 +226,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -489,6 +498,20 @@ public class ProjectController(
         };
 
         return View(vm);
+    }
+
+    public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+
+        var normalized = (format ?? "csv").Trim().ToLowerInvariant();
+        if (normalized is not ("csv" or "txt" or "xlsx"))
+            return BadRequest("Ongeldig formaat.");
+
+        var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
+        return File(bytes, contentType, fileName);
     }
 
     [HttpPost]

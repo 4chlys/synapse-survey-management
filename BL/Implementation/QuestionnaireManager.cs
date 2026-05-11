@@ -30,7 +30,10 @@ public class QuestionnaireManager(
     public async Task<Question> AddQuestionAsync(int projectId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
         int? parentQuestionId = null, string parentTriggerValue = null,
-        List<string> endingAnswers = null, CancellationToken ct = default)
+        List<string> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null,
+        bool mediaIsEmbed = false, string mediaText = null,
+        CancellationToken ct = default)
     {
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
@@ -67,7 +70,11 @@ public class QuestionnaireManager(
             Section = section,
             ParentQuestion = parent,
             ParentTriggerValue = parent is not null ? parentTriggerValue : null,
-            Position = nextPosition
+            Position = nextPosition,
+            MediaUrl = mediaUrl,
+            MediaType = mediaType,
+            MediaIsEmbed = mediaIsEmbed,
+            MediaText = mediaText
         };
         if (endingAnswers is not null)
             foreach (var value in endingAnswers)
@@ -86,7 +93,10 @@ public class QuestionnaireManager(
 
     public async Task<bool> UpdateQuestionAsync(int questionId, string text,
         QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
-        List<string> endingAnswers = null, CancellationToken ct = default)
+        List<string> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null,
+        bool mediaIsEmbed = false, string mediaText = null,
+        CancellationToken ct = default)
     {
         var question = await questionRepository.ReadByIdWithSectionForUpdateAsync(questionId);
         if (question is null) return false;
@@ -125,6 +135,11 @@ public class QuestionnaireManager(
                 question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
             }
         }
+
+        question.MediaUrl = mediaUrl;
+        question.MediaType = mediaType;
+        question.MediaIsEmbed = mediaIsEmbed;
+        question.MediaText = mediaText;
 
         questionRepository.Update(question);
         await uow.SaveChangesAsync(ct);

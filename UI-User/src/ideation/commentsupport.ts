@@ -1,9 +1,6 @@
-// Types
+import { AiSupportSessionBase, AiSupportMessage, getCsrfToken, fetchWithTimeout } from './ai-support-base';
 
-export interface CommentSupportMessage {
-    role: 'user' | 'assistant';
-    content: string;
-}
+export type { AiSupportMessage as CommentSupportMessage };
 
 export interface CommentSupportChatResponse {
     assistantMessage: string;
@@ -13,35 +10,13 @@ export interface CommentSupportChatResponse {
     isFinal: boolean;
 }
 
-// CSRF
-
-function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>(
-        'meta[name="__RequestVerificationToken"]'
-    )?.content ?? '';
-}
-
-// Low-level fetch with timeout
-
-const FETCH_TIMEOUT_MS = 30_000;
-
-async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-        return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-        clearTimeout(id);
-    }
-}
-
 /**
  * Sends a single comment-support chat turn to the MVC proxy endpoint.
  * Empty `userMessage` = opening turn (AI generates the idea summary/greeting).
  */
 export async function sendCommentSupportMessage(
     projectId: number,
-    history: CommentSupportMessage[],
+    history: AiSupportMessage[],
     userMessage: string,
     ideaText: string,
     categoryName: string,
@@ -57,30 +32,22 @@ export async function sendCommentSupportMessage(
         signal,
     });
 
-    if (!res.ok) {
-        throw new Error(`CommentSupport chat returned HTTP ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error(`CommentSupport chat returned HTTP ${res.status}`);
     return res.json() as Promise<CommentSupportChatResponse>;
 }
 
 // CommentSupportSession
 
-export class CommentSupportSession {
+export class CommentSupportSession extends AiSupportSessionBase {
     private readonly _projectId:    number;
     private readonly _ideaText:     string;
     private readonly _categoryName: string;
-    private readonly _history:      CommentSupportMessage[] = [];
-    private _abortController: AbortController | null = null;
 
     constructor(projectId: number, ideaText: string, categoryName: string) {
+        super();
         this._projectId    = projectId;
         this._ideaText     = ideaText;
         this._categoryName = categoryName;
-    }
-
-    get history(): readonly CommentSupportMessage[] {
-        return this._history;
     }
 
     /**
@@ -100,19 +67,7 @@ export class CommentSupportSession {
             this._abortController.signal,
         );
 
-        if (userMessage.trim()) {
-            this._history.push({ role: 'user',      content: userMessage });
-            this._history.push({ role: 'assistant', content: reply.assistantMessage });
-        } else if (reply.assistantMessage) {
-            this._history.push({ role: 'assistant', content: reply.assistantMessage });
-        }
-
+        this.appendTurn(userMessage, reply.assistantMessage);
         return reply;
-    }
-
-    reset(): void {
-        this._history.length = 0;
-        this._abortController?.abort();
-        this._abortController = null;
     }
 }
