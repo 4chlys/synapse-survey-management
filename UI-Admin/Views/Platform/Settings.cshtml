@@ -110,6 +110,24 @@
                            placeholder="bijv. PO-2026-001" />
                 </label>
 
+                <div class="divider my-0 text-xs text-base-content/40">AI & monitoring</div>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">AI-modelnaam</span></div>
+                    <input name="AiModelName" value="@Model.Configuration.AiModelName"
+                           class="input input-bordered w-full"
+                           placeholder="bijv. Gemini 2.0 Flash" />
+                    <span class="label-text-alt text-base-content/40 mt-1">Vrije tekst — voor weergave op het dashboard</span>
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Kostendashboard URL</span></div>
+                    <input name="CostDashboardUrl" type="url" value="@Model.Configuration.CostDashboardUrl"
+                           class="input input-bordered w-full"
+                           placeholder="https://lookerstudio.google.com/embed/..." />
+                    <span class="label-text-alt text-base-content/40 mt-1">Looker Studio of andere embed-URL voor kostenrapportage</span>
+                </label>
+
                 <div class="card-actions justify-end">
                     <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
                 </div>
