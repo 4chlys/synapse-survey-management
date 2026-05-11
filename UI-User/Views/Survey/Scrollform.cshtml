@@ -8,8 +8,9 @@
     ViewData["Title"] = L["Title"];
     ViewData["SurveyTitle"] = (ViewData["ProjectName"] as string) ?? Model.Title;
     ViewData["BgLogoCentered"] = true;
-    ViewData["LockScroll"] = true;
 }
+
+<div class="scroll-lock-marker hidden"></div>
 
 @* Animated landing-style background — logo shows on all sizes, cards lg+ only *@
 @await Html.PartialAsync("_BackgroundAnimation")

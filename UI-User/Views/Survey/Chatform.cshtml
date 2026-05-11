@@ -7,9 +7,10 @@
     var projectName = (ViewData["ProjectName"] as string) ?? Model.Title;
     var orgName = ViewData["OrganisationName"] as string;
     ViewData["SurveyTitle"] = projectName;
-    ViewData["LockScroll"] = true;
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 }
+
+<div class="scroll-lock-marker hidden"></div>
 
 @Html.AntiForgeryToken()
 
