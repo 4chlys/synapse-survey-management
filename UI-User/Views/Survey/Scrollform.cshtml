@@ -6,10 +6,15 @@
 
 @{
     ViewData["Title"] = L["Title"];
-    ViewData["SurveyTitle"] = Model.Title;
+    ViewData["SurveyTitle"] = (ViewData["ProjectName"] as string) ?? Model.Title;
 }
 
-<div id="survey-container" class="relative overflow-hidden page-enter" style="height: var(--slide-h)" data-project-id="@Context.GetRouteValue("projectId")"
+@* Animated landing-style background — lg+ only *@
+<div class="hidden lg:block">
+    @await Html.PartialAsync("_BackgroundAnimation")
+</div>
+
+<div id="survey-container" class="relative overflow-hidden page-enter z-10" style="height: var(--slide-h)" data-project-id="@Context.GetRouteValue("projectId")"
      data-has-session="@Model.HasSession.ToString().ToLower()">
 
     @* Progress bar *@
