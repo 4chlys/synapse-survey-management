@@ -21,6 +21,7 @@ source "${SCRIPT_DIR}/lib/06_loadbalancer.sh"
 source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
 source "${SCRIPT_DIR}/lib/08_logging.sh"
 source "${SCRIPT_DIR}/lib/09_armor.sh"
+source "${SCRIPT_DIR}/lib/10_backup.sh"
 
 # ── Bevestiging ─────────────────────────────────────────────────
 echo "======================================================"
@@ -45,7 +46,7 @@ PID_MIGS=$!
 ( destroy_cloud_sql ) &
 PID_SQL=$!
 
-( destroy_storage_bucket ) &
+( destroy_storage_bucket && destroy_backup_bucket ) &
 PID_BUCKET=$!
 
 ( destroy_firewall_rules && destroy_vpc_peering ) &

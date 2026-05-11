@@ -137,6 +137,7 @@ source "${INFRA_DIR}/lib/06_loadbalancer.sh"
 source "${INFRA_DIR}/lib/07_cloudsql.sh"
 source "${INFRA_DIR}/lib/08_logging.sh"
 source "${INFRA_DIR}/lib/09_armor.sh"
+source "${INFRA_DIR}/lib/10_backup.sh"
 
 # ── Stap 6: Setup uitvoeren ────────────────────────────────────
 echo ""
@@ -153,7 +154,7 @@ export API_BASE_URL="https://api.${DOMAIN}"
 ( create_secrets ) &
 PID_SECRETS=$!
 
-( create_storage_bucket ) &
+( create_storage_bucket && create_backup_bucket ) &
 PID_BUCKET=$!
 
 ( create_health_checks ) &
