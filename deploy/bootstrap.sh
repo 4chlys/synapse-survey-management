@@ -222,7 +222,7 @@ LB_IP=$(gcloud compute addresses describe "synapse-${ENV}-lb-ip" \
 # ── Stap 8: Samenvatting ───────────────────────────────────────
 echo ""
 echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════╗${RESET}"
-echo -e "${GREEN}${BOLD}║  Setup klaar! Omgeving: ${ENV}$(printf '%*s' $((20-${#ENV})) '')🎉  ║${RESET}"
+echo -e "${GREEN}${BOLD}║  Setup klaar! Omgeving: ${ENV}$(printf '%*s' $((20-${#ENV})) '') ║${RESET}"
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "  Load Balancer IP : ${BOLD}${LB_IP}${RESET}"

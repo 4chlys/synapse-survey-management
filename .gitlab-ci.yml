@@ -178,7 +178,8 @@ push-test:
     - docker push "${IMAGE_UI}:test-latest"
     - docker push "${IMAGE_ADMIN}:test-latest"
   only:
-    - development #reverse
+    - development
+    - release/staging
 
 push-prod:
   stage: push
@@ -224,7 +225,8 @@ deploy-test:
       gcloud compute instance-groups managed wait-until synapse-test-ui-mig    --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-test-admin-mig --stable --zone="${ZONE}"
   only:
-    - development #reverse
+    - development
+    - release/staging
   environment:
     name: test
 
