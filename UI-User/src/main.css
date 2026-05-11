@@ -108,6 +108,16 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* iOS Safari zooms when input font-size < 16px. Force 16px on small screens
+   to prevent zoom-on-focus (which also pushes adjacent buttons off-screen). */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
