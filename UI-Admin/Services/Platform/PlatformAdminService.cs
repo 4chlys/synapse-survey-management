@@ -106,4 +106,58 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
 
         await db.SaveChangesAsync();
     }
+
+    public async Task<SystemAiSettings> GetSystemAiSettingsAsync()
+    {
+        return await db.SystemAiSettings.FirstOrDefaultAsync();
+    }
+
+    public async Task SaveSystemAiSettingsAsync(IReadOnlyList<string> allowedModelIds)
+    {
+        var settings = await db.SystemAiSettings.FirstOrDefaultAsync()
+            ?? new SystemAiSettings { Id = 1 };
+
+        settings.AllowedModelIds = System.Text.Json.JsonSerializer.Serialize(allowedModelIds);
+
+        if (!await db.SystemAiSettings.AnyAsync(s => s.Id == 1))
+            db.SystemAiSettings.Add(settings);
+
+        await db.SaveChangesAsync();
+    }
+
+    public async Task SaveSelectedAiModelAsync(int platformId, string selectedModelId)
+    {
+        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
+            ?? new PlatformSettings { ProjectPlatformId = platformId };
+
+        settings.SelectedAiModel = selectedModelId;
+
+        if (settings.Id == 0)
+            db.PlatformSettings.Add(settings);
+
+        await db.SaveChangesAsync();
+    }
+
+    public async Task SavePromptOverrideAsync(int platformId, string promptType, string value)
+    {
+        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
+            ?? new PlatformSettings { ProjectPlatformId = platformId };
+
+        switch (promptType)
+        {
+            case "Moderation":        settings.PromptModeration        = value; break;
+            case "CommentModeration": settings.PromptCommentModeration = value; break;
+            case "Rewrite":           settings.PromptRewrite           = value; break;
+            case "ImageModeration":   settings.PromptImageModeration   = value; break;
+            case "IdeaSupport":       settings.PromptIdeaSupport       = value; break;
+            case "CommentSupport":    settings.PromptCommentSupport    = value; break;
+            case "QuestionSupport":   settings.PromptQuestionSupport   = value; break;
+            default: return;
+        }
+
+        if (settings.Id == 0)
+            db.PlatformSettings.Add(settings);
+
+        await db.SaveChangesAsync();
+    }
 }

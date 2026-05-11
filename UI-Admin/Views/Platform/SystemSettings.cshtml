@@ -1,0 +1,52 @@
+@using SynapseEnqueteManagement.BL.Domain.Ai
+@model SynapseEnqueteManagement.UI.Admin.Models.Platform.SystemAiSettingsViewModel
+@{
+    ViewData["Title"] = "AI Instellingen";
+    ViewData["ActiveSection"] = "AI Instellingen";
+    Layout = "_Layout";
+}
+
+<div class="max-w-2xl">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">AI Instellingen</h1>
+
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <h2 class="font-semibold text-base-content">AI-modellen</h2>
+            <p class="text-sm text-base-content/60">
+                Vink de modellen aan die projectplatforms mogen gebruiken. Als je slechts één model selecteert,
+                worden alle platforms verplicht dat model te gebruiken.
+            </p>
+
+            <form asp-action="SaveSystemAiSettings" method="post" class="flex flex-col gap-5">
+
+                @foreach (var provider in Enum.GetValues<AiProvider>())
+                {
+                    var group = Model.AllModels.Where(m => m.Provider == provider).ToList();
+                    if (!group.Any()) continue;
+
+                    <div>
+                        <div class="divider my-0 text-xs text-base-content/40">@provider.ToString()</div>
+                        <div class="flex flex-col gap-2 mt-3">
+                            @foreach (var aiModel in group)
+                            {
+                                <label class="label cursor-pointer justify-start gap-3">
+                                    <input type="checkbox"
+                                           name="AllowedModelIds"
+                                           value="@aiModel.Id"
+                                           class="checkbox checkbox-primary checkbox-sm"
+                                           @(Model.AllowedModelIds.Contains(aiModel.Id) ? "checked" : "") />
+                                    <span class="label-text">@aiModel.DisplayName</span>
+                                    <span class="text-xs text-base-content/40 ml-1">(@aiModel.Id)</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

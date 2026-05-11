@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
@@ -67,6 +69,37 @@ public class PlatformController(
 
         ViewData["ActiveSection"] = "Dashboard";
         return View(new SystemDashboardViewModel(summaries));
+    }
+
+    public async Task<IActionResult> SystemSettings()
+    {
+        var settings = await platformService.GetSystemAiSettingsAsync();
+        var allowedIds = settings is not null
+            ? JsonSerializer.Deserialize<List<string>>(settings.AllowedModelIds) ?? []
+            : [];
+
+        ViewData["ActiveSection"] = "AI Instellingen";
+        return View(new SystemAiSettingsViewModel(
+            AllModels: AiModelCatalog.All,
+            AllowedModelIds: allowedIds
+        ));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveSystemAiSettings(List<string> AllowedModelIds)
+    {
+        if (AllowedModelIds is null || AllowedModelIds.Count == 0)
+        {
+            TempData["Error"] = "Minstens één AI-model moet geselecteerd zijn.";
+            return RedirectToAction(nameof(SystemSettings));
+        }
+
+        var valid = AiModelCatalog.All.Select(m => m.Id).ToHashSet();
+        AllowedModelIds = AllowedModelIds.Where(valid.Contains).ToList();
+
+        await platformService.SaveSystemAiSettingsAsync(AllowedModelIds);
+        TempData["Success"] = "AI-instellingen opgeslagen.";
+        return RedirectToAction(nameof(SystemSettings));
     }
 
     public async Task<IActionResult> Dashboard(int id)
