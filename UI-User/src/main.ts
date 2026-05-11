@@ -1,14 +1,17 @@
 import './main.css';
-import { initTheme } from './theme';
+import './lib/i18n';
+import { initTheme } from './lib/theme';
 import { initSurvey } from './survey/init';
 import { initChat } from './survey/chat';
 import { initIdeation } from "./ideation/ideahub";
+import { initSpeechToTextButtons } from './lib/speechtotext-attach';
 
 function init() {
     initTheme();
     initSurvey();
     initChat();
     initIdeation();
+    initSpeechToTextButtons();
 
     requestAnimationFrame(() => {
         document.querySelectorAll<HTMLElement>('.page-enter').forEach(el => {

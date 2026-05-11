@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Pgvector;
@@ -10,7 +11,11 @@ namespace SynapseEnqueteManagement.DAL;
 
 public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
 {
+    public DbSet<Language> Languages { get; set; }
     public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectTranslation> ProjectTranslations { get; set; }
+    public DbSet<IntroductionTranslation> IntroductionTranslations { get; set; }
+    public DbSet<CategoryTranslation> CategoryTranslations { get; set; }
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<Questionnaire> Questionnaires { get; set; }
     public DbSet<Question> Questions { get; set; }
@@ -20,6 +25,9 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     public DbSet<Category> Categories { get; set; }
     public DbSet<Introduction> Introductions { get; set; }
     public DbSet<Section> Sections { get; set; }
+    public DbSet<SectionTranslation> SectionTranslations { get; set; }
+    public DbSet<QuestionTranslation> QuestionTranslations { get; set; }
+    public DbSet<EndingAnswerTranslation> EndingAnswerTranslations { get; set; }
     public DbSet<Emoji> Emojis { get; set; }
     public DbSet<IconComment> IconComments { get; set; }
     public DbSet<TextComment> TextComments { get; set; }
@@ -31,6 +39,10 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
     {
         base.OnModelCreating(builder);
         builder.HasPostgresExtension("vector");
+
+        // Language
+        builder.Entity<Language>()
+            .HasKey(l => l.Code);
 
         // Project
         builder.Entity<Project>()
@@ -65,6 +77,35 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(p => p.Project)
                 .HasForeignKey("ProjectId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(p => p.DefaultLanguage)
+                .WithMany()
+                .HasForeignKey("DefaultLanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasMany(p => p.SupportedLanguages)
+                .WithMany()
+                .UsingEntity(j => j.ToTable("ProjectLanguage"));
+
+            e.HasMany(p => p.Translations)
+                .WithOne(t => t.Project)
+                .HasForeignKey("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ProjectTranslation
+        builder.Entity<ProjectTranslation>(e =>
+        {
+            e.Property<int>("ProjectId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("ProjectId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Questionnaire
@@ -79,20 +120,6 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
         // Question
         builder.Entity<Question>(e =>
         {
-            // Serialize the list of answer choices as a JSON array in a TEXT column.
-            e.Property(q => q.AnswerChoices)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
-                         ?? new List<string>()
-                )
-                .HasColumnType("TEXT")
-                .Metadata.SetValueComparer(new ValueComparer<ICollection<string>>(
-                    (c1, c2) => c1.SequenceEqual(c2),
-                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                    c => c.ToList()
-                ));
-
             e.HasIndex("QuestionnaireId");
 
             e.HasOne(q => q.Section)
@@ -108,6 +135,60 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex("ParentQuestionId");
+
+            e.HasMany(q => q.Translations)
+                .WithOne(t => t.Question)
+                .HasForeignKey("QuestionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // QuestionTranslation
+        builder.Entity<QuestionTranslation>(e =>
+        {
+            e.Property<int>("QuestionId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("QuestionId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.Property(t => t.AnswerChoices)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
+                         ?? new List<string>()
+                )
+                .HasColumnType("TEXT")
+                .Metadata.SetValueComparer(new ValueComparer<ICollection<string>>(
+                    (c1, c2) => c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()
+                ));
+        });
+
+        // Section translations
+        builder.Entity<Section>(e =>
+        {
+            e.HasMany(s => s.Translations)
+                .WithOne(t => t.Section)
+                .HasForeignKey("SectionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SectionTranslation>(e =>
+        {
+            e.Property<int>("SectionId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("SectionId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // EndingAnswer — rows only exist for answers that terminate the survey.
@@ -119,6 +200,24 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex("QuestionId");
+
+            e.HasMany(ea => ea.Translations)
+                .WithOne(t => t.EndingAnswer)
+                .HasForeignKey("EndingAnswerId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<EndingAnswerTranslation>(e =>
+        {
+            e.Property<int>("EndingAnswerId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("EndingAnswerId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Response
@@ -134,6 +233,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .HasForeignKey("ParticipantId")
                 .OnDelete(DeleteBehavior.Cascade);
 
+            e.HasOne(r => r.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Supports "which participants answered this question?" queries.
             e.HasIndex("QuestionId", "ParticipantId");
             e.HasIndex("ParticipantId");
@@ -146,10 +251,39 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
             e.HasIndex(p => p.SessionToken).IsUnique();
             e.HasIndex("ProjectId");
 
+            e.HasOne(p => p.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
             e.HasMany(p => p.Comments)
                 .WithOne(c => c.Participant)
                 .HasForeignKey("ParticipantId")
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Introduction
+        builder.Entity<Introduction>(e =>
+        {
+            e.HasMany(i => i.Translations)
+                .WithOne(t => t.Introduction)
+                .HasForeignKey("IntroductionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // IntroductionTranslation
+        builder.Entity<IntroductionTranslation>(e =>
+        {
+            e.Property<int>("IntroductionId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("IntroductionId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Category
@@ -159,6 +293,25 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(i => i.Category)
                 .HasForeignKey("CategoryId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(c => c.Translations)
+                .WithOne(t => t.Category)
+                .HasForeignKey("CategoryId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CategoryTranslation
+        builder.Entity<CategoryTranslation>(e =>
+        {
+            e.Property<int>("CategoryId");
+            e.Property<string>("LanguageCode").HasMaxLength(10);
+            e.HasKey("CategoryId", "LanguageCode");
+
+            e.HasOne(t => t.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Idea
@@ -177,6 +330,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
                 .WithOne(c => c.Idea)
                 .HasForeignKey("IdeaId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(i => i.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
 
             var embeddingComparer = new ValueComparer<float[]>(
                 (a, b) => (a == null && b == null) || (a != null && b != null && a.SequenceEqual(b)),
@@ -220,6 +379,12 @@ public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options
             e.HasDiscriminator<string>("CommentType")
                 .HasValue<TextComment>("TextComment")
                 .HasValue<IconComment>("IconComment");
+
+            e.HasOne(c => c.Language)
+                .WithMany()
+                .HasForeignKey("LanguageCode")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // IconComment

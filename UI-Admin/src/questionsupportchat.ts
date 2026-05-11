@@ -1,4 +1,4 @@
-import { QuestionSupportSession, updateAiAssistanceMode } from './questionsupport';
+import { QuestionSupportSession, updateAiAssistanceMode } from './lib/questionsupport';
 
 // DOM references
 let messagesContainer: HTMLElement        | null = null;

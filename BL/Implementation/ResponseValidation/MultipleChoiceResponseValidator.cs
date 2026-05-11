@@ -13,9 +13,12 @@ public class MultipleChoiceResponseValidator : IResponseValidator
         if (string.IsNullOrWhiteSpace(value)) return;
 
         var selected = value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var allChoices = (question.Translations?
+            .SelectMany(t => t.AnswerChoices ?? Enumerable.Empty<string>())
+            ?? Enumerable.Empty<string>()).ToHashSet();
         foreach (var choice in selected)
         {
-            if (!question.AnswerChoices.Contains(choice))
+            if (!allChoices.Contains(choice))
                 throw new ArgumentException($"Invalid answer: '{choice}' is not in the list.", nameof(value));
         }
     }

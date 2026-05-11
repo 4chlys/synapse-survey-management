@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Mock_Comment_FirstTurn" xml:space="preserve">
+    <value>Dit idee gaat over: "{0}". Wat is jouw reactie hierop? Typ je reactie hieronder en ik geef je snel feedback.</value>
+  </data>
+  <data name="Mock_Comment_GoodReaction_WithSuggestion" xml:space="preserve">
+    <value>Goede reactie! Ik heb de formulering iets aangescherpt — je kunt dit gebruiken of je eigen versie indienen.</value>
+  </data>
+  <data name="Mock_Comment_GoodReaction_NoSuggestion" xml:space="preserve">
+    <value>Goede reactie! Je reactie is helder verwoord. Je kunt hem zo indienen.</value>
+  </data>
+  <data name="Mock_Idea_Opening_1" xml:space="preserve">
+    <value>Interessant! Wat is het grootste probleem dat jouw idee oplost?</value>
+  </data>
+  <data name="Mock_Idea_Opening_2" xml:space="preserve">
+    <value>Goed dat je een idee hebt! Kun je me vertellen voor wie dit idee bedoeld is?</value>
+  </data>
+  <data name="Mock_Idea_Opening_3" xml:space="preserve">
+    <value>Vertel me meer — wat heeft je geïnspireerd om dit idee te bedenken?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_1" xml:space="preserve">
+    <value>Dat klinkt goed. Hoe zou jij de eerste stap zetten om dit idee te realiseren?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_2" xml:space="preserve">
+    <value>Interessant perspectief! Wie zou er nog meer baat bij hebben?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_3" xml:space="preserve">
+    <value>Kun je een concreet voorbeeld geven van hoe dit werkt in de praktijk?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_4" xml:space="preserve">
+    <value>Wat zijn mogelijke obstakels en hoe zou je die aanpakken?</value>
+  </data>
+  <data name="Mock_Idea_Draft_Intro" xml:space="preserve">
+    <value>Op basis van ons gesprek heb ik een voorstel voor je idee samengesteld:</value>
+  </data>
+  <data name="Mock_Idea_Draft_Body" xml:space="preserve">
+    <value>Ik stel voor om {0} te verbeteren door: {1}. Dit zou een positieve impact hebben op de betrokken mensen en is haalbaar met de juiste aanpak.</value>
+  </data>
+</root>

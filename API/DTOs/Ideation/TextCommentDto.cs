@@ -8,5 +8,6 @@ public class TextCommentDto
     public bool IsOwnedByCurrentUser { get; set; }
     public bool IsPostedByIdeaAuthor { get; set; }
     public bool IsFlagged { get; set; }
+    public string LanguageCode { get; set; }
     public List<IconCommentDto> Emojis { get; set; } = new();
 }

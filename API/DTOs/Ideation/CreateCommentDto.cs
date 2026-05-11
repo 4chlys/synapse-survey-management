@@ -14,4 +14,5 @@ public class CreateCommentDto
     /// the server runs moderation again.
     /// </summary>
     public string ModerationToken { get; set; }
+    public string LanguageCode { get; set; }
 }

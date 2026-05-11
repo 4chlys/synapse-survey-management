@@ -4,6 +4,6 @@ public sealed class MockImageGenerationService : IAiImageGenerationService
 {
     public Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, CancellationToken ct = default)
     {
-        return Task.FromResult(ImageGenerationResult.Failed("AI-beeldgeneratie is uitgeschakeld."));
+        return Task.FromResult(ImageGenerationResult.Failed("AI image generation is disabled."));
     }
 }

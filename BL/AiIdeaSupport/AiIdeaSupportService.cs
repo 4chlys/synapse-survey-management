@@ -15,9 +15,20 @@ public sealed class AiIdeaSupportService(
     protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
     {
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
-        var systemPrompt = config.SystemPrompt.Replace("{age_range}", ageRange, StringComparison.OrdinalIgnoreCase);
+        var langName     = GetLanguageName(request.Language);
+        var systemPrompt = config.SystemPrompt
+            .Replace("{age_range}", ageRange,         StringComparison.OrdinalIgnoreCase)
+            .Replace("{language}",  request.Language, StringComparison.OrdinalIgnoreCase);
 
-        var messages = new List<ChatMessage> { new(ChatRole.System, systemPrompt) };
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.System, systemPrompt),
+            // Explicit language instruction using the full name so it is unambiguous
+            // regardless of what language the system prompt itself is written in.
+            new(ChatRole.System,
+                $"You MUST respond in {langName} for every message in this conversation. " +
+                "Do not use any other language."),
+        };
 
         if (request.IsFirstTurn && !string.IsNullOrWhiteSpace(request.CategoryName))
         {
@@ -25,14 +36,15 @@ public sealed class AiIdeaSupportService(
                 .Replace("{project_name}",         request.ProjectName,         StringComparison.OrdinalIgnoreCase)
                 .Replace("{project_introduction}", request.ProjectIntroduction, StringComparison.OrdinalIgnoreCase)
                 .Replace("{category_name}",        request.CategoryName,        StringComparison.OrdinalIgnoreCase)
-                .Replace("{category_description}", request.CategoryDescription, StringComparison.OrdinalIgnoreCase);
+                .Replace("{category_description}", request.CategoryDescription, StringComparison.OrdinalIgnoreCase)
+                .Replace("{language}",             request.Language,            StringComparison.OrdinalIgnoreCase);
             messages.Add(new ChatMessage(ChatRole.System, ctx));
         }
         else if (!string.IsNullOrWhiteSpace(request.CategoryName))
         {
             messages.Add(new ChatMessage(ChatRole.System,
-                $"Herinnering: de categorie voor deze sessie is '{request.CategoryName}'. " +
-                "Gebruik altijd deze naam — verzin NOOIT een andere categorienaam."));
+                $"Reminder: the category for this session is '{request.CategoryName}'. " +
+                "Always use this exact name — NEVER invent a different category name."));
         }
 
         var history = request.History.Count > config.MaxHistoryTurns * 2
@@ -91,14 +103,16 @@ public sealed class AiIdeaSupportService(
     protected override IdeaSupportChatReply FallbackReply() =>
         new() { AssistantMessage = config.FallbackMessage, Phase = IdeaSupportPhase.Error };
 
-    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, CancellationToken ct = default)
+    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))
             return new IdeaSupportRefineResult { RefinedText = null };
 
         try
         {
-            var prompt   = config.RefinePrompt.Replace("{draft}", draftText, StringComparison.OrdinalIgnoreCase);
+            var prompt   = config.RefinePrompt
+                .Replace("{draft}",    draftText, StringComparison.OrdinalIgnoreCase)
+                .Replace("{language}", language,  StringComparison.OrdinalIgnoreCase);
             var refined  = await SendSingleAsync([new(ChatRole.User, prompt)], ct);
 
             if (string.IsNullOrWhiteSpace(refined) || refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
@@ -112,5 +126,11 @@ public sealed class AiIdeaSupportService(
             logger.LogWarning(ex, "[IdeaSupport] Refine call failed.");
             return new IdeaSupportRefineResult { RefinedText = null };
         }
+    }
+
+    private static string GetLanguageName(string langCode)
+    {
+        try { return System.Globalization.CultureInfo.GetCultureInfo(langCode).EnglishName; }
+        catch { return langCode; }
     }
 }

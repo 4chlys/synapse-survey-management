@@ -9,9 +9,9 @@ public class HomeController : Controller
     public IActionResult ShortFormNotFound()
     {
         Response.StatusCode = StatusCodes.Status404NotFound;
-        return View("~/Views/ProjectLandingPage/NotFound.cshtml");
+        return View("~/Views/LandingPage/NotFound.cshtml");
     }
 
     public IActionResult ShortFormInactive()
-        => View("~/Views/ProjectLandingPage/Inactive.cshtml");
+        => View("~/Views/LandingPage/Inactive.cshtml");
 }

@@ -11,4 +11,5 @@ public class AdminIdeaDto
     public DateTime CreatedAt { get; set; }
     public string ParticipantEmail { get; set; }
     public string ImageUrl { get; set; }
+    public string LanguageCode { get; set; }
 }

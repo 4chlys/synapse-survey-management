@@ -1,10 +1,13 @@
+using Microsoft.Extensions.Localization;
+
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
 /// <summary>
 /// Local-only implementation used when <c>use_ai = false</c> in ai-config.json.
 /// Returns scripted responses that exercise the full request/response contract.
 /// </summary>
-public sealed class MockCommentSupportService : IAiCommentSupportService
+public sealed class MockCommentSupportService(IStringLocalizer<SharedResource> localizer)
+    : IAiCommentSupportService
 {
     public Task<CommentSupportReply> ChatAsync(
         CommentSupportRequest request,
@@ -18,10 +21,8 @@ public sealed class MockCommentSupportService : IAiCommentSupportService
 
             return Task.FromResult(new CommentSupportReply
             {
-                AssistantMessage =
-                    $"Dit idee gaat over: \"{ideaSnippet}\". " +
-                    "Wat is jouw reactie hierop? Typ je reactie hieronder en ik geef je snel feedback.",
-                IsFinal = false,
+                AssistantMessage = localizer["Mock_Comment_FirstTurn", ideaSnippet].Value,
+                IsFinal          = false,
             });
         }
 
@@ -32,11 +33,9 @@ public sealed class MockCommentSupportService : IAiCommentSupportService
 
         return Task.FromResult(new CommentSupportReply
         {
-            AssistantMessage =
-                "Goede reactie! " +
-                (suggestion is not null
-                    ? "Ik heb de formulering iets aangescherpt — je kunt dit gebruiken of je eigen versie indienen."
-                    : "Je reactie is helder verwoord. Je kunt hem zo indienen."),
+            AssistantMessage = suggestion is not null
+                ? localizer["Mock_Comment_GoodReaction_WithSuggestion"].Value
+                : localizer["Mock_Comment_GoodReaction_NoSuggestion"].Value,
             Suggestion = suggestion != userComment ? suggestion : null,
             IsFinal    = true,
         });

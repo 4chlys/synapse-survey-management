@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Mock_Comment_FirstTurn" xml:space="preserve">
+    <value>This idea is about: "{0}". What's your reaction? Type your reaction below and I'll give you quick feedback.</value>
+  </data>
+  <data name="Mock_Comment_GoodReaction_WithSuggestion" xml:space="preserve">
+    <value>Good reaction! I tightened the wording slightly — you can use this or submit your own version.</value>
+  </data>
+  <data name="Mock_Comment_GoodReaction_NoSuggestion" xml:space="preserve">
+    <value>Good reaction! Your reaction is clearly worded. You can submit it as is.</value>
+  </data>
+  <data name="Mock_Idea_Opening_1" xml:space="preserve">
+    <value>Interesting! What's the biggest problem your idea solves?</value>
+  </data>
+  <data name="Mock_Idea_Opening_2" xml:space="preserve">
+    <value>Good that you have an idea! Can you tell me who this idea is for?</value>
+  </data>
+  <data name="Mock_Idea_Opening_3" xml:space="preserve">
+    <value>Tell me more — what inspired you to come up with this idea?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_1" xml:space="preserve">
+    <value>Sounds good. How would you take the first step to realise this idea?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_2" xml:space="preserve">
+    <value>Interesting perspective! Who else would benefit?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_3" xml:space="preserve">
+    <value>Can you give a concrete example of how this works in practice?</value>
+  </data>
+  <data name="Mock_Idea_FollowUp_4" xml:space="preserve">
+    <value>What are possible obstacles and how would you address them?</value>
+  </data>
+  <data name="Mock_Idea_Draft_Intro" xml:space="preserve">
+    <value>Based on our conversation, I've drafted a proposal for your idea:</value>
+  </data>
+  <data name="Mock_Idea_Draft_Body" xml:space="preserve">
+    <value>I propose improving {0} by: {1}. This would have a positive impact on the people involved and is achievable with the right approach.</value>
+  </data>
+</root>

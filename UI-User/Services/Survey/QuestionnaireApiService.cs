@@ -12,9 +12,12 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         _httpClient = httpClient;
     }
 
-    public async Task<SurveyViewModel> GetSurveyAsync(int projectId)
+    public async Task<SurveyViewModel> GetSurveyAsync(int projectId, string languageCode = null)
     {
-        var response = await _httpClient.GetAsync($"api/projects/{projectId}/questionnaire/questions");
+        var url = languageCode is not null
+            ? $"api/projects/{projectId}/questionnaire/questions?languageCode={Uri.EscapeDataString(languageCode)}"
+            : $"api/projects/{projectId}/questionnaire/questions";
+        var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
             return null;
@@ -144,9 +147,10 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         return result?.QuestionIds ?? [];
     }
 
-    public async Task<string> StartSessionAsync(int projectId)
+    public async Task<string> StartSessionAsync(int projectId, string languageCode)
     {
-        var response = await _httpClient.PostAsync($"api/projects/{projectId}/participants", null);
+        var response = await _httpClient.PostAsync(
+            $"api/projects/{projectId}/participants?languageCode={Uri.EscapeDataString(languageCode)}", null);
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<ApiParticipantDto>();
@@ -177,6 +181,8 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         public string Text { get; set; }
         public string QuestionFormat { get; set; }
         public List<string> AnswerChoices { get; set; } = new();
+        public int AnswerChoiceCount { get; set; }
+        public int? ChoiceIndex { get; set; }
         public bool IsMandatory { get; set; }
         public int Position { get; set; }
         public string MediaUrl { get; set; }

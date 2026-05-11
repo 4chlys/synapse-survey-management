@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideas;
 using SynapseEnqueteManagement.API.Services;
@@ -34,8 +35,9 @@ public class AdminIdeasController(
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
+        var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var (items, total, approved, pending, flagged) =
-            await categoryManager.GetIdeasPagedAsync(projectId, search, categoryId, statusEnum, page, pageSize);
+            await categoryManager.GetIdeasPagedAsync(projectId, search, categoryId, statusEnum, page, lang, pageSize);
 
         return Ok(new IdeaPageDto
         {
@@ -55,7 +57,8 @@ public class AdminIdeasController(
                 CreatedAt     = i.CreatedAt,
                 Status        = i.Status.ToString(),
                 ParticipantEmail = i.ParticipantEmail,
-                ImageUrl      = i.ImageUrl
+                ImageUrl      = i.ImageUrl,
+                LanguageCode  = i.LanguageCode
             }).ToList()
         });
     }

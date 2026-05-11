@@ -5,24 +5,24 @@ namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
 public class CreateQuestionDto
 {
-    [Required] [MaxLength(500)]
-    public string Text { get; set; }
+    [Required] [Range(0, int.MaxValue)]
+    public int AnswerChoiceCount { get; set; }
 
     [Required] [MaxLength(50)]
     public string QuestionFormat { get; set; }
 
     public bool IsMandatory { get; set; }
 
-    public ICollection<string> AnswerChoices { get; set; } = new List<string>();
-
     public int? SectionId { get; set; }
 
     public int? ParentQuestionId { get; set; }
 
-    [MaxLength(500)]
-    public string ParentTriggerValue { get; set; }
+    public int? ChoiceIndex { get; set; }
 
-    public ICollection<string> EndingAnswers { get; set; } = new List<string>();
+    [Required]
+    public ICollection<QuestionTranslationDto> Translations { get; set; } = new List<QuestionTranslationDto>();
+
+    public ICollection<ICollection<EndingAnswerTranslationDto>> EndingAnswers { get; set; } = new List<ICollection<EndingAnswerTranslationDto>>();
 
     [MaxLength(500)]
     public string MediaUrl { get; set; }
@@ -30,7 +30,4 @@ public class CreateQuestionDto
     public QuestionMediaType? MediaType { get; set; }
 
     public bool MediaIsEmbed { get; set; }
-
-    [MaxLength(2000)]
-    public string MediaText { get; set; }
 }

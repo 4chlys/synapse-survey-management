@@ -494,8 +494,7 @@ $RECYCLE.BIN/
 
 # manually by Casper
 CLAUDE.md
-start_ui-admin.bat
-start_ui-user.bat
+start.bat
 stop.bat
 CasperContext/
 

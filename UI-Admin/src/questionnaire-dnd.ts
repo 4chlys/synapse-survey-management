@@ -4,12 +4,12 @@
 // toggle. Event handlers are attached once to the stable #questions-list
 // container; re-rendering its innerHTML does not invalidate them.
 
-import { renderTree, Question, RenderContext } from './questionnaire-tree';
+import { renderTree, Question, RenderContext } from './lib/questionnaire-tree';
 import { toast } from './lib/notify';
 
 interface MovePayload {
     parentQuestionId: number | null;
-    parentTriggerValue: string | null;
+    choiceIndex: number | null;
     position: number;
 }
 
@@ -137,10 +137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const questionId = parseInt(dragged.dataset.questionId ?? '0', 10);
         const parentIdStr = zone.dataset.parentId ?? '';
-        const triggerStr = zone.dataset.parentTrigger ?? '';
+        const choiceIndexStr = zone.dataset.parentChoiceIndex ?? '';
         const payload: MovePayload = {
             parentQuestionId: parentIdStr === '' ? null : parseInt(parentIdStr, 10),
-            parentTriggerValue: parentIdStr === '' ? null : triggerStr,
+            choiceIndex: (parentIdStr === '' || choiceIndexStr === '') ? null : parseInt(choiceIndexStr, 10),
             position: 9999, // server clamps to end of scope
         };
 

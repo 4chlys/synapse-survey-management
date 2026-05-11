@@ -14,6 +14,8 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
     public Task<Participant> ReadBySessionTokenWithProjectForUpdateAsync(Guid sessionToken)
         => Context.Set<Participant>()
             .Include(p => p.Project)
+                .ThenInclude(p => p.DefaultLanguage)
+            .Include(p => p.Language)
             .FirstOrDefaultAsync(p => p.SessionToken == sessionToken);
 
     public Task<Participant> ReadBySessionTokenReadOnlyAsync(Guid sessionToken)

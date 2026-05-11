@@ -1,8 +1,10 @@
 import { wireIdeationForm } from './ideationform';
 import { wireModerationField } from './moderation';
 import { wireIdeaImageField } from './ideaimage';
+import { wireImageDescribeButton } from './imagedescribe';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
+import { t } from '../lib/i18n';
 
 interface EmojiReaction {
     emojiId: number;
@@ -13,6 +15,7 @@ interface EmojiReaction {
 
 export function initIdeation(): void {
     const projectId = getProjectId();
+    const showAllToggle = document.getElementById('show-all-languages-toggle') as HTMLInputElement | null;
 
     const createFormEl    = document.getElementById('createForm');
     const createForm      = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
@@ -29,6 +32,7 @@ export function initIdeation(): void {
     if (createForm && projectId != null && categoryId) {
         wireIdeationForm(createForm, 'description', projectId, 'idea');
         wireIdeaImageField(createForm);
+        wireImageDescribeButton(createForm, projectId);
         if (descriptionEl) {
             wireModerationField(descriptionEl, projectId);
         }
@@ -271,7 +275,7 @@ export function initIdeation(): void {
             }
             case 'refresh-ideas':
                 e.preventDefault();
-                handleRefreshIdeas();
+                handleRefreshIdeas(showAllToggle);
                 break;
 
             case 'copy-idea': {
@@ -298,6 +302,22 @@ export function initIdeation(): void {
             }
         }
     });
+
+    // Restore toggle state from URL so the checkbox reflects the current filter on page load.
+    const currentParams = new URLSearchParams(window.location.search);
+    if (showAllToggle && currentParams.get('showAllLanguages') === 'true') {
+        showAllToggle.checked = true;
+    }
+
+    showAllToggle?.addEventListener('change', () => {
+        const url = new URL(window.location.href);
+        if (showAllToggle.checked) {
+            url.searchParams.set('showAllLanguages', 'true');
+        } else {
+            url.searchParams.delete('showAllLanguages');
+        }
+        window.location.href = url.toString();
+    });
 }
 
 // Refresh ideas logic
@@ -315,7 +335,7 @@ interface LoadIdeasResponse {
     remaining: number;
 }
 
-async function handleRefreshIdeas(): Promise<void> {
+async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<void> {
     const list = document.getElementById('ideas-list');
     const btn = document.getElementById('refresh-ideas-btn');
     const counter = document.getElementById('refresh-ideas-counter');
@@ -333,8 +353,11 @@ async function handleRefreshIdeas(): Promise<void> {
     currentPage++;
     list.dataset.currentPage = currentPage.toString();
 
+    const showAll = toggle?.checked ?? false;
+
     try {
-        const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}`;
+        const showAllParam = showAll ? '&showAllLanguages=true' : '';
+        const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}${showAllParam}`;
         const response = await fetch(url);
         if (!response.ok) return;
 
@@ -372,12 +395,12 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
     if (idea.isFlagged) {
         statusLabel = `<span class="inline-flex items-center gap-1 text-xs text-warning font-medium mb-2">
             <span class="w-1.5 h-1.5 rounded-full bg-warning inline-block"></span>
-            In behandeling
+            ${t('ideaCardStatusFlagged')}
         </span>`;
     } else if (idea.isOwnedByCurrentUser) {
         statusLabel = `<span class="inline-flex items-center gap-1 text-xs text-primary font-medium mb-2">
             <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
-            Jouw idee
+            ${t('ideaCardStatusOwnIdea')}
         </span>`;
     }
 
@@ -408,7 +431,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                 </svg>
-                Gebruiken als startpunt
+                ${t('ideaCardUseAsStartingPoint')}
             </button>
         </div>
         ${emojiHtml ? `<div class="flex gap-2 mt-4 items-center flex-wrap">${emojiHtml}</div>` : ''}

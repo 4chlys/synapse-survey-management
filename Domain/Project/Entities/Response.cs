@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
@@ -14,4 +15,6 @@ public class Response : IHasCreatedAt
     [Required] public Question Question { get; set; }
 
     [Required] public Participant Participant { get; set; }
+
+    public Language Language { get; set; }
 }

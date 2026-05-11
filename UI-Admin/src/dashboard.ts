@@ -2,7 +2,7 @@ import { initStatWidget } from './widget-stat';
 import { initTimelineWidget } from './widget-timeline';
 import { initTopCategoriesWidget } from './widget-top-categories';
 import { initTopIdeasWidget } from './widget-top-ideas';
-import { initSurveyDistributionWidget } from './widget-survey-distribution';
+import { initSurveyDistributionWidget } from './lib/widget-survey-distribution';
 import { initIdeaFeedWidget } from './widget-idea-feed';
 import { initModerationQueueWidget } from './widget-moderation-queue';
 
