@@ -1,0 +1,94 @@
+@{
+    var orgName = (ViewData["SurveyTitle"] ?? ViewData["OrganisationName"] ?? "").ToString();
+    var orgLogoUrl = ViewData["OrganisationLogoUrl"] as string;
+
+    var cards = new[]
+    {
+        new { Left = "4%",  Dur = "18s", Delay = "-9s",  Rot = "-3deg", Width = "w-52" },
+        new { Left = "18%", Dur = "22s", Delay = "-5s",  Rot = "2deg",  Width = "w-56" },
+        new { Left = "34%", Dur = "19s", Delay = "-15s", Rot = "-1deg", Width = "w-48" },
+        new { Left = "50%", Dur = "24s", Delay = "-12s", Rot = "3deg",  Width = "w-60" },
+        new { Left = "64%", Dur = "20s", Delay = "-6s",  Rot = "-2deg", Width = "w-52" },
+        new { Left = "78%", Dur = "23s", Delay = "-18s", Rot = "1deg",  Width = "w-56" },
+        new { Left = "88%", Dur = "17s", Delay = "-8s",  Rot = "-4deg", Width = "w-44" },
+    };
+
+    var questions = new[]
+    {
+        new { Q = "Hoe tevreden bent u over onze service?", Type = "likert" },
+        new { Q = "Wat is uw voorkeur voor contact?",       Type = "choice" },
+        new { Q = "Hoe vaak gebruikt u dit platform?",      Type = "choice" },
+        new { Q = "Geef uw mening over de gebruiksgemak.",  Type = "likert" },
+        new { Q = "Welke functie gebruikt u het meest?",    Type = "choice" },
+        new { Q = "Hoe waardeert u de ondersteuning?",      Type = "likert" },
+        new { Q = "Wat kunnen wij verbeteren?",             Type = "open"   },
+        new { Q = "What should we do to improve?",          Type = "Open"   },
+        new { Q = "How often do you use this platform?",    Type = "choice" },
+        new { Q = "How likely are you to recommend us?",    Type = "likert" },
+        new { Q = "What aspects of our service do you value most?", Type = "choice" },
+    };
+
+    var shuffledQuestions = questions.OrderBy(_ => Guid.NewGuid()).ToArray();
+}
+
+@if (!string.IsNullOrEmpty(orgLogoUrl))
+{
+    <div class="fixed inset-0 flex items-start justify-center z-0 pointer-events-none pt-[7vh]" aria-hidden="true">
+        <img src="@orgLogoUrl" alt=""
+             class="w-[320px] max-w-[40vw] object-contain opacity-[0.15] select-none" />
+    </div>
+}
+
+<div class="fixed inset-0 bg-black/5 z-[2] pointer-events-none" aria-hidden="true"></div>
+
+<div class="fixed inset-0 overflow-hidden z-[1] pointer-events-none" aria-hidden="true">
+    @for (int i = 0; i < cards.Length; i++)
+    {
+        var c = cards[i];
+        var q = shuffledQuestions[i % shuffledQuestions.Length];
+        <div class="landing-bg-card @c.Width"
+             style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
+            <div class="rounded-2xl border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
+
+                @if (!string.IsNullOrEmpty(orgLogoUrl))
+                {
+                    <img src="@orgLogoUrl" alt="" class="h-4 w-auto object-contain opacity-40 self-start" />
+                }
+                else
+                {
+                    <span class="text-[10px] font-semibold tracking-widest text-base-content/30 uppercase">@orgName</span>
+                }
+
+                <p class="text-xs font-medium text-base-content/50 leading-snug landing-card-question">@q.Q</p>
+
+                @if (q.Type == "likert")
+                {
+                    <div class="flex gap-1.5 items-center">
+                        @for (int d = 1; d <= 5; d++)
+                        {
+                            <div class="h-5 w-5 rounded-full border border-base-300/60 @(d == 3 ? "bg-primary/30 border-primary/50" : "bg-base-200/50")"></div>
+                        }
+                    </div>
+                }
+                else if (q.Type == "choice")
+                {
+                    foreach (var opt in new[] { "44px", "56px", "36px" })
+                    {
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 w-3 rounded-full border border-base-300/60 bg-base-200/50"></div>
+                            <div class="h-2 rounded-full bg-base-content/20" style="width: @opt"></div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="rounded-lg border border-base-300/50 bg-base-200/30 h-10 w-full"></div>
+                }
+
+                <div class="h-1 w-full rounded-full bg-base-300/40 mt-1">
+                    <div class="h-1 rounded-full bg-primary/40" style="width: @(35 + i * 9)%"></div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

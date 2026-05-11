@@ -112,67 +112,59 @@
 
     @if (ViewData["HideNavbar"] is not true)
     {
-    <header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300" style="height: var(--header-h)">
-        <div class="h-full max-w-2xl mx-auto px-6 flex items-center justify-between gap-4">
+    <header class="fixed left-0 right-0 z-40 bg-transparent" style="height: var(--header-h)">
+        <div class="h-full max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
 
             @{
-                var logoUrl = ViewData["OrganisationLogoUrl"]?.ToString();
-                var websiteUrl = ViewData["OrganisationWebsiteUrl"]?.ToString();
+                var surveyTitle = (ViewData["SurveyTitle"] ?? "SynapseIP").ToString();
             }
 
-            @* Left: logo or fixed-width spacer *@
-            <div class="w-20 flex items-center shrink-0">
-                @if (!string.IsNullOrEmpty(logoUrl))
-                {
-                    <img src="@logoUrl" alt="@L["OrganisationLogoAlt"]" class="h-7 w-auto object-contain" />
-                }
+            @* Left: title — same alignment on all sizes *@
+            <div class="flex items-center min-w-0 flex-1">
+                <span class="font-heading font-semibold text-base-content/80 text-base tracking-wide truncate">
+                    @surveyTitle
+                </span>
             </div>
 
-            @* Center: project title *@
-            <h1 class="font-heading font-semibold text-base-content text-lg tracking-tight truncate text-center flex-1">
-                @(ViewData["SurveyTitle"] ?? "SynapseIP")
-            </h1>
+            @* Right: language switcher + theme toggle *@
+            <div class="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
 
-            @* Right: language switcher + website link + theme toggle *@
-            <div class="flex items-center justify-end gap-2 shrink-0">
-
-                @* Language switcher — POST to CultureController to set the cookie *@
+                @* Language switcher — segmented pill *@
                 @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
                 <form asp-controller="Culture" asp-action="SetCulture" method="post"
-                      class="flex items-center gap-1"
+                      class="flex items-center rounded-full border border-base-content/20 bg-base-200 overflow-hidden"
                       aria-label="@Shared["LanguageMenu_Switch"]">
                     <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
                     @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
                     {
                         var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
                         <button type="submit" name="culture" value="@c.Name"
-                                class="text-xs font-medium @(isActive ? "text-primary underline underline-offset-2" : "text-neutral hover:text-primary") transition-colors uppercase cursor-pointer"
+                                class="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer @(isActive ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-primary")"
                                 aria-current="@(isActive ? "true" : "false")">
                             @c.TwoLetterISOLanguageName
                         </button>
                     }
                 </form>
 
-                @if (!string.IsNullOrEmpty(websiteUrl))
-                {
-                    <a href="@websiteUrl" target="_blank" rel="noopener noreferrer"
-                           class="hidden sm:block text-xs text-neutral hover:text-primary transition-colors">
-                        @L["WebsiteLink"]
-                    </a>
-                }
-
+                @* Theme toggle pill *@
                 <button id="theme-toggle" aria-label="@L["ThemeToggleLabel"]"
-                        class="w-8 h-8 rounded-full flex items-center justify-center text-neutral hover:text-primary hover:bg-base-200 transition-colors cursor-pointer">
-                    <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none"
+                        class="relative inline-flex items-center w-14 h-7 rounded-full border border-base-content/20 bg-base-200 transition-colors cursor-pointer focus:outline-none shrink-0">
+                    <span class="sr-only">@L["ThemeToggleLabel"]</span>
+                    <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg"
+                         class="absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-warning hidden pointer-events-none" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                    <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg"
+                         class="absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-base-content/50 pointer-events-none" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
+                    <span id="toggle-knob"
+                          class="absolute left-1 h-5 w-5 rounded-full bg-base-content/70 shadow-sm transition-transform duration-200 pointer-events-none translate-x-0">
+                    </span>
                 </button>
             </div>
 
