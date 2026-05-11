@@ -19,30 +19,30 @@ setup_logging_iam() {
 }
 
 create_uptime_checks() {
-  echo ">>> Uptime checks aanmaken..."
+  echo ">>> Uptime checks aanmaken (omgeving: ${ENV})..."
 
-  gcloud monitoring uptime create synapse-api-uptime \
-    --display-name="Synapse API Health" \
+  gcloud monitoring uptime create "synapse-${ENV}-api-uptime" \
+    --display-name="Synapse ${ENV} API Health" \
     --resource-type=uptime-url \
     --resource-labels="host=api.${DOMAIN},project_id=${PROJECT_ID}" \
     --path="/health" \
     --period=5 \
     --timeout=10 \
-    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-api-uptime al aanwezig)"
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-api-uptime al aanwezig)"
 
-  gcloud monitoring uptime create synapse-ui-uptime \
-    --display-name="Synapse UI Health" \
+  gcloud monitoring uptime create "synapse-${ENV}-ui-uptime" \
+    --display-name="Synapse ${ENV} UI Health" \
     --resource-type=uptime-url \
     --resource-labels="host=${DOMAIN},project_id=${PROJECT_ID}" \
     --path="/health" \
     --period=5 \
     --timeout=10 \
-    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-ui-uptime al aanwezig)"
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-ui-uptime al aanwezig)"
 }
 
 destroy_uptime_checks() {
-  echo ">>> Uptime checks verwijderen..."
-  for check in synapse-api-uptime synapse-ui-uptime; do
+  echo ">>> Uptime checks verwijderen (omgeving: ${ENV})..."
+  for check in "synapse-${ENV}-api-uptime" "synapse-${ENV}-ui-uptime"; do
     gcloud monitoring uptime delete "${check}" \
       --project="${PROJECT_ID}" --quiet 2>/dev/null || true
   done

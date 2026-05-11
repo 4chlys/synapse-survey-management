@@ -1,10 +1,10 @@
 #!/bin/bash
 # Cloud Armor beveiligingsbeleid + WAF regels
 
-ARMOR_POLICY="synapse-armor"
+ARMOR_POLICY="synapse-${ENV}-armor"
 
 create_cloud_armor() {
-  echo ">>> Cloud Armor policy aanmaken: ${ARMOR_POLICY}..."
+  echo ">>> Cloud Armor policy aanmaken: ${ARMOR_POLICY} (omgeving: ${ENV})..."
   gcloud compute security-policies create "${ARMOR_POLICY}" \
     --description="Synapse WAF - DDoS, OWASP, rate limiting" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
@@ -41,7 +41,7 @@ create_cloud_armor() {
   gcloud compute security-policies rules create 200 --security-policy="${ARMOR_POLICY}" --expression="true" --action=deny-403 --description="Geo-blocking: alleen EU toegelaten" --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   echo "  >>> Policy koppelen aan backend services..."
-  for backend in synapse-api-backend synapse-ui-backend synapse-admin-backend; do
+  for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
     gcloud compute backend-services update "${backend}" \
       --security-policy="${ARMOR_POLICY}" \
       --global \
@@ -52,8 +52,8 @@ create_cloud_armor() {
 }
 
 destroy_cloud_armor() {
-  echo ">>> Cloud Armor policy ontkoppelen en verwijderen..."
-  for backend in synapse-api-backend synapse-ui-backend synapse-admin-backend; do
+  echo ">>> Cloud Armor policy ontkoppelen en verwijderen (omgeving: ${ENV})..."
+  for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
     gcloud compute backend-services update "${backend}" \
       --security-policy="" \
       --global \
