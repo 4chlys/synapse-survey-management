@@ -2,68 +2,56 @@
 @model PlatformFormViewModel
 @{
     ViewData["Title"] = "Nieuw platform";
+    ViewData["ActiveSection"] = "Platform";
     Layout = "_Layout";
 }
 
-<div class="min-h-screen bg-gray-900 text-white p-8">
+<div class="max-w-lg">
+    <div class="mb-6">
+        <a asp-controller="Platform" asp-action="Index"
+           class="text-base-content/60 hover:text-base-content transition text-sm">
+            ← Platformen
+        </a>
+    </div>
 
-    <div class="max-w-lg">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Nieuw platform</h1>
 
-        <div class="flex items-center gap-3 mb-8">
-            <a asp-controller="Platform" asp-action="Index"
-               class="text-gray-400 hover:text-white transition text-sm">
-                ← Platformen
-            </a>
-        </div>
-
-        <h1 class="text-2xl font-semibold mb-6">Nieuw platform</h1>
-
-        <div class="bg-gray-800 p-6">
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
 
             <div asp-validation-summary="ModelOnly"
-                 class="mb-4 text-sm text-red-400 border border-red-700 bg-red-900/20 px-4 py-3"></div>
+                 class="text-sm text-error border border-error bg-error/10 px-4 py-3 rounded"></div>
 
-            <form asp-controller="Platform" asp-action="Create" method="post">
+            <form asp-controller="Platform" asp-action="Create" method="post" class="flex flex-col gap-4">
                 @Html.AntiForgeryToken()
 
-                <div class="mb-4">
-                    <label asp-for="Name" class="block text-sm text-gray-300 mb-1">Naam</label>
-                    <input asp-for="Name"
-                           class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Naam *</span></div>
+                    <input asp-for="Name" class="input input-bordered w-full"
                            placeholder="Naam van het platform" />
-                    <span asp-validation-for="Name" class="text-xs text-red-400 mt-1 block"></span>
-                </div>
+                    <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
+                </label>
 
-                <div class="mb-4">
-                    <label asp-for="LogoUrl" class="block text-sm text-gray-300 mb-1">Logo-URL</label>
-                    <input asp-for="LogoUrl"
-                           class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Logo-URL</span></div>
+                    <input asp-for="LogoUrl" class="input input-bordered w-full"
                            placeholder="https://..." />
-                    <span asp-validation-for="LogoUrl" class="text-xs text-red-400 mt-1 block"></span>
-                </div>
+                    <span asp-validation-for="LogoUrl" class="label-text-alt text-error mt-1"></span>
+                </label>
 
-                <div class="mb-6">
-                    <label asp-for="WebsiteUrl" class="block text-sm text-gray-300 mb-1">Website-URL</label>
-                    <input asp-for="WebsiteUrl"
-                           class="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-2 w-full focus:outline-none focus:border-gray-400"
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Website-URL</span></div>
+                    <input asp-for="WebsiteUrl" class="input input-bordered w-full"
                            placeholder="https://..." />
-                    <span asp-validation-for="WebsiteUrl" class="text-xs text-red-400 mt-1 block"></span>
-                </div>
+                    <span asp-validation-for="WebsiteUrl" class="label-text-alt text-error mt-1"></span>
+                </label>
 
-                <div class="flex items-center gap-3">
-                    <button type="submit"
-                            class="border border-gray-400 px-5 py-2 text-sm text-white hover:bg-gray-700 transition">
-                        Opslaan
-                    </button>
-                    <a asp-controller="Platform" asp-action="Index"
-                       class="border border-gray-600 px-5 py-2 text-sm text-gray-300 hover:text-white hover:border-gray-400 transition">
-                        Annuleer
-                    </a>
+                <div class="card-actions justify-end gap-2 pt-2">
+                    <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
+                    <button type="submit" class="btn btn-primary">Opslaan</button>
                 </div>
-
             </form>
         </div>
-
     </div>
 </div>
 

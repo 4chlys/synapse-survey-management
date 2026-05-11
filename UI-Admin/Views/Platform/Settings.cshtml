@@ -1,0 +1,125 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model PlatformSettingsViewModel
+@{
+    ViewData["Title"] = "Instellingen";
+    ViewData["ActiveSection"] = "Instellingen";
+    Layout = "_Layout";
+}
+
+<div class="max-w-2xl">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Instellingen</h1>
+
+    @* Basic info *@
+    <div class="card bg-base-100 shadow-sm mb-6">
+        <div class="card-body gap-5">
+            <h2 class="font-semibold text-base-content">Basisinformatie</h2>
+
+            <form asp-action="SaveBasicInfo" asp-route-id="@Model.ProjectPlatformId"
+                  method="post" class="flex flex-col gap-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ProjectPlatformId" value="@Model.BasicInfo.ProjectPlatformId" />
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Naam *</span></div>
+                    <input name="Name" value="@Model.BasicInfo.Name" class="input input-bordered w-full"
+                           placeholder="Naam van het platform" />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Logo-URL</span></div>
+                    <input name="LogoUrl" value="@Model.BasicInfo.LogoUrl" class="input input-bordered w-full"
+                           placeholder="https://..." />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Website-URL</span></div>
+                    <input name="WebsiteUrl" value="@Model.BasicInfo.WebsiteUrl" class="input input-bordered w-full"
+                           placeholder="https://..." />
+                </label>
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Configuration: feature flags, quotas, billing *@
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <h2 class="font-semibold text-base-content">Configuratie</h2>
+
+            <form asp-action="SaveConfiguration" asp-route-id="@Model.ProjectPlatformId"
+                  method="post" class="flex flex-col gap-5">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ProjectPlatformId" value="@Model.Configuration.ProjectPlatformId" />
+
+                <div class="divider my-0 text-xs text-base-content/40">Feature flags</div>
+
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="hidden" name="AiAssistanceEnabled" value="false" />
+                    <input type="checkbox" name="AiAssistanceEnabled" value="true"
+                           class="toggle toggle-primary toggle-sm"
+                           @(Model.Configuration.AiAssistanceEnabled ? "checked" : "") />
+                    <span class="label-text">AI-assistentie ingeschakeld</span>
+                </label>
+
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="hidden" name="IdeationEnabled" value="false" />
+                    <input type="checkbox" name="IdeationEnabled" value="true"
+                           class="toggle toggle-primary toggle-sm"
+                           @(Model.Configuration.IdeationEnabled ? "checked" : "") />
+                    <span class="label-text">Ideation (ideeën module) ingeschakeld</span>
+                </label>
+
+                <div class="divider my-0 text-xs text-base-content/40">Quota's</div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Max. projecten</span></div>
+                        <input name="MaxProjects" type="number" min="0"
+                               value="@Model.Configuration.MaxProjects"
+                               class="input input-bordered w-full no-spinner" placeholder="Onbeperkt" />
+                    </label>
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">Max. beheerders</span></div>
+                        <input name="MaxAdmins" type="number" min="0"
+                               value="@Model.Configuration.MaxAdmins"
+                               class="input input-bordered w-full no-spinner" placeholder="Onbeperkt" />
+                    </label>
+                </div>
+
+                <div class="divider my-0 text-xs text-base-content/40">Contact & facturatie</div>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Contactpersoon</span></div>
+                    <input name="ContactName" value="@Model.Configuration.ContactName"
+                           class="input input-bordered w-full"
+                           placeholder="Naam van de contactpersoon" />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Contacte-mail</span></div>
+                    <input name="ContactEmail" type="email" value="@Model.Configuration.ContactEmail"
+                           class="input input-bordered w-full"
+                           placeholder="contact@voorbeeld.be" />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Factuurreferentie</span></div>
+                    <input name="BillingReference" value="@Model.Configuration.BillingReference"
+                           class="input input-bordered w-full"
+                           placeholder="bijv. PO-2026-001" />
+                </label>
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
