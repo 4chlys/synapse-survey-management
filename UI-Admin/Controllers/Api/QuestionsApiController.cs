@@ -46,7 +46,9 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
 
         await questionService.UpdateQuestionAsync(projectId, questionId,
             question.Text, question.QuestionFormat, question.IsMandatory,
-            question.AnswerChoices, question.SectionId, request.EndingAnswers);
+            question.AnswerChoices, question.SectionId, request.EndingAnswers,
+            mediaUrl: question.MediaUrl, mediaType: question.MediaType,
+            mediaIsEmbed: question.MediaIsEmbed, mediaText: question.MediaText);
         return NoContent();
     }
 

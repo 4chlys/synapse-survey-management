@@ -48,6 +48,9 @@ public class ParticipantManager(
     public Task<int> CountCompletionsByProjectAsync(int projectId)
         => participantRepository.CountCompletionsByProjectAsync(projectId);
 
+    public Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId)
+        => participantRepository.ReadEmailsByProjectIdReadOnlyAsync(projectId);
+
     public async Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30)
     {
         var events = await participantRepository.ReadTimelineAsync(projectId, days);

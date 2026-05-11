@@ -1,3 +1,5 @@
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+
 namespace SynapseEnqueteManagement.UI.Admin.Models.Question;
 
 public class QuestionViewModel
@@ -13,4 +15,8 @@ public class QuestionViewModel
     public ICollection<string> EndingAnswers { get; set; } = new List<string>();
     public string SectionName { get; set; }
     public int? SectionId { get; set; }
+    public string MediaUrl { get; set; }
+    public QuestionMediaType? MediaType { get; set; }
+    public bool MediaIsEmbed { get; set; }
+    public string MediaText { get; set; }
 }

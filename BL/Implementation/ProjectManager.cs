@@ -179,6 +179,14 @@ public class ProjectManager(
         await uow.SaveChangesAsync();
     }
 
+    public async Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId)
+            ?? throw new ArgumentException($"Project {projectId} not found.", nameof(projectId));
+        project.AiAssistance = mode;
+        await uow.SaveChangesAsync();
+    }
+
     public async Task<Project> DuplicateProjectAsync(int sourceProjectId, string newName, int platformId, string newShortForm = null, CancellationToken ct = default)
     {
         var src = await projectRepository.ReadByIdForDuplicationReadOnlyAsync(sourceProjectId);

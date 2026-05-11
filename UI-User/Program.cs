@@ -113,7 +113,7 @@ builder.Services.AddRateLimiter(options =>
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 Window      = TimeSpan.FromMinutes(1),
-                PermitLimit = 10,
+                PermitLimit = 5,
                 QueueLimit  = 0,
             }));
     options.AddPolicy("participant-creation", context =>
@@ -163,9 +163,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseHttpLogging();
 app.UseStaticFiles();
 app.UseRouting();

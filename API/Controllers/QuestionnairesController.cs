@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
+using SynapseEnqueteManagement.API.Helpers;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -13,9 +15,14 @@ public class QuestionnairesController(
     IQuestionnaireManager questionnaireManager,
     ISurveyFlowManager surveyFlowManager,
     IParticipantManager participantManager,
-    IProjectManager projectManager)
+    IProjectManager projectManager,
+    IStorageService storageService,
+    IWebHostEnvironment env)
     : ParticipantControllerBase(participantManager, projectManager)
 {
+    private static readonly string GcsBucket =
+        Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod";
+
     [HttpGet]
     public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
     {
@@ -46,11 +53,17 @@ public class QuestionnairesController(
         if (!Enum.TryParse<QuestionFormat>(dto.QuestionFormat, out var format))
             return BadRequest("Invalid QuestionFormat.");
 
+        var (mediaValid, canonicalUrl, mediaError) = MediaUrlValidator.Validate(
+            dto.MediaUrl, dto.MediaType, dto.MediaIsEmbed, GcsBucket, env.IsDevelopment());
+        if (!mediaValid)
+            return BadRequest(mediaError);
+
         try
         {
             var question = await questionnaireManager.AddQuestionAsync(projectId,
                 dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
-                dto.ParentQuestionId, dto.ParentTriggerValue, dto.EndingAnswers?.ToList(), ct);
+                dto.ParentQuestionId, dto.ParentTriggerValue, dto.EndingAnswers?.ToList(),
+                canonicalUrl, dto.MediaType, dto.MediaIsEmbed, dto.MediaText, ct);
             if (question is null)
                 return NotFound();
 
@@ -72,11 +85,33 @@ public class QuestionnairesController(
         if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
             return NotFound();
 
+        var (mediaValid, canonicalUrl, mediaError) = MediaUrlValidator.Validate(
+            dto.MediaUrl, dto.MediaType, dto.MediaIsEmbed, GcsBucket, env.IsDevelopment());
+        if (!mediaValid)
+            return BadRequest(mediaError);
+
+        var existing = await questionnaireManager.GetQuestionByIdReadOnlyAsync(questionId);
+        var oldMediaUrl = existing?.MediaUrl;
+
         var success = await questionnaireManager.UpdateQuestionAsync(questionId,
             dto.Text, format, dto.IsMandatory, dto.AnswerChoices?.ToList(), dto.SectionId,
-            dto.EndingAnswers?.ToList(), ct);
+            dto.EndingAnswers?.ToList(),
+            canonicalUrl, dto.MediaType, dto.MediaIsEmbed, dto.MediaText, ct);
         if (!success)
             return NotFound();
+
+        // Orphan cleanup: delete old uploaded file if the URL changed
+        if (!string.IsNullOrEmpty(oldMediaUrl) && oldMediaUrl != canonicalUrl
+            && existing?.MediaIsEmbed == false)
+        {
+            try { await storageService.DeleteAsync(oldMediaUrl); }
+            catch (Exception ex)
+            {
+                HttpContext.RequestServices
+                    .GetRequiredService<ILogger<QuestionnairesController>>()
+                    .LogWarning(ex, "[Media] Failed to delete orphaned question media {Url}", oldMediaUrl);
+            }
+        }
 
         return NoContent();
     }
@@ -87,9 +122,25 @@ public class QuestionnairesController(
         if (!await questionnaireManager.QuestionBelongsToProjectAsync(questionId, projectId))
             return NotFound();
 
+        var existing = await questionnaireManager.GetQuestionByIdReadOnlyAsync(questionId);
+        var mediaUrl = existing?.MediaUrl;
+        var isEmbed = existing?.MediaIsEmbed ?? false;
+
         var success = await questionnaireManager.DeleteQuestionAsync(questionId, ct);
         if (!success)
             return NotFound();
+
+        // Orphan cleanup: delete the storage file after the DB row is gone
+        if (!string.IsNullOrEmpty(mediaUrl) && !isEmbed)
+        {
+            try { await storageService.DeleteAsync(mediaUrl); }
+            catch (Exception ex)
+            {
+                HttpContext.RequestServices
+                    .GetRequiredService<ILogger<QuestionnairesController>>()
+                    .LogWarning(ex, "[Media] Failed to delete question media on question delete {Url}", mediaUrl);
+            }
+        }
 
         return NoContent();
     }
@@ -182,7 +233,11 @@ public class QuestionnairesController(
             ParentTriggerValue = question.ParentTriggerValue,
             EndingAnswers = question.EndingAnswers.Select(e => e.Value).ToList(),
             SectionName = question.Section?.Name,
-            SectionId = question.Section?.SectionId
+            SectionId = question.Section?.SectionId,
+            MediaUrl = question.MediaUrl,
+            MediaType = question.MediaType,
+            MediaIsEmbed = question.MediaIsEmbed,
+            MediaText = question.MediaText
         };
     }
 }

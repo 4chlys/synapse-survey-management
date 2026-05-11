@@ -12,4 +12,6 @@ public interface IParticipantManager
     Task SaveContactInfoAsync(int participantId, string email, CancellationToken ct = default);
     Task<int> CountCompletionsByProjectAsync(int projectId);
     Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30);
+
+    Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId);
 }

@@ -4,18 +4,12 @@ using Microsoft.Extensions.Logging;
 namespace SynapseEnqueteManagement.BL.AiSpeechToText;
 
 /// <summary>
-/// Transcribes audio using Gemini's native multimodal understanding via the
-/// shared <see cref="IChatClient"/>. No additional NuGet packages are required —
-/// the same Vertex AI client used by the moderation and idea-support services is
-/// reused here.
-///
-/// Gemini accepts audio as an inline data part alongside a text instruction.
-/// The service sends the audio bytes + a transcription prompt, then returns
-/// the model's text response verbatim as the transcript.
+/// Transcribes audio via <see cref="IChatClient"/> using multimodal input.
+/// Sends audio bytes and a transcription prompt; returns the model's text response as the transcript.
 /// </summary>
-public sealed class GoogleVertexAiSpeechToTextService(
+public sealed class AiSpeechToTextService(
     IChatClient chatClient,
-    ILogger<GoogleVertexAiSpeechToTextService> logger,
+    ILogger<AiSpeechToTextService> logger,
     AiSpeechToTextConfig config) : IAiSpeechToTextService
 {
     // Base MIME types accepted by Gemini multimodal audio input.

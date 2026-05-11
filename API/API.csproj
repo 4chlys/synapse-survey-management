@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.3.0" />
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.3.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,5 +29,12 @@
     <None Include="ai-config.example.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\ideas\" />
+    <Folder Include="wwwroot\uploads\tmp\ideas\" />
+    <Folder Include="wwwroot\uploads\questions\images\" />
+    <Folder Include="wwwroot\uploads\projects\" />
   </ItemGroup>
 </Project>

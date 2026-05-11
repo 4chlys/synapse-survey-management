@@ -522,6 +522,8 @@ deploy/config.*.env
 UI-Admin/.vite
 API/wwwroot/uploads/ideas/
 API/wwwroot/uploads/tmp/
+API/wwwroot/uploads/projects/
+API/wwwroot/uploads/logos
 
 # Git worktrees
 .worktrees/

@@ -10,4 +10,8 @@ public class QuestionViewModel
     public int TotalQuestions { get; set; }
     public bool IsMandatory { get; set; }
     public int Position { get; set; }
+    public string MediaUrl { get; set; }
+    public QuestionMediaType? MediaType { get; set; }
+    public bool MediaIsEmbed { get; set; }
+    public string MediaText { get; set; }
 }
