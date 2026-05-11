@@ -12,7 +12,7 @@ namespace SynapseEnqueteManagement.UI.User.Controllers;
 public class CategoryController(CategoryService categoryService, IProjectApiService projectApiService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId)
+    public async Task<IActionResult> CategoryList(int projectId)
     {
         var projectTask = projectApiService.GetProjectAsync(projectId);
         var categoriesTask = categoryService.GetCategoriesAsync(projectId);
