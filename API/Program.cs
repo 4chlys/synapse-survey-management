@@ -262,6 +262,8 @@ var app = builder.Build();
 
         try
         {
+            // pgvector extension must exist before EnsureCreated tries to create the vector column
+            context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS vector;");
             context.CreateDatabase(deleteIfExists);
             var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
             DummyDataSeeder.Seed(context, apiBaseUrl);
