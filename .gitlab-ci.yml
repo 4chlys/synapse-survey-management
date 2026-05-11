@@ -52,6 +52,7 @@ build-api:
   only:
     - development
     - main
+    - design/ui-2
 
 build-ui:
   stage: build
@@ -66,6 +67,7 @@ build-ui:
   only:
     - development
     - main
+    - design/ui-2
 
 build-admin:
   stage: build
@@ -80,6 +82,7 @@ build-admin:
   only:
     - development
     - main
+    - design/ui-2
 
 scan-api:
   stage: scan
@@ -98,7 +101,8 @@ scan-api:
   only:
     - development
     - main
-
+    - design/ui-2
+    
 scan-ui:
   stage: scan
   image:
@@ -116,6 +120,7 @@ scan-ui:
   only:
     - development
     - main
+    - design/ui-2
 
 scan-admin:
   stage: scan
@@ -134,6 +139,7 @@ scan-admin:
   only:
     - development
     - main
+    - design/ui-2
 
 scan-nginx:
   stage: scan
@@ -231,6 +237,7 @@ deploy-test:
       gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
   only:
     - development #reverse
+    - design/ui-2
   environment:
     name: test
 
