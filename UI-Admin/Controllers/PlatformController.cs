@@ -2,11 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
+using SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 [Authorize(Roles = "SystemAdmin")]
-public class PlatformController(PlatformAdminService platformService) : Controller
+public class PlatformController(
+    PlatformAdminService platformService,
+    ProjectAdminService projectService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -36,12 +39,42 @@ public class PlatformController(PlatformAdminService platformService) : Controll
         return RedirectToAction(nameof(Dashboard), new { id = platform.ProjectPlatformId });
     }
 
+    public async Task<IActionResult> SystemDashboard()
+    {
+        var platforms = await platformService.GetAllPlatformsAsync();
+        var allAdmins = await platformService.GetAllAdminsAsync();
+
+        var summaries = new List<PlatformSummaryViewModel>();
+        foreach (var platform in platforms)
+        {
+            var projects = await projectService.GetAllProjectsAsync(platform.ProjectPlatformId);
+            var settings = await platformService.GetPlatformSettingsAsync(platform.ProjectPlatformId);
+            var adminCount = allAdmins.Count(a => a.ProjectPlatformId == platform.ProjectPlatformId);
+
+            summaries.Add(new PlatformSummaryViewModel(
+                platform.ProjectPlatformId,
+                platform.Name,
+                platform.LogoUrl,
+                adminCount,
+                projects.Count(p => p.ProjectState == "Active"),
+                projects.Count(p => p.ProjectState == "Draft"),
+                settings?.AiModelName ?? string.Empty,
+                settings?.CostDashboardUrl ?? string.Empty
+            ));
+        }
+
+        ViewData["ActiveSection"] = "Dashboard";
+        return View(new SystemDashboardViewModel(summaries));
+    }
+
     public async Task<IActionResult> Dashboard(int id)
     {
         var platform = await platformService.GetPlatformByIdAsync(id);
         if (platform is null) return NotFound();
 
         var admins = await platformService.GetAdminsForPlatformAsync(id);
+        var projects = await projectService.GetAllProjectsAsync(id);
+        var settings = await platformService.GetPlatformSettingsAsync(id);
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
@@ -53,7 +86,11 @@ public class PlatformController(PlatformAdminService platformService) : Controll
             platform.LogoUrl,
             platform.WebsiteUrl,
             platform.CreatedAt,
-            admins.Count
+            admins.Count,
+            projects.Count(p => p.ProjectState == "Active"),
+            projects.Count(p => p.ProjectState == "Draft"),
+            settings?.AiModelName ?? string.Empty,
+            settings?.CostDashboardUrl ?? string.Empty
         ));
     }
 
@@ -181,7 +218,9 @@ public class PlatformController(PlatformAdminService platformService) : Controll
                 AiAssistanceEnabled = settings.AiAssistanceEnabled,
                 IdeationEnabled = settings.IdeationEnabled,
                 MaxProjects = settings.MaxProjects,
-                MaxAdmins = settings.MaxAdmins
+                MaxAdmins = settings.MaxAdmins,
+                AiModelName = settings.AiModelName,
+                CostDashboardUrl = settings.CostDashboardUrl
             }
             : new PlatformConfigurationViewModel
             {
