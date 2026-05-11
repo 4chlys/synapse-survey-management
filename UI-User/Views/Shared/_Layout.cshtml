@@ -103,7 +103,7 @@
     </environment>
 </head>
 
-<body class="bg-base-200 min-h-[100dvh]">
+<body class="bg-base-200 min-h-[100dvh]" @(ViewData["LockScroll"] is true ? "data-lock-scroll" : "")>
 
     @if (ViewData["ShowModerationPopup"] is true)
     {
