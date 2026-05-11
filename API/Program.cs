@@ -216,12 +216,9 @@ var app = builder.Build();
 
         try
         {
-            bool isNewDatabase = context.CreateDatabase(deleteIfExists);
-            if (isNewDatabase)
-            {
-                var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
-                DummyDataSeeder.Seed(context, apiBaseUrl);
-            }
+            context.CreateDatabase(deleteIfExists);
+            var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+            DummyDataSeeder.Seed(context, apiBaseUrl);
 
             var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             var ideasNeedingEmbeddings = await context.Set<Idea>()

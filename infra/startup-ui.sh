@@ -11,6 +11,9 @@ ENV=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attri
 PROJECT_ID=$(curl -s "http://metadata.google.internal/computeMetadata/v1/project/project-id" \
   -H "Metadata-Flavor: Google")
 
+DOMAIN=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attributes/domain" \
+  -H "Metadata-Flavor: Google" 2>/dev/null || echo "synapse-ip.xyz")
+
 IMAGE_TAG="$([ "${ENV}" = "prod" ] && echo "latest" || echo "${ENV}-latest")"
 
 get_secret() {
@@ -29,4 +32,5 @@ docker run -d --name mvp-ui --restart always -p 80:8080 \
   -e ApiBaseUrl="$(get_secret api-base-url)" \
   -e ApiKey="$(get_secret api-key)" \
   -e GCS_BUCKET="$(get_secret gcs-bucket)" \
+  -e Subdomains__BaseDomain="${DOMAIN}" \
   "gcr.io/${PROJECT_ID}/mvp-ui:${IMAGE_TAG}"
