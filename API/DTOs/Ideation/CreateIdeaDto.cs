@@ -17,4 +17,5 @@ public class CreateIdeaDto
 
     [MaxLength(500)] public string ImageUrl { get; set; }
     public string ImageModerationToken { get; set; }
+    public string LanguageCode { get; set; }
 }

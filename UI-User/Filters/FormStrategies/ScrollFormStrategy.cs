@@ -5,7 +5,7 @@ public class ScrollFormStrategy : IFormStrategy
 {
     public string FormType => "VerticalScroll";
 
-    public string GetViewName() => "Index";
+    public string GetViewName() => "Scrollform";
 
     public FormLayoutData GetLayoutData() => new()
     {

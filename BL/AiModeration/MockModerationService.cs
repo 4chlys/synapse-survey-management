@@ -10,12 +10,13 @@ public sealed class MockModerationService(IRegexModerationService regex) : IAiMo
     public Task<ModerationResult> CheckWithAiAsync(
         string text,
         CancellationToken ct = default,
-        string contentType = "idea")
+        string contentType = "idea",
+        string respondInLanguage = null)
         => Task.FromResult(regex.Check(text, contentType));
 
-    public Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default)
+    public Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default, string respondInLanguage = null)
         => Task.FromResult(ModerationResult.Acceptable());
 
-    public Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default)
+    public Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default, string respondInLanguage = null)
         => Task.FromResult<string>(null);
 }

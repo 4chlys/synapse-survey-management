@@ -4,5 +4,12 @@ namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 public interface IAiIdeaSupportService : IAiSupportService<IdeaSupportChatRequest, IdeaSupportChatReply>
 {
-    Task<IdeaSupportRefineResult> RefineAsync(string draftText, CancellationToken ct = default);
+    /// <summary>
+    /// Standalone polish of a draft without conversation history.
+    /// Returns null when the text cannot meaningfully be improved.
+    /// </summary>
+    Task<IdeaSupportRefineResult> RefineAsync(
+        string draftText,
+        string language,
+        CancellationToken ct = default);
 }

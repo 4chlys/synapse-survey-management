@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Implementation;
 
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
@@ -7,6 +8,7 @@ public class ProjectManagerTests
 {
     private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
+    private readonly Mock<ILanguageRepository> _languageRepository = new(MockBehavior.Strict);
     private readonly Mock<IShortFormService> _shortFormService = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ProjectManager _manager;
@@ -14,37 +16,84 @@ public class ProjectManagerTests
     private const int ProjectId = 1;
     private const int EmojiId = 99;
 
+    private static readonly Language LanguageNl = new() { Code = "nl", DisplayName = "Nederlands", IsActive = true };
+    private static readonly Language LanguageEn = new() { Code = "en", DisplayName = "English", IsActive = true };
+
     public ProjectManagerTests()
     {
         _manager = new ProjectManager(
             _projectRepository.Object,
             _emojiRepository.Object,
+            _languageRepository.Object,
             _shortFormService.Object,
             _uow.Object);
+
+        _languageRepository
+            .Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync((IEnumerable<string> codes) =>
+            {
+                var set = codes.ToHashSet();
+                return new[] { LanguageNl, LanguageEn }.Where(l => set.Contains(l.Code)).ToList();
+            });
     }
+
+    private static IEnumerable<ProjectTranslationInput> Translations(params (string code, string name)[] entries) =>
+        entries.Select(e => new ProjectTranslationInput(e.code, e.name, "T"));
+
+    private static IEnumerable<IntroductionTranslationInput> NoIntroductions() =>
+        Array.Empty<IntroductionTranslationInput>();
 
     #region CreateProjectAsync
 
     [Fact]
-    public async Task CreateProjectAsync_BlankShortForm_AutofillsFromName()
+    public async Task CreateProjectAsync_BlankShortForm_AutofillsFromDefaultLanguageName()
     {
         // Arrange
         _shortFormService.Setup(s => s.Normalize("My Project")).Returns("my-project");
         _shortFormService.Setup(s => s.IsValid("my-project")).Returns(true);
         _shortFormService.Setup(s => s.IsReserved("my-project")).Returns(false);
         _shortFormService.Setup(s => s.EnsureUniqueAsync("my-project", null)).ReturnsAsync("my-project");
-        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>()))
-            .ReturnsAsync((Project p) => p);
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
         var result = await _manager.CreateProjectAsync(
-            "My Project", string.Empty, string.Empty, string.Empty,
-            FormType.VerticalScroll, AiAssistanceType.ProActive,
-            null, null, false, platformId: 1, shortForm: null);
+            Translations(("nl", "Mijn Project"), ("en", "My Project")),
+            NoIntroductions(),
+            defaultLanguageCode: "en",
+            supportedLanguageCodes: new[] { "nl", "en" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, platformId: 1, shortForm: null,
+            allowCrossLanguageIdeas: true);
 
         // Assert
         Assert.Equal("my-project", result.ShortForm);
+        Assert.Equal("en", result.DefaultLanguage.Code);
+        Assert.Equal(2, result.Translations.Count);
+        Assert.True(result.AllowCrossLanguageIdeas);
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_AllowCrossLanguageIdeasFalse_DefaultsToFalse()
+    {
+        // Arrange
+        _shortFormService.Setup(s => s.Normalize("Naam")).Returns("naam");
+        _shortFormService.Setup(s => s.IsValid("naam")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("naam")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("naam", null)).ReturnsAsync("naam");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act — omit allowCrossLanguageIdeas to verify default is false
+        var result = await _manager.CreateProjectAsync(
+            Translations(("nl", "Naam")),
+            NoIntroductions(),
+            "nl", new[] { "nl" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, platformId: 1);
+
+        // Assert
+        Assert.False(result.AllowCrossLanguageIdeas);
     }
 
     [Fact]
@@ -57,8 +106,10 @@ public class ProjectManagerTests
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
-                "Admin", string.Empty, string.Empty, string.Empty,
-                FormType.VerticalScroll, AiAssistanceType.ProActive,
+                Translations(("nl", "Admin")),
+                NoIntroductions(),
+                "nl", new[] { "nl" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
                 null, null, false, platformId: 1, shortForm: "admin"));
     }
 
@@ -71,26 +122,79 @@ public class ProjectManagerTests
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
-                "Test", string.Empty, string.Empty, string.Empty,
-                FormType.VerticalScroll, AiAssistanceType.ProActive,
+                Translations(("nl", "Test")),
+                NoIntroductions(),
+                "nl", new[] { "nl" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
                 null, null, false, platformId: 1, shortForm: "INVALID FORM"));
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_DefaultLanguageNotInSupported_Throws()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _manager.CreateProjectAsync(
+                Translations(("nl", "X")),
+                NoIntroductions(),
+                defaultLanguageCode: "en",
+                supportedLanguageCodes: new[] { "nl" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, platformId: 1));
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_MissingTranslationForSupportedLanguage_Throws()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _manager.CreateProjectAsync(
+                Translations(("nl", "X")),
+                NoIntroductions(),
+                "nl", new[] { "nl", "en" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, platformId: 1));
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_UnknownLanguageCode_Throws()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _manager.CreateProjectAsync(
+                Translations(("zz", "X")),
+                NoIntroductions(),
+                "zz", new[] { "zz" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, platformId: 1));
     }
 
     #endregion
 
     #region UpdateProjectAsync
 
+    private static Project SeedExistingProject(ProjectState state, string shortForm = "old-form")
+    {
+        var nlTranslation = new ProjectTranslation { Language = LanguageNl, Name = "Naam", Topic = "T" };
+        var project = new Project
+        {
+            ProjectId = ProjectId,
+            ShortForm = shortForm,
+            ProjectState = state,
+            DefaultLanguage = LanguageNl,
+            SupportedLanguages = new List<Language> { LanguageNl },
+            Translations = new List<ProjectTranslation> { nlTranslation },
+        };
+        nlTranslation.Project = project;
+        return project;
+    }
+
     [Fact]
     public async Task UpdateProjectAsync_ShortFormChangeInDraft_UpdatesShortForm()
     {
         // Arrange
-        var project = new Project
-        {
-            ProjectId = ProjectId,
-            ShortForm = "old-form",
-            ProjectState = ProjectState.Draft
-        };
-        _projectRepository.Setup(r => r.ReadByIdWithIntroductionForUpdateAsync(ProjectId))
+        var project = SeedExistingProject(ProjectState.Draft);
+        _projectRepository.Setup(r => r.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
         _shortFormService.Setup(s => s.IsValid("new-form")).Returns(true);
         _shortFormService.Setup(s => s.IsReserved("new-form")).Returns(false);
@@ -100,32 +204,35 @@ public class ProjectManagerTests
 
         // Act
         var result = await _manager.UpdateProjectAsync(
-            ProjectId, "Name", string.Empty, string.Empty, string.Empty,
-            FormType.VerticalScroll, AiAssistanceType.ProActive,
-            null, null, false, shortForm: "new-form");
+            ProjectId,
+            Translations(("nl", "Naam")),
+            NoIntroductions(),
+            "nl", new[] { "nl" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, shortForm: "new-form",
+            allowCrossLanguageIdeas: true);
 
         // Assert
         Assert.Equal("new-form", result.ShortForm);
+        Assert.True(result.AllowCrossLanguageIdeas);
     }
 
     [Fact]
     public async Task UpdateProjectAsync_ShortFormChangeInActive_ThrowsValidationException()
     {
         // Arrange
-        var project = new Project
-        {
-            ProjectId = ProjectId,
-            ShortForm = "old-form",
-            ProjectState = ProjectState.Active
-        };
-        _projectRepository.Setup(r => r.ReadByIdWithIntroductionForUpdateAsync(ProjectId))
+        var project = SeedExistingProject(ProjectState.Active);
+        _projectRepository.Setup(r => r.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() =>
             _manager.UpdateProjectAsync(
-                ProjectId, "Name", string.Empty, string.Empty, string.Empty,
-                FormType.VerticalScroll, AiAssistanceType.ProActive,
+                ProjectId,
+                Translations(("nl", "Naam")),
+                NoIntroductions(),
+                "nl", new[] { "nl" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
                 null, null, false, shortForm: "changed-form"));
     }
 
@@ -133,21 +240,19 @@ public class ProjectManagerTests
     public async Task UpdateProjectAsync_SameShortFormInActive_DoesNotThrow()
     {
         // Arrange
-        var project = new Project
-        {
-            ProjectId = ProjectId,
-            ShortForm = "same-form",
-            ProjectState = ProjectState.Active
-        };
-        _projectRepository.Setup(r => r.ReadByIdWithIntroductionForUpdateAsync(ProjectId))
+        var project = SeedExistingProject(ProjectState.Active, shortForm: "same-form");
+        _projectRepository.Setup(r => r.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
         _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act — passing the same shortform should not throw
         var result = await _manager.UpdateProjectAsync(
-            ProjectId, "Name", string.Empty, string.Empty, string.Empty,
-            FormType.VerticalScroll, AiAssistanceType.ProActive,
+            ProjectId,
+            Translations(("nl", "Naam")),
+            NoIntroductions(),
+            "nl", new[] { "nl" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
             null, null, false, shortForm: "same-form");
 
         // Assert
@@ -263,35 +368,81 @@ public class ProjectManagerTests
     #region DuplicateProjectAsync
 
     [Fact]
-    public async Task DuplicateProjectAsync_HappyPath_CopiesGraphAndRemapsParentQuestion()
+    public async Task DuplicateProjectAsync_HappyPath_CopiesGraphAndTranslations()
     {
         // Arrange
         const int srcId = 10;
         const int platformId = 5;
         const int emojiId = 42;
 
-        var srcSection = new Section { SectionId = 1, Name = "Sectie 1", Description = "desc" };
-        var srcParent = new Question { QuestionId = 101, Text = "Parent?", QuestionFormat = QuestionFormat.Open, IsMandatory = true, AnswerChoices = new List<string>(), Position = 1 };
-        var srcChild  = new Question { QuestionId = 102, Text = "Child?",  QuestionFormat = QuestionFormat.MultipleChoice, IsMandatory = false, AnswerChoices = new List<string> { "A", "B" }, Position = 2, Section = srcSection, ParentQuestion = srcParent, ParentTriggerValue = "yes" };
-        srcChild.EndingAnswers.Add(new EndingAnswer { Value = "end" });
+        var srcSection = new Section
+        {
+            SectionId = 1,
+            Translations = new List<SectionTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Sectie 1", Description = "desc" }
+            }
+        };
+        var srcParent = new Question
+        {
+            QuestionId = 101, QuestionFormat = QuestionFormat.Open, IsMandatory = true,
+            AnswerChoiceCount = 0, Position = 1,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = LanguageNl, Text = "Parent?", AnswerChoices = new List<string>() }
+            }
+        };
+        var srcChild = new Question
+        {
+            QuestionId = 102, QuestionFormat = QuestionFormat.MultipleChoice, IsMandatory = false,
+            AnswerChoiceCount = 2, ChoiceIndex = 0, Position = 2, Section = srcSection, ParentQuestion = srcParent,
+            Translations = new List<QuestionTranslation>
+            {
+                new() { Language = LanguageNl, Text = "Child?", AnswerChoices = new List<string> { "A", "B" } }
+            }
+        };
+        srcChild.EndingAnswers.Add(new EndingAnswer
+        {
+            Translations = new List<EndingAnswerTranslation>
+            {
+                new() { Language = LanguageNl, Value = "end" }
+            }
+        });
 
         var srcEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
-        var srcCat   = new Category { CategoryId = 9, Name = "Cat A", Description = "cat desc" };
+        var srcCat   = new Category
+        {
+            CategoryId = 9,
+            Translations = new List<CategoryTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Cat A", Description = "cat desc" },
+            }
+        };
+
+        var srcNlTrans = new ProjectTranslation { Language = LanguageNl, Name = "Source", Topic = "T-nl" };
+        var srcEnTrans = new ProjectTranslation { Language = LanguageEn, Name = "Source EN", Topic = "T-en" };
 
         var source = new Project
         {
             ProjectId = srcId,
             ProjectPlatformId = platformId,
-            Name = "Source",
             ShortForm = "source",
-            Topic = "T",
             ImageUrl = "img.png",
             FormType = FormType.VerticalScroll,
             AiAssistance = AiAssistanceType.ProActive,
             IdeaPageSize = 5,
             MaxExtraIdeaRequests = 3,
             CommentPageSize = 20,
-            Introduction = new Introduction { Text = "Intro text" },
+            DefaultLanguage = LanguageNl,
+            SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
+            Translations = new List<ProjectTranslation> { srcNlTrans, srcEnTrans },
+            Introduction = new Introduction
+            {
+                Translations = new List<IntroductionTranslation>
+                {
+                    new() { Language = LanguageNl, Text = "Intro text" },
+                }
+            },
             Questionnaire = new Questionnaire
             {
                 Sections = new List<Section> { srcSection },
@@ -313,17 +464,26 @@ public class ProjectManagerTests
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        var result = await _manager.DuplicateProjectAsync(srcId, "New Project", platformId);
+        var result = await _manager.DuplicateProjectAsync(srcId,
+            Translations(("nl", "New Project"), ("en", "New Project EN")),
+            platformId);
 
         // Assert
-        Assert.Equal("New Project", result.Name);
         Assert.Equal("new-project", result.ShortForm);
         Assert.Equal(ProjectState.Draft, result.ProjectState);
         Assert.Equal(0, result.ViewCount);
-        Assert.Equal("Intro text", result.Introduction.Text);
+        Assert.NotNull(result.Introduction);
+        Assert.Single(result.Introduction.Translations);
+        Assert.Equal("Intro text", result.Introduction.Translations.First().Text);
+
+        Assert.Equal(2, result.Translations.Count);
+        var nlClone = result.Translations.First(t => t.Language.Code == "nl");
+        var enClone = result.Translations.First(t => t.Language.Code == "en");
+        Assert.Equal("New Project", nlClone.Name);
+        Assert.Equal("New Project EN", enClone.Name);
 
         Assert.Single(result.Questionnaire.Sections);
-        Assert.Equal("Sectie 1", result.Questionnaire.Sections.First().Name);
+        Assert.Equal("Sectie 1", result.Questionnaire.Sections.First().Translations.First(t => t.Language.Code == "nl").Name);
 
         Assert.Equal(2, result.Questionnaire.Questions.Count);
         var newParent = result.Questionnaire.Questions.First(q => q.Position == 1);
@@ -333,16 +493,57 @@ public class ProjectManagerTests
         Assert.Same(newParent, newChild.ParentQuestion);
         Assert.NotSame(srcParent, newChild.ParentQuestion);
 
-        Assert.Equal("yes", newChild.ParentTriggerValue);
+        Assert.Equal(0, newChild.ChoiceIndex);
         Assert.Single(newChild.EndingAnswers);
-        Assert.Equal("end", newChild.EndingAnswers.First().Value);
+        Assert.Equal("end", newChild.EndingAnswers.First().Translations.First().Value);
         Assert.Same(result.Questionnaire.Sections.First(), newChild.Section);
 
         Assert.Single(result.Categories);
-        Assert.Equal("Cat A", result.Categories.First().Name);
+        Assert.Single(result.Categories.First().Translations);
+        Assert.Equal("Cat A", result.Categories.First().Translations.First().Name);
 
         Assert.Single(result.Emojis);
         Assert.Same(trackedEmoji, result.Emojis.First());
+    }
+
+    [Fact]
+    public async Task DuplicateProjectAsync_ClonesAllowCrossLanguageIdeas()
+    {
+        // Arrange
+        const int srcId = 20;
+        const int platformId = 5;
+
+        var source = new Project
+        {
+            ProjectId = srcId,
+            ProjectPlatformId = platformId,
+            ShortForm = "source",
+            AllowCrossLanguageIdeas = true,
+            DefaultLanguage = LanguageNl,
+            SupportedLanguages = new List<Language> { LanguageNl },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Clone Me", Topic = "T" }
+            },
+            Questionnaire = new Questionnaire(),
+            Categories = new List<Category>(),
+            Emojis = new List<Emoji>(),
+        };
+
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
+        _shortFormService.Setup(s => s.Normalize("Clone Me")).Returns("clone-me");
+        _shortFormService.Setup(s => s.IsValid("clone-me")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("clone-me")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("clone-me", null)).ReturnsAsync("clone-me");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.DuplicateProjectAsync(srcId,
+            Translations(("nl", "Clone Me")), platformId);
+
+        // Assert
+        Assert.True(result.AllowCrossLanguageIdeas);
     }
 
     [Fact]
@@ -354,7 +555,7 @@ public class ProjectManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _manager.DuplicateProjectAsync(1, "X", platformId: 7));
+            _manager.DuplicateProjectAsync(1, Translations(("nl", "X")), platformId: 7));
     }
 
     [Fact]
@@ -365,7 +566,7 @@ public class ProjectManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _manager.DuplicateProjectAsync(999, "X", platformId: 1));
+            _manager.DuplicateProjectAsync(999, Translations(("nl", "X")), platformId: 1));
     }
 
     #endregion

@@ -1,3 +1,4 @@
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = "Synapse — Deelplatform";
 }
@@ -14,15 +15,14 @@
         </div>
 
         <h1 class="font-heading text-2xl font-semibold text-base-content">
-            Welkom bij Synapse
+            @L["WelcomeHeading"]
         </h1>
         <p class="text-sm text-neutral leading-relaxed">
-            Dit is het deelnemersplatform voor Synapse-enquêtes.
-            Jouw organisatie deelt de directe link naar jouw project met je.
+            @L["WelcomePlatformInfo"]
         </p>
         <p class="text-sm text-neutral leading-relaxed">
-            Ben je een organisatiebeheerder?
-            Ga dan naar <strong>admin.synapse-ip.xyz</strong>.
+            @L["AdminQuestion"]
+            @L["AdminDirectionPrefix"] <strong>admin.synapse-ip.xyz</strong>.
         </p>
 
     </div>

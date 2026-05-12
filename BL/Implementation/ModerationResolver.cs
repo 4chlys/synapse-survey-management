@@ -8,7 +8,7 @@ public class ModerationResolver(
     IModerationTokenService tokenService,
     IAiModerationService moderationService) : IModerationResolver
 {
-    public async Task<ModerationStatus> ResolveStatusAsync(string text, string token, int projectId, CancellationToken ct = default)
+    public async Task<ModerationStatus> ResolveStatusAsync(string text, string token, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (!string.IsNullOrEmpty(token))
         {
@@ -20,7 +20,7 @@ public class ModerationResolver(
             }
         }
 
-        var result = await moderationService.CheckWithAiAsync(text, ct);
+        var result = await moderationService.CheckWithAiAsync(text, ct, respondInLanguage: respondInLanguage);
         return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

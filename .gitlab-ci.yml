@@ -31,7 +31,7 @@ build-nginx:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_NGINX}:${IMAGE_TAG}" -f Dockerfile.nginx .
+    - docker build --provenance=false --network host -t "${IMAGE_NGINX}:${IMAGE_TAG}" -f Dockerfile.nginx .
     - docker save "${IMAGE_NGINX}:${IMAGE_TAG}" | gzip > nginx-image.tar.gz
   artifacts:
     paths:
@@ -44,7 +44,7 @@ build-api:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_API}:${IMAGE_TAG}" .
+    - docker build --provenance=false --network host -t "${IMAGE_API}:${IMAGE_TAG}" .
     - docker save "${IMAGE_API}:${IMAGE_TAG}" | gzip > api-image.tar.gz
   artifacts:
     paths:
@@ -59,7 +59,7 @@ build-ui:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_UI}:${IMAGE_TAG}" -f Dockerfile.ui-user .
+    - docker build --provenance=false --network host -t "${IMAGE_UI}:${IMAGE_TAG}" -f Dockerfile.ui-user .
     - docker save "${IMAGE_UI}:${IMAGE_TAG}" | gzip > ui-image.tar.gz
   artifacts:
     paths:
@@ -74,7 +74,7 @@ build-admin:
   stage: build
   <<: *gcr_login
   script:
-    - docker build --provenance=false -t "${IMAGE_ADMIN}:${IMAGE_TAG}" -f Dockerfile.ui-admin .
+    - docker build --provenance=false --network host -t "${IMAGE_ADMIN}:${IMAGE_TAG}" -f Dockerfile.ui-admin .
     - docker save "${IMAGE_ADMIN}:${IMAGE_TAG}" | gzip > admin-image.tar.gz
   artifacts:
     paths:

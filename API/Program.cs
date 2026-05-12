@@ -16,6 +16,7 @@ using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
@@ -44,6 +45,19 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
+
+var apiSupportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(apiSupportedCultures)
+        .AddSupportedUICultures(apiSupportedCultures);
+    opts.RequestCultureProviders =
+    [
+        new Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -69,6 +83,7 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
@@ -125,6 +140,7 @@ var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "a
 var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
 builder.Services.AddScoped<IShortFormService>(sp =>
     new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
+builder.Services.AddScoped<ILanguageManager, LanguageManager>();
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -135,6 +151,7 @@ builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
+builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
 // AI configuration
 //
@@ -187,6 +204,7 @@ if (useAi)
     builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
+    builder.Services.AddScoped<IAiImageDescriptionService, AiImageDescriptionService>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -218,6 +236,7 @@ else
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
+    builder.Services.AddScoped<IAiImageDescriptionService, MockImageDescriptionService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
 }
 
@@ -243,12 +262,11 @@ var app = builder.Build();
 
         try
         {
-            bool isNewDatabase = context.CreateDatabase(deleteIfExists);
-            if (isNewDatabase)
-            {
-                var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
-                DummyDataSeeder.Seed(context, apiBaseUrl);
-            }
+            if (context.Database.IsNpgsql())
+                context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS vector;");
+            context.CreateDatabase(deleteIfExists);
+            var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+            DummyDataSeeder.Seed(context, apiBaseUrl);
 
             var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
             var ideasNeedingEmbeddings = await context.Set<Idea>()
@@ -285,6 +303,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseHttpLogging();
+app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();

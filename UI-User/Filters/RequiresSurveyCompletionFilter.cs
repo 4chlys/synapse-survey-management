@@ -24,7 +24,7 @@ public class RequiresSurveyCompletionFilter(
 
         if (!hasResponded)
         {
-            context.Result = new RedirectToActionResult("Index", "ProjectLandingPage", new { projectId });
+            context.Result = new RedirectToActionResult("Index", "LandingPage", new { projectId });
             return;
         }
 

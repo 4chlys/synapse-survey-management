@@ -199,7 +199,8 @@ if [[ "${DB_HOST}" != "PENDING" ]]; then
   update_secret "db-host" "${DB_HOST}"
 fi
 
-enable_pgvector
+# pgvector wordt door de API zelf geïnstalleerd bij opstart via ExecuteSqlRaw
+# (vereist geen cloud-sql-proxy in het bootstrap script)
 
 # 4. MIGs aanmaken
 create_migs

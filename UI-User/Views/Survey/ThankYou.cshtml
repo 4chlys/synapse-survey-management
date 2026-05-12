@@ -1,4 +1,5 @@
 @model ThankYouViewModel
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = "Bedankt";
 }
@@ -23,17 +24,16 @@
 
                 <div>
                     <h2 class="font-heading text-2xl font-bold text-base-content mb-2 leading-tight">
-                        Bedankt voor je antwoorden!
+                        @L["ThankYouHeading"]
                     </h2>
                     <p class="text-[15px] text-base-content/75 leading-relaxed">
-                        In de volgende stap vind je categorieën met ideeën van andere deelnemers.
-                        Reageer erop of deel je eigen idee!
+                        @L["ThankYouBody"]
                     </p>
                 </div>
 
                 <a asp-controller="Category" asp-action="Index" asp-route-projectId="@Model.ProjectId"
                        class="btn btn-primary w-full rounded-xl font-heading font-semibold text-base py-4 h-auto gap-2">
-                    Bekijk ideeën & reageer
+                    @L["ViewIdeasButton"]
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"
                          stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />

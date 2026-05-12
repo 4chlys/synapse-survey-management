@@ -1,7 +1,8 @@
 @model CategoryIndexViewModel
+@inject IViewLocalizer L
 
 @{
-    ViewData["Title"] = "Kies een Categorie";
+    ViewData["Title"] = L["Title"];
 }
 
 <div class="max-w-2xl mx-auto px-6 pt-10 pb-28 min-h-[calc(100dvh-64px)] page-enter">
@@ -9,10 +10,10 @@
     @* Page header *@
     <div class="w-full mb-8">
         <h1 class="font-heading text-2xl font-bold text-base-content leading-snug">
-            Kies een categorie.
+            @L["Heading"]
         </h1>
         <p class="text-sm text-base-content/85 mt-2 leading-relaxed">
-            Bekijk bestaande ideeën of voeg zelf iets toe.
+            @L["Subtitle"]
         </p>
     </div>
 
@@ -71,7 +72,7 @@
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
             </svg>
-            <span class="text-[11px] font-medium">Terug</span>
+            <span class="text-[11px] font-medium">@L["BackNavLabel"]</span>
         </a>
 
         <button class="flex flex-col items-center justify-center gap-1.5 py-1 min-h-13
@@ -81,7 +82,7 @@
                  stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span class="hidden text-[11px] font-semibold">Nieuw idee</span>
+            <span class="hidden text-[11px] font-semibold">@L["NewIdeaNavLabel"]</span>
         </button>
 
         <a
@@ -91,7 +92,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span class="hidden text-[11px] font-medium">Mijn ideeën</span>
+            <span class="hidden text-[11px] font-medium">@L["MyIdeasNavLabel"]</span>
         </a>
 
         <a asp-controller="Category" asp-action="FinalThankYou" asp-route-projectId="@Model.ProjectId"
@@ -101,7 +102,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            <span class="text-[11px] font-medium">Afsluiten</span>
+            <span class="text-[11px] font-medium">@L["CloseNavLabel"]</span>
         </a>
 
     </div>

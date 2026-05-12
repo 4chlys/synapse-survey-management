@@ -1,9 +1,15 @@
+@using Microsoft.AspNetCore.Localization
+@using Microsoft.Extensions.Options
+@using System.Globalization
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
+@inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
 @{
     var _theme = Context.Request.Cookies["synapse-theme"] is "synapse-dark" ? "synapse-dark" : "synapse-light";
 }
-<html lang="nl" data-theme="@_theme">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@_theme">
 
 <head>
     <meta charset="utf-8" />
@@ -16,6 +22,80 @@
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@
     <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
+    @* Server-rendered i18n blob — must come before the JS module so window.__i18n is set when i18n.ts is imported *@
+    <script>
+      window.__i18n = {
+        culture: @Json.Serialize(CultureInfo.CurrentUICulture.Name),
+        strings: @Json.Serialize(new {
+          submit = Shared["Submit"].Value,
+          cancel = Shared["Cancel"].Value,
+          back   = Shared["Back"].Value,
+          next   = Shared["Next"].Value,
+          uploading = Shared["Uploading"].Value,
+          checking = Shared["Checking"].Value,
+          contentNotAllowed = Shared["ContentNotAllowed"].Value,
+          maxLengthExceeded = Shared["MaxLengthExceeded"].Value,
+          submitFallback = Shared["SubmitFallback"].Value,
+          ideaCardStatusFlagged = Shared["IdeaCard_StatusFlagged"].Value,
+          ideaCardStatusOwnIdea = Shared["IdeaCard_StatusOwnIdea"].Value,
+          ideaCardUseAsStartingPoint = Shared["IdeaCard_UseAsStartingPoint"].Value,
+          imageUploadInvalidType = Shared["ImageUpload_InvalidType"].Value,
+          imageUploadTooLarge = Shared["ImageUpload_TooLarge"].Value,
+          imageUploadFailed = Shared["ImageUpload_Failed"].Value,
+          imageUploadNotAllowed = Shared["ImageUpload_NotAllowed"].Value,
+          imageDescribeLoading = Shared["ImageDescribe_Loading"].Value,
+          imageDescribeFailed = Shared["ImageDescribe_Failed"].Value,
+          speechToTextEmptyRecording = Shared["SpeechToText_EmptyRecording"].Value,
+          speechToTextTooManyRequests = Shared["SpeechToText_TooManyRequests"].Value,
+          speechToTextUnavailable = Shared["SpeechToText_Unavailable"].Value,
+          surveyYourAnswer = Shared["Survey_YourAnswer"].Value,
+          surveyChoiceOptions = Shared["Survey_ChoiceOptions"].Value,
+          surveyConfirm = Shared["Survey_Confirm"].Value,
+          surveySaveError = Shared["Survey_SaveError"].Value,
+          surveyLoadError = Shared["Survey_LoadError"].Value,
+          surveyUnknownType = Shared["Survey_UnknownType"].Value,
+          surveyReadyToSubmit = Shared["Survey_ReadyToSubmit"].Value,
+          surveySubmitError = Shared["Survey_SubmitError"].Value,
+          surveyDone = Shared["Survey_Done"].Value,
+          surveyRestartConfirm = Shared["Survey_RestartConfirm"].Value,
+          surveyRestartError = Shared["Survey_RestartError"].Value,
+          surveySubmitting = Shared["Survey_Submitting"].Value,
+          surveySubmitAnswers = Shared["Survey_SubmitAnswers"].Value,
+          aiChatAssistantUnavailableIdea = Shared["AiChat_AssistantUnavailable_Idea"].Value,
+          aiChatError = Shared["AiChat_Error"].Value,
+          aiChatDraftLabel = Shared["AiChat_DraftLabel"].Value,
+          aiChatDraftYes = Shared["AiChat_DraftYes"].Value,
+          aiChatDraftNo = Shared["AiChat_DraftNo"].Value,
+          aiChatNoProblem = Shared["AiChat_NoProblem"].Value,
+          aiChatRefining = Shared["AiChat_Refining"].Value,
+          aiChatRefinedText = Shared["AiChat_RefinedText"].Value,
+          aiChatAlreadyGood = Shared["AiChat_AlreadyGood"].Value,
+          aiChatRefineError = Shared["AiChat_RefineError"].Value,
+          aiChatRefine = Shared["AiChat_Refine"].Value,
+          aiChatAssistantUnavailableComment = Shared["AiChat_AssistantUnavailable_Comment"].Value,
+          aiChatChooseVersion = Shared["AiChat_ChooseVersion"].Value,
+          aiChatYourVersion = Shared["AiChat_YourVersion"].Value,
+          aiChatAiSuggestion = Shared["AiChat_AiSuggestion"].Value,
+          aiChatYourComment = Shared["AiChat_YourComment"].Value,
+          surveyAnswerTooLong = Shared["Survey_AnswerTooLong"].Value,
+          surveyAnswerRequired = Shared["Survey_AnswerRequired"].Value,
+          speechToTextErrorPermissionDenied = Shared["SpeechToText_ErrorPermissionDenied"].Value,
+          speechToTextErrorNoMicrophone = Shared["SpeechToText_ErrorNoMicrophone"].Value,
+          speechToTextErrorUnsupportedBrowser = Shared["SpeechToText_ErrorUnsupportedBrowser"].Value,
+          speechToTextErrorNothingHeard = Shared["SpeechToText_ErrorNothingHeard"].Value,
+          speechToTextErrorTooLong = Shared["SpeechToText_ErrorTooLong"].Value,
+          speechToTextStatusMicAccess = Shared["SpeechToText_StatusMicAccess"].Value,
+          speechToTextStatusTranscribing = Shared["SpeechToText_StatusTranscribing"].Value,
+          speechToTextStatusRecording = Shared["SpeechToText_StatusRecording"].Value,
+          speechToTextCancelAriaLabel = Shared["SpeechToText_CancelAriaLabel"].Value,
+          speechToTextMicAriaLabel = Shared["SpeechToText_MicAriaLabel"].Value,
+          speechToTextErrorUnsupportedFormat = Shared["SpeechToText_ErrorUnsupportedFormat"].Value,
+          speechToTextErrorInvalidAudioData = Shared["SpeechToText_ErrorInvalidAudioData"].Value,
+          speechToTextErrorUnexpectedResponse = Shared["SpeechToText_ErrorUnexpectedResponse"].Value
+        })
+      };
+    </script>
+
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" />
@@ -25,63 +105,76 @@
     </environment>
 </head>
 
-<body class="bg-base-200 min-h-screen">
+<body class="bg-base-200 min-h-[100dvh]">
 
     @if (ViewData["ShowModerationPopup"] is true)
     {
         @await Html.PartialAsync("_ModerationPopup")
     }
 
-    <header class="fixed left-0 right-0 z-40 bg-base-100 border-b border-base-300" style="height: var(--header-h)">
-        <div class="h-full max-w-2xl mx-auto px-6 flex items-center justify-between gap-4">
+    @if (ViewData["HideNavbar"] is not true)
+    {
+    <header class="fixed left-0 right-0 z-40 bg-transparent" style="height: var(--header-h)">
+        <div class="h-full max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
 
             @{
-                var logoUrl = ViewData["OrganisationLogoUrl"]?.ToString();
-                var websiteUrl = ViewData["OrganisationWebsiteUrl"]?.ToString();
+                var surveyTitle = (ViewData["SurveyTitle"] ?? "SynapseIP").ToString();
             }
 
-            @* Left: logo or fixed-width spacer *@
-            <div class="w-20 flex items-center shrink-0">
-                @if (!string.IsNullOrEmpty(logoUrl))
-                {
-                    <img src="@logoUrl" alt="Organisation logo" class="h-7 w-auto object-contain" />
-                }
+            @* Left: title — same alignment on all sizes *@
+            <div class="flex items-center min-w-0 flex-1">
+                <span class="font-heading font-semibold text-base-content/80 text-base tracking-wide truncate">
+                    @surveyTitle
+                </span>
             </div>
 
-            @* Center: project title *@
-            <h1 class="font-heading font-semibold text-base-content text-lg tracking-tight truncate text-center flex-1">
-                @(ViewData["SurveyTitle"] ?? "SynapseIP")
-            </h1>
+            @* Right: language switcher + theme toggle *@
+            <div class="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
 
-            @* Right: website link + theme toggle *@
-            <div class="w-20 flex items-center justify-end gap-2 shrink-0">
-                @if (!string.IsNullOrEmpty(websiteUrl))
-                {
-                    <a href="@websiteUrl" target="_blank" rel="noopener noreferrer"
-                           class="hidden sm:block text-xs text-neutral hover:text-primary transition-colors">
-                        website
-                    </a>
-                }
+                @* Language switcher — segmented pill *@
+                @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
+                <form asp-controller="Culture" asp-action="SetCulture" method="post"
+                      class="flex items-center rounded-full border border-base-content/20 bg-base-200 overflow-hidden"
+                      aria-label="@Shared["LanguageMenu_Switch"]">
+                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                    @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
+                    {
+                        var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
+                        <button type="submit" name="culture" value="@c.Name"
+                                class="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer @(isActive ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-primary")"
+                                aria-current="@(isActive ? "true" : "false")">
+                            @c.TwoLetterISOLanguageName
+                        </button>
+                    }
+                </form>
 
-                <button id="theme-toggle" aria-label="Toggle dark mode"
-                        class="w-8 h-8 rounded-full flex items-center justify-center text-neutral hover:text-primary hover:bg-base-200 transition-colors cursor-pointer">
-                    <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none"
+                @* Theme toggle pill *@
+                <button id="theme-toggle" aria-label="@L["ThemeToggleLabel"]"
+                        class="relative inline-flex items-center w-14 h-7 rounded-full border border-base-content/20 bg-base-200 transition-colors cursor-pointer focus:outline-none shrink-0">
+                    <span class="sr-only">@L["ThemeToggleLabel"]</span>
+                    <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg"
+                         class="absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-warning hidden pointer-events-none" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                    <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg"
+                         class="absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-base-content/50 pointer-events-none" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
+                    <span id="toggle-knob"
+                          class="absolute left-1 h-5 w-5 rounded-full bg-base-content/70 shadow-sm transition-transform duration-200 pointer-events-none translate-x-0">
+                    </span>
                 </button>
             </div>
 
         </div>
     </header>
+    }
 
-    <main class="pt-16">
+    <main class="@(ViewData["HideNavbar"] is true ? "" : "pt-16")">
         @RenderBody()
     </main>
 

@@ -15,7 +15,7 @@ public class LikertResponseValidator : IResponseValidator
         if (!int.TryParse(value, out var numericValue))
             throw new ArgumentException("Likert response must be a number.", nameof(value));
 
-        var max = question.AnswerChoices.Count > 0 ? question.AnswerChoices.Count : DefaultMax;
+        var max = question.AnswerChoiceCount > 0 ? question.AnswerChoiceCount : DefaultMax;
         if (numericValue < 1 || numericValue > max)
             throw new ArgumentException(
                 $"Likert response must be between 1 and {max}.", nameof(value));

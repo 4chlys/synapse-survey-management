@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.DAL.Interfaces;
@@ -9,6 +10,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 public class ProjectManager(
     IProjectRepository projectRepository,
     IEmojiRepository emojiRepository,
+    ILanguageRepository languageRepository,
     IShortFormService shortFormService,
     IUnitOfWork uow) : IProjectManager
 {
@@ -24,6 +26,9 @@ public class ProjectManager(
     public Task<Project> GetProjectByIdWithQuestionnaireForUpdateAsync(int projectId)
         => projectRepository.ReadByIdWithQuestionnaireForUpdateAsync(projectId);
 
+    public Task<Project> GetProjectByIdWithTranslationsReadOnlyAsync(int projectId)
+        => projectRepository.ReadByIdWithTranslationsReadOnlyAsync(projectId);
+
     public async Task<IEnumerable<Emoji>> GetEmojisForProjectAsync(int projectId)
     {
         var project = await projectRepository.ReadByIdWithEmojisReadOnlyAsync(projectId);
@@ -33,15 +38,31 @@ public class ProjectManager(
     public Task<Project> GetProjectByShortFormAsync(string shortForm)
         => projectRepository.ReadByShortFormReadOnlyAsync(shortForm);
 
-    public async Task<Project> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
+    public async Task<Project> CreateProjectAsync(
+        IEnumerable<ProjectTranslationInput> translations,
+        IEnumerable<IntroductionTranslationInput> introductions,
+        string defaultLanguageCode,
+        IEnumerable<string> supportedLanguageCodes,
+        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        int? minAge, int? maxAge, bool requestContactInfo, int platformId,
+        string shortForm = null, int ideaPageSize = 5,
+        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
+        bool allowCrossLanguageIdeas = false)
     {
+        var translationList = translations?.ToList() ?? new List<ProjectTranslationInput>();
+        var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
+        var introductionList = introductions?.ToList() ?? new List<IntroductionTranslationInput>();
+
+        var languages = await ValidateTranslationInputsAsync(
+            translationList, supportedList, defaultLanguageCode, introductionList);
+
+        var defaultName = translationList.First(t => t.LanguageCode == defaultLanguageCode).Name;
         var candidate = string.IsNullOrWhiteSpace(shortForm)
-            ? shortFormService.Normalize(name)
+            ? shortFormService.Normalize(defaultName)
             : shortForm;
 
         if (!shortFormService.IsValid(candidate))
             throw new ValidationException($"'{candidate}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
-
         if (shortFormService.IsReserved(candidate))
             throw new ValidationException($"'{candidate}' is a reserved shortform and cannot be used.");
 
@@ -49,34 +70,59 @@ public class ProjectManager(
 
         var project = new Project
         {
-            Name = name,
             ShortForm = unique,
             ProjectPlatformId = platformId,
-            Topic = topic,
             ImageUrl = imageUrl,
             FormType = formType,
             AiAssistance = aiAssistance,
             MinAge = minAge,
             MaxAge = maxAge,
             RequestContactInfo = requestContactInfo,
+            AllowCrossLanguageIdeas = allowCrossLanguageIdeas,
             IdeaPageSize = ideaPageSize,
             ExtraIdeasReplaceExisting = extraIdeasReplaceExisting,
             MaxExtraIdeaRequests = maxExtraIdeaRequests,
             ProjectState = ProjectState.Draft,
             Questionnaire = new Questionnaire(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            DefaultLanguage = languages[defaultLanguageCode],
         };
-        EntityValidator.ValidateProperty(project, name, nameof(Project.Name));
-        EntityValidator.ValidateProperty(project, topic, nameof(Project.Topic));
+
+        foreach (var code in supportedList)
+            project.SupportedLanguages.Add(languages[code]);
+
+        foreach (var t in translationList)
+        {
+            EntityValidator.ValidateProperty(new ProjectTranslation(), t.Name, nameof(ProjectTranslation.Name));
+            EntityValidator.ValidateProperty(new ProjectTranslation(), t.Topic, nameof(ProjectTranslation.Topic));
+            project.Translations.Add(new ProjectTranslation
+            {
+                Language = languages[t.LanguageCode],
+                Name = t.Name,
+                Topic = t.Topic,
+            });
+        }
+
         EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
         EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
         EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
             throw new ValidationException("MinAge must not be greater than MaxAge.");
-        if (!string.IsNullOrEmpty(introduction))
+
+        var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
+        if (nonEmptyIntros.Count > 0)
         {
-            EntityValidator.ValidateProperty(new Introduction(), introduction, nameof(Introduction.Text));
-            project.Introduction = new Introduction { Text = introduction };
+            var intro = new Introduction();
+            foreach (var introInput in nonEmptyIntros)
+            {
+                EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
+                intro.Translations.Add(new IntroductionTranslation
+                {
+                    Language = languages[introInput.LanguageCode],
+                    Text = introInput.Text,
+                });
+            }
+            project.Introduction = intro;
         }
 
         var created = await projectRepository.CreateAsync(project);
@@ -84,63 +130,167 @@ public class ProjectManager(
         return created;
     }
 
-    public async Task<Project> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, FormType formType, AiAssistanceType aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3)
+    public async Task<Project> UpdateProjectAsync(int projectId,
+        IEnumerable<ProjectTranslationInput> translations,
+        IEnumerable<IntroductionTranslationInput> introductions,
+        string defaultLanguageCode,
+        IEnumerable<string> supportedLanguageCodes,
+        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        int? minAge, int? maxAge, bool requestContactInfo,
+        string shortForm = null, int ideaPageSize = 5,
+        bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
+        bool allowCrossLanguageIdeas = false)
     {
-        var project = await projectRepository.ReadByIdWithIntroductionForUpdateAsync(projectId);
+        var project = await projectRepository.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(projectId);
         if (project is null)
             throw new ArgumentException($"Project {projectId} not found.");
+
+        var translationList = translations?.ToList() ?? new List<ProjectTranslationInput>();
+        var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
+        var introductionList = introductions?.ToList() ?? new List<IntroductionTranslationInput>();
+
+        var languages = await ValidateTranslationInputsAsync(
+            translationList, supportedList, defaultLanguageCode, introductionList);
 
         if (shortForm != null && shortForm != project.ShortForm)
         {
             if (project.ProjectState != ProjectState.Draft)
                 throw new ValidationException("ShortForm cannot be changed after the project has been published.");
-
             if (!shortFormService.IsValid(shortForm))
                 throw new ValidationException($"'{shortForm}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
-
             if (shortFormService.IsReserved(shortForm))
                 throw new ValidationException($"'{shortForm}' is a reserved shortform and cannot be used.");
 
             project.ShortForm = await shortFormService.EnsureUniqueAsync(shortForm, excludeProjectId: projectId);
         }
 
-        EntityValidator.ValidateProperty(project, name, nameof(Project.Name));
-        EntityValidator.ValidateProperty(project, topic, nameof(Project.Topic));
         EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
         EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
         EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
             throw new ValidationException("MinAge must not be greater than MaxAge.");
-        project.Name = name;
-        project.Topic = topic;
+
         project.ImageUrl = imageUrl;
         project.FormType = formType;
         project.AiAssistance = aiAssistance;
         project.MinAge = minAge;
         project.MaxAge = maxAge;
         project.RequestContactInfo = requestContactInfo;
+        project.AllowCrossLanguageIdeas = allowCrossLanguageIdeas;
         project.IdeaPageSize = ideaPageSize;
         project.ExtraIdeasReplaceExisting = extraIdeasReplaceExisting;
         project.MaxExtraIdeaRequests = maxExtraIdeaRequests;
+        project.DefaultLanguage = languages[defaultLanguageCode];
 
-        if (string.IsNullOrEmpty(introduction))
+        var supportedSet = supportedList.ToHashSet();
+        foreach (var existing in project.SupportedLanguages.Where(l => !supportedSet.Contains(l.Code)).ToList())
+            project.SupportedLanguages.Remove(existing);
+        foreach (var code in supportedList)
+            if (!project.SupportedLanguages.Any(l => l.Code == code))
+                project.SupportedLanguages.Add(languages[code]);
+
+        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
+        foreach (var stale in project.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
+            project.Translations.Remove(stale);
+
+        foreach (var input in translationList)
+        {
+            EntityValidator.ValidateProperty(new ProjectTranslation(), input.Name, nameof(ProjectTranslation.Name));
+            EntityValidator.ValidateProperty(new ProjectTranslation(), input.Topic, nameof(ProjectTranslation.Topic));
+
+            var existing = project.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
+            if (existing is null)
+            {
+                project.Translations.Add(new ProjectTranslation
+                {
+                    Language = languages[input.LanguageCode],
+                    Name = input.Name,
+                    Topic = input.Topic,
+                });
+            }
+            else
+            {
+                existing.Name = input.Name;
+                existing.Topic = input.Topic;
+            }
+        }
+
+        var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
+        if (nonEmptyIntros.Count == 0)
         {
             project.Introduction = null;
         }
-        else if (project.Introduction is null)
-        {
-            EntityValidator.ValidateProperty(new Introduction(), introduction, nameof(Introduction.Text));
-            project.Introduction = new Introduction { Text = introduction };
-        }
         else
         {
-            EntityValidator.ValidateProperty(project.Introduction, introduction, nameof(Introduction.Text));
-            project.Introduction.Text = introduction;
+            project.Introduction ??= new Introduction();
+
+            var inputByCodes = nonEmptyIntros.ToDictionary(i => i.LanguageCode);
+            foreach (var stale in project.Introduction.Translations
+                         .Where(t => !inputByCodes.ContainsKey(t.Language.Code)).ToList())
+                project.Introduction.Translations.Remove(stale);
+
+            foreach (var introInput in nonEmptyIntros)
+            {
+                EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
+                var existing = project.Introduction.Translations.FirstOrDefault(t => t.Language.Code == introInput.LanguageCode);
+                if (existing is null)
+                {
+                    project.Introduction.Translations.Add(new IntroductionTranslation
+                    {
+                        Language = languages[introInput.LanguageCode],
+                        Text = introInput.Text,
+                    });
+                }
+                else
+                {
+                    existing.Text = introInput.Text;
+                }
+            }
         }
 
         projectRepository.Update(project);
         await uow.SaveChangesAsync();
         return project;
+    }
+
+    private async Task<Dictionary<string, Language>> ValidateTranslationInputsAsync(
+        ICollection<ProjectTranslationInput> translations,
+        ICollection<string> supportedLanguageCodes,
+        string defaultLanguageCode,
+        ICollection<IntroductionTranslationInput> introductions)
+    {
+        if (string.IsNullOrWhiteSpace(defaultLanguageCode))
+            throw new ValidationException("DefaultLanguageCode is required.");
+        if (supportedLanguageCodes.Count == 0)
+            throw new ValidationException("At least one supported language is required.");
+        if (!supportedLanguageCodes.Contains(defaultLanguageCode))
+            throw new ValidationException("DefaultLanguageCode must be one of the SupportedLanguageCodes.");
+
+        var translationCodes = translations.Select(t => t.LanguageCode).ToList();
+        if (translationCodes.Distinct().Count() != translationCodes.Count)
+            throw new ValidationException("Translations must contain a single row per language.");
+        if (!supportedLanguageCodes.All(translationCodes.Contains))
+            throw new ValidationException("Every supported language must have a translation row.");
+
+        var introByCode = introductions.GroupBy(i => i.LanguageCode).ToList();
+        if (introByCode.Any(g => g.Count() > 1))
+            throw new ValidationException("Introductions must contain a single row per language.");
+
+        var allCodes = supportedLanguageCodes
+            .Concat(translationCodes)
+            .Concat(introductions.Select(i => i.LanguageCode))
+            .Distinct()
+            .ToList();
+        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(allCodes)).ToList();
+        if (resolved.Any(l => !l.IsActive))
+            throw new ValidationException("Inactive languages cannot be assigned to a project.");
+
+        var byCode = resolved.ToDictionary(l => l.Code);
+        var missing = allCodes.Where(c => !byCode.ContainsKey(c)).ToList();
+        if (missing.Count > 0)
+            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+
+        return byCode;
     }
 
     public Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null)
@@ -187,7 +337,9 @@ public class ProjectManager(
         await uow.SaveChangesAsync();
     }
 
-    public async Task<Project> DuplicateProjectAsync(int sourceProjectId, string newName, int platformId, string newShortForm = null, CancellationToken ct = default)
+    public async Task<Project> DuplicateProjectAsync(int sourceProjectId,
+        IEnumerable<ProjectTranslationInput> translations,
+        int platformId, string newShortForm = null, CancellationToken ct = default)
     {
         var src = await projectRepository.ReadByIdForDuplicationReadOnlyAsync(sourceProjectId);
         if (src is null)
@@ -196,13 +348,21 @@ public class ProjectManager(
         if (src.ProjectPlatformId != platformId)
             throw new UnauthorizedAccessException("Source project belongs to a different platform.");
 
+        var translationList = translations?.ToList() ?? new List<ProjectTranslationInput>();
+        var supportedCodes = src.SupportedLanguages.Select(l => l.Code).ToList();
+        var defaultCode = src.DefaultLanguage?.Code
+            ?? throw new InvalidOperationException("Source project has no default language.");
+
+        var languages = await ValidateTranslationInputsAsync(
+            translationList, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
+
+        var defaultName = translationList.First(t => t.LanguageCode == defaultCode).Name;
         var candidate = string.IsNullOrWhiteSpace(newShortForm)
-            ? shortFormService.Normalize(newName)
+            ? shortFormService.Normalize(defaultName)
             : newShortForm;
 
         if (!shortFormService.IsValid(candidate))
             throw new ValidationException($"'{candidate}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
-
         if (shortFormService.IsReserved(candidate))
             throw new ValidationException($"'{candidate}' is a reserved shortform and cannot be used.");
 
@@ -210,15 +370,14 @@ public class ProjectManager(
 
         var copy = new Project
         {
-            Name = newName,
             ShortForm = uniqueShortForm,
-            Topic = src.Topic,
             ImageUrl = src.ImageUrl,
             FormType = src.FormType,
             AiAssistance = src.AiAssistance,
             MinAge = src.MinAge,
             MaxAge = src.MaxAge,
             RequestContactInfo = src.RequestContactInfo,
+            AllowCrossLanguageIdeas = src.AllowCrossLanguageIdeas,
             IdeaPageSize = src.IdeaPageSize,
             ExtraIdeasReplaceExisting = src.ExtraIdeasReplaceExisting,
             MaxExtraIdeaRequests = src.MaxExtraIdeaRequests,
@@ -227,12 +386,27 @@ public class ProjectManager(
             ProjectState = ProjectState.Draft,
             CreatedAt = DateTime.UtcNow,
             ViewCount = 0,
+            DefaultLanguage = languages[defaultCode],
         };
 
-        EntityValidator.ValidateProperty(copy, newName, nameof(Project.Name));
+        foreach (var code in supportedCodes)
+            copy.SupportedLanguages.Add(languages[code]);
 
-        if (src.Introduction is not null)
-            copy.Introduction = new Introduction { Text = src.Introduction.Text };
+        foreach (var t in translationList)
+            copy.Translations.Add(new ProjectTranslation
+            {
+                Language = languages[t.LanguageCode],
+                Name = t.Name,
+                Topic = t.Topic,
+            });
+
+        if (src.Introduction is not null && src.Introduction.Translations.Count > 0)
+        {
+            var introCopy = new Introduction();
+            foreach (var t in src.Introduction.Translations)
+                introCopy.Translations.Add(new IntroductionTranslation { Language = t.Language, Text = t.Text });
+            copy.Introduction = introCopy;
+        }
 
         copy.Questionnaire = new Questionnaire();
 
@@ -243,7 +417,9 @@ public class ProjectManager(
 
             foreach (var srcSection in src.Questionnaire.Sections)
             {
-                var newSection = new Section { Name = srcSection.Name, Description = srcSection.Description };
+                var newSection = new Section();
+                foreach (var t in srcSection.Translations)
+                    newSection.Translations.Add(new SectionTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
                 sectionMap[srcSection.SectionId] = newSection;
                 copy.Questionnaire.Sections.Add(newSection);
             }
@@ -252,21 +428,26 @@ public class ProjectManager(
             {
                 var newQ = new Question
                 {
-                    Text = srcQ.Text,
                     QuestionFormat = srcQ.QuestionFormat,
                     IsMandatory = srcQ.IsMandatory,
-                    AnswerChoices = srcQ.AnswerChoices.ToList(),
+                    AnswerChoiceCount = srcQ.AnswerChoiceCount,
+                    ChoiceIndex = srcQ.ChoiceIndex,
                     Position = srcQ.Position,
-                    ParentTriggerValue = srcQ.ParentTriggerValue,
                     Section = srcQ.Section is not null ? sectionMap[srcQ.Section.SectionId] : null,
                 };
+                foreach (var t in srcQ.Translations)
+                    newQ.Translations.Add(new QuestionTranslation { Language = t.Language, Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
                 foreach (var ea in srcQ.EndingAnswers)
-                    newQ.EndingAnswers.Add(new EndingAnswer { Value = ea.Value });
+                {
+                    var newEa = new EndingAnswer { Question = newQ };
+                    foreach (var t in ea.Translations)
+                        newEa.Translations.Add(new EndingAnswerTranslation { Language = t.Language, Value = t.Value });
+                    newQ.EndingAnswers.Add(newEa);
+                }
                 questionMap[srcQ.QuestionId] = newQ;
                 copy.Questionnaire.Questions.Add(newQ);
             }
 
-            // Second pass: remap parent-child links using new entity instances
             foreach (var srcQ in src.Questionnaire.Questions)
             {
                 if (srcQ.ParentQuestion is not null && questionMap.TryGetValue(srcQ.ParentQuestion.QuestionId, out var newParent))
@@ -275,7 +456,12 @@ public class ProjectManager(
         }
 
         foreach (var srcCat in src.Categories)
-            copy.Categories.Add(new Category { Name = srcCat.Name, Description = srcCat.Description });
+        {
+            var catCopy = new Category();
+            foreach (var t in srcCat.Translations)
+                catCopy.Translations.Add(new CategoryTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
+            copy.Categories.Add(catCopy);
+        }
 
         foreach (var srcEmoji in src.Emojis)
         {

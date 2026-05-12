@@ -41,7 +41,7 @@ public sealed class GoogleVertexAiImageGenerationService(
             if (response.Candidates is null || response.Candidates.Count == 0)
             {
                 logger.LogWarning("[ImageGeneration] Gemini returned no candidates for project '{Name}'", projectName);
-                return ImageGenerationResult.Failed("Afbeelding kon niet worden gegenereerd.");
+                return ImageGenerationResult.Failed("Image could not be generated.");
             }
 
             foreach (var part in response.Candidates[0].Content.Parts)
@@ -55,7 +55,7 @@ public sealed class GoogleVertexAiImageGenerationService(
             }
 
             logger.LogWarning("[ImageGeneration] Gemini response contained no image data for project '{Name}'", projectName);
-            return ImageGenerationResult.Failed("Afbeelding kon niet worden gegenereerd.");
+            return ImageGenerationResult.Failed("Image could not be generated.");
         }
         catch (OperationCanceledException)
         {
@@ -64,7 +64,7 @@ public sealed class GoogleVertexAiImageGenerationService(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "[ImageGeneration] Failed to generate image for project '{Name}'", projectName);
-            return ImageGenerationResult.Failed("Afbeelding kon niet worden gegenereerd.");
+            return ImageGenerationResult.Failed("Image could not be generated.");
         }
     }
 }

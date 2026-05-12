@@ -16,7 +16,7 @@ _create_template() {
     --image-project=cos-cloud \
     --tags=allow-health-check \
     --scopes=cloud-platform \
-    --metadata="env=${ENV},project-id=${PROJECT_ID}" \
+    --metadata="env=${ENV},project-id=${PROJECT_ID},domain=${DOMAIN}" \
     --metadata-from-file="startup-script=${_INFRA_DIR}/${startup_script}" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "    (al aanwezig, overgeslagen)"
 }

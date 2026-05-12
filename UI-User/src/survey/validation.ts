@@ -1,3 +1,5 @@
+import {t} from '../lib/i18n';
+
 const MAX_LENGTH = 500;
 
 interface QuestionValidator {
@@ -68,12 +70,12 @@ export function isSlideValid(slide: HTMLElement): { valid: boolean; message: str
     if (format === 'Open') {
         const ta = slide.querySelector<HTMLTextAreaElement>('textarea');
         if (ta && ta.value.length > MAX_LENGTH) {
-            return {valid: false, message: `Je antwoord mag maximaal ${MAX_LENGTH} tekens bevatten.`};
+            return {valid: false, message: t('surveyAnswerTooLong').replace('{max}', String(MAX_LENGTH))};
         }
     }
 
     if (!isSlideAnswered(slide)) {
-        return {valid: false, message: 'Geef eerst een antwoord voor je verdergaat.'};
+        return {valid: false, message: t('surveyAnswerRequired')};
     }
 
     return {valid: true, message: ''};
@@ -86,7 +88,7 @@ export function showValidationError(slide: HTMLElement, message?: string): void 
         el.className = 'slide-error text-red-500 text-xs mt-4 font-medium';
         slide.querySelector('.slide-answer-area')?.appendChild(el);
     }
-    el.textContent = message ?? 'Geef eerst een antwoord voor je verdergaat.';
+    el.textContent = message ?? t('surveyAnswerRequired');
 }
 
 export function clearValidationError(slide: HTMLElement): void {

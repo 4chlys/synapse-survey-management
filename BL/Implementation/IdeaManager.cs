@@ -21,8 +21,13 @@ public class IdeaManager(
     // memory when not on PostgreSQL. The brief calls for "performant for ≤1,000 ideas".
     private const int EmbeddingSortMaxItems = 1000;
 
-    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int categoryId, int? participantId, int pageSize, int page, string sortKey, CancellationToken ct = default)
+    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int categoryId, int? participantId, int pageSize, int page, string sortKey, string participantLanguageCode = null, bool showAllLanguages = false, CancellationToken ct = default)
     {
+        var (allowCross, defaultLangCode) = await ideaRepository.ReadProjectFlagsForCategoryReadOnlyAsync(categoryId);
+        string filterLanguageCode = (!allowCross || !showAllLanguages)
+            ? (participantLanguageCode ?? defaultLangCode)
+            : null;
+
         // Anchor = participant's most recent idea description in this category.
         string anchorText = null;
         if (participantId.HasValue)
@@ -31,14 +36,14 @@ public class IdeaManager(
 
         if (!embeddingSortFactory.IsEmbeddingKey(sortKey))
         {
-            var paged = await RegularSortAsync(categoryId, pageSize, page, sortKey);
+            var paged = await RegularSortAsync(categoryId, pageSize, page, sortKey, filterLanguageCode);
             return ToIndexResult(paged, sortKey, hasOwnIdeas);
         }
 
         float[] queryEmbedding = null;
         if (!string.IsNullOrWhiteSpace(anchorText))
             queryEmbedding = await embeddingService.GenerateAsync(anchorText, ct);
-        
+
         var resolvedKey = sortKey;
         if (queryEmbedding == null && sortKey != "diverse")
         {
@@ -46,13 +51,13 @@ public class IdeaManager(
             queryEmbedding = null;
         }
 
-        var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
+        var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId, filterLanguageCode);
         if (total > EmbeddingSortMaxItems)
             logger.LogWarning("Embedding sort '{Key}' hit the {Cap}-item cap for category {CategoryId}",
                 resolvedKey, EmbeddingSortMaxItems, categoryId);
 
         var all = (await ideaRepository.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
-            categoryId, q => q.OrderBy(i => i.IdeaId), false, 0, EmbeddingSortMaxItems)).ToList();
+            categoryId, q => q.OrderBy(i => i.IdeaId), false, 0, EmbeddingSortMaxItems, filterLanguageCode)).ToList();
 
         var sorted = embeddingSortFactory.Get(resolvedKey).Sort(all, queryEmbedding);
         var pagedItems = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -68,12 +73,12 @@ public class IdeaManager(
         };
     }
 
-    private async Task<PagedResult<Idea>> RegularSortAsync(int categoryId, int pageSize, int page, string sortKey)
+    private async Task<PagedResult<Idea>> RegularSortAsync(int categoryId, int pageSize, int page, string sortKey, string filterLanguageCode)
     {
         var strategy = sortStrategyFactory.Get(sortKey);
-        var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId);
+        var total = await ideaRepository.CountVisibleByCategoryAsync(categoryId, filterLanguageCode);
         var items = await ideaRepository.ReadVisibleByCategoryWithCommentsReadOnlyAsync(
-            categoryId, strategy.DbOrderBy, strategy.Randomize, (page - 1) * pageSize, pageSize);
+            categoryId, strategy.DbOrderBy, strategy.Randomize, (page - 1) * pageSize, pageSize, filterLanguageCode);
 
         return new PagedResult<Idea> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
     }
@@ -102,7 +107,7 @@ public class IdeaManager(
     }
 
     public async Task<AddIdeaResult> AddIdeaAsync(int categoryId, int projectId, string description, ModerationStatus status,
-        Participant participant, string imageUrl = null, CancellationToken ct = default)
+        Participant participant, string imageUrl = null, string submissionLanguageCode = null, CancellationToken ct = default)
     {
         var category = await categoryRepository.ReadByIdWithProjectForUpdateAsync(categoryId);
         if (category == null || category.Project?.ProjectId != projectId)
@@ -123,6 +128,10 @@ public class IdeaManager(
             logger.LogWarning(ex, "Failed to generate embedding for idea; storing without vector");
         }
 
+        var submissionLanguage = submissionLanguageCode != null
+            ? category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
+            : null;
+
         var idea = new Idea
         {
             Status = status,
@@ -131,6 +140,7 @@ public class IdeaManager(
             Category = category,
             Participant = participant,
             Embedding = embedding,
+            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(idea);

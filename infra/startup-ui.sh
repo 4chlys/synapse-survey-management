@@ -22,8 +22,6 @@ docker login -u oauth2accesstoken -p "$TOKEN" https://gcr.io
 docker pull "gcr.io/${PROJECT_ID}/mvp-ui:${IMAGE_TAG}"
 docker stop mvp-ui 2>/dev/null; docker rm mvp-ui 2>/dev/null
 
-BASE_DOMAIN="$(get_secret domain)"
-
 docker run -d --name mvp-ui --restart always -p 80:8080 \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e ASPNETCORE_URLS=http://+:8080 \
@@ -31,5 +29,5 @@ docker run -d --name mvp-ui --restart always -p 80:8080 \
   -e ApiBaseUrl="$(get_secret api-base-url)" \
   -e ApiKey="$(get_secret api-key)" \
   -e GCS_BUCKET="$(get_secret gcs-bucket)" \
-  -e Subdomains__BaseDomain="${BASE_DOMAIN}" \
+  -e Subdomains__BaseDomain="$(get_secret domain)" \
   "gcr.io/${PROJECT_ID}/mvp-ui:${IMAGE_TAG}"

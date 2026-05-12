@@ -6,6 +6,8 @@ public sealed class ModerationConfig
 {
     [JsonPropertyName("use_ai")] public bool UseAi { get; init; } = true;
 
+    public string DefaultLanguage { get; init; } = "nl";
+
     [JsonPropertyName("moderation_prompt")]
     public string ModerationPrompt { get; init; } = string.Empty;
 
