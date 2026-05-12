@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="HeaderTitle" xml:space="preserve">
+    <value>Reactie-assistent</value>
+  </data>
+  <data name="HeaderSubtitle" xml:space="preserve">
+    <value>Snel feedback van AI</value>
+  </data>
+  <data name="SkipButtonTitle" xml:space="preserve">
+    <value>Direct reageren zonder AI</value>
+  </data>
+  <data name="SkipButtonText" xml:space="preserve">
+    <value>Direct plaatsen</value>
+  </data>
+  <data name="CloseAriaLabel" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="InputPlaceholder" xml:space="preserve">
+    <value>Typ hier je reactie...</value>
+  </data>
+  <data name="SendAriaLabel" xml:space="preserve">
+    <value>Versturen</value>
+  </data>
+  <data name="FooterNote" xml:space="preserve">
+    <value>De assistent geeft snelle feedback — jij beslist wat er geplaatst wordt.</value>
+  </data>
+</root>

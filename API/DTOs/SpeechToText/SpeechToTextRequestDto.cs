@@ -15,4 +15,7 @@ public sealed class SpeechToTextRequestDto
     [Required]
     [StringLength(64)]
     public string MimeType { get; set; } = "audio/webm;codecs=opus";
+
+    /// <summary>BCP-47 two-letter language code of the participant's UI language (e.g. "nl", "en").</summary>
+    public string Language { get; set; } = "nl";
 }

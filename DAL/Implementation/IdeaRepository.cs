@@ -25,7 +25,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
 
     public Task<Idea> ReadByIdWithProjectForUpdateAsync(int ideaId)
         => Context.Set<Idea>()
-            .Include(i => i.Category).ThenInclude(c => c.Project)
+            .Include(i => i.Category).ThenInclude(c => c.Project).ThenInclude(p => p.SupportedLanguages)
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
     public Task<Idea> ReadByIdWithProjectAndEmojisForUpdateAsync(int ideaId)
@@ -35,7 +35,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
 
     public async Task<Idea> ReadByIdWithCommentsAndParticipantReadOnlyAsync(int ideaId)
     {
-        var idea = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant))
+        var idea = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant).Include(i => i.Language))
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
         if (idea != null) ExcludeReactions([idea]);
         return idea;
@@ -47,11 +47,30 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
             .Include(i => i.Participant)
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId);
 
-    public Task<int> CountVisibleByCategoryAsync(int categoryId)
-        => Context.Set<Idea>()
-            .CountAsync(i => i.Category.CategoryId == categoryId
-                             && i.Status != ModerationStatus.Flagged
-                             && i.Status != ModerationStatus.Declined);
+    public async Task<(bool AllowCrossLanguageIdeas, string DefaultLanguageCode)> ReadProjectFlagsForCategoryReadOnlyAsync(int categoryId)
+    {
+        var result = await Context.Set<Category>()
+            .AsNoTracking()
+            .Where(c => c.CategoryId == categoryId)
+            .Select(c => new
+            {
+                c.Project.AllowCrossLanguageIdeas,
+                DefaultLanguageCode = EF.Property<string>(c.Project, "DefaultLanguageCode")
+            })
+            .FirstOrDefaultAsync();
+        return result == null ? (false, null) : (result.AllowCrossLanguageIdeas, result.DefaultLanguageCode);
+    }
+
+    public Task<int> CountVisibleByCategoryAsync(int categoryId, string filterLanguageCode = null)
+    {
+        var query = Context.Set<Idea>()
+            .Where(i => i.Category.CategoryId == categoryId
+                         && i.Status != ModerationStatus.Flagged
+                         && i.Status != ModerationStatus.Declined);
+        if (filterLanguageCode != null)
+            query = query.Where(i => EF.Property<string>(i, "LanguageCode") == filterLanguageCode);
+        return query.CountAsync();
+    }
 
     public Task<int> CountByCategoryAsync(int categoryId)
         => Context.Set<Idea>()
@@ -71,12 +90,16 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         Func<IQueryable<Idea>, IOrderedQueryable<Idea>> orderBy,
         bool randomize,
         int skip,
-        int take)
+        int take,
+        string filterLanguageCode = null)
     {
-        var query = WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant))
+        var query = WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant).Include(i => i.Language))
             .Where(i => i.Category.CategoryId == categoryId
                         && i.Status != ModerationStatus.Flagged
                         && i.Status != ModerationStatus.Declined);
+
+        if (filterLanguageCode != null)
+            query = query.Where(i => EF.Property<string>(i, "LanguageCode") == filterLanguageCode);
 
         IQueryable<Idea> ordered = randomize
             ? query.OrderBy(_ => EF.Functions.Random())
@@ -103,7 +126,7 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
 
     public async Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId)
     {
-        var ideas = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant))
+        var ideas = await WithComments(Context.Set<Idea>().AsNoTracking().Include(i => i.Participant).Include(i => i.Language))
             .Where(i => i.Category.CategoryId == categoryId
                         && i.Participant.ParticipantId == participantId
                         && i.Status != ModerationStatus.Declined)

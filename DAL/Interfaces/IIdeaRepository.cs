@@ -12,7 +12,9 @@ public interface IIdeaRepository : IRepository<Idea>
 
     Task<Idea> ReadByIdWithProjectAndEmojisForUpdateAsync(int ideaId);
 
-    Task<int> CountVisibleByCategoryAsync(int categoryId);
+    Task<(bool AllowCrossLanguageIdeas, string DefaultLanguageCode)> ReadProjectFlagsForCategoryReadOnlyAsync(int categoryId);
+
+    Task<int> CountVisibleByCategoryAsync(int categoryId, string filterLanguageCode = null);
 
     Task<int> CountByCategoryAsync(int categoryId);
 
@@ -23,7 +25,8 @@ public interface IIdeaRepository : IRepository<Idea>
         Func<IQueryable<Idea>, IOrderedQueryable<Idea>> orderBy,
         bool randomize,
         int skip,
-        int take);
+        int take,
+        string filterLanguageCode = null);
 
     Task<IEnumerable<Idea>> ReadByCategoryAndParticipantWithCommentsReadOnlyAsync(int categoryId, int participantId);
 

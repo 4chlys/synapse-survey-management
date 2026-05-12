@@ -3,6 +3,7 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
@@ -10,6 +11,7 @@ public class QuestionnaireManager(
     IQuestionnaireRepository questionnaireRepository,
     IQuestionRepository questionRepository,
     ISectionRepository sectionRepository,
+    ILanguageRepository languageRepository,
     IUnitOfWork uow) : IQuestionnaireManager
 {
     public Task<Questionnaire> GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(int projectId)
@@ -21,19 +23,32 @@ public class QuestionnaireManager(
     public Task<Questionnaire> GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(int questionId)
         => questionnaireRepository.ReadByQuestionIdWithQuestionsReadOnlyAsync(questionId);
 
+    public Task<Questionnaire> GetQuestionnaireByProjectIdWithTranslationsReadOnlyAsync(int projectId)
+        => questionnaireRepository.ReadByProjectIdWithQuestionsAndTranslationsReadOnlyAsync(projectId);
+
+    public Task<Questionnaire> GetQuestionnaireByQuestionIdWithTranslationsReadOnlyAsync(int questionId)
+        => questionnaireRepository.ReadByQuestionIdWithQuestionsAndTranslationsReadOnlyAsync(questionId);
+
     public Task<Question> GetQuestionByIdReadOnlyAsync(int questionId)
         => questionRepository.ReadByIdReadOnlyAsync(questionId);
 
     public Task<bool> QuestionBelongsToProjectAsync(int questionId, int projectId)
         => questionRepository.ExistsForProjectAsync(questionId, projectId);
 
-    public async Task<Question> AddQuestionAsync(int projectId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
-        int? parentQuestionId = null, string parentTriggerValue = null,
-        List<string> endingAnswers = null, CancellationToken ct = default)
+    public async Task<Question> AddQuestionAsync(
+        int projectId, int answerChoiceCount, QuestionFormat format, bool isMandatory,
+        IEnumerable<QuestionTranslationInput> translations,
+        int? sectionId = null,
+        int? parentQuestionId = null, int? choiceIndex = null,
+        IEnumerable<IEnumerable<EndingAnswerTranslationInput>> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null, bool mediaIsEmbed = false,
+        CancellationToken ct = default)
     {
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
+
+        var translationList = translations?.ToList() ?? new List<QuestionTranslationInput>();
+        var languages = await ValidateQuestionTranslationInputsAsync(translationList, answerChoiceCount);
 
         var section = sectionId.HasValue
             ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
@@ -45,36 +60,62 @@ public class QuestionnaireManager(
             parent = await questionRepository.ReadByIdWithSectionForUpdateAsync(parentQuestionId.Value);
             if (parent is null)
                 throw new ValidationException($"Parent question {parentQuestionId} not found.");
-            EntityValidator.ValidateProperty(new Question(), parentTriggerValue, nameof(Question.ParentTriggerValue));
-            ValidateParentTrigger(parent, parentTriggerValue);
+            ValidateParentChoiceIndex(parent, choiceIndex);
         }
-        else if (!string.IsNullOrEmpty(parentTriggerValue))
+        else if (choiceIndex.HasValue)
         {
-            throw new ValidationException("ParentTriggerValue must be null when no parent is set.");
+            throw new ValidationException("ChoiceIndex must be null when no parent is set.");
         }
 
         var siblings = (await questionRepository.ReadSiblingsForUpdateAsync(
-            parentQuestionId, parentTriggerValue, questionnaire.QuestionnaireId)).ToList();
+            parentQuestionId, parent is not null ? choiceIndex : null, questionnaire.QuestionnaireId)).ToList();
         var nextPosition = siblings.Count == 0 ? 1 : siblings.Max(s => s.Position) + 1;
 
         var question = new Question
         {
-            Text = text,
             QuestionFormat = format,
             IsMandatory = isMandatory,
-            AnswerChoices = answerChoices ?? new List<string>(),
+            AnswerChoiceCount = answerChoiceCount,
             Questionnaire = questionnaire,
             Section = section,
             ParentQuestion = parent,
-            ParentTriggerValue = parent is not null ? parentTriggerValue : null,
-            Position = nextPosition
+            ChoiceIndex = parent is not null ? choiceIndex : null,
+            Position = nextPosition,
+            MediaUrl = mediaUrl,
+            MediaType = mediaType,
+            MediaIsEmbed = mediaIsEmbed
         };
-        if (endingAnswers is not null)
-            foreach (var value in endingAnswers)
+
+        foreach (var input in translationList)
+        {
+            question.Translations.Add(new QuestionTranslation
             {
-                EntityValidator.ValidateProperty(new EndingAnswer(), value, nameof(EndingAnswer.Value));
-                question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
+                Language = languages[input.LanguageCode],
+                Text = input.Text,
+                AnswerChoices = input.AnswerChoices ?? new List<string>(),
+                MediaText = input.MediaText
+            });
+        }
+
+        if (endingAnswers is not null)
+        {
+            foreach (var eaInputs in endingAnswers)
+            {
+                var eaInputList = eaInputs?.ToList() ?? new List<EndingAnswerTranslationInput>();
+                var ea = new EndingAnswer { Question = question };
+                foreach (var eaInput in eaInputList)
+                {
+                    EntityValidator.ValidateProperty(new EndingAnswerTranslation(), eaInput.Value, nameof(EndingAnswerTranslation.Value));
+                    ea.Translations.Add(new EndingAnswerTranslation
+                    {
+                        Language = languages[eaInput.LanguageCode],
+                        Value = eaInput.Value
+                    });
+                }
+                question.EndingAnswers.Add(ea);
             }
+        }
+
         EntityValidator.Validate(question);
         var created = await questionRepository.CreateAsync(question);
         await uow.SaveChangesAsync(ct);
@@ -82,35 +123,60 @@ public class QuestionnaireManager(
     }
 
     public async Task<IEnumerable<Question>> GetQuestionsForProjectAsync(int projectId)
-        => await questionRepository.ReadByProjectIdWithSectionAndEndingAnswersReadOnlyAsync(projectId);
+        => await questionRepository.ReadByProjectIdWithTranslationsReadOnlyAsync(projectId);
 
-    public async Task<bool> UpdateQuestionAsync(int questionId, string text,
-        QuestionFormat format, bool isMandatory, List<string> answerChoices, int? sectionId = null,
-        List<string> endingAnswers = null, CancellationToken ct = default)
+    public async Task<bool> UpdateQuestionAsync(
+        int questionId, int answerChoiceCount, QuestionFormat format, bool isMandatory,
+        IEnumerable<QuestionTranslationInput> translations,
+        int? sectionId = null,
+        IEnumerable<IEnumerable<EndingAnswerTranslationInput>> endingAnswers = null,
+        string mediaUrl = null, QuestionMediaType? mediaType = null, bool mediaIsEmbed = false,
+        CancellationToken ct = default)
     {
         var question = await questionRepository.ReadByIdWithSectionForUpdateAsync(questionId);
         if (question is null) return false;
 
-        EntityValidator.ValidateProperty(question, text, nameof(Question.Text));
-        question.Text = text;
+        var translationList = translations?.ToList() ?? new List<QuestionTranslationInput>();
+        var languages = await ValidateQuestionTranslationInputsAsync(translationList, answerChoiceCount);
+
+        // Guard: cannot remove choices if children reference those indices
+        if (answerChoiceCount < question.AnswerChoiceCount)
+        {
+            var invalidChildren = question.Children.Where(c => c.ChoiceIndex >= answerChoiceCount).ToList();
+            if (invalidChildren.Count > 0)
+                throw new ValidationException(
+                    "Cannot reduce answer choice count: child questions reference choices that would be removed.");
+        }
+
         question.QuestionFormat = format;
         question.IsMandatory = isMandatory;
+        question.AnswerChoiceCount = answerChoiceCount;
 
-        // Migrate child questions and ending-answers when an answer is renamed
-        // in place. Pair old → new by position; children & ending markers reference
-        // answers by text, so a rename without remap orphans them.
-        var oldChoices = question.AnswerChoices.ToList();
-        var newChoices = answerChoices ?? new List<string>();
-        var pairCount = Math.Min(oldChoices.Count, newChoices.Count);
-        for (var i = 0; i < pairCount; i++)
+        // Upsert translations
+        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
+        foreach (var stale in question.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
+            question.Translations.Remove(stale);
+
+        foreach (var input in translationList)
         {
-            if (oldChoices[i] == newChoices[i]) continue;
-            foreach (var child in question.Children.Where(c => c.ParentTriggerValue == oldChoices[i]))
-                child.ParentTriggerValue = newChoices[i];
-            foreach (var ending in question.EndingAnswers.Where(e => e.Value == oldChoices[i]))
-                ending.Value = newChoices[i];
+            var existing = question.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
+            if (existing is null)
+            {
+                question.Translations.Add(new QuestionTranslation
+                {
+                    Language = languages[input.LanguageCode],
+                    Text = input.Text,
+                    AnswerChoices = input.AnswerChoices ?? new List<string>(),
+                    MediaText = input.MediaText
+                });
+            }
+            else
+            {
+                existing.Text = input.Text;
+                existing.AnswerChoices = input.AnswerChoices ?? new List<string>();
+                existing.MediaText = input.MediaText;
+            }
         }
-        question.AnswerChoices = newChoices;
 
         question.Section = sectionId.HasValue
             ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
@@ -119,12 +185,26 @@ public class QuestionnaireManager(
         if (endingAnswers is not null)
         {
             question.EndingAnswers.Clear();
-            foreach (var value in endingAnswers)
+            foreach (var eaInputs in endingAnswers)
             {
-                EntityValidator.ValidateProperty(new EndingAnswer(), value, nameof(EndingAnswer.Value));
-                question.EndingAnswers.Add(new EndingAnswer { Question = question, Value = value });
+                var eaInputList = eaInputs?.ToList() ?? new List<EndingAnswerTranslationInput>();
+                var ea = new EndingAnswer { Question = question };
+                foreach (var eaInput in eaInputList)
+                {
+                    EntityValidator.ValidateProperty(new EndingAnswerTranslation(), eaInput.Value, nameof(EndingAnswerTranslation.Value));
+                    ea.Translations.Add(new EndingAnswerTranslation
+                    {
+                        Language = languages[eaInput.LanguageCode],
+                        Value = eaInput.Value
+                    });
+                }
+                question.EndingAnswers.Add(ea);
             }
         }
+
+        question.MediaUrl = mediaUrl;
+        question.MediaType = mediaType;
+        question.MediaIsEmbed = mediaIsEmbed;
 
         questionRepository.Update(question);
         await uow.SaveChangesAsync(ct);
@@ -139,7 +219,7 @@ public class QuestionnaireManager(
     }
 
     public async Task<Question> MoveQuestionAsync(int questionId, int? newParentQuestionId,
-        string newParentTriggerValue, int newPosition, CancellationToken ct = default)
+        int? newChoiceIndex, int newPosition, CancellationToken ct = default)
     {
         var question = await questionRepository.ReadByIdWithParentChainForUpdateAsync(questionId);
         if (question is null) return null;
@@ -156,24 +236,24 @@ public class QuestionnaireManager(
             if (newParent.Questionnaire.QuestionnaireId != question.Questionnaire.QuestionnaireId)
                 throw new ValidationException("Parent must belong to the same questionnaire.");
 
-            ValidateParentTrigger(newParent, newParentTriggerValue);
+            ValidateParentChoiceIndex(newParent, newChoiceIndex);
             EnsureNoCycle(question, newParent);
         }
-        else if (!string.IsNullOrEmpty(newParentTriggerValue))
+        else if (newChoiceIndex.HasValue)
         {
-            throw new ValidationException("ParentTriggerValue must be null when moving to top-level.");
+            throw new ValidationException("ChoiceIndex must be null when moving to top-level.");
         }
 
         var oldParentId = question.ParentQuestion?.QuestionId;
-        var oldTrigger = question.ParentTriggerValue;
+        var oldChoiceIndex = question.ChoiceIndex;
         var questionnaireId = question.Questionnaire.QuestionnaireId;
 
         question.ParentQuestion = newParent;
-        question.ParentTriggerValue = newParent is null ? null : newParentTriggerValue;
+        question.ChoiceIndex = newParent is null ? null : newChoiceIndex;
         questionRepository.Update(question);
 
-        await RepackScopeAsync(questionnaireId, oldParentId, oldTrigger, excludeId: questionId);
-        await RepackScopeAsync(questionnaireId, newParentQuestionId, newParent is null ? null : newParentTriggerValue,
+        await RepackScopeAsync(questionnaireId, oldParentId, oldChoiceIndex, excludeId: questionId);
+        await RepackScopeAsync(questionnaireId, newParentQuestionId, newParent is null ? null : newChoiceIndex,
             insertId: questionId, insertAt: newPosition);
 
         await uow.SaveChangesAsync(ct);
@@ -224,32 +304,66 @@ public class QuestionnaireManager(
     public Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId)
         => sectionRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
-    public async Task<Section> CreateSectionAsync(int projectId, string name, string description, CancellationToken ct = default)
+    public async Task<Section> CreateSectionAsync(int projectId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default)
     {
         var questionnaire = await questionnaireRepository.ReadByProjectIdForUpdateAsync(projectId);
         if (questionnaire is null) return null;
 
-        var section = new Section
+        var translationList = translations?.ToList() ?? new List<SectionTranslationInput>();
+        var languages = await ValidateSectionTranslationInputsAsync(translationList);
+
+        var section = new Section { Questionnaire = questionnaire };
+        foreach (var input in translationList)
         {
-            Name = name,
-            Description = description,
-            Questionnaire = questionnaire
-        };
+            EntityValidator.ValidateProperty(new SectionTranslation(), input.Name, nameof(SectionTranslation.Name));
+            EntityValidator.ValidateProperty(new SectionTranslation(), input.Description, nameof(SectionTranslation.Description));
+            section.Translations.Add(new SectionTranslation
+            {
+                Language = languages[input.LanguageCode],
+                Name = input.Name,
+                Description = input.Description
+            });
+        }
+
         EntityValidator.Validate(section);
         var created = await sectionRepository.CreateAsync(section);
         await uow.SaveChangesAsync(ct);
         return created;
     }
 
-    public async Task<bool> UpdateSectionAsync(int sectionId, string name, string description, CancellationToken ct = default)
+    public async Task<bool> UpdateSectionAsync(int sectionId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default)
     {
         var section = await sectionRepository.ReadByIdForUpdateAsync(sectionId);
         if (section is null) return false;
 
-        EntityValidator.ValidateProperty(section, name, nameof(Section.Name));
-        EntityValidator.ValidateProperty(section, description, nameof(Section.Description));
-        section.Name = name;
-        section.Description = description;
+        var translationList = translations?.ToList() ?? new List<SectionTranslationInput>();
+        var languages = await ValidateSectionTranslationInputsAsync(translationList);
+
+        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
+        foreach (var stale in section.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
+            section.Translations.Remove(stale);
+
+        foreach (var input in translationList)
+        {
+            EntityValidator.ValidateProperty(new SectionTranslation(), input.Name, nameof(SectionTranslation.Name));
+            EntityValidator.ValidateProperty(new SectionTranslation(), input.Description, nameof(SectionTranslation.Description));
+            var existing = section.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
+            if (existing is null)
+            {
+                section.Translations.Add(new SectionTranslation
+                {
+                    Language = languages[input.LanguageCode],
+                    Name = input.Name,
+                    Description = input.Description
+                });
+            }
+            else
+            {
+                existing.Name = input.Name;
+                existing.Description = input.Description;
+            }
+        }
+
         sectionRepository.Update(section);
         await uow.SaveChangesAsync(ct);
         return true;
@@ -262,22 +376,21 @@ public class QuestionnaireManager(
         return result;
     }
 
-    private static void ValidateParentTrigger(Question parent, string triggerValue)
+    private static void ValidateParentChoiceIndex(Question parent, int? choiceIndex)
     {
         if (parent.QuestionFormat == QuestionFormat.Open)
             throw new ValidationException("Open questions cannot have sub-questions.");
-        if (string.IsNullOrEmpty(triggerValue))
-            throw new ValidationException("ParentTriggerValue is required when nesting under a parent.");
+        if (!choiceIndex.HasValue)
+            throw new ValidationException("ChoiceIndex is required when nesting under a parent.");
 
         if (parent.QuestionFormat == QuestionFormat.SingleChoice
             || parent.QuestionFormat == QuestionFormat.MultipleChoice)
         {
-            if (!parent.AnswerChoices.Contains(triggerValue))
+            if (choiceIndex < 0 || choiceIndex >= parent.AnswerChoiceCount)
                 throw new ValidationException(
-                    $"TriggerValue '{triggerValue}' is not one of the parent's answer choices.");
+                    $"ChoiceIndex {choiceIndex} is out of range for the parent (0..{parent.AnswerChoiceCount - 1}).");
         }
-        // Likert: accept any integer — the UI presents 1..N and we don't currently store Min/Max on Question.
-        // If Likert bounds are later added to the domain, validate them here.
+        // Likert: accept any non-negative int — the UI presents 1..N and bounds are not stored on Question.
     }
 
     private static void EnsureNoCycle(Question moving, Question newParent)
@@ -291,11 +404,11 @@ public class QuestionnaireManager(
         }
     }
 
-    private async Task RepackScopeAsync(int questionnaireId, int? parentQuestionId, string triggerValue,
+    private async Task RepackScopeAsync(int questionnaireId, int? parentQuestionId, int? choiceIndex,
         int? excludeId = null, int? insertId = null, int? insertAt = null)
     {
         var siblings = (await questionRepository.ReadSiblingsForUpdateAsync(
-            parentQuestionId, triggerValue, questionnaireId)).ToList();
+            parentQuestionId, choiceIndex, questionnaireId)).ToList();
 
         if (excludeId.HasValue)
             siblings.RemoveAll(s => s.QuestionId == excludeId.Value);
@@ -320,5 +433,51 @@ public class QuestionnaireManager(
                 questionRepository.Update(siblings[i]);
             }
         }
+    }
+
+    private async Task<Dictionary<string, Language>> ValidateQuestionTranslationInputsAsync(
+        ICollection<QuestionTranslationInput> translations, int answerChoiceCount)
+    {
+        if (translations.Count == 0)
+            throw new ValidationException("At least one translation is required.");
+
+        var codes = translations.Select(t => t.LanguageCode).ToList();
+        if (codes.Distinct().Count() != codes.Count)
+            throw new ValidationException("Translations must contain a single row per language.");
+
+        foreach (var t in translations)
+        {
+            var count = t.AnswerChoices?.Count ?? 0;
+            if (count != answerChoiceCount)
+                throw new ValidationException(
+                    $"Translation '{t.LanguageCode}' has {count} answer choices but AnswerChoiceCount is {answerChoiceCount}.");
+        }
+
+        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
+        var byCode = resolved.ToDictionary(l => l.Code);
+        var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
+        if (missing.Count > 0)
+            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+
+        return byCode;
+    }
+
+    private async Task<Dictionary<string, Language>> ValidateSectionTranslationInputsAsync(
+        ICollection<SectionTranslationInput> translations)
+    {
+        if (translations.Count == 0)
+            throw new ValidationException("At least one translation is required.");
+
+        var codes = translations.Select(t => t.LanguageCode).ToList();
+        if (codes.Distinct().Count() != codes.Count)
+            throw new ValidationException("Translations must contain a single row per language.");
+
+        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
+        var byCode = resolved.ToDictionary(l => l.Code);
+        var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
+        if (missing.Count > 0)
+            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+
+        return byCode;
     }
 }

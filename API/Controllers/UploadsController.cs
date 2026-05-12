@@ -1,5 +1,7 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -11,13 +13,28 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class UploadsController(
     IStorageService storageService,
     IAiModerationService aiModerationService,
-    IModerationTokenService moderationTokenService) : ControllerBase
+    IModerationTokenService moderationTokenService,
+    IAiImageDescriptionService aiImageDescriptionService) : ControllerBase
 {
-    private static readonly HashSet<string> AllowedContentTypes =
-    [
-        "image/jpeg", "image/png", "image/webp", "image/gif"
-    ];
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+    private static readonly HashSet<string> AllowedImageContentTypes =
+        ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
+
+    private static readonly HashSet<string> AllowedVideoContentTypes =
+        ["video/mp4", "video/webm"];
+    private const long MaxVideoSizeBytes = 25 * 1024 * 1024; // 25 MB
+
+    private static readonly HashSet<string> AllowedAudioContentTypes =
+        ["audio/mpeg", "audio/mp4", "audio/wav", "audio/ogg", "audio/x-m4a"];
+    private const long MaxAudioSizeBytes = 20 * 1024 * 1024; // 20 MB
+
+    private static readonly Dictionary<QuestionMediaType, (HashSet<string> Types, long MaxBytes, string Folder)>
+        QuestionMediaConfig = new()
+        {
+            [QuestionMediaType.Image] = (AllowedImageContentTypes, 5 * 1024 * 1024, "questions/images"),
+            [QuestionMediaType.Video] = (AllowedVideoContentTypes, MaxVideoSizeBytes, "questions/videos"),
+            [QuestionMediaType.Audio] = (AllowedAudioContentTypes, MaxAudioSizeBytes, "questions/audios"),
+        };
 
     [HttpPost]
     [RequestSizeLimit(10 * 1024 * 1024)]
@@ -26,10 +43,10 @@ public class UploadsController(
         if (file is null || file.Length == 0)
             return BadRequest("No file provided.");
 
-        if (!AllowedContentTypes.Contains(file.ContentType))
+        if (!AllowedImageContentTypes.Contains(file.ContentType))
             return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
 
-        if (file.Length > MaxFileSizeBytes)
+        if (file.Length > MaxImageSizeBytes)
             return BadRequest("File exceeds the 10 MB limit.");
 
         var url = await storageService.UploadAsync(file, "logos");
@@ -44,17 +61,17 @@ public class UploadsController(
         if (file is null || file.Length == 0)
             return BadRequest("No file provided.");
 
-        if (!AllowedContentTypes.Contains(file.ContentType))
+        if (!AllowedImageContentTypes.Contains(file.ContentType))
             return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
 
-        if (file.Length > MaxFileSizeBytes)
+        if (file.Length > MaxImageSizeBytes)
             return BadRequest("File exceeds the 10 MB limit.");
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
@@ -70,11 +87,69 @@ public class UploadsController(
             Reason = modResult.IsAcceptable ? null : modResult.Reason
         });
     }
+
+    [HttpPost("describe-image")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<ImageDescriptionResultDto>> DescribeImage(
+        IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
+        [FromQuery] string language, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest("No file provided.");
+
+        if (!AllowedImageContentTypes.Contains(file.ContentType))
+            return BadRequest("Only image files (jpeg, png, webp, gif) are allowed.");
+
+        if (file.Length > MaxImageSizeBytes)
+            return BadRequest("File exceeds the 10 MB limit.");
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct);
+        var bytes = ms.ToArray();
+
+        var effectiveLanguage = string.IsNullOrWhiteSpace(language)
+            ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
+            : language;
+        var description = await aiImageDescriptionService.DescribeImageAsync(
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
+
+        if (string.IsNullOrEmpty(description))
+            return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });
+
+        return Ok(new ImageDescriptionResultDto { Description = description });
+    }
+
+    [HttpPost("question-media")]
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
+    public async Task<ActionResult<UploadResultDto>> UploadQuestionMedia(
+        IFormFile file, [FromQuery] QuestionMediaType mediaType, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest("No file provided.");
+
+        if (!QuestionMediaConfig.TryGetValue(mediaType, out var config))
+            return BadRequest("Invalid media type.");
+
+        if (!config.Types.Contains(file.ContentType))
+            return BadRequest($"File type '{file.ContentType}' is not allowed for {mediaType}.");
+
+        if (file.Length > config.MaxBytes)
+            return BadRequest($"File exceeds the {config.MaxBytes / (1024 * 1024)} MB limit for {mediaType}.");
+
+        var url = await storageService.UploadAsync(file, config.Folder);
+        return Ok(new UploadResultDto { Url = url });
+    }
 }
 
 public class UploadResultDto
 {
     public string Url { get; set; }
+}
+
+public class ImageDescriptionResultDto
+{
+    public string Description { get; set; }
 }
 
 public class IdeaImageUploadResultDto

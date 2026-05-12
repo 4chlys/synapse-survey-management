@@ -3,8 +3,9 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
-using SynapseEnqueteManagement.BL.AiSocialMedia;
+using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 namespace SynapseEnqueteManagement.BL.Ai;
 
@@ -97,6 +98,7 @@ public static class AiConfigLoader
         var substitutedModeration = new ModerationConfig
         {
             UseAi                   = m.UseAi,
+            DefaultLanguage         = p.Language,
             ModerationPrompt        = SubWithAge(m.ModerationPrompt),
             CommentModerationPrompt = SubWithAge(m.CommentModerationPrompt),
             RewritePrompt           = Sub(m.RewritePrompt),
@@ -105,15 +107,22 @@ public static class AiConfigLoader
             RegexPatterns           = m.RegexPatterns,
         };
 
+        // IdeaSupport and CommentSupport substitute {language} per-request (participant's UI language);
+        // omit it here so it is not locked to the platform default at startup.
+        string SubNoLang(string s) => string.IsNullOrEmpty(s) ? s : s
+            .Replace("{platform_name}", p.Name,    StringComparison.OrdinalIgnoreCase)
+            .Replace("{country}",       p.Country, StringComparison.OrdinalIgnoreCase);
+
         var i = config.IdeaSupport;
         var substitutedIdeaSupport = new AiIdeaSupportConfig
         {
-            SystemPrompt          = Sub(i.SystemPrompt),   // {age_range} substituted per-request
-            ContextPrompt         = Sub(i.ContextPrompt),
-            RefinePrompt          = Sub(i.RefinePrompt),
+            SystemPrompt          = SubNoLang(i.SystemPrompt),   // {language}/{age_range} substituted per-request
+            ContextPrompt         = SubNoLang(i.ContextPrompt),  // {language} substituted per-request
+            RefinePrompt          = SubNoLang(i.RefinePrompt),   // {language} substituted per-request
             MaxHistoryTurns       = i.MaxHistoryTurns,
             MaxIntroductionLength = i.MaxIntroductionLength,
             DefaultAgeRange       = p.AgeRange,
+            FallbackMessage       = i.FallbackMessage,
         };
 
         var s = config.SpeechToText;
@@ -126,9 +135,18 @@ public static class AiConfigLoader
         var c = config.CommentSupport;
         var substitutedCommentSupport = new AiCommentSupportConfig
         {
-            SystemPrompt    = Sub(c.SystemPrompt),         // {age_range} substituted per-request
-            ContextPrompt   = Sub(c.ContextPrompt),
+            SystemPrompt    = SubNoLang(c.SystemPrompt),   // {language}/{age_range} substituted per-request
+            ContextPrompt   = SubNoLang(c.ContextPrompt),  // {language} substituted per-request
             FallbackMessage = c.FallbackMessage,
+            DefaultAgeRange = p.AgeRange,
+        };
+
+        var q = config.QuestionSupport;
+        var substitutedQuestionSupport = new AiQuestionSupportConfig
+        {
+            SystemPrompt    = Sub(q.SystemPrompt),         // {age_range} substituted per-request
+            ContextPrompt   = Sub(q.ContextPrompt),
+            FallbackMessage = q.FallbackMessage,
             DefaultAgeRange = p.AgeRange,
         };
 
@@ -146,13 +164,14 @@ public static class AiConfigLoader
             Instagram       = SubPlatform(sm.Instagram),
             FallbackMessage = sm.FallbackMessage,
         };
-
+        
         return new AiConfig
         {
             Platform        = config.Platform,
             Moderation      = substitutedModeration,
             IdeaSupport     = substitutedIdeaSupport,
             CommentSupport  = substitutedCommentSupport,
+            QuestionSupport = substitutedQuestionSupport,
             SpeechToText    = substitutedSpeechToText,
             ImageGeneration = config.ImageGeneration,
             SocialMedia     = substitutedSocialMedia,

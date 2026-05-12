@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Models.Admin;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
@@ -12,30 +13,33 @@ public class AdminController(
     PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager) : Controller
 {
-    public async Task<IActionResult> Index()
+    [Authorize(Roles = "SystemAdmin")]
+    public async Task<IActionResult> Index(int? platformId = null)
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null)
-            return RedirectToAction("Login", "Auth");
+        var platforms = await platformService.GetAllPlatformsAsync();
+        var allAdmins = await platformService.GetAllAdminsAsync();
 
-        if (user.ProjectPlatformId is null)
-            return Forbid();
+        var filtered = platformId.HasValue
+            ? allAdmins.Where(a => a.ProjectPlatformId == platformId).ToList()
+            : allAdmins;
 
-        var admins = await platformService.GetAdminsForPlatformAsync(user.ProjectPlatformId.Value);
-        var platform = await platformService.GetPlatformByIdAsync(user.ProjectPlatformId.Value);
+        ViewData["ActiveSection"] = "Beheerders";
 
-        return View(new PlatformDetailViewModel
-        {
-            ProjectPlatformId = platform.ProjectPlatformId,
-            Name = platform.Name,
-            LogoUrl = platform.LogoUrl,
-            WebsiteUrl = platform.WebsiteUrl,
-            Admins = admins.Select(a => new AdminSummaryViewModel
+        return View(new AdminListViewModel(
+            filtered.Select(a => new AdminWithPlatformViewModel(
+                a.Id,
+                a.UserName ?? a.Email ?? string.Empty,
+                a.Email ?? string.Empty,
+                a.ProjectPlatformId ?? 0,
+                a.ProjectPlatform?.Name ?? "—"
+            )).ToList(),
+            platforms.Select(p => new PlatformViewModel
             {
-                UserName = a.UserName,
-                Email = a.Email
-            }).ToList()
-        });
+                ProjectPlatformId = p.ProjectPlatformId,
+                Name = p.Name
+            }).ToList(),
+            platformId
+        ));
     }
 
     public async Task<IActionResult> Add()
@@ -76,6 +80,6 @@ public class AdminController(
             return View(model);
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Add));
     }
 }

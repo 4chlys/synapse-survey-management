@@ -11,7 +11,7 @@ public class SurveyFlowManager(
     public async Task<Question> GetNextQuestionAsync(int currentQuestionId, int participantId)
     {
         var questionnaire = await questionnaireManager
-            .GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(currentQuestionId);
+            .GetQuestionnaireByQuestionIdWithTranslationsReadOnlyAsync(currentQuestionId);
         if (questionnaire is null) return null;
 
         var path = await ComputePathAsync(questionnaire, participantId);
@@ -23,7 +23,7 @@ public class SurveyFlowManager(
     public async Task<Question> GetPreviousQuestionAsync(int currentQuestionId, int participantId)
     {
         var questionnaire = await questionnaireManager
-            .GetQuestionnaireByQuestionIdWithQuestionsReadOnlyAsync(currentQuestionId);
+            .GetQuestionnaireByQuestionIdWithTranslationsReadOnlyAsync(currentQuestionId);
         if (questionnaire is null)
             throw new KeyNotFoundException($"Question with id {currentQuestionId} not found.");
 
@@ -36,14 +36,14 @@ public class SurveyFlowManager(
     public async Task<Question> GetResumeQuestionAsync(int projectId, int participantId)
     {
         var questionnaire = await questionnaireManager
-            .GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
+            .GetQuestionnaireByProjectIdWithTranslationsReadOnlyAsync(projectId);
         if (questionnaire is null) return null;
 
         var path = await ComputePathAsync(questionnaire, participantId);
         if (path.Count == 0) return null;
 
-        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
-        var answeredIds = responses.Select(r => r.Question.QuestionId).ToHashSet();
+        var resumeResponses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
+        var answeredIds = resumeResponses.Select(r => r.Question.QuestionId).ToHashSet();
 
         return path.FirstOrDefault(q => !answeredIds.Contains(q.QuestionId)) ?? path.LastOrDefault();
     }
@@ -51,7 +51,7 @@ public class SurveyFlowManager(
     public async Task<ICollection<int>> ComputeVisiblePathAsync(int projectId, int participantId)
     {
         var questionnaire = await questionnaireManager
-            .GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
+            .GetQuestionnaireByProjectIdWithTranslationsReadOnlyAsync(projectId);
         if (questionnaire is null) return [];
 
         var path = await ComputePathAsync(questionnaire, participantId);
@@ -64,23 +64,27 @@ public class SurveyFlowManager(
 
         var allQuestions = questionnaire.Questions.ToList();
         var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
-        var answersById = responses.ToDictionary(r => r.Question.QuestionId, r => r.Value);
+        // Each response carries its own source language (the participant's language at save time),
+        // so branching/ending lookups must use that language — not the participant's current one.
+        var responseByQId = responses.ToDictionary(r => r.Question.QuestionId, r => r);
 
         var path = new List<Question>();
         var visited = new HashSet<int>();
-        WalkScope(parentId: null, triggerValue: null, allQuestions, answersById, path, visited);
+        WalkScope(parentId: null, triggerChoiceIndex: null,
+            allQuestions, responseByQId, path, visited);
         return path;
     }
 
-    private static bool WalkScope(int? parentId, string triggerValue,
+    private static bool WalkScope(
+        int? parentId, int? triggerChoiceIndex,
         List<Question> allQuestions,
-        Dictionary<int, string> answersById,
+        Dictionary<int, Response> responseByQId,
         List<Question> path,
         HashSet<int> visited)
     {
         var children = allQuestions
             .Where(q => (q.ParentQuestion?.QuestionId) == parentId
-                        && q.ParentTriggerValue == triggerValue)
+                        && q.ChoiceIndex == triggerChoiceIndex)
             .OrderBy(q => q.Position);
 
         foreach (var child in children)
@@ -88,16 +92,44 @@ public class SurveyFlowManager(
             if (!visited.Add(child.QuestionId)) continue;
             path.Add(child);
 
-            if (!answersById.TryGetValue(child.QuestionId, out var answer)) continue;
+            if (!responseByQId.TryGetValue(child.QuestionId, out var response)) continue;
 
-            var selected = SplitSelected(child.QuestionFormat, answer);
+            var selected = SplitSelected(child.QuestionFormat, response.Value);
+            var sourceLanguageCode = response.Language?.Code;
 
-            if (child.EndingAnswers.Any(ea => selected.Contains(ea.Value)))
+            // Check if the selected answer terminates the survey (match by translated value
+            // in the response's source language, falling back to first translation)
+            if (child.EndingAnswers.Any(ea =>
+                {
+                    var endVal = ea.Translations.FirstOrDefault(t => t.Language.Code == sourceLanguageCode)?.Value
+                                 ?? ea.Translations.FirstOrDefault()?.Value;
+                    return endVal is not null && selected.Contains(endVal);
+                }))
                 return true;
+
+            // Resolve selected answer strings to choice indices for branching, using the
+            // response's source language so saved values map to the correct choice index.
+            var translation = child.Translations.FirstOrDefault(t => t.Language.Code == sourceLanguageCode)
+                              ?? child.Translations.FirstOrDefault();
+            var choices = translation?.AnswerChoices?.ToList() ?? new List<string>();
 
             foreach (var value in selected)
             {
-                var ended = WalkScope(child.QuestionId, value, allQuestions, answersById, path, visited);
+                int idx;
+                if (child.QuestionFormat == QuestionFormat.Likert
+                    && int.TryParse(value, out var raw))
+                {
+                    // Likert responses are 1-based; ChoiceIndex is 0-based
+                    idx = raw - 1;
+                }
+                else
+                {
+                    idx = choices.IndexOf(value);
+                    if (idx < 0) continue;
+                }
+
+                var ended = WalkScope(child.QuestionId, idx,
+                    allQuestions, responseByQId, path, visited);
                 if (ended) return true;
             }
         }

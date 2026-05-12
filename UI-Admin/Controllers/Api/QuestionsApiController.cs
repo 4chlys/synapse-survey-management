@@ -25,7 +25,7 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
         try
         {
             await questionService.MoveQuestionAsync(projectId, questionId,
-                request.ParentQuestionId, request.ParentTriggerValue, request.Position);
+                request.ParentQuestionId, request.ChoiceIndex, request.Position);
             return NoContent();
         }
         catch (HttpRequestException ex)
@@ -46,14 +46,16 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
 
         await questionService.UpdateQuestionAsync(projectId, questionId,
             question.Text, question.QuestionFormat, question.IsMandatory,
-            question.AnswerChoices, question.SectionId, request.EndingAnswers);
+            question.AnswerChoices, question.SectionId, request.EndingAnswers,
+            mediaUrl: question.MediaUrl, mediaType: question.MediaType,
+            mediaIsEmbed: question.MediaIsEmbed, mediaText: question.MediaText);
         return NoContent();
     }
 
     public class MoveRequest
     {
         public int? ParentQuestionId { get; set; }
-        public string ParentTriggerValue { get; set; }
+        public int? ChoiceIndex { get; set; }
         public int Position { get; set; }
     }
 

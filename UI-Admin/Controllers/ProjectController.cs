@@ -76,6 +76,8 @@ public class ProjectController(
             MinAge = project.MinAge,
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
+            AllowCrossLanguageIdeas = project.AllowCrossLanguageIdeas,
+            SupportedLanguageCodes = project.SupportedLanguageCodes,
             Sections = sections.Select(s => s.Name).ToList()
         };
         ViewData["Project"] = project;
@@ -138,7 +140,8 @@ public class ProjectController(
                 model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
                 model.ContactOptIn, model.ShortForm,
-                lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests);
+                lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
+                model.AllowCrossLanguageIdeas);
         }
         else
         {
@@ -152,7 +155,8 @@ public class ProjectController(
                 model.ImageUrl, model.InteractionMode, model.AiAssistance,
                 model.MinAge, model.MaxAge, model.ContactOptIn,
                 platformId: user.ProjectPlatformId.Value,
-                shortForm: model.ShortForm);
+                shortForm: model.ShortForm,
+                allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -208,7 +212,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -223,7 +230,10 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(), model.IsMandatory, model.GetAnswerChoices(), model.SectionId);
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
+                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                mediaUrl: model.MediaUrl, mediaType: model.MediaType,
+                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
     }
 
@@ -256,7 +266,8 @@ public class ProjectController(
             projectId, project.Name, project.Topic, project.Introduction,
             project.ProjectImage, project.FormType, project.AiAssistance,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
-            project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests);
+            project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
+            project.AllowCrossLanguageIdeas);
 
         return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }
@@ -505,6 +516,24 @@ public class ProjectController(
             return BadRequest("Ongeldig formaat.");
 
         var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
+        return File(bytes, contentType, fileName);
+    }
+
+    public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx", string tables = "")
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction("Login", "Auth");
+
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+        if (project.ProjectState is not ("Active" or "Archived"))
+            return BadRequest("Export is enkel beschikbaar voor actieve of gearchiveerde projecten.");
+
+        var normalized = (format ?? "xlsx").Trim().ToLowerInvariant();
+        if (normalized is not ("csv" or "xlsx"))
+            return BadRequest("Ongeldig formaat.");
+
+        var (bytes, contentType, fileName) = await participantService.ExportRawDataAsync(projectId, normalized, tables);
         return File(bytes, contentType, fileName);
     }
 

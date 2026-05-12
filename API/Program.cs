@@ -16,8 +16,9 @@ using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
-using SynapseEnqueteManagement.BL.AiSocialMedia;
+using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
@@ -25,6 +26,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -35,9 +37,28 @@ bool useAi = aiConfig.Moderation.UseAi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Allow up to 30 MB request bodies (question video uploads are capped at 25 MB at the action level,
+// leaving headroom for multipart overhead). Cloud Run HTTP/1 hard-caps at 32 MB — do not raise further.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 30 * 1024 * 1024);
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
+    o => o.MultipartBodyLengthLimit = 30 * 1024 * 1024);
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
+
+var apiSupportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(apiSupportedCultures)
+        .AddSupportedUICultures(apiSupportedCultures);
+    opts.RequestCultureProviders =
+    [
+        new Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -63,6 +84,7 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
@@ -119,6 +141,7 @@ var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "a
 var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
 builder.Services.AddScoped<IShortFormService>(sp =>
     new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
+builder.Services.AddScoped<ILanguageManager, LanguageManager>();
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
@@ -129,6 +152,7 @@ builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
+builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
 // AI configuration
 //
@@ -142,6 +166,7 @@ builder.Services.AddSingleton(aiConfig.Moderation);
 builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.IdeaSupport);
 builder.Services.AddSingleton(aiConfig.CommentSupport);
+builder.Services.AddSingleton(aiConfig.QuestionSupport);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton(aiConfig.SocialMedia);
@@ -176,10 +201,12 @@ if (useAi)
     builder.Services.AddChatClient(chatClient);
 
     // All AI features share the same IChatClient.
-    builder.Services.AddScoped<IAiModerationService, GoogleVertexAiModerationService>();
-    builder.Services.AddScoped<IAiIdeaSupportService, GoogleVertexAiIdeaSupportService>();
-    builder.Services.AddScoped<IAiCommentSupportService, GoogleVertexAiCommentSupportService>();
-    builder.Services.AddScoped<IAiSpeechToTextService, GoogleVertexAiSpeechToTextService>();
+    builder.Services.AddScoped<IAiModerationService, AiModerationService>();
+    builder.Services.AddScoped<IAiIdeaSupportService, AiIdeaSupportService>();
+    builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
+    builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
+    builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
+    builder.Services.AddScoped<IAiImageDescriptionService, AiImageDescriptionService>();
     builder.Services.AddScoped<ISocialPostGenerator, GoogleVertexAiSocialPostGenerator>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
@@ -210,7 +237,9 @@ else
     builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
+    builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
+    builder.Services.AddScoped<IAiImageDescriptionService, MockImageDescriptionService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
     builder.Services.AddSingleton<ISocialPostGenerator, MockSocialPostGenerator>();
 }
@@ -279,6 +308,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseHttpLogging();
+app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();

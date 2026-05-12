@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using ClosedXML.Excel;
 
@@ -47,6 +48,53 @@ public class ExportService : IExportService
 
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    public byte[] BuildXlsx(IEnumerable<(string SheetName, string[] Headers, IEnumerable<string[]> Rows)> sheets)
+    {
+        using var wb = new XLWorkbook();
+
+        foreach (var (sheetName, headers, rows) in sheets)
+        {
+            var ws = wb.Worksheets.Add(sheetName);
+
+            for (var col = 0; col < headers.Length; col++)
+            {
+                ws.Cell(1, col + 1).Value = headers[col];
+                ws.Cell(1, col + 1).Style.Font.Bold = true;
+            }
+
+            var rowIndex = 2;
+            foreach (var row in rows)
+            {
+                for (var col = 0; col < row.Length; col++)
+                    ws.Cell(rowIndex, col + 1).Value = row[col];
+                rowIndex++;
+            }
+
+            for (var col = 1; col <= headers.Length; col++)
+                ws.Column(col).AdjustToContents();
+        }
+
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    public byte[] BuildZip(IEnumerable<(string FileName, string[] Headers, IEnumerable<string[]> Rows)> files)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+        {
+            foreach (var (fileName, headers, rows) in files)
+            {
+                var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
+                using var entryStream = entry.Open();
+                var csvBytes = BuildCsv(headers, rows);
+                entryStream.Write(csvBytes, 0, csvBytes.Length);
+            }
+        }
         return ms.ToArray();
     }
 

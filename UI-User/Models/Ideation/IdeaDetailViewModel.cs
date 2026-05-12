@@ -8,4 +8,7 @@ public class IdeaDetailViewModel
     public IdeaViewModel Idea { get; set; } = null!;
     public List<CommentViewModel> Comments { get; set; } = new();
     public List<EmojiViewModel> Emojis { get; set; } = new();
+    public bool AllowCrossLanguageIdeas { get; set; }
+    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+    public string ParticipantLanguageCode { get; set; }
 }

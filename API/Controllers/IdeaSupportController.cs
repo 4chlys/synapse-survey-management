@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.IdeaSupport;
+using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
+using SynapseEnqueteManagement.BL.AiSupport;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -55,26 +57,35 @@ public class IdeaSupportController(
         try { project = await GetProjectByIdReadOnlyAsync(projectId); }
         catch { /* intentionally swallowed */ }
 
+        var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
         var projectName         = isFirstTurn ? (project?.ProjectPlatform?.Name ?? string.Empty) : string.Empty;
-        var projectIntroduction = isFirstTurn ? (project?.Introduction?.Text ?? string.Empty) : string.Empty;
+        var projectIntroduction = isFirstTurn
+            ? (project?.Introduction?.Translations
+                   .FirstOrDefault(t => t.Language?.Code == lang)?.Text
+               ?? project?.Introduction?.Translations
+                   .FirstOrDefault(t => t.Language?.Code == project?.DefaultLanguage?.Code)?.Text
+               ?? project?.Introduction?.Translations.FirstOrDefault()?.Text
+               ?? string.Empty)
+            : string.Empty;
         if (projectIntroduction.Length > ideaSupportConfig.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..ideaSupportConfig.MaxIntroductionLength] + "…";
+
+        var catTranslation = category.Translations?.FirstOrDefault(t => t.Language?.Code == lang)
+            ?? category.Translations?.FirstOrDefault();
 
         var request = new IdeaSupportChatRequest
         {
             History = dto.History
-                .Select(h => new IdeaSupportChatMessage
-                {
-                    Role = h.Role,
-                    Content = h.Content,
-                })
+                .Select(h => new AiSupportMessage(h.Role, h.Content))
                 .ToList(),
             UserMessage         = dto.UserMessage ?? string.Empty,
             ProjectName         = projectName,
             ProjectIntroduction = projectIntroduction,
-            CategoryName        = category.Name,
-            CategoryDescription = category.Description ?? string.Empty,
-            AgeRange            = FormatAgeRange(project?.MinAge, project?.MaxAge),
+            CategoryName        = catTranslation?.Name ?? string.Empty,
+            CategoryDescription = catTranslation?.Description ?? string.Empty,
+            AgeRange            = AiSupportHelpers.FormatAgeRange(project?.MinAge, project?.MaxAge),
+            Language            = lang,
             IsFirstTurn         = isFirstTurn,
         };
 
@@ -88,14 +99,6 @@ public class IdeaSupportController(
         });
     }
 
-    private static string FormatAgeRange(int? minAge, int? maxAge) => (minAge, maxAge) switch
-    {
-        (null, null)       => null,
-        (var min, null)    => $"{min}+",
-        (null, var max)    => $"0–{max}",
-        (var min, var max) => $"{min}–{max}",
-    };
-
     [HttpPost("refine")]
     public async Task<ActionResult<IdeaSupportRefineResponseDto>> Refine(
         int projectId,
@@ -105,7 +108,8 @@ public class IdeaSupportController(
         var (_, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var result = await ideaSupportService.RefineAsync(dto.DraftText, ct);
+        var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var result = await ideaSupportService.RefineAsync(dto.DraftText, lang, ct);
         return Ok(new IdeaSupportRefineResponseDto { RefinedText = result.RefinedText });
     }
 }

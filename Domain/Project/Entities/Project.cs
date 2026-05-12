@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain;
+using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
@@ -14,17 +15,15 @@ public class Project : IHasCreatedAt
     [Required] public ProjectPlatform ProjectPlatform { get; set; }
     public int ViewCount { get; set; } = 0;
 
-    [Required] [MaxLength(100)]
-    public string Name { get; set; }
-
     [Required]
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
         ErrorMessage = "ShortForm must be lowercase alphanumeric with single hyphens.")]
     public string ShortForm { get; set; }
 
-    [MaxLength(100)]
-    public string Topic { get; set; }
+    public Language DefaultLanguage { get; set; }
+    public ICollection<Language> SupportedLanguages { get; set; } = new List<Language>();
+    public ICollection<ProjectTranslation> Translations { get; set; } = new List<ProjectTranslation>();
 
     [Range(0, 120)] public int? MinAge { get; set; }
     [Range(0, 120)] public int? MaxAge { get; set; }
@@ -41,6 +40,7 @@ public class Project : IHasCreatedAt
     [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;
     [Range(1, 200)] public int CommentPageSize { get; set; } = 20;
     public bool RequestContactInfo { get; set; } = false;
+    public bool AllowCrossLanguageIdeas { get; set; } = false;
 
     public Questionnaire Questionnaire { get; set; }
 

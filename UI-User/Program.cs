@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Middleware;
@@ -11,13 +13,36 @@ using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
 using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
+using SynapseEnqueteManagement.UI.User.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTransient<CultureForwardingHandler>();
+builder.Services.ConfigureHttpClientDefaults(b => b.AddHttpMessageHandler<CultureForwardingHandler>());
+
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
+
+// TODO (step 7): load supported cultures dynamically from ILanguageManager at startup.
+var supportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(supportedCultures)
+        .AddSupportedUICultures(supportedCultures);
+
+    opts.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-});
+})
+.AddViewLocalization()
+.AddDataAnnotationsLocalization();
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -113,7 +138,16 @@ builder.Services.AddRateLimiter(options =>
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 Window      = TimeSpan.FromMinutes(1),
-                PermitLimit = 10,
+                PermitLimit = 5,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-image-describe", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 3,
                 QueueLimit  = 0,
             }));
     options.AddPolicy("participant-creation", context =>
@@ -163,11 +197,11 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseHttpLogging();
 app.UseStaticFiles();
+app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthorization();
@@ -176,7 +210,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "project",
-    pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
+    pattern: "{projectId:int}/{controller=LandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.MapControllerRoute(

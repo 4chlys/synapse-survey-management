@@ -5,7 +5,7 @@ public class ChatFormStrategy : IFormStrategy
 {
     public string FormType => "Chat";
 
-    public string GetViewName() => "Chat";
+    public string GetViewName() => "Chatform";
 
     public FormLayoutData GetLayoutData() => new()
     {

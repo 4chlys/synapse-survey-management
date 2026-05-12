@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Dashboard;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -11,14 +12,20 @@ public class DashboardController(
     IParticipantManager participantManager,
     ICategoryManager categoryManager) : ControllerBase
 {
+    private static string ActiveCulture() =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
     [HttpGet]
     public async Task<ActionResult<ProjectDashboardDto>> GetDashboard(int projectId)
     {
         var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
         if (project is null) return NotFound();
 
+        var lang = ActiveCulture();
+        var defaultLang = project.DefaultLanguage?.Code ?? lang;
+
         var completionCountTask = participantManager.CountCompletionsByProjectAsync(projectId);
-        var metricsTask = categoryManager.GetDashboardMetricsAsync(projectId);
+        var metricsTask = categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
         await Task.WhenAll(completionCountTask, metricsTask);
 
         var completionCount = await completionCountTask;

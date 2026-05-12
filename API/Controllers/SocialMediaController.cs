@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.SocialMedia;
 using SynapseEnqueteManagement.API.Services;
@@ -27,13 +28,23 @@ public class SocialMediaController(
         var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
         if (project is null) return NotFound();
 
+        var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var defaultLang = project.DefaultLanguage?.Code ?? lang;
+
         var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
-        var metrics         = await categoryManager.GetDashboardMetricsAsync(projectId);
+        var metrics         = await categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
         var completionRate  = project.ViewCount > 0
             ? Math.Round((double)completionCount / project.ViewCount * 100, 1) : 0d;
 
+        var projectTr = project.Translations.FirstOrDefault(t => t.Language?.Code == lang)
+                        ?? project.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
+                        ?? project.Translations.FirstOrDefault();
+        var introTr = project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
+                      ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
+                      ?? project.Introduction?.Translations.FirstOrDefault();
+
         var intro = System.Text.RegularExpressions.Regex
-            .Replace(project.Introduction?.Text ?? "", "<[^>]+>", "");
+            .Replace(introTr?.Text ?? "", "<[^>]+>", "");
 
         var stats = new SocialPostStats(
             project.ViewCount,
@@ -44,8 +55,8 @@ public class SocialMediaController(
 
         var request = new SocialPostRequest(
             platform,
-            project.Name,
-            project.Topic ?? "",
+            projectTr?.Name ?? "",
+            projectTr?.Topic ?? "",
             intro,
             project.ProjectPlatform?.Name ?? "",
             dto.UserDescription,
@@ -69,7 +80,13 @@ public class SocialMediaController(
         var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
         if (project is null) return NotFound();
 
-        var result = await imageGenerator.GenerateProjectImageAsync(project.Name, ct);
+        var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var defaultLang = project.DefaultLanguage?.Code ?? lang;
+        var projectTr = project.Translations.FirstOrDefault(t => t.Language?.Code == lang)
+                        ?? project.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
+                        ?? project.Translations.FirstOrDefault();
+
+        var result = await imageGenerator.GenerateProjectImageAsync(projectTr?.Name ?? "", ct);
         if (!result.IsSuccess)
             return StatusCode(502, new { error = result.ErrorMessage });
 

@@ -1,4 +1,5 @@
 import { toast } from './lib/notify';
+import { wireQuestionMediaPanel, hydrateMediaPanel } from './lib/question-media';
 
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal') as HTMLDivElement | null;
@@ -15,6 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (new URLSearchParams(window.location.search).get('saved') === '1')
         toast('Opgeslagen', 'success');
+
+    const projectId = parseInt(questionForm?.dataset.projectId ?? questionsList?.dataset.projectId ?? '0', 10);
+
+    // Wire media panel for the modal form (prefix = '' so IDs match: MediaType, media-upload-block, etc.)
+    if (projectId) {
+        wireQuestionMediaPanel('', projectId);
+        wireQuestionMediaPanel('card-', projectId);
+    }
 
     function openModal(): void {
         resetModal();
@@ -47,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (title) title.textContent = 'Vraag aanmaken';
     }
 
-    function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string, isMandatory: boolean): void {
+    function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string, isMandatory: boolean, mediaUrl = '', mediaType = 0, mediaIsEmbed = false, mediaText = ''): void {
         resetModal();
 
         const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
@@ -76,6 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const title = document.getElementById('modal-title');
         if (title) title.textContent = 'Vraag bewerken';
+
+        hydrateMediaPanel('', mediaUrl, mediaType, mediaIsEmbed, mediaText);
 
         modal?.classList.add('modal-open');
     }
@@ -222,7 +233,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const answers = JSON.parse(btn.dataset.answers ?? '[]') as string[];
         const sectionId = btn.dataset.sectionId ?? '';
         const isMandatory = btn.dataset.isMandatory === 'true';
-        openEditModal(id, text, format, answers, sectionId, isMandatory);
+        const mediaUrl = btn.dataset.mediaUrl ?? '';
+        const mediaType = parseInt(btn.dataset.mediaType ?? '0', 10);
+        const mediaIsEmbed = btn.dataset.mediaIsEmbed === 'true';
+        const mediaText = btn.dataset.mediaText ?? '';
+        openEditModal(id, text, format, answers, sectionId, isMandatory, mediaUrl, mediaType, mediaIsEmbed, mediaText);
     });
 
     // Validate at least 1 question before proceeding to next step

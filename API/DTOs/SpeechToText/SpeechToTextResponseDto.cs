@@ -9,4 +9,10 @@ public sealed class SpeechToTextResponseDto
 
     /// <summary>User-facing error message — null when <see cref="IsSuccess"/> is true.</summary>
     public string ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Machine-readable error code; the frontend maps this to a localized message.
+    /// Null when <see cref="IsSuccess"/> is true.
+    /// </summary>
+    public string ErrorCode { get; set; }
 }
