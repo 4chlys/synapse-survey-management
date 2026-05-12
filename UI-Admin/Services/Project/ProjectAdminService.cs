@@ -80,6 +80,21 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
+    public async Task<PlatformStats> GetPlatformStatsAsync(int platformId)
+    {
+        var response = await httpClient.GetAsync($"api/admin/platform-stats?platformId={platformId}");
+        if (!response.IsSuccessStatusCode) return new PlatformStats();
+        return await response.Content.ReadFromJsonAsync<PlatformStats>() ?? new PlatformStats();
+    }
+
+    public class PlatformStats
+    {
+        public int ActiveCount { get; set; }
+        public int DraftCount { get; set; }
+        public int ArchivedCount { get; set; }
+        public int ParticipantCount { get; set; }
+    }
+
     public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)
     {
         var response = await httpClient.GetAsync($"api/projects/by-shortform/{Uri.EscapeDataString(shortForm)}");
