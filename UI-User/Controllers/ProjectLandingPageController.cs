@@ -33,7 +33,7 @@ public class LandingPageController : Controller
         if (!string.IsNullOrWhiteSpace(token)
             && await _questionnaireApiService.HasParticipantRespondedAsync(projectId, token))
         {
-            return RedirectToAction("Index", "Category", new { projectId });
+            return RedirectToAction("CategoryList", "Category", new { projectId });
         }
         
         this.SetLayoutData(project, projectId);

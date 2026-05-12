@@ -18,6 +18,9 @@
   <data name="Mandatory" xml:space="preserve">
     <value>Mandatory</value>
   </data>
+  <data name="QuestionLabel" xml:space="preserve">
+    <value>Question</value>
+  </data>
   <data name="LikertDisagree" xml:space="preserve">
     <value>Strongly disagree</value>
   </data>
