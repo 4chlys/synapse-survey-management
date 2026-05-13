@@ -121,7 +121,8 @@ export function initSurvey(): void {
 
         try {
             await submitSurvey(projectId);
-            window.location.href = `/${projectId}/Survey/ThankYou`;
+            const popup = document.getElementById('thank-you-popup');
+            if (popup) popup.classList.remove('hidden');
         } catch {
             if (submitBtn) {
                 submitBtn.disabled = false;

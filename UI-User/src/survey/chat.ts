@@ -561,7 +561,8 @@ function renderDone(ctx: Ctx): void {
     ctx.backBtns.forEach(b => (b.disabled = true));
     appendSystemBubble(ctx, t('surveyDone'), false);
     setTimeout(() => {
-        window.location.href = `/${ctx.projectId}/Survey/ThankYou`;
+        const popup = document.getElementById('thank-you-popup');
+        if (popup) popup.classList.remove('hidden');
     }, 800);
 }
 
