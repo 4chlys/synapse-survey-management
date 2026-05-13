@@ -35,7 +35,10 @@ export function getAnswerFromSlide(slide: HTMLElement): string {
 }
 
 export function updateQuestionCounters(slides: HTMLElement[], visibleIndices: number[]): void {
-    const visibleQuestionIndices = visibleIndices.filter(i => slides[i]?.dataset.format !== 'Submit');
+    const visibleQuestionIndices = visibleIndices.filter(i => {
+        const fmt = slides[i]?.dataset.format;
+        return fmt !== 'Submit' && fmt !== 'Intro';
+    });
 
     visibleQuestionIndices.forEach((slideIndex, position) => {
         const slide = slides[slideIndex];
