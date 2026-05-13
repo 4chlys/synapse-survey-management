@@ -30,6 +30,9 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(
     /// <summary>The Vertex AI chat model name as it appears in pricing config.</summary>
     protected abstract string Model { get; }
 
+    /// <summary>Maximum tokens the model may generate per response. Override per service as needed.</summary>
+    protected virtual int MaxOutputTokens => 1024;
+
     public async Task<TReply> ChatAsync(TRequest request, int projectId, CancellationToken ct = default)
     {
         try
@@ -66,7 +69,8 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(
     /// </summary>
     protected async Task<ChatResponse> SendSingleAsync(List<ChatMessage> messages, int projectId, CancellationToken ct)
     {
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        var options  = new ChatOptions { MaxOutputTokens = MaxOutputTokens };
+        var response = await chatClient.GetResponseAsync(messages, options, ct);
         try
         {
             await usageManager.LogChatAsync(projectId, Service, Model, response.Usage, ct);

@@ -52,7 +52,7 @@ public sealed class GoogleVertexAiImageGenerationService(
                 {
                     try
                     {
-                        await usageManager.LogImageAsync(projectId, config.Model, 1, ct);
+                        await usageManager.LogImageAsync(projectId, config.Model, 1, config.Width, config.Height, ct);
                     }
                     catch (Exception ex)
                     {

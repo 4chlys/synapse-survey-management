@@ -52,7 +52,7 @@ public sealed class AiImageDescriptionService(
                 new TextContent(prompt),
             ]);
 
-            var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
+            var response = await chatClient.GetResponseAsync([message], new ChatOptions { MaxOutputTokens = 300 }, ct);
 
             try
             {

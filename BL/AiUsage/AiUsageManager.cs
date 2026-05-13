@@ -28,7 +28,7 @@ public class AiUsageManager(
         {
             inputTokens = (int)(usage.InputTokenCount ?? 0);
             outputTokens = (int)(usage.OutputTokenCount ?? 0);
-            cost = pricing.ComputeChat(model, inputTokens, outputTokens);
+            cost = pricing.ComputeChat(model, service, inputTokens, outputTokens);
         }
 
         await repository.LogAsync(new AiUsageEvent
@@ -43,7 +43,7 @@ public class AiUsageManager(
         }, projectId);
     }
 
-    public async Task LogImageAsync(int projectId, string model, int count, CancellationToken ct = default)
+    public async Task LogImageAsync(int projectId, string model, int count, int width, int height, CancellationToken ct = default)
     {
         if (projectId <= 0) return;
 
@@ -54,7 +54,7 @@ public class AiUsageManager(
             InputTokens = 0,
             OutputTokens = 0,
             RequestCount = count,
-            CostEur = pricing.ComputeImage(model, count),
+            CostEur = pricing.ComputeImage(model, count, width, height),
             CreatedAt = DateTime.UtcNow
         }, projectId);
     }

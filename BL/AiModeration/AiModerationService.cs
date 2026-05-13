@@ -22,6 +22,14 @@ public sealed class AiModerationService(
     IAiUsageManager usageManager,
     AiChatModelOptions modelOptions) : IAiModerationService
 {
+    private const int MaxInputChars    = 4000;
+    private const int MaxVerdictTokens = 300;
+    private const int MaxRewriteTokens = 500;
+    private const int MaxImageTokens   = 300;
+
+    private static readonly ChatOptions VerdictOptions = new() { MaxOutputTokens = MaxVerdictTokens };
+    private static readonly ChatOptions RewriteOptions = new() { MaxOutputTokens = MaxRewriteTokens };
+    private static readonly ChatOptions ImageOptions   = new() { MaxOutputTokens = MaxImageTokens };
     private static readonly Regex CodeFenceRe =
         new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
@@ -45,6 +53,9 @@ public sealed class AiModerationService(
         if (!regexResult.IsAcceptable) return regexResult;
 
         if (!config.UseAi) return ModerationResult.Acceptable();
+
+        if (text.Length > MaxInputChars)
+            text = text[..MaxInputChars];
 
         try
         {
@@ -79,7 +90,7 @@ public sealed class AiModerationService(
                 new TextContent(imagePrompt),
             ]);
 
-            var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
+            var response = await chatClient.GetResponseAsync([message], ImageOptions, ct);
             await LogUsageAsync(projectId, response.Usage, ct);
             var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
@@ -126,6 +137,9 @@ public sealed class AiModerationService(
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
+        if (text.Length > MaxInputChars)
+            text = text[..MaxInputChars];
+
         try
         {
             var rewritePrompt = config.RewritePrompt
@@ -137,7 +151,7 @@ public sealed class AiModerationService(
                 new(ChatRole.User,   text),
             };
 
-            var response   = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var response   = await chatClient.GetResponseAsync(messages, RewriteOptions, ct);
             await LogUsageAsync(projectId, response.Usage, ct);
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
@@ -179,7 +193,7 @@ public sealed class AiModerationService(
             new(ChatRole.User,   text),
         };
 
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        var response = await chatClient.GetResponseAsync(messages, VerdictOptions, ct);
         await LogUsageAsync(projectId, response.Usage, ct);
         var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 

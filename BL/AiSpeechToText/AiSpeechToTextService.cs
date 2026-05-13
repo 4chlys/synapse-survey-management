@@ -64,7 +64,7 @@ public sealed class AiSpeechToTextService(
             ]);
 
             var response = await chatClient.GetResponseAsync(
-                [message], cancellationToken: ct);
+                [message], new ChatOptions { MaxOutputTokens = 1000 }, ct);
 
             try
             {

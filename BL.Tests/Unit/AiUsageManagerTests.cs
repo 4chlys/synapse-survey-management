@@ -18,7 +18,7 @@ public class AiUsageManagerTests
     {
         var config = new AiPricingConfig
         {
-            Models = new() { [Model] = new ModelPrice(1m, 2m, 0m) }
+            Models = new() { [Model] = new ModelPrice(1m, 0m, 2m) }
         };
         var pricing = new AiPricing(Options.Create(config), NullLogger<AiPricing>.Instance);
         _manager = new AiUsageManager(_repo.Object, pricing, _logger.Object);

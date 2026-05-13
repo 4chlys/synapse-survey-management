@@ -5,4 +5,4 @@ public class AiPricingConfig
     public Dictionary<string, ModelPrice> Models { get; set; } = new();
 }
 
-public record ModelPrice(decimal InputPerMillion, decimal OutputPerMillion, decimal PerImage);
+public record ModelPrice(decimal InputPerMillion, decimal AudioInputPerMillion, decimal OutputPerMillion);
