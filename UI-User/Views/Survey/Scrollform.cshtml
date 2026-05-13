@@ -277,10 +277,16 @@
                     flex flex-col items-center justify-center gap-8 p-10">
 
                     <div class="flex flex-col items-center gap-4 text-center">
-                        <div class="w-20 h-20 rounded-2xl bg-secondary/25 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-secondary" fill="none"
-                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        <div class="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-primary/70 mb-1">
+                            <span class="w-5 h-[2px] rounded bg-primary/40"></span>
+                            @L["StepIndicator"]
+                            <span class="w-5 h-[2px] rounded bg-primary/40"></span>
+                        </div>
+                        <div class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none"
+                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                             </svg>
                         </div>
                         <div>
@@ -292,8 +298,12 @@
                     </div>
 
                     <button type="submit"
-                            class="btn btn-primary w-full max-w-xs rounded-xl font-heading font-semibold py-4 h-auto text-base">
+                            class="btn btn-primary w-full max-w-xs rounded-xl font-heading font-semibold py-4 h-auto text-base gap-2">
                         @L["SubmitAnswers"]
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
                     </button>
 
                 </div>

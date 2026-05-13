@@ -16,7 +16,7 @@
     <value>Thank you for your answers!</value>
   </data>
   <data name="ThankYouBody" xml:space="preserve">
-    <value>In the next step you will find categories with ideas from other participants. React to them or share your own idea!</value>
+    <value>Your answers have been received.</value>
   </data>
   <data name="ViewIdeasButton" xml:space="preserve">
     <value>View ideas &amp; respond</value>
