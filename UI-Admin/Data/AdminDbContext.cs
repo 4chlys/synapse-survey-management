@@ -9,6 +9,7 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
 {
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<UserWidgetPreference> UserWidgetPreferences { get; set; }
+    public DbSet<PlatformSettings> PlatformSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -37,6 +38,12 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
             e.HasIndex(p => new { p.UserId, p.ProjectId, p.Position }).IsUnique();
             e.Property(p => p.UserId).IsRequired().HasMaxLength(450);
             e.Property(p => p.WidgetType).IsRequired().HasMaxLength(50);
+        });
+
+        builder.Entity<PlatformSettings>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.HasIndex(s => s.ProjectPlatformId).IsUnique();
         });
     }
 }
