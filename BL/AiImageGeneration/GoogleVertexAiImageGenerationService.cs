@@ -1,5 +1,6 @@
 using Google.Cloud.AIPlatform.V1;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.AiUsage;
 
 namespace SynapseEnqueteManagement.BL.AiImageGeneration;
 
@@ -7,9 +8,10 @@ public sealed class GoogleVertexAiImageGenerationService(
     PredictionServiceClient predictionClient,
     string modelResource,
     AiImageGenerationConfig config,
+    IAiUsageManager usageManager,
     ILogger<GoogleVertexAiImageGenerationService> logger) : IAiImageGenerationService
 {
-    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, CancellationToken ct = default)
+    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, int projectId, CancellationToken ct = default)
     {
         try
         {
@@ -48,6 +50,15 @@ public sealed class GoogleVertexAiImageGenerationService(
             {
                 if (part.InlineData is { } inlineData && inlineData.MimeType.StartsWith("image/"))
                 {
+                    try
+                    {
+                        await usageManager.LogImageAsync(projectId, config.Model, 1, config.Width, config.Height, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "[ImageGeneration] Failed to record AI usage.");
+                    }
+
                     return ImageGenerationResult.Success(
                         inlineData.Data.ToByteArray(),
                         inlineData.MimeType);

@@ -11,5 +11,6 @@ public interface IAiIdeaSupportService : IAiSupportService<IdeaSupportChatReques
     Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
         string language,
+        int projectId,
         CancellationToken ct = default);
 }

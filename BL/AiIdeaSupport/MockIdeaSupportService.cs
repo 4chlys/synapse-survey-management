@@ -29,6 +29,7 @@ public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> loca
 
     public Task<IdeaSupportChatReply> ChatAsync(
         IdeaSupportChatRequest request,
+        int projectId,
         CancellationToken ct = default)
     {
         var turnCount = request.History.Count;
@@ -70,6 +71,7 @@ public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> loca
     public Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
         string language,
+        int projectId,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))

@@ -2,16 +2,23 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
 public sealed class AiCommentSupportService(
     IChatClient chatClient,
     ILogger<AiCommentSupportService> logger,
-    AiCommentSupportConfig config)
-    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(chatClient, logger),
+    AiCommentSupportConfig config,
+    IAiUsageManager usageManager,
+    AiChatModelOptions modelOptions)
+    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(chatClient, logger, usageManager),
       IAiCommentSupportService
 {
+    protected override AiServiceKind Service => AiServiceKind.CommentSupport;
+    protected override string Model => modelOptions.Model;
+
     protected override List<ChatMessage> BuildMessages(CommentSupportRequest request)
     {
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;

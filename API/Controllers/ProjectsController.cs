@@ -168,7 +168,8 @@ public class ProjectsController(
 
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
-            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, ct);
+            // projectId=0: image is generated before the project exists, so the call is not attributed to a project.
+            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, 0, ct);
             if (result.IsSuccess)
             {
                 var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
