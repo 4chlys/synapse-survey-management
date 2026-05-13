@@ -38,7 +38,7 @@ public class IdeasController(
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var pageSize = project?.IdeaPageSize ?? 5;
 
-        var result = await ideaManager.GetIdeasIndexAsync(categoryId, participantId, pageSize, page, sort, participantLanguageCode, showAllLanguages ?? false, ct);
+        var result = await ideaManager.GetIdeasIndexAsync(categoryId, projectId, participantId, pageSize, page, sort, participantLanguageCode, showAllLanguages ?? false, ct);
 
         return Ok(new IdeaIndexResponseDto
         {

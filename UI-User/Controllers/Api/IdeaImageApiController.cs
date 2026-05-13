@@ -46,6 +46,7 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
     [RequestSizeLimit(10 * 1024 * 1024)]
     [EnableRateLimiting("ai-image-describe")]
     public async Task<IActionResult> Describe(
+        int projectId,
         IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
         [FromQuery] string language, CancellationToken ct)
     {
@@ -58,7 +59,7 @@ public class IdeaImageApiController(IIdeaImageService ideaImageService) : Contro
         if (file.Length > MaxFileSizeBytes)
             return BadRequest(new { reason = "De afbeelding mag maximaal 10 MB zijn." });
 
-        var result = await ideaImageService.DescribeAsync(file, categoryName ?? "", categoryDescription ?? "", language, ct);
+        var result = await ideaImageService.DescribeAsync(file, projectId, categoryName ?? "", categoryDescription ?? "", language, ct);
 
         if (!result.IsSuccess)
             return UnprocessableEntity(new { reason = result.Reason });

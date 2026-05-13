@@ -115,6 +115,29 @@
         }
     </div>
 
+    @* Live AI cost card *@
+    <h2 class="font-semibold text-base-content mb-4">Live AI-kosten (laatste 24u)</h2>
+    <div class="card bg-base-100 shadow-sm mb-8" data-ai-cost-container>
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Project</th>
+                            <th class="text-right">Input tokens</th>
+                            <th class="text-right">Output tokens</th>
+                            <th class="text-right">Kosten (EUR)</th>
+                        </tr>
+                    </thead>
+                    <tbody data-ai-usage>
+                        <tr><td colspan="5" class="text-center text-base-content/40 text-sm py-4">Laden...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     @* Cost dashboards *@
     <h2 class="font-semibold text-base-content mb-4">Kosten & monitoring</h2>
     @if (platformsWithCost.Any())

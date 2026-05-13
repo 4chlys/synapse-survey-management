@@ -78,6 +78,9 @@
   <data name="BackNavLabel" xml:space="preserve">
     <value>Terug</value>
   </data>
+  <data name="BackToCategoriesLabel" xml:space="preserve">
+    <value>Terug naar categorieën</value>
+  </data>
   <data name="MyIdeasNavLabel" xml:space="preserve">
     <value>Mijn ideeën</value>
   </data>

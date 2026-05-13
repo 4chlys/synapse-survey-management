@@ -39,13 +39,16 @@
   <data name="NextQuestion" xml:space="preserve">
     <value>Next question</value>
   </data>
+  <data name="StepIndicator" xml:space="preserve">
+    <value>Step 1 of 2</value>
+  </data>
   <data name="SubmitSlideHeading" xml:space="preserve">
-    <value>Done!</value>
+    <value>Survey complete</value>
   </data>
   <data name="SubmitSlideDescription" xml:space="preserve">
-    <value>Review your answers and submit them.</value>
+    <value>Next, you can share your ideas and react to others.</value>
   </data>
   <data name="SubmitAnswers" xml:space="preserve">
-    <value>Submit answers</value>
+    <value>Continue to ideas</value>
   </data>
 </root>

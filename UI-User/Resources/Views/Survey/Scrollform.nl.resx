@@ -39,13 +39,16 @@
   <data name="NextQuestion" xml:space="preserve">
     <value>Volgende vraag</value>
   </data>
+  <data name="StepIndicator" xml:space="preserve">
+    <value>Stap 1 van 2</value>
+  </data>
   <data name="SubmitSlideHeading" xml:space="preserve">
-    <value>Klaar!</value>
+    <value>Enquête ingevuld</value>
   </data>
   <data name="SubmitSlideDescription" xml:space="preserve">
-    <value>Controleer je antwoorden en stuur ze in.</value>
+    <value>Daarna deel je jouw ideeën en reageer je op anderen.</value>
   </data>
   <data name="SubmitAnswers" xml:space="preserve">
-    <value>Antwoorden versturen</value>
+    <value>Verder naar ideeën</value>
   </data>
 </root>

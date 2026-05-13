@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -33,6 +34,7 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
     public DbSet<TextComment> TextComments { get; set; }
     public DbSet<Comment> Comments { get; set; }
     public DbSet<EndingAnswer> EndingAnswers { get; set; }
+    public DbSet<AiUsageEvent> AiUsageEvents { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -365,6 +367,20 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
                     .HasColumnType("TEXT")
                     .Metadata.SetValueComparer(embeddingComparer);
             }
+        });
+
+        // AiUsageEvent — per-call cost/token log for AI services.
+        builder.Entity<AiUsageEvent>(e =>
+        {
+            e.Property<int>("ProjectId");
+
+            e.HasOne(u => u.Project)
+                .WithMany()
+                .HasForeignKey("ProjectId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Supports filtering recent events by project (dashboard polling).
+            e.HasIndex("ProjectId", nameof(AiUsageEvent.CreatedAt));
         });
 
         // Project-Emoji many-to-many (implicit join table)

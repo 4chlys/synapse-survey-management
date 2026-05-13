@@ -1,3 +1,4 @@
+@using SynapseEnqueteManagement.BL.Domain.Project.Enums
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @{
     var isEdit = Model.ProjectId.HasValue;
@@ -30,6 +31,15 @@
                 @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
                 <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                 <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">Taal *</span></div>
+                    <select asp-for="DefaultLanguageCode" class="select select-bordered w-full">
+                        <option value="nl">Nederlands</option>
+                        <option value="en">English</option>
+                    </select>
+                    <span asp-validation-for="DefaultLanguageCode" class="label-text-alt text-error mt-1"></span>
+                </label>
 
                 <label class="form-control">
                     <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
@@ -161,6 +171,75 @@
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                     Sectie toevoegen
                 </button>
+
+                <div class="divider my-0">Stijl</div>
+
+                <div class="form-control">
+                    <label asp-for="Theme" class="label">
+                        <span class="label-text">Thema</span>
+                    </label>
+                    <select asp-for="Theme" asp-items="Html.GetEnumSelectList<ProjectTheme>()"
+                            class="select select-bordered w-full"></select>
+                    <span asp-validation-for="Theme" class="label-text-alt text-error mt-1"></span>
+                </div>
+
+                <div class="form-control">
+                    <span class="label-text">Voorbeeld</span>
+                    <div id="theme-preview-host"
+                         class="mt-1"
+                         data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())">
+                    </div>
+                    <span class="label-text-alt mt-1 opacity-70">
+                        Live voorbeeld van thema, primaire kleur en aangepaste CSS.
+                    </span>
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Primaire kleur (optioneel)</span>
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input id="primary-color-picker" type="color" value="#16A34A"
+                               class="h-10 w-16 rounded border border-base-300 cursor-pointer disabled:opacity-50" />
+                        <label class="label cursor-pointer justify-start gap-2 py-0">
+                            <input id="use-theme-color" type="checkbox" class="checkbox checkbox-sm" />
+                            <span class="label-text">Themakleur gebruiken</span>
+                        </label>
+                    </div>
+                    <input asp-for="PrimaryColor" type="hidden" />
+                    <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
+                </div>
+
+                <div class="form-control">
+                    <label asp-for="CustomCss" class="label">
+                        <span class="label-text">Aangepaste CSS (optioneel)</span>
+                    </label>
+                    <textarea asp-for="CustomCss" rows="6"
+                              class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
+                    <span class="label-text-alt">Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</span>
+                    <span asp-validation-for="CustomCss" class="label-text-alt text-error mt-1"></span>
+                    <details class="mt-2 text-sm">
+                        <summary class="cursor-pointer label-text">
+                            Beschikbare CSS-variabelen en selectors (klikken om in te voegen)
+                        </summary>
+                        <div id="customcss-helper" class="mt-2 flex flex-col gap-3">
+                            <div>
+                                <div class="text-xs uppercase opacity-60 mb-1">Variabelen</div>
+                                <div data-helper-group="variables" class="flex flex-wrap gap-1">
+                                    @* Tokens injected by project-style.ts on load *@
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs uppercase opacity-60 mb-1">Snippets</div>
+                                <div data-helper-group="snippets" class="flex flex-wrap gap-1">
+                                    @* Snippets injected by project-style.ts on load *@
+                                </div>
+                            </div>
+                            <div id="customcss-syntax-hint"
+                                 class="text-xs opacity-70" aria-live="polite"></div>
+                        </div>
+                    </details>
+                </div>
 
                 </fieldset>
             </form>
