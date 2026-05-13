@@ -23,4 +23,8 @@ public class AdminProjectDto
     public string DefaultLanguageCode { get; set; }
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
     public ICollection<ProjectTranslationDto> Translations { get; set; } = new List<ProjectTranslationDto>();
+
+    public string Theme { get; set; }
+    public string PrimaryColor { get; set; }
+    public string CustomCss { get; set; }
 }

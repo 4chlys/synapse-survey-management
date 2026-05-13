@@ -37,5 +37,21 @@ public class CreateProjectViewModel
 
     public bool ContactOptIn { get; set; } = true;
     public bool AllowCrossLanguageIdeas { get; set; } = false;
+
+    [Required]
+    [MaxLength(10)]
+    public string DefaultLanguageCode { get; set; } = "nl";
+
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+
+    [MaxLength(20)]
+    public string Theme { get; set; } = "Default";
+
+    [MaxLength(7)]
+    [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
+        ErrorMessage = "Ongeldige kleurcode. Gebruik een hex-waarde (bv. #FF5733).")]
+    public string PrimaryColor { get; set; }
+
+    [MaxLength(4000)]
+    public string CustomCss { get; set; }
 }
