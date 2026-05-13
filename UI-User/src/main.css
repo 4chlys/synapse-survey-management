@@ -104,13 +104,35 @@
   --slide-h: calc(100dvh - var(--header-h));
 }
 
-html {
-  scrollbar-gutter: stable;
+/* Scroll lock — opt-in via .scroll-lock-marker emitted by lock-needing views.
+   Used on Landing + Survey pages so scrolling is delegated to inner containers
+   (card list, chat messages) and the fixed transparent header can't get visually
+   crossed by content scrolling under it. */
+html:has(.scroll-lock-marker),
+html:has(.scroll-lock-marker) body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100dvh;
+}
+
+/* iOS Safari zooms when input font-size < 16px. Force 16px on small screens
+   to prevent zoom-on-focus (which also pushes adjacent buttons off-screen). */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Use dvh (dynamic viewport) so body height tracks the actual visible viewport on
+     mobile. Tailwind's min-h-screen uses 100vh which equals the largest viewport
+     (address bar retracted) — when the bar is visible, body becomes taller than the
+     viewport, body scrolls, and fixed-positioned content slides under the header. */
+  min-height: 100dvh;
 }
 
 /* Strip browser-default button chrome from non-DaisyUI buttons.
@@ -145,6 +167,31 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 .survey-slide.is-above {
   transform: translateY(-100%);
+}
+
+/* Vacuum-suck card on both directions */
+.survey-card {
+  transform-origin: 50% 50%;
+  transform: scale(0.18) rotate(4deg);
+  opacity: 0;
+  filter: blur(2px);
+  transition:
+    transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.45s ease,
+    filter 0.45s ease;
+  will-change: transform, opacity, filter;
+}
+
+.survey-slide.is-active .survey-card {
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+  filter: blur(0);
+}
+
+.survey-slide.is-above .survey-card {
+  transform: scale(0.18) rotate(-4deg);
+  opacity: 0;
+  filter: blur(2px);
 }
 
 .nav-scrollable {

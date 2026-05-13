@@ -28,7 +28,7 @@ public class SurveyController(
         if (!string.IsNullOrWhiteSpace(token)
             && await questionnaireService.HasParticipantRespondedAsync(projectId, token))
         {
-            return RedirectToAction("Index", "Category", new { projectId });
+            return RedirectToAction("CategoryList", "Category", new { projectId });
         }
 
         var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "nl", "en" };

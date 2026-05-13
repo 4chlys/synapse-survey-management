@@ -66,6 +66,12 @@
   <data name="ImageUpload_NotAllowed" xml:space="preserve">
     <value>The image is not allowed.</value>
   </data>
+  <data name="ImageDescribe_Loading" xml:space="preserve">
+    <value>Describing image…</value>
+  </data>
+  <data name="ImageDescribe_Failed" xml:space="preserve">
+    <value>Could not describe the image. Please try again.</value>
+  </data>
   <data name="SpeechToText_EmptyRecording" xml:space="preserve">
     <value>Empty recording received.</value>
   </data>
