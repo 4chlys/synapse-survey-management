@@ -1,4 +1,6 @@
 @using System.Text.Json
+@using SynapseEnqueteManagement.UI.User.Models
+@using SynapseEnqueteManagement.UI.User.Models.Survey
 @model SurveyViewModel
 @inject IViewLocalizer L
 
@@ -8,6 +10,14 @@
     var orgName = ViewData["OrganisationName"] as string;
     ViewData["SurveyTitle"] = projectName;
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var chatProject = ViewData["Project"] as ProjectViewModel;
+    var thankYouModel = new ThankYouViewModel
+    {
+        ProjectId = chatProject?.ProjectId ?? 0,
+        OrganisationName = chatProject?.OrganisationName ?? string.Empty,
+        OrganisationLogoUrl = chatProject?.OrganisationLogoUrl ?? string.Empty,
+        OrganisationWebsiteUrl = chatProject?.OrganisationWebsiteUrl ?? string.Empty,
+    };
 }
 
 <div class="scroll-lock-marker hidden"></div>
@@ -135,3 +145,5 @@
     </div>
 </div>
 </div>
+
+<partial name="_ThankYouPopup" model="thankYouModel" />

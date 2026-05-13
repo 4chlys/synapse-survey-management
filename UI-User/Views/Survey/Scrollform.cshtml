@@ -1,5 +1,6 @@
 @using System.Text.Json
 @using SynapseEnqueteManagement.UI.User.Helpers
+@using SynapseEnqueteManagement.UI.User.Models
 @using SynapseEnqueteManagement.UI.User.Models.Survey
 @model SurveyViewModel
 @inject IViewLocalizer L
@@ -8,11 +9,15 @@
     ViewData["Title"] = L["Title"];
     ViewData["SurveyTitle"] = (ViewData["ProjectName"] as string) ?? Model.Title;
     ViewData["BgLogoCentered"] = true;
+    var project = ViewData["Project"] as ProjectViewModel;
+    var hasIntro = project is not null
+                   && (!string.IsNullOrWhiteSpace(project.Introduction)
+                       || !string.IsNullOrWhiteSpace(project.ProjectImage));
 }
 
 <div class="scroll-lock-marker hidden"></div>
 
-@* Animated landing-style background — logo shows on all sizes, cards lg+ only *@
+@* Animated landing-style background logo shows on all sizes, cards lg+ only *@
 @await Html.PartialAsync("_BackgroundAnimation")
 
 <div id="survey-container" class="relative overflow-hidden page-enter z-10" style="height: var(--slide-h)" data-project-id="@Context.GetRouteValue("projectId")"
@@ -26,6 +31,49 @@
     @* form for the survey *@
     <form id="survey-form" method="post" asp-controller="Survey" asp-action="Submit"
           asp-route-projectId="@Context.GetRouteValue("projectId")" style="height: var(--slide-h)">
+
+        @if (hasIntro)
+        {
+            <section class="survey-slide" data-format="Intro">
+                <div class="w-full h-full flex items-center justify-center px-4 py-6">
+                    <div class="survey-card w-full max-w-2xl bg-base-100 rounded-2xl shadow-xl border border-base-300
+                        flex flex-col justify-between p-8 gap-4" style="max-height: calc(var(--slide-h) - 48px)">
+
+                        <div class="flex-1 flex flex-col gap-5 overflow-y-auto min-h-0">
+                            @if (!string.IsNullOrWhiteSpace(project!.ProjectImage))
+                            {
+                                <div class="shrink-0">
+                                    <img src="@project.ProjectImage" alt=""
+                                         class="rounded-xl max-h-64 w-full object-contain bg-base-200" />
+                                </div>
+                            }
+
+                            <h2 class="font-heading text-[22px] font-semibold text-base-content leading-snug shrink-0">
+                                @(string.IsNullOrWhiteSpace(project.Name) ? project.OrganisationName : project.Name)
+                            </h2>
+
+                            @if (!string.IsNullOrWhiteSpace(project.Introduction))
+                            {
+                                <div class="prose prose-sm max-w-none text-base-content/80">
+                                    @Html.Raw(MarkdownRenderer.Render(project.Introduction))
+                                </div>
+                            }
+                        </div>
+
+                        <div class="flex items-center justify-end shrink-0">
+                            <button type="button" aria-label="@L["NextQuestion"]"
+                                    class="btn-next w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-md hover:opacity-90 active:scale-95 transition-all cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content" fill="none"
+                                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+        }
 
         @foreach (var question in Model.Questions)
         {
@@ -51,7 +99,7 @@
                             }
                         </div>
 
-                        @* Question text + answer area (mc, sc, open,...) *@
+                        @* Question text + answer area (mc, sc, open and likert) *@
                         <div class="flex-1 flex flex-col gap-5 overflow-y-auto min-h-0">
 
                             @if (question.MediaType.HasValue)
@@ -261,3 +309,14 @@
 {
     <script type="application/json" id="existing-responses">@Html.Raw(JsonSerializer.Serialize(Model.ExistingResponses))</script>
 }
+
+@{
+    var thankYouModel = new ThankYouViewModel
+    {
+        ProjectId = project?.ProjectId ?? 0,
+        OrganisationName = project?.OrganisationName ?? string.Empty,
+        OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
+        OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
+    };
+}
+<partial name="_ThankYouPopup" model="thankYouModel" />

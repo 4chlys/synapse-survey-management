@@ -34,6 +34,14 @@ export async function navigateNext(state: SurveyState): Promise<void> {
     const current = state.slides[state.currentIndex];
     if (current.dataset.format === 'Submit') return;
 
+    if (current.dataset.format === 'Intro') {
+        const visiblePos = getVisiblePosition(state);
+        const nextIdx = state.visibleIndices[visiblePos + 1];
+        if (nextIdx === undefined) return;
+        navigateTo(state, nextIdx, true);
+        return;
+    }
+
     const {valid, message} = isSlideValid(current);
     if (!valid) {
         showValidationError(current, message);
