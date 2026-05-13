@@ -52,4 +52,18 @@
   <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
   <data name="NextButton" xml:space="preserve"><value>Volgende</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Taal *</value></data>
+  <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>
+  <data name="ThemeLabel" xml:space="preserve"><value>Thema</value></data>
+  <data name="PreviewLabel" xml:space="preserve"><value>Voorbeeld</value></data>
+  <data name="PreviewHint" xml:space="preserve"><value>Live voorbeeld van thema, primaire kleur en aangepaste CSS.</value></data>
+  <data name="PrimaryColorLabel" xml:space="preserve"><value>Primaire kleur (optioneel)</value></data>
+  <data name="UseThemeColorLabel" xml:space="preserve"><value>Themakleur gebruiken</value></data>
+  <data name="CustomCssLabel" xml:space="preserve"><value>Aangepaste CSS (optioneel)</value></data>
+  <data name="CustomCssHint" xml:space="preserve"><value>Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</value></data>
+  <data name="CustomCssHelperSummary" xml:space="preserve"><value>Beschikbare CSS-variabelen en selectors (klikken om in te voegen)</value></data>
+  <data name="CustomCssVariables" xml:space="preserve"><value>Variabelen</value></data>
+  <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
+  <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Niet-gebalanceerde accolades ({0} {  vs  {1} }).</value></data>
+  <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS ziet er gebalanceerd uit.</value></data>
 </root>

@@ -21,7 +21,7 @@ public class IdeaManager(
     // memory when not on PostgreSQL. The brief calls for "performant for ≤1,000 ideas".
     private const int EmbeddingSortMaxItems = 1000;
 
-    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int categoryId, int? participantId, int pageSize, int page, string sortKey, string participantLanguageCode = null, bool showAllLanguages = false, CancellationToken ct = default)
+    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int categoryId, int projectId, int? participantId, int pageSize, int page, string sortKey, string participantLanguageCode = null, bool showAllLanguages = false, CancellationToken ct = default)
     {
         var (allowCross, defaultLangCode) = await ideaRepository.ReadProjectFlagsForCategoryReadOnlyAsync(categoryId);
         string filterLanguageCode = (!allowCross || !showAllLanguages)
@@ -42,7 +42,7 @@ public class IdeaManager(
 
         float[] queryEmbedding = null;
         if (!string.IsNullOrWhiteSpace(anchorText))
-            queryEmbedding = await embeddingService.GenerateAsync(anchorText, ct);
+            queryEmbedding = await embeddingService.GenerateAsync(anchorText, projectId, ct);
 
         var resolvedKey = sortKey;
         if (queryEmbedding == null && sortKey != "diverse")
@@ -121,7 +121,7 @@ public class IdeaManager(
         float[] embedding = null;
         try
         {
-            embedding = await embeddingService.GenerateAsync(description, ct);
+            embedding = await embeddingService.GenerateAsync(description, projectId, ct);
         }
         catch (Exception ex)
         {

@@ -58,7 +58,7 @@ public class SpeechToTextController(
             Language  = lang,
         };
 
-        var result = await speechToTextService.TranscribeAsync(request, ct);
+        var result = await speechToTextService.TranscribeAsync(request, projectId, ct);
 
         return Ok(new SpeechToTextResponseDto
         {

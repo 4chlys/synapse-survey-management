@@ -26,6 +26,11 @@ public class ProjectsController(
             ? aiResult
             : AiAssistanceType.ProActive;
 
+    private static ProjectTheme ParseTheme(string theme) =>
+        Enum.TryParse<ProjectTheme>(theme, ignoreCase: true, out var themeResult)
+            ? themeResult
+            : ProjectTheme.Default;
+
     private static string ActiveCulture() =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
@@ -72,6 +77,9 @@ public class ProjectsController(
             LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
             DefaultLanguageCode = p.DefaultLanguage?.Code,
             SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            Theme = p.Theme.ToString(),
+            PrimaryColor = p.PrimaryColor,
+            CustomCss = p.CustomCss,
         };
     }
 
@@ -104,6 +112,9 @@ public class ProjectsController(
             Introduction = p.Introduction?.Translations
                 .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
         }).ToList(),
+        Theme = p.Theme.ToString(),
+        PrimaryColor = p.PrimaryColor,
+        CustomCss = p.CustomCss,
     };
 
     private static IEnumerable<ProjectTranslationInput> MapTranslations(ICollection<ProjectTranslationDto> dtos) =>
@@ -157,7 +168,8 @@ public class ProjectsController(
 
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
-            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, ct);
+            // projectId=0: image is generated before the project exists, so the call is not attributed to a project.
+            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, 0, ct);
             if (result.IsSuccess)
             {
                 var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
@@ -182,7 +194,10 @@ public class ProjectsController(
             dto.IdeaPageSize,
             dto.ExtraIdeasReplaceExisting,
             dto.MaxExtraIdeaRequests,
-            dto.AllowCrossLanguageIdeas);
+            dto.AllowCrossLanguageIdeas,
+            ParseTheme(dto.Theme),
+            dto.PrimaryColor,
+            dto.CustomCss);
 
         return Created(string.Empty, MapToAdminDto(project));
     }
@@ -206,7 +221,10 @@ public class ProjectsController(
             dto.IdeaPageSize,
             dto.ExtraIdeasReplaceExisting,
             dto.MaxExtraIdeaRequests,
-            dto.AllowCrossLanguageIdeas);
+            dto.AllowCrossLanguageIdeas,
+            ParseTheme(dto.Theme),
+            dto.PrimaryColor,
+            dto.CustomCss);
 
         return Ok(MapToAdminDto(project));
     }

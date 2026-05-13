@@ -52,7 +52,7 @@ public class IdeasControllerTests
             HasOwnIdeas = false
         };
         _ideaManager
-            .Setup(m => m.GetIdeasIndexAsync(CategoryId, _participant.ParticipantId, 5, 1, null, null, true, default))
+            .Setup(m => m.GetIdeasIndexAsync(CategoryId, ProjectId, _participant.ParticipantId, 5, 1, null, null, true, default))
             .ReturnsAsync(expectedResult)
             .Verifiable(Times.Exactly(1));
 

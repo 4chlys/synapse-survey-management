@@ -93,6 +93,28 @@
         </div>
     }
 
+    @* Live AI cost card *@
+    <h2 class="font-semibold text-base-content mb-4">@L["LiveAiCostHeading"]</h2>
+    <div class="card bg-base-100 shadow-sm mb-6" data-ai-cost-container data-platform-id="@Model.ProjectPlatformId" data-empty-label="@L["AiCost_Empty"]">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>@L["AiCost_Project"]</th>
+                            <th class="text-right">@L["AiCost_InputTokens"]</th>
+                            <th class="text-right">@L["AiCost_OutputTokens"]</th>
+                            <th class="text-right">@L["AiCost_Cost"]</th>
+                        </tr>
+                    </thead>
+                    <tbody data-ai-usage>
+                        <tr><td colspan="4" class="text-center text-base-content/40 text-sm py-4">@L["AiCost_Loading"]</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     @* Cost dashboard *@
     <h2 class="font-semibold text-base-content mb-4">@L["CostMonitoringHeading"]</h2>
     @if (!string.IsNullOrEmpty(Model.CostDashboardUrl))

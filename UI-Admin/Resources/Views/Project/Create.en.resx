@@ -52,4 +52,18 @@
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="NextButton" xml:space="preserve"><value>Next</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Language *</value></data>
+  <data name="StyleDivider" xml:space="preserve"><value>Style</value></data>
+  <data name="ThemeLabel" xml:space="preserve"><value>Theme</value></data>
+  <data name="PreviewLabel" xml:space="preserve"><value>Preview</value></data>
+  <data name="PreviewHint" xml:space="preserve"><value>Live preview of theme, primary color and custom CSS.</value></data>
+  <data name="PrimaryColorLabel" xml:space="preserve"><value>Primary color (optional)</value></data>
+  <data name="UseThemeColorLabel" xml:space="preserve"><value>Use theme color</value></data>
+  <data name="CustomCssLabel" xml:space="preserve"><value>Custom CSS (optional)</value></data>
+  <data name="CustomCssHint" xml:space="preserve"><value>For developers — leave blank if theme + color is enough.</value></data>
+  <data name="CustomCssHelperSummary" xml:space="preserve"><value>Available CSS variables and selectors (click to insert)</value></data>
+  <data name="CustomCssVariables" xml:space="preserve"><value>Variables</value></data>
+  <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
+  <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Unbalanced braces ({0} {  vs  {1} }).</value></data>
+  <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS looks balanced.</value></data>
 </root>

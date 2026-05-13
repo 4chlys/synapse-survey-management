@@ -89,7 +89,7 @@ public class IdeaSupportController(
             IsFirstTurn         = isFirstTurn,
         };
 
-        var reply = await ideaSupportService.ChatAsync(request, ct);
+        var reply = await ideaSupportService.ChatAsync(request, projectId, ct);
 
         return Ok(new IdeaSupportChatResponseDto
         {
@@ -109,7 +109,7 @@ public class IdeaSupportController(
         if (error is not null) return error;
 
         var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        var result = await ideaSupportService.RefineAsync(dto.DraftText, lang, ct);
+        var result = await ideaSupportService.RefineAsync(dto.DraftText, lang, projectId, ct);
         return Ok(new IdeaSupportRefineResponseDto { RefinedText = result.RefinedText });
     }
 }

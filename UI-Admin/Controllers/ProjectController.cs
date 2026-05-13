@@ -79,7 +79,11 @@ public class ProjectController(
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
             AllowCrossLanguageIdeas = project.AllowCrossLanguageIdeas,
+            DefaultLanguageCode = project.DefaultLanguageCode ?? "nl",
             SupportedLanguageCodes = project.SupportedLanguageCodes,
+            Theme = project.Theme,
+            PrimaryColor = project.PrimaryColor,
+            CustomCss = project.CustomCss,
             Sections = sections.Select(s => s.Name).ToList()
         };
         ViewData["Project"] = project;
@@ -143,7 +147,9 @@ public class ProjectController(
                 model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
                 model.ContactOptIn, model.ShortForm,
                 lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
-                model.AllowCrossLanguageIdeas);
+                model.AllowCrossLanguageIdeas,
+                model.Theme, model.PrimaryColor, model.CustomCss,
+                model.DefaultLanguageCode);
         }
         else
         {
@@ -158,7 +164,11 @@ public class ProjectController(
                 model.MinAge, model.MaxAge, model.ContactOptIn,
                 platformId: user.ProjectPlatformId.Value,
                 shortForm: model.ShortForm,
-                allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas);
+                allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
+                theme: model.Theme,
+                primaryColor: model.PrimaryColor,
+                customCss: model.CustomCss,
+                languageCode: model.DefaultLanguageCode);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -269,7 +279,9 @@ public class ProjectController(
             project.ProjectImage, project.FormType, project.AiAssistance,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
-            project.AllowCrossLanguageIdeas);
+            project.AllowCrossLanguageIdeas,
+            project.Theme, project.PrimaryColor, project.CustomCss,
+            project.DefaultLanguageCode ?? "nl");
 
         return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }
@@ -360,7 +372,7 @@ public class ProjectController(
 
         try
         {
-            var copy = await projectService.CopyProjectAsync(projectId, newName, platformId);
+            var copy = await projectService.CopyProjectAsync(projectId, newName, platformId, languageCode: source.DefaultLanguageCode ?? "nl");
             TempData["Success"] = localizer["Project_CopySuccess"].Value;
             return RedirectToAction(nameof(Create), new { projectId = copy.ProjectId, isNew = true });
         }
