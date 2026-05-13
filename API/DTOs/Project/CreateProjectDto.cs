@@ -33,4 +33,13 @@ public class CreateProjectDto
     [Required] [MaxLength(10)] public string DefaultLanguageCode { get; set; }
     [Required] [MinLength(1)] public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
     [Required] [MinLength(1)] public ICollection<ProjectTranslationDto> Translations { get; set; } = new List<ProjectTranslationDto>();
+
+    [MaxLength(20)] public string Theme { get; set; } = "Default";
+
+    [MaxLength(7)]
+    [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
+        ErrorMessage = "Invalid color code. Use a hex value (e.g. #FF5733).")]
+    public string PrimaryColor { get; set; }
+
+    [MaxLength(4000)] public string CustomCss { get; set; }
 }

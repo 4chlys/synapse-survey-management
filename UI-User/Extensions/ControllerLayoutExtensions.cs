@@ -13,6 +13,9 @@ public static class ControllerLayoutExtensions
         controller.ViewData["OrganisationName"] = project?.OrganisationName;
         controller.ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
         controller.ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
+        controller.ViewData["ProjectTheme"] = project?.Theme?.ToLowerInvariant() ?? "default";
+        controller.ViewData["ProjectPrimaryColor"] = project?.PrimaryColor;
+        controller.ViewData["ProjectCustomCss"] = project?.CustomCss;
         if (showModerationPopup)
             controller.ViewData["ShowModerationPopup"] = true;
     }

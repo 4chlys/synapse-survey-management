@@ -26,4 +26,8 @@ public class ProjectDto
     public string LanguageCode { get; set; }
     public string DefaultLanguageCode { get; set; }
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+
+    public string Theme { get; set; }
+    public string PrimaryColor { get; set; }
+    public string CustomCss { get; set; }
 }
