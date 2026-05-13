@@ -1,11 +1,16 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiImageDescription;
 
 public sealed class AiImageDescriptionService(
     IChatClient chatClient,
-    ILogger<AiImageDescriptionService> logger) : IAiImageDescriptionService
+    ILogger<AiImageDescriptionService> logger,
+    IAiUsageManager usageManager,
+    AiChatModelOptions modelOptions) : IAiImageDescriptionService
 {
     private const string PromptTemplate =
         """
@@ -31,7 +36,7 @@ public sealed class AiImageDescriptionService(
         """;
 
     public async Task<string> DescribeImageAsync(byte[] imageBytes, string mimeType, string language,
-        string categoryName, string categoryDescription, CancellationToken ct = default)
+        string categoryName, string categoryDescription, int projectId, CancellationToken ct = default)
     {
         try
         {
@@ -48,6 +53,16 @@ public sealed class AiImageDescriptionService(
             ]);
 
             var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
+
+            try
+            {
+                await usageManager.LogChatAsync(projectId, AiServiceKind.ImageDescription, modelOptions.Model, response.Usage, ct);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "[ImageDescription] Failed to record AI usage.");
+            }
+
             var description = response.Messages.LastOrDefault()?.Text?.Trim();
 
             return string.IsNullOrWhiteSpace(description) ? string.Empty : description;

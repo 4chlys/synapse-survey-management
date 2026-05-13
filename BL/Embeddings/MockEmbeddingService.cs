@@ -14,7 +14,7 @@ public class MockEmbeddingService(int dimensions = 128) : IEmbeddingService
 
     private readonly int _dimensions = dimensions;
 
-    public Task<float[]> GenerateAsync(string text, CancellationToken cancellationToken = default)
+    public Task<float[]> GenerateAsync(string text, int projectId, CancellationToken cancellationToken = default)
         => Task.FromResult(Embed(text));
 
     private float[] Embed(string text)

@@ -58,7 +58,7 @@ public class QuestionSupportController(
             IsFirstTurn = dto.IsFirstTurn,
         };
 
-        var reply = await questionSupportService.ChatAsync(request, ct);
+        var reply = await questionSupportService.ChatAsync(request, projectId, ct);
 
         return Ok(new QuestionSupportChatResponseDto { AssistantMessage = reply.AssistantMessage });
     }
