@@ -184,6 +184,17 @@
                 </div>
 
                 <div class="form-control">
+                    <span class="label-text">Voorbeeld</span>
+                    <div id="theme-preview-host"
+                         class="mt-1"
+                         data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())">
+                    </div>
+                    <span class="label-text-alt mt-1 opacity-70">
+                        Live voorbeeld van thema, primaire kleur en aangepaste CSS.
+                    </span>
+                </div>
+
+                <div class="form-control">
                     <label class="label">
                         <span class="label-text">Primaire kleur (optioneel)</span>
                     </label>
@@ -207,6 +218,27 @@
                               class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
                     <span class="label-text-alt">Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</span>
                     <span asp-validation-for="CustomCss" class="label-text-alt text-error mt-1"></span>
+                    <details class="mt-2 text-sm">
+                        <summary class="cursor-pointer label-text">
+                            Beschikbare CSS-variabelen en selectors (klikken om in te voegen)
+                        </summary>
+                        <div id="customcss-helper" class="mt-2 flex flex-col gap-3">
+                            <div>
+                                <div class="text-xs uppercase opacity-60 mb-1">Variabelen</div>
+                                <div data-helper-group="variables" class="flex flex-wrap gap-1">
+                                    @* Tokens injected by project-style.ts on load *@
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs uppercase opacity-60 mb-1">Snippets</div>
+                                <div data-helper-group="snippets" class="flex flex-wrap gap-1">
+                                    @* Snippets injected by project-style.ts on load *@
+                                </div>
+                            </div>
+                            <div id="customcss-syntax-hint"
+                                 class="text-xs opacity-70" aria-live="polite"></div>
+                        </div>
+                    </details>
                 </div>
 
                 </fieldset>
