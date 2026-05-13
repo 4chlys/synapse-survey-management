@@ -2,11 +2,12 @@ using Microsoft.Extensions.AI;
 
 namespace SynapseEnqueteManagement.API.Ai;
 
-public sealed class ChatClientRegistry(IDictionary<string, IChatClient> clients)
+public sealed class ChatClientRegistry(IDictionary<string, IChatClient> clients, string defaultModelId = null)
 {
     private readonly IReadOnlyDictionary<string, IChatClient> _clients = new Dictionary<string, IChatClient>(clients, StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyCollection<string> AvailableModelIds => _clients.Keys.ToList();
+    public string DefaultModelId { get; } = defaultModelId;
 
     public IChatClient Get(string modelId)
     {

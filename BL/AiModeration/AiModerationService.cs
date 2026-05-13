@@ -79,7 +79,7 @@ public sealed class AiModerationService(
             if (string.IsNullOrWhiteSpace(rawJson))
             {
                 logger.LogWarning("[ImageModeration] Vertex AI returned empty response; failing closed.");
-                return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+                return ModerationResult.RejectedByAi("The image could not be checked. Please try again later.");
             }
 
             rawJson = CodeFenceRe.Replace(rawJson, string.Empty).Trim();
@@ -94,14 +94,14 @@ public sealed class AiModerationService(
             {
                 logger.LogWarning(ex, "[ImageModeration] Non-JSON response; failing closed. Raw: {Raw}",
                     rawJson.Length > 200 ? rawJson[..200] : rawJson);
-                return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+                return ModerationResult.RejectedByAi("The image could not be checked. Please try again later.");
             }
 
             return verdict.Acceptable
                 ? ModerationResult.Acceptable()
                 : ModerationResult.RejectedByAi(
                     string.IsNullOrWhiteSpace(verdict.Reason)
-                        ? "De afbeelding is niet toegestaan op dit platform."
+                        ? "This image is not allowed on this platform."
                         : verdict.Reason);
         }
         catch (OperationCanceledException)
@@ -111,7 +111,7 @@ public sealed class AiModerationService(
         catch (Exception ex)
         {
             logger.LogError(ex, "[ImageModeration] Vertex AI call failed; failing closed.");
-            return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+            return ModerationResult.RejectedByAi("The image could not be checked. Please try again later.");
         }
     }
 
@@ -199,7 +199,7 @@ public sealed class AiModerationService(
             ? ModerationResult.Acceptable()
             : ModerationResult.RejectedByAi(
                 string.IsNullOrWhiteSpace(verdict.Reason)
-                    ? "De inhoud is niet toegestaan op dit platform."
+                    ? "This content is not allowed on this platform."
                     : verdict.Reason);
     }
 

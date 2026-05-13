@@ -74,6 +74,8 @@ public class SettingsController(
         return RedirectToAction(nameof(Index));
     }
 
+    private const int MaxPromptLength = 4000;
+
     [HttpPost]
     public async Task<IActionResult> SavePromptOverride(string promptType, string value)
     {
@@ -86,6 +88,12 @@ public class SettingsController(
         if (!validTypes.Contains(promptType))
         {
             TempData["Error"] = "Ongeldig prompt-type.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!string.IsNullOrEmpty(value) && value.Length > MaxPromptLength)
+        {
+            TempData["Error"] = $"Systeemprompt mag maximaal {MaxPromptLength} tekens bevatten.";
             return RedirectToAction(nameof(Index));
         }
 

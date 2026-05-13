@@ -14,7 +14,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/ideasupport")]
 public class IdeaSupportController(
     IAiIdeaSupportService ideaSupportService,
-    PlatformAiConfigService platformAiConfig,
+    IPlatformAiConfigService platformAiConfig,
     IInputValidationService inputValidation,
     ICategoryManager categoryManager,
     IProjectManager projectManager,

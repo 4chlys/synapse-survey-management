@@ -55,7 +55,7 @@ public sealed class AiCommentSupportService(
         return messages;
     }
 
-    protected override CommentSupportReply ParseRawReply(string raw, CommentSupportRequest _)
+    protected override CommentSupportReply ParseRawReply(string raw, CommentSupportRequest _, ResolvedPlatformAiConfig platformConfig)
     {
         var cleaned = StripCodeFences(raw);
         var json    = ExtractJson(cleaned);
@@ -65,7 +65,7 @@ public sealed class AiCommentSupportService(
             var aiReply = JsonSerializer.Deserialize<CommentSupportAiReply>(json, JsonOpts);
 
             if (aiReply is null || string.IsNullOrWhiteSpace(aiReply.Message))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
             return new CommentSupportReply
             {
@@ -80,8 +80,8 @@ public sealed class AiCommentSupportService(
         }
     }
 
-    protected override CommentSupportReply FallbackReply() =>
-        new() { AssistantMessage = "Er ging iets mis. Probeer het opnieuw.", IsFinal = true };
+    protected override CommentSupportReply FallbackReply(ResolvedPlatformAiConfig platformConfig) =>
+        new() { AssistantMessage = platformConfig.CommentSupport.FallbackMessage, IsFinal = true };
 
     private static string GetLanguageName(string langCode)
     {

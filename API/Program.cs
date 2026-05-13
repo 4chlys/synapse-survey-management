@@ -87,7 +87,9 @@ else
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
 
-// AdminReadContext — reads PlatformSettings + SystemAiSettings from the shared DB
+// AdminReadContext — reads PlatformSettings + SystemAiSettings from the shared DB.
+// DEPLOY ORDER: UI-Admin must run its migrations before the API starts, otherwise
+// these tables do not yet exist and all AI endpoints will fail at runtime.
 if (!string.IsNullOrEmpty(dbHost))
 {
     var adminConnStr = $"Host={dbHost};" +
@@ -250,7 +252,7 @@ if (useAi)
         foreach (var anthropicModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.Anthropic))
         {
             var anthropicClient = new Anthropic.SDK.AnthropicClient(anthropicKey);
-            chatClients[anthropicModel.Id] = (IChatClient)anthropicClient.Messages;
+            chatClients[anthropicModel.Id] = anthropicClient.Messages;
             tempLogger.LogInformation("[AI] Registered Anthropic model: {Model}", anthropicModel.Id);
         }
     }
@@ -269,7 +271,8 @@ if (useAi)
         }
     }
 
-    builder.Services.AddSingleton(new ChatClientRegistry(chatClients));
+    var defaultModelId = builder.Configuration["VertexAi:Model"];
+    builder.Services.AddSingleton(new ChatClientRegistry(chatClients, defaultModelId));
 
     // All AI features share the ChatClientRegistry.
     builder.Services.AddScoped<IAiModerationService, AiModerationService>();

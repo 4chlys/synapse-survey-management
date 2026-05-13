@@ -14,7 +14,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/commentsupport")]
 public class CommentSupportController(
     IAiCommentSupportService commentSupportService,
-    PlatformAiConfigService platformAiConfig,
+    IPlatformAiConfigService platformAiConfig,
     IInputValidationService inputValidation,
     IParticipantManager participantManager, IProjectManager projectManager)
     : ParticipantControllerBase(participantManager, projectManager)

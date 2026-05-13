@@ -46,7 +46,7 @@ public sealed class AiQuestionSupportService(
         return messages;
     }
 
-    protected override QuestionSupportChatReply ParseRawReply(string raw, QuestionSupportChatRequest _)
+    protected override QuestionSupportChatReply ParseRawReply(string raw, QuestionSupportChatRequest _, ResolvedPlatformAiConfig platformConfig)
     {
         var cleaned = StripCodeFences(raw);
         var json    = ExtractJson(cleaned);
@@ -56,7 +56,7 @@ public sealed class AiQuestionSupportService(
             var aiReply = JsonSerializer.Deserialize<QuestionSupportAiReply>(json, JsonOpts);
 
             if (aiReply is null || string.IsNullOrWhiteSpace(aiReply.Message))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
             return new QuestionSupportChatReply { AssistantMessage = aiReply.Message };
         }
@@ -66,6 +66,6 @@ public sealed class AiQuestionSupportService(
         }
     }
 
-    protected override QuestionSupportChatReply FallbackReply() =>
-        new() { AssistantMessage = "Er ging iets mis. Probeer het opnieuw." };
+    protected override QuestionSupportChatReply FallbackReply(ResolvedPlatformAiConfig platformConfig) =>
+        new() { AssistantMessage = platformConfig.QuestionSupport.FallbackMessage };
 }

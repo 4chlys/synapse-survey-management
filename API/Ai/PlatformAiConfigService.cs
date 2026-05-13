@@ -1,6 +1,8 @@
+using System.Data.Common;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Data;
 using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiCommentSupport;
@@ -15,9 +17,11 @@ public class PlatformAiConfigService(
     AdminReadContext adminDb,
     AiConfig globalConfig,
     ChatClientRegistry registry,
-    IMemoryCache cache) : IPlatformAiConfigService
+    IMemoryCache cache,
+    ILogger<PlatformAiConfigService> logger) : IPlatformAiConfigService
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+    // Short TTL so UI-Admin prompt/model changes are picked up quickly.
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
 
     public async Task<ResolvedPlatformAiConfig> ResolveAsync(int platformId, CancellationToken ct)
     {
@@ -25,9 +29,19 @@ public class PlatformAiConfigService(
         if (cache.TryGetValue(cacheKey, out ResolvedPlatformAiConfig cached))
             return cached;
 
-        var settings = await adminDb.SystemAiSettings.FirstOrDefaultAsync(ct);
-        var platform  = await adminDb.PlatformSettings
-            .FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId, ct);
+        SystemAiSettingsReadModel settings = null;
+        PlatformSettingsReadModel platform = null;
+        try
+        {
+            settings = await adminDb.SystemAiSettings.FirstOrDefaultAsync(ct);
+            platform = await adminDb.PlatformSettings
+                .FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId, ct);
+        }
+        catch (DbException ex)
+        {
+            logger.LogWarning(ex,
+                "[AI] Admin DB unavailable for platform {PlatformId}; using global defaults.", platformId);
+        }
 
         var resolved = Build(settings, platform);
         cache.Set(cacheKey, resolved, CacheTtl);
@@ -40,7 +54,16 @@ public class PlatformAiConfigService(
         if (cache.TryGetValue(cacheKey, out ResolvedPlatformAiConfig cached))
             return cached;
 
-        var settings = await adminDb.SystemAiSettings.FirstOrDefaultAsync(ct);
+        SystemAiSettingsReadModel settings = null;
+        try
+        {
+            settings = await adminDb.SystemAiSettings.FirstOrDefaultAsync(ct);
+        }
+        catch (DbException ex)
+        {
+            logger.LogWarning(ex, "[AI] Admin DB unavailable; using global defaults.");
+        }
+
         var resolved = Build(settings, platform: null);
         cache.Set(cacheKey, resolved, CacheTtl);
         return resolved;
@@ -52,13 +75,19 @@ public class PlatformAiConfigService(
             ? JsonSerializer.Deserialize<List<string>>(settings.AllowedModelIds) ?? []
             : AiModelCatalog.All.Where(m => m.Provider == AiProvider.VertexAi).Select(m => m.Id).ToList();
 
-        var selectedModel = platform?.SelectedAiModel;
+        var selectedModel = platform?.SelectedAiModel
+            ?? (settings is null ? registry.DefaultModelId : null);
         var effectiveModel = allowedIds.Contains(selectedModel ?? string.Empty)
             ? selectedModel
             : allowedIds.FirstOrDefault(id => registry.TryGet(id, out _));
 
         if (effectiveModel is null || !registry.TryGet(effectiveModel, out var chatClient))
-            throw new InvalidOperationException("No available AI model found. Check ChatClientRegistry and SystemAiSettings.");
+        {
+            var fallbackId = registry.AvailableModelIds.FirstOrDefault();
+            if (fallbackId is null || !registry.TryGet(fallbackId, out chatClient))
+                throw new InvalidOperationException(
+                    "No AI model is available. Verify that at least one provider API key is configured.");
+        }
 
         var m = globalConfig.Moderation;
         var moderation = new ModerationConfig

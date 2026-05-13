@@ -27,7 +27,7 @@ public class ModerationController(
     IModerationTokenService tokenService,
     IParticipantManager participantManager,
     IProjectManager projectManager,
-    PlatformAiConfigService platformAiConfig)
+    IPlatformAiConfigService platformAiConfig)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("regex")]

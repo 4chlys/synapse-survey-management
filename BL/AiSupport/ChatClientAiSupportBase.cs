@@ -28,9 +28,9 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger)
             var raw      = await SendSingleAsync(messages, platformConfig.ChatClient, ct);
 
             if (string.IsNullOrWhiteSpace(raw))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
-            return ParseRawReply(raw, request);
+            return ParseRawReply(raw, request, platformConfig);
         }
         catch (OperationCanceledException)
         {
@@ -39,13 +39,13 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger)
         catch (Exception ex)
         {
             logger.LogWarning(ex, "[{Domain}] Chat call failed; returning fallback.", GetType().Name);
-            return FallbackReply();
+            return FallbackReply(platformConfig);
         }
     }
 
     protected abstract List<ChatMessage> BuildMessages(TRequest request, ResolvedPlatformAiConfig platformConfig);
-    protected abstract TReply ParseRawReply(string raw, TRequest request);
-    protected abstract TReply FallbackReply();
+    protected abstract TReply ParseRawReply(string raw, TRequest request, ResolvedPlatformAiConfig platformConfig);
+    protected abstract TReply FallbackReply(ResolvedPlatformAiConfig platformConfig);
 
     protected static async Task<string> SendSingleAsync(List<ChatMessage> messages, IChatClient client, CancellationToken ct)
     {

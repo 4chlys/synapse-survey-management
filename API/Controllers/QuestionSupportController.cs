@@ -13,7 +13,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/questionsupport")]
 public class QuestionSupportController(
     IAiQuestionSupportService questionSupportService,
-    PlatformAiConfigService platformAiConfig,
+    IPlatformAiConfigService platformAiConfig,
     IProjectManager projectManager,
     IQuestionnaireManager questionnaireManager)
     : ControllerBase
