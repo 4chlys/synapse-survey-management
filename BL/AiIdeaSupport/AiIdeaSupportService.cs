@@ -2,16 +2,23 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 public sealed class AiIdeaSupportService(
     IChatClient chatClient,
     ILogger<AiIdeaSupportService> logger,
-    AiIdeaSupportConfig config)
-    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger),
+    AiIdeaSupportConfig config,
+    IAiUsageManager usageManager,
+    AiChatModelOptions modelOptions)
+    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger, usageManager),
       IAiIdeaSupportService
 {
+    protected override AiServiceKind Service => AiServiceKind.IdeaSupport;
+    protected override string Model => modelOptions.Model;
+
     protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
     {
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
@@ -103,7 +110,7 @@ public sealed class AiIdeaSupportService(
     protected override IdeaSupportChatReply FallbackReply() =>
         new() { AssistantMessage = config.FallbackMessage, Phase = IdeaSupportPhase.Error };
 
-    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, CancellationToken ct = default)
+    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, int projectId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))
             return new IdeaSupportRefineResult { RefinedText = null };
@@ -113,7 +120,8 @@ public sealed class AiIdeaSupportService(
             var prompt   = config.RefinePrompt
                 .Replace("{draft}",    draftText, StringComparison.OrdinalIgnoreCase)
                 .Replace("{language}", language,  StringComparison.OrdinalIgnoreCase);
-            var refined  = await SendSingleAsync([new(ChatRole.User, prompt)], ct);
+            var response = await SendSingleAsync([new(ChatRole.User, prompt)], projectId, ct);
+            var refined  = ExtractText(response);
 
             if (string.IsNullOrWhiteSpace(refined) || refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                 return new IdeaSupportRefineResult { RefinedText = null };

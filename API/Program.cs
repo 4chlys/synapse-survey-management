@@ -20,6 +20,8 @@ using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
+using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -94,6 +96,7 @@ builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<ISectionRepository, SectionRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Sort strategies (singleton — stateless)
@@ -153,6 +156,11 @@ builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
+// AI usage tracking
+builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));
+builder.Services.AddSingleton<AiPricing>();
+builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
+
 // AI configuration
 //
 // Register the already-loaded AiConfig instance directly so we don't parse
@@ -198,6 +206,10 @@ if (useAi)
 
     builder.Services.AddChatClient(chatClient);
 
+    // Model identifiers used by usage logging so cost is attributed to the right pricing entry.
+    builder.Services.AddSingleton(new AiChatModelOptions { Model = model });
+    builder.Services.AddSingleton(new AiEmbeddingModelOptions { Model = embeddingModel });
+
     // All AI features share the same IChatClient.
     builder.Services.AddScoped<IAiModerationService, AiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, AiIdeaSupportService>();
@@ -211,11 +223,13 @@ if (useAi)
     var imagenModelResource = EndpointName.FormatProjectLocationPublisherModel(
         projectId, location, "google", imagenModel);
     var imagenClient = await predictionBuilder.BuildAsync();
-    builder.Services.AddSingleton<IAiImageGenerationService>(sp =>
+    // Scoped because the inner IAiUsageManager is scoped (it depends on the EF DbContext).
+    builder.Services.AddScoped<IAiImageGenerationService>(sp =>
         new GoogleVertexAiImageGenerationService(
             imagenClient,
             imagenModelResource,
             sp.GetRequiredService<AiImageGenerationConfig>(),
+            sp.GetRequiredService<IAiUsageManager>(),
             sp.GetRequiredService<ILogger<GoogleVertexAiImageGenerationService>>()));
 
     // Embedding generator — same PredictionServiceClientBuilder, different model
@@ -226,7 +240,8 @@ if (useAi)
         projectId, location, "google", embeddingModel);
     var embeddingGenerator = await predictionBuilder.BuildIEmbeddingGeneratorAsync(embeddingModelResource);
     builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(embeddingGenerator);
-    builder.Services.AddSingleton<IEmbeddingService, AiEmbeddingService>();
+    // Scoped: AiEmbeddingService depends on the scoped IAiUsageManager.
+    builder.Services.AddScoped<IEmbeddingService, AiEmbeddingService>();
 }
 else
 {
@@ -272,8 +287,10 @@ var app = builder.Build();
             var ideasNeedingEmbeddings = await context.Set<Idea>()
                 .Where(i => i.Embedding == null)
                 .ToListAsync();
+            // projectId=0: seed-time backfill is a system call, not attributable to any project.
+            // AiUsageManager.LogEmbeddingAsync early-returns on projectId <= 0.
             foreach (var idea in ideasNeedingEmbeddings)
-                idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description);
+                idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description, 0);
             if (ideasNeedingEmbeddings.Count > 0)
                 await context.SaveChangesAsync();
             break;

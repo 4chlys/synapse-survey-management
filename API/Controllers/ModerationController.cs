@@ -48,7 +48,7 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = await aiModeration.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var result = await aiModeration.CheckWithAiAsync(dto.Text, projectId, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
@@ -64,7 +64,7 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
-        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
         string suggestionToken = null;
         if (suggestion != null)

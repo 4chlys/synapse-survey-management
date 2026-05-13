@@ -11,6 +11,7 @@ public sealed class MockCommentSupportService(IStringLocalizer<SharedResource> l
 {
     public Task<CommentSupportReply> ChatAsync(
         CommentSupportRequest request,
+        int projectId,
         CancellationToken ct = default)
     {
         if (request.IsFirstTurn || request.History.Count == 0)

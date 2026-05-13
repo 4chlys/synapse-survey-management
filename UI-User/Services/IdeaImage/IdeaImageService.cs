@@ -26,7 +26,7 @@ public class IdeaImageService(HttpClient httpClient) : IIdeaImageService
             result.Reason ?? "De afbeelding is niet toegestaan.");
     }
 
-    public async Task<ImageDescriptionResult> DescribeAsync(IFormFile file, string categoryName, string categoryDescription, string language, CancellationToken ct = default)
+    public async Task<ImageDescriptionResult> DescribeAsync(IFormFile file, int projectId, string categoryName, string categoryDescription, string language, CancellationToken ct = default)
     {
         using var content = new MultipartFormDataContent();
         await using var stream = file.OpenReadStream();
@@ -34,7 +34,7 @@ public class IdeaImageService(HttpClient httpClient) : IIdeaImageService
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
         content.Add(fileContent, "file", file.FileName);
 
-        var query = $"api/upload/describe-image?categoryName={Uri.EscapeDataString(categoryName)}&categoryDescription={Uri.EscapeDataString(categoryDescription)}";
+        var query = $"api/upload/describe-image?projectId={projectId}&categoryName={Uri.EscapeDataString(categoryName)}&categoryDescription={Uri.EscapeDataString(categoryDescription)}";
         if (!string.IsNullOrWhiteSpace(language))
             query += $"&language={Uri.EscapeDataString(language)}";
         var response = await httpClient.PostAsync(query, content, ct);

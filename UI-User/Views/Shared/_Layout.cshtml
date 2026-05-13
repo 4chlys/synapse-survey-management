@@ -105,8 +105,20 @@
     </environment>
 </head>
 
-<body class="bg-base-200 min-h-[100dvh]">
+<body class="bg-base-200 min-h-[100dvh]" data-project-theme="@(ViewData["ProjectTheme"] ?? "default")">
 
+    @{
+        var _primary   = ViewData["ProjectPrimaryColor"] as string;
+        var _customCss = ViewData["ProjectCustomCss"] as string;
+    }
+    @if (!string.IsNullOrWhiteSpace(_primary))
+    {
+        <style>[data-project-theme] { --color-primary: @_primary; }</style>
+    }
+    @if (!string.IsNullOrWhiteSpace(_customCss))
+    {
+        <style>@Html.Raw(_customCss)</style>
+    }
 
     @if (ViewData["ShowModerationPopup"] is true)
     {

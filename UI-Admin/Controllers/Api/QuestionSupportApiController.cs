@@ -32,7 +32,7 @@ public class QuestionSupportApiController(QuestionSupportService questionSupport
     }
 
     [HttpPatch("mode")]
-    public async Task<IActionResult> UpdateMode(int projectId, [FromBody] string mode)
+    public async Task<IActionResult> UpdateMode(int projectId, string mode)
     {
         try
         {

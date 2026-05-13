@@ -24,6 +24,9 @@
   <data name="BackNavLabel" xml:space="preserve">
     <value>Back</value>
   </data>
+  <data name="BackToIdeasLabel" xml:space="preserve">
+    <value>Back to ideas</value>
+  </data>
   <data name="NewIdeaNavLabel" xml:space="preserve">
     <value>New idea</value>
   </data>

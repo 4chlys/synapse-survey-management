@@ -19,7 +19,7 @@ public class QuestionSupportController(
     [HttpPost("chat")]
     public async Task<ActionResult<QuestionSupportChatResponseDto>> Chat(
         int projectId,
-        [FromBody] QuestionSupportChatRequestDto dto,
+        QuestionSupportChatRequestDto dto,
         CancellationToken ct)
     {
         var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
@@ -58,13 +58,13 @@ public class QuestionSupportController(
             IsFirstTurn = dto.IsFirstTurn,
         };
 
-        var reply = await questionSupportService.ChatAsync(request, ct);
+        var reply = await questionSupportService.ChatAsync(request, projectId, ct);
 
         return Ok(new QuestionSupportChatResponseDto { AssistantMessage = reply.AssistantMessage });
     }
 
     [HttpPatch("mode")]
-    public async Task<IActionResult> UpdateMode(int projectId, [FromBody] AiAssistanceType mode)
+    public async Task<IActionResult> UpdateMode(int projectId, AiAssistanceType mode)
     {
         await projectManager.UpdateAiAssistanceModeAsync(projectId, mode);
         return NoContent();

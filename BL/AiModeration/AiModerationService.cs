@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
@@ -15,8 +18,18 @@ public sealed class AiModerationService(
     IChatClient chatClient,
     ILogger<AiModerationService> logger,
     ModerationConfig config,
-    IRegexModerationService regex) : IAiModerationService
+    IRegexModerationService regex,
+    IAiUsageManager usageManager,
+    AiChatModelOptions modelOptions) : IAiModerationService
 {
+    private const int MaxInputChars    = 4000;
+    private const int MaxVerdictTokens = 300;
+    private const int MaxRewriteTokens = 500;
+    private const int MaxImageTokens   = 300;
+
+    private static readonly ChatOptions VerdictOptions = new() { MaxOutputTokens = MaxVerdictTokens };
+    private static readonly ChatOptions RewriteOptions = new() { MaxOutputTokens = MaxRewriteTokens };
+    private static readonly ChatOptions ImageOptions   = new() { MaxOutputTokens = MaxImageTokens };
     private static readonly Regex CodeFenceRe =
         new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
@@ -28,6 +41,7 @@ public sealed class AiModerationService(
 
     public async Task<ModerationResult> CheckWithAiAsync(
         string text,
+        int projectId,
         CancellationToken ct = default,
         string contentType = "idea",
         string respondInLanguage = null)
@@ -40,9 +54,12 @@ public sealed class AiModerationService(
 
         if (!config.UseAi) return ModerationResult.Acceptable();
 
+        if (text.Length > MaxInputChars)
+            text = text[..MaxInputChars];
+
         try
         {
-            return await CallModerationAsync(text, contentType, respondInLanguage, ct);
+            return await CallModerationAsync(text, contentType, respondInLanguage, projectId, ct);
         }
         catch (OperationCanceledException)
         {
@@ -57,7 +74,7 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (!config.UseAi) return ModerationResult.Acceptable();
 
@@ -73,7 +90,8 @@ public sealed class AiModerationService(
                 new TextContent(imagePrompt),
             ]);
 
-            var response = await chatClient.GetResponseAsync([message], cancellationToken: ct);
+            var response = await chatClient.GetResponseAsync([message], ImageOptions, ct);
+            await LogUsageAsync(projectId, response.Usage, ct);
             var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(rawJson))
@@ -115,9 +133,12 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<string> SuggestRewriteAsync(string text, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<string> SuggestRewriteAsync(string text, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
+
+        if (text.Length > MaxInputChars)
+            text = text[..MaxInputChars];
 
         try
         {
@@ -130,7 +151,8 @@ public sealed class AiModerationService(
                 new(ChatRole.User,   text),
             };
 
-            var response   = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+            var response   = await chatClient.GetResponseAsync(messages, RewriteOptions, ct);
+            await LogUsageAsync(projectId, response.Usage, ct);
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -155,6 +177,7 @@ public sealed class AiModerationService(
         string text,
         string contentType,
         string respondInLanguage,
+        int projectId,
         CancellationToken ct)
     {
         var rawPrompt = contentType == "comment"
@@ -170,7 +193,8 @@ public sealed class AiModerationService(
             new(ChatRole.User,   text),
         };
 
-        var response = await chatClient.GetResponseAsync(messages, cancellationToken: ct);
+        var response = await chatClient.GetResponseAsync(messages, VerdictOptions, ct);
+        await LogUsageAsync(projectId, response.Usage, ct);
         var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawJson))
@@ -200,6 +224,18 @@ public sealed class AiModerationService(
                 string.IsNullOrWhiteSpace(verdict.Reason)
                     ? "De inhoud is niet toegestaan op dit platform."
                     : verdict.Reason);
+    }
+
+    private async Task LogUsageAsync(int projectId, UsageDetails usage, CancellationToken ct)
+    {
+        try
+        {
+            await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, modelOptions.Model, usage, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "[Moderation] Failed to record AI usage.");
+        }
     }
 
     private sealed class ModerationVerdict

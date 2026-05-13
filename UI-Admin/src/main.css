@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Nunito:wght@400;500;600;700&family=Source+Sans+3:wght@400;600&display=swap');
 @import "tailwindcss";
 @plugin "daisyui";
 
@@ -112,4 +112,18 @@ input[type=number].no-spinner::-webkit-inner-spin-button,
 input[type=number].no-spinner::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ─── Project theme preview host (admin Create/Edit) ────────────
+   The preview mock lives inside a shadow root attached to
+   #theme-preview-host. Outside-the-shadow styling only — the
+   actual theme tokens are injected into the shadow root by
+   project-style.ts. */
+
+#theme-preview-host {
+    display: block;
+    min-height: 8rem;
+    border: 1px solid var(--color-base-300, oklch(91% 0.02 277));
+    border-radius: 0.75rem;
+    overflow: hidden;
 }

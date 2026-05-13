@@ -71,7 +71,7 @@ public class UploadsController(
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
@@ -91,7 +91,7 @@ public class UploadsController(
     [HttpPost("describe-image")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<ImageDescriptionResultDto>> DescribeImage(
-        IFormFile file, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
+        IFormFile file, [FromQuery] int projectId, [FromQuery] string categoryName, [FromQuery] string categoryDescription,
         [FromQuery] string language, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
@@ -111,7 +111,7 @@ public class UploadsController(
             ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
             : language;
         var description = await aiImageDescriptionService.DescribeImageAsync(
-            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", projectId, ct);
 
         if (string.IsNullOrEmpty(description))
             return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });
