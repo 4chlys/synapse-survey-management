@@ -24,7 +24,7 @@ public class IdeationController(
     ISessionService sessionService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse", bool showAllLanguages = false)
+    public async Task<IActionResult> IdeaHub(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse", bool showAllLanguages = false)
     {
         var projectTask  = projectApiService.GetProjectAsync(projectId);
         var emojisTask   = emojiService.GetEmojisAsync(projectId);
@@ -183,16 +183,16 @@ public class IdeationController(
         if (!result.Success) return PartialView("_ModerationPopup");
 
         if (result.ShouldAskForContactInfo)
-            return RedirectToAction("Index", new { projectId, categoryId, contactInfo = true });
+            return RedirectToAction("IdeaHub", new { projectId, categoryId, contactInfo = true });
 
-        return RedirectToAction("Index", new { projectId, categoryId });
+        return RedirectToAction("IdeaHub", new { projectId, categoryId });
     }
 
     [HttpPost]
     public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email)
     {
         await participantService.SaveContactInfoAsync(projectId, email);
-        return RedirectToAction("Index", new { projectId, categoryId });
+        return RedirectToAction("IdeaHub", new { projectId, categoryId });
     }
 
     [HttpPost]
@@ -221,8 +221,8 @@ public class IdeationController(
             return Json(idea?.Emojis ?? []);
         }
 
-        if (returnPage == "Index")
-            return RedirectToAction("Index", new { projectId, categoryId });
+        if (returnPage == "IdeaHub")
+            return RedirectToAction("IdeaHub", new { projectId, categoryId });
 
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
@@ -255,8 +255,8 @@ public class IdeationController(
             return Json(idea?.Emojis ?? []);
         }
 
-        if (returnPage == "Index")
-            return RedirectToAction("Index", new { projectId, categoryId });
+        if (returnPage == "IdeaHub")
+            return RedirectToAction("IdeaHub", new { projectId, categoryId });
 
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }

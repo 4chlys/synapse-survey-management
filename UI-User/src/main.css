@@ -104,10 +104,12 @@
   --slide-h: calc(100dvh - var(--header-h));
 }
 
-html, body {
-  /* Lock page scroll. Scrolling is delegated to inner containers (survey card list,
-     chat messages). Prevents progress bar from sliding under the fixed transparent
-     header when mobile address bar shows/hides. */
+/* Scroll lock — opt-in via .scroll-lock-marker emitted by lock-needing views.
+   Used on Landing + Survey pages so scrolling is delegated to inner containers
+   (card list, chat messages) and the fixed transparent header can't get visually
+   crossed by content scrolling under it. */
+html:has(.scroll-lock-marker),
+html:has(.scroll-lock-marker) body {
   overflow: hidden;
   overscroll-behavior: none;
   height: 100dvh;
