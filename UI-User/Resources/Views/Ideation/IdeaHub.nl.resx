@@ -13,72 +13,75 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ShowAllLanguages" xml:space="preserve">
-    <value>Show ideas in all languages</value>
+    <value>Toon ideeën in alle talen</value>
   </data>
   <data name="SubmissionLanguageLabel" xml:space="preserve">
-    <value>Submit as</value>
+    <value>Indienen als</value>
   </data>
   <data name="ModeSelectHeading" xml:space="preserve">
-    <value>How do you want to add your idea?</value>
+    <value>Hoe wil je jouw idee toevoegen?</value>
   </data>
   <data name="AiOptionTitle" xml:space="preserve">
-    <value>With AI assistant</value>
+    <value>Met AI-assistent</value>
   </data>
   <data name="AiOptionSubtitle" xml:space="preserve">
-    <value>We help you formulate your idea</value>
+    <value>Wij helpen je idee te formuleren</value>
   </data>
   <data name="ManualOptionTitle" xml:space="preserve">
-    <value>Write yourself</value>
+    <value>Zelf schrijven</value>
   </data>
   <data name="ManualOptionSubtitle" xml:space="preserve">
-    <value>Type your idea directly in the form</value>
+    <value>Typ je idee direct in het formulier</value>
   </data>
   <data name="NewIdeaButton" xml:space="preserve">
-    <value>Post a new idea</value>
+    <value>Nieuw idee plaatsen</value>
   </data>
   <data name="YourIdeaLabel" xml:space="preserve">
-    <value>Your idea</value>
+    <value>Jouw idee</value>
   </data>
   <data name="IdeaPlaceholder" xml:space="preserve">
-    <value>Explain your idea...</value>
+    <value>Leg jouw idee uit...</value>
   </data>
   <data name="AddImageButton" xml:space="preserve">
-    <value>📎 Add image</value>
+    <value>📎 Afbeelding toevoegen</value>
+  </data>
+  <data name="DescribeImageButton" xml:space="preserve">
+    <value>Beschrijf met AI</value>
   </data>
   <data name="PostButton" xml:space="preserve">
-    <value>Post</value>
+    <value>Plaatsen</value>
   </data>
   <data name="CancelButton" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Annuleren</value>
   </data>
   <data name="SortDiverse" xml:space="preserve">
-    <value>Diverse</value>
+    <value>Divers</value>
   </data>
   <data name="SortSimilar" xml:space="preserve">
-    <value>Similar</value>
+    <value>Gelijkaardig</value>
   </data>
   <data name="SortDifferent" xml:space="preserve">
-    <value>Different</value>
+    <value>Anders</value>
   </data>
   <data name="EmptyState" xml:space="preserve">
-    <value>No ideas yet — be the first!</value>
+    <value>Nog geen ideeën — wees de eerste!</value>
   </data>
   <data name="FlaggedBadge" xml:space="preserve">
-    <value>Under review</value>
+    <value>In behandeling</value>
   </data>
   <data name="CopyIdeaButton" xml:space="preserve">
-    <value>Use as starting point</value>
+    <value>Gebruiken als startpunt</value>
   </data>
   <data name="RefreshIdeasButton" xml:space="preserve">
-    <value>See new ideas</value>
+    <value>Nieuwe ideeën zien</value>
   </data>
   <data name="BackNavLabel" xml:space="preserve">
-    <value>Back</value>
+    <value>Terug</value>
   </data>
   <data name="MyIdeasNavLabel" xml:space="preserve">
-    <value>My ideas</value>
+    <value>Mijn ideeën</value>
   </data>
   <data name="CloseNavLabel" xml:space="preserve">
-    <value>Close</value>
+    <value>Afsluiten</value>
   </data>
 </root>

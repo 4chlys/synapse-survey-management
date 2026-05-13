@@ -141,6 +141,15 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = 5,
                 QueueLimit  = 0,
             }));
+    options.AddPolicy("ai-image-describe", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 3,
+                QueueLimit  = 0,
+            }));
     options.AddPolicy("participant-creation", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",

@@ -14,6 +14,5 @@
   <data name="TableLogo" xml:space="preserve"><value>Logo</value></data>
   <data name="TableWebsite" xml:space="preserve"><value>Website</value></data>
   <data name="LogoAltSuffix" xml:space="preserve"><value>logo</value></data>
-  <data name="EditAction" xml:space="preserve"><value>Bewerken</value></data>
-  <data name="DetailsAction" xml:space="preserve"><value>Details</value></data>
+  <data name="OpenAction" xml:space="preserve"><value>Openen</value></data>
 </root>

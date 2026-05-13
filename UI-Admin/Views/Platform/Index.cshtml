@@ -56,7 +56,7 @@ else
                             <td>
                                 @if (!string.IsNullOrEmpty(platform.WebsiteUrl))
                                 {
-                                    <a href="@platform.WebsiteUrl" target="_blank"
+                                    <a href="@platform.WebsiteUrl" target="_blank" rel="noopener noreferrer"
                                        class="text-base-content/60 hover:text-base-content transition underline underline-offset-2">
                                         @platform.WebsiteUrl
                                     </a>
@@ -68,15 +68,10 @@ else
                             </td>
                             <td>
                                 <div class="flex items-center gap-2 justify-end">
-                                    <a asp-controller="Platform" asp-action="Edit"
+                                    <a asp-controller="Platform" asp-action="Dashboard"
                                        asp-route-id="@platform.ProjectPlatformId"
                                        class="btn btn-ghost btn-sm">
-                                        @L["EditAction"]
-                                    </a>
-                                    <a asp-controller="Platform" asp-action="Detail"
-                                       asp-route-id="@platform.ProjectPlatformId"
-                                       class="btn btn-ghost btn-sm">
-                                        @L["DetailsAction"]
+                                        @L["OpenAction"]
                                     </a>
                                 </div>
                             </td>

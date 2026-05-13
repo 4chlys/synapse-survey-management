@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="Heading" xml:space="preserve"><value>Settings</value></data>
+  <data name="BasicInfoHeading" xml:space="preserve"><value>Basic information</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="NamePlaceholder" xml:space="preserve"><value>Platform name</value></data>
+  <data name="LogoLabel" xml:space="preserve"><value>Logo URL</value></data>
+  <data name="WebsiteLabel" xml:space="preserve"><value>Website URL</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
+  <data name="ConfigHeading" xml:space="preserve"><value>Configuration</value></data>
+  <data name="FeatureFlagsDivider" xml:space="preserve"><value>Feature flags</value></data>
+  <data name="AiAssistanceToggle" xml:space="preserve"><value>AI assistance enabled</value></data>
+  <data name="IdeationToggle" xml:space="preserve"><value>Ideation (ideas module) enabled</value></data>
+  <data name="QuotasDivider" xml:space="preserve"><value>Quotas</value></data>
+  <data name="MaxProjectsLabel" xml:space="preserve"><value>Max. projects</value></data>
+  <data name="MaxAdminsLabel" xml:space="preserve"><value>Max. admins</value></data>
+  <data name="UnlimitedPlaceholder" xml:space="preserve"><value>Unlimited</value></data>
+  <data name="ContactBillingDivider" xml:space="preserve"><value>Contact &amp; billing</value></data>
+  <data name="ContactNameLabel" xml:space="preserve"><value>Contact person</value></data>
+  <data name="ContactNamePlaceholder" xml:space="preserve"><value>Name of contact person</value></data>
+  <data name="ContactEmailLabel" xml:space="preserve"><value>Contact email</value></data>
+  <data name="ContactEmailPlaceholder" xml:space="preserve"><value>contact@example.com</value></data>
+  <data name="BillingReferenceLabel" xml:space="preserve"><value>Billing reference</value></data>
+  <data name="BillingReferencePlaceholder" xml:space="preserve"><value>e.g. PO-2026-001</value></data>
+  <data name="AiMonitoringDivider" xml:space="preserve"><value>AI &amp; monitoring</value></data>
+  <data name="AiModelNameLabel" xml:space="preserve"><value>AI model name</value></data>
+  <data name="AiModelNamePlaceholder" xml:space="preserve"><value>e.g. Gemini 2.0 Flash</value></data>
+  <data name="AiModelNameHint" xml:space="preserve"><value>Free text — for display on the dashboard</value></data>
+  <data name="CostDashboardUrlLabel" xml:space="preserve"><value>Cost dashboard URL</value></data>
+  <data name="CostDashboardUrlHint" xml:space="preserve"><value>Data Studio or other embed URL for cost reporting</value></data>
+</root>

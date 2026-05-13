@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="SettingsLink" xml:space="preserve"><value>Settings</value></data>
+  <data name="LogoAltSuffix" xml:space="preserve"><value>logo</value></data>
+  <data name="NoWebsite" xml:space="preserve"><value>No website</value></data>
+  <data name="CreatedAt" xml:space="preserve"><value>Created on {0}</value></data>
+  <data name="StatActive" xml:space="preserve"><value>Active</value></data>
+  <data name="StatDraft" xml:space="preserve"><value>Draft</value></data>
+  <data name="StatArchived" xml:space="preserve"><value>Archived</value></data>
+  <data name="StatProjects" xml:space="preserve"><value>Projects</value></data>
+  <data name="StatParticipants" xml:space="preserve"><value>Participants</value></data>
+  <data name="AdminsLink" xml:space="preserve"><value>Admins</value></data>
+  <data name="AiModel" xml:space="preserve"><value>AI model</value></data>
+  <data name="CostMonitoringHeading" xml:space="preserve"><value>Cost &amp; monitoring</value></data>
+  <data name="CostIframeTitle" xml:space="preserve"><value>Cost overview {0}</value></data>
+  <data name="NoCostDashboard" xml:space="preserve"><value>No cost dashboard configured.</value></data>
+  <data name="AddCostDashboardHint" xml:space="preserve"><value>Add a Data Studio embed URL via {0}.</value></data>
+</root>

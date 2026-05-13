@@ -18,8 +18,11 @@
   <data name="Nav_Categories" xml:space="preserve"><value>Categories</value></data>
   <data name="Nav_Questions" xml:space="preserve"><value>Questions</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_SystemDashboard" xml:space="preserve"><value>System dashboard</value></data>
 
   <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="Sidebar_SystemAdmin" xml:space="preserve"><value>System administration</value></data>
 
   <data name="State_Active" xml:space="preserve"><value>Active</value></data>
   <data name="State_Draft" xml:space="preserve"><value>Draft</value></data>

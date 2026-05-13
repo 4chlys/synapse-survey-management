@@ -28,7 +28,7 @@ public class SurveyController(
         if (!string.IsNullOrWhiteSpace(token)
             && await questionnaireService.HasParticipantRespondedAsync(projectId, token))
         {
-            return RedirectToAction("Index", "Category", new { projectId });
+            return RedirectToAction("CategoryList", "Category", new { projectId });
         }
 
         var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "nl", "en" };
@@ -58,6 +58,7 @@ public class SurveyController(
         }
 
         this.SetLayoutData(project, projectId);
+        ViewData["Project"] = project;
         var strategy = formStrategyFactory.Create(project.FormType);
         ViewData["FormLayout"] = strategy.GetLayoutData();
         return View(strategy.GetViewName(), model);
@@ -73,21 +74,6 @@ public class SurveyController(
 
         await questionnaireService.SubmitAsync(projectId, token);
 
-        return RedirectToAction("ThankYou", new { projectId });
-    }
-
-    public async Task<IActionResult> ThankYou(int projectId)
-    {
-        var project = await projectApiService.GetProjectAsync(projectId);
-
-        this.SetLayoutData(project, projectId);
-
-        return View(new ThankYouViewModel
-        {
-            ProjectId = projectId,
-            OrganisationName = project?.OrganisationName ?? string.Empty,
-            OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
-            OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
-        });
+        return NoContent();
     }
 }

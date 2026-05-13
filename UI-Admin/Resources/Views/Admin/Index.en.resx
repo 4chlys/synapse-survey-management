@@ -5,11 +5,13 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
-  <data name="LogoAltSuffix" xml:space="preserve"><value>logo</value></data>
-  <data name="NoWebsite" xml:space="preserve"><value>No website</value></data>
-  <data name="AdminsHeading" xml:space="preserve"><value>Admins</value></data>
-  <data name="AddAdminButton" xml:space="preserve"><value>Add admin</value></data>
-  <data name="NoAdmins" xml:space="preserve"><value>No admins</value></data>
+  <data name="PageTitle" xml:space="preserve"><value>Admins</value></data>
+  <data name="Heading" xml:space="preserve"><value>Admins</value></data>
+  <data name="FilterAllPlatforms" xml:space="preserve"><value>All platforms</value></data>
+  <data name="ClearFilter" xml:space="preserve"><value>Clear</value></data>
+  <data name="NoAdmins" xml:space="preserve"><value>No admins found.</value></data>
   <data name="TableUsername" xml:space="preserve"><value>Username</value></data>
   <data name="TableEmail" xml:space="preserve"><value>Email</value></data>
+  <data name="TablePlatform" xml:space="preserve"><value>Platform</value></data>
+  <data name="ViewAction" xml:space="preserve"><value>View</value></data>
 </root>

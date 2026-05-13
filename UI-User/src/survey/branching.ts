@@ -35,15 +35,15 @@ export function getAnswerFromSlide(slide: HTMLElement): string {
 }
 
 export function updateQuestionCounters(slides: HTMLElement[], visibleIndices: number[]): void {
-    const visibleQuestionIndices = visibleIndices.filter(i => slides[i]?.dataset.format !== 'Submit');
-    const total = visibleQuestionIndices.length;
+    const visibleQuestionIndices = visibleIndices.filter(i => {
+        const fmt = slides[i]?.dataset.format;
+        return fmt !== 'Submit' && fmt !== 'Intro';
+    });
 
     visibleQuestionIndices.forEach((slideIndex, position) => {
         const slide = slides[slideIndex];
         const numEl = slide.querySelector('.q-number');
-        const totalEl = slide.querySelector('.q-total');
         if (numEl) numEl.textContent = String(position + 1);
-        if (totalEl) totalEl.textContent = String(total);
     });
 }
 

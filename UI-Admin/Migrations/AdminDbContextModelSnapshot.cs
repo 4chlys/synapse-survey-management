@@ -244,6 +244,50 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SynapseEnqueteManagement.UI.Admin.Data.PlatformSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AiAssistanceEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AiModelName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BillingReference")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContactEmail")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContactName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CostDashboardUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IdeationEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MaxAdmins")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MaxProjects")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProjectPlatformId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectPlatformId")
+                        .IsUnique();
+
+                    b.ToTable("PlatformSettings");
+                });
+
             modelBuilder.Entity("SynapseEnqueteManagement.UI.Admin.Data.UserWidgetPreference", b =>
                 {
                     b.Property<int>("Id")

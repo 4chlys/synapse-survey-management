@@ -15,6 +15,8 @@ type Strings = {
     imageUploadTooLarge: string;
     imageUploadFailed: string;
     imageUploadNotAllowed: string;
+    imageDescribeLoading: string;
+    imageDescribeFailed: string;
     speechToTextEmptyRecording: string;
     speechToTextTooManyRequests: string;
     speechToTextUnavailable: string;

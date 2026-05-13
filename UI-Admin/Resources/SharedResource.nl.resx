@@ -18,8 +18,11 @@
   <data name="Nav_Categories" xml:space="preserve"><value>Categorieën</value></data>
   <data name="Nav_Questions" xml:space="preserve"><value>Vragen</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Instellingen</value></data>
+  <data name="Nav_SystemDashboard" xml:space="preserve"><value>Systeemdashboard</value></data>
 
   <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platformen</value></data>
+  <data name="Sidebar_SystemAdmin" xml:space="preserve"><value>Systeembeheer</value></data>
 
   <data name="State_Active" xml:space="preserve"><value>Actief</value></data>
   <data name="State_Draft" xml:space="preserve"><value>Concept</value></data>

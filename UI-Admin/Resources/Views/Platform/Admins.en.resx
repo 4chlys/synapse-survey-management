@@ -5,13 +5,17 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
-  <data name="PageTitle" xml:space="preserve"><value>Add admin</value></data>
-  <data name="Heading" xml:space="preserve"><value>Add admin</value></data>
-  <data name="PlatformLabel" xml:space="preserve"><value>Platform</value></data>
+  <data name="PageTitle" xml:space="preserve"><value>Admins</value></data>
+  <data name="Heading" xml:space="preserve"><value>Admins</value></data>
+  <data name="NoAdmins" xml:space="preserve"><value>No admins found.</value></data>
+  <data name="TableUsername" xml:space="preserve"><value>Username</value></data>
+  <data name="TableEmail" xml:space="preserve"><value>Email</value></data>
+  <data name="RemoveConfirm" xml:space="preserve"><value>Remove admin {0}?</value></data>
+  <data name="RemoveButton" xml:space="preserve"><value>Remove</value></data>
+  <data name="AddHeading" xml:space="preserve"><value>Add admin</value></data>
   <data name="EmailLabel" xml:space="preserve"><value>Email address</value></data>
   <data name="EmailPlaceholder" xml:space="preserve"><value>admin@example.com</value></data>
   <data name="PasswordLabel" xml:space="preserve"><value>Password</value></data>
   <data name="PasswordPlaceholder" xml:space="preserve"><value>At least 6 characters</value></data>
-  <data name="SubmitButton" xml:space="preserve"><value>Add admin</value></data>
-  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AddButton" xml:space="preserve"><value>Add admin</value></data>
 </root>
