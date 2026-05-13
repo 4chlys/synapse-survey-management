@@ -1,0 +1,173 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model SystemDashboardViewModel
+@{
+    ViewData["Title"] = "Systeem Dashboard";
+    ViewData["ActiveSection"] = "SystemDashboard";
+    Layout = "_Layout";
+
+    var totalPlatforms = Model.Platforms.Count;
+    var totalActive = Model.Platforms.Sum(p => p.ActiveProjectCount);
+    var totalDraft = Model.Platforms.Sum(p => p.DraftProjectCount);
+    var totalArchived = Model.Platforms.Sum(p => p.ArchivedProjectCount);
+    var totalAdmins = Model.Platforms.Sum(p => p.AdminCount);
+    var totalParticipants = Model.Platforms.Sum(p => p.ParticipantCount);
+    var platformsWithCost = Model.Platforms.Where(p => !string.IsNullOrEmpty(p.CostDashboardUrl)).ToList();
+}
+
+<div class="w-full">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Systeem Dashboard</h1>
+
+    @* System totals *@
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalPlatforms</p>
+                <p class="text-sm text-base-content/60">Platformen</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalActive</p>
+                <p class="text-xs font-semibold text-success uppercase tracking-wide">Actief</p>
+                <p class="text-sm text-base-content/60">Projecten</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalDraft</p>
+                <p class="text-xs font-semibold text-warning uppercase tracking-wide">Concept</p>
+                <p class="text-sm text-base-content/60">Projecten</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalArchived</p>
+                <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wide">Archief</p>
+                <p class="text-sm text-base-content/60">Projecten</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalAdmins</p>
+                <p class="text-sm text-base-content/60">Beheerders</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalParticipants</p>
+                <p class="text-sm text-base-content/60">Deelnemers</p>
+            </div>
+        </div>
+    </div>
+
+    @* Per-platform cards *@
+    <h2 class="font-semibold text-base-content mb-4">Platformen</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        @foreach (var platform in Model.Platforms)
+        {
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        @if (!string.IsNullOrEmpty(platform.LogoUrl))
+                        {
+                            <img src="@platform.LogoUrl" alt="@platform.Name"
+                                 class="h-8 w-auto object-contain flex-shrink-0" />
+                        }
+                        <p class="font-semibold text-base-content truncate">@platform.Name</p>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.ActiveProjectCount</p>
+                            <p class="text-xs text-success font-semibold uppercase">Actief</p>
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.DraftProjectCount</p>
+                            <p class="text-xs text-warning font-semibold uppercase">Concept</p>
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.ArchivedProjectCount</p>
+                            <p class="text-xs text-base-content/40 font-semibold uppercase">Archief</p>
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.ParticipantCount</p>
+                            <p class="text-xs text-base-content/50">Deelnemers</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(platform.AiModelName))
+                    {
+                        <p class="text-xs text-base-content/40">
+                            <span class="font-medium">AI:</span> @platform.AiModelName
+                        </p>
+                    }
+
+                    <div class="card-actions justify-end gap-1 pt-1">
+                        <a asp-controller="Platform" asp-action="Dashboard"
+                           asp-route-id="@platform.ProjectPlatformId"
+                           class="btn btn-ghost btn-xs">Openen</a>
+                        <a asp-controller="Platform" asp-action="Admins"
+                           asp-route-id="@platform.ProjectPlatformId"
+                           class="btn btn-ghost btn-xs">Beheerders</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Cost dashboards *@
+    <h2 class="font-semibold text-base-content mb-4">Kosten & monitoring</h2>
+    @if (platformsWithCost.Any())
+    {
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body gap-4">
+                @if (platformsWithCost.Count > 1)
+                {
+                    <div role="tablist" class="tabs tabs-bordered" id="cost-tabs">
+                        @for (int i = 0; i < platformsWithCost.Count; i++)
+                        {
+                            var p = platformsWithCost[i];
+                            <button role="tab" type="button"
+                                    class="tab @(i == 0 ? "tab-active" : "")"
+                                    onclick="showCostTab('@p.ProjectPlatformId', this)">
+                                @p.Name
+                            </button>
+                        }
+                    </div>
+                }
+                @for (int i = 0; i < platformsWithCost.Count; i++)
+                {
+                    var p = platformsWithCost[i];
+                    <div id="cost-@p.ProjectPlatformId" class="@(i > 0 ? "hidden" : "")">
+                        <iframe src="@p.CostDashboardUrl"
+                                class="w-full rounded-xl"
+                                style="height:600px;border:none;"
+                                title="Kostenoverzicht @p.Name"
+                                loading="lazy">
+                        </iframe>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body text-center gap-2">
+                <p class="text-sm text-base-content/60">Geen kostendashboard geconfigureerd.</p>
+                <p class="text-xs text-base-content/40">Voeg een Data Studio embed-URL toe via Platform → Instellingen voor elk platform.</p>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function showCostTab(platformId, btn) {
+            document.querySelectorAll('[id^="cost-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById('cost-' + platformId)?.classList.remove('hidden');
+            document.querySelectorAll('#cost-tabs [role="tab"]').forEach(t => t.classList.remove('tab-active'));
+            btn.classList.add('tab-active');
+        }
+    </script>
+}

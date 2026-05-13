@@ -4,12 +4,17 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 public class ProjectAdminService(HttpClient httpClient)
 {
-    private class ProjectRequest
+    private class ProjectTranslationPayload
     {
+        public string LanguageCode { get; set; }
         public string Name { get; set; }
-        public string ShortForm { get; set; }
         public string Topic { get; set; }
         public string Introduction { get; set; }
+    }
+
+    private class ProjectRequest
+    {
+        public string ShortForm { get; set; }
         public string ImageUrl { get; set; }
         public string InteractionMode { get; set; }
         public string AiAssistance { get; set; }
@@ -21,6 +26,12 @@ public class ProjectAdminService(HttpClient httpClient)
         public bool ExtraIdeasReplaceExisting { get; set; }
         public int MaxExtraIdeaRequests { get; set; }
         public int PlatformId { get; set; }
+        public string DefaultLanguageCode { get; set; }
+        public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+        public ICollection<ProjectTranslationPayload> Translations { get; set; } = new List<ProjectTranslationPayload>();
+        public string Theme { get; set; } = "Default";
+        public string PrimaryColor { get; set; }
+        public string CustomCss { get; set; }
     }
 
     public async Task<List<ProjectAdminViewModel>> GetAllProjectsAsync(int? platformId = null)
@@ -43,17 +54,17 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false)
+    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false, string theme = "Default", string primaryColor = null, string customCss = null, string languageCode = "nl")
     {
-        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId };
+        var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = languageCode, SupportedLanguageCodes = new List<string> { languageCode }, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = name, Topic = topic, Introduction = introduction } } };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
     
-    public async Task<ProjectAdminViewModel> CopyProjectAsync(int projectId, string newName, int platformId, string newShortForm = null)
+    public async Task<ProjectAdminViewModel> CopyProjectAsync(int projectId, string newName, int platformId, string newShortForm = null, string languageCode = "nl")
     {
-        var payload = new { NewName = newName, NewShortForm = newShortForm, PlatformId = platformId };
+        var payload = new { NewShortForm = newShortForm, PlatformId = platformId, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = newName } } };
         var response = await httpClient.PostAsJsonAsync($"api/projects/{projectId}/copy", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
@@ -72,12 +83,27 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false)
+    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, string aiAssistance, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false, string theme = "Default", string primaryColor = null, string customCss = null, string languageCode = "nl")
     {
-        var payload = new ProjectRequest { Name = name, ShortForm = shortForm, Topic = topic, Introduction = introduction, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests };
+        var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = languageCode, SupportedLanguageCodes = new List<string> { languageCode }, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = name, Topic = topic, Introduction = introduction } } };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+    }
+
+    public async Task<PlatformStats> GetPlatformStatsAsync(int platformId)
+    {
+        var response = await httpClient.GetAsync($"api/admin/platform-stats?platformId={platformId}");
+        if (!response.IsSuccessStatusCode) return new PlatformStats();
+        return await response.Content.ReadFromJsonAsync<PlatformStats>() ?? new PlatformStats();
+    }
+
+    public class PlatformStats
+    {
+        public int ActiveCount { get; set; }
+        public int DraftCount { get; set; }
+        public int ArchivedCount { get; set; }
+        public int ParticipantCount { get; set; }
     }
 
     public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)

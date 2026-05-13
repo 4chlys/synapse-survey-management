@@ -170,7 +170,8 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
-                It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>()))
+                It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>(),
+                It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(created);
 
         var dto = new CreateProjectDto
@@ -211,7 +212,8 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
-                It.IsAny<bool>(), It.IsAny<int>(), true))
+                It.IsAny<bool>(), It.IsAny<int>(), true,
+                It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(created);
 
         var dto = new CreateProjectDto
@@ -237,7 +239,8 @@ public class ProjectsControllerTests
             It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
             It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
             It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
-            It.IsAny<bool>(), It.IsAny<int>(), true), Times.Once);
+            It.IsAny<bool>(), It.IsAny<int>(), true,
+            It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -251,7 +254,8 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                It.IsAny<int>(), "admin", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>()))
+                It.IsAny<int>(), "admin", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>(),
+                It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new ValidationException("'admin' is a reserved shortform."));
 
         var dto = new CreateProjectDto
@@ -288,7 +292,8 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true))
+                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true,
+                It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(updated);
 
         var dto = new UpdateProjectDto
@@ -313,7 +318,8 @@ public class ProjectsControllerTests
             It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
             It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
             It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-            It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true), Times.Once);
+            It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true,
+            It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -328,7 +334,8 @@ public class ProjectsControllerTests
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
-                "new-form", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>()))
+                "new-form", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>(),
+                It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new ValidationException("ShortForm cannot be changed after the project has been published."));
 
         var dto = new UpdateProjectDto
