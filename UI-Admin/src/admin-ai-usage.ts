@@ -71,9 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const all: ProjectCostAggregateDto[] = await res.json();
 
             if (platformId !== null) {
-                renderPlatformFiltered(tbody, all.filter(p => p.platformId === platformId), emptyLabel);
+                renderPlatformFiltered(tbody!, all.filter(p => p.platformId === platformId), emptyLabel);
             } else {
-                renderSystemWide(tbody, all, emptyLabel);
+                renderSystemWide(tbody!, all, emptyLabel);
             }
         } catch {
             // ignore network errors during polling
