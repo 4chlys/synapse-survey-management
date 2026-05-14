@@ -146,10 +146,10 @@
                 <div class="mb-4">
                     <label class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2 block">@L["SubmissionLanguageLabel"]</label>
                     <select name="languageCode" class="w-full px-4 py-2.5 border border-base-300 rounded-xl bg-base-100 text-base-content text-sm focus:border-primary focus:outline-none transition-colors">
-                        @foreach (var code in Model.SupportedLanguageCodes)
+                        @foreach (var languageCode in Model.SupportedLanguageCodes)
                         {
-                            var displayName = code switch { "nl" => "Nederlands", "en" => "English", _ => code };
-                            <option value="@code" selected="@(code == Model.ParticipantLanguageCode)">@displayName</option>
+                            var displayName = languageCode switch { "nl" => "Nederlands", "en" => "English", _ => languageCode }; 
+                            <option value="@languageCode" selected="@(languageCode == Model.ParticipantLanguageCode)">@displayName</option>
                         }
                     </select>
                 </div>
