@@ -20,7 +20,7 @@ public class CreateProjectViewModel
     [MaxLength(5000, ErrorMessage = "Introduction_TooLong")]
     public string Introduction { get; set; }
 
-    public string InteractionMode { get; set; } = "Scroll";
+    public string InteractionMode { get; set; } = "VerticalScroll";
 
     public string AiAssistance { get; set; } = "ProActive";
 
