@@ -34,7 +34,6 @@
   <ItemGroup>
     <Folder Include="wwwroot\uploads\ideas\" />
     <Folder Include="wwwroot\uploads\tmp\ideas\" />
-    <Folder Include="wwwroot\uploads\questions\images\" />
     <Folder Include="wwwroot\uploads\projects\" />
   </ItemGroup>
 </Project>
