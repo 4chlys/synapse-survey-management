@@ -2,16 +2,23 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiQuestionSupport;
 
 public sealed class AiQuestionSupportService(
     IChatClient chatClient,
     ILogger<AiQuestionSupportService> logger,
-    AiQuestionSupportConfig config)
-    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(chatClient, logger),
+    AiQuestionSupportConfig config,
+    IAiUsageManager usageManager,
+    AiChatModelOptions modelOptions)
+    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(chatClient, logger, usageManager),
       IAiQuestionSupportService
 {
+    protected override AiServiceKind Service => AiServiceKind.QuestionSupport;
+    protected override string Model => modelOptions.Model;
+
     protected override List<ChatMessage> BuildMessages(QuestionSupportChatRequest request)
     {
         var messages = new List<ChatMessage> { new(ChatRole.System, config.SystemPrompt) };

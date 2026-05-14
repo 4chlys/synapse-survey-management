@@ -59,7 +59,7 @@ public class CommentSupportController(
             IsFirstTurn  = isFirstTurn,
         };
 
-        var reply = await commentSupportService.ChatAsync(request, ct);
+        var reply = await commentSupportService.ChatAsync(request, projectId, ct);
 
         return Ok(new CommentSupportChatResponseDto
         {

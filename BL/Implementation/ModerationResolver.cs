@@ -20,7 +20,7 @@ public class ModerationResolver(
             }
         }
 
-        var result = await moderationService.CheckWithAiAsync(text, ct, respondInLanguage: respondInLanguage);
+        var result = await moderationService.CheckWithAiAsync(text, projectId, ct, respondInLanguage: respondInLanguage);
         return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

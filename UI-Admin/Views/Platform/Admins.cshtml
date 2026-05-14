@@ -1,28 +1,29 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model PlatformAdminsViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Beheerders";
-    ViewData["ActiveSection"] = "Beheerders";
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Admins";
     Layout = "_Layout";
 }
 
 <div class="max-w-2xl">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Beheerders</h1>
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
 
     @* Admins table *@
     <div class="card bg-base-100 shadow-sm mb-6">
         <div class="card-body p-0 overflow-x-auto">
             @if (!Model.Admins.Any())
             {
-                <p class="text-sm text-base-content/60 italic p-4">Geen beheerders gevonden.</p>
+                <p class="text-sm text-base-content/60 italic p-4">@L["NoAdmins"]</p>
             }
             else
             {
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Gebruikersnaam</th>
-                            <th>E-mail</th>
+                            <th>@L["TableUsername"]</th>
+                            <th>@L["TableEmail"]</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -35,9 +36,9 @@
                                 <td>
                                     <form asp-action="RemoveAdmin" asp-route-id="@Model.ProjectPlatformId"
                                           method="post" class="inline"
-                                          onsubmit="return confirm('Beheerder @admin.Email verwijderen?')">
+                                          onsubmit="return confirm('@string.Format(L["RemoveConfirm"].Value, admin.Email)')">
                                         <input type="hidden" name="userId" value="@admin.UserId" />
-                                        <button type="submit" class="btn btn-ghost btn-xs text-error">Verwijderen</button>
+                                        <button type="submit" class="btn btn-ghost btn-xs text-error">@L["RemoveButton"]</button>
                                     </form>
                                 </td>
                             </tr>
@@ -51,7 +52,7 @@
     @* Add admin inline form *@
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-4">
-            <h2 class="font-semibold text-base-content">Beheerder toevoegen</h2>
+            <h2 class="font-semibold text-base-content">@L["AddHeading"]</h2>
 
             <div asp-validation-summary="ModelOnly"
                  class="text-sm text-error border border-error bg-error/10 px-4 py-3 rounded"></div>
@@ -60,19 +61,19 @@
                   method="post" class="flex flex-col gap-4">
 
                 <label class="form-control">
-                    <div class="label"><span class="label-text text-xs font-medium">E-mailadres</span></div>
+                    <div class="label"><span class="label-text text-xs font-medium">@L["EmailLabel"]</span></div>
                     <input type="email" name="Email" class="input input-bordered w-full"
-                           placeholder="beheerder@voorbeeld.be" required />
+                           placeholder="@L["EmailPlaceholder"]" required />
                 </label>
 
                 <label class="form-control">
-                    <div class="label"><span class="label-text text-xs font-medium">Wachtwoord</span></div>
+                    <div class="label"><span class="label-text text-xs font-medium">@L["PasswordLabel"]</span></div>
                     <input type="password" name="Password" class="input input-bordered w-full"
-                           placeholder="Minimaal 6 tekens" required minlength="6" />
+                           placeholder="@L["PasswordPlaceholder"]" required minlength="6" />
                 </label>
 
                 <div>
-                    <button type="submit" class="btn btn-primary btn-sm">Beheerder toevoegen</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@L["AddButton"]</button>
                 </div>
             </form>
         </div>

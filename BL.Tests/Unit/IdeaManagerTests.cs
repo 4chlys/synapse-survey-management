@@ -1,6 +1,8 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.BL.AiModeration;
+using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.BL.Sorting.Embeddings;
@@ -165,7 +167,7 @@ public class IdeaManagerTests
             .ReturnsAsync(new List<Idea>()).Verifiable();
 
         // Act
-        await _manager.GetIdeasIndexAsync(CategoryId, 1, 5, 1, "diverse", "nl", showAllLanguages: true);
+        await _manager.GetIdeasIndexAsync(CategoryId, ProjectId, 1, 5, 1, "diverse", "nl", showAllLanguages: true);
 
         // Assert — filter is "nl", not null, because AllowCrossLanguageIdeas is false
         _ideaRepository.Verify(r => r.CountVisibleByCategoryAsync(CategoryId, "nl"), Times.Once);
@@ -192,7 +194,7 @@ public class IdeaManagerTests
             .ReturnsAsync(new List<Idea>()).Verifiable();
 
         // Act
-        await _manager.GetIdeasIndexAsync(CategoryId, 1, 5, 1, "diverse", "en", showAllLanguages: false);
+        await _manager.GetIdeasIndexAsync(CategoryId, ProjectId, 1, 5, 1, "diverse", "en", showAllLanguages: false);
 
         // Assert — filter is participant's language "en"
         _ideaRepository.Verify(r => r.CountVisibleByCategoryAsync(CategoryId, "en"), Times.Once);
@@ -219,7 +221,7 @@ public class IdeaManagerTests
             .ReturnsAsync(new List<Idea>()).Verifiable();
 
         // Act
-        await _manager.GetIdeasIndexAsync(CategoryId, 1, 5, 1, "diverse", "en", showAllLanguages: true);
+        await _manager.GetIdeasIndexAsync(CategoryId, ProjectId, 1, 5, 1, "diverse", "en", showAllLanguages: true);
 
         // Assert — no filter (null) because AllowCrossLanguageIdeas is true and showAllLanguages is true
         _ideaRepository.Verify(r => r.CountVisibleByCategoryAsync(CategoryId, null), Times.Once);
@@ -336,10 +338,12 @@ public class AiModerationServiceTests
             mockChat.Object,
             NullLogger<AiModerationService>.Instance,
             config,
-            mockRegex.Object);
+            mockRegex.Object,
+            Mock.Of<IAiUsageManager>(),
+            new AiChatModelOptions { Model = "test" });
 
         // Act
-        await sut.CheckWithAiAsync("some idea text", respondInLanguage: "en");
+        await sut.CheckWithAiAsync("some idea text", projectId: 1, respondInLanguage: "en");
 
         // Assert — "{response_language}" replaced with "en" (not left as placeholder, not "nl")
         Assert.NotNull(capturedMessages);
