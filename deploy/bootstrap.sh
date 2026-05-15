@@ -212,6 +212,7 @@ create_ssl_and_proxy
 reserve_static_ip
 create_forwarding_rules
 create_cloud_armor
+add_mig_ips_to_armor
 
 # 6. Monitoring
 setup_logging_iam

@@ -23,6 +23,7 @@ create_secrets() {
   _create_secret "${ENV}-db-host"      "${DB_HOST:-PENDING}"
   _create_secret "${ENV}-api-base-url" "${API_BASE_URL:-PENDING}"
   _create_secret "${ENV}-gcs-bucket"   "${GCS_BUCKET:-PENDING}"
+  _create_secret "${ENV}-domain"       "${DOMAIN:-PENDING}"
 }
 
 update_secret() {
@@ -36,7 +37,7 @@ update_secret() {
 
 destroy_secrets() {
   echo ">>> Secrets verwijderen (omgeving: ${ENV})..."
-  for secret in db-password api-key db-host api-base-url gcs-bucket; do
+  for secret in db-password api-key db-host api-base-url gcs-bucket domain; do
     gcloud secrets delete "${ENV}-${secret}" \
       --project="${PROJECT_ID}" --quiet 2>/dev/null || true
   done
