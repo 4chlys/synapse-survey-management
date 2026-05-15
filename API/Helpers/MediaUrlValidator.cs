@@ -111,7 +111,7 @@ public static class MediaUrlValidator
             var id = ExtractYoutubeId(uri);
             if (id is null)
                 return (false, null, "Could not extract a YouTube video ID from the URL.");
-            return (true, $"https://www.youtube.com/embed/{id}", null);
+            return (true, $"https://www.youtube.com/embed/{id}?enablejsapi=1", null);
         }
 
         if (VimeoHosts.Contains(host))

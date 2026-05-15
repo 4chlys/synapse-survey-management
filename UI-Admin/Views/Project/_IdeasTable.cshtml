@@ -1,4 +1,5 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasViewModel
+@inject IViewLocalizer L
 @{
     string StatusBadge(string s) => s switch {
         "Approved"  => "badge-success",
@@ -7,10 +8,10 @@
         _           => "badge-ghost"
     };
     string StatusLabel(string s) => s switch {
-        "Approved"  => "Goedgekeurd",
-        "Declined"  => "Afgewezen",
-        "Flagged"   => "Gemarkeerd",
-        "Unflagged" => "Nieuw",
+        "Approved"  => L["Status_Approved"].Value,
+        "Declined"  => L["Status_Declined"].Value,
+        "Flagged"   => L["Status_Flagged"].Value,
+        "Unflagged" => L["Status_New"].Value,
         _           => s
     };
     string RowBg(string s) => s switch {
@@ -21,6 +22,7 @@
     var ideasUrl = Url.Action("Ideas", new {
         Model.ProjectId, Model.Search, Model.CategoryId, Model.Status, Model.Page
     });
+    var hasFilters = !string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status);
 }
 
 <div class="card bg-base-100 shadow-sm overflow-hidden">
@@ -28,11 +30,11 @@
         <table class="table table-sm">
             <thead>
                 <tr class="bg-base-200">
-                    <th class="w-auto">Idee</th>
-                    <th class="w-28">Categorie</th>
-                    <th class="w-32">Status</th>
+                    <th class="w-auto">@L["TableIdea"]</th>
+                    <th class="w-28">@L["TableCategory"]</th>
+                    <th class="w-32">@L["TableStatus"]</th>
                     <th class="w-12 text-center">👍</th>
-                    <th class="w-28">Acties</th>
+                    <th class="w-28">@L["TableActions"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,7 +42,7 @@
                 {
                     <tr>
                         <td colspan="5" class="text-center text-base-content/40 py-10 italic">
-                            Geen ideeën gevonden@(!string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status) ? " voor deze filters" : "").
+                            @(hasFilters ? L["NoIdeasFiltered"] : L["NoIdeas"])
                         </td>
                     </tr>
                 }
@@ -73,7 +75,7 @@
                                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                                         <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-success btn-xs" title="Goedkeuren">✓</button>
+                                        <button type="submit" class="btn btn-success btn-xs" title="@L["ActionApprove"]">✓</button>
                                     </form>
                                 }
                                 @if (idea.Status != "Declined")
@@ -83,7 +85,7 @@
                                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                                         <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-error btn-xs" title="Afwijzen">✕</button>
+                                        <button type="submit" class="btn btn-error btn-xs" title="@L["ActionDecline"]">✕</button>
                                     </form>
                                 }
                                 @if (idea.Status != "Flagged")
@@ -93,7 +95,7 @@
                                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                                         <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-warning btn-xs btn-outline" title="Markeren">⚑</button>
+                                        <button type="submit" class="btn btn-warning btn-xs btn-outline" title="@L["ActionFlag"]">⚑</button>
                                     </form>
                                 }
                                 @if (!string.IsNullOrEmpty(idea.ImageUrl))
@@ -103,8 +105,8 @@
                                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                                         <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-ghost btn-xs" title="Afbeelding verwijderen"
-                                                onclick="return confirm('Afbeelding verwijderen?');">🖼✕</button>
+                                        <button type="submit" class="btn btn-ghost btn-xs" title="@L["ActionRemoveImage"]"
+                                                onclick="return confirm('@L["ConfirmRemoveImage"].Value');">🖼✕</button>
                                     </form>
                                 }
                             </div>
@@ -119,7 +121,7 @@
 @if (Model.TotalPages > 1)
 {
     <div class="flex justify-between items-center mt-4">
-        <span class="text-sm text-base-content/50">Pagina @Model.Page van @Model.TotalPages</span>
+        <span class="text-sm text-base-content/50">@string.Format(L["PageOf"].Value, Model.Page, Model.TotalPages)</span>
         <div class="join">
             @if (Model.Page > 1)
             {

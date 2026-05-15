@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
@@ -32,14 +33,15 @@ public class ProjectController(
     WidgetPreferenceService widgetPreferenceService,
     IdeaAdminService ideaService,
     ParticipantAdminService participantService,
-    IOptions<AdminSettings> adminSettings) : Controller
+    IOptions<AdminSettings> adminSettings,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
         var projects = await projectService.GetAllProjectsAsync(user.ProjectPlatformId);
-        ViewData["ActiveSection"] = "Projecten";
+        ViewData["ActiveSection"] = "Projects";
         return View(projects);
     }
 
@@ -89,7 +91,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
         ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Instellingen";
+        ViewData["ActiveSection"] = "Settings";
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         return View(model);
@@ -103,13 +105,13 @@ public class ProjectController(
         if (submitAction == "next")
         {
             if (string.IsNullOrWhiteSpace(model.Topic))
-                ModelState.AddModelError(nameof(model.Topic), "Onderwerp is verplicht.");
+                ModelState.AddModelError(nameof(model.Topic), localizer["Project_TopicRequired"]);
             if (string.IsNullOrWhiteSpace(model.Introduction))
-                ModelState.AddModelError(nameof(model.Introduction), "Introductie is verplicht.");
+                ModelState.AddModelError(nameof(model.Introduction), localizer["Project_IntroductionRequired"]);
         }
 
         if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
-            ModelState.AddModelError(nameof(model.MinAge), "MinLeeftijd mag niet groter zijn dan MaxLeeftijd.");
+            ModelState.AddModelError(nameof(model.MinAge), localizer["Project_AgeRange"]);
 
         var wizardActive = isNew || !model.ProjectId.HasValue;
 
@@ -123,7 +125,7 @@ public class ProjectController(
                 ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
-            ViewData["ActiveSection"] = "Instellingen";
+            ViewData["ActiveSection"] = "Settings";
             ViewData["IsNew"]         = wizardActive;
             ViewData["HideSidebar"]   = wizardActive;
             return View(model);
@@ -137,7 +139,7 @@ public class ProjectController(
             var lockCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
             if (IsProjectLocked(lockCheck))
             {
-                TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+                TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
                 return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
             }
             project = await projectService.UpdateProjectAsync(
@@ -153,7 +155,7 @@ public class ProjectController(
         {
             if (user.ProjectPlatformId is null)
             {
-                ModelState.AddModelError(string.Empty, "Uw account is niet gekoppeld aan een platform.");
+                ModelState.AddModelError(string.Empty, localizer["Project_NoPlatform"]);
                 return View(model);
             }
             project = await projectService.CreateProjectAsync(
@@ -202,7 +204,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Vragen";
+        ViewData["ActiveSection"] = "Questions";
         ViewData["AiAssistance"]  = aiAssistance;
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
@@ -218,7 +220,7 @@ public class ProjectController(
         var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForCreate))
         {
-            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
@@ -236,7 +238,7 @@ public class ProjectController(
         var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForUpdate))
         {
-            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
             return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
         }
         if (ModelState.IsValid)
@@ -255,7 +257,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categorieën";
+        ViewData["ActiveSection"] = "Categories";
         ViewData["Project"]       = project;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
@@ -268,7 +270,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(project))
         {
-            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
             return RedirectToAction(nameof(Ideation), new { projectId, isNew });
         }
 
@@ -290,7 +292,7 @@ public class ProjectController(
         var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForAdd))
         {
-            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
             return RedirectToAction(nameof(Ideation), new { projectId, isNew });
         }
         if (ModelState.IsValid)
@@ -299,7 +301,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = projectForAdd?.Name ?? "";
         ViewData["PlatformName"]  = projectForAdd?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForAdd?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categorieën";
+        ViewData["ActiveSection"] = "Categories";
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
@@ -309,7 +311,7 @@ public class ProjectController(
         var projectForDelete = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForDelete))
         {
-            TempData["Error"] = "Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.";
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
             return RedirectToAction(nameof(Ideation), new { projectId, isNew });
         }
         await categoryService.DeleteCategoryAsync(projectId, categoryId);
@@ -317,7 +319,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = projectForDelete?.Name ?? "";
         ViewData["PlatformName"]  = projectForDelete?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForDelete?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categorieën";
+        ViewData["ActiveSection"] = "Categories";
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
@@ -326,7 +328,7 @@ public class ProjectController(
     public async Task<IActionResult> UploadImage(IFormFile file)
     {
         if (file is null || file.Length == 0)
-            return BadRequest(new { error = "Geen bestand ontvangen." });
+            return BadRequest(new { error = localizer["Project_NoFileReceived"].Value });
 
         try
         {
@@ -359,7 +361,7 @@ public class ProjectController(
         var source = await projectService.GetProjectByIdAsync(projectId);
         if (source is null || source.PlatformId != platformId)
         {
-            TempData["Error"] = "Project niet gevonden of geen toegang.";
+            TempData["Error"] = localizer["Project_NotFoundOrNoAccess"].Value;
             return RedirectToAction(nameof(Index));
         }
 
@@ -371,12 +373,12 @@ public class ProjectController(
         try
         {
             var copy = await projectService.CopyProjectAsync(projectId, newName, platformId, languageCode: source.DefaultLanguageCode ?? "nl");
-            TempData["Success"] = "Project gekopieerd als sjabloon!";
+            TempData["Success"] = localizer["Project_CopySuccess"].Value;
             return RedirectToAction(nameof(Create), new { projectId = copy.ProjectId, isNew = true });
         }
         catch (HttpRequestException ex)
         {
-            TempData["Error"] = $"Kopiëren mislukt: {ex.Message}";
+            TempData["Error"] = string.Format(localizer["Project_CopyFailed"].Value, ex.Message);
             return RedirectToAction(nameof(Index));
         }
     }
@@ -398,7 +400,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
         ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Instellingen";
+        ViewData["ActiveSection"] = "Settings";
         return View(project);
     }
 
@@ -411,7 +413,7 @@ public class ProjectController(
         ViewData["ProjectName"]   = projectForActivate?.Name ?? "";
         ViewData["PlatformName"]  = projectForActivate?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForActivate?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Instellingen";
+        ViewData["ActiveSection"] = "Settings";
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
@@ -486,8 +488,8 @@ public class ProjectController(
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName;
         ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideeën";
-        ViewData["Title"]         = "Ideeën";
+        ViewData["ActiveSection"] = "Ideas";
+        // ViewData["Title"] is set by the view via the localized PageTitle resource.
 
         var (items, total, approved, pending, flagged) =
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
@@ -525,7 +527,7 @@ public class ProjectController(
 
         var normalized = (format ?? "csv").Trim().ToLowerInvariant();
         if (normalized is not ("csv" or "txt" or "xlsx"))
-            return BadRequest("Ongeldig formaat.");
+            return BadRequest(localizer["Project_InvalidFormat"].Value);
 
         var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
         return File(bytes, contentType, fileName);
@@ -539,11 +541,11 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
         if (project.ProjectState is not ("Active" or "Archived"))
-            return BadRequest("Export is enkel beschikbaar voor actieve of gearchiveerde projecten.");
+            return BadRequest(localizer["Project_ExportOnlyActive"].Value);
 
         var normalized = (format ?? "xlsx").Trim().ToLowerInvariant();
         if (normalized is not ("csv" or "xlsx"))
-            return BadRequest("Ongeldig formaat.");
+            return BadRequest(localizer["Project_InvalidFormat"].Value);
 
         var (bytes, contentType, fileName) = await participantService.ExportRawDataAsync(projectId, normalized, tables);
         return File(bytes, contentType, fileName);

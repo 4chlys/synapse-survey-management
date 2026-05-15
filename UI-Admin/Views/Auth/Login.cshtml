@@ -1,6 +1,8 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Auth.LoginViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
-    ViewData["Title"] = "Inloggen";
+    ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_LoginLayout";
 }
 
@@ -12,7 +14,7 @@
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
             </div>
-            <h1 class="font-heading font-bold text-lg text-base-content">Synapse Admin</h1>
+            <h1 class="font-heading font-bold text-lg text-base-content">@Shared["AppName"]</h1>
         </div>
 
         @if (!ViewData.ModelState.IsValid)
@@ -27,20 +29,20 @@
             <input type="hidden" asp-for="ReturnUrl" />
 
             <label class="form-control">
-                <div class="label"><span class="label-text text-xs font-medium">E-mailadres</span></div>
+                <div class="label"><span class="label-text text-xs font-medium">@L["EmailLabel"]</span></div>
                 <input asp-for="Email" type="email" autocomplete="email"
-                       class="input input-bordered w-full" placeholder="naam@voorbeeld.be" />
+                       class="input input-bordered w-full" placeholder="@L["EmailPlaceholder"]" />
                 <span asp-validation-for="Email" class="label-text-alt text-error mt-1"></span>
             </label>
 
             <label class="form-control">
-                <div class="label"><span class="label-text text-xs font-medium">Wachtwoord</span></div>
+                <div class="label"><span class="label-text text-xs font-medium">@L["PasswordLabel"]</span></div>
                 <input asp-for="Password" type="password" autocomplete="current-password"
                        class="input input-bordered w-full" placeholder="••••••••" />
                 <span asp-validation-for="Password" class="label-text-alt text-error mt-1"></span>
             </label>
 
-            <button type="submit" class="btn btn-primary w-full mt-1">Inloggen</button>
+            <button type="submit" class="btn btn-primary w-full mt-1">@L["SubmitButton"]</button>
         </form>
     </div>
 </div>
