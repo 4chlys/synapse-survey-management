@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="Heading" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="StatPlatforms" xml:space="preserve"><value>Platformen</value></data>
+  <data name="StatActive" xml:space="preserve"><value>Actief</value></data>
+  <data name="StatDraft" xml:space="preserve"><value>Concept</value></data>
+  <data name="StatArchived" xml:space="preserve"><value>Archief</value></data>
+  <data name="StatProjects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="StatAdmins" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="StatParticipants" xml:space="preserve"><value>Deelnemers</value></data>
+  <data name="PlatformsHeading" xml:space="preserve"><value>Platformen</value></data>
+  <data name="AiShort" xml:space="preserve"><value>AI</value></data>
+  <data name="OpenAction" xml:space="preserve"><value>Openen</value></data>
+  <data name="AdminsAction" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="CostMonitoringHeading" xml:space="preserve"><value>Kosten &amp; monitoring</value></data>
+  <data name="CostIframeTitle" xml:space="preserve"><value>Kostenoverzicht {0}</value></data>
+  <data name="NoCostDashboard" xml:space="preserve"><value>Geen kostendashboard geconfigureerd.</value></data>
+  <data name="AddCostDashboardHint" xml:space="preserve"><value>Voeg een Data Studio embed-URL toe via Platform → Instellingen voor elk platform.</value></data>
+  <data name="LiveAiCostHeading" xml:space="preserve"><value>Live AI-kosten (laatste 24u)</value></data>
+  <data name="AiCost_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="AiCost_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="AiCost_InputTokens" xml:space="preserve"><value>Input-tokens</value></data>
+  <data name="AiCost_OutputTokens" xml:space="preserve"><value>Output-tokens</value></data>
+  <data name="AiCost_Cost" xml:space="preserve"><value>Kosten (EUR)</value></data>
+  <data name="AiCost_Loading" xml:space="preserve"><value>Laden...</value></data>
+  <data name="AiCost_Empty" xml:space="preserve"><value>Geen AI-gebruik in de laatste 24u.</value></data>
+</root>

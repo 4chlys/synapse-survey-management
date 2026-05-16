@@ -232,16 +232,16 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   animation: slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* ─── Soft violet chip (secondary action) ────────────── */
+/* ─── Soft chip (secondary action) — follows theme primary ─── */
 .chip-soft {
-  background-color: oklch(93% 0.04 277);
-  color: oklch(52% 0.22 277);
-  border: 1px solid oklch(91% 0.02 277);
+  background-color: color-mix(in oklch, var(--color-primary) 12%, var(--color-base-100));
+  color: var(--color-primary);
+  border: 1px solid color-mix(in oklch, var(--color-primary) 18%, var(--color-base-100));
 }
 
 /* ─── Ideation accent strip ──────────────────────────── */
 .accent-strip {
-  background: oklch(52% 0.22 277);
+  background: var(--color-primary);
 }
 
 /* ─── Landing page — floating survey cards background ── */

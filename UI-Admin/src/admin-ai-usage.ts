@@ -15,9 +15,18 @@ const eur = new Intl.NumberFormat('nl-BE', {
     maximumFractionDigits: 4,
 });
 
-function renderSystemWide(tbody: HTMLTableSectionElement, projects: ProjectCostAggregateDto[]): void {
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderSystemWide(tbody: HTMLTableSectionElement, projects: ProjectCostAggregateDto[], emptyLabel: string): void {
     if (projects.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-base-content/40 text-sm py-4">Geen AI-gebruik in de laatste 24u.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-base-content/40 text-sm py-4">${escapeHtml(emptyLabel)}</td></tr>`;
         return;
     }
     tbody.innerHTML = projects.map(p =>
@@ -31,9 +40,9 @@ function renderSystemWide(tbody: HTMLTableSectionElement, projects: ProjectCostA
     ).join('');
 }
 
-function renderPlatformFiltered(tbody: HTMLTableSectionElement, projects: ProjectCostAggregateDto[]): void {
+function renderPlatformFiltered(tbody: HTMLTableSectionElement, projects: ProjectCostAggregateDto[], emptyLabel: string): void {
     if (projects.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-base-content/40 text-sm py-4">Geen AI-gebruik in de laatste 24u.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-base-content/40 text-sm py-4">${escapeHtml(emptyLabel)}</td></tr>`;
         return;
     }
     tbody.innerHTML = projects.map(p =>
@@ -53,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = tbody.closest<HTMLElement>('[data-ai-cost-container]');
     const platformIdStr = container?.dataset.platformId;
     const platformId = platformIdStr !== undefined ? parseInt(platformIdStr, 10) : null;
+    const emptyLabel = container?.dataset.emptyLabel ?? '';
 
     async function fetchAndRender(): Promise<void> {
         try {
@@ -61,9 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const all: ProjectCostAggregateDto[] = await res.json();
 
             if (platformId !== null) {
-                renderPlatformFiltered(tbody, all.filter(p => p.platformId === platformId));
+                renderPlatformFiltered(tbody!, all.filter(p => p.platformId === platformId), emptyLabel);
             } else {
-                renderSystemWide(tbody, all);
+                renderSystemWide(tbody!, all, emptyLabel);
             }
         } catch {
             // ignore network errors during polling

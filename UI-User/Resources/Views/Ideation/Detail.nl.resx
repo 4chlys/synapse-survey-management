@@ -39,6 +39,12 @@
   <data name="BackNavLabel" xml:space="preserve">
     <value>Terug</value>
   </data>
+  <data name="BackToIdeasLabel" xml:space="preserve">
+    <value>Terug naar ideeën</value>
+  </data>
+  <data name="MyIdeasNavLabel" xml:space="preserve">
+    <value>Mijn ideeën</value>
+  </data>
   <data name="CloseNavLabel" xml:space="preserve">
     <value>Afsluiten</value>
   </data>
@@ -59,6 +65,9 @@
   </data>
   <data name="CommentPlaceholder" xml:space="preserve">
     <value>Schrijf een reactie...</value>
+  </data>
+  <data name="YourCommentLabel" xml:space="preserve">
+    <value>Jouw reactie</value>
   </data>
   <data name="PostCommentButton" xml:space="preserve">
     <value>Plaatsen</value>

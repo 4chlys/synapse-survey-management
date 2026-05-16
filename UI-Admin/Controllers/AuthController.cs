@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Auth;
 
@@ -8,7 +9,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 public class AuthController(
     SignInManager<ApplicationUser> signInManager,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     [HttpGet]
     [AllowAnonymous]
@@ -43,13 +45,13 @@ public class AuthController(
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "Account is vergrendeld. Probeer het later opnieuw.");
+            ModelState.AddModelError(string.Empty, localizer["Auth_AccountLocked"]);
             return View(model);
         }
 
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, "Ongeldig e-mailadres of wachtwoord.");
+            ModelState.AddModelError(string.Empty, localizer["Auth_InvalidCredentials"]);
             return View(model);
         }
 
@@ -90,7 +92,7 @@ public class AuthController(
 
         await signInManager.RefreshSignInAsync(user);
 
-        TempData["SuccessMessage"] = "Wachtwoord succesvol gewijzigd.";
+        TempData["SuccessMessage"] = localizer["Auth_PasswordChanged"].Value;
         return RedirectToAction(nameof(ChangePassword));
     }
 

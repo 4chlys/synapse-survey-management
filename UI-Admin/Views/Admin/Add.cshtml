@@ -1,8 +1,9 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model AddAdminViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Beheerder toevoegen";
-    ViewData["ActiveSection"] = "Beheerders";
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = L["NavActive"].Value;
     Layout = "_Layout";
 }
 
@@ -17,7 +18,7 @@
                 </a>
             </div>
 
-            <h1 class="font-heading font-bold text-xl text-base-content mb-5">Beheerder toevoegen</h1>
+            <h1 class="font-heading font-bold text-xl text-base-content mb-5">@L["Heading"]</h1>
 
             <div asp-validation-summary="ModelOnly"
                  class="text-sm text-error border border-error bg-error/10 px-4 py-3 rounded"></div>
@@ -28,38 +29,38 @@
 
                 <label class="form-control">
                     <div class="label">
-                        <span class="label-text text-xs font-medium">Platform</span>
+                        <span class="label-text text-xs font-medium">@L["PlatformLabel"]</span>
                     </div>
                     <p class="input input-bordered w-full flex items-center text-base-content/60">@Model.PlatformName</p>
                 </label>
 
                 <label class="form-control">
                     <div class="label">
-                        <span class="label-text text-xs font-medium">E-mailadres</span>
+                        <span class="label-text text-xs font-medium">@L["EmailLabel"]</span>
                     </div>
                     <input asp-for="Email"
                            class="input input-bordered w-full"
-                           placeholder="beheerder@voorbeeld.be" />
+                           placeholder="@L["EmailPlaceholder"]" />
                     <span asp-validation-for="Email" class="text-xs text-error mt-1 block"></span>
                 </label>
 
                 <label class="form-control">
                     <div class="label">
-                        <span class="label-text text-xs font-medium">Wachtwoord</span>
+                        <span class="label-text text-xs font-medium">@L["PasswordLabel"]</span>
                     </div>
                     <input asp-for="Password"
                            class="input input-bordered w-full"
-                           placeholder="Minimaal 6 tekens" />
+                           placeholder="@L["PasswordPlaceholder"]" />
                     <span asp-validation-for="Password" class="text-xs text-error mt-1 block"></span>
                 </label>
 
                 <div class="flex items-center gap-3 mt-2">
                     <button type="submit" class="btn btn-primary w-full">
-                        Beheerder toevoegen
+                        @L["SubmitButton"]
                     </button>
                     <a asp-controller="Admin" asp-action="Index"
                        class="btn btn-ghost btn-sm text-error">
-                        Annuleer
+                        @L["CancelButton"]
                     </a>
                 </div>
 

@@ -7,6 +7,17 @@
  * array index, because sub-questions can have a lower array index than later
  * top-level questions (Position is scoped per sibling group, not globally).
  */
+function stopSlideMedia(slide: HTMLElement): void {
+    slide.querySelectorAll<HTMLVideoElement | HTMLAudioElement>('video, audio').forEach(el => el.pause());
+    slide.querySelectorAll<HTMLIFrameElement>('iframe').forEach(iframe => {
+        if (iframe.src.includes('youtube.com')) {
+            iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }), '*');
+        } else if (iframe.src.includes('vimeo.com')) {
+            iframe.contentWindow?.postMessage(JSON.stringify({ method: 'pause' }), '*');
+        }
+    });
+}
+
 export function activateSlide(
     slides: HTMLElement[],
     prevIndex: number,
@@ -17,6 +28,7 @@ export function activateSlide(
     const next = slides[nextIndex];
 
     if (prev) {
+        stopSlideMedia(prev);
         prev.classList.remove('is-active');
         if (goingForward) {
             // Exit upward

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Categories</value></data>
+  <data name="Heading" xml:space="preserve"><value>Ideation</value></data>
+  <data name="LockedActive" xml:space="preserve"><value>This project is active. Settings can no longer be changed.</value></data>
+  <data name="LockedArchived" xml:space="preserve"><value>This project is archived. Settings can no longer be changed.</value></data>
+  <data name="SettingsHeading" xml:space="preserve"><value>Settings</value></data>
+  <data name="MaxShownIdeasLabel" xml:space="preserve"><value>Maximum number of shown ideas</value></data>
+  <data name="ExtraBehaviorLabel" xml:space="preserve"><value>Extra ideas behavior</value></data>
+  <data name="ExtraBehavior_Append" xml:space="preserve"><value>Append (add to existing)</value></data>
+  <data name="ExtraBehavior_Replace" xml:space="preserve"><value>Replace (replace existing)</value></data>
+  <data name="MaxExtraRequestsLabel" xml:space="preserve"><value>Maximum number of extra requests</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
+  <data name="CategoriesHeading" xml:space="preserve"><value>Categories</value></data>
+  <data name="TableName" xml:space="preserve"><value>Name</value></data>
+  <data name="TableDescription" xml:space="preserve"><value>Description</value></data>
+  <data name="NoCategories" xml:space="preserve"><value>No categories yet.</value></data>
+  <data name="AddCategoryHeading" xml:space="preserve"><value>Add category</value></data>
+  <data name="NameRequired" xml:space="preserve"><value>Name *</value></data>
+  <data name="CategoryNamePlaceholder" xml:space="preserve"><value>Category name</value></data>
+  <data name="OptionalPlaceholder" xml:space="preserve"><value>Optional</value></data>
+  <data name="AddButton" xml:space="preserve"><value>Add</value></data>
+  <data name="QuestionsLink" xml:space="preserve"><value>Questions</value></data>
+  <data name="DashboardLink" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="NextLink" xml:space="preserve"><value>Next</value></data>
+</root>
