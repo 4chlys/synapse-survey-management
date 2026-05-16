@@ -3,14 +3,18 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
 public sealed class AiCommentSupportService(
-    ILogger<AiCommentSupportService> logger)
-    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(logger),
+    ILogger<AiCommentSupportService> logger,
+    IAiUsageManager usageManager)
+    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(logger, usageManager),
       IAiCommentSupportService
 {
+    protected override AiServiceKind Service => AiServiceKind.CommentSupport;
     protected override List<ChatMessage> BuildMessages(CommentSupportRequest request, ResolvedPlatformAiConfig platformConfig)
     {
         var config       = platformConfig.CommentSupport;

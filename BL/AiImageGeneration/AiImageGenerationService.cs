@@ -9,7 +9,7 @@ public sealed class AiImageGenerationService(
     AiImageGenerationConfig config,
     ILogger<AiImageGenerationService> logger) : IAiImageGenerationService
 {
-    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, CancellationToken ct = default)
+    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, int projectId, CancellationToken ct = default)
     {
         try
         {

@@ -6,6 +6,7 @@ using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Settings;
+using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
@@ -14,7 +15,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 public class SettingsController(
     PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager,
-    AiConfig aiConfig) : Controller
+    AiConfig aiConfig,
+    AiAdminService aiAdminService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -116,15 +118,19 @@ public class SettingsController(
     private async Task<HashSet<string>> GetAllowedModelIdsAsync()
     {
         var sysSettings = await platformService.GetSystemAiSettingsAsync();
-        if (sysSettings is null) return AiModelCatalog.All.Select(m => m.Id).ToHashSet();
+        if (sysSettings is null)
+            return AiModelCatalog.All.Where(m => m.Provider == AiProvider.VertexAi).Select(m => m.Id).ToHashSet();
         return (JsonSerializer.Deserialize<List<string>>(sysSettings.AllowedModelIds) ?? []).ToHashSet();
     }
 
     private async Task<PlatformAdminSettingsViewModel> BuildViewModel(int platformId, string platformName)
     {
-        var settings      = await platformService.GetPlatformSettingsAsync(platformId);
-        var allowedIds    = await GetAllowedModelIdsAsync();
-        var allowedModels = AiModelCatalog.All.Where(m => allowedIds.Contains(m.Id)).ToList();
+        var settings       = await platformService.GetPlatformSettingsAsync(platformId);
+        var allowedIds     = await GetAllowedModelIdsAsync();
+        var availableIds   = await aiAdminService.GetAvailableModelIdsAsync();
+        var allowedModels  = AiModelCatalog.All
+            .Where(m => allowedIds.Contains(m.Id) && availableIds.Contains(m.Id))
+            .ToList();
 
         var basicInfo = new PlatformAdminBasicInfoViewModel(
             settings?.ContactName      ?? string.Empty,

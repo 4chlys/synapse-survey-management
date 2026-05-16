@@ -67,7 +67,7 @@ public class SpeechToTextController(
         catch { /* intentionally swallowed */ }
 
         var platformConfig = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
-        var result = await speechToTextService.TranscribeAsync(request, platformConfig, ct);
+        var result = await speechToTextService.TranscribeAsync(request, platformConfig, projectId, ct);
 
         return Ok(new SpeechToTextResponseDto
         {

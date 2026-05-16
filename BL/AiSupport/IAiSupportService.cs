@@ -4,5 +4,5 @@ namespace SynapseEnqueteManagement.BL.AiSupport;
 
 public interface IAiSupportService<TRequest, TReply>
 {
-    Task<TReply> ChatAsync(TRequest request, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default);
+    Task<TReply> ChatAsync(TRequest request, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default);
 }

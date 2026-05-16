@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
+using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 
@@ -11,7 +12,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 [Authorize(Roles = "SystemAdmin")]
 public class PlatformController(
     PlatformAdminService platformService,
-    ProjectAdminService projectService) : Controller
+    ProjectAdminService projectService,
+    AiAdminService aiAdminService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -73,15 +75,17 @@ public class PlatformController(
 
     public async Task<IActionResult> SystemSettings()
     {
-        var settings = await platformService.GetSystemAiSettingsAsync();
-        var allowedIds = settings is not null
+        var settings     = await platformService.GetSystemAiSettingsAsync();
+        var allowedIds   = settings is not null
             ? JsonSerializer.Deserialize<List<string>>(settings.AllowedModelIds) ?? []
             : [];
+        var availableIds = await aiAdminService.GetAvailableModelIdsAsync();
 
         ViewData["ActiveSection"] = "AI Instellingen";
         return View(new SystemAiSettingsViewModel(
             AllModels: AiModelCatalog.All,
-            AllowedModelIds: allowedIds
+            AllowedModelIds: allowedIds,
+            AvailableModelIds: availableIds
         ));
     }
 
@@ -94,8 +98,14 @@ public class PlatformController(
             return RedirectToAction(nameof(SystemSettings));
         }
 
-        var valid = AiModelCatalog.All.Select(m => m.Id).ToHashSet();
-        AllowedModelIds = AllowedModelIds.Where(valid.Contains).ToList();
+        var available = await aiAdminService.GetAvailableModelIdsAsync();
+        AllowedModelIds = AllowedModelIds.Where(available.Contains).ToList();
+
+        if (AllowedModelIds.Count == 0)
+        {
+            TempData["Error"] = "Minstens één geconfigureerd AI-model moet geselecteerd zijn.";
+            return RedirectToAction(nameof(SystemSettings));
+        }
 
         await platformService.SaveSystemAiSettingsAsync(AllowedModelIds);
         TempData["Success"] = "AI-instellingen opgeslagen.";

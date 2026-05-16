@@ -26,6 +26,7 @@ using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
@@ -178,6 +179,12 @@ builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
+// AI usage tracking
+builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));
+builder.Services.AddSingleton<AiPricing>();
+builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
+builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
+
 // AI configuration
 //
 // Register the already-loaded AiConfig instance directly so we don't parse
@@ -302,13 +309,14 @@ if (useAi)
         projectId, location, "google", embeddingModel);
     var embeddingGenerator = await predictionBuilder.BuildIEmbeddingGeneratorAsync(embeddingModelResource);
     builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(embeddingGenerator);
-    builder.Services.AddSingleton<IEmbeddingService, AiEmbeddingService>();
+    builder.Services.AddSingleton(new AiEmbeddingModelOptions { Model = embeddingModel });
+    builder.Services.AddScoped<IEmbeddingService, AiEmbeddingService>();
 }
 else
 {
     builder.Services.AddSingleton(new ChatClientRegistry(new Dictionary<string, IChatClient>()));
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
-    builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
+    builder.Services.AddScoped<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
@@ -346,14 +354,21 @@ var app = builder.Build();
                 DummyDataSeeder.Seed(context, apiBaseUrl);
             }
 
-            var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
-            var ideasNeedingEmbeddings = await context.Set<Idea>()
-                .Where(i => i.Embedding == null)
-                .ToListAsync();
-            foreach (var idea in ideasNeedingEmbeddings)
-                idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description);
-            if (ideasNeedingEmbeddings.Count > 0)
-                await context.SaveChangesAsync();
+            try
+            {
+                var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
+                var ideasNeedingEmbeddings = await context.Set<Idea>()
+                    .Where(i => i.Embedding == null)
+                    .ToListAsync();
+                foreach (var idea in ideasNeedingEmbeddings)
+                    idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description, 0);
+                if (ideasNeedingEmbeddings.Count > 0)
+                    await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                dbLogger.LogWarning(ex, "[Seed] Embedding backfill skipped; embeddings will be generated on first use.");
+            }
             break;
         }
         catch (Exception ex) when (attempt < maxRetries)

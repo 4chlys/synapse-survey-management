@@ -31,6 +31,7 @@ public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> loca
     public Task<IdeaSupportChatReply> ChatAsync(
         IdeaSupportChatRequest request,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default)
     {
         var turnCount = request.History.Count;
@@ -73,6 +74,7 @@ public sealed class MockIdeaSupportService(IStringLocalizer<SharedResource> loca
         string draftText,
         string language,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))

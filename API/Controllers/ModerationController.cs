@@ -52,7 +52,7 @@ public class ModerationController(
 
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
-        var result = await aiModeration.CheckWithAiAsync(dto.Text, config, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var result = await aiModeration.CheckWithAiAsync(dto.Text, config, projectId, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
@@ -70,7 +70,7 @@ public class ModerationController(
 
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
-        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, config, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, config, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
         string suggestionToken = null;
         if (suggestion != null)

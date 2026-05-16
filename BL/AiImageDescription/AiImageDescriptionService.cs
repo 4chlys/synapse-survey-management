@@ -1,16 +1,19 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiImageDescription;
 
 public sealed class AiImageDescriptionService(
     AiImageDescriptionConfig config,
+    IAiUsageManager usageManager,
     ILogger<AiImageDescriptionService> logger) : IAiImageDescriptionService
 {
     public async Task<string> DescribeImageAsync(byte[] imageBytes, string mimeType, string language,
         string categoryName, string categoryDescription,
-        ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default)
+        ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default)
     {
         try
         {
@@ -27,6 +30,9 @@ public sealed class AiImageDescriptionService(
             ]);
 
             var response = await platformConfig.ChatClient.GetResponseAsync([message], cancellationToken: ct);
+            try { await usageManager.LogChatAsync(projectId, AiServiceKind.ImageDescription, platformConfig.SelectedModelId, response.Usage, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "[ImageDescription] Failed to record AI usage."); }
+
             var description = response.Messages.LastOrDefault()?.Text?.Trim();
 
             return string.IsNullOrWhiteSpace(description) ? string.Empty : description;

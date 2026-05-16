@@ -4,17 +4,15 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
-/// <summary>
-/// AI-backed content moderation using <see cref="IChatClient"/>.
-/// Regex pre-filtering is delegated to <see cref="IRegexModerationService"/> so this
-/// class contains only AI-specific logic.
-/// </summary>
 public sealed class AiModerationService(
     ILogger<AiModerationService> logger,
-    IRegexModerationService regex) : IAiModerationService
+    IRegexModerationService regex,
+    IAiUsageManager usageManager) : IAiModerationService
 {
     private static readonly Regex CodeFenceRe =
         new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
@@ -28,6 +26,7 @@ public sealed class AiModerationService(
     public async Task<ModerationResult> CheckWithAiAsync(
         string text,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default,
         string contentType = "idea",
         string respondInLanguage = null)
@@ -42,7 +41,7 @@ public sealed class AiModerationService(
 
         try
         {
-            return await CallModerationAsync(text, contentType, respondInLanguage, platformConfig, ct);
+            return await CallModerationAsync(text, contentType, respondInLanguage, platformConfig, projectId, ct);
         }
         catch (OperationCanceledException)
         {
@@ -57,7 +56,7 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (!platformConfig.Moderation.UseAi) return ModerationResult.Acceptable();
 
@@ -74,7 +73,10 @@ public sealed class AiModerationService(
             ]);
 
             var response = await platformConfig.ChatClient.GetResponseAsync([message], cancellationToken: ct);
-            var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+            try { await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, platformConfig.SelectedModelId, response.Usage, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "[ImageModeration] Failed to record AI usage."); }
+
+            var rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(rawJson))
             {
@@ -115,7 +117,7 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<string> SuggestRewriteAsync(string text, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<string> SuggestRewriteAsync(string text, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
@@ -131,6 +133,9 @@ public sealed class AiModerationService(
             };
 
             var response   = await platformConfig.ChatClient.GetResponseAsync(messages, cancellationToken: ct);
+            try { await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, platformConfig.SelectedModelId, response.Usage, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "[Moderation] Failed to record AI usage for rewrite."); }
+
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -156,6 +161,7 @@ public sealed class AiModerationService(
         string contentType,
         string respondInLanguage,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct)
     {
         var rawPrompt = contentType == "comment"
@@ -172,7 +178,10 @@ public sealed class AiModerationService(
         };
 
         var response = await platformConfig.ChatClient.GetResponseAsync(messages, cancellationToken: ct);
-        var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+        try { await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, platformConfig.SelectedModelId, response.Usage, ct); }
+        catch (Exception ex) { logger.LogWarning(ex, "[Moderation] Failed to record AI usage."); }
+
+        var rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawJson))
         {

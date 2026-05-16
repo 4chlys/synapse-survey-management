@@ -4,10 +4,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiSupport;
 
-public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger)
+public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger, IAiUsageManager usageManager)
     : IAiSupportService<TRequest, TReply>
 {
     protected static readonly Regex CodeFenceRe =
@@ -20,12 +22,14 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger)
         DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public async Task<TReply> ChatAsync(TRequest request, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default)
+    protected abstract AiServiceKind Service { get; }
+
+    public async Task<TReply> ChatAsync(TRequest request, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default)
     {
         try
         {
             var messages = BuildMessages(request, platformConfig);
-            var raw      = await SendSingleAsync(messages, platformConfig.ChatClient, ct);
+            var raw      = await SendSingleAsync(messages, platformConfig.ChatClient, platformConfig.SelectedModelId, projectId, ct);
 
             if (string.IsNullOrWhiteSpace(raw))
                 return FallbackReply(platformConfig);
@@ -47,9 +51,11 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger)
     protected abstract TReply ParseRawReply(string raw, TRequest request, ResolvedPlatformAiConfig platformConfig);
     protected abstract TReply FallbackReply(ResolvedPlatformAiConfig platformConfig);
 
-    protected static async Task<string> SendSingleAsync(List<ChatMessage> messages, IChatClient client, CancellationToken ct)
+    protected async Task<string> SendSingleAsync(List<ChatMessage> messages, IChatClient client, string modelId, int projectId, CancellationToken ct)
     {
         var response = await client.GetResponseAsync(messages, cancellationToken: ct);
+        try { await usageManager.LogChatAsync(projectId, Service, modelId, response.Usage, ct); }
+        catch (Exception ex) { logger.LogWarning(ex, "[{Domain}] Failed to record AI usage.", GetType().Name); }
         return response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
     }
 

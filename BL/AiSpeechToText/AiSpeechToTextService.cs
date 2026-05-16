@@ -1,14 +1,16 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiSpeechToText;
 
 public sealed class AiSpeechToTextService(
     AiSpeechToTextConfig config,
+    IAiUsageManager usageManager,
     ILogger<AiSpeechToTextService> logger) : IAiSpeechToTextService
 {
-    // Base MIME types accepted by Gemini multimodal audio input.
     private static readonly HashSet<string> SupportedBaseMimeTypes = new(
         StringComparer.OrdinalIgnoreCase)
     {
@@ -19,9 +21,9 @@ public sealed class AiSpeechToTextService(
     public async Task<SpeechToTextResult> TranscribeAsync(
         SpeechToTextRequest request,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default)
     {
-        // Strip codec parameters for the base-type check (e.g. "audio/webm;codecs=opus" → "audio/webm").
         var baseType = request.MimeType.Split(';')[0].Trim();
         if (!SupportedBaseMimeTypes.Contains(baseType))
             return SpeechToTextResult.Failed(
@@ -40,7 +42,6 @@ public sealed class AiSpeechToTextService(
 
         try
         {
-            // Build a multimodal message: audio blob + transcription instruction.
             var audioContent = new DataContent(
                 new ReadOnlyMemory<byte>(request.AudioData),
                 request.MimeType);
@@ -56,6 +57,9 @@ public sealed class AiSpeechToTextService(
 
             var response = await platformConfig.ChatClient.GetResponseAsync(
                 [message], cancellationToken: ct);
+
+            try { await usageManager.LogChatAsync(projectId, AiServiceKind.SpeechToText, platformConfig.SelectedModelId, response.Usage, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "[SpeechToText] Failed to record AI usage."); }
 
             var transcript = response.Messages.LastOrDefault()?.Text?.Trim();
 

@@ -32,6 +32,7 @@ public class IdeasControllerTests
         _platformAiConfig.Setup(s => s.ResolveAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResolvedPlatformAiConfig(
                 Mock.Of<Microsoft.Extensions.AI.IChatClient>(),
+                "gemini-2.0-flash",
                 new SynapseEnqueteManagement.BL.AiModeration.ModerationConfig(),
                 new SynapseEnqueteManagement.BL.AiIdeaSupport.AiIdeaSupportConfig(),
                 new SynapseEnqueteManagement.BL.AiCommentSupport.AiCommentSupportConfig(),

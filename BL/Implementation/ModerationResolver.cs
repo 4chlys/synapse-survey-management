@@ -21,7 +21,7 @@ public class ModerationResolver(
             }
         }
 
-        var result = await moderationService.CheckWithAiAsync(text, platformConfig, ct, respondInLanguage: respondInLanguage);
+        var result = await moderationService.CheckWithAiAsync(text, platformConfig, projectId, ct, respondInLanguage: respondInLanguage);
         return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

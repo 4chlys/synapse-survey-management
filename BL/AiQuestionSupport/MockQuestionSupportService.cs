@@ -21,6 +21,7 @@ public sealed class MockQuestionSupportService : IAiQuestionSupportService
     public Task<QuestionSupportChatReply> ChatAsync(
         QuestionSupportChatRequest request,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default)
     {
         var msg = request.IsFirstTurn || request.History.Count == 0

@@ -13,5 +13,6 @@ public interface IAiIdeaSupportService : IAiSupportService<IdeaSupportChatReques
         string draftText,
         string language,
         ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default);
 }

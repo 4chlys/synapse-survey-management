@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.API.Data;
@@ -81,12 +82,20 @@ public class PlatformAiConfigService(
             ? selectedModel
             : allowedIds.FirstOrDefault(id => registry.TryGet(id, out _));
 
-        if (effectiveModel is null || !registry.TryGet(effectiveModel, out var chatClient))
+        IChatClient chatClient;
+        string actualModelId;
+
+        if (effectiveModel is not null && registry.TryGet(effectiveModel, out chatClient))
+        {
+            actualModelId = effectiveModel;
+        }
+        else
         {
             var fallbackId = registry.AvailableModelIds.FirstOrDefault();
             if (fallbackId is null || !registry.TryGet(fallbackId, out chatClient))
                 throw new InvalidOperationException(
                     "No AI model is available. Verify that at least one provider API key is configured.");
+            actualModelId = fallbackId;
         }
 
         var m = globalConfig.Moderation;
@@ -132,6 +141,6 @@ public class PlatformAiConfigService(
             DefaultAgeRange = q.DefaultAgeRange,
         };
 
-        return new ResolvedPlatformAiConfig(chatClient, moderation, ideaSupport, commentSupport, questionSupport);
+        return new ResolvedPlatformAiConfig(chatClient, actualModelId, moderation, ideaSupport, commentSupport, questionSupport);
     }
 }

@@ -74,7 +74,7 @@ public class UploadsController(
         var bytes = ms.ToArray();
 
         var config = await platformAiConfig.ResolveGlobalAsync(ct);
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, config, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, config, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
@@ -115,7 +115,7 @@ public class UploadsController(
             : language;
         var platformConfig = await platformAiConfig.ResolveGlobalAsync(ct);
         var description = await aiImageDescriptionService.DescribeImageAsync(
-            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", platformConfig, ct);
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", platformConfig, 0, ct);
 
         if (string.IsNullOrEmpty(description))
             return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });

@@ -61,7 +61,7 @@ public class QuestionSupportController(
         };
 
         var platformConfig = await platformAiConfig.ResolveAsync(project.ProjectPlatformId, ct);
-        var reply = await questionSupportService.ChatAsync(request, platformConfig, ct);
+        var reply = await questionSupportService.ChatAsync(request, platformConfig, projectId, ct);
 
         return Ok(new QuestionSupportChatResponseDto { AssistantMessage = reply.AssistantMessage });
     }
