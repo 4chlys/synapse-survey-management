@@ -148,7 +148,7 @@ public class PlatformController(
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Beheerders";
+        ViewData["ActiveSection"] = "Admins";
 
         return View(await BuildAdminsViewModel(id, platform.Name));
     }
@@ -161,7 +161,7 @@ public class PlatformController(
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Beheerders";
+        ViewData["ActiveSection"] = "Admins";
 
         if (!ModelState.IsValid)
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
@@ -193,7 +193,7 @@ public class PlatformController(
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Instellingen";
+        ViewData["ActiveSection"] = "Settings";
 
         return View(await BuildSettingsViewModel(id, platform));
     }
@@ -206,7 +206,7 @@ public class PlatformController(
             var platform = await platformService.GetPlatformByIdAsync(id);
             ViewData["PlatformId"] = id;
             ViewData["PlatformName"] = platform?.Name;
-            ViewData["ActiveSection"] = "Instellingen";
+            ViewData["ActiveSection"] = "Settings";
             return View("Settings", await BuildSettingsViewModel(id, platform!));
         }
 

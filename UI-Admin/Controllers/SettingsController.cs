@@ -128,9 +128,14 @@ public class SettingsController(
         var settings       = await platformService.GetPlatformSettingsAsync(platformId);
         var allowedIds     = await GetAllowedModelIdsAsync();
         var availableIds   = await aiAdminService.GetAvailableModelIdsAsync();
+        var globalPrompts  = await aiAdminService.GetGlobalPromptsAsync();
         var allowedModels  = AiModelCatalog.All
             .Where(m => allowedIds.Contains(m.Id) && availableIds.Contains(m.Id))
             .ToList();
+
+        // API-fetched prompts are preferred; fall back to locally loaded AiConfig if the API is unreachable.
+        string Fallback(string apiPrompt, string localPrompt) =>
+            !string.IsNullOrEmpty(apiPrompt) ? apiPrompt : localPrompt;
 
         var basicInfo = new PlatformAdminBasicInfoViewModel(
             settings?.ContactName      ?? string.Empty,
@@ -144,13 +149,13 @@ public class SettingsController(
         );
 
         var prompts = new PlatformAdminPromptsViewModel([
-            new("Moderation",        "Moderatie",               settings?.PromptModeration        ?? aiConfig.Moderation.ModerationPrompt,        settings?.PromptModeration        is not null),
-            new("CommentModeration", "Commentaarmoderatie",     settings?.PromptCommentModeration ?? aiConfig.Moderation.CommentModerationPrompt,  settings?.PromptCommentModeration is not null),
-            new("Rewrite",           "Herschrijven",            settings?.PromptRewrite           ?? aiConfig.Moderation.RewritePrompt,            settings?.PromptRewrite           is not null),
-            new("ImageModeration",   "Beeldmoderatie",          settings?.PromptImageModeration   ?? aiConfig.Moderation.ImageModerationPrompt,    settings?.PromptImageModeration   is not null),
-            new("IdeaSupport",       "Ideeondersteuning",       settings?.PromptIdeaSupport       ?? aiConfig.IdeaSupport.SystemPrompt,            settings?.PromptIdeaSupport       is not null),
-            new("CommentSupport",    "Commentaarondersteuning", settings?.PromptCommentSupport    ?? aiConfig.CommentSupport.SystemPrompt,         settings?.PromptCommentSupport    is not null),
-            new("QuestionSupport",   "Vraagondersteuning",      settings?.PromptQuestionSupport   ?? aiConfig.QuestionSupport.SystemPrompt,        settings?.PromptQuestionSupport   is not null),
+            new("Moderation",        "Moderatie",               settings?.PromptModeration        ?? Fallback(globalPrompts.Moderation,        aiConfig.Moderation.ModerationPrompt),        settings?.PromptModeration        is not null),
+            new("CommentModeration", "Commentaarmoderatie",     settings?.PromptCommentModeration ?? Fallback(globalPrompts.CommentModeration,  aiConfig.Moderation.CommentModerationPrompt),  settings?.PromptCommentModeration is not null),
+            new("Rewrite",           "Herschrijven",            settings?.PromptRewrite           ?? Fallback(globalPrompts.Rewrite,            aiConfig.Moderation.RewritePrompt),            settings?.PromptRewrite           is not null),
+            new("ImageModeration",   "Beeldmoderatie",          settings?.PromptImageModeration   ?? Fallback(globalPrompts.ImageModeration,    aiConfig.Moderation.ImageModerationPrompt),    settings?.PromptImageModeration   is not null),
+            new("IdeaSupport",       "Ideeondersteuning",       settings?.PromptIdeaSupport       ?? Fallback(globalPrompts.IdeaSupport,        aiConfig.IdeaSupport.SystemPrompt),            settings?.PromptIdeaSupport       is not null),
+            new("CommentSupport",    "Commentaarondersteuning", settings?.PromptCommentSupport    ?? Fallback(globalPrompts.CommentSupport,     aiConfig.CommentSupport.SystemPrompt),         settings?.PromptCommentSupport    is not null),
+            new("QuestionSupport",   "Vraagondersteuning",      settings?.PromptQuestionSupport   ?? Fallback(globalPrompts.QuestionSupport,    aiConfig.QuestionSupport.SystemPrompt),        settings?.PromptQuestionSupport   is not null),
         ]);
 
         return new PlatformAdminSettingsViewModel(platformId, platformName, basicInfo, aiSettings, prompts);
