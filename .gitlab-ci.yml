@@ -252,14 +252,18 @@ deploy-test:
         --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
       ADMIN_IP=$(gcloud compute instances describe "${ADMIN_INSTANCE}" --zone="${ZONE}" \
         --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
-      gcloud compute security-policies rules update 50 \
-        --security-policy="synapse-test-armor" \
-        --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
-        --action=allow --project="${PROJECT_ID}" || \
-      gcloud compute security-policies rules create 50 \
-        --security-policy="synapse-test-armor" \
-        --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
-        --action=allow --project="${PROJECT_ID}"
+      sleep 15
+      for attempt in 1 2 3; do
+        gcloud compute security-policies rules update 50 \
+          --security-policy="synapse-test-armor" \
+          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+          --action=allow --project="${PROJECT_ID}" && break || \
+        gcloud compute security-policies rules create 50 \
+          --security-policy="synapse-test-armor" \
+          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+          --action=allow --project="${PROJECT_ID}" && break || \
+        sleep 15
+      done
   only:
     - development
     - release/staging
