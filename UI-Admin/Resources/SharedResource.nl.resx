@@ -20,7 +20,6 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Instellingen</value></data>
   <data name="Nav_AiSettings" xml:space="preserve"><value>AI instellingen</value></data>
   <data name="Nav_SystemDashboard" xml:space="preserve"><value>Systeemdashboard</value></data>
-  <data name="Nav_AiSettings" xml:space="preserve"><value>AI Instellingen</value></data>
   <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
 
   <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projecten</value></data>
@@ -91,4 +90,7 @@
   <data name="Prompt_IdeaSupport" xml:space="preserve"><value>Ideeondersteuning</value></data>
   <data name="Prompt_CommentSupport" xml:space="preserve"><value>Commentaarondersteuning</value></data>
   <data name="Prompt_QuestionSupport" xml:space="preserve"><value>Vraagondersteuning</value></data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value></data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value></data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, de AI-assistent is even niet beschikbaar.</value></data>
 </root>

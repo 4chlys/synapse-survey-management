@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Session;
@@ -13,7 +14,8 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 [Route("{projectId:int}/api/[controller]")]
 public class CommentSupportApiController(
     CommentSupportService commentSupportService,
-    ISessionService sessionService) : ControllerBase
+    ISessionService sessionService,
+    IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<CommentSupportChatResponse>> Chat(
@@ -38,7 +40,7 @@ public class CommentSupportApiController(
         {
             return Ok(new CommentSupportChatResponse
             {
-                AssistantMessage = "Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.",
+                AssistantMessage = localizer["AiSupport_CommentFallback"],
                 IsFinal          = true,
             });
         }
