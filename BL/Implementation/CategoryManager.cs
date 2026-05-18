@@ -97,16 +97,15 @@ public class CategoryManager(
 
     public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, string languageCode, string defaultLanguageCode, int topCount = 5)
     {
-        var categoriesTask = categoryRepository.ReadTopCategoriesAsync(projectId, topCount, languageCode, defaultLanguageCode);
-        var ideasTask = categoryRepository.ReadTopIdeasAsync(projectId, topCount);
-        await Task.WhenAll(categoriesTask, ideasTask);
+        var categories = await categoryRepository.ReadTopCategoriesAsync(projectId, topCount, languageCode, defaultLanguageCode);
+        var rawIdeas = await categoryRepository.ReadTopIdeasAsync(projectId, topCount);
 
-        var ideas = (await ideasTask).Select(i => i with
+        var ideas = rawIdeas.Select(i => i with
         {
             Description = i.Description.Length > 100 ? i.Description[..100] + "…" : i.Description
         }).ToList();
 
-        return new DashboardMetrics(await categoriesTask, ideas);
+        return new DashboardMetrics(categories, ideas);
     }
 
     public async Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, string languageCode, int count = 10)
