@@ -23,29 +23,18 @@ export function initSystemProjectStatesWidget(el: HTMLElement): () => void {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: labelColor,
-                        font: { size: 11 },
-                        generateLabels: (c) => {
-                            const ds = c.data.datasets[0];
-                            const colors = ds.backgroundColor as string[];
-                            return (c.data.labels as string[]).map((label, i) => ({
-                                text: `${label} (${ds.data[i]})`,
-                                fillStyle: colors[i],
-                                strokeStyle: colors[i],
-                                index: i,
-                            }));
-                        },
-                    },
-                },
+                legend: { position: 'right', labels: { color: labelColor, font: { size: 11 } } },
             },
             cutout: '50%',
         },
     });
 
     fetchSystemStats(platformId).then(stats => {
+        chart.data.labels = [
+            `Active (${stats.activeProjectCount})`,
+            `Draft (${stats.draftProjectCount})`,
+            `Archived (${stats.archivedProjectCount})`,
+        ];
         chart.data.datasets[0].data = [stats.activeProjectCount, stats.draftProjectCount, stats.archivedProjectCount];
         chart.update('none');
     }).catch(() => { /* ignore */ });
