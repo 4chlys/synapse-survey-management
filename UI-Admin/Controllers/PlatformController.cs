@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
+using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 
@@ -9,7 +12,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 [Authorize(Roles = "SystemAdmin")]
 public class PlatformController(
     PlatformAdminService platformService,
-    ProjectAdminService projectService) : Controller
+    ProjectAdminService projectService,
+    AiAdminService aiAdminService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -69,6 +73,45 @@ public class PlatformController(
         return View(new SystemDashboardViewModel(summaries));
     }
 
+    public async Task<IActionResult> SystemSettings()
+    {
+        var settings     = await platformService.GetSystemAiSettingsAsync();
+        var allowedIds   = settings is not null
+            ? JsonSerializer.Deserialize<List<string>>(settings.AllowedModelIds) ?? []
+            : [];
+        var availableIds = await aiAdminService.GetAvailableModelIdsAsync();
+
+        ViewData["ActiveSection"] = "AI Instellingen";
+        return View(new SystemAiSettingsViewModel(
+            AllModels: AiModelCatalog.All,
+            AllowedModelIds: allowedIds,
+            AvailableModelIds: availableIds
+        ));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveSystemAiSettings(List<string> AllowedModelIds)
+    {
+        if (AllowedModelIds is null || AllowedModelIds.Count == 0)
+        {
+            TempData["Error"] = "Minstens één AI-model moet geselecteerd zijn.";
+            return RedirectToAction(nameof(SystemSettings));
+        }
+
+        var available = await aiAdminService.GetAvailableModelIdsAsync();
+        AllowedModelIds = AllowedModelIds.Where(available.Contains).ToList();
+
+        if (AllowedModelIds.Count == 0)
+        {
+            TempData["Error"] = "Minstens één geconfigureerd AI-model moet geselecteerd zijn.";
+            return RedirectToAction(nameof(SystemSettings));
+        }
+
+        await platformService.SaveSystemAiSettingsAsync(AllowedModelIds);
+        TempData["Success"] = "AI-instellingen opgeslagen.";
+        return RedirectToAction(nameof(SystemSettings));
+    }
+
     public async Task<IActionResult> Dashboard(int id)
     {
         var platform = await platformService.GetPlatformByIdAsync(id);
@@ -105,7 +148,7 @@ public class PlatformController(
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Beheerders";
+        ViewData["ActiveSection"] = "Admins";
 
         return View(await BuildAdminsViewModel(id, platform.Name));
     }
@@ -118,7 +161,7 @@ public class PlatformController(
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Beheerders";
+        ViewData["ActiveSection"] = "Admins";
 
         if (!ModelState.IsValid)
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
@@ -150,7 +193,7 @@ public class PlatformController(
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Instellingen";
+        ViewData["ActiveSection"] = "Settings";
 
         return View(await BuildSettingsViewModel(id, platform));
     }
@@ -163,7 +206,7 @@ public class PlatformController(
             var platform = await platformService.GetPlatformByIdAsync(id);
             ViewData["PlatformId"] = id;
             ViewData["PlatformName"] = platform?.Name;
-            ViewData["ActiveSection"] = "Instellingen";
+            ViewData["ActiveSection"] = "Settings";
             return View("Settings", await BuildSettingsViewModel(id, platform!));
         }
 

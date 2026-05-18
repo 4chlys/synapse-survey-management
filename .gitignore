@@ -1,6 +1,8 @@
 # Secrets
 vertexai-key.json
+ai-config.json
 cosign.key
+
 
 # Documentatie
 Documentatie/

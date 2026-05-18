@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 
 namespace SynapseEnqueteManagement.UI.Admin.Data;
@@ -18,6 +19,7 @@ public class AdminSeeder(
         await EnsureRoleAsync("ProjectPlatformAdmin");
         await EnsureSystemAdminAsync();
         await EnsurePlatformAdminsAsync();
+        await EnsureSystemAiSettingsAsync();
     }
 
     private async Task EnsureRoleAsync(string roleName)
@@ -103,5 +105,23 @@ public class AdminSeeder(
 
             logger.LogInformation("Seeded platform admin {Email} for platform {Platform}", email, platform.Name);
         }
+    }
+
+    private async Task EnsureSystemAiSettingsAsync()
+    {
+        if (await db.SystemAiSettings.AnyAsync()) return;
+
+        var vertexModelIds = AiModelCatalog.All
+            .Where(m => m.Provider == AiProvider.VertexAi)
+            .Select(m => m.Id)
+            .ToList();
+
+        db.SystemAiSettings.Add(new SystemAiSettings
+        {
+            Id = 1,
+            AllowedModelIds = System.Text.Json.JsonSerializer.Serialize(vertexModelIds),
+        });
+        await db.SaveChangesAsync();
+        logger.LogInformation("[Seeder] SystemAiSettings seeded with {Count} Vertex AI models.", vertexModelIds.Count);
     }
 }

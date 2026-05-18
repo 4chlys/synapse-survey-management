@@ -10,7 +10,7 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL;
 
-public class SynapseEnqueteContext(DbContextOptions options) : DbContext(options)
+public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> options) : DbContext(options)
 {
     public DbSet<Language> Languages { get; set; }
     public DbSet<Project> Projects { get; set; }

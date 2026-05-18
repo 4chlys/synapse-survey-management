@@ -285,11 +285,14 @@ function updateSyntaxHint(): void {
     const opens  = (value.match(/\{/g) ?? []).length;
     const closes = (value.match(/\}/g) ?? []).length;
     if (opens !== closes) {
-        syntaxHint.textContent = `Niet-gebalanceerde accolades (${opens} {  vs  ${closes} }).`;
+        const template = syntaxHint.dataset.unbalancedLabel ?? '';
+        syntaxHint.textContent = template
+            .replace('{0}', String(opens))
+            .replace('{1}', String(closes));
         syntaxHint.classList.add('text-error');
         syntaxHint.classList.remove('text-success');
     } else {
-        syntaxHint.textContent = 'CSS ziet er gebalanceerd uit.';
+        syntaxHint.textContent = syntaxHint.dataset.balancedLabel ?? '';
         syntaxHint.classList.add('text-success');
         syntaxHint.classList.remove('text-error');
     }

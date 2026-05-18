@@ -17,6 +17,10 @@ interface QuestionData {
     totalQuestions: number;
     isMandatory: boolean;
     position: number;
+    mediaUrl: string | null;
+    mediaType: number | null;
+    mediaIsEmbed: boolean;
+    mediaText: string | null;
 }
 
 interface QuestionEntry {
@@ -44,6 +48,9 @@ interface Ctx {
     confirmBubble: HTMLElement | null;
     userTypingBubble: HTMLElement | null;
     openHandlers: { send: () => void; key: (e: KeyboardEvent) => void } | null;
+    introText: string;
+    introImage: string;
+    introShown: boolean;
 }
 
 // ─── Visual class constants ──────────────────────────────
@@ -119,8 +126,16 @@ function removeUserTyping(ctx: Ctx): void {
     }
 }
 
+interface BubbleMedia {
+    imageUrl?: string | null;
+    videoUrl?: string | null;
+    audioUrl?: string | null;
+    isEmbed?: boolean;
+    extraText?: string | null;
+}
+
 // Async: shows typing indicator, then resolves with the real bubble element
-async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true): Promise<HTMLElement> {
+async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true, media?: BubbleMedia): Promise<HTMLElement> {
     if (withTyping) {
         const typing = document.createElement('div');
         typing.className = TYPING_BUBBLE_CLASS;
@@ -136,8 +151,56 @@ async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true): Pr
 
     const bubble = document.createElement('div');
     bubble.className = SYSTEM_BUBBLE_CLASS;
-    bubble.textContent = text;
     bubble.setAttribute('tabindex', '-1');
+
+    if (media?.imageUrl) {
+        const img = document.createElement('img');
+        img.src = media.imageUrl;
+        img.alt = '';
+        img.className = 'rounded-xl max-h-56 w-full object-contain bg-base-200 mb-2';
+        img.addEventListener('load', () => scrollToBottom(ctx));
+        bubble.appendChild(img);
+    }
+    if (media?.videoUrl) {
+        if (media.isEmbed && (media.videoUrl.includes('youtube.com/embed') || media.videoUrl.includes('player.vimeo.com'))) {
+            const wrap = document.createElement('div');
+            wrap.className = 'aspect-video rounded-xl overflow-hidden bg-black mb-2';
+            const iframe = document.createElement('iframe');
+            iframe.src = media.videoUrl;
+            iframe.className = 'w-full h-full';
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+            iframe.setAttribute('allow', 'accelerometer; encrypted-media; picture-in-picture');
+            iframe.loading = 'lazy';
+            wrap.appendChild(iframe);
+            bubble.appendChild(wrap);
+        } else {
+            const video = document.createElement('video');
+            video.controls = true;
+            video.preload = 'metadata';
+            video.src = media.videoUrl;
+            video.className = 'rounded-xl max-h-56 w-full bg-black mb-2';
+            bubble.appendChild(video);
+        }
+    }
+    if (media?.audioUrl) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.preload = 'metadata';
+        audio.src = media.audioUrl;
+        audio.className = 'w-full mb-2';
+        bubble.appendChild(audio);
+    }
+    if (media?.extraText) {
+        const sub = document.createElement('div');
+        sub.className = 'text-xs text-base-content/70 mb-1';
+        sub.textContent = media.extraText;
+        bubble.appendChild(sub);
+    }
+
+    const textEl = document.createElement('div');
+    textEl.textContent = text;
+    bubble.appendChild(textEl);
+
     ctx.messagesEl.appendChild(bubble);
     scrollToBottom(ctx);
     requestAnimationFrame(() => bubble.focus({ preventScroll: true }));
@@ -237,11 +300,15 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
 
         btn.addEventListener('click', () => {
             if (!opts.multi) {
-                const sourceRect = btn.cloneNode(true) as HTMLElement;
+                buttons.forEach(b => { b.disabled = true; b.style.pointerEvents = 'none'; });
+                btn.classList.add(...CHIP_SELECTED_CLASS.split(' '));
+                btn.setAttribute('aria-pressed', 'true');
                 const r = btn.getBoundingClientRect();
+                const sourceRect = btn.cloneNode(true) as HTMLElement;
+                sourceRect.classList.remove('chat-chip-enter');
                 Object.assign(sourceRect.style, {
                     position: 'fixed', left: `${r.left}px`, top: `${r.top}px`,
-                    width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '50', opacity: '0',
+                    width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '50', opacity: '0', visibility: 'hidden',
                 });
                 document.body.appendChild(sourceRect);
                 removeActiveChips(ctx);
@@ -280,11 +347,16 @@ function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
             confirmBtn.addEventListener('click', () => {
                 const values = Array.from(selected);
                 const cb = confirmBtn!;
+                cb.disabled = true;
+                cb.style.pointerEvents = 'none';
+                cb.classList.add('opacity-90', 'scale-95');
+                buttons.forEach(b => { b.disabled = true; b.style.pointerEvents = 'none'; });
                 const r = cb.getBoundingClientRect();
                 const ghost = cb.cloneNode(true) as HTMLElement;
+                ghost.classList.remove('chat-chip-enter');
                 Object.assign(ghost.style, {
                     position: 'fixed', left: `${r.left}px`, top: `${r.top}px`,
-                    width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '50', opacity: '0',
+                    width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '50', opacity: '0', visibility: 'hidden',
                 });
                 document.body.appendChild(ghost);
                 removeActiveChips(ctx);
@@ -357,11 +429,16 @@ function showLikertSlider(ctx: Ctx, items: string[], onSelect: (value: string, s
     confirmBtn.addEventListener('click', () => {
         const idx = Number(slider.value);
         const value = items[idx];
+        confirmBtn.disabled = true;
+        confirmBtn.style.pointerEvents = 'none';
+        confirmBtn.classList.add('opacity-90', 'scale-95');
+        slider.disabled = true;
         const r = confirmBtn.getBoundingClientRect();
         const ghost = confirmBtn.cloneNode(true) as HTMLElement;
+        ghost.classList.remove('chat-chip-enter');
         Object.assign(ghost.style, {
             position: 'fixed', left: `${r.left}px`, top: `${r.top}px`,
-            width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '50', opacity: '0',
+            width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '50', opacity: '0', visibility: 'hidden',
         });
         document.body.appendChild(ghost);
         removeActiveChips(ctx);
@@ -432,7 +509,16 @@ async function renderQuestion(ctx: Ctx, index: number, withTyping = true): Promi
 
     updateProgress(q);
 
-    const sysBubble = await appendSystemBubble(ctx, q.text, withTyping);
+    const media: BubbleMedia | undefined = q.mediaType
+        ? {
+            imageUrl: q.mediaType === 1 ? q.mediaUrl : null,
+            videoUrl: q.mediaType === 2 ? q.mediaUrl : null,
+            audioUrl: q.mediaType === 3 ? q.mediaUrl : null,
+            isEmbed: q.mediaIsEmbed,
+            extraText: q.mediaText,
+        }
+        : (q.mediaText ? { extraText: q.mediaText } : undefined);
+    const sysBubble = await appendSystemBubble(ctx, q.text, withTyping, media);
     ctx.questionStack.push({ qid: q.questionId, sysBubble, ansBubble: null });
     updateBackBtn(ctx);
 
@@ -563,7 +649,7 @@ function renderDone(ctx: Ctx): void {
     setTimeout(() => {
         const popup = document.getElementById('thank-you-popup');
         if (popup) popup.classList.remove('hidden');
-    }, 800);
+    }, 3000);
 }
 
 function updateBackBtn(ctx: Ctx): void {
@@ -623,7 +709,20 @@ async function doRestart(ctx: Ctx): Promise<void> {
     window.location.reload();
 }
 
+async function showIntro(ctx: Ctx): Promise<void> {
+    if (ctx.introShown) return;
+    ctx.introShown = true;
+    const hasText = ctx.introText.trim().length > 0;
+    const hasImage = ctx.introImage.trim().length > 0;
+    if (!hasText && !hasImage) return;
+    const text = hasText ? ctx.introText : '';
+    await appendSystemBubble(ctx, text, true, {
+        imageUrl: hasImage ? ctx.introImage : null,
+    });
+}
+
 async function startFlow(ctx: Ctx): Promise<void> {
+    await showIntro(ctx);
     if (ctx.hasSession) {
         try {
             const resumeId = await getResumeQuestion(ctx.projectId);
@@ -688,6 +787,9 @@ export function initChat(): void {
         confirmBubble: null,
         userTypingBubble: null,
         openHandlers: null,
+        introText: root.dataset.introText ?? '',
+        introImage: root.dataset.introImage ?? '',
+        introShown: false,
     };
 
     inputEl.addEventListener('input', () => {

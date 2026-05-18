@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Localization;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
@@ -11,6 +12,7 @@ public sealed class MockCommentSupportService(IStringLocalizer<SharedResource> l
 {
     public Task<CommentSupportReply> ChatAsync(
         CommentSupportRequest request,
+        ResolvedPlatformAiConfig platformConfig,
         int projectId,
         CancellationToken ct = default)
     {

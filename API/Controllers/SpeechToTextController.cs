@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.SpeechToText;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
+using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -10,6 +13,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class SpeechToTextController(
     IAiSpeechToTextService speechToTextService,
     AiSpeechToTextConfig speechToTextConfig,
+    IPlatformAiConfigService platformAiConfig,
     IParticipantManager participantManager, IProjectManager projectManager)
     : ParticipantControllerBase(participantManager, projectManager)
 {
@@ -57,8 +61,13 @@ public class SpeechToTextController(
             MimeType  = dto.MimeType,
             Language  = lang,
         };
+        
+        Project project = null;
+        try { project = await GetProjectByIdReadOnlyAsync(projectId); }
+        catch { /* intentionally swallowed */ }
 
-        var result = await speechToTextService.TranscribeAsync(request, projectId, ct);
+        var platformConfig = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+        var result = await speechToTextService.TranscribeAsync(request, platformConfig, projectId, ct);
 
         return Ok(new SpeechToTextResponseDto
         {

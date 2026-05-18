@@ -1,7 +1,10 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiCommentSupport;
+using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiModeration;
-using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Sorting;
@@ -335,15 +338,20 @@ public class AiModerationServiceTests
             .Returns(ModerationResult.Acceptable());
 
         var sut = new AiModerationService(
-            mockChat.Object,
             NullLogger<AiModerationService>.Instance,
-            config,
             mockRegex.Object,
-            Mock.Of<IAiUsageManager>(),
-            new AiChatModelOptions { Model = "test" });
+            new Mock<IAiUsageManager>().Object);
+
+        var platformConfig = new ResolvedPlatformAiConfig(
+            mockChat.Object,
+            "gemini-2.0-flash",
+            config,
+            new AiIdeaSupportConfig(),
+            new AiCommentSupportConfig(),
+            new AiQuestionSupportConfig());
 
         // Act
-        await sut.CheckWithAiAsync("some idea text", projectId: 1, respondInLanguage: "en");
+        await sut.CheckWithAiAsync("some idea text", platformConfig, 0, respondInLanguage: "en");
 
         // Assert — "{response_language}" replaced with "en" (not left as placeholder, not "nl")
         Assert.NotNull(capturedMessages);

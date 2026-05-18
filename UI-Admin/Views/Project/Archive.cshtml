@@ -1,6 +1,7 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Project archiveren";
+    ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
 }
@@ -10,16 +11,16 @@
             <div class="w-14 h-14 bg-warning/10 rounded-full flex items-center justify-center">
                 <svg class="text-warning" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
             </div>
-            <h1 class="font-heading font-bold text-xl text-base-content">Project archiveren</h1>
+            <h1 class="font-heading font-bold text-xl text-base-content">@L["Heading"]</h1>
             <p class="text-sm text-base-content/60">
-                <strong>@Model.Name</strong> staat momenteel op <em>Actief</em>. Archiveren maakt het project onzichtbaar voor deelnemers.
+                @Html.Raw(string.Format(L["Body"].Value, $"<strong>{Model.Name}</strong>"))
             </p>
             <div class="card-actions w-full flex-col gap-2 mt-2">
                 <form asp-action="ArchiveProject" method="post" class="w-full">
                     <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                    <button type="submit" class="btn btn-warning w-full">Project archiveren</button>
+                    <button type="submit" class="btn btn-warning w-full">@L["ArchiveButton"]</button>
                 </form>
-                <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost w-full">Annuleren</a>
+                <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost w-full">@L["CancelButton"]</a>
             </div>
         </div>
     </div>

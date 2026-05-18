@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.QuestionSupport;
 using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
@@ -12,6 +13,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/questionsupport")]
 public class QuestionSupportController(
     IAiQuestionSupportService questionSupportService,
+    IPlatformAiConfigService platformAiConfig,
     IProjectManager projectManager,
     IQuestionnaireManager questionnaireManager)
     : ControllerBase
@@ -19,7 +21,7 @@ public class QuestionSupportController(
     [HttpPost("chat")]
     public async Task<ActionResult<QuestionSupportChatResponseDto>> Chat(
         int projectId,
-        QuestionSupportChatRequestDto dto,
+        [FromBody] QuestionSupportChatRequestDto dto,
         CancellationToken ct)
     {
         var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
@@ -58,13 +60,14 @@ public class QuestionSupportController(
             IsFirstTurn = dto.IsFirstTurn,
         };
 
-        var reply = await questionSupportService.ChatAsync(request, projectId, ct);
+        var platformConfig = await platformAiConfig.ResolveAsync(project.ProjectPlatformId, ct);
+        var reply = await questionSupportService.ChatAsync(request, platformConfig, projectId, ct);
 
         return Ok(new QuestionSupportChatResponseDto { AssistantMessage = reply.AssistantMessage });
     }
 
     [HttpPatch("mode")]
-    public async Task<IActionResult> UpdateMode(int projectId, AiAssistanceType mode)
+    public async Task<IActionResult> UpdateMode(int projectId, [FromBody] AiAssistanceType mode)
     {
         await projectManager.UpdateAiAssistanceModeAsync(projectId, mode);
         return NoContent();

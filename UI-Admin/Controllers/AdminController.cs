@@ -23,7 +23,7 @@ public class AdminController(
             ? allAdmins.Where(a => a.ProjectPlatformId == platformId).ToList()
             : allAdmins;
 
-        ViewData["ActiveSection"] = "Beheerders";
+        ViewData["ActiveSection"] = "Admins";
 
         return View(new AdminListViewModel(
             filtered.Select(a => new AdminWithPlatformViewModel(
