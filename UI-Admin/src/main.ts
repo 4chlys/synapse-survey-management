@@ -11,3 +11,4 @@ import './project-ideation';
 import './ideas-filter';
 import './rawdata-export';
 import './system-stats-export';
+import './project-stats-export';

@@ -30,6 +30,11 @@ export function initSystemProjectStatesWidget(el: HTMLElement): () => void {
     });
 
     fetchSystemStats(platformId).then(stats => {
+        chart.data.labels = [
+            `Active (${stats.activeProjectCount})`,
+            `Draft (${stats.draftProjectCount})`,
+            `Archived (${stats.archivedProjectCount})`,
+        ];
         chart.data.datasets[0].data = [stats.activeProjectCount, stats.draftProjectCount, stats.archivedProjectCount];
         chart.update('none');
     }).catch(() => { /* ignore */ });

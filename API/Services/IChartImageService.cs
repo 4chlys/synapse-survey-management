@@ -13,4 +13,7 @@ public interface IChartImageService
     /// <summary>Renders only the completion-time box plot. Used by the XLSX export
     /// to embed a PNG image because native Excel chartex box plots are brittle.</summary>
     byte[] RenderCompletionBoxPlot(SystemStatsDto stats);
+
+    /// <summary>Renders the project-dashboard charts (timeline + top categories) as PNG byte buffers.</summary>
+    IReadOnlyList<(string Stem, byte[] PngBytes)> RenderProjectCharts(ProjectExportDataDto data);
 }

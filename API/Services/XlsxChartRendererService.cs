@@ -324,4 +324,24 @@ public class XlsxChartRendererService(IChartImageService chartImages) : IChartRe
         worksheetDrawing.Append(anchor);
         worksheetDrawing.Save(drawingsPart);
     }
+
+    public Task<byte[]> InjectProjectChartsAsync(byte[] xlsxBytes, ProjectExportDataDto data, CancellationToken ct = default)
+    {
+        using var ms = new MemoryStream();
+        ms.Write(xlsxBytes, 0, xlsxBytes.Length);
+        ms.Position = 0;
+
+        using (var doc = SpreadsheetDocument.Open(ms, true))
+        {
+            var charts = chartImages.RenderProjectCharts(data);
+            foreach (var (stem, png) in charts)
+            {
+                var sheetName = stem == "participation-timeline" ? "Timeline" : "Categories";
+                if (png.Length > 0)
+                    EmbedImage(doc, sheetName, png, anchorRow: 6, widthCols: 15, heightRows: 22);
+            }
+        }
+
+        return Task.FromResult(ms.ToArray());
+    }
 }

@@ -66,4 +66,32 @@ public class StatsProxyController(
         var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/stats/moderation-queue");
         return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
     }
+
+    [HttpGet("stats/export")]
+    public async Task<IActionResult> ExportStats(
+        int projectId,
+        [FromQuery] string format,
+        [FromQuery] string sections,
+        [FromQuery] bool includeGraphics = false)
+    {
+        if (!await CanAccessProjectAsync(projectId))
+            return Forbid();
+
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(format))
+            parts.Add($"format={Uri.EscapeDataString(format)}");
+        if (!string.IsNullOrEmpty(sections))
+            parts.Add($"sections={Uri.EscapeDataString(sections)}");
+        if (includeGraphics)
+            parts.Add("includeGraphics=true");
+        var qs = parts.Count > 0 ? "?" + string.Join("&", parts) : string.Empty;
+
+        var (status, stream, contentType, fileName) =
+            await proxy.ProxyGetFileAsync($"api/projects/{projectId}/stats/export{qs}");
+
+        if (status != 200)
+            return StatusCode(status);
+
+        return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
+    }
 }

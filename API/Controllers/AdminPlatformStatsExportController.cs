@@ -45,18 +45,12 @@ public class AdminPlatformStatsExportController(
         var projects = (await projectManager.GetAllProjectsAsync(platformId)).ToList();
         var projectIds = projects.Select(p => p.ProjectId).ToList();
 
-        var statsTask      = participantManager.GetStatsByProjectsAsync(projectIds);
-        var aiSystemTask   = usageManager.ReadServiceBreakdownSystemAsync(platformId, null);
-        var aiPlatformTask = usageManager.ReadServiceBreakdownByPlatformAsync(platformId, null);
-        var aiProjectTask  = usageManager.ReadServiceBreakdownByProjectsAsync(platformId, null);
+        var participantStats = await participantManager.GetStatsByProjectsAsync(projectIds);
+        var aiSystem   = (await usageManager.ReadServiceBreakdownSystemAsync(platformId, null)).ToList();
+        var aiPlatform = (await usageManager.ReadServiceBreakdownByPlatformAsync(platformId, null)).ToList();
+        var aiProject  = (await usageManager.ReadServiceBreakdownByProjectsAsync(platformId, null)).ToList();
 
-        await Task.WhenAll(statsTask, aiSystemTask, aiPlatformTask, aiProjectTask);
-
-        var participantStats = statsTask.Result;
         var statsById = participantStats.ToDictionary(s => s.ProjectId);
-        var aiSystem   = aiSystemTask.Result.ToList();
-        var aiPlatform = aiPlatformTask.Result.ToList();
-        var aiProject  = aiProjectTask.Result.ToList();
 
         // Pre-compute rollups (reused for both sheets and the chart-renderer DTO)
         var projectRows = projects.Select(p =>

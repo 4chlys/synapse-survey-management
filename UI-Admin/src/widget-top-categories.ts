@@ -1,5 +1,6 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
 import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
+import { attachDownloadButton } from './lib/system-stats';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 
@@ -53,6 +54,8 @@ export function initTopCategoriesWidget(el: HTMLElement): () => void {
             chart.update('none');
         } catch { /* ignore */ }
     }
+
+    attachDownloadButton(el, canvas, 'top-categories.png');
 
     fetch_and_render();
     const interval = setInterval(fetch_and_render, POLL_INTERVAL_MS);

@@ -144,6 +144,75 @@ public class ScottPlotChartImageService : IChartImageService
         return plot.GetImageBytes(Width, Height, ImageFormat.Png);
     }
 
+    public IReadOnlyList<(string Stem, byte[] PngBytes)> RenderProjectCharts(ProjectExportDataDto data) =>
+        [
+            ("participation-timeline", RenderTimeline(data)),
+            ("top-categories",         RenderTopCategories(data)),
+        ];
+
+    private static byte[] RenderTimeline(ProjectExportDataDto data)
+    {
+        var plot = new Plot();
+        plot.Title("Participation (30 days)");
+
+        if (data.TimelineStarts.Count == 0)
+            return plot.GetImageBytes(Width, Height, ImageFormat.Png);
+
+        var xs = Enumerable.Range(0, data.TimelineDates.Count).Select(i => (double)i).ToArray();
+        var starts = data.TimelineStarts.Select(v => (double)v).ToArray();
+        var completions = data.TimelineCompletions.Select(v => (double)v).ToArray();
+
+        var startScatter = plot.Add.Scatter(xs, starts);
+        startScatter.LegendText = "Started";
+        var completionScatter = plot.Add.Scatter(xs, completions);
+        completionScatter.LegendText = "Completed";
+
+        var step = Math.Max(1, xs.Length / 8);
+        var tickPositions = xs.Where((_, i) => i % step == 0).ToArray();
+        var tickLabels = data.TimelineDates
+            .Where((_, i) => i % step == 0)
+            .Select(d => d.Length >= 10 ? d[5..] : d)
+            .ToArray();
+        plot.Axes.Bottom.SetTicks(tickPositions, tickLabels);
+        plot.Axes.Bottom.TickLabelStyle.Rotation = -30;
+        plot.Axes.Left.Label.Text = "Count";
+        plot.Legend.IsVisible = true;
+
+        return plot.GetImageBytes(Width, Height, ImageFormat.Png);
+    }
+
+    private static byte[] RenderTopCategories(ProjectExportDataDto data)
+    {
+        var plot = new Plot();
+        plot.Title("Top categories");
+
+        if (data.TopCategories.Count == 0)
+            return plot.GetImageBytes(Width, Height, ImageFormat.Png);
+
+        var ideaBars = data.TopCategories.Select((c, i) => new Bar
+        {
+            Position = i * 3 + 1,
+            Value = c.IdeaCount,
+            Label = c.IdeaCount.ToString(),
+        }).ToList();
+        var reactionBars = data.TopCategories.Select((c, i) => new Bar
+        {
+            Position = i * 3 + 2,
+            Value = c.TotalReactions,
+            Label = c.TotalReactions.ToString(),
+        }).ToList();
+
+        plot.Add.Bars(ideaBars);
+        plot.Add.Bars(reactionBars);
+
+        var labelPositions = data.TopCategories.Select((_, i) => (double)(i * 3 + 1.5)).ToArray();
+        plot.Axes.Bottom.SetTicks(labelPositions, data.TopCategories.Select(c => Truncate(c.Name, 14)).ToArray());
+        plot.Axes.Bottom.TickLabelStyle.Rotation = -30;
+        plot.Axes.Left.Label.Text = "Count";
+
+        return plot.GetImageBytes(Width, Height, ImageFormat.Png);
+    }
+
     private static string Truncate(string s, int max) =>
         string.IsNullOrEmpty(s) ? string.Empty : (s.Length <= max ? s : s[..max] + "…");
 }
