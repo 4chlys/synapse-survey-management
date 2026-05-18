@@ -231,15 +231,16 @@ deploy-test:
     - gcloud auth login --cred-file=gcp-wif-test.json
     - gcloud config set project "${PROJECT_ID}"
   script:
-    # Rolling replace op de test-MIGs (zero-downtime, --max-surge=1 houdt altijd 1 actief)
+    # Rolling replace op de test-MIGs (--max-unavailable=1 --max-surge=0: vrijmaken van capaciteit
+    # voor aanmaken nieuwe instantie, korte downtime acceptabel in test)
     # Vereist: bootstrap.sh test is al eens uitgevoerd zodat de MIGs bestaan.
     - |
       gcloud compute instance-groups managed rolling-action replace synapse-test-api-mig \
-        --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+        --zone="${ZONE}" --max-unavailable=1 --max-surge=0
       gcloud compute instance-groups managed rolling-action replace synapse-test-ui-mig \
-        --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+        --zone="${ZONE}" --max-unavailable=1 --max-surge=0
       gcloud compute instance-groups managed rolling-action replace synapse-test-admin-mig \
-        --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+        --zone="${ZONE}" --max-unavailable=1 --max-surge=0
       gcloud compute instance-groups managed wait-until synapse-test-api-mig   --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-test-ui-mig    --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-test-admin-mig --stable --zone="${ZONE}"
