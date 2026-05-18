@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cleanups: Array<() => void> = [];
 
     slots.forEach(el => {
+        if (el.dataset.widgetInitialized === 'true') return;
+        el.dataset.widgetInitialized = 'true';
+
         const type = el.dataset.widget ?? '';
         const init = widgetRegistry[type];
         if (!init) return;
