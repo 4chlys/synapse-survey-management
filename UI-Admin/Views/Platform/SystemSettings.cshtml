@@ -1,21 +1,19 @@
 @using SynapseEnqueteManagement.BL.Domain.Ai
 @model SynapseEnqueteManagement.UI.Admin.Models.Platform.SystemAiSettingsViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "AI Instellingen";
+    ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "AI Instellingen";
     Layout = "_Layout";
 }
 
 <div class="max-w-2xl">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">AI Instellingen</h1>
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
 
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-5">
-            <h2 class="font-semibold text-base-content">AI-modellen</h2>
-            <p class="text-sm text-base-content/60">
-                Vink de modellen aan die projectplatforms mogen gebruiken. Als je slechts één model selecteert,
-                worden alle platforms verplicht dat model te gebruiken.
-            </p>
+            <h2 class="font-semibold text-base-content">@L["ModelsHeading"]</h2>
+            <p class="text-sm text-base-content/60">@L["ModelsDescription"]</p>
 
             <form asp-action="SaveSystemAiSettings" method="post" class="flex flex-col gap-5">
 
@@ -31,7 +29,7 @@
                             {
                                 var available = Model.AvailableModelIds.Contains(aiModel.Id);
                                 <label class="label justify-start gap-3 @(available ? "cursor-pointer" : "cursor-not-allowed opacity-40")"
-                                       title="@(available ? "" : "Geen API-sleutel geconfigureerd voor dit model")">
+                                       title="@(available ? "" : L["NoApiKeyTooltip"].Value)">
                                     <input type="checkbox"
                                            name="AllowedModelIds"
                                            value="@aiModel.Id"
@@ -42,7 +40,7 @@
                                     <span class="text-xs text-base-content/40 ml-1">(@aiModel.Id)</span>
                                     @if (!available)
                                     {
-                                        <span class="badge badge-ghost badge-xs">geen API-sleutel</span>
+                                        <span class="badge badge-ghost badge-xs">@L["NoApiKeyBadge"]</span>
                                     }
                                 </label>
                             }
@@ -51,7 +49,7 @@
                 }
 
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
                 </div>
             </form>
         </div>
