@@ -36,6 +36,7 @@ public class LandingPageController : Controller
             return RedirectToAction("CategoryList", "Category", new { projectId });
         }
         
+        await _projectApiService.TrackViewAsync(projectId);
         this.SetLayoutData(project, projectId);
         return View(project);
     }

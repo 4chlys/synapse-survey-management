@@ -160,6 +160,8 @@ else
 }
 
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<IChartImageService, ScottPlotChartImageService>();
+builder.Services.AddScoped<IChartRendererService, XlsxChartRendererService>();
 
 // Registering BL
 var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };

@@ -13,4 +13,7 @@ public sealed record PlatformDashboardViewModel(
     int ParticipantCount,
     string AiModelName,
     string CostDashboardUrl
-);
+)
+{
+    public ICollection<ProjectRowViewModel> Projects { get; init; } = [];
+}

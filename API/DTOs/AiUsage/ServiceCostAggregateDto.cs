@@ -5,4 +5,5 @@ public record ServiceCostAggregateDto(
     string Model,
     long InputTokens,
     long OutputTokens,
+    int RequestCount,
     decimal CostEur);
