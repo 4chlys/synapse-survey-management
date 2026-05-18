@@ -12,4 +12,7 @@ public interface IAiUsageManager
     Task<IEnumerable<ProjectCostAggregate>> ReadProjectAggregatesAsync(DateTime? from, CancellationToken ct = default);
     Task<IEnumerable<PlatformCostAggregate>> ReadPlatformAggregatesAsync(DateTime? from, CancellationToken ct = default);
     Task<IEnumerable<ServiceCostAggregate>> ReadServiceBreakdownByProjectAsync(int projectId, DateTime? from, CancellationToken ct = default);
+    Task<IEnumerable<ServiceCostAggregate>> ReadServiceBreakdownSystemAsync(int? platformId, DateTime? from, CancellationToken ct = default);
+    Task<IEnumerable<PlatformServiceCostAggregate>> ReadServiceBreakdownByPlatformAsync(int? platformId, DateTime? from, CancellationToken ct = default);
+    Task<IEnumerable<ProjectServiceCostAggregate>> ReadServiceBreakdownByProjectsAsync(int? platformId, DateTime? from, CancellationToken ct = default);
 }

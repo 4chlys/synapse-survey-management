@@ -5,6 +5,10 @@ import { initTopIdeasWidget } from './widget-top-ideas';
 import { initSurveyDistributionWidget } from './lib/widget-survey-distribution';
 import { initIdeaFeedWidget } from './widget-idea-feed';
 import { initModerationQueueWidget } from './widget-moderation-queue';
+import { initSystemParticipantsWidget } from './widget-system-participants';
+import { initSystemProjectStatesWidget } from './widget-system-project-states';
+import { initSystemAiCostWidget } from './widget-system-ai-cost';
+import { initSystemCompletionBoxplotWidget } from './widget-system-completion-boxplot';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -20,6 +24,10 @@ const widgetRegistry: Record<string, WidgetInit> = {
     SurveyDistribution: initSurveyDistributionWidget,
     IdeaFeed: initIdeaFeedWidget,
     ModerationQueue: initModerationQueueWidget,
+    SystemParticipants: initSystemParticipantsWidget,
+    SystemProjectStates: initSystemProjectStatesWidget,
+    SystemAiCost: initSystemAiCostWidget,
+    SystemCompletionBoxplot: initSystemCompletionBoxplotWidget,
 };
 
 document.addEventListener('DOMContentLoaded', () => {

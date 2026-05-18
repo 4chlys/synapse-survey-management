@@ -27,4 +27,24 @@
   <data name="AiCost_Cost" xml:space="preserve"><value>Kosten (EUR)</value></data>
   <data name="AiCost_Loading" xml:space="preserve"><value>Laden...</value></data>
   <data name="AiCost_Empty" xml:space="preserve"><value>Geen AI-gebruik in de laatste 24u.</value></data>
+
+  <data name="ProjectsTableHeading" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Col_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Col_State" xml:space="preserve"><value>Status</value></data>
+  <data name="Col_Participants" xml:space="preserve"><value>Deelnemers</value></data>
+  <data name="Col_AvgTime" xml:space="preserve"><value>Gem. tijd</value></data>
+  <data name="Col_MedianTime" xml:space="preserve"><value>Mediaantijd</value></data>
+  <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
+  <data name="ExportModalTitle" xml:space="preserve"><value>Statistieken exporteren</value></data>
+  <data name="ExportGroupHeading_Stats" xml:space="preserve"><value>Statistieken</value></data>
+  <data name="ExportGroupHeading_Ai" xml:space="preserve"><value>AI-gebruik</value></data>
+  <data name="Section_Platforms" xml:space="preserve"><value>Platformen</value></data>
+  <data name="Section_Projects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Section_Summary" xml:space="preserve"><value>Samenvatting</value></data>
+  <data name="Section_AiSystem" xml:space="preserve"><value>AI per dienst (systeem)</value></data>
+  <data name="Section_AiPlatforms" xml:space="preserve"><value>AI per dienst (platform)</value></data>
+  <data name="Section_AiProjects" xml:space="preserve"><value>AI per dienst (project)</value></data>
+  <data name="IncludeGraphicsLabel" xml:space="preserve"><value>Grafieken opnemen (xlsx)</value></data>
+  <data name="FormatLabel" xml:space="preserve"><value>Formaat</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
 </root>
