@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using SynapseEnqueteManagement.BL.Ai;
@@ -171,6 +172,14 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Cloud Run / GFE proxy IPs are dynamic; clear the default allow-list to trust the LB.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddViteServices();
 
 var app = builder.Build();
@@ -202,6 +211,8 @@ var app = builder.Build();
     }
 }
 
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
     app.UseViteDevelopmentServer();
 
@@ -217,7 +228,6 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter();
 app.MapStaticAssets();
 app.MapControllerRoute(
         name: "default",
