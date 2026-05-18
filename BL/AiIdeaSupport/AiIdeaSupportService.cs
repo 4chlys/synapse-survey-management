@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
@@ -8,19 +9,15 @@ using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
 
 public sealed class AiIdeaSupportService(
-    IChatClient chatClient,
     ILogger<AiIdeaSupportService> logger,
-    AiIdeaSupportConfig config,
-    IAiUsageManager usageManager,
-    AiChatModelOptions modelOptions)
-    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(chatClient, logger, usageManager),
+    IAiUsageManager usageManager)
+    : ChatClientAiSupportBase<IdeaSupportChatRequest, IdeaSupportChatReply>(logger, usageManager),
       IAiIdeaSupportService
 {
     protected override AiServiceKind Service => AiServiceKind.IdeaSupport;
-    protected override string Model => modelOptions.Model;
-
-    protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request)
+    protected override List<ChatMessage> BuildMessages(IdeaSupportChatRequest request, ResolvedPlatformAiConfig platformConfig)
     {
+        var config       = platformConfig.IdeaSupport;
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
         var langName     = GetLanguageName(request.Language);
         var systemPrompt = config.SystemPrompt
@@ -78,7 +75,7 @@ public sealed class AiIdeaSupportService(
         return messages;
     }
 
-    protected override IdeaSupportChatReply ParseRawReply(string raw, IdeaSupportChatRequest _)
+    protected override IdeaSupportChatReply ParseRawReply(string raw, IdeaSupportChatRequest _, ResolvedPlatformAiConfig platformConfig)
     {
         var cleaned = StripCodeFences(raw);
         var json    = ExtractJson(cleaned);
@@ -88,7 +85,7 @@ public sealed class AiIdeaSupportService(
             var aiReply = JsonSerializer.Deserialize<IdeaSupportAiReply>(json, JsonOpts);
 
             if (aiReply is null || string.IsNullOrWhiteSpace(aiReply.Message))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
             var phase = Enum.TryParse<IdeaSupportPhase>(aiReply.Phase, ignoreCase: true, out var p)
                 ? p
@@ -107,21 +104,21 @@ public sealed class AiIdeaSupportService(
         }
     }
 
-    protected override IdeaSupportChatReply FallbackReply() =>
-        new() { AssistantMessage = config.FallbackMessage, Phase = IdeaSupportPhase.Error };
+    protected override IdeaSupportChatReply FallbackReply(ResolvedPlatformAiConfig platformConfig) =>
+        new() { AssistantMessage = platformConfig.IdeaSupport.FallbackMessage, Phase = IdeaSupportPhase.Error };
 
-    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, int projectId, CancellationToken ct = default)
+    public async Task<IdeaSupportRefineResult> RefineAsync(string draftText, string language, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(draftText))
             return new IdeaSupportRefineResult { RefinedText = null };
 
         try
         {
+            var config   = platformConfig.IdeaSupport;
             var prompt   = config.RefinePrompt
                 .Replace("{draft}",    draftText, StringComparison.OrdinalIgnoreCase)
                 .Replace("{language}", language,  StringComparison.OrdinalIgnoreCase);
-            var response = await SendSingleAsync([new(ChatRole.User, prompt)], projectId, ct);
-            var refined  = ExtractText(response);
+            var refined  = await SendSingleAsync([new(ChatRole.User, prompt)], platformConfig.ChatClient, platformConfig.SelectedModelId, projectId, ct);
 
             if (string.IsNullOrWhiteSpace(refined) || refined.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                 return new IdeaSupportRefineResult { RefinedText = null };

@@ -21,4 +21,14 @@ public class PlatformSettings
     // Monitoring
     public string AiModelName { get; set; }
     public string CostDashboardUrl { get; set; }
+
+    // AI configuration
+    public string SelectedAiModel { get; set; }
+    public string PromptModeration { get; set; }
+    public string PromptCommentModeration { get; set; }
+    public string PromptRewrite { get; set; }
+    public string PromptImageModeration { get; set; }
+    public string PromptIdeaSupport { get; set; }
+    public string PromptCommentSupport { get; set; }
+    public string PromptQuestionSupport { get; set; }
 }

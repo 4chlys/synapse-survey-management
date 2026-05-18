@@ -1,4 +1,6 @@
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -8,6 +10,7 @@ public class CommentsControllerTests
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IModerationResolver> _moderationResolver = new();
     private readonly Mock<IProjectManager> _projectManager = new();
+    private readonly Mock<IPlatformAiConfigService> _platformAiConfig = new();
     private readonly CommentsController _controller;
 
     private const int ProjectId = 1;
@@ -22,7 +25,15 @@ public class CommentsControllerTests
         _participant = new Participant { ParticipantId = 5, Project = new Project { ProjectId = ProjectId } };
         _participantManager.Setup(p => p.GetParticipantBySessionTokenForUpdateAsync(_sessionToken))
             .ReturnsAsync(_participant);
-        _controller = new CommentsController(_commentManager.Object, _participantManager.Object, _moderationResolver.Object, _projectManager.Object);
+        _platformAiConfig.Setup(s => s.ResolveAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResolvedPlatformAiConfig(
+                Mock.Of<Microsoft.Extensions.AI.IChatClient>(),
+                "gemini-2.0-flash",
+                new SynapseEnqueteManagement.BL.AiModeration.ModerationConfig(),
+                new SynapseEnqueteManagement.BL.AiIdeaSupport.AiIdeaSupportConfig(),
+                new SynapseEnqueteManagement.BL.AiCommentSupport.AiCommentSupportConfig(),
+                new SynapseEnqueteManagement.BL.AiQuestionSupport.AiQuestionSupportConfig()));
+        _controller = new CommentsController(_commentManager.Object, _participantManager.Object, _moderationResolver.Object, _projectManager.Object, _platformAiConfig.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -32,7 +43,7 @@ public class CommentsControllerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct, It.IsAny<string>()))
+        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, It.IsAny<ResolvedPlatformAiConfig>(), ct, It.IsAny<string>()))
             .ReturnsAsync(ModerationStatus.Approved);
         _commentManager.Setup(c => c.AddTextCommentAsync(IdeaId, ProjectId, "hi", ModerationStatus.Approved, _participant, null, ct))
             .ReturnsAsync(new TextComment { CommentId = 1, Text = "hi" })

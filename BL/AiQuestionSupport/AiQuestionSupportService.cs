@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
@@ -8,19 +9,15 @@ using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 namespace SynapseEnqueteManagement.BL.AiQuestionSupport;
 
 public sealed class AiQuestionSupportService(
-    IChatClient chatClient,
     ILogger<AiQuestionSupportService> logger,
-    AiQuestionSupportConfig config,
-    IAiUsageManager usageManager,
-    AiChatModelOptions modelOptions)
-    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(chatClient, logger, usageManager),
+    IAiUsageManager usageManager)
+    : ChatClientAiSupportBase<QuestionSupportChatRequest, QuestionSupportChatReply>(logger, usageManager),
       IAiQuestionSupportService
 {
     protected override AiServiceKind Service => AiServiceKind.QuestionSupport;
-    protected override string Model => modelOptions.Model;
-
-    protected override List<ChatMessage> BuildMessages(QuestionSupportChatRequest request)
+    protected override List<ChatMessage> BuildMessages(QuestionSupportChatRequest request, ResolvedPlatformAiConfig platformConfig)
     {
+        var config   = platformConfig.QuestionSupport;
         var messages = new List<ChatMessage> { new(ChatRole.System, config.SystemPrompt) };
 
         if (request.IsFirstTurn)
@@ -53,7 +50,7 @@ public sealed class AiQuestionSupportService(
         return messages;
     }
 
-    protected override QuestionSupportChatReply ParseRawReply(string raw, QuestionSupportChatRequest _)
+    protected override QuestionSupportChatReply ParseRawReply(string raw, QuestionSupportChatRequest _, ResolvedPlatformAiConfig platformConfig)
     {
         var cleaned = StripCodeFences(raw);
         var json    = ExtractJson(cleaned);
@@ -63,7 +60,7 @@ public sealed class AiQuestionSupportService(
             var aiReply = JsonSerializer.Deserialize<QuestionSupportAiReply>(json, JsonOpts);
 
             if (aiReply is null || string.IsNullOrWhiteSpace(aiReply.Message))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
             return new QuestionSupportChatReply { AssistantMessage = aiReply.Message };
         }
@@ -73,6 +70,6 @@ public sealed class AiQuestionSupportService(
         }
     }
 
-    protected override QuestionSupportChatReply FallbackReply() =>
-        new() { AssistantMessage = config.FallbackMessage };
+    protected override QuestionSupportChatReply FallbackReply(ResolvedPlatformAiConfig platformConfig) =>
+        new() { AssistantMessage = platformConfig.QuestionSupport.FallbackMessage };
 }

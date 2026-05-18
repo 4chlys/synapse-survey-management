@@ -3,15 +3,13 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiSupport;
 
-public abstract class ChatClientAiSupportBase<TRequest, TReply>(
-    IChatClient chatClient,
-    ILogger logger,
-    IAiUsageManager usageManager)
+public abstract class ChatClientAiSupportBase<TRequest, TReply>(ILogger logger, IAiUsageManager usageManager)
     : IAiSupportService<TRequest, TReply>
 {
     protected static readonly Regex CodeFenceRe =
@@ -24,27 +22,19 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(
         DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <summary>Token-usage attribution: identifies which AI feature this service represents.</summary>
     protected abstract AiServiceKind Service { get; }
 
-    /// <summary>The Vertex AI chat model name as it appears in pricing config.</summary>
-    protected abstract string Model { get; }
-
-    /// <summary>Maximum tokens the model may generate per response. Override per service as needed.</summary>
-    protected virtual int MaxOutputTokens => 1024;
-
-    public async Task<TReply> ChatAsync(TRequest request, int projectId, CancellationToken ct = default)
+    public async Task<TReply> ChatAsync(TRequest request, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default)
     {
         try
         {
-            var messages = BuildMessages(request);
-            var response = await SendSingleAsync(messages, projectId, ct);
-            var raw      = ExtractText(response);
+            var messages = BuildMessages(request, platformConfig);
+            var raw      = await SendSingleAsync(messages, platformConfig.ChatClient, platformConfig.SelectedModelId, projectId, ct);
 
             if (string.IsNullOrWhiteSpace(raw))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
-            return ParseRawReply(raw, request);
+            return ParseRawReply(raw, request, platformConfig);
         }
         catch (OperationCanceledException)
         {
@@ -52,38 +42,22 @@ public abstract class ChatClientAiSupportBase<TRequest, TReply>(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "[{Domain}] Chat call failed; returning fallback.",
-                GetType().Name);
-            return FallbackReply();
+            logger.LogWarning(ex, "[{Domain}] Chat call failed; returning fallback.", GetType().Name);
+            return FallbackReply(platformConfig);
         }
     }
 
-    protected abstract List<ChatMessage> BuildMessages(TRequest request);
-    protected abstract TReply ParseRawReply(string raw, TRequest request);
-    protected abstract TReply FallbackReply();
+    protected abstract List<ChatMessage> BuildMessages(TRequest request, ResolvedPlatformAiConfig platformConfig);
+    protected abstract TReply ParseRawReply(string raw, TRequest request, ResolvedPlatformAiConfig platformConfig);
+    protected abstract TReply FallbackReply(ResolvedPlatformAiConfig platformConfig);
 
-    /// <summary>
-    /// Sends one chat round-trip and records the resulting token usage against
-    /// <paramref name="projectId"/>. Logging failures are caught so they cannot
-    /// surface as a chat failure.
-    /// </summary>
-    protected async Task<ChatResponse> SendSingleAsync(List<ChatMessage> messages, int projectId, CancellationToken ct)
+    protected async Task<string> SendSingleAsync(List<ChatMessage> messages, IChatClient client, string modelId, int projectId, CancellationToken ct)
     {
-        var options  = new ChatOptions { MaxOutputTokens = MaxOutputTokens };
-        var response = await chatClient.GetResponseAsync(messages, options, ct);
-        try
-        {
-            await usageManager.LogChatAsync(projectId, Service, Model, response.Usage, ct);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "[{Domain}] Failed to record AI usage.", GetType().Name);
-        }
-        return response;
+        var response = await client.GetResponseAsync(messages, cancellationToken: ct);
+        try { await usageManager.LogChatAsync(projectId, Service, modelId, response.Usage, ct); }
+        catch (Exception ex) { logger.LogWarning(ex, "[{Domain}] Failed to record AI usage.", GetType().Name); }
+        return response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
     }
-
-    protected static string ExtractText(ChatResponse response) =>
-        response.Messages.LastOrDefault()?.Text?.Trim() ?? string.Empty;
 
     protected static string StripCodeFences(string raw) =>
         CodeFenceRe.Replace(raw, string.Empty).Trim();

@@ -3,33 +3,17 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
-/// <summary>
-/// AI-backed content moderation using <see cref="IChatClient"/>.
-/// Regex pre-filtering is delegated to <see cref="IRegexModerationService"/> so this
-/// class contains only AI-specific logic.
-/// </summary>
 public sealed class AiModerationService(
-    IChatClient chatClient,
     ILogger<AiModerationService> logger,
-    ModerationConfig config,
     IRegexModerationService regex,
-    IAiUsageManager usageManager,
-    AiChatModelOptions modelOptions) : IAiModerationService
+    IAiUsageManager usageManager) : IAiModerationService
 {
-    private const int MaxInputChars    = 4000;
-    private const int MaxVerdictTokens = 300;
-    private const int MaxRewriteTokens = 500;
-    private const int MaxImageTokens   = 300;
-
-    private static readonly ChatOptions VerdictOptions = new() { MaxOutputTokens = MaxVerdictTokens };
-    private static readonly ChatOptions RewriteOptions = new() { MaxOutputTokens = MaxRewriteTokens };
-    private static readonly ChatOptions ImageOptions   = new() { MaxOutputTokens = MaxImageTokens };
     private static readonly Regex CodeFenceRe =
         new(@"^```[a-zA-Z]*\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
@@ -41,6 +25,7 @@ public sealed class AiModerationService(
 
     public async Task<ModerationResult> CheckWithAiAsync(
         string text,
+        ResolvedPlatformAiConfig platformConfig,
         int projectId,
         CancellationToken ct = default,
         string contentType = "idea",
@@ -52,14 +37,11 @@ public sealed class AiModerationService(
         var regexResult = regex.Check(text, contentType);
         if (!regexResult.IsAcceptable) return regexResult;
 
-        if (!config.UseAi) return ModerationResult.Acceptable();
-
-        if (text.Length > MaxInputChars)
-            text = text[..MaxInputChars];
+        if (!platformConfig.Moderation.UseAi) return ModerationResult.Acceptable();
 
         try
         {
-            return await CallModerationAsync(text, contentType, respondInLanguage, projectId, ct);
+            return await CallModerationAsync(text, contentType, respondInLanguage, platformConfig, projectId, ct);
         }
         catch (OperationCanceledException)
         {
@@ -74,14 +56,14 @@ public sealed class AiModerationService(
         }
     }
 
-    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, int projectId, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<ModerationResult> CheckImageWithAiAsync(byte[] imageBytes, string mimeType, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
-        if (!config.UseAi) return ModerationResult.Acceptable();
+        if (!platformConfig.Moderation.UseAi) return ModerationResult.Acceptable();
 
         try
         {
-            var imagePrompt = config.ImageModerationPrompt
-                .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+            var imagePrompt = platformConfig.Moderation.ImageModerationPrompt
+                .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
             var imageContent = new DataContent(new ReadOnlyMemory<byte>(imageBytes), mimeType);
             var message = new ChatMessage(ChatRole.User,
@@ -90,14 +72,16 @@ public sealed class AiModerationService(
                 new TextContent(imagePrompt),
             ]);
 
-            var response = await chatClient.GetResponseAsync([message], ImageOptions, ct);
-            await LogUsageAsync(projectId, response.Usage, ct);
-            var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+            var response = await platformConfig.ChatClient.GetResponseAsync([message], cancellationToken: ct);
+            try { await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, platformConfig.SelectedModelId, response.Usage, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "[ImageModeration] Failed to record AI usage."); }
+
+            var rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(rawJson))
             {
                 logger.LogWarning("[ImageModeration] Vertex AI returned empty response; failing closed.");
-                return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+                return ModerationResult.RejectedByAi("The image could not be checked. Please try again later.");
             }
 
             rawJson = CodeFenceRe.Replace(rawJson, string.Empty).Trim();
@@ -112,14 +96,14 @@ public sealed class AiModerationService(
             {
                 logger.LogWarning(ex, "[ImageModeration] Non-JSON response; failing closed. Raw: {Raw}",
                     rawJson.Length > 200 ? rawJson[..200] : rawJson);
-                return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+                return ModerationResult.RejectedByAi("The image could not be checked. Please try again later.");
             }
 
             return verdict.Acceptable
                 ? ModerationResult.Acceptable()
                 : ModerationResult.RejectedByAi(
                     string.IsNullOrWhiteSpace(verdict.Reason)
-                        ? "De afbeelding is niet toegestaan op dit platform."
+                        ? "This image is not allowed on this platform."
                         : verdict.Reason);
         }
         catch (OperationCanceledException)
@@ -129,21 +113,18 @@ public sealed class AiModerationService(
         catch (Exception ex)
         {
             logger.LogError(ex, "[ImageModeration] Vertex AI call failed; failing closed.");
-            return ModerationResult.RejectedByAi("De afbeelding kon niet worden gecontroleerd, probeer het later opnieuw.");
+            return ModerationResult.RejectedByAi("The image could not be checked. Please try again later.");
         }
     }
 
-    public async Task<string> SuggestRewriteAsync(string text, int projectId, CancellationToken ct = default, string respondInLanguage = null)
+    public async Task<string> SuggestRewriteAsync(string text, ResolvedPlatformAiConfig platformConfig, int projectId, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
-        if (text.Length > MaxInputChars)
-            text = text[..MaxInputChars];
-
         try
         {
-            var rewritePrompt = config.RewritePrompt
-                .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+            var rewritePrompt = platformConfig.Moderation.RewritePrompt
+                .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
             var messages = new List<ChatMessage>
             {
@@ -151,8 +132,10 @@ public sealed class AiModerationService(
                 new(ChatRole.User,   text),
             };
 
-            var response   = await chatClient.GetResponseAsync(messages, RewriteOptions, ct);
-            await LogUsageAsync(projectId, response.Usage, ct);
+            var response   = await platformConfig.ChatClient.GetResponseAsync(messages, cancellationToken: ct);
+            try { await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, platformConfig.SelectedModelId, response.Usage, ct); }
+            catch (Exception ex) { logger.LogWarning(ex, "[Moderation] Failed to record AI usage for rewrite."); }
+
             var suggestion = response.Messages.LastOrDefault()?.Text.Trim();
 
             return string.IsNullOrWhiteSpace(suggestion)
@@ -177,15 +160,16 @@ public sealed class AiModerationService(
         string text,
         string contentType,
         string respondInLanguage,
+        ResolvedPlatformAiConfig platformConfig,
         int projectId,
         CancellationToken ct)
     {
         var rawPrompt = contentType == "comment"
-            ? config.CommentModerationPrompt
-            : config.ModerationPrompt;
+            ? platformConfig.Moderation.CommentModerationPrompt
+            : platformConfig.Moderation.ModerationPrompt;
 
         var prompt = rawPrompt
-            .Replace("{response_language}", respondInLanguage ?? config.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+            .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
 
         var messages = new List<ChatMessage>
         {
@@ -193,9 +177,11 @@ public sealed class AiModerationService(
             new(ChatRole.User,   text),
         };
 
-        var response = await chatClient.GetResponseAsync(messages, VerdictOptions, ct);
-        await LogUsageAsync(projectId, response.Usage, ct);
-        var rawJson  = response.Messages.LastOrDefault()?.Text ?? string.Empty;
+        var response = await platformConfig.ChatClient.GetResponseAsync(messages, cancellationToken: ct);
+        try { await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, platformConfig.SelectedModelId, response.Usage, ct); }
+        catch (Exception ex) { logger.LogWarning(ex, "[Moderation] Failed to record AI usage."); }
+
+        var rawJson = response.Messages.LastOrDefault()?.Text ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(rawJson))
         {
@@ -222,20 +208,8 @@ public sealed class AiModerationService(
             ? ModerationResult.Acceptable()
             : ModerationResult.RejectedByAi(
                 string.IsNullOrWhiteSpace(verdict.Reason)
-                    ? "De inhoud is niet toegestaan op dit platform."
+                    ? "This content is not allowed on this platform."
                     : verdict.Reason);
-    }
-
-    private async Task LogUsageAsync(int projectId, UsageDetails usage, CancellationToken ct)
-    {
-        try
-        {
-            await usageManager.LogChatAsync(projectId, AiServiceKind.Moderation, modelOptions.Model, usage, ct);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "[Moderation] Failed to record AI usage.");
-        }
     }
 
     private sealed class ModerationVerdict

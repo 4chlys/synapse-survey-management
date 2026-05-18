@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using SynapseEnqueteManagement.BL.Ai;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
@@ -15,6 +16,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
+using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -129,6 +131,8 @@ builder.Services.AddHttpClient<QuestionSupportService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IQuestionMediaService, QuestionMediaService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -144,6 +148,9 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
+
+builder.Services.AddSingleton(AiConfigLoader.Load(
+    LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();

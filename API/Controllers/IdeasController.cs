@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
@@ -21,6 +22,7 @@ public class IdeasController(
     IProjectManager projectManager,
     IStorageService storageService,
     IModerationTokenService moderationTokenService,
+    IPlatformAiConfigService platformAiConfig,
     ILogger<IdeasController> logger)
     : ParticipantControllerBase(participantManager, projectManager)
 {
@@ -56,7 +58,9 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var resolveProject = await GetProjectByIdReadOnlyAsync(projectId);
+        var platformConfig = await platformAiConfig.ResolveAsync(resolveProject?.ProjectPlatformId ?? 0, ct);
+        var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, platformConfig, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
         string permanentImageUrl = null;
         if (!string.IsNullOrEmpty(dto.ImageUrl))

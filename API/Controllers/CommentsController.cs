@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -11,7 +12,8 @@ public class CommentsController(
     ICommentManager manager,
     IParticipantManager participantManager,
     IModerationResolver moderationResolver,
-    IProjectManager projectManager)
+    IProjectManager projectManager,
+    IPlatformAiConfigService platformAiConfig)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("comments")]
@@ -35,7 +37,9 @@ public class CommentsController(
 
         try
         {
-            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+            var resolveProject = await GetProjectByIdReadOnlyAsync(projectId);
+            var platformConfig = await platformAiConfig.ResolveAsync(resolveProject?.ProjectPlatformId ?? 0, ct);
+            var status = await moderationResolver.ResolveStatusAsync(dto.Text, dto.ModerationToken, projectId, platformConfig, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
             var comment = await manager.AddTextCommentAsync(ideaId, projectId, dto.Text, status, participant, submissionLanguageCode, ct);
             return Ok(new CreatedTextCommentDto { CommentId = comment.CommentId, Text = comment.Text });
         }
