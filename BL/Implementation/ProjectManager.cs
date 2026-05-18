@@ -444,7 +444,7 @@ public class ProjectManager(
         {
             var introCopy = new Introduction();
             foreach (var t in src.Introduction.Translations)
-                introCopy.Translations.Add(new IntroductionTranslation { Language = t.Language, Text = t.Text });
+                introCopy.Translations.Add(new IntroductionTranslation { Language = languages[t.Language.Code], Text = t.Text });
             copy.Introduction = introCopy;
         }
 
@@ -459,7 +459,7 @@ public class ProjectManager(
             {
                 var newSection = new Section();
                 foreach (var t in srcSection.Translations)
-                    newSection.Translations.Add(new SectionTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
+                    newSection.Translations.Add(new SectionTranslation { Language = languages[t.Language.Code], Name = t.Name, Description = t.Description });
                 sectionMap[srcSection.SectionId] = newSection;
                 copy.Questionnaire.Sections.Add(newSection);
             }
@@ -476,12 +476,12 @@ public class ProjectManager(
                     Section = srcQ.Section is not null ? sectionMap[srcQ.Section.SectionId] : null,
                 };
                 foreach (var t in srcQ.Translations)
-                    newQ.Translations.Add(new QuestionTranslation { Language = t.Language, Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
+                    newQ.Translations.Add(new QuestionTranslation { Language = languages[t.Language.Code], Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
                 foreach (var ea in srcQ.EndingAnswers)
                 {
                     var newEa = new EndingAnswer { Question = newQ };
                     foreach (var t in ea.Translations)
-                        newEa.Translations.Add(new EndingAnswerTranslation { Language = t.Language, Value = t.Value });
+                        newEa.Translations.Add(new EndingAnswerTranslation { Language = languages[t.Language.Code], Value = t.Value });
                     newQ.EndingAnswers.Add(newEa);
                 }
                 questionMap[srcQ.QuestionId] = newQ;
@@ -499,7 +499,7 @@ public class ProjectManager(
         {
             var catCopy = new Category();
             foreach (var t in srcCat.Translations)
-                catCopy.Translations.Add(new CategoryTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
+                catCopy.Translations.Add(new CategoryTranslation { Language = languages[t.Language.Code], Name = t.Name, Description = t.Description });
             copy.Categories.Add(catCopy);
         }
 
