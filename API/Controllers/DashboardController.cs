@@ -24,12 +24,8 @@ public class DashboardController(
         var lang = ActiveCulture();
         var defaultLang = project.DefaultLanguage?.Code ?? lang;
 
-        var completionCountTask = participantManager.CountCompletionsByProjectAsync(projectId);
-        var metricsTask = categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
-        await Task.WhenAll(completionCountTask, metricsTask);
-
-        var completionCount = await completionCountTask;
-        var metrics = await metricsTask;
+        var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
+        var metrics = await categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
 
         return Ok(new ProjectDashboardDto
         {

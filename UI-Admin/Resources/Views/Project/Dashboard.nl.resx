@@ -9,4 +9,14 @@
   <data name="Heading" xml:space="preserve"><value>Dashboard</value></data>
   <data name="ArchiveButton" xml:space="preserve"><value>Archiveren</value></data>
   <data name="ConfigureButton" xml:space="preserve"><value>Widgets instellen</value></data>
+  <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
+  <data name="ExportModalTitle" xml:space="preserve"><value>Dashboard exporteren</value></data>
+  <data name="ExportGroupHeading" xml:space="preserve"><value>Datasecties</value></data>
+  <data name="Section_Summary" xml:space="preserve"><value>Statistieken samenvatting</value></data>
+  <data name="Section_Timeline" xml:space="preserve"><value>Deelname tijdlijn</value></data>
+  <data name="Section_Categories" xml:space="preserve"><value>Topcategorieën</value></data>
+  <data name="Section_Ideas" xml:space="preserve"><value>Topideeën</value></data>
+  <data name="FormatLabel" xml:space="preserve"><value>Formaat</value></data>
+  <data name="IncludeGraphicsLabel" xml:space="preserve"><value>Grafieken insluiten</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
 </root>

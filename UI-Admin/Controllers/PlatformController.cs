@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
@@ -17,7 +18,8 @@ public class PlatformController(
     ProjectAdminService projectService,
     AiAdminService aiAdminService,
     SystemStatsAdminService systemStatsAdminService,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -49,14 +51,9 @@ public class PlatformController(
 
     public async Task<IActionResult> SystemDashboard()
     {
-        var statsTask = systemStatsAdminService.GetSystemStatsAsync(null);
-        var platformsTask = platformService.GetAllPlatformsAsync();
-        var adminsTask = platformService.GetAllAdminsAsync();
-        await Task.WhenAll(statsTask, platformsTask, adminsTask);
-
-        var stats = statsTask.Result;
-        var platforms = platformsTask.Result;
-        var allAdmins = adminsTask.Result;
+        var stats = await systemStatsAdminService.GetSystemStatsAsync(null);
+        var platforms = await platformService.GetAllPlatformsAsync();
+        var allAdmins = await platformService.GetAllAdminsAsync();
 
         var summaries = new List<PlatformSummaryViewModel>();
         foreach (var platform in platforms)
@@ -125,7 +122,7 @@ public class PlatformController(
             : [];
         var availableIds = await aiAdminService.GetAvailableModelIdsAsync();
 
-        ViewData["ActiveSection"] = "AI Instellingen";
+        ViewData["ActiveSection"] = "SystemSettings";
         return View(new SystemAiSettingsViewModel(
             AllModels: AiModelCatalog.All,
             AllowedModelIds: allowedIds,
@@ -138,7 +135,7 @@ public class PlatformController(
     {
         if (AllowedModelIds is null || AllowedModelIds.Count == 0)
         {
-            TempData["Error"] = "Minstens één AI-model moet geselecteerd zijn.";
+            TempData["Error"] = localizer["Platform_AiModelRequired"].Value;
             return RedirectToAction(nameof(SystemSettings));
         }
 
@@ -147,12 +144,12 @@ public class PlatformController(
 
         if (AllowedModelIds.Count == 0)
         {
-            TempData["Error"] = "Minstens één geconfigureerd AI-model moet geselecteerd zijn.";
+            TempData["Error"] = localizer["Platform_AiModelConfiguredRequired"].Value;
             return RedirectToAction(nameof(SystemSettings));
         }
 
         await platformService.SaveSystemAiSettingsAsync(AllowedModelIds);
-        TempData["Success"] = "AI-instellingen opgeslagen.";
+        TempData["Success"] = localizer["Platform_AiSettingsSaved"].Value;
         return RedirectToAction(nameof(SystemSettings));
     }
 
@@ -239,7 +236,7 @@ public class PlatformController(
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
         }
 
-        TempData["Success"] = "Beheerder toegevoegd.";
+        TempData["Success"] = localizer["Platform_AdminAdded"].Value;
         return RedirectToAction(nameof(Admins), new { id });
     }
 
@@ -247,7 +244,7 @@ public class PlatformController(
     public async Task<IActionResult> RemoveAdmin(int id, string userId)
     {
         await platformService.RemoveAdminAsync(id, userId);
-        TempData["Success"] = "Beheerder verwijderd.";
+        TempData["Success"] = localizer["Platform_AdminRemoved"].Value;
         return RedirectToAction(nameof(Admins), new { id });
     }
 
@@ -281,7 +278,7 @@ public class PlatformController(
             model.LogoUrl ?? string.Empty,
             model.WebsiteUrl ?? string.Empty);
 
-        TempData["Success"] = "Basisinformatie opgeslagen.";
+        TempData["Success"] = localizer["Platform_BasicInfoSaved"].Value;
         return RedirectToAction(nameof(Settings), new { id });
     }
 
@@ -290,7 +287,7 @@ public class PlatformController(
     {
         model.ProjectPlatformId = id;
         await platformService.SavePlatformSettingsAsync(id, model);
-        TempData["Success"] = "Instellingen opgeslagen.";
+        TempData["Success"] = localizer["Platform_SettingsSaved"].Value;
         return RedirectToAction(nameof(Settings), new { id });
     }
 

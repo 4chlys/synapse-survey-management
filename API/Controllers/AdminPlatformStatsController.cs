@@ -18,8 +18,9 @@ public class AdminPlatformStatsController(
     public async Task<ActionResult<PlatformStatsDto>> GetStats([FromQuery] int platformId)
     {
         var projects = (await projectManager.GetAllProjectsAsync(platformId)).ToList();
-        var counts = await Task.WhenAll(
-            projects.Select(p => participantManager.CountCompletionsByProjectAsync(p.ProjectId)));
+        var counts = new List<int>(projects.Count);
+        foreach (var p in projects)
+            counts.Add(await participantManager.CountCompletionsByProjectAsync(p.ProjectId));
 
         return Ok(new PlatformStatsDto
         {
@@ -38,14 +39,12 @@ public class AdminPlatformStatsController(
         var projects = (await projectManager.GetAllProjectsAsync(platformId)).ToList();
         var projectIds = projects.Select(p => p.ProjectId).ToList();
 
-        var statsTask      = participantManager.GetStatsByProjectsAsync(projectIds);
-        var aiSystemTask   = usageManager.ReadServiceBreakdownSystemAsync(platformId, aiFrom);
-        var aiPlatformTask = usageManager.ReadServiceBreakdownByPlatformAsync(platformId, aiFrom);
-        var aiProjectTask  = usageManager.ReadServiceBreakdownByProjectsAsync(platformId, aiFrom);
+        var participantStats = await participantManager.GetStatsByProjectsAsync(projectIds);
+        var aiSystem   = await usageManager.ReadServiceBreakdownSystemAsync(platformId, aiFrom);
+        var aiPlatform = await usageManager.ReadServiceBreakdownByPlatformAsync(platformId, aiFrom);
+        var aiProject  = await usageManager.ReadServiceBreakdownByProjectsAsync(platformId, aiFrom);
 
-        await Task.WhenAll(statsTask, aiSystemTask, aiPlatformTask, aiProjectTask);
 
-        var participantStats = statsTask.Result;
         var statsById = participantStats.ToDictionary(s => s.ProjectId);
 
         var projectRows = projects.Select(p =>
@@ -122,12 +121,12 @@ public class AdminPlatformStatsController(
             MedianCompletionSeconds = systemMedian,
             Platforms               = platformRows,
             Projects                = projectRows,
-            AiUsageBySystem = aiSystemTask.Result.Select(s => new ServiceCostAggregateDto(
+            AiUsageBySystem = aiSystem.Select(s => new ServiceCostAggregateDto(
                 s.Service.ToString(), s.Model, s.InputTokens, s.OutputTokens, s.RequestCount, s.CostEur)).ToList(),
-            AiUsageByPlatform = aiPlatformTask.Result.Select(s => new PlatformServiceCostAggregateDto(
+            AiUsageByPlatform = aiPlatform.Select(s => new PlatformServiceCostAggregateDto(
                 s.ProjectPlatformId, s.ProjectPlatformName, s.Service.ToString(), s.Model,
                 s.InputTokens, s.OutputTokens, s.RequestCount, s.CostEur)).ToList(),
-            AiUsageByProject = aiProjectTask.Result.Select(s => new ProjectServiceCostAggregateDto(
+            AiUsageByProject = aiProject.Select(s => new ProjectServiceCostAggregateDto(
                 s.ProjectId, s.ShortForm, s.ProjectPlatformId, s.ProjectPlatformName,
                 s.Service.ToString(), s.Model, s.InputTokens, s.OutputTokens, s.RequestCount, s.CostEur)).ToList(),
         });

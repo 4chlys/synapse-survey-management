@@ -41,15 +41,9 @@ public class AdminRawDataController(
         if (selectedTables.Count == 0)
             selectedTables = AllTables;
 
-        var questionsTask = questionnaireManager.GetQuestionsForProjectAsync(projectId);
-        var responsesTask = responseManager.GetCommittedResponsesForProjectReadOnlyAsync(projectId);
-        var categoriesTask = categoryManager.GetCategoriesWithIdeasForProjectReadOnlyAsync(projectId);
-
-        await Task.WhenAll(questionsTask, responsesTask, categoriesTask);
-
-        var questions = (await questionsTask).ToList();
-        var responses = (await responsesTask).ToList();
-        var categories = (await categoriesTask).ToList();
+        var questions = (await questionnaireManager.GetQuestionsForProjectAsync(projectId)).ToList();
+        var responses = (await responseManager.GetCommittedResponsesForProjectReadOnlyAsync(projectId)).ToList();
+        var categories = (await categoryManager.GetCategoriesWithIdeasForProjectReadOnlyAsync(projectId)).ToList();
 
         var projectName = project.Translations.FirstOrDefault()?.Name ?? project.ShortForm ?? $"project-{projectId}";
         var safeName = SanitizeFileName(projectName);
