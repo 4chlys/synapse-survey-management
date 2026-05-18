@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Privacyverklaring</value>
+  </data>
+  <data name="Intro" xml:space="preserve">
+    <value>Deze privacyverklaring legt uit hoe {0} omgaat met je gegevens wanneer je dit platform gebruikt om bevragingen in te vullen, ideeën te delen of te reageren op ideeën van anderen.</value>
+  </data>
+  <data name="WhatWeCollectTitle" xml:space="preserve">
+    <value>Welke gegevens verzamelen we?</value>
+  </data>
+  <data name="WhatWeCollectBody" xml:space="preserve">
+    <value>We verzamelen de antwoorden die je geeft op bevragingen, de ideeën die je indient en eventuele reacties die je plaatst op ideeën van anderen. Al deze bijdragen worden anoniem opgeslagen — je hoeft geen naam of andere persoonlijk identificeerbare informatie op te geven. Indien de organisatie de contactoptie heeft geactiveerd, kun je na het indienen van een idee vrijwillig je e-mailadres achterlaten (opt-in). Dit e-mailadres wordt enkel gebruikt zodat de organiserende partij je kan contacteren over je ideeën. Je bent nooit verplicht om je e-mailadres te delen.</value>
+  </data>
+  <data name="AnonymityTitle" xml:space="preserve">
+    <value>Anonimiteit</value>
+  </data>
+  <data name="AnonymityBody" xml:space="preserve">
+    <value>Deelname is volledig anoniem. Je hoeft geen naam of andere persoonlijke gegevens op te geven om deel te nemen. Om je eerder ingediende ideeën te kunnen tonen wanneer je later terugkeert naar het platform, wordt er een anoniem herkenningskenmerk lokaal opgeslagen op je toestel (via een cookie of lokale opslag). Dit kenmerk bevat geen persoonlijke informatie en wordt enkel gebruikt om je ideeën aan jou te koppelen op je eigen toestel.</value>
+  </data>
+  <data name="AITitle" xml:space="preserve">
+    <value>Gebruik van AI</value>
+  </data>
+  <data name="AIBody" xml:space="preserve">
+    <value>Dit platform maakt gebruik van artificiële intelligentie (AI) om je een betere ervaring te bieden. In overeenstemming met de Europese AI Act willen we hier transparant over zijn. AI wordt op dit platform ingezet voor: het stellen van gerichte bijvragen om je idee verder te verdiepen, het controleren van bijdragen op ongepast taalgebruik (moderatie), het omzetten van spraak naar tekst (speech-to-text), het beschrijven van afbeeldingen die je uploadt als startpunt voor een idee, het aanbieden van relevante ideeën van andere deelnemers, en het automatisch genereren van projectafbeeldingen. Je bijdragen worden hiervoor verwerkt door een extern AI-taalmodel. De inhoud van je bijdragen wordt niet gebruikt om AI-modellen te trainen.</value>
+  </data>
+  <data name="DataAccessTitle" xml:space="preserve">
+    <value>Wie heeft toegang tot je gegevens?</value>
+  </data>
+  <data name="DataAccessBody" xml:space="preserve">
+    <value>Je anonieme bijdragen zijn zichtbaar voor de organisatie die het project beheert en voor de platformbeheerder. Ideeën die je indient kunnen ook zichtbaar zijn voor andere deelnemers, zodat zij erop kunnen reageren. Als je je e-mailadres hebt gedeeld via de opt-in, is dit enkel zichtbaar voor de beheerder van de organisatie.</value>
+  </data>
+  <data name="ContactTitle" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="ContactBody" xml:space="preserve">
+    <value>Als je vragen hebt over hoe je gegevens worden behandeld, neem dan contact op met de organisatie die je heeft uitgenodigd om deel te nemen.</value>
+  </data>
+</root>

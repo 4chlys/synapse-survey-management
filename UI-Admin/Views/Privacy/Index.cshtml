@@ -1,0 +1,38 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer L
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["HideSidebar"] = true;
+}
+
+<div class="max-w-3xl mx-auto prose prose-sm text-base-content">
+    <h1 class="font-heading text-2xl font-semibold">@L["Heading"]</h1>
+
+    <p>@L["Intro"]</p>
+
+    <h2 class="font-heading text-lg font-semibold mt-8">@L["AccountHeading"]</h2>
+    <p>@L["AccountBody"]</p>
+
+    <h2 class="font-heading text-lg font-semibold mt-8">@L["ParticipantsHeading"]</h2>
+    <p>@L["ParticipantsBody"]</p>
+
+    <h2 class="font-heading text-lg font-semibold mt-8">@L["AiHeading"]</h2>
+    <p>@L["AiBody"]</p>
+
+    <h2 class="font-heading text-lg font-semibold mt-8">@L["StorageHeading"]</h2>
+    <p>@L["StorageBody"]</p>
+
+    <h2 class="font-heading text-lg font-semibold mt-8">@L["ResponsibilitiesHeading"]</h2>
+    <p>@L["ResponsibilitiesBody"]</p>
+
+    <h2 class="font-heading text-lg font-semibold mt-8">@L["ContactHeading"]</h2>
+    <p>@L["ContactBody"]</p>
+</div>
+
+<a asp-controller="Project" asp-action="Index"
+   class="fixed bottom-6 left-16 btn btn-sm btn-ghost gap-1 text-base-content/60 hover:text-base-content z-50">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    @L["BackButton"]
+</a>

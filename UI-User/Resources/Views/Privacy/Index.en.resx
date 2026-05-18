@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Privacy Statement</value>
+  </data>
+  <data name="Intro" xml:space="preserve">
+    <value>This privacy statement explains how {0} handles your data when you use this platform to complete surveys, share ideas or respond to the ideas of others.</value>
+  </data>
+  <data name="WhatWeCollectTitle" xml:space="preserve">
+    <value>What data do we collect?</value>
+  </data>
+  <data name="WhatWeCollectBody" xml:space="preserve">
+    <value>We collect the answers you provide in surveys, the ideas you submit and any responses you post to the ideas of others. All contributions are stored anonymously — you do not need to provide your name or any other personally identifiable information. If the organisation has enabled the contact option, you may voluntarily leave your email address after submitting an idea (opt-in). This email address is only used so the organising party can contact you about your ideas. You are never required to share your email address.</value>
+  </data>
+  <data name="AnonymityTitle" xml:space="preserve">
+    <value>Anonymity</value>
+  </data>
+  <data name="AnonymityBody" xml:space="preserve">
+    <value>Participation is fully anonymous. You do not need to provide your name or any other personal details to participate. To show your previously submitted ideas when you return to the platform later, an anonymous identifier is stored locally on your device (via a cookie or local storage). This identifier contains no personal information and is only used to link your ideas to you on your own device.</value>
+  </data>
+  <data name="AITitle" xml:space="preserve">
+    <value>Use of AI</value>
+  </data>
+  <data name="AIBody" xml:space="preserve">
+    <value>This platform uses artificial intelligence (AI) to provide you with a better experience. In accordance with the European AI Act, we want to be transparent about this. AI is used on this platform for: asking targeted follow-up questions to help you develop your idea further, checking contributions for inappropriate language (moderation), converting speech to text (speech-to-text), describing images you upload as a starting point for an idea, suggesting relevant ideas from other participants, and automatically generating project images. Your contributions are processed by an external AI language model for these purposes. The content of your contributions is not used to train AI models.</value>
+  </data>
+  <data name="DataAccessTitle" xml:space="preserve">
+    <value>Who has access to your data?</value>
+  </data>
+  <data name="DataAccessBody" xml:space="preserve">
+    <value>Your anonymous contributions are visible to the organisation managing the project and to the platform administrator. Ideas you submit may also be visible to other participants, so they can respond to them. If you have shared your email address via the opt-in, it is only visible to the administrator of the organisation.</value>
+  </data>
+  <data name="ContactTitle" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="ContactBody" xml:space="preserve">
+    <value>If you have questions about how your data is handled, please contact the organisation that invited you to participate.</value>
+  </data>
+</root>
