@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Widgets instellen</value></data>
+  <data name="Heading" xml:space="preserve"><value>Widgets instellen</value></data>
+  <data name="PositionLabel" xml:space="preserve"><value>Positie</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
+  <data name="Widget_ViewCount" xml:space="preserve"><value>Bekeken (aantal)</value></data>
+  <data name="Widget_CompletionCount" xml:space="preserve"><value>Ingevuld (aantal)</value></data>
+  <data name="Widget_CompletionRate" xml:space="preserve"><value>Voltooiingsgraad (%)</value></data>
+  <data name="Widget_ParticipationTimeline" xml:space="preserve"><value>Deelname over tijd</value></data>
+  <data name="Widget_TopCategories" xml:space="preserve"><value>Top categorieën</value></data>
+  <data name="Widget_TopIdeas" xml:space="preserve"><value>Top ideeën</value></data>
+  <data name="Widget_SurveyDistribution" xml:space="preserve"><value>Survey-link &amp; QR</value></data>
+  <data name="Widget_IdeaFeed" xml:space="preserve"><value>Nieuwste ideeën</value></data>
+  <data name="Widget_ModerationQueue" xml:space="preserve"><value>Moderatiestatus</value></data>
+</root>

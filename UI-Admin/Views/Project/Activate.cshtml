@@ -1,7 +1,8 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Project activeren";
-    ViewData["ActiveSection"] = "Instellingen";
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Settings";
     Layout = "_Layout";
 }
 <div class="max-w-sm">
@@ -10,16 +11,16 @@
             <div class="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center">
                 <svg class="text-success" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <h1 class="font-heading font-bold text-xl text-base-content">Project activeren</h1>
+            <h1 class="font-heading font-bold text-xl text-base-content">@L["Heading"]</h1>
             <p class="text-sm text-base-content/60">
-                <strong>@Model.Name</strong> staat momenteel op <em>Concept</em>. Activeren maakt het project zichtbaar voor deelnemers.
+                @Html.Raw(string.Format(L["Body"].Value, $"<strong>{Model.Name}</strong>"))
             </p>
             <div class="card-actions w-full flex-col gap-2 mt-2">
                 <form asp-action="ActivateProject" method="post" class="w-full">
                     <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                    <button type="submit" class="btn btn-success w-full">Project activeren</button>
+                    <button type="submit" class="btn btn-success w-full">@L["ActivateButton"]</button>
                 </form>
-                <a asp-action="Index" class="btn btn-ghost w-full">Nog niet</a>
+                <a asp-action="Index" class="btn btn-ghost w-full">@L["NotYetButton"]</a>
             </div>
         </div>
     </div>

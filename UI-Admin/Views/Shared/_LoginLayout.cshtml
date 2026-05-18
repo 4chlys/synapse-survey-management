@@ -1,12 +1,41 @@
+@using Microsoft.AspNetCore.Localization
+@using Microsoft.Extensions.Options
+@using System.Globalization
+@inject IHtmlLocalizer<SharedResource> Shared
+@inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
-<html lang="nl" data-theme="synapse-light">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="synapse-light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — Synapse Admin</title>
+    <title>@ViewData["Title"] — @Shared["AppName"]</title>
     <script>
         (function(){var t=localStorage.getItem('admin-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
     </script>
+
+    <script>
+      window.__i18n = {
+        culture: @Json.Serialize(CultureInfo.CurrentUICulture.Name),
+        strings: @Json.Serialize(new {
+          submit  = Shared["Common_Submit"].Value,
+          cancel  = Shared["Common_Cancel"].Value,
+          save    = Shared["Common_Save"].Value,
+          delete  = Shared["Common_Delete"].Value,
+          edit    = Shared["Common_Edit"].Value,
+          add     = Shared["Common_Add"].Value,
+          back    = Shared["Common_Back"].Value,
+          search  = Shared["Common_Search"].Value,
+          yes     = Shared["Common_Yes"].Value,
+          no      = Shared["Common_No"].Value,
+          confirm = Shared["Common_Confirm"].Value,
+          loading = Shared["Common_Loading"].Value,
+          close   = Shared["Common_Close"].Value,
+          all     = Shared["Common_All"].Value,
+          none    = Shared["Common_None"].Value
+        })
+      };
+    </script>
+
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" />
@@ -16,6 +45,23 @@
     </environment>
 </head>
 <body class="bg-base-200 min-h-screen flex items-center justify-center p-4">
+
+    @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
+    <form asp-controller="Culture" asp-action="SetCulture" method="post"
+          class="fixed top-4 right-4 flex items-center gap-1"
+          aria-label="@Shared["LanguageMenu_Switch"]">
+        <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+        @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
+        {
+            var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
+            <button type="submit" name="culture" value="@c.Name"
+                    class="text-xs font-medium @(isActive ? "text-primary underline underline-offset-2" : "text-base-content/60 hover:text-primary") transition-colors uppercase cursor-pointer"
+                    aria-current="@(isActive ? "true" : "false")">
+                @c.TwoLetterISOLanguageName
+            </button>
+        }
+    </form>
+
     @RenderBody()
     <footer class="fixed bottom-4 left-4 z-50">
         <a asp-controller="Privacy" asp-action="Index"

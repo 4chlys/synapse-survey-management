@@ -9,6 +9,9 @@ using Google.Cloud.VertexAI.Extensions;
 using Microsoft.Extensions.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.API.Ai;
+using SynapseEnqueteManagement.API.Data;
+using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.API.Middleware;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
@@ -23,6 +26,7 @@ using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
@@ -83,6 +87,28 @@ else
 }
 
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<SynapseEnqueteContext>());
+
+// AdminReadContext — reads PlatformSettings + SystemAiSettings from the shared DB.
+// DEPLOY ORDER: UI-Admin must run its migrations before the API starts, otherwise
+// these tables do not yet exist and all AI endpoints will fail at runtime.
+if (!string.IsNullOrEmpty(dbHost))
+{
+    var adminConnStr = $"Host={dbHost};" +
+                       $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
+                       $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
+                       $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
+                       $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
+    builder.Services.AddDbContext<AdminReadContext>(opt => opt.UseNpgsql(adminConnStr));
+}
+else
+{
+    var adminConnStr = builder.Configuration.GetConnectionString("AdminDb")
+                       ?? "Data Source=../UI-Admin/SynapseEnquete.db";
+    builder.Services.AddDbContext<AdminReadContext>(opt => opt.UseSqlite(adminConnStr));
+}
+
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IPlatformAiConfigService, PlatformAiConfigService>();
 builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
@@ -153,6 +179,12 @@ builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
+// AI usage tracking
+builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));
+builder.Services.AddSingleton<AiPricing>();
+builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
+builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
+
 // AI configuration
 //
 // Register the already-loaded AiConfig instance directly so we don't parse
@@ -163,11 +195,9 @@ builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageC
 builder.Services.AddSingleton(aiConfig);
 builder.Services.AddSingleton(aiConfig.Moderation);
 builder.Services.AddSingleton(aiConfig.Fuzzy);
-builder.Services.AddSingleton(aiConfig.IdeaSupport);
-builder.Services.AddSingleton(aiConfig.CommentSupport);
-builder.Services.AddSingleton(aiConfig.QuestionSupport);
-builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
+builder.Services.AddSingleton(aiConfig.ImageDescription);
+builder.Services.AddSingleton(aiConfig.SpeechToText);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -181,24 +211,77 @@ var tokenSecret = builder.Configuration["ApiKey"]
 builder.Services.AddSingleton<IModerationTokenService>(sp =>
     new ModerationTokenService(tokenSecret, sp.GetRequiredService<ILogger<ModerationTokenService>>()));
 
-// Vertex AI (optional — controlled by use_ai in ai-config.json)
+// AI chat clients — multi-provider registry (optional — controlled by use_ai in ai-config.json)
 if (useAi)
 {
-    var projectId = builder.Configuration["VertexAi:ProjectId"]
-                    ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
-    var location = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
-    var model = builder.Configuration["VertexAi:Model"] ?? "gemini-2.5-flash-lite";
+    var projectId    = builder.Configuration["VertexAi:ProjectId"]
+                       ?? throw new InvalidOperationException("Missing VertexAi:ProjectId");
+    var location     = builder.Configuration["VertexAi:Location"] ?? "europe-west1";
     var embeddingModel = builder.Configuration["VertexAi:EmbeddingModel"] ?? "gemini-embedding-001";
-    var endpoint = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
+    var endpoint     = builder.Configuration["VertexAi:Endpoint"] ?? $"{location}-aiplatform.googleapis.com";
 
     var predictionBuilder = new PredictionServiceClientBuilder { Endpoint = endpoint };
-    var chatModelResource = EndpointName.FormatProjectLocationPublisherModel(
-        projectId, location, "google", model);
-    var chatClient = await predictionBuilder.BuildIChatClientAsync(chatModelResource);
 
-    builder.Services.AddChatClient(chatClient);
+    var chatClients = new Dictionary<string, IChatClient>();
 
-    // All AI features share the same IChatClient.
+    // Vertex AI models
+    foreach (var vertexModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.VertexAi))
+    {
+        try
+        {
+            var resource = EndpointName.FormatProjectLocationPublisherModel(projectId, location, "google", vertexModel.Id);
+            var client   = await predictionBuilder.BuildIChatClientAsync(resource);
+            chatClients[vertexModel.Id] = client;
+            tempLogger.LogInformation("[AI] Registered Vertex AI model: {Model}", vertexModel.Id);
+        }
+        catch (Exception ex)
+        {
+            tempLogger.LogWarning(ex, "[AI] Failed to register Vertex AI model {Model} — skipping.", vertexModel.Id);
+        }
+    }
+
+    // OpenAI
+    var openAiKey = builder.Configuration["OpenAi:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(openAiKey))
+    {
+        foreach (var openAiModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.OpenAi))
+        {
+            var openAiClient = new OpenAI.OpenAIClient(openAiKey);
+            chatClients[openAiModel.Id] = openAiClient.GetChatClient(openAiModel.Id).AsIChatClient();
+            tempLogger.LogInformation("[AI] Registered OpenAI model: {Model}", openAiModel.Id);
+        }
+    }
+
+    // Anthropic
+    var anthropicKey = builder.Configuration["Anthropic:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(anthropicKey))
+    {
+        foreach (var anthropicModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.Anthropic))
+        {
+            var anthropicClient = new Anthropic.SDK.AnthropicClient(anthropicKey);
+            chatClients[anthropicModel.Id] = anthropicClient.Messages;
+            tempLogger.LogInformation("[AI] Registered Anthropic model: {Model}", anthropicModel.Id);
+        }
+    }
+
+    // Grok (OpenAI-compatible)
+    var xaiKey = builder.Configuration["Grok:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(xaiKey))
+    {
+        foreach (var grokModel in AiModelCatalog.All.Where(m => m.Provider == AiProvider.Grok))
+        {
+            var grokClient = new OpenAI.OpenAIClient(
+                new System.ClientModel.ApiKeyCredential(xaiKey),
+                new OpenAI.OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            chatClients[grokModel.Id] = grokClient.GetChatClient(grokModel.Id).AsIChatClient();
+            tempLogger.LogInformation("[AI] Registered Grok model: {Model}", grokModel.Id);
+        }
+    }
+
+    var defaultModelId = builder.Configuration["VertexAi:Model"];
+    builder.Services.AddSingleton(new ChatClientRegistry(chatClients, defaultModelId));
+
+    // All AI features share the ChatClientRegistry.
     builder.Services.AddScoped<IAiModerationService, AiModerationService>();
     builder.Services.AddScoped<IAiIdeaSupportService, AiIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, AiCommentSupportService>();
@@ -212,11 +295,11 @@ if (useAi)
         projectId, location, "google", imagenModel);
     var imagenClient = await predictionBuilder.BuildAsync();
     builder.Services.AddSingleton<IAiImageGenerationService>(sp =>
-        new GoogleVertexAiImageGenerationService(
+        new AiImageGenerationService(
             imagenClient,
             imagenModelResource,
             sp.GetRequiredService<AiImageGenerationConfig>(),
-            sp.GetRequiredService<ILogger<GoogleVertexAiImageGenerationService>>()));
+            sp.GetRequiredService<ILogger<AiImageGenerationService>>()));
 
     // Embedding generator — same PredictionServiceClientBuilder, different model
     // resource. AiEmbeddingService consumes the abstract IEmbeddingGenerator, so
@@ -226,12 +309,14 @@ if (useAi)
         projectId, location, "google", embeddingModel);
     var embeddingGenerator = await predictionBuilder.BuildIEmbeddingGeneratorAsync(embeddingModelResource);
     builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(embeddingGenerator);
-    builder.Services.AddSingleton<IEmbeddingService, AiEmbeddingService>();
+    builder.Services.AddSingleton(new AiEmbeddingModelOptions { Model = embeddingModel });
+    builder.Services.AddScoped<IEmbeddingService, AiEmbeddingService>();
 }
 else
 {
+    builder.Services.AddSingleton(new ChatClientRegistry(new Dictionary<string, IChatClient>()));
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
-    builder.Services.AddSingleton<IEmbeddingService, MockEmbeddingService>();
+    builder.Services.AddScoped<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();
     builder.Services.AddScoped<IAiCommentSupportService, MockCommentSupportService>();
     builder.Services.AddScoped<IAiQuestionSupportService, MockQuestionSupportService>();
@@ -269,14 +354,21 @@ var app = builder.Build();
                 DummyDataSeeder.Seed(context, apiBaseUrl);
             }
 
-            var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
-            var ideasNeedingEmbeddings = await context.Set<Idea>()
-                .Where(i => i.Embedding == null)
-                .ToListAsync();
-            foreach (var idea in ideasNeedingEmbeddings)
-                idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description);
-            if (ideasNeedingEmbeddings.Count > 0)
-                await context.SaveChangesAsync();
+            try
+            {
+                var seedEmbedSvc = scope.ServiceProvider.GetRequiredService<IEmbeddingService>();
+                var ideasNeedingEmbeddings = await context.Set<Idea>()
+                    .Where(i => i.Embedding == null)
+                    .ToListAsync();
+                foreach (var idea in ideasNeedingEmbeddings)
+                    idea.Embedding = await seedEmbedSvc.GenerateAsync(idea.Description, 0);
+                if (ideasNeedingEmbeddings.Count > 0)
+                    await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                dbLogger.LogWarning(ex, "[Seed] Embedding backfill skipped; embeddings will be generated on first use.");
+            }
             break;
         }
         catch (Exception ex) when (attempt < maxRetries)

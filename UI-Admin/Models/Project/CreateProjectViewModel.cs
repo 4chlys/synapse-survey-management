@@ -11,13 +11,13 @@ public class CreateProjectViewModel
 
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
-        ErrorMessage = "ShortForm must be lowercase alphanumeric with single hyphens.")]
+        ErrorMessage = "ShortForm_Invalid")]
     public string ShortForm { get; set; }
 
     [MaxLength(100)]
     public string Topic { get; set; }
 
-    [MaxLength(5000, ErrorMessage = "De introductie is te lang (maximaal 5000 tekens inclusief opmaak).")]
+    [MaxLength(5000, ErrorMessage = "Introduction_TooLong")]
     public string Introduction { get; set; }
 
     public string InteractionMode { get; set; } = "Scroll";
@@ -49,7 +49,7 @@ public class CreateProjectViewModel
 
     [MaxLength(7)]
     [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
-        ErrorMessage = "Ongeldige kleurcode. Gebruik een hex-waarde (bv. #FF5733).")]
+        ErrorMessage = "PrimaryColor_Invalid")]
     public string PrimaryColor { get; set; }
 
     [MaxLength(4000)]

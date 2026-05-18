@@ -1,19 +1,23 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
 public sealed class AiCommentSupportService(
-    IChatClient chatClient,
     ILogger<AiCommentSupportService> logger,
-    AiCommentSupportConfig config)
-    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(chatClient, logger),
+    IAiUsageManager usageManager)
+    : ChatClientAiSupportBase<CommentSupportRequest, CommentSupportReply>(logger, usageManager),
       IAiCommentSupportService
 {
-    protected override List<ChatMessage> BuildMessages(CommentSupportRequest request)
+    protected override AiServiceKind Service => AiServiceKind.CommentSupport;
+    protected override List<ChatMessage> BuildMessages(CommentSupportRequest request, ResolvedPlatformAiConfig platformConfig)
     {
+        var config       = platformConfig.CommentSupport;
         var ageRange     = string.IsNullOrWhiteSpace(request.AgeRange) ? config.DefaultAgeRange : request.AgeRange;
         var langName     = GetLanguageName(request.Language);
         var systemPrompt = config.SystemPrompt
@@ -55,7 +59,7 @@ public sealed class AiCommentSupportService(
         return messages;
     }
 
-    protected override CommentSupportReply ParseRawReply(string raw, CommentSupportRequest _)
+    protected override CommentSupportReply ParseRawReply(string raw, CommentSupportRequest _, ResolvedPlatformAiConfig platformConfig)
     {
         var cleaned = StripCodeFences(raw);
         var json    = ExtractJson(cleaned);
@@ -65,7 +69,7 @@ public sealed class AiCommentSupportService(
             var aiReply = JsonSerializer.Deserialize<CommentSupportAiReply>(json, JsonOpts);
 
             if (aiReply is null || string.IsNullOrWhiteSpace(aiReply.Message))
-                return FallbackReply();
+                return FallbackReply(platformConfig);
 
             return new CommentSupportReply
             {
@@ -80,8 +84,8 @@ public sealed class AiCommentSupportService(
         }
     }
 
-    protected override CommentSupportReply FallbackReply() =>
-        new() { AssistantMessage = config.FallbackMessage, IsFinal = true };
+    protected override CommentSupportReply FallbackReply(ResolvedPlatformAiConfig platformConfig) =>
+        new() { AssistantMessage = platformConfig.CommentSupport.FallbackMessage, IsFinal = true };
 
     private static string GetLanguageName(string langCode)
     {

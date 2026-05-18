@@ -1,29 +1,35 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
 @model ConfigureDashboardViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Widgets instellen";
+    ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
 }
 <div class="max-w-lg">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">Widgets instellen</h1>
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-4">
             <form asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId" method="post" class="flex flex-col gap-3">
                 @for (var i = 0; i < 9; i++)
                 {
                     <div class="flex items-center gap-3">
-                        <span class="text-base-content/40 text-xs w-20">Positie @(i + 1)</span>
+                        <span class="text-base-content/40 text-xs w-20">@L["PositionLabel"] @(i + 1)</span>
                         <select name="Layout[@i]" class="select select-bordered select-sm flex-1">
                             @foreach (var type in Model.AllWidgetTypes)
                             {
                                 var isSelected = i < Model.Layout.Length && Model.Layout[i] == type;
                                 var label = type switch {
-                                    "ViewCount" => "Bekeken (aantal)", "CompletionCount" => "Ingevuld (aantal)",
-                                    "CompletionRate" => "Voltooiingsgraad (%)", "ParticipationTimeline" => "Deelname over tijd",
-                                    "TopCategories" => "Top categorieën", "TopIdeas" => "Top ideeën",
-                                    "SurveyDistribution" => "Survey-link & QR", "IdeaFeed" => "Nieuwste ideeën",
-                                    "ModerationQueue" => "Moderatiestatus", _ => type
+                                    "ViewCount" => L["Widget_ViewCount"].Value,
+                                    "CompletionCount" => L["Widget_CompletionCount"].Value,
+                                    "CompletionRate" => L["Widget_CompletionRate"].Value,
+                                    "ParticipationTimeline" => L["Widget_ParticipationTimeline"].Value,
+                                    "TopCategories" => L["Widget_TopCategories"].Value,
+                                    "TopIdeas" => L["Widget_TopIdeas"].Value,
+                                    "SurveyDistribution" => L["Widget_SurveyDistribution"].Value,
+                                    "IdeaFeed" => L["Widget_IdeaFeed"].Value,
+                                    "ModerationQueue" => L["Widget_ModerationQueue"].Value,
+                                    _ => type
                                 };
                                 if (isSelected)
                                 {
@@ -38,8 +44,8 @@
                     </div>
                 }
                 <div class="card-actions justify-end gap-2 pt-2">
-                    <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost btn-sm">Annuleren</a>
-                    <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+                    <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost btn-sm">@L["CancelButton"]</a>
+                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
                 </div>
             </form>
         </div>

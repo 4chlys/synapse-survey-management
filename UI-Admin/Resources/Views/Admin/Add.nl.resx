@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Beheerder toevoegen</value></data>
+  <data name="NavActive" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="Heading" xml:space="preserve"><value>Beheerder toevoegen</value></data>
+  <data name="PlatformLabel" xml:space="preserve"><value>Platform</value></data>
+  <data name="EmailLabel" xml:space="preserve"><value>E-mailadres</value></data>
+  <data name="EmailPlaceholder" xml:space="preserve"><value>beheerder@voorbeeld.be</value></data>
+  <data name="PasswordLabel" xml:space="preserve"><value>Wachtwoord</value></data>
+  <data name="PasswordPlaceholder" xml:space="preserve"><value>Minimaal 6 tekens</value></data>
+  <data name="SubmitButton" xml:space="preserve"><value>Beheerder toevoegen</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleer</value></data>
+</root>

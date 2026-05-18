@@ -10,6 +10,7 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
     public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<UserWidgetPreference> UserWidgetPreferences { get; set; }
     public DbSet<PlatformSettings> PlatformSettings { get; set; }
+    public DbSet<SystemAiSettings> SystemAiSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -44,6 +45,12 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
         {
             e.HasKey(s => s.Id);
             e.HasIndex(s => s.ProjectPlatformId).IsUnique();
+        });
+
+        builder.Entity<SystemAiSettings>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.AllowedModelIds).IsRequired();
         });
     }
 }

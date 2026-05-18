@@ -4,8 +4,9 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Section
 @using System.Text.Json
 @model List<QuestionViewModel>
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Vragen";
+    ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_Layout";
     int projectId = (int)ViewData["ProjectId"];
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
@@ -14,14 +15,14 @@
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
 }
-<h1 class="font-heading font-bold text-2xl text-base-content mb-6">Vragen</h1>
+<h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
 <div class="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 <div class="flex flex-col gap-4">
     @if (isLocked)
     {
         <div class="alert alert-warning mb-4">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Vragen kunnen niet meer worden gewijzigd.</span>
+            <span>@(projectState == "Active" ? L["LockedActive"] : L["LockedArchived"])</span>
         </div>
     }
 
@@ -32,14 +33,14 @@
          data-delete-endpoint="@Url.Action("Delete", "Question")"
          data-ai-assistance="@aiAssistance"
          data-locked="@(isLocked ? "true" : "false")">
-        <p class="text-base-content/40 italic text-sm p-4">Vragen laden…</p>
+        <p class="text-base-content/40 italic text-sm p-4">@L["LoadingQuestions"]</p>
     </div>
 
     @if (!isLocked)
     {
         <div class="card bg-base-100 shadow-sm mb-6">
             <div class="card-body gap-4">
-                <h2 class="font-semibold">Vraag toevoegen</h2>
+                <h2 class="font-semibold">@L["AddQuestionHeading"]</h2>
                 <form id="card-question-form" asp-action="CreateQuestion" method="post" class="flex flex-col gap-3">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="projectId" value="@projectId" />
@@ -47,23 +48,23 @@
                     <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                     <input type="hidden" id="card-answers-raw" name="AnswerChoicesRaw" value="" />
                     <label class="form-control">
-                        <div class="label"><span class="label-text text-xs">Vraagtekst *</span></div>
-                        <input type="text" name="Text" class="input input-bordered input-sm w-full" required placeholder="Stel hier je vraag…" />
+                        <div class="label"><span class="label-text text-xs">@L["QuestionTextLabel"]</span></div>
+                        <input type="text" name="Text" class="input input-bordered input-sm w-full" required placeholder="@L["QuestionTextPlaceholder"]" />
                     </label>
                     <div class="grid grid-cols-2 gap-3">
                         <label class="form-control">
-                            <div class="label"><span class="label-text text-xs">Type</span></div>
+                            <div class="label"><span class="label-text text-xs">@L["TypeLabel"]</span></div>
                             <select id="card-format" name="QuestionFormat" class="select select-bordered select-sm w-full">
-                                <option value="Open">Open vraag</option>
-                                <option value="MultipleChoice">Meerkeuze</option>
-                                <option value="SingleChoice">Enkelvoudige keuze</option>
-                                <option value="Likert">Likert</option>
+                                <option value="Open">@L["Type_Open"]</option>
+                                <option value="MultipleChoice">@L["Type_MultipleChoice"]</option>
+                                <option value="SingleChoice">@L["Type_SingleChoice"]</option>
+                                <option value="Likert">@L["Type_Likert"]</option>
                             </select>
                         </label>
                         <label class="form-control">
-                            <div class="label"><span class="label-text text-xs">Sectie</span></div>
+                            <div class="label"><span class="label-text text-xs">@L["SectionLabel"]</span></div>
                             <select name="SectionId" class="select select-bordered select-sm w-full">
-                                <option value="">— geen sectie —</option>
+                                <option value="">@L["NoSectionOption"]</option>
                                 @foreach (var sec in sections)
                                 {
                                     <option value="@sec.SectionId">@sec.Name</option>
@@ -72,31 +73,31 @@
                         </label>
                     </div>
                     <div id="card-answers-section" class="hidden flex-col gap-2">
-                        <div class="label"><span class="label-text text-xs">Antwoorden *</span></div>
+                        <div class="label"><span class="label-text text-xs">@L["AnswersLabel"]</span></div>
                         <div id="card-answer-list" class="flex flex-col gap-1"></div>
-                        <span id="card-answers-error" class="hidden text-error text-xs">Voeg minimaal 2 antwoorden toe.</span>
-                        <button type="button" id="card-add-answer" class="btn btn-ghost btn-xs self-start">+ Antwoord toevoegen</button>
+                        <span id="card-answers-error" class="hidden text-error text-xs">@L["MinTwoAnswersError"]</span>
+                        <button type="button" id="card-add-answer" class="btn btn-ghost btn-xs self-start">+ @L["AddAnswerButton"]</button>
                     </div>
                     <label class="label cursor-pointer justify-start gap-3">
                         <input type="checkbox" id="card-mandatory" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
-                        <span class="label-text text-sm">Verplicht</span>
+                        <span class="label-text text-sm">@L["MandatoryLabel"]</span>
                     </label>
                     <details id="card-media-section" class="mb-1">
-                        <summary class="font-semibold text-sm cursor-pointer">Ondersteunende media (optioneel)</summary>
+                        <summary class="font-semibold text-sm cursor-pointer">@L["MediaSummary"]</summary>
                         <div class="flex flex-col gap-3 mt-3">
                             <label class="form-control">
-                                <div class="label"><span class="label-text text-xs">Mediatype</span></div>
+                                <div class="label"><span class="label-text text-xs">@L["MediaTypeLabel"]</span></div>
                                 <select id="card-MediaType" name="MediaType" class="select select-bordered select-sm w-full">
-                                    <option value="">— geen media —</option>
-                                    <option value="1">Afbeelding</option>
-                                    <option value="2">Video</option>
-                                    <option value="3">Audio</option>
+                                    <option value="">@L["NoMediaOption"]</option>
+                                    <option value="1">@L["Media_Image"]</option>
+                                    <option value="2">@L["Media_Video"]</option>
+                                    <option value="3">@L["Media_Audio"]</option>
                                 </select>
                             </label>
                             <div id="card-media-source-toggle" class="hidden">
                                 <label class="label cursor-pointer justify-start gap-3">
                                     <input type="checkbox" id="card-MediaIsEmbed" name="MediaIsEmbed" value="true" class="checkbox checkbox-sm" />
-                                    <span class="label-text text-sm">URL / link invoeren</span>
+                                    <span class="label-text text-sm">@L["MediaEmbedToggle"]</span>
                                 </label>
                             </div>
                             <div id="card-media-upload-block" class="hidden flex-col gap-2">
@@ -113,49 +114,49 @@
                             <input type="hidden" name="MediaUrl" id="card-MediaUrl" value="" />
                             <label class="form-control">
                                 <div class="label">
-                                    <span class="label-text text-xs">Begeleidende tekst</span>
+                                    <span class="label-text text-xs">@L["MediaTextLabel"]</span>
                                     <span id="card-media-text-counter" class="label-text-alt text-xs">0 / 2000</span>
                                 </div>
                                 <textarea id="card-MediaText" name="MediaText" rows="3" maxlength="2000"
                                           class="textarea textarea-bordered textarea-sm w-full resize-none"
-                                          placeholder="Korte uitleg of context bij de media..."></textarea>
+                                          placeholder="@L["MediaTextPlaceholder"]"></textarea>
                             </label>
                         </div>
                     </details>
-                    <button type="submit" class="btn btn-primary btn-sm self-end">Toevoegen</button>
+                    <button type="submit" class="btn btn-primary btn-sm self-end">@L["AddButton"]</button>
                 </form>
             </div>
         </div>
     }
 
     <div class="flex justify-between">
-        <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← Instellingen</a>
+        <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["SettingsLink"]</a>
         @if (!isLocked)
         {
             <button type="button" id="questions-next-btn"
                     class="btn btn-primary btn-sm"
                     data-question-count="@Model.Count"
-                    data-href="@Url.Action("Ideation", new { projectId, isNew })">Volgende →</button>
+                    data-href="@Url.Action("Ideation", new { projectId, isNew })">@L["NextLink"] →</button>
         }
         else
         {
-            <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">Volgende →</a>
+            <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">@L["NextLink"] →</a>
         }
     </div>
-    <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">Voeg minstens één vraag toe.</p>
+    <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">@L["AddOneQuestionError"]</p>
 </div>
 
 <div id="qs-chat-panel" class="flex flex-col gap-3">
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-4">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-sm">AI Ondersteuning</h2>
+                <h2 class="font-semibold text-sm">@L["AiSupportHeading"]</h2>
                 <select id="qs-mode-select"
                         class="select select-bordered select-xs w-auto"
                         data-prev="@aiAssistance">
-                    <option value="ProActive"  selected="@(aiAssistance == "ProActive"  ? "selected" : null)">Pro-actief</option>
-                    <option value="AskFirst"   selected="@(aiAssistance == "AskFirst"   ? "selected" : null)">Vraag eerst</option>
-                    <option value="Never"      selected="@(aiAssistance == "Never"      ? "selected" : null)">Nooit</option>
+                    <option value="ProActive"  selected="@(aiAssistance == "ProActive"  ? "selected" : null)">@L["AiMode_ProActive"]</option>
+                    <option value="AskFirst"   selected="@(aiAssistance == "AskFirst"   ? "selected" : null)">@L["AiMode_AskFirst"]</option>
+                    <option value="Never"      selected="@(aiAssistance == "Never"      ? "selected" : null)">@L["AiMode_Never"]</option>
                 </select>
             </div>
 
@@ -167,10 +168,10 @@
                 <textarea id="qs-input"
                           rows="2"
                           class="textarea textarea-bordered textarea-sm w-full resize-none"
-                          placeholder="Stel een vraag over jouw enquête…"></textarea>
+                          placeholder="@L["AiInputPlaceholder"]"></textarea>
                 <button id="qs-btn-send" type="button"
                         class="btn btn-primary btn-sm self-end">
-                    Versturen
+                    @L["SendButton"]
                 </button>
             </div>
         </div>
@@ -182,7 +183,7 @@
 <div id="modal" class="modal">
     <div class="modal-box w-[480px] max-w-xl">
         <div class="flex justify-between items-center mb-4">
-            <span id="modal-title" class="font-bold text-base">Vraag aanmaken</span>
+            <span id="modal-title" class="font-bold text-base">@L["ModalTitleCreate"]</span>
             <button type="button" id="modal-close" class="btn btn-ghost btn-sm btn-circle">×</button>
         </div>
 
@@ -203,48 +204,48 @@
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
 
             <label class="form-control mb-3">
-                <div class="label"><span class="label-text text-xs">Vraagtekst</span></div>
+                <div class="label"><span class="label-text text-xs">@L["QuestionTextLabel"]</span></div>
                 <textarea name="Text" id="QuestionText" rows="3"
                           class="textarea textarea-bordered textarea-sm w-full resize-none"
-                          placeholder="Vul je vraag in..."></textarea>
-                <span id="text-error" class="hidden text-error text-xs mt-1">Dit veld moet ingevuld zijn.</span>
+                          placeholder="@L["ModalQuestionPlaceholder"]"></textarea>
+                <span id="text-error" class="hidden text-error text-xs mt-1">@L["FieldRequiredError"]</span>
             </label>
 
             <label class="form-control mb-4">
-                <div class="label"><span class="label-text text-xs">Vraagtype</span></div>
+                <div class="label"><span class="label-text text-xs">@L["QuestionTypeLabel"]</span></div>
                 <div class="flex gap-2">
                     <div class="flex flex-col items-center gap-1">
                         <button type="button" class="type-btn btn btn-sm btn-primary" data-type="MultipleChoice">MCQ</button>
-                        <span class="type-selected-label text-base-content/40 italic text-xs">(geselecteerd)</span>
+                        <span class="type-selected-label text-base-content/40 italic text-xs">@L["SelectedSuffix"]</span>
                     </div>
                     <div class="flex flex-col items-center gap-1">
                         <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="SingleChoice">SCQ</button>
-                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">(geselecteerd)</span>
+                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">@L["SelectedSuffix"]</span>
                     </div>
                     <div class="flex flex-col items-center gap-1">
-                        <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="Open">Open</button>
-                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">(geselecteerd)</span>
+                        <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="Open">@L["Type_Open"]</button>
+                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">@L["SelectedSuffix"]</span>
                     </div>
                     <div class="flex flex-col items-center gap-1">
                         <button type="button" class="type-btn btn btn-sm btn-ghost" data-type="Likert">Likert</button>
-                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">(geselecteerd)</span>
+                        <span class="type-selected-label text-base-content/40 italic text-xs hidden">@L["SelectedSuffix"]</span>
                     </div>
                 </div>
             </label>
 
             <div id="answers-section" class="mb-4">
-                <label class="label"><span class="label-text text-xs">Antwoorden</span></label>
+                <label class="label"><span class="label-text text-xs">@L["AnswersLabel"]</span></label>
                 <div id="answer-list" class="space-y-2 mb-2"></div>
                 <span id="answers-error" class="hidden text-error text-xs mb-2 block"></span>
-                <button type="button" id="add-answer-btn" class="btn btn-ghost btn-xs">+ Antwoord toevoegen</button>
+                <button type="button" id="add-answer-btn" class="btn btn-ghost btn-xs">+ @L["AddAnswerButton"]</button>
             </div>
 
             @if (sections.Any())
             {
                 <label class="form-control mb-4">
-                    <div class="label"><span class="label-text text-xs">Sectie (optioneel)</span></div>
+                    <div class="label"><span class="label-text text-xs">@L["SectionOptionalLabel"]</span></div>
                     <select name="SectionId" id="SectionId" class="select select-bordered select-sm w-full">
-                        <option value="">— Geen sectie —</option>
+                        <option value="">@L["NoSectionOption"]</option>
                         @foreach (var sec in sections)
                         {
                             <option value="@sec.SectionId">@sec.Name</option>
@@ -255,28 +256,28 @@
 
             <label class="label cursor-pointer justify-start gap-3 mb-2">
                 <input type="checkbox" id="IsMandatory-cb" name="IsMandatory" value="true" class="checkbox checkbox-primary checkbox-sm" checked />
-                <span class="label-text text-sm">Verplicht</span>
+                <span class="label-text text-sm">@L["MandatoryLabel"]</span>
             </label>
 
             <div class="divider my-2"></div>
 
             <details id="media-section" class="mb-2">
-                <summary class="font-semibold text-sm cursor-pointer">Ondersteunende media (optioneel)</summary>
+                <summary class="font-semibold text-sm cursor-pointer">@L["MediaSummary"]</summary>
                 <div class="flex flex-col gap-3 mt-3">
                     <label class="form-control">
-                        <div class="label"><span class="label-text text-xs">Mediatype</span></div>
+                        <div class="label"><span class="label-text text-xs">@L["MediaTypeLabel"]</span></div>
                         <select id="MediaType" name="MediaType" class="select select-bordered select-sm w-full">
-                            <option value="">— geen media —</option>
-                            <option value="1">Afbeelding</option>
-                            <option value="2">Video</option>
-                            <option value="3">Audio</option>
+                            <option value="">@L["NoMediaOption"]</option>
+                            <option value="1">@L["Media_Image"]</option>
+                            <option value="2">@L["Media_Video"]</option>
+                            <option value="3">@L["Media_Audio"]</option>
                         </select>
                     </label>
 
                     <div id="media-source-toggle" class="hidden">
                         <label class="label cursor-pointer justify-start gap-3">
                             <input type="checkbox" id="MediaIsEmbed" name="MediaIsEmbed" value="true" class="checkbox checkbox-sm" />
-                            <span class="label-text text-sm">URL / link invoeren</span>
+                            <span class="label-text text-sm">@L["MediaEmbedToggle"]</span>
                         </label>
                     </div>
 
@@ -298,19 +299,19 @@
 
                     <label class="form-control">
                         <div class="label">
-                            <span class="label-text text-xs">Begeleidende tekst (markdown — **vet**, *cursief*, - lijst)</span>
+                            <span class="label-text text-xs">@L["MediaTextMarkdownLabel"]</span>
                             <span id="media-text-counter" class="label-text-alt text-xs">0 / 2000</span>
                         </div>
                         <textarea id="MediaText" name="MediaText" rows="4" maxlength="2000"
                                   class="textarea textarea-bordered textarea-sm w-full resize-none"
-                                  placeholder="Korte uitleg of context bij de media..."></textarea>
+                                  placeholder="@L["MediaTextPlaceholder"]"></textarea>
                     </label>
                 </div>
             </details>
 
             <div class="modal-action gap-2">
-                <button type="button" id="modal-cancel" class="btn btn-ghost btn-sm">Annuleer</button>
-                <button type="submit" class="btn btn-primary btn-sm">OK</button>
+                <button type="button" id="modal-cancel" class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                <button type="submit" class="btn btn-primary btn-sm">@L["OkButton"]</button>
             </div>
         </form>
     </div>

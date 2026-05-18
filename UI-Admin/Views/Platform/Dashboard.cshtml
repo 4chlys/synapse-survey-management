@@ -1,5 +1,6 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model PlatformDashboardViewModel
+@inject IViewLocalizer L
 @{
     ViewData["Title"] = Model.Name;
     ViewData["ActiveSection"] = "Dashboard";
@@ -14,7 +15,7 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
             </svg>
-            Instellingen
+            @L["SettingsLink"]
         </a>
     </div>
 
@@ -24,7 +25,7 @@
             <div class="flex items-center gap-4">
                 @if (!string.IsNullOrEmpty(Model.LogoUrl))
                 {
-                    <img src="@Model.LogoUrl" alt="@Model.Name logo" class="h-14 w-auto object-contain" />
+                    <img src="@Model.LogoUrl" alt="@Model.Name @L["LogoAltSuffix"]" class="h-14 w-auto object-contain" />
                 }
                 <div>
                     <p class="font-semibold text-base-content">@Model.Name</p>
@@ -37,10 +38,10 @@
                     }
                     else
                     {
-                        <span class="text-sm text-base-content/40 italic">Geen website</span>
+                        <span class="text-sm text-base-content/40 italic">@L["NoWebsite"]</span>
                     }
                     <p class="text-xs text-base-content/40 mt-1">
-                        Aangemaakt op @Model.CreatedAt.ToString("d MMMM yyyy")
+                        @string.Format(L["CreatedAt"].Value, Model.CreatedAt.ToString("d MMMM yyyy"))
                     </p>
                 </div>
             </div>
@@ -52,30 +53,30 @@
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body items-center text-center gap-1">
                 <p class="text-3xl font-bold text-base-content">@Model.ActiveProjectCount</p>
-                <p class="text-xs font-semibold text-success uppercase tracking-wide">Actief</p>
-                <p class="text-sm text-base-content/60">Projecten</p>
+                <p class="text-xs font-semibold text-success uppercase tracking-wide">@L["StatActive"]</p>
+                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
             </div>
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body items-center text-center gap-1">
                 <p class="text-3xl font-bold text-base-content">@Model.DraftProjectCount</p>
-                <p class="text-xs font-semibold text-warning uppercase tracking-wide">Concept</p>
-                <p class="text-sm text-base-content/60">Projecten</p>
+                <p class="text-xs font-semibold text-warning uppercase tracking-wide">@L["StatDraft"]</p>
+                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
             </div>
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body items-center text-center gap-1">
                 <p class="text-3xl font-bold text-base-content">@Model.ArchivedProjectCount</p>
-                <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wide">Archief</p>
-                <p class="text-sm text-base-content/60">Projecten</p>
+                <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wide">@L["StatArchived"]</p>
+                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
             </div>
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body items-center text-center gap-1">
                 <p class="text-3xl font-bold text-base-content">@Model.ParticipantCount</p>
-                <p class="text-sm text-base-content/60">Deelnemers</p>
+                <p class="text-sm text-base-content/60">@L["StatParticipants"]</p>
                 <a asp-action="Admins" asp-route-id="@Model.ProjectPlatformId"
-                   class="btn btn-ghost btn-xs mt-2">Beheerders →</a>
+                   class="btn btn-ghost btn-xs mt-2">@L["AdminsLink"] →</a>
             </div>
         </div>
     </div>
@@ -86,14 +87,36 @@
         <div class="card bg-base-100 shadow-sm mb-6">
             <div class="card-body py-3">
                 <p class="text-sm text-base-content/60">
-                    <span class="font-medium text-base-content">AI model:</span> @Model.AiModelName
+                    <span class="font-medium text-base-content">@L["AiModel"]:</span> @Model.AiModelName
                 </p>
             </div>
         </div>
     }
 
+    @* Live AI cost card *@
+    <h2 class="font-semibold text-base-content mb-4">@L["LiveAiCostHeading"]</h2>
+    <div class="card bg-base-100 shadow-sm mb-6" data-ai-cost-container data-platform-id="@Model.ProjectPlatformId" data-empty-label="@L["AiCost_Empty"]">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>@L["AiCost_Project"]</th>
+                            <th class="text-right">@L["AiCost_InputTokens"]</th>
+                            <th class="text-right">@L["AiCost_OutputTokens"]</th>
+                            <th class="text-right">@L["AiCost_Cost"]</th>
+                        </tr>
+                    </thead>
+                    <tbody data-ai-usage>
+                        <tr><td colspan="4" class="text-center text-base-content/40 text-sm py-4">@L["AiCost_Loading"]</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     @* Cost dashboard *@
-    <h2 class="font-semibold text-base-content mb-4">Kosten & monitoring</h2>
+    <h2 class="font-semibold text-base-content mb-4">@L["CostMonitoringHeading"]</h2>
     @if (!string.IsNullOrEmpty(Model.CostDashboardUrl))
     {
         <div class="card bg-base-100 shadow-sm">
@@ -101,7 +124,7 @@
                 <iframe src="@Model.CostDashboardUrl"
                         class="w-full rounded-2xl"
                         style="height:600px;border:none;"
-                        title="Kostenoverzicht @Model.Name"
+                        title="@string.Format(L["CostIframeTitle"].Value, Model.Name)"
                         loading="lazy">
                 </iframe>
             </div>
@@ -111,11 +134,10 @@
     {
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body text-center gap-2">
-                <p class="text-sm text-base-content/60">Geen kostendashboard geconfigureerd.</p>
+                <p class="text-sm text-base-content/60">@L["NoCostDashboard"]</p>
                 <p class="text-xs text-base-content/40">
-                    Voeg een Data Studio embed-URL toe via
-                    <a asp-action="Settings" asp-route-id="@Model.ProjectPlatformId"
-                       class="underline hover:text-base-content transition">Instellingen</a>.
+                    @Html.Raw(string.Format(L["AddCostDashboardHint"].Value,
+                        $"<a href=\"{Url.Action("Settings", "Platform", new { id = Model.ProjectPlatformId })}\" class=\"underline hover:text-base-content transition\">{L["SettingsLink"].Value}</a>"))
                 </p>
             </div>
         </div>

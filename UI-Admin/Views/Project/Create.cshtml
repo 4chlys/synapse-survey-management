@@ -1,26 +1,28 @@
 @using SynapseEnqueteManagement.BL.Domain.Project.Enums
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     var isEdit = Model.ProjectId.HasValue;
     var projectState = (string)(ViewData["ProjectState"] ?? "");
     var isLocked = isEdit && projectState is "Active" or "Archived";
     var shortFormReadonly = isEdit && projectState != "Draft";
     bool isNew = ViewData["IsNew"] is true;
-    ViewData["Title"]         = isEdit ? "Project bewerken" : "Project aanmaken";
-    ViewData["ActiveSection"] = "Instellingen";
+    ViewData["Title"]         = isEdit ? L["TitleEdit"].Value : L["TitleCreate"].Value;
+    ViewData["ActiveSection"] = "Settings";
     Layout = "_Layout";
 }
 
 <div class="max-w-2xl">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">
-        @(isEdit ? "Project bewerken" : "Nieuw project")
+        @(isEdit ? L["HeadingEdit"].Value : L["HeadingNew"].Value)
     </h1>
 
     @if (isLocked)
     {
         <div class="alert alert-warning mb-4">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span>Dit project is @(projectState == "Active" ? "actief" : "gearchiveerd"). Instellingen kunnen niet meer worden gewijzigd.</span>
+            <span>@(projectState == "Active" ? L["LockedActive"] : L["LockedArchived"])</span>
         </div>
     }
 
@@ -33,7 +35,7 @@
                 <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
 
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">Taal *</span></div>
+                    <div class="label"><span class="label-text font-medium">@L["LanguageLabel"]</span></div>
                     <select asp-for="DefaultLanguageCode" class="select select-bordered w-full">
                         <option value="nl">Nederlands</option>
                         <option value="en">English</option>
@@ -42,15 +44,15 @@
                 </label>
 
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">Projectnaam *</span></div>
-                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="Bijv. Mentaal Welzijn" maxlength="100" required />
+                    <div class="label"><span class="label-text font-medium">@L["NameLabel"]</span></div>
+                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="@L["NamePlaceholder"]" maxlength="100" required />
                     <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
                 </label>
 
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">Shortform</span></div>
+                    <div class="label"><span class="label-text font-medium">@L["ShortformLabel"]</span></div>
                     <input asp-for="ShortForm" id="project-shortform-input"
-                           class="input input-bordered w-full" placeholder="automatisch ingevuld vanuit de naam"
+                           class="input input-bordered w-full" placeholder="@L["ShortformPlaceholder"]"
                            maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
                            readonly="@shortFormReadonly" />
                     <span asp-validation-for="ShortForm" class="label-text-alt text-error mt-1"></span>
@@ -58,13 +60,13 @@
                 </label>
 
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">Onderwerp</span></div>
-                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="Waar gaat dit project over?" maxlength="100" />
+                    <div class="label"><span class="label-text font-medium">@L["TopicLabel"]</span></div>
+                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="@L["TopicPlaceholder"]" maxlength="100" />
                     <span asp-validation-for="Topic" class="label-text-alt text-error mt-1"></span>
                 </label>
 
                 <div class="form-control">
-                    <div class="label"><span class="label-text font-medium">Introductietekst</span></div>
+                    <div class="label"><span class="label-text font-medium">@L["IntroductionLabel"]</span></div>
                     @if (isLocked)
                     {
                         <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
@@ -84,40 +86,40 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">Soort enqu&ecirc;te</span></div>
+                        <div class="label"><span class="label-text font-medium">@L["InteractionModeLabel"]</span></div>
                         <select asp-for="InteractionMode" class="select select-bordered w-full">
-                            <option value="VerticalScroll">Verticaal scrollen</option>
-                            <option value="Paginated">Chat</option>
+                            <option value="VerticalScroll">@L["InteractionMode_Scroll"]</option>
+                            <option value="Paginated">@L["InteractionMode_Chat"]</option>
                         </select>
                     </label>
                     <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">AI-assistentie</span></div>
+                        <div class="label"><span class="label-text font-medium">@L["AiAssistanceLabel"]</span></div>
                         <select asp-for="AiAssistance" class="select select-bordered w-full">
-                            <option value="ProActive">Pro-actief</option>
-                            <option value="AskFirst">Op aanvraag</option>
-                            <option value="Never">Nooit</option>
+                            <option value="ProActive">@L["AiAssistance_ProActive"]</option>
+                            <option value="AskFirst">@L["AiAssistance_AskFirst"]</option>
+                            <option value="Never">@L["AiAssistance_Never"]</option>
                         </select>
                     </label>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">Minimumleeftijd</span></div>
+                        <div class="label"><span class="label-text font-medium">@L["MinAgeLabel"]</span></div>
                         <input asp-for="MinAge" type="number" id="min-age-input" min="0" max="120"
-                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                               class="input input-bordered w-full no-spinner" placeholder="@L["AgeOptional"]" />
                         <span asp-validation-for="MinAge" class="label-text-alt text-error mt-1"></span>
                     </label>
                     <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">Maximumleeftijd</span></div>
+                        <div class="label"><span class="label-text font-medium">@L["MaxAgeLabel"]</span></div>
                         <input asp-for="MaxAge" type="number" id="max-age-input" min="0" max="120"
-                               class="input input-bordered w-full no-spinner" placeholder="Optioneel" />
+                               class="input input-bordered w-full no-spinner" placeholder="@L["AgeOptional"]" />
                         <span asp-validation-for="MaxAge" class="label-text-alt text-error mt-1"></span>
                     </label>
                 </div>
-                <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</span>
+                <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">@L["AgeRangeError"]</span>
 
                 <div class="form-control">
-                    <div class="label"><span class="label-text font-medium">Afbeelding</span></div>
+                    <div class="label"><span class="label-text font-medium">@L["ImageLabel"]</span></div>
                     <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative mb-2 overflow-hidden bg-base-200">
                         <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
                             <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
@@ -129,7 +131,7 @@
                     @if (!isLocked)
                     {
                         <div class="flex gap-2">
-                            <button type="button" id="browse-btn" class="btn btn-outline btn-sm">Bladeren</button>
+                            <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
                         </div>
                         <input type="file" id="image-file-input" accept="image/*" class="hidden" />
                     }
@@ -140,7 +142,7 @@
                 <div class="form-control">
                     <label class="label cursor-pointer justify-start gap-3">
                         <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
-                        <span class="label-text">Contactgegevens opvragen bij deelnemers</span>
+                        <span class="label-text">@L["ContactOptInLabel"]</span>
                     </label>
                 </div>
 
@@ -149,34 +151,34 @@
                     <div class="form-control">
                         <label class="label cursor-pointer justify-start gap-3">
                             <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
-                            <span class="label-text">Meertalige idee&euml;n toestaan</span>
+                            <span class="label-text">@L["CrossLanguageLabel"]</span>
                         </label>
-                        <span class="label-text-alt">Sta toe dat deelnemers idee&euml;n in andere projecttalen zien en indienen</span>
+                        <span class="label-text-alt">@L["CrossLanguageHint"]</span>
                     </div>
                 }
 
-                <div class="divider my-0">Secties</div>
+                <div class="divider my-0">@L["SectionsDivider"]</div>
 
                 <div id="sections-container" class="flex flex-col gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
                     @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                     {
                         <div class="flex gap-2 items-center section-row">
                             <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
-                                   class="input input-bordered input-sm flex-1" placeholder="Sectienaam" />
+                                   class="input input-bordered input-sm flex-1" placeholder="@L["SectionNamePlaceholder"]" />
                             <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
                         </div>
                     }
                 </div>
                 <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                    Sectie toevoegen
+                    @L["AddSectionButton"]
                 </button>
 
-                <div class="divider my-0">Stijl</div>
+                <div class="divider my-0">@L["StyleDivider"]</div>
 
                 <div class="form-control">
                     <label asp-for="Theme" class="label">
-                        <span class="label-text">Thema</span>
+                        <span class="label-text">@L["ThemeLabel"]</span>
                     </label>
                     <select asp-for="Theme" asp-items="Html.GetEnumSelectList<ProjectTheme>()"
                             class="select select-bordered w-full"></select>
@@ -184,26 +186,26 @@
                 </div>
 
                 <div class="form-control">
-                    <span class="label-text">Voorbeeld</span>
+                    <span class="label-text">@L["PreviewLabel"]</span>
                     <div id="theme-preview-host"
                          class="mt-1"
                          data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())">
                     </div>
                     <span class="label-text-alt mt-1 opacity-70">
-                        Live voorbeeld van thema, primaire kleur en aangepaste CSS.
+                        @L["PreviewHint"]
                     </span>
                 </div>
 
                 <div class="form-control">
                     <label class="label">
-                        <span class="label-text">Primaire kleur (optioneel)</span>
+                        <span class="label-text">@L["PrimaryColorLabel"]</span>
                     </label>
                     <div class="flex items-center gap-3">
                         <input id="primary-color-picker" type="color" value="#16A34A"
                                class="h-10 w-16 rounded border border-base-300 cursor-pointer disabled:opacity-50" />
                         <label class="label cursor-pointer justify-start gap-2 py-0">
                             <input id="use-theme-color" type="checkbox" class="checkbox checkbox-sm" />
-                            <span class="label-text">Themakleur gebruiken</span>
+                            <span class="label-text">@L["UseThemeColorLabel"]</span>
                         </label>
                     </div>
                     <input asp-for="PrimaryColor" type="hidden" />
@@ -212,31 +214,33 @@
 
                 <div class="form-control">
                     <label asp-for="CustomCss" class="label">
-                        <span class="label-text">Aangepaste CSS (optioneel)</span>
+                        <span class="label-text">@L["CustomCssLabel"]</span>
                     </label>
                     <textarea asp-for="CustomCss" rows="6"
                               class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
-                    <span class="label-text-alt">Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</span>
+                    <span class="label-text-alt">@L["CustomCssHint"]</span>
                     <span asp-validation-for="CustomCss" class="label-text-alt text-error mt-1"></span>
                     <details class="mt-2 text-sm">
                         <summary class="cursor-pointer label-text">
-                            Beschikbare CSS-variabelen en selectors (klikken om in te voegen)
+                            @L["CustomCssHelperSummary"]
                         </summary>
                         <div id="customcss-helper" class="mt-2 flex flex-col gap-3">
                             <div>
-                                <div class="text-xs uppercase opacity-60 mb-1">Variabelen</div>
+                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssVariables"]</div>
                                 <div data-helper-group="variables" class="flex flex-wrap gap-1">
                                     @* Tokens injected by project-style.ts on load *@
                                 </div>
                             </div>
                             <div>
-                                <div class="text-xs uppercase opacity-60 mb-1">Snippets</div>
+                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssSnippets"]</div>
                                 <div data-helper-group="snippets" class="flex flex-wrap gap-1">
                                     @* Snippets injected by project-style.ts on load *@
                                 </div>
                             </div>
                             <div id="customcss-syntax-hint"
-                                 class="text-xs opacity-70" aria-live="polite"></div>
+                                 class="text-xs opacity-70" aria-live="polite"
+                                 data-unbalanced-label="@L["CustomCss_Unbalanced"].Value"
+                                 data-balanced-label="@L["CustomCss_Balanced"]"></div>
                         </div>
                     </details>
                 </div>
@@ -246,52 +250,52 @@
 
             @if (isLocked && Model.ProjectId.HasValue)
             {
-                <div class="divider my-0">Exporteren</div>
+                <div class="divider my-0">@L["ExportDivider"]</div>
 
                 <button type="button" class="btn btn-outline btn-sm gap-1.5"
                         onclick="document.getElementById('rawdata-modal').showModal()">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
                     </svg>
-                    Exporteer ruwe data
+                    @L["ExportRawDataButton"]
                 </button>
 
                 <dialog id="rawdata-modal" class="modal"
                         data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
                     <div class="modal-box">
-                        <h3 class="font-bold text-lg mb-4">Ruwe data exporteren</h3>
+                        <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
 
-                        <p class="text-sm text-base-content/60 mb-3">Selecteer de gegevens die je wilt exporteren:</p>
+                        <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
 
                         <div class="form-control gap-2 mb-4">
                             <label class="label cursor-pointer justify-start gap-3">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
-                                <span class="label-text">Vragen</span>
+                                <span class="label-text">@L["RawData_Questions"]</span>
                             </label>
                             <label class="label cursor-pointer justify-start gap-3">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
-                                <span class="label-text">Antwoorden</span>
+                                <span class="label-text">@L["RawData_Answers"]</span>
                             </label>
                             <label class="label cursor-pointer justify-start gap-3">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
-                                <span class="label-text">Categorie&euml;n</span>
+                                <span class="label-text">@L["RawData_Categories"]</span>
                             </label>
                             <label class="label cursor-pointer justify-start gap-3">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
-                                <span class="label-text">Idee&euml;n</span>
+                                <span class="label-text">@L["RawData_Ideas"]</span>
                             </label>
                             <label class="label cursor-pointer justify-start gap-3">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
-                                <span class="label-text">Comments</span>
+                                <span class="label-text">@L["RawData_Comments"]</span>
                             </label>
                             <label class="label cursor-pointer justify-start gap-3">
                                 <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
-                                <span class="label-text">Emoji-reacties (detail)</span>
+                                <span class="label-text">@L["RawData_EmojiReactions"]</span>
                             </label>
                         </div>
 
                         <div class="flex items-center gap-2 mb-4">
-                            <span class="text-sm font-medium">Formaat:</span>
+                            <span class="text-sm font-medium">@L["FormatLabel"]</span>
                             <select id="rawdata-format" class="select select-bordered select-sm w-40">
                                 <option value="xlsx">Excel (.xlsx)</option>
                                 <option value="csv">CSV (.zip)</option>
@@ -300,9 +304,9 @@
 
                         <div class="modal-action">
                             <form method="dialog">
-                                <button class="btn btn-ghost btn-sm">Annuleren</button>
+                                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
                             </form>
-                            <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">Exporteren</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
                         </div>
                     </div>
                     <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -312,16 +316,16 @@
             <div class="card-actions justify-end gap-2 pt-2">
                 @if (!isLocked)
                 {
-                    <a asp-action="Index" class="btn btn-ghost">Annuleren</a>
-                    <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">Opslaan</button>
-                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">Volgende &rarr;</button>
+                    <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
+                    <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@L["SaveButton"]</button>
+                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
                 }
                 else
                 {
-                    <a asp-action="Index" class="btn btn-ghost">Terug</a>
+                    <a asp-action="Index" class="btn btn-ghost">@Shared["Common_Back"]</a>
                     @if (Model.ProjectId.HasValue)
                     {
-                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">Volgende &rarr;</a>
+                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">@L["NextButton"] &rarr;</a>
                     }
                 }
             </div>

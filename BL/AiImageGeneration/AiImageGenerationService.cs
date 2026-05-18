@@ -3,13 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.BL.AiImageGeneration;
 
-public sealed class GoogleVertexAiImageGenerationService(
+public sealed class AiImageGenerationService(
     PredictionServiceClient predictionClient,
     string modelResource,
     AiImageGenerationConfig config,
-    ILogger<GoogleVertexAiImageGenerationService> logger) : IAiImageGenerationService
+    ILogger<AiImageGenerationService> logger) : IAiImageGenerationService
 {
-    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, CancellationToken ct = default)
+    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, int projectId, CancellationToken ct = default)
     {
         try
         {

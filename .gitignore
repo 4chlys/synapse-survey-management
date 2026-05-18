@@ -1,5 +1,6 @@
 # Secrets
 vertexai-key.json
+ai-config.json
 
 # Documentatie
 Documentatie/
@@ -493,7 +494,7 @@ $RECYCLE.BIN/
 
 # manually by Casper
 CLAUDE.md
-start.bat
+start-up.bat
 stop.bat
 CasperContext/
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Heading" xml:space="preserve"><value>Projecten</value></data>
+  <data name="NewButton" xml:space="preserve"><value>Nieuw project</value></data>
+  <data name="OpenButton" xml:space="preserve"><value>Openen</value></data>
+  <data name="CopyAsTemplate" xml:space="preserve"><value>Kopiëren als sjabloon</value></data>
+  <data name="DeleteButton" xml:space="preserve"><value>Verwijderen</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Project verwijderen?</value></data>
+  <data name="CopyModalTitle" xml:space="preserve"><value>Project kopiëren als sjabloon</value></data>
+  <data name="CopyModalBody" xml:space="preserve"><value>Maakt een nieuw concept-project met de structuur van {0}. Antwoorden, ideeën en reacties van deelnemers worden niet gekopieerd.</value></data>
+  <data name="CopyModalNewNameLabel" xml:space="preserve"><value>Naam van het nieuwe project</value></data>
+  <data name="CopySuffix" xml:space="preserve"><value>(kopie)</value></data>
+  <data name="CopyButton" xml:space="preserve"><value>Kopiëren</value></data>
+  <data name="DeleteModalTitle" xml:space="preserve"><value>Project verwijderen</value></data>
+  <data name="DeleteModalBody" xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</value></data>
+</root>

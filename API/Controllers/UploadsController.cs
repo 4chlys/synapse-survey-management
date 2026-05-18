@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiModeration;
@@ -14,6 +15,7 @@ public class UploadsController(
     IStorageService storageService,
     IAiModerationService aiModerationService,
     IModerationTokenService moderationTokenService,
+    IPlatformAiConfigService platformAiConfig,
     IAiImageDescriptionService aiImageDescriptionService) : ControllerBase
 {
     private static readonly HashSet<string> AllowedImageContentTypes =
@@ -71,7 +73,8 @@ public class UploadsController(
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var config = await platformAiConfig.ResolveGlobalAsync(ct);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, config, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
@@ -110,8 +113,9 @@ public class UploadsController(
         var effectiveLanguage = string.IsNullOrWhiteSpace(language)
             ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
             : language;
+        var platformConfig = await platformAiConfig.ResolveGlobalAsync(ct);
         var description = await aiImageDescriptionService.DescribeImageAsync(
-            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", platformConfig, 0, ct);
 
         if (string.IsNullOrEmpty(description))
             return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });
