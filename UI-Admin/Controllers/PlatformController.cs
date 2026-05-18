@@ -1,7 +1,9 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.BL.Domain.Ai;
+using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
@@ -13,7 +15,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 public class PlatformController(
     PlatformAdminService platformService,
     ProjectAdminService projectService,
-    AiAdminService aiAdminService) : Controller
+    AiAdminService aiAdminService,
+    SystemStatsAdminService systemStatsAdminService,
+    UserManager<ApplicationUser> userManager) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -45,13 +49,19 @@ public class PlatformController(
 
     public async Task<IActionResult> SystemDashboard()
     {
-        var platforms = await platformService.GetAllPlatformsAsync();
-        var allAdmins = await platformService.GetAllAdminsAsync();
+        var statsTask = systemStatsAdminService.GetSystemStatsAsync(null);
+        var platformsTask = platformService.GetAllPlatformsAsync();
+        var adminsTask = platformService.GetAllAdminsAsync();
+        await Task.WhenAll(statsTask, platformsTask, adminsTask);
+
+        var stats = statsTask.Result;
+        var platforms = platformsTask.Result;
+        var allAdmins = adminsTask.Result;
 
         var summaries = new List<PlatformSummaryViewModel>();
         foreach (var platform in platforms)
         {
-            var stats = await projectService.GetPlatformStatsAsync(platform.ProjectPlatformId);
+            var platformStats = stats.Platforms.FirstOrDefault(p => p.PlatformId == platform.ProjectPlatformId);
             var settings = await platformService.GetPlatformSettingsAsync(platform.ProjectPlatformId);
             var adminCount = allAdmins.Count(a => a.ProjectPlatformId == platform.ProjectPlatformId);
 
@@ -60,17 +70,51 @@ public class PlatformController(
                 platform.Name,
                 platform.LogoUrl,
                 adminCount,
-                stats.ActiveCount,
-                stats.DraftCount,
-                stats.ArchivedCount,
-                stats.ParticipantCount,
+                platformStats?.ActiveCount ?? 0,
+                platformStats?.DraftCount ?? 0,
+                platformStats?.ArchivedCount ?? 0,
+                platformStats?.ParticipantCount ?? 0,
                 settings?.AiModelName ?? string.Empty,
                 settings?.CostDashboardUrl ?? string.Empty
             ));
         }
 
         ViewData["ActiveSection"] = "Dashboard";
-        return View(new SystemDashboardViewModel(summaries));
+        return View(new SystemDashboardViewModel(summaries)
+        {
+            AvgCompletionSeconds = stats.AvgCompletionSeconds,
+            MedianCompletionSeconds = stats.MedianCompletionSeconds,
+            Projects = stats.Projects.Select(p => new ProjectRowViewModel
+            {
+                ProjectId = p.ProjectId,
+                ProjectName = p.ProjectName,
+                PlatformName = p.PlatformName,
+                State = p.State,
+                ParticipantCount = p.ParticipantCount,
+                AvgCompletionSeconds = p.AvgCompletionSeconds,
+                MedianCompletionSeconds = p.MedianCompletionSeconds
+            }).ToList(),
+            AiUsageBySystem = stats.AiUsageBySystem.Select(a => new ServiceUsageRowViewModel
+            {
+                Service = a.Service,
+                Model = a.Model,
+                InputTokens = a.InputTokens,
+                OutputTokens = a.OutputTokens,
+                RequestCount = a.RequestCount,
+                CostEur = a.CostEur
+            }).ToList(),
+            AiUsageByPlatform = stats.AiUsageByPlatform.Select(a => new PlatformServiceUsageRowViewModel
+            {
+                PlatformId = a.ProjectPlatformId,
+                PlatformName = a.ProjectPlatformName,
+                Service = a.Service,
+                Model = a.Model,
+                InputTokens = a.InputTokens,
+                OutputTokens = a.OutputTokens,
+                RequestCount = a.RequestCount,
+                CostEur = a.CostEur
+            }).ToList()
+        });
     }
 
     public async Task<IActionResult> SystemSettings()
@@ -112,14 +156,23 @@ public class PlatformController(
         return RedirectToAction(nameof(SystemSettings));
     }
 
+    [Authorize(Roles = "SystemAdmin,ProjectPlatformAdmin")]
     public async Task<IActionResult> Dashboard(int id)
     {
+        if (!User.IsInRole("SystemAdmin"))
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user?.ProjectPlatformId != id)
+                return Forbid();
+        }
+
         var platform = await platformService.GetPlatformByIdAsync(id);
         if (platform is null) return NotFound();
 
         var admins = await platformService.GetAdminsForPlatformAsync(id);
         var stats = await projectService.GetPlatformStatsAsync(id);
         var settings = await platformService.GetPlatformSettingsAsync(id);
+        var systemStats = await systemStatsAdminService.GetSystemStatsAsync(id);
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
@@ -138,7 +191,19 @@ public class PlatformController(
             stats.ParticipantCount,
             settings?.AiModelName ?? string.Empty,
             settings?.CostDashboardUrl ?? string.Empty
-        ));
+        )
+        {
+            Projects = systemStats.Projects.Select(p => new ProjectRowViewModel
+            {
+                ProjectId = p.ProjectId,
+                ProjectName = p.ProjectName,
+                PlatformName = p.PlatformName,
+                State = p.State,
+                ParticipantCount = p.ParticipantCount,
+                AvgCompletionSeconds = p.AvgCompletionSeconds,
+                MedianCompletionSeconds = p.MedianCompletionSeconds
+            }).ToList()
+        });
     }
 
     public async Task<IActionResult> Admins(int id)
