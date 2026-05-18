@@ -31,6 +31,12 @@
                         <img src="@project.ProjectImage" alt="@project.Name"
                              class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                              loading="lazy" decoding="async" />
+                        @if (project.IsAiGeneratedImage)
+                        {
+                            <span class="absolute bottom-2 left-2 bg-base-100/80 backdrop-blur-sm text-base-content/60 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-base-300">
+                                AI
+                            </span>
+                        }
                     }
                     else
                     {

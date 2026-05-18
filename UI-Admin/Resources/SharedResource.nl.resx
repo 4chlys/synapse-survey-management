@@ -19,6 +19,8 @@
   <data name="Nav_Questions" xml:space="preserve"><value>Vragen</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Instellingen</value></data>
   <data name="Nav_SystemDashboard" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="Nav_AiSettings" xml:space="preserve"><value>AI Instellingen</value></data>
+  <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
 
   <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projecten</value></data>
   <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platformen</value></data>

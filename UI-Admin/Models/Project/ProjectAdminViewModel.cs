@@ -7,6 +7,7 @@ public class ProjectAdminViewModel
     public string ShortForm { get; set; }
     public string Topic { get; set; }
     public string ProjectImage { get; set; }
+    public bool IsAiGeneratedImage { get; set; }
     public string ProjectState { get; set; }
     public string FormType { get; set; }
     public string OrganisationName { get; set; }

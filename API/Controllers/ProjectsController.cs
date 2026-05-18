@@ -63,6 +63,7 @@ public class ProjectsController(
             FormType = p.FormType.ToString(),
             OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
             ProjectImage = p.ImageUrl ?? string.Empty,
+            IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
             OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
             Introduction = introText,
@@ -92,6 +93,7 @@ public class ProjectsController(
         FormType = p.FormType.ToString(),
         OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
         ProjectImage = p.ImageUrl ?? string.Empty,
+        IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
         OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
         AiAssistance = p.AiAssistance.ToString(),
@@ -257,4 +259,8 @@ public class ProjectsController(
         var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
         return Ok(MapToAdminDto(project));
     }
+
+    private static bool IsAiGeneratedImageUrl(string imageUrl) =>
+        !string.IsNullOrWhiteSpace(imageUrl)
+        && Path.GetFileNameWithoutExtension(imageUrl).Contains("generated", StringComparison.OrdinalIgnoreCase);
 }

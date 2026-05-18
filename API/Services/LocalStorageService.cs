@@ -7,7 +7,8 @@ public class LocalStorageService(IWebHostEnvironment env, IHttpContextAccessor h
         var uploadsDir = Path.Combine(env.WebRootPath, "uploads", folder);
         Directory.CreateDirectory(uploadsDir);
 
-        var uniqueName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+        var baseName = Path.GetFileNameWithoutExtension(fileName);
+        var uniqueName = $"{baseName}-{Guid.NewGuid()}{Path.GetExtension(fileName)}";
         var filePath = Path.Combine(uploadsDir, uniqueName);
 
         await File.WriteAllBytesAsync(filePath, data);
