@@ -51,6 +51,46 @@ create_cloud_armor() {
   echo "  Cloud Armor actief. Kost: ~\$10/maand (policy + regels) + requests."
 }
 
+add_mig_ips_to_armor() {
+  echo ">>> UI en Admin VM IPs toevoegen aan Cloud Armor (omgeving: ${ENV})..."
+
+  gcloud compute instance-groups managed wait-until "synapse-${ENV}-ui-mig" \
+    --stable --zone="${ZONE}" --project="${PROJECT_ID}" 2>/dev/null || true
+  gcloud compute instance-groups managed wait-until "synapse-${ENV}-admin-mig" \
+    --stable --zone="${ZONE}" --project="${PROJECT_ID}" 2>/dev/null || true
+
+  UI_INSTANCE=$(gcloud compute instance-groups managed list-instances "synapse-${ENV}-ui-mig" \
+    --zone="${ZONE}" --project="${PROJECT_ID}" --format="value(instance)" | head -1 | sed 's|.*/||')
+  ADMIN_INSTANCE=$(gcloud compute instance-groups managed list-instances "synapse-${ENV}-admin-mig" \
+    --zone="${ZONE}" --project="${PROJECT_ID}" --format="value(instance)" | head -1 | sed 's|.*/||')
+
+  UI_IP=$(gcloud compute instances describe "${UI_INSTANCE}" \
+    --zone="${ZONE}" --project="${PROJECT_ID}" \
+    --format="value(networkInterfaces[0].accessConfigs[0].natIP)" 2>/dev/null || true)
+  ADMIN_IP=$(gcloud compute instances describe "${ADMIN_INSTANCE}" \
+    --zone="${ZONE}" --project="${PROJECT_ID}" \
+    --format="value(networkInterfaces[0].accessConfigs[0].natIP)" 2>/dev/null || true)
+
+  if [[ -z "${UI_IP}" || -z "${ADMIN_IP}" ]]; then
+    echo "  ⚠️  Kon externe IPs niet ophalen — voeg handmatig toe."
+    return
+  fi
+
+  echo "  UI IP: ${UI_IP} | Admin IP: ${ADMIN_IP}"
+  gcloud compute security-policies rules create 50 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+    --action=allow \
+    --description="Allow UI en Admin MIG server-side API calls" \
+    --project="${PROJECT_ID}" 2>/dev/null || \
+  gcloud compute security-policies rules update 50 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+    --action=allow \
+    --description="Allow UI en Admin MIG server-side API calls" \
+    --project="${PROJECT_ID}"
+}
+
 destroy_cloud_armor() {
   echo ">>> Cloud Armor policy ontkoppelen en verwijderen (omgeving: ${ENV})..."
   for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
