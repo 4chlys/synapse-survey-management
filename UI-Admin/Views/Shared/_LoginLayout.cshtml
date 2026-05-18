@@ -17,6 +17,12 @@
 </head>
 <body class="bg-base-200 min-h-screen flex items-center justify-center p-4">
     @RenderBody()
+    <footer class="fixed bottom-4 left-4 z-50">
+        <a asp-controller="Privacy" asp-action="Index"
+           class="text-xs text-base-content/40 hover:text-base-content/70 underline transition-colors">
+            Privacy
+        </a>
+    </footer>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

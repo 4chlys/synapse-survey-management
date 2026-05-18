@@ -18,4 +18,7 @@
   <data name="StartSurveyButton" xml:space="preserve">
     <value>Start survey</value>
   </data>
+  <data name="Privacy" xml:space="preserve">
+    <value>Privacy</value>
+  </data>
 </root>
