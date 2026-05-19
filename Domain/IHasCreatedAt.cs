@@ -2,5 +2,5 @@ namespace SynapseEnqueteManagement.BL.Domain;
 
 public interface IHasCreatedAt
 {
-    DateTime CreatedAt { get; }
+    DateTime CreatedAt { get; set; }
 }
