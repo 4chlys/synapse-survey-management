@@ -190,11 +190,11 @@ public class IdeasController(
 
     private static List<IconCommentDto> GroupEmojiReactions(IEnumerable<IconComment> reactions, int? participantId) =>
         reactions
-            .GroupBy(r => r.Emoji.Symbol)
+            .GroupBy(r => r.Emoji.EmojiId)
             .Select(g => new IconCommentDto
             {
-                EmojiId = g.First().Emoji.EmojiId,
-                Symbol = g.Key,
+                EmojiId = g.Key,
+                Symbol = g.First().Emoji.Symbol,
                 Count = g.Count(),
                 PostedByCurrentUser = participantId.HasValue &&
                                       g.Any(r => r.Participant?.ParticipantId == participantId.Value)
