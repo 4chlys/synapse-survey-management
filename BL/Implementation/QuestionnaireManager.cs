@@ -211,12 +211,8 @@ public class QuestionnaireManager(
         return true;
     }
 
-    public async Task<bool> DeleteQuestionAsync(int questionId, CancellationToken ct = default)
-    {
-        var result = await questionRepository.DeleteByIdAsync(questionId);
-        if (result) await uow.SaveChangesAsync(ct);
-        return result;
-    }
+    public Task<bool> DeleteQuestionAsync(int questionId, CancellationToken ct = default)
+        => uow.ExecuteInTransactionAsync(_ => questionRepository.DeleteByIdAsync(questionId), ct);
 
     public async Task<Question> MoveQuestionAsync(int questionId, int? newParentQuestionId,
         int? newChoiceIndex, int newPosition, CancellationToken ct = default)
@@ -369,12 +365,8 @@ public class QuestionnaireManager(
         return true;
     }
 
-    public async Task<bool> DeleteSectionAsync(int sectionId, CancellationToken ct = default)
-    {
-        var result = await sectionRepository.DeleteByIdAsync(sectionId);
-        if (result) await uow.SaveChangesAsync(ct);
-        return result;
-    }
+    public Task<bool> DeleteSectionAsync(int sectionId, CancellationToken ct = default)
+        => uow.ExecuteInTransactionAsync(_ => sectionRepository.DeleteByIdAsync(sectionId), ct);
 
     private static void ValidateParentChoiceIndex(Question parent, int? choiceIndex)
     {

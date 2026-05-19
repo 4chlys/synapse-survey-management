@@ -61,9 +61,10 @@ public class RepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task DeleteByIdAsync_WithoutSaveChanges_DoesNotPersist()
+    public async Task DeleteByIdAsync_PersistsImmediately()
     {
-        // Arrange
+        // ExecuteDeleteAsync runs outside the change tracker, so the row is gone without a SaveChanges.
+        // Callers must wrap this in IUnitOfWork.ExecuteInTransactionAsync to keep rollback semantics.
         await using var seedContext = _db.NewContext();
         var emoji = TestEntities.NewEmoji();
         seedContext.Emojis.Add(emoji);
@@ -73,13 +74,11 @@ public class RepositoryTests : IDisposable
         await using var actContext = _db.NewContext();
         var repository = new Repository<Emoji>(actContext);
 
-        // Act
         var removed = await repository.DeleteByIdAsync(emojiId);
 
-        // Assert
         Assert.True(removed);
         await using var verifyContext = _db.NewContext();
-        Assert.Single(verifyContext.Emojis);
+        Assert.Empty(verifyContext.Emojis);
     }
 
     [Fact]

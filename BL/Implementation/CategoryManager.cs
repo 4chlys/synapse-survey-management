@@ -88,12 +88,8 @@ public class CategoryManager(
         return true;
     }
 
-    public async Task<bool> DeleteCategoryAsync(int categoryId, CancellationToken ct = default)
-    {
-        var result = await categoryRepository.DeleteByIdAsync(categoryId);
-        if (result) await uow.SaveChangesAsync(ct);
-        return result;
-    }
+    public Task<bool> DeleteCategoryAsync(int categoryId, CancellationToken ct = default)
+        => uow.ExecuteInTransactionAsync(_ => categoryRepository.DeleteByIdAsync(categoryId), ct);
 
     public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, string languageCode, string defaultLanguageCode, int topCount = 5)
     {
