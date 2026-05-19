@@ -56,32 +56,33 @@ public class CategoryManager(
         var translationList = translations?.ToList() ?? new List<CategoryTranslationInput>();
         var languages = await ValidateTranslationInputsAsync(translationList, category.Project);
 
-        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
-
-        foreach (var stale in category.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
-            category.Translations.Remove(stale);
-
-        foreach (var input in translationList)
+        void Validate(CategoryTranslationInput input)
         {
             EntityValidator.ValidateProperty(new CategoryTranslation(), input.Name, nameof(CategoryTranslation.Name));
             EntityValidator.ValidateProperty(new CategoryTranslation(), input.Description, nameof(CategoryTranslation.Description));
+        }
 
-            var existing = category.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
-            if (existing is null)
+        TranslationUpserter.Upsert(
+            category.Translations,
+            translationList,
+            inputLanguageCode: i => i.LanguageCode,
+            existingLanguageCode: t => t.Language.Code,
+            create: input =>
             {
-                category.Translations.Add(new CategoryTranslation
+                Validate(input);
+                return new CategoryTranslation
                 {
                     Language = languages[input.LanguageCode],
                     Name = input.Name,
                     Description = input.Description,
-                });
-            }
-            else
+                };
+            },
+            update: (existing, input) =>
             {
+                Validate(input);
                 existing.Name = input.Name;
                 existing.Description = input.Description;
-            }
-        }
+            });
 
         categoryRepository.Update(category);
         await uow.SaveChangesAsync(ct);

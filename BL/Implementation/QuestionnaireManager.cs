@@ -152,31 +152,24 @@ public class QuestionnaireManager(
         question.IsMandatory = isMandatory;
         question.AnswerChoiceCount = answerChoiceCount;
 
-        // Upsert translations
-        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
-        foreach (var stale in question.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
-            question.Translations.Remove(stale);
-
-        foreach (var input in translationList)
-        {
-            var existing = question.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
-            if (existing is null)
+        TranslationUpserter.Upsert(
+            question.Translations,
+            translationList,
+            inputLanguageCode: i => i.LanguageCode,
+            existingLanguageCode: t => t.Language.Code,
+            create: input => new QuestionTranslation
             {
-                question.Translations.Add(new QuestionTranslation
-                {
-                    Language = languages[input.LanguageCode],
-                    Text = input.Text,
-                    AnswerChoices = input.AnswerChoices ?? new List<string>(),
-                    MediaText = input.MediaText
-                });
-            }
-            else
+                Language = languages[input.LanguageCode],
+                Text = input.Text,
+                AnswerChoices = input.AnswerChoices ?? new List<string>(),
+                MediaText = input.MediaText
+            },
+            update: (existing, input) =>
             {
                 existing.Text = input.Text;
                 existing.AnswerChoices = input.AnswerChoices ?? new List<string>();
                 existing.MediaText = input.MediaText;
-            }
-        }
+            });
 
         question.Section = sectionId.HasValue
             ? await sectionRepository.ReadByIdForUpdateAsync(sectionId.Value)
@@ -335,30 +328,33 @@ public class QuestionnaireManager(
         var translationList = translations?.ToList() ?? new List<SectionTranslationInput>();
         var languages = await ValidateSectionTranslationInputsAsync(translationList);
 
-        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
-        foreach (var stale in section.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
-            section.Translations.Remove(stale);
-
-        foreach (var input in translationList)
+        void Validate(SectionTranslationInput input)
         {
             EntityValidator.ValidateProperty(new SectionTranslation(), input.Name, nameof(SectionTranslation.Name));
             EntityValidator.ValidateProperty(new SectionTranslation(), input.Description, nameof(SectionTranslation.Description));
-            var existing = section.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
-            if (existing is null)
+        }
+
+        TranslationUpserter.Upsert(
+            section.Translations,
+            translationList,
+            inputLanguageCode: i => i.LanguageCode,
+            existingLanguageCode: t => t.Language.Code,
+            create: input =>
             {
-                section.Translations.Add(new SectionTranslation
+                Validate(input);
+                return new SectionTranslation
                 {
                     Language = languages[input.LanguageCode],
                     Name = input.Name,
                     Description = input.Description
-                });
-            }
-            else
+                };
+            },
+            update: (existing, input) =>
             {
+                Validate(input);
                 existing.Name = input.Name;
                 existing.Description = input.Description;
-            }
-        }
+            });
 
         sectionRepository.Update(section);
         await uow.SaveChangesAsync(ct);
