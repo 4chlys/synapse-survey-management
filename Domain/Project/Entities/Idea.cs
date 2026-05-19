@@ -8,7 +8,7 @@ namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 public class Idea : IHasCreatedAt
 {
     public int IdeaId { get; set; }
-    [Required] public ModerationStatus Status { get; set; }
+    public ModerationStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 
     [Required] [MaxLength(1000)] public string Description { get; set; }
