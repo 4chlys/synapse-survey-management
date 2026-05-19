@@ -2,7 +2,7 @@ namespace SynapseEnqueteManagement.API.DTOs.Stats;
 
 public class TimelineDto
 {
-    public List<string> Dates { get; set; } = new();
-    public List<int> Starts { get; set; } = new();
-    public List<int> Completions { get; set; } = new();
+    public ICollection<string> Dates { get; set; } = new List<string>();
+    public ICollection<int> Starts { get; set; } = new List<int>();
+    public ICollection<int> Completions { get; set; } = new List<int>();
 }

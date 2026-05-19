@@ -8,5 +8,5 @@ public class IdeaPageDto
     public int ApprovedCount { get; set; }
     public int PendingCount { get; set; }
     public int FlaggedCount { get; set; }
-    public List<AdminIdeaDto> Items { get; set; } = new();
+    public ICollection<AdminIdeaDto> Items { get; set; } = new List<AdminIdeaDto>();
 }
