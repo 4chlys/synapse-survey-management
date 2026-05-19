@@ -21,12 +21,14 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 public class IdeaSupportApiController(
     IdeaSupportService ideaSupportService,
     ISessionService sessionService,
-    IStringLocalizer<SharedResource> localizer) : ControllerBase
+    IStringLocalizer<SharedResource> localizer,
+    ILogger<IdeaSupportApiController> logger) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<IdeaSupportChatResponse>> Chat(
         int projectId,
-        IdeaSupportChatRequest body)
+        IdeaSupportChatRequest body,
+        CancellationToken ct)
     {
         // Gate behind a valid participant session (survey must have been completed)
         var token = sessionService.GetToken(projectId);
@@ -40,10 +42,13 @@ public class IdeaSupportApiController(
                 projectId,
                 body.CategoryId,
                 body.History,
-                body.UserMessage);
+                body.UserMessage,
+                ct);
         }
-        catch (Exception)
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "AI IdeaSupport call failed for project {ProjectId}", projectId);
             return Ok(new IdeaSupportChatResponse
             {
                 AssistantMessage = localizer["AiSupport_IdeaFallback"],

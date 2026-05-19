@@ -9,12 +9,14 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 [Route("api/admin/projects/{projectId:int}/questionsupport")]
 public class QuestionSupportApiController(
     QuestionSupportService questionSupportService,
-    IStringLocalizer<SharedResource> localizer) : ControllerBase
+    IStringLocalizer<SharedResource> localizer,
+    ILogger<QuestionSupportApiController> logger) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<QuestionSupportChatResponse>> Chat(
         int projectId,
-        QuestionSupportChatRequest body)
+        QuestionSupportChatRequest body,
+        CancellationToken ct)
     {
         try
         {
@@ -22,11 +24,14 @@ public class QuestionSupportApiController(
                 projectId,
                 body.History,
                 body.UserMessage,
-                body.IsFirstTurn);
+                body.IsFirstTurn,
+                ct);
             return Ok(result);
         }
-        catch
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "AI QuestionSupport call failed for project {ProjectId}", projectId);
             return Ok(new QuestionSupportChatResponse
             {
                 AssistantMessage = localizer["AiSupport_QuestionFallback"],

@@ -9,7 +9,8 @@ public sealed class QuestionSupportService(HttpClient httpClient)
         int projectId,
         IEnumerable<QuestionSupportMessage> history,
         string userMessage,
-        bool isFirstTurn)
+        bool isFirstTurn,
+        CancellationToken ct = default)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Post,
@@ -22,10 +23,10 @@ public sealed class QuestionSupportService(HttpClient httpClient)
             IsFirstTurn = isFirstTurn,
         });
 
-        var response = await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<QuestionSupportChatResponse>()
+        return await response.Content.ReadFromJsonAsync<QuestionSupportChatResponse>(ct)
                ?? new QuestionSupportChatResponse { AssistantMessage = string.Empty };
     }
 
