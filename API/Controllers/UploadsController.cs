@@ -146,9 +146,9 @@ public class UploadsController(
     }
 }
 
-public class UploadResultDto
+public record UploadResultDto
 {
-    public string Url { get; set; }
+    public string Url { get; init; }
 }
 
 public class ImageDescriptionResultDto

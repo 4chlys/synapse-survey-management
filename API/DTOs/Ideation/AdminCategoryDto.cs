@@ -1,8 +1,8 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class AdminCategoryDto
+public record AdminCategoryDto
 {
-    public int CategoryId { get; set; }
-    public int IdeaCount { get; set; }
-    public ICollection<CategoryTranslationDto> Translations { get; set; } = new List<CategoryTranslationDto>();
+    public int CategoryId { get; init; }
+    public int IdeaCount { get; init; }
+    public ICollection<CategoryTranslationDto> Translations { get; init; } = new List<CategoryTranslationDto>();
 }

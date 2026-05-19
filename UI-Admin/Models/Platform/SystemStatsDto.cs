@@ -1,83 +1,83 @@
 namespace SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
-public class SystemStatsDto
+public record SystemStatsDto
 {
-    public int PlatformCount { get; set; }
-    public int ActiveProjectCount { get; set; }
-    public int DraftProjectCount { get; set; }
-    public int ArchivedProjectCount { get; set; }
-    public int TotalParticipants { get; set; }
-    public double AvgCompletionSeconds { get; set; }
-    public double MedianCompletionSeconds { get; set; }
-    public ICollection<PlatformStatsRowDto> Platforms { get; set; } = [];
-    public ICollection<ProjectStatsRowDto> Projects { get; set; } = [];
-    public ICollection<ServiceCostAggregateDto> AiUsageBySystem { get; set; } = [];
-    public ICollection<PlatformServiceCostAggregateDto> AiUsageByPlatform { get; set; } = [];
-    public ICollection<ProjectServiceCostAggregateDto> AiUsageByProject { get; set; } = [];
+    public int PlatformCount { get; init; }
+    public int ActiveProjectCount { get; init; }
+    public int DraftProjectCount { get; init; }
+    public int ArchivedProjectCount { get; init; }
+    public int TotalParticipants { get; init; }
+    public double AvgCompletionSeconds { get; init; }
+    public double MedianCompletionSeconds { get; init; }
+    public ICollection<PlatformStatsRowDto> Platforms { get; init; } = [];
+    public ICollection<ProjectStatsRowDto> Projects { get; init; } = [];
+    public ICollection<ServiceCostAggregateDto> AiUsageBySystem { get; init; } = [];
+    public ICollection<PlatformServiceCostAggregateDto> AiUsageByPlatform { get; init; } = [];
+    public ICollection<ProjectServiceCostAggregateDto> AiUsageByProject { get; init; } = [];
 }
 
-public class PlatformStatsRowDto
+public record PlatformStatsRowDto
 {
-    public int PlatformId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public int ActiveCount { get; set; }
-    public int DraftCount { get; set; }
-    public int ArchivedCount { get; set; }
-    public int ParticipantCount { get; set; }
-    public double AvgCompletionSeconds { get; set; }
-    public double MedianCompletionSeconds { get; set; }
+    public int PlatformId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public int ActiveCount { get; init; }
+    public int DraftCount { get; init; }
+    public int ArchivedCount { get; init; }
+    public int ParticipantCount { get; init; }
+    public double AvgCompletionSeconds { get; init; }
+    public double MedianCompletionSeconds { get; init; }
 }
 
-public class ProjectStatsRowDto
+public record ProjectStatsRowDto
 {
-    public int ProjectId { get; set; }
-    public string ProjectName { get; set; } = string.Empty;
-    public string ShortForm { get; set; } = string.Empty;
-    public int PlatformId { get; set; }
-    public string PlatformName { get; set; } = string.Empty;
-    public string State { get; set; } = string.Empty;
-    public int ParticipantCount { get; set; }
-    public int StartedCount { get; set; }
-    public double AvgCompletionSeconds { get; set; }
-    public double MedianCompletionSeconds { get; set; }
-    public double MinCompletionSeconds { get; set; }
-    public double Q1CompletionSeconds { get; set; }
-    public double Q3CompletionSeconds { get; set; }
-    public double MaxCompletionSeconds { get; set; }
+    public int ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public string ShortForm { get; init; } = string.Empty;
+    public int PlatformId { get; init; }
+    public string PlatformName { get; init; } = string.Empty;
+    public string State { get; init; } = string.Empty;
+    public int ParticipantCount { get; init; }
+    public int StartedCount { get; init; }
+    public double AvgCompletionSeconds { get; init; }
+    public double MedianCompletionSeconds { get; init; }
+    public double MinCompletionSeconds { get; init; }
+    public double Q1CompletionSeconds { get; init; }
+    public double Q3CompletionSeconds { get; init; }
+    public double MaxCompletionSeconds { get; init; }
 }
 
-public class ServiceCostAggregateDto
+public record ServiceCostAggregateDto
 {
-    public string Service { get; set; } = string.Empty;
-    public string Model { get; set; } = string.Empty;
-    public long InputTokens { get; set; }
-    public long OutputTokens { get; set; }
-    public int RequestCount { get; set; }
-    public decimal CostEur { get; set; }
+    public string Service { get; init; } = string.Empty;
+    public string Model { get; init; } = string.Empty;
+    public long InputTokens { get; init; }
+    public long OutputTokens { get; init; }
+    public int RequestCount { get; init; }
+    public decimal CostEur { get; init; }
 }
 
-public class PlatformServiceCostAggregateDto
+public record PlatformServiceCostAggregateDto
 {
-    public int ProjectPlatformId { get; set; }
-    public string ProjectPlatformName { get; set; } = string.Empty;
-    public string Service { get; set; } = string.Empty;
-    public string Model { get; set; } = string.Empty;
-    public long InputTokens { get; set; }
-    public long OutputTokens { get; set; }
-    public int RequestCount { get; set; }
-    public decimal CostEur { get; set; }
+    public int ProjectPlatformId { get; init; }
+    public string ProjectPlatformName { get; init; } = string.Empty;
+    public string Service { get; init; } = string.Empty;
+    public string Model { get; init; } = string.Empty;
+    public long InputTokens { get; init; }
+    public long OutputTokens { get; init; }
+    public int RequestCount { get; init; }
+    public decimal CostEur { get; init; }
 }
 
-public class ProjectServiceCostAggregateDto
+public record ProjectServiceCostAggregateDto
 {
-    public int ProjectId { get; set; }
-    public string ShortForm { get; set; } = string.Empty;
-    public int ProjectPlatformId { get; set; }
-    public string ProjectPlatformName { get; set; } = string.Empty;
-    public string Service { get; set; } = string.Empty;
-    public string Model { get; set; } = string.Empty;
-    public long InputTokens { get; set; }
-    public long OutputTokens { get; set; }
-    public int RequestCount { get; set; }
-    public decimal CostEur { get; set; }
+    public int ProjectId { get; init; }
+    public string ShortForm { get; init; } = string.Empty;
+    public int ProjectPlatformId { get; init; }
+    public string ProjectPlatformName { get; init; } = string.Empty;
+    public string Service { get; init; } = string.Empty;
+    public string Model { get; init; } = string.Empty;
+    public long InputTokens { get; init; }
+    public long OutputTokens { get; init; }
+    public int RequestCount { get; init; }
+    public decimal CostEur { get; init; }
 }

@@ -1,13 +1,13 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class TextCommentDto
+public record TextCommentDto
 {
-    public int CommentId { get; set; }
-    public string Text { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public bool IsOwnedByCurrentUser { get; set; }
-    public bool IsPostedByIdeaAuthor { get; set; }
-    public bool IsFlagged { get; set; }
-    public string LanguageCode { get; set; }
-    public ICollection<IconCommentDto> Emojis { get; set; } = new List<IconCommentDto>();
+    public int CommentId { get; init; }
+    public string Text { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public bool IsOwnedByCurrentUser { get; init; }
+    public bool IsPostedByIdeaAuthor { get; init; }
+    public bool IsFlagged { get; init; }
+    public string LanguageCode { get; init; }
+    public ICollection<IconCommentDto> Emojis { get; init; } = new List<IconCommentDto>();
 }

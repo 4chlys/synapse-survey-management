@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class CreatedTextCommentDto
+public record CreatedTextCommentDto
 {
-    public int CommentId { get; set; }
-    public string Text { get; set; }
+    public int CommentId { get; init; }
+    public string Text { get; init; }
 }
