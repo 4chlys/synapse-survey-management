@@ -1,4 +1,4 @@
-import { fetchJson } from '../dashboard';
+import { fetchJson } from '../admin/dashboard';
 
 export interface ServiceCostRow {
     service: string;

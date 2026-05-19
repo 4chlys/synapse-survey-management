@@ -1,4 +1,4 @@
-import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
+import { POLL_INTERVAL_MS, fetchJson } from '../admin/dashboard';
 
 interface IdeaMetric {
     description: string;

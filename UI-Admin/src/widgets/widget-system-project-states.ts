@@ -1,5 +1,5 @@
 import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js';
-import { attachDownloadButton, fetchSystemStats } from './lib/system-stats';
+import { attachDownloadButton, fetchSystemStats } from '../lib/system-stats';
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 

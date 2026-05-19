@@ -1,14 +1,14 @@
-import { initStatWidget } from './widget-stat';
-import { initTimelineWidget } from './widget-timeline';
-import { initTopCategoriesWidget } from './widget-top-categories';
-import { initTopIdeasWidget } from './widget-top-ideas';
-import { initSurveyDistributionWidget } from './lib/widget-survey-distribution';
-import { initIdeaFeedWidget } from './widget-idea-feed';
-import { initModerationQueueWidget } from './widget-moderation-queue';
-import { initSystemParticipantsWidget } from './widget-system-participants';
-import { initSystemProjectStatesWidget } from './widget-system-project-states';
-import { initSystemAiCostWidget } from './widget-system-ai-cost';
-import { initSystemCompletionBoxplotWidget } from './widget-system-completion-boxplot';
+import { initStatWidget } from '../widgets/widget-stat';
+import { initTimelineWidget } from '../widgets/widget-timeline';
+import { initTopCategoriesWidget } from '../widgets/widget-top-categories';
+import { initTopIdeasWidget } from '../widgets/widget-top-ideas';
+import { initSurveyDistributionWidget } from '../lib/widget-survey-distribution';
+import { initIdeaFeedWidget } from '../widgets/widget-idea-feed';
+import { initModerationQueueWidget } from '../widgets/widget-moderation-queue';
+import { initSystemParticipantsWidget } from '../widgets/widget-system-participants';
+import { initSystemProjectStatesWidget } from '../widgets/widget-system-project-states';
+import { initSystemAiCostWidget } from '../widgets/widget-system-ai-cost';
+import { initSystemCompletionBoxplotWidget } from '../widgets/widget-system-completion-boxplot';
 
 const POLL_INTERVAL_MS = 30_000;
 

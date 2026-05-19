@@ -1,6 +1,6 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
-import { POLL_INTERVAL_MS, fetchJson } from './dashboard';
-import { attachDownloadButton } from './lib/system-stats';
+import { POLL_INTERVAL_MS, fetchJson } from '../admin/dashboard';
+import { attachDownloadButton } from '../lib/system-stats';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 
