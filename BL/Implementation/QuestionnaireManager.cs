@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
@@ -59,12 +60,12 @@ public class QuestionnaireManager(
         {
             parent = await questionRepository.ReadByIdWithSectionForUpdateAsync(parentQuestionId.Value);
             if (parent is null)
-                throw new ValidationException($"Parent question {parentQuestionId} not found.");
+                throw new LocalizedValidationException("Validation.Question.ParentNotFound", parentQuestionId);
             ValidateParentChoiceIndex(parent, choiceIndex);
         }
         else if (choiceIndex.HasValue)
         {
-            throw new ValidationException("ChoiceIndex must be null when no parent is set.");
+            throw new LocalizedValidationException("Validation.Question.ChoiceIndexNullWhenNoParent");
         }
 
         var siblings = (await questionRepository.ReadSiblingsForUpdateAsync(
@@ -144,8 +145,7 @@ public class QuestionnaireManager(
         {
             var invalidChildren = question.Children.Where(c => c.ChoiceIndex >= answerChoiceCount).ToList();
             if (invalidChildren.Count > 0)
-                throw new ValidationException(
-                    "Cannot reduce answer choice count: child questions reference choices that would be removed.");
+                throw new LocalizedValidationException("Validation.Question.CannotReduceChoiceCount");
         }
 
         question.QuestionFormat = format;
@@ -217,20 +217,20 @@ public class QuestionnaireManager(
         if (newParentQuestionId.HasValue)
         {
             if (newParentQuestionId.Value == questionId)
-                throw new ValidationException("A question cannot be its own parent.");
+                throw new LocalizedValidationException("Validation.Question.CannotBeOwnParent");
 
             newParent = await questionRepository.ReadByIdWithParentChainForUpdateAsync(newParentQuestionId.Value);
             if (newParent is null)
-                throw new ValidationException($"Parent question {newParentQuestionId} not found.");
+                throw new LocalizedValidationException("Validation.Question.ParentNotFound", newParentQuestionId);
             if (newParent.Questionnaire.QuestionnaireId != question.Questionnaire.QuestionnaireId)
-                throw new ValidationException("Parent must belong to the same questionnaire.");
+                throw new LocalizedValidationException("Validation.Question.ParentInDifferentQuestionnaire");
 
             ValidateParentChoiceIndex(newParent, newChoiceIndex);
             EnsureNoCycle(question, newParent);
         }
         else if (newChoiceIndex.HasValue)
         {
-            throw new ValidationException("ChoiceIndex must be null when moving to top-level.");
+            throw new LocalizedValidationException("Validation.Question.ChoiceIndexNullWhenTopLevel");
         }
 
         var oldParentId = question.ParentQuestion?.QuestionId;
@@ -287,7 +287,7 @@ public class QuestionnaireManager(
             .ToList();
 
         if (missing.Count > 0)
-            throw new ValidationException($"Missing answers for mandatory questions: {string.Join(", ", missing)}");
+            throw new LocalizedValidationException("Validation.Question.MissingMandatoryAnswers", string.Join(", ", missing));
     }
 
     public Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId)
@@ -367,16 +367,16 @@ public class QuestionnaireManager(
     private static void ValidateParentChoiceIndex(Question parent, int? choiceIndex)
     {
         if (parent.QuestionFormat == QuestionFormat.Open)
-            throw new ValidationException("Open questions cannot have sub-questions.");
+            throw new LocalizedValidationException("Validation.Question.OpenCannotHaveSubQuestions");
         if (!choiceIndex.HasValue)
-            throw new ValidationException("ChoiceIndex is required when nesting under a parent.");
+            throw new LocalizedValidationException("Validation.Question.ChoiceIndexRequiredForNesting");
 
         if (parent.QuestionFormat == QuestionFormat.SingleChoice
             || parent.QuestionFormat == QuestionFormat.MultipleChoice)
         {
             if (choiceIndex < 0 || choiceIndex >= parent.AnswerChoiceCount)
-                throw new ValidationException(
-                    $"ChoiceIndex {choiceIndex} is out of range for the parent (0..{parent.AnswerChoiceCount - 1}).");
+                throw new LocalizedValidationException(
+                    "Validation.Question.ChoiceIndexOutOfRange", choiceIndex, parent.AnswerChoiceCount - 1);
         }
         // Likert: accept any non-negative int — the UI presents 1..N and bounds are not stored on Question.
     }
@@ -387,7 +387,7 @@ public class QuestionnaireManager(
         while (cursor is not null)
         {
             if (cursor.QuestionId == moving.QuestionId)
-                throw new ValidationException("Move would create a cycle.");
+                throw new LocalizedValidationException("Validation.Question.MoveCreatesCycle");
             cursor = cursor.ParentQuestion;
         }
     }
@@ -427,25 +427,25 @@ public class QuestionnaireManager(
         ICollection<QuestionTranslationInput> translations, int answerChoiceCount)
     {
         if (translations.Count == 0)
-            throw new ValidationException("At least one translation is required.");
+            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
 
         var codes = translations.Select(t => t.LanguageCode).ToList();
         if (codes.Distinct().Count() != codes.Count)
-            throw new ValidationException("Translations must contain a single row per language.");
+            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
 
         foreach (var t in translations)
         {
             var count = t.AnswerChoices?.Count ?? 0;
             if (count != answerChoiceCount)
-                throw new ValidationException(
-                    $"Translation '{t.LanguageCode}' has {count} answer choices but AnswerChoiceCount is {answerChoiceCount}.");
+                throw new LocalizedValidationException(
+                    "Validation.Question.AnswerChoicesCountMismatch", t.LanguageCode, count, answerChoiceCount);
         }
 
         var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
         var byCode = resolved.ToDictionary(l => l.Code);
         var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
         if (missing.Count > 0)
-            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
 
         return byCode;
     }
@@ -454,17 +454,17 @@ public class QuestionnaireManager(
         ICollection<SectionTranslationInput> translations)
     {
         if (translations.Count == 0)
-            throw new ValidationException("At least one translation is required.");
+            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
 
         var codes = translations.Select(t => t.LanguageCode).ToList();
         if (codes.Distinct().Count() != codes.Count)
-            throw new ValidationException("Translations must contain a single row per language.");
+            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
 
         var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
         var byCode = resolved.ToDictionary(l => l.Code);
         var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
         if (missing.Count > 0)
-            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
 
         return byCode;
     }
