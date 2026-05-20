@@ -71,7 +71,10 @@ public class AdminIdeaSummaryController(
         if (job.Status != IdeaSummaryJobStatus.Completed || job.OutputPath is null)
             return BadRequest(new { error = "Samenvatting is nog niet klaar." });
 
-        var fullPath = Path.Combine(env.WebRootPath ?? string.Empty, job.OutputPath);
+        var webRoot = env.WebRootPath ?? string.Empty;
+        var fullPath = Path.GetFullPath(Path.Combine(webRoot, job.OutputPath));
+        if (!fullPath.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Ongeldig bestandspad." });
         if (!System.IO.File.Exists(fullPath)) return NotFound();
 
         var contentType = Path.GetExtension(job.OutputPath).ToLowerInvariant() switch

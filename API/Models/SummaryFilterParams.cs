@@ -2,7 +2,7 @@ using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Models;
 
-public sealed class SummaryFilterParams
+public sealed record SummaryFilterParams
 {
     public int? CategoryId { get; init; }
     public string Status { get; init; }
