@@ -263,12 +263,15 @@
                     </div>
                 </div>
 
-                <div class="form-control">
-                    <label asp-for="CustomCss" class="label">
-                        <span class="label-text">@L["CustomCssLabel"]</span>
+                @* Custom CSS is an advanced, rarely-used escape hatch — collapsed by
+                   default, auto-opened when the project already has CSS saved. *@
+                <details@(string.IsNullOrWhiteSpace(Model.CustomCss) ? "" : " open")>
+                    <summary class="cursor-pointer label-text font-medium py-1">@L["CustomCssLabel"]</summary>
+                    <div class="form-control mt-1">
+                    <div class="flex justify-end">
                         <button id="customcss-reset" type="button" class="btn btn-xs btn-ghost"
                                 data-confirm="@L["CustomCss_ResetConfirm"].Value">@L["CustomCss_ResetButton"]</button>
-                    </label>
+                    </div>
                     <textarea asp-for="CustomCss" rows="6"
                               class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
                     <span class="label-text-alt">@L["CustomCssHint"]</span>
@@ -324,7 +327,8 @@
                                  data-balanced-label="@L["CustomCss_Balanced"]"></div>
                         </div>
                     </details>
-                </div>
+                    </div>
+                </details>
 
                 </fieldset>
             </form>
