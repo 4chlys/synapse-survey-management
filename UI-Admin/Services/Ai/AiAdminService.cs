@@ -11,6 +11,7 @@ public sealed class GlobalPromptsDto
     public string IdeaSupport       { get; init; } = "";
     public string CommentSupport    { get; init; } = "";
     public string QuestionSupport   { get; init; } = "";
+    public string IdeaSummary       { get; init; } = "";
 }
 
 public class AiAdminService(HttpClient httpClient)

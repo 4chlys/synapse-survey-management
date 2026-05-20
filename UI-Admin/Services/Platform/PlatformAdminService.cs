@@ -152,8 +152,22 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
             case "IdeaSupport":       settings.PromptIdeaSupport       = value; break;
             case "CommentSupport":    settings.PromptCommentSupport    = value; break;
             case "QuestionSupport":   settings.PromptQuestionSupport   = value; break;
+            case "IdeaSummary":       settings.PromptIdeaSummary       = value; break;
             default: return;
         }
+
+        if (settings.Id == 0)
+            db.PlatformSettings.Add(settings);
+
+        await db.SaveChangesAsync();
+    }
+
+    public async Task SaveIdeaSummaryMaxIdeasAsync(int platformId, int maxIdeas)
+    {
+        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
+            ?? new PlatformSettings { ProjectPlatformId = platformId };
+
+        settings.IdeaSummaryMaxIdeas = Math.Clamp(maxIdeas, 10, 2000);
 
         if (settings.Id == 0)
             db.PlatformSettings.Add(settings);

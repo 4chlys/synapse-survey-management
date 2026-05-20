@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Ai;
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.Domain.Ai;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/ai")]
-public class AdminAiController(ChatClientRegistry registry, IPlatformAiConfigService configService) : ControllerBase
+public class AdminAiController(ChatClientRegistry registry, IPlatformAiConfigService configService, AiConfig aiConfig) : ControllerBase
 {
     [HttpGet("available-models")]
     public IActionResult GetAvailableModels()
@@ -32,6 +33,7 @@ public class AdminAiController(ChatClientRegistry registry, IPlatformAiConfigSer
             ideaSupport       = config.IdeaSupport.SystemPrompt,
             commentSupport    = config.CommentSupport.SystemPrompt,
             questionSupport   = config.QuestionSupport.SystemPrompt,
+            ideaSummary       = aiConfig.IdeaSummary.SystemPrompt,
         });
     }
 }
