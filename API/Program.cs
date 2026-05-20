@@ -26,6 +26,8 @@ using SynapseEnqueteManagement.BL.AiSpeechToText;
 using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.API.BackgroundServices;
+using SynapseEnqueteManagement.BL.AiIdeaSummary;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
@@ -184,6 +186,13 @@ builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("Ai
 builder.Services.AddSingleton<AiPricing>();
 builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
 builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
+
+// Idea summary
+builder.Services.AddScoped<IIdeaSummaryJobRepository, IdeaSummaryJobRepository>();
+builder.Services.AddScoped<IAiIdeaSummaryService, AiIdeaSummaryService>();
+builder.Services.AddSingleton<IIdeaSummarySamplingService, IdeaSummarySamplingService>();
+builder.Services.AddSingleton<IdeaSummaryExporter>();
+builder.Services.AddHostedService<IdeaSummaryWorker>();
 
 // AI configuration
 //
