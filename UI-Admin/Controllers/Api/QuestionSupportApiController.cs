@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Models.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 
@@ -6,7 +7,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
 [Route("api/admin/projects/{projectId:int}/questionsupport")]
-public class QuestionSupportApiController(QuestionSupportService questionSupportService) : ControllerBase
+public class QuestionSupportApiController(
+    QuestionSupportService questionSupportService,
+    IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<QuestionSupportChatResponse>> Chat(
@@ -26,7 +29,7 @@ public class QuestionSupportApiController(QuestionSupportService questionSupport
         {
             return Ok(new QuestionSupportChatResponse
             {
-                AssistantMessage = "Sorry, de AI-assistent is even niet beschikbaar.",
+                AssistantMessage = localizer["AiSupport_QuestionFallback"],
             });
         }
     }

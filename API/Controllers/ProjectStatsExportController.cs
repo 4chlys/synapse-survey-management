@@ -50,14 +50,9 @@ public class ProjectStatsExportController(
             ?? project.Translations.FirstOrDefault()?.Name
             ?? string.Empty;
 
-        var completionTask = participantManager.CountCompletionsByProjectAsync(projectId);
-        var metricsTask = categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
-        var timelineTask = participantManager.GetTimelineAsync(projectId, 30);
-        await Task.WhenAll(completionTask, metricsTask, timelineTask);
-
-        var completionCount = completionTask.Result;
-        var metrics = metricsTask.Result;
-        var timeline = timelineTask.Result;
+        var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
+        var metrics = await categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
+        var timeline = await participantManager.GetTimelineAsync(projectId, 30);
         var completionRate = project.ViewCount > 0
             ? Math.Round((double)completionCount / project.ViewCount, 4)
             : 0;

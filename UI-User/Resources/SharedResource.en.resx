@@ -213,4 +213,13 @@
   <data name="SpeechToText_ErrorUnexpectedResponse" xml:space="preserve">
     <value>Unexpected response.</value>
   </data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve">
+    <value>Sorry, the assistant is temporarily unavailable. You can type your idea directly below and submit it.</value>
+  </data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve">
+    <value>Sorry, the assistant is temporarily unavailable. You can type your reply directly below.</value>
+  </data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve">
+    <value>Sorry, the AI assistant is temporarily unavailable.</value>
+  </data>
 </root>

@@ -213,4 +213,13 @@
   <data name="SpeechToText_ErrorUnexpectedResponse" xml:space="preserve">
     <value>Onverwacht antwoord.</value>
   </data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve">
+    <value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value>
+  </data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve">
+    <value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value>
+  </data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve">
+    <value>Sorry, de AI-assistent is even niet beschikbaar.</value>
+  </data>
 </root>
