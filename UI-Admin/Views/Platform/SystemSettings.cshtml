@@ -1,0 +1,57 @@
+@using SynapseEnqueteManagement.BL.Domain.Ai
+@model SynapseEnqueteManagement.UI.Admin.Models.Platform.SystemAiSettingsViewModel
+@inject IViewLocalizer L
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "AiSettings";
+    Layout = "_Layout";
+}
+
+<div class="max-w-2xl">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <h2 class="font-semibold text-base-content">@L["ModelsHeading"]</h2>
+            <p class="text-sm text-base-content/60">@L["ModelsDescription"]</p>
+
+            <form asp-action="SaveSystemAiSettings" method="post" class="flex flex-col gap-5">
+
+                @foreach (var provider in Enum.GetValues<AiProvider>())
+                {
+                    var group = Model.AllModels.Where(m => m.Provider == provider).ToList();
+                    if (!group.Any()) continue;
+
+                    <div>
+                        <div class="divider my-0 text-xs text-base-content/40">@provider.ToString()</div>
+                        <div class="flex flex-col gap-2 mt-3">
+                            @foreach (var aiModel in group)
+                            {
+                                var available = Model.AvailableModelIds.Contains(aiModel.Id);
+                                <label class="label justify-start gap-3 @(available ? "cursor-pointer" : "cursor-not-allowed opacity-40")"
+                                       title="@(available ? "" : L["NoApiKeyTooltip"].Value)">
+                                    <input type="checkbox"
+                                           name="AllowedModelIds"
+                                           value="@aiModel.Id"
+                                           class="checkbox checkbox-primary checkbox-sm"
+                                           @(Model.AllowedModelIds.Contains(aiModel.Id) ? "checked" : "")
+                                           @(available ? "" : "disabled") />
+                                    <span class="label-text">@aiModel.DisplayName</span>
+                                    <span class="text-xs text-base-content/40 ml-1">(@aiModel.Id)</span>
+                                    @if (!available)
+                                    {
+                                        <span class="badge badge-ghost badge-xs">@L["NoApiKeyBadge"]</span>
+                                    }
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

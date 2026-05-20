@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSupport;
@@ -11,5 +12,7 @@ public interface IAiIdeaSupportService : IAiSupportService<IdeaSupportChatReques
     Task<IdeaSupportRefineResult> RefineAsync(
         string draftText,
         string language,
+        ResolvedPlatformAiConfig platformConfig,
+        int projectId,
         CancellationToken ct = default);
 }

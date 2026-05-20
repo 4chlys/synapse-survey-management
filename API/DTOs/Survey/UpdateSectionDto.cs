@@ -2,8 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class UpdateSectionDto
+public record UpdateSectionDto
 {
     [Required]
-    public ICollection<SectionTranslationDto> Translations { get; set; } = new List<SectionTranslationDto>();
+    public ICollection<SectionTranslationDto> Translations { get; init; } = new List<SectionTranslationDto>();
 }

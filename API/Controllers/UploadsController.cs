@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiModeration;
@@ -14,6 +15,7 @@ public class UploadsController(
     IStorageService storageService,
     IAiModerationService aiModerationService,
     IModerationTokenService moderationTokenService,
+    IPlatformAiConfigService platformAiConfig,
     IAiImageDescriptionService aiImageDescriptionService) : ControllerBase
 {
     private static readonly HashSet<string> AllowedImageContentTypes =
@@ -50,7 +52,7 @@ public class UploadsController(
             return BadRequest("File exceeds the 10 MB limit.");
 
         var url = await storageService.UploadAsync(file, "logos");
-        return Ok(new UploadResultDto { Url = url });
+        return Ok(new UploadResultDto(url));
     }
 
     [HttpPost("idea-image")]
@@ -71,7 +73,8 @@ public class UploadsController(
         await file.CopyToAsync(ms, ct);
         var bytes = ms.ToArray();
 
-        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var config = await platformAiConfig.ResolveGlobalAsync(ct);
+        var modResult = await aiModerationService.CheckImageWithAiAsync(bytes, file.ContentType, config, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         var imageStatus = modResult.IsAcceptable ? ModerationStatus.Approved : ModerationStatus.Flagged;
 
         // Always upload — token encodes the AI result so the idea can be stored as Flagged when rejected.
@@ -79,13 +82,11 @@ public class UploadsController(
         var tmpUrl = await storageService.UploadAsync(file, "tmp/ideas");
         var imageModerationToken = moderationTokenService.GenerateImageToken(bytes, projectId, imageStatus);
 
-        return Ok(new IdeaImageUploadResultDto
-        {
-            Url = tmpUrl,
-            ImageModerationToken = imageModerationToken,
-            IsAcceptable = modResult.IsAcceptable,
-            Reason = modResult.IsAcceptable ? null : modResult.Reason
-        });
+        return Ok(new IdeaImageUploadResultDto(
+            Url: tmpUrl,
+            ImageModerationToken: imageModerationToken,
+            IsAcceptable: modResult.IsAcceptable,
+            Reason: modResult.IsAcceptable ? null : modResult.Reason));
     }
 
     [HttpPost("describe-image")]
@@ -110,13 +111,14 @@ public class UploadsController(
         var effectiveLanguage = string.IsNullOrWhiteSpace(language)
             ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
             : language;
+        var platformConfig = await platformAiConfig.ResolveGlobalAsync(ct);
         var description = await aiImageDescriptionService.DescribeImageAsync(
-            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", ct);
+            bytes, file.ContentType, effectiveLanguage, categoryName ?? "", categoryDescription ?? "", platformConfig, 0, ct);
 
         if (string.IsNullOrEmpty(description))
             return UnprocessableEntity(new { reason = "De afbeelding kon niet worden omschreven." });
 
-        return Ok(new ImageDescriptionResultDto { Description = description });
+        return Ok(new ImageDescriptionResultDto(description));
     }
 
     [HttpPost("question-media")]
@@ -138,24 +140,12 @@ public class UploadsController(
             return BadRequest($"File exceeds the {config.MaxBytes / (1024 * 1024)} MB limit for {mediaType}.");
 
         var url = await storageService.UploadAsync(file, config.Folder);
-        return Ok(new UploadResultDto { Url = url });
+        return Ok(new UploadResultDto(url));
     }
 }
 
-public class UploadResultDto
-{
-    public string Url { get; set; }
-}
+public record UploadResultDto(string Url);
 
-public class ImageDescriptionResultDto
-{
-    public string Description { get; set; }
-}
+public record ImageDescriptionResultDto(string Description);
 
-public class IdeaImageUploadResultDto
-{
-    public string Url { get; set; }
-    public string ImageModerationToken { get; set; }
-    public bool IsAcceptable { get; set; }
-    public string Reason { get; set; }
-}
+public record IdeaImageUploadResultDto(string Url, string ImageModerationToken, bool IsAcceptable, string Reason);

@@ -2,8 +2,8 @@ using SynapseEnqueteManagement.BL;
 
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class IdeaIndexResponseDto : PagedResult<IdeaDto>
+public record IdeaIndexResponseDto : PagedResult<IdeaDto>
 {
-    public string ResolvedSort { get; set; }
-    public bool HasOwnIdeas { get; set; }
+    public string ResolvedSort { get; init; }
+    public bool HasOwnIdeas { get; init; }
 }

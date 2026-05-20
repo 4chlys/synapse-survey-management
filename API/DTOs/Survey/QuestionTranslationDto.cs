@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class QuestionTranslationDto
+public record QuestionTranslationDto
 {
-    [Required] [MaxLength(10)] public string LanguageCode { get; set; }
-    [Required] [MaxLength(500)] public string Text { get; set; }
-    public ICollection<string> AnswerChoices { get; set; } = new List<string>();
-    [MaxLength(2000)] public string MediaText { get; set; }
+    [Required] [MaxLength(10)] public string LanguageCode { get; init; }
+    [Required] [MaxLength(500)] public string Text { get; init; }
+    public ICollection<string> AnswerChoices { get; init; } = new List<string>();
+    [MaxLength(2000)] public string MediaText { get; init; }
 }

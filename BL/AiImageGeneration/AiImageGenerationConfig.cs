@@ -16,6 +16,14 @@ public sealed class AiImageGenerationConfig
     [JsonPropertyName("aspect_ratio")]
     public string AspectRatio { get; init; } = "16:9";
 
+    // Output resolution sent to Vertex. Google bills image output at $30/1M tokens;
+    // 1024×1024 = 1290 tokens (documented reference). Token count scales with pixel area.
+    [JsonPropertyName("width")]
+    public int Width { get; init; } = 1280;
+
+    [JsonPropertyName("height")]
+    public int Height { get; init; } = 720;
+
     [JsonPropertyName("model")]
     public string Model { get; init; } = "gemini-2.5-flash-image";
 }

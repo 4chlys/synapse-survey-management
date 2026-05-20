@@ -1,9 +1,14 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
+using SynapseEnqueteManagement.BL.Ai;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin;
 using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Services;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
@@ -12,14 +17,36 @@ using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
+using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddTransient<CultureForwardingHandler>();
+builder.Services.ConfigureHttpClientDefaults(b => b.AddHttpMessageHandler<CultureForwardingHandler>());
+
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
+
+var supportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(supportedCultures)
+        .AddSupportedUICultures(supportedCultures);
+
+    opts.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
+
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-});
+})
+.AddViewLocalization()
+.AddDataAnnotationsLocalization();
 
 // AdminDbContext — Identity + ProjectPlatform (shared DB)
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
@@ -107,6 +134,10 @@ builder.Services.AddHttpClient<SocialMediaProxyService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<IQuestionMediaService, QuestionMediaService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -122,6 +153,9 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
+
+builder.Services.AddSingleton(AiConfigLoader.Load(
+    LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();
@@ -140,6 +174,14 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit  = 0,
             }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Cloud Run / GFE proxy IPs are dynamic; clear the default allow-list to trust the LB.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 builder.Services.AddViteServices();
@@ -173,6 +215,8 @@ var app = builder.Build();
     }
 }
 
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
     app.UseViteDevelopmentServer();
 
@@ -182,13 +226,15 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseHttpsRedirection();
 }
-app.UseRouting();
 app.UseStaticFiles();
+app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
+app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter();
 app.MapStaticAssets();
+app.MapGet("/health", () => Results.Ok("healthy"));
+
 app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}")

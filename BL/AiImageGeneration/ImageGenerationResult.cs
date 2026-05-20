@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.BL.AiImageGeneration;
 
-public sealed class ImageGenerationResult
+public sealed record ImageGenerationResult
 {
     public bool IsSuccess { get; private init; }
     public byte[] ImageBytes { get; private init; }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Session;
@@ -13,12 +14,15 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 [Route("{projectId:int}/api/[controller]")]
 public class CommentSupportApiController(
     CommentSupportService commentSupportService,
-    ISessionService sessionService) : ControllerBase
+    ISessionService sessionService,
+    IStringLocalizer<SharedResource> localizer,
+    ILogger<CommentSupportApiController> logger) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<CommentSupportChatResponse>> Chat(
         int projectId,
-        CommentSupportChatRequest body)
+        CommentSupportChatRequest body,
+        CancellationToken ct)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))
@@ -32,13 +36,16 @@ public class CommentSupportApiController(
                 body.History,
                 body.UserMessage,
                 body.IdeaText,
-                body.CategoryName);
+                body.CategoryName,
+                ct);
         }
-        catch (Exception)
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "AI CommentSupport call failed for project {ProjectId}", projectId);
             return Ok(new CommentSupportChatResponse
             {
-                AssistantMessage = "Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.",
+                AssistantMessage = localizer["AiSupport_CommentFallback"],
                 IsFinal          = true,
             });
         }

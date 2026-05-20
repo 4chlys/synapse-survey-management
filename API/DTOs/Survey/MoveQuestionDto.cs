@@ -2,11 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class MoveQuestionDto
+public record MoveQuestionDto
 {
-    public int? ParentQuestionId { get; set; }
-    public int? ChoiceIndex { get; set; }
+    public int? ParentQuestionId { get; init; }
+    public int? ChoiceIndex { get; init; }
 
     [Range(1, int.MaxValue)]
-    public int Position { get; set; }
+    public int Position { get; init; }
 }

@@ -4,14 +4,22 @@ import fs from 'fs';
 import path from 'path';
 
 export default defineConfig(async () => {
-    const files = fs.readdirSync('./src');
-    const inputEntries = files
-        .filter(file => file.endsWith('.ts'))
-        .reduce((acc, file) => {
-            const fileName = path.parse(file).name;
-            acc[fileName] = path.join('./src', file);
-            return acc;
-        }, {} as Record<string, string>);
+    // Recursively collect entry .ts files under ./src, skipping ./src/lib
+    // (lib contains shared modules imported by entries, not entries themselves).
+    const inputEntries: Record<string, string> = {};
+    const walk = (dir: string): void => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                if (entry.name === 'lib') continue;
+                walk(full);
+            } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+                const key = path.parse(entry.name).name;
+                inputEntries[key] = full;
+            }
+        }
+    };
+    walk('./src');
 
     const config: UserConfig = {
         plugins: [tailwindcss()],

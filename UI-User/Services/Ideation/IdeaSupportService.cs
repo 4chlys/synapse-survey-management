@@ -20,7 +20,8 @@ public sealed class IdeaSupportService(HttpClient httpClient, ISessionService se
         int projectId,
         int categoryId,
         IEnumerable<IdeaSupportMessage> history,
-        string userMessage)
+        string userMessage,
+        CancellationToken ct = default)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Post,
@@ -35,10 +36,10 @@ public sealed class IdeaSupportService(HttpClient httpClient, ISessionService se
 
         AddTokenHeader(request, projectId);
 
-        var response = await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();   // throws HttpRequestException on non-2xx
 
-        return await response.Content.ReadFromJsonAsync<IdeaSupportChatResponse>()
+        return await response.Content.ReadFromJsonAsync<IdeaSupportChatResponse>(ct)
                ?? new IdeaSupportChatResponse { AssistantMessage = string.Empty };
     }
 

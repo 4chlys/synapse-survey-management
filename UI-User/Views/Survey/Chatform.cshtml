@@ -1,4 +1,7 @@
 @using System.Text.Json
+@using SynapseEnqueteManagement.UI.User.Models
+@using SynapseEnqueteManagement.UI.User.Models.SpeechToText
+@using SynapseEnqueteManagement.UI.User.Models.Survey
 @model SurveyViewModel
 @inject IViewLocalizer L
 
@@ -8,6 +11,16 @@
     var orgName = ViewData["OrganisationName"] as string;
     ViewData["SurveyTitle"] = projectName;
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var chatProject = ViewData["Project"] as ProjectViewModel;
+    var introText = chatProject?.Introduction ?? string.Empty;
+    var introImage = chatProject?.ProjectImage ?? string.Empty;
+    var thankYouModel = new ThankYouViewModel
+    {
+        ProjectId = chatProject?.ProjectId ?? 0,
+        OrganisationName = chatProject?.OrganisationName ?? string.Empty,
+        OrganisationLogoUrl = chatProject?.OrganisationLogoUrl ?? string.Empty,
+        OrganisationWebsiteUrl = chatProject?.OrganisationWebsiteUrl ?? string.Empty,
+    };
 }
 
 <div class="scroll-lock-marker hidden"></div>
@@ -33,6 +46,9 @@
      data-has-session="@Model.HasSession.ToString().ToLower()"
      data-questions="@Html.Raw(System.Net.WebUtility.HtmlEncode(JsonSerializer.Serialize(Model.Questions, jsonOpts)))"
      data-existing-responses="@Html.Raw(System.Net.WebUtility.HtmlEncode(JsonSerializer.Serialize(Model.ExistingResponses, jsonOpts)))"
+     data-intro-text="@introText"
+     data-intro-image="@introImage"
+     data-project-name="@(chatProject?.Name ?? projectName)"
      aria-label="@L["ChatFormAriaLabel"]">
 
     @* Progress bar — sits at very top of card (just under shared layout header) *@
@@ -119,6 +135,8 @@
                              focus:ring-2 focus:ring-primary/10
                              transition-all max-h-32 overflow-y-auto
                              placeholder:text-base-content/30"></textarea>
+            <partial name="_MicButton"
+                     model="@(new MicButtonModel(TargetSelector: "#chat-input", SizeClass: "w-10 h-10"))" />
             <button id="chat-send" type="button" aria-label="@L["SendAriaLabel"]"
                     class="shrink-0 w-10 h-10 rounded-full bg-primary
                            flex items-center justify-center
@@ -135,3 +153,5 @@
     </div>
 </div>
 </div>
+
+<partial name="_ThankYouPopup" model="thankYouModel" />

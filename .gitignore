@@ -1,5 +1,8 @@
 # Secrets
 vertexai-key.json
+ai-config.json
+cosign.key
+
 
 # Documentatie
 Documentatie/
@@ -514,6 +517,7 @@ UI-*/.vite
 UI-*/wwwroot/dist
 cicd-key.json
 deploy/config.env
+deploy/config.*.env
 .claude/
 
 UI-Admin/.vite
@@ -521,7 +525,8 @@ API/wwwroot/uploads/ideas/
 API/wwwroot/uploads/tmp/
 API/wwwroot/uploads/projects/
 API/wwwroot/uploads/logos
-API/wwwroot/uploads/social/
+API/wwwroot/uploads/social
+API/wwwroot/uploads/questions
 
 # Git worktrees
 .worktrees/

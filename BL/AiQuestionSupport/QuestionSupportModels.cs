@@ -3,7 +3,7 @@ using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiQuestionSupport;
 
-public sealed class QuestionSupportChatRequest
+public sealed record QuestionSupportChatRequest
 {
     public string                          ProjectName        { get; init; } = string.Empty;
     public string                          ProjectDescription { get; init; } = string.Empty;
@@ -13,12 +13,12 @@ public sealed class QuestionSupportChatRequest
     public bool                            IsFirstTurn        { get; init; }
 }
 
-public sealed class QuestionSupportChatReply
+public sealed record QuestionSupportChatReply
 {
     public string AssistantMessage { get; init; } = string.Empty;
 }
 
-internal sealed class QuestionSupportAiReply
+internal sealed record QuestionSupportAiReply
 {
     [JsonPropertyName("message")] public string Message { get; init; } = string.Empty;
 }

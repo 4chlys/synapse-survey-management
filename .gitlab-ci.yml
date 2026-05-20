@@ -20,6 +20,7 @@ stages:
   - build
   - scan
   - push
+  - sign
   - deploy
 
 .gcr_login: &gcr_login
@@ -53,7 +54,6 @@ build-api:
   only:
     - development
     - main
-    - design/ui-2
 
 build-ui:
   stage: build
@@ -68,7 +68,6 @@ build-ui:
   only:
     - development
     - main
-    - design/ui-2
 
 build-admin:
   stage: build
@@ -83,7 +82,6 @@ build-admin:
   only:
     - development
     - main
-    - design/ui-2
 
 scan-api:
   stage: scan
@@ -102,8 +100,7 @@ scan-api:
   only:
     - development
     - main
-    - design/ui-2
-    
+
 scan-ui:
   stage: scan
   image:
@@ -121,7 +118,6 @@ scan-ui:
   only:
     - development
     - main
-    - design/ui-2
 
 scan-admin:
   stage: scan
@@ -140,7 +136,6 @@ scan-admin:
   only:
     - development
     - main
-    - design/ui-2
 
 scan-nginx:
   stage: scan
@@ -160,21 +155,25 @@ scan-nginx:
     - development
     - design/ui-2
 
-push-dev:
+push-test:
   stage: push
   <<: *gcr_login
   script:
     - docker load < api-image.tar.gz
     - docker load < ui-image.tar.gz
     - docker load < admin-image.tar.gz
-    - docker load < nginx-image.tar.gz
     - docker push "${IMAGE_API}:${IMAGE_TAG}"
     - docker push "${IMAGE_UI}:${IMAGE_TAG}"
     - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
-    - docker push "${IMAGE_NGINX}:${IMAGE_TAG}"
+    # test-latest tag zodat de test-MIG startup scripts de juiste image pullen
+    - docker tag "${IMAGE_API}:${IMAGE_TAG}"   "${IMAGE_API}:test-latest"
+    - docker tag "${IMAGE_UI}:${IMAGE_TAG}"    "${IMAGE_UI}:test-latest"
+    - docker tag "${IMAGE_ADMIN}:${IMAGE_TAG}" "${IMAGE_ADMIN}:test-latest"
+    - docker push "${IMAGE_API}:test-latest"
+    - docker push "${IMAGE_UI}:test-latest"
+    - docker push "${IMAGE_ADMIN}:test-latest"
   only:
-    - development #reverse
-    - design/ui-2
+    - development
 
 push-prod:
   stage: push
@@ -195,6 +194,23 @@ push-prod:
   only:
     - main #reverse
 
+sign-prod:
+  stage: sign
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl docker-cli
+    - curl -sL https://github.com/sigstore/cosign/releases/download/v2.4.1/cosign-linux-amd64 -o /usr/local/bin/cosign
+    - chmod +x /usr/local/bin/cosign
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
+  script:
+    - echo "${COSIGN_KEY_B64}" | base64 -d > /tmp/cosign.key
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_API}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_UI}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    - rm -f /tmp/cosign.key
+  only:
+    - main
+
 deploy-test:
   stage: deploy
   image: google/cloud-sdk:latest
@@ -202,45 +218,45 @@ deploy-test:
     GCP_ID_TOKEN:
       aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   before_script:
-      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
-      - gcloud auth login --cred-file=gcp-wif-test.json
-      - gcloud config set project "${PROJECT_ID}"
+    - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+    - gcloud auth login --cred-file=gcp-wif-test.json
+    - gcloud config set project "${PROJECT_ID}"
   script:
-    # 1. Deploy combined service first: nginx + API + admin + postgres
-    - sed -i "s|IMAGE_NGINX_PLACEHOLDER|${IMAGE_NGINX}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
-    - sed -i "s|IMAGE_API_PLACEHOLDER|${IMAGE_API}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
-    - sed -i "s|IMAGE_ADMIN_PLACEHOLDER|${IMAGE_ADMIN}:${IMAGE_TAG}|g" cloudrun-test-api.yaml
-    - gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
-    - gcloud run services add-iam-policy-binding mvp-test --region="${REGION}" --member="allUsers" --role="roles/run.invoker"
+    # Rolling replace op de test-MIGs (--max-unavailable=1 --max-surge=0: vrijmaken van capaciteit
+    # voor aanmaken nieuwe instantie, korte downtime acceptabel in test)
+    # Vereist: bootstrap.sh test is al eens uitgevoerd zodat de MIGs bestaan.
     - |
-      COMBINED_URL=$(gcloud run services describe mvp-test --region="${REGION}" --format="value(status.url)")
-      COMBINED_DOMAIN=$(echo "$COMBINED_URL" | sed 's|https://||')
-      echo "Combined service URL: $COMBINED_URL"
-
-    # 2. Deploy UI-User with the combined service URL as ApiBaseUrl
-    - |
-      gcloud run deploy mvp-ui-test \
-        --image="${IMAGE_UI}:${IMAGE_TAG}" \
-        --region="${REGION}" \
-        --allow-unauthenticated \
-        --port=8080 \
-        --min-instances=0 \
-        --max-instances=3 \
-        --set-env-vars="ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://+:8080,ApiBaseUrl=${COMBINED_URL},ApiKey=REDACTED,AllowedHosts=*"
-    - |
-      UI_URL=$(gcloud run services describe mvp-ui-test --region="${REGION}" --format="value(status.url)")
-      echo "Test Admin + API at: $COMBINED_URL"
-      echo "Test UI-User at:     $UI_URL"
-
-    # 3. Patch admin with UI-User domain + API with its own public URL (for seeder logo URLs)
-    - |
-      UI_DOMAIN=$(echo "$UI_URL" | sed 's|https://||')
-      sed -i "s|PARTICIPANT_DOMAIN_PLACEHOLDER|${UI_DOMAIN}|g" cloudrun-test-api.yaml
-      sed -i "s|COMBINED_URL_PLACEHOLDER|${COMBINED_URL}|g" cloudrun-test-api.yaml
-      gcloud run services replace cloudrun-test-api.yaml --region="${REGION}"
+      gcloud compute instance-groups managed rolling-action replace synapse-test-api-mig \
+        --zone="${ZONE}" --max-unavailable=1 --max-surge=0
+      gcloud compute instance-groups managed rolling-action replace synapse-test-ui-mig \
+        --zone="${ZONE}" --max-unavailable=1 --max-surge=0
+      gcloud compute instance-groups managed rolling-action replace synapse-test-admin-mig \
+        --zone="${ZONE}" --max-unavailable=1 --max-surge=0
+      gcloud compute instance-groups managed wait-until synapse-test-api-mig   --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-test-ui-mig    --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-test-admin-mig --stable --zone="${ZONE}"
+      UI_INSTANCE=$(gcloud compute instance-groups managed list-instances synapse-test-ui-mig \
+        --zone="${ZONE}" --format="value(NAME)" | head -1)
+      ADMIN_INSTANCE=$(gcloud compute instance-groups managed list-instances synapse-test-admin-mig \
+        --zone="${ZONE}" --format="value(NAME)" | head -1)
+      UI_IP=$(gcloud compute instances describe "${UI_INSTANCE}" --zone="${ZONE}" \
+        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+      ADMIN_IP=$(gcloud compute instances describe "${ADMIN_INSTANCE}" --zone="${ZONE}" \
+        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+      sleep 15
+      for attempt in 1 2 3; do
+        gcloud compute security-policies rules update 50 \
+          --security-policy="synapse-test-armor" \
+          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+          --action=allow --project="${PROJECT_ID}" && break || \
+        gcloud compute security-policies rules create 50 \
+          --security-policy="synapse-test-armor" \
+          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+          --action=allow --project="${PROJECT_ID}" && break || \
+        sleep 15
+      done
   only:
-    - development #reverse
-    - design/ui-2
+    - development
   environment:
     name: test
 
@@ -256,12 +272,15 @@ deploy-production:
       - gcloud config set project "${PROJECT_ID}"
   script:
     - |
-      gcloud compute instance-groups managed rolling-action replace synapse-api-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
-      gcloud compute instance-groups managed rolling-action replace synapse-ui-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
-      gcloud compute instance-groups managed wait-until synapse-api-mig --stable --zone="${ZONE}"
-      gcloud compute instance-groups managed wait-until synapse-ui-mig --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed rolling-action replace synapse-prod-api-mig   --zone="${ZONE}" --max-unavailable=1 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-prod-ui-mig    --zone="${ZONE}" --max-unavailable=1 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-prod-admin-mig --zone="${ZONE}" --max-unavailable=1 --max-surge=1
+      gcloud compute instance-groups managed wait-until synapse-prod-api-mig   --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-prod-ui-mig    --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-prod-admin-mig --stable --zone="${ZONE}"
   only:
     - main #reverse
   when: manual
   environment:
     name: production
+    

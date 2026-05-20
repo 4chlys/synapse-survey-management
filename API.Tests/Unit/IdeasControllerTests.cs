@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -13,6 +15,7 @@ public class IdeasControllerTests
     private readonly Mock<IProjectManager> _projectManager = new();
     private readonly Mock<IStorageService> _storageService = new();
     private readonly Mock<IModerationTokenService> _moderationTokenService = new();
+    private readonly Mock<IPlatformAiConfigService> _platformAiConfig = new();
     private readonly IdeasController _controller;
 
     private const int ProjectId = 1;
@@ -26,6 +29,14 @@ public class IdeasControllerTests
         _participantManager.Setup(p => p.GetParticipantBySessionTokenForUpdateAsync(_sessionToken))
             .ReturnsAsync(_participant);
 
+        _platformAiConfig.Setup(s => s.ResolveAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResolvedPlatformAiConfig(
+                Mock.Of<Microsoft.Extensions.AI.IChatClient>(),
+                "gemini-2.0-flash",
+                new SynapseEnqueteManagement.BL.AiModeration.ModerationConfig(),
+                new SynapseEnqueteManagement.BL.AiIdeaSupport.AiIdeaSupportConfig(),
+                new SynapseEnqueteManagement.BL.AiCommentSupport.AiCommentSupportConfig(),
+                new SynapseEnqueteManagement.BL.AiQuestionSupport.AiQuestionSupportConfig()));
         _controller = new IdeasController(
             _ideaManager.Object,
             _commentManager.Object,
@@ -34,6 +45,7 @@ public class IdeasControllerTests
             _projectManager.Object,
             _storageService.Object,
             _moderationTokenService.Object,
+            _platformAiConfig.Object,
             NullLogger<IdeasController>.Instance);
         _controller.AttachHttpContext(_sessionToken);
     }
@@ -52,7 +64,7 @@ public class IdeasControllerTests
             HasOwnIdeas = false
         };
         _ideaManager
-            .Setup(m => m.GetIdeasIndexAsync(CategoryId, _participant.ParticipantId, 5, 1, null, null, true, default))
+            .Setup(m => m.GetIdeasIndexAsync(CategoryId, ProjectId, _participant.ParticipantId, 5, 1, null, null, true, default))
             .ReturnsAsync(expectedResult)
             .Verifiable(Times.Exactly(1));
 
@@ -69,7 +81,7 @@ public class IdeasControllerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, ct, It.IsAny<string>()))
+        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, It.IsAny<ResolvedPlatformAiConfig>(), ct, It.IsAny<string>()))
             .ReturnsAsync(ModerationStatus.Approved);
         _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, null, null, ct))
             .ReturnsAsync(new AddIdeaResult(42, false))

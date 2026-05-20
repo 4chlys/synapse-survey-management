@@ -31,10 +31,21 @@ public class Project : IHasCreatedAt
     [MaxLength(500)]
     public string ImageUrl { get; set; }
 
-    [Required] public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
+    public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
 
-    [Required] public ProjectState ProjectState { get; set; } = ProjectState.Draft;
-    [Required] public FormType FormType { get; set; } = FormType.VerticalScroll;
+    public ProjectState ProjectState { get; set; } = ProjectState.Draft;
+    public FormType FormType { get; set; } = FormType.VerticalScroll;
+
+    public ProjectTheme Theme { get; set; } = ProjectTheme.Default;
+
+    [MaxLength(7)]
+    [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
+        ErrorMessage = "Invalid color code. Use a hex value (e.g. #FF5733).")]
+    public string PrimaryColor { get; set; }
+
+    [MaxLength(4000)]
+    public string CustomCss { get; set; }
+
     [Range(1, 100)] public int IdeaPageSize { get; set; } = 5;
     public bool ExtraIdeasReplaceExisting { get; set; } = false;
     [Range(0, 50)] public int MaxExtraIdeaRequests { get; set; } = 3;

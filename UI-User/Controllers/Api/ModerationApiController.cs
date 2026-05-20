@@ -48,8 +48,4 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     }
 }
 
-public class ModerationRequest
-{
-    public string Text { get; set; }
-    public string ContentType { get; set; } = "idea";
-}
+public record ModerationRequest(string Text, string ContentType = "idea");

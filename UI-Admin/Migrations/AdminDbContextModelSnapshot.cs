@@ -280,12 +280,51 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     b.Property<int>("ProjectPlatformId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("PromptCommentModeration")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptCommentSupport")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptIdeaSupport")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptImageModeration")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptModeration")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptQuestionSupport")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptRewrite")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SelectedAiModel")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectPlatformId")
                         .IsUnique();
 
                     b.ToTable("PlatformSettings");
+                });
+
+            modelBuilder.Entity("SynapseEnqueteManagement.UI.Admin.Data.SystemAiSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AllowedModelIds")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemAiSettings");
                 });
 
             modelBuilder.Entity("SynapseEnqueteManagement.UI.Admin.Data.UserWidgetPreference", b =>

@@ -3,7 +3,7 @@ using SynapseEnqueteManagement.BL.AiSupport;
 
 namespace SynapseEnqueteManagement.BL.AiCommentSupport;
 
-public sealed class CommentSupportRequest
+public sealed record CommentSupportRequest
 {
     /// <summary>Full text of the idea being commented on.</summary>
     public string IdeaText { get; init; } = string.Empty;
@@ -27,14 +27,14 @@ public sealed class CommentSupportRequest
     public bool IsFirstTurn { get; init; }
 }
 
-public sealed class CommentSupportReply
+public sealed record CommentSupportReply
 {
     public string AssistantMessage { get; init; } = string.Empty;
     public string Suggestion       { get; init; }
     public bool   IsFinal          { get; init; }
 }
 
-internal sealed class CommentSupportAiReply
+internal sealed record CommentSupportAiReply
 {
     [JsonPropertyName("message")]    public string Message    { get; init; } = string.Empty;
     [JsonPropertyName("suggestion")] public string Suggestion { get; init; }

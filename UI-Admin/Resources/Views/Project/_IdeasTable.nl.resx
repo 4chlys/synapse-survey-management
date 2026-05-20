@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="TableIdea" xml:space="preserve"><value>Idee</value></data>
+  <data name="TableCategory" xml:space="preserve"><value>Categorie</value></data>
+  <data name="TableStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="TableActions" xml:space="preserve"><value>Acties</value></data>
+  <data name="Status_New" xml:space="preserve"><value>Nieuw</value></data>
+  <data name="Status_Approved" xml:space="preserve"><value>Goedgekeurd</value></data>
+  <data name="Status_Flagged" xml:space="preserve"><value>Gemarkeerd</value></data>
+  <data name="Status_Declined" xml:space="preserve"><value>Afgewezen</value></data>
+  <data name="NoIdeas" xml:space="preserve"><value>Geen ideeën gevonden.</value></data>
+  <data name="NoIdeasFiltered" xml:space="preserve"><value>Geen ideeën gevonden voor deze filters.</value></data>
+  <data name="ActionApprove" xml:space="preserve"><value>Goedkeuren</value></data>
+  <data name="ActionDecline" xml:space="preserve"><value>Afwijzen</value></data>
+  <data name="ActionFlag" xml:space="preserve"><value>Markeren</value></data>
+  <data name="ActionRemoveImage" xml:space="preserve"><value>Afbeelding verwijderen</value></data>
+  <data name="ConfirmRemoveImage" xml:space="preserve"><value>Afbeelding verwijderen?</value></data>
+  <data name="PageOf" xml:space="preserve"><value>Pagina {0} van {1}</value></data>
+</root>

@@ -1,7 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -14,7 +17,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ProjectsController(
     IProjectManager projectManager,
     IAiImageGenerationService imageGenerationService,
-    IStorageService storageService) : ControllerBase
+    IStorageService storageService,
+    IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
     private static FormType ParseFormType(string interactionMode) =>
         Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
@@ -25,6 +29,11 @@ public class ProjectsController(
         Enum.TryParse<AiAssistanceType>(aiAssistance, ignoreCase: true, out var aiResult)
             ? aiResult
             : AiAssistanceType.ProActive;
+
+    private static ProjectTheme ParseTheme(string theme) =>
+        Enum.TryParse<ProjectTheme>(theme, ignoreCase: true, out var themeResult)
+            ? themeResult
+            : ProjectTheme.Default;
 
     private static string ActiveCulture() =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
@@ -58,6 +67,7 @@ public class ProjectsController(
             FormType = p.FormType.ToString(),
             OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
             ProjectImage = p.ImageUrl ?? string.Empty,
+            IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
             OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
             Introduction = introText,
@@ -72,6 +82,9 @@ public class ProjectsController(
             LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
             DefaultLanguageCode = p.DefaultLanguage?.Code,
             SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            Theme = p.Theme.ToString(),
+            PrimaryColor = p.PrimaryColor,
+            CustomCss = p.CustomCss,
         };
     }
 
@@ -84,6 +97,7 @@ public class ProjectsController(
         FormType = p.FormType.ToString(),
         OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
         ProjectImage = p.ImageUrl ?? string.Empty,
+        IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
         OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
         AiAssistance = p.AiAssistance.ToString(),
@@ -104,6 +118,9 @@ public class ProjectsController(
             Introduction = p.Introduction?.Translations
                 .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
         }).ToList(),
+        Theme = p.Theme.ToString(),
+        PrimaryColor = p.PrimaryColor,
+        CustomCss = p.CustomCss,
     };
 
     private static IEnumerable<ProjectTranslationInput> MapTranslations(ICollection<ProjectTranslationDto> dtos) =>
@@ -150,21 +167,6 @@ public class ProjectsController(
     public async Task<ActionResult<AdminProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
     {
         var imageUrl = dto.ImageUrl ?? string.Empty;
-        var defaultName = dto.Translations
-            .FirstOrDefault(t => t.LanguageCode == dto.DefaultLanguageCode)?.Name
-            ?? dto.Translations.FirstOrDefault()?.Name
-            ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, ct);
-            if (result.IsSuccess)
-            {
-                var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
-                imageUrl = await storageService.UploadBytesAsync(
-                    result.ImageBytes, "projects", $"generated{extension}", result.MimeType);
-            }
-        }
 
         var project = await projectManager.CreateProjectAsync(
             MapTranslations(dto.Translations),
@@ -182,7 +184,10 @@ public class ProjectsController(
             dto.IdeaPageSize,
             dto.ExtraIdeasReplaceExisting,
             dto.MaxExtraIdeaRequests,
-            dto.AllowCrossLanguageIdeas);
+            dto.AllowCrossLanguageIdeas,
+            ParseTheme(dto.Theme),
+            dto.PrimaryColor,
+            dto.CustomCss);
 
         return Created(string.Empty, MapToAdminDto(project));
     }
@@ -206,7 +211,10 @@ public class ProjectsController(
             dto.IdeaPageSize,
             dto.ExtraIdeasReplaceExisting,
             dto.MaxExtraIdeaRequests,
-            dto.AllowCrossLanguageIdeas);
+            dto.AllowCrossLanguageIdeas,
+            ParseTheme(dto.Theme),
+            dto.PrimaryColor,
+            dto.CustomCss);
 
         return Ok(MapToAdminDto(project));
     }
@@ -239,4 +247,25 @@ public class ProjectsController(
         var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
         return Ok(MapToAdminDto(project));
     }
+
+    [HttpPost("generate-image")]
+    public async Task<IActionResult> GenerateImage([FromQuery] string name, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new LocalizedValidationException("Validation.Project.NameRequired");
+
+        var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
+        var url = await storageService.UploadBytesAsync(
+            result.ImageBytes, "projects", $"generated{extension}", result.MimeType);
+
+        return Ok(new { url });
+    }
+
+    private static bool IsAiGeneratedImageUrl(string imageUrl) =>
+        !string.IsNullOrWhiteSpace(imageUrl)
+        && Path.GetFileNameWithoutExtension(imageUrl).Contains("generated", StringComparison.OrdinalIgnoreCase);
 }

@@ -1,8 +1,8 @@
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class SectionDto
+public record SectionDto
 {
-    public int SectionId { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
+    public int SectionId { get; init; }
+    public string Name { get; init; }
+    public string Description { get; init; }
 }

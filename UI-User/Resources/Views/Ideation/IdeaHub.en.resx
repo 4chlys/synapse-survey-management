@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ShowAllLanguages" xml:space="preserve">
+    <value>Show ideas in all languages</value>
+  </data>
+  <data name="SubmissionLanguageLabel" xml:space="preserve">
+    <value>Submit as</value>
+  </data>
+  <data name="ModeSelectHeading" xml:space="preserve">
+    <value>How do you want to add your idea?</value>
+  </data>
+  <data name="AiOptionTitle" xml:space="preserve">
+    <value>With AI assistant</value>
+  </data>
+  <data name="AiOptionSubtitle" xml:space="preserve">
+    <value>We help you formulate your idea</value>
+  </data>
+  <data name="ManualOptionTitle" xml:space="preserve">
+    <value>Write yourself</value>
+  </data>
+  <data name="ManualOptionSubtitle" xml:space="preserve">
+    <value>Type your idea directly in the form</value>
+  </data>
+  <data name="NewIdeaButton" xml:space="preserve">
+    <value>Post a new idea</value>
+  </data>
+  <data name="YourIdeaLabel" xml:space="preserve">
+    <value>Your idea</value>
+  </data>
+  <data name="IdeaPlaceholder" xml:space="preserve">
+    <value>Explain your idea...</value>
+  </data>
+  <data name="AddImageButton" xml:space="preserve">
+    <value>📎 Add image</value>
+  </data>
+  <data name="DescribeImageButton" xml:space="preserve">
+    <value>Describe with AI</value>
+  </data>
+  <data name="PostButton" xml:space="preserve">
+    <value>Post</value>
+  </data>
+  <data name="CancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SortDiverse" xml:space="preserve">
+    <value>Diverse</value>
+  </data>
+  <data name="SortSimilar" xml:space="preserve">
+    <value>Similar</value>
+  </data>
+  <data name="SortDifferent" xml:space="preserve">
+    <value>Different</value>
+  </data>
+  <data name="EmptyState" xml:space="preserve">
+    <value>No ideas yet — be the first!</value>
+  </data>
+  <data name="FlaggedBadge" xml:space="preserve">
+    <value>Under review</value>
+  </data>
+  <data name="CopyIdeaButton" xml:space="preserve">
+    <value>Use as starting point</value>
+  </data>
+  <data name="RefreshIdeasButton" xml:space="preserve">
+    <value>See new ideas</value>
+  </data>
+  <data name="BackNavLabel" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="BackToCategoriesLabel" xml:space="preserve">
+    <value>Back to categories</value>
+  </data>
+  <data name="MyIdeasNavLabel" xml:space="preserve">
+    <value>My ideas</value>
+  </data>
+  <data name="CloseNavLabel" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="AiDisclaimer" xml:space="preserve">
+    <value>Ideas on this platform may have been written with the help of AI assistance.</value>
+  </data>
+</root>

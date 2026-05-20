@@ -6,7 +6,7 @@ namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 public class Question
 {
     public int QuestionId { get; set; }
-    [Required] public QuestionFormat QuestionFormat { get; set; }
+    public QuestionFormat QuestionFormat { get; set; }
     public bool IsMandatory { get; set; }
     public int AnswerChoiceCount { get; set; }
     public int? ChoiceIndex { get; set; }

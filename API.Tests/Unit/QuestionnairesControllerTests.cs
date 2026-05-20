@@ -139,7 +139,7 @@ public class QuestionnairesControllerTests
 
         await _controller.AddQuestion(1, dto, CancellationToken.None);
 
-        Assert.Equal("https://www.youtube.com/embed/dQw4w9WgXcQ", capturedUrl);
+        Assert.Equal("https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1", capturedUrl);
     }
 
     [Fact]

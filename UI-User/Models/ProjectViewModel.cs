@@ -9,6 +9,8 @@ public class ProjectViewModel
     public string OrganisationName { get; set; } = string.Empty;
     public string OrganisationLogoUrl { get; set; } = string.Empty;
     public string OrganisationWebsiteUrl { get; set; } = string.Empty;
+    public string ProjectImage { get; set; } = string.Empty;
+    public bool IsAiGeneratedImage { get; set; }
     public string Introduction { get; set; } = string.Empty;
     public bool RequestContactInfo { get; set; }
     public bool ExtraIdeasReplaceExisting { get; set; }
@@ -16,4 +18,8 @@ public class ProjectViewModel
     public string DefaultLanguageCode { get; set; } = "nl";
     public bool AllowCrossLanguageIdeas { get; set; }
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+
+    public string Theme { get; set; } = "Default";
+    public string PrimaryColor { get; set; }
+    public string CustomCss { get; set; }
 }

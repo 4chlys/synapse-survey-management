@@ -1,19 +1,20 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Admin
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model AdminListViewModel
+@inject IViewLocalizer L
 @{
-    ViewData["Title"] = "Beheerders";
-    ViewData["ActiveSection"] = "Beheerders";
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Admins";
     Layout = "_Layout";
 }
 
-<h1 class="font-heading font-bold text-2xl text-base-content mb-6">Beheerders</h1>
+<h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
 
 @* Platform filter *@
 <form method="get" asp-action="Index" class="flex flex-wrap gap-2 mb-6 items-center">
     <select name="platformId" class="select select-bordered select-sm min-w-48"
             onchange="this.form.submit()">
-        <option value="">Alle platformen</option>
+        <option value="">@L["FilterAllPlatforms"]</option>
         @foreach (var platform in Model.Platforms)
         {
             if (Model.FilterPlatformId == platform.ProjectPlatformId)
@@ -28,7 +29,7 @@
     </select>
     @if (Model.FilterPlatformId.HasValue)
     {
-        <a asp-action="Index" class="btn btn-ghost btn-sm">Wissen</a>
+        <a asp-action="Index" class="btn btn-ghost btn-sm">@L["ClearFilter"]</a>
     }
 </form>
 
@@ -36,7 +37,7 @@
 {
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body text-center text-base-content/60 text-sm">
-            Geen beheerders gevonden.
+            @L["NoAdmins"]
         </div>
     </div>
 }
@@ -47,9 +48,9 @@ else
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th>Gebruikersnaam</th>
-                        <th>E-mail</th>
-                        <th>Platform</th>
+                        <th>@L["TableUsername"]</th>
+                        <th>@L["TableEmail"]</th>
+                        <th>@L["TablePlatform"]</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -69,7 +70,7 @@ else
                             <td>
                                 <a asp-controller="Platform" asp-action="Admins"
                                    asp-route-id="@admin.PlatformId"
-                                   class="btn btn-ghost btn-xs">Bekijken</a>
+                                   class="btn btn-ghost btn-xs">@L["ViewAction"]</a>
                             </td>
                         </tr>
                     }

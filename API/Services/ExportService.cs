@@ -98,6 +98,21 @@ public class ExportService : IExportService
         return ms.ToArray();
     }
 
+    public byte[] BuildBinaryZip(IEnumerable<(string FileName, byte[] Content)> files)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+        {
+            foreach (var (fileName, content) in files)
+            {
+                var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
+                using var entryStream = entry.Open();
+                entryStream.Write(content, 0, content.Length);
+            }
+        }
+        return ms.ToArray();
+    }
+
     private static string EscapeCsv(string value)
     {
         if (value.IndexOfAny([',', '"', '\r', '\n']) < 0) return value;

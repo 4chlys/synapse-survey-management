@@ -3,13 +3,13 @@ using SynapseEnqueteManagement.API.DTOs.AiSupport;
 
 namespace SynapseEnqueteManagement.API.DTOs.QuestionSupport;
 
-public sealed class QuestionSupportChatRequestDto
+public sealed record QuestionSupportChatRequestDto
 {
     [MaxLength(20)]
-    public IReadOnlyList<AiSupportMessageDto> History { get; set; } = [];
+    public IReadOnlyList<AiSupportMessageDto> History { get; init; } = [];
 
     [MaxLength(1000)]
-    public string UserMessage { get; set; } = string.Empty;
+    public string UserMessage { get; init; } = string.Empty;
 
-    public bool IsFirstTurn { get; set; }
+    public bool IsFirstTurn { get; init; }
 }

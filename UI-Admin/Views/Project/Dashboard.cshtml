@@ -1,26 +1,35 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
 @model DashboardViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
 }
 <div class="w-full">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="font-heading font-bold text-2xl text-base-content">Dashboard</h1>
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
         <div class="flex items-center gap-2">
             @if (ViewData["ProjectState"] as string == "Active")
             {
                 <a asp-action="Archive" asp-route-projectId="@Model.ProjectId"
                    class="btn btn-outline btn-warning btn-sm gap-1.5">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-                    Archiveren
+                    @L["ArchiveButton"]
                 </a>
             }
+            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+                    onclick="document.getElementById('project-export-modal').showModal()">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                </svg>
+                @L["ExportButton"]
+            </button>
             <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
                class="btn btn-outline btn-sm gap-1.5">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-                Widgets instellen
+                @L["ConfigureButton"]
             </a>
         </div>
     </div>
@@ -34,12 +43,62 @@
                  data-project-id="@Model.ProjectId"
                  data-api-base="@Model.ApiBaseUrl"
                  data-survey-url="@Model.SurveyUrl"
-                 class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : isTall ? "min-h-96" : "min-h-28")">
-                <p class="text-base-content/30 text-xs">Laden…</p>
+                 class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : "min-h-28")">
+                <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
             </div>
         }
     </div>
 </div>
+
+@* Project dashboard export modal *@
+<dialog id="project-export-modal" class="modal"
+        data-export-url="/api/projects/@Model.ProjectId/stats/export">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">@L["ExportModalTitle"]</h3>
+
+        <p class="text-sm font-medium mb-2">@L["ExportGroupHeading"]</p>
+        <div class="form-control gap-2 mb-4">
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="summary" checked />
+                <span class="label-text">@L["Section_Summary"]</span>
+            </label>
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="timeline" checked />
+                <span class="label-text">@L["Section_Timeline"]</span>
+            </label>
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="categories" checked />
+                <span class="label-text">@L["Section_Categories"]</span>
+            </label>
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="ideas" checked />
+                <span class="label-text">@L["Section_Ideas"]</span>
+            </label>
+        </div>
+
+        <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm font-medium">@L["FormatLabel"]</span>
+            <select id="project-export-format" class="select select-bordered select-sm w-40">
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="csv">CSV (.zip)</option>
+            </select>
+        </div>
+
+        <label class="label cursor-pointer justify-start gap-3 mb-4">
+            <input type="checkbox" class="checkbox checkbox-sm" id="project-export-graphics" data-project-graphics checked />
+            <span class="label-text">@L["IncludeGraphicsLabel"]</span>
+        </label>
+
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+            </form>
+            <button type="button" class="btn btn-primary btn-sm" id="project-export-download">@L["ExportButton"]</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
 @section Scripts {
-    <script type="module" vite-src="~/dashboard.ts"></script>
+    <script type="module" vite-src="~/admin/dashboard.ts"></script>
 }

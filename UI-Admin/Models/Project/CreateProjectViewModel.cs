@@ -11,16 +11,16 @@ public class CreateProjectViewModel
 
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
-        ErrorMessage = "ShortForm must be lowercase alphanumeric with single hyphens.")]
+        ErrorMessage = "ShortForm_Invalid")]
     public string ShortForm { get; set; }
 
     [MaxLength(100)]
     public string Topic { get; set; }
 
-    [MaxLength(5000, ErrorMessage = "De introductie is te lang (maximaal 5000 tekens inclusief opmaak).")]
+    [MaxLength(5000, ErrorMessage = "Introduction_TooLong")]
     public string Introduction { get; set; }
 
-    public string InteractionMode { get; set; } = "Scroll";
+    public string InteractionMode { get; set; } = "VerticalScroll";
 
     public string AiAssistance { get; set; } = "ProActive";
 
@@ -37,5 +37,21 @@ public class CreateProjectViewModel
 
     public bool ContactOptIn { get; set; } = true;
     public bool AllowCrossLanguageIdeas { get; set; } = false;
+
+    [Required]
+    [MaxLength(10)]
+    public string DefaultLanguageCode { get; set; } = "nl";
+
     public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+
+    [MaxLength(20)]
+    public string Theme { get; set; } = "Default";
+
+    [MaxLength(7)]
+    [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
+        ErrorMessage = "PrimaryColor_Invalid")]
+    public string PrimaryColor { get; set; }
+
+    [MaxLength(4000)]
+    public string CustomCss { get; set; }
 }

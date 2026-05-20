@@ -52,15 +52,10 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
         return NoContent();
     }
 
-    public class MoveRequest
-    {
-        public int? ParentQuestionId { get; set; }
-        public int? ChoiceIndex { get; set; }
-        public int Position { get; set; }
-    }
+    public record MoveRequest(int? ParentQuestionId, int? ChoiceIndex, int Position);
 
-    public class EndingAnswersRequest
+    public record EndingAnswersRequest
     {
-        public ICollection<string> EndingAnswers { get; set; } = new List<string>();
+        public ICollection<string> EndingAnswers { get; init; } = new List<string>();
     }
 }

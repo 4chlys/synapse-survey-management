@@ -48,4 +48,91 @@
   <data name="Mock_Idea_Draft_Body" xml:space="preserve">
     <value>Ik stel voor om {0} te verbeteren door: {1}. Dit zou een positieve impact hebben op de betrokken mensen en is haalbaar met de juiste aanpak.</value>
   </data>
+  <data name="Validation.ShortForm.Invalid" xml:space="preserve">
+    <value>'{0}' is geen geldige shortform. Gebruik alleen kleine letters, cijfers en enkele koppeltekens.</value>
+  </data>
+  <data name="Validation.ShortForm.Reserved" xml:space="preserve">
+    <value>'{0}' is een gereserveerde shortform en kan niet worden gebruikt.</value>
+  </data>
+  <data name="Validation.ShortForm.CannotChangeAfterPublish" xml:space="preserve">
+    <value>ShortForm kan niet meer worden gewijzigd nadat het project is gepubliceerd.</value>
+  </data>
+  <data name="Validation.PrimaryColor.Invalid" xml:space="preserve">
+    <value>Ongeldige kleurcode. Gebruik een hexadecimale waarde (bijv. #FF5733).</value>
+  </data>
+  <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
+    <value>Aangepaste CSS bevat niet-toegestane inhoud (scripts, expression(), javascript: urls, @import of behavior).</value>
+  </data>
+  <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
+    <value>MinAge mag niet groter zijn dan MaxAge.</value>
+  </data>
+  <data name="Validation.Project.NameRequired" xml:space="preserve">
+    <value>Projectnaam is verplicht.</value>
+  </data>
+  <data name="Validation.Project.DefaultLanguageCodeRequired" xml:space="preserve">
+    <value>DefaultLanguageCode is verplicht.</value>
+  </data>
+  <data name="Validation.Project.AtLeastOneSupportedLanguage" xml:space="preserve">
+    <value>Er is ten minste één ondersteunde taal vereist.</value>
+  </data>
+  <data name="Validation.Project.DefaultLanguageMustBeSupported" xml:space="preserve">
+    <value>DefaultLanguageCode moet een van de SupportedLanguageCodes zijn.</value>
+  </data>
+  <data name="Validation.Project.AllSupportedLanguagesNeedTranslation" xml:space="preserve">
+    <value>Elke ondersteunde taal moet een vertalingsregel hebben.</value>
+  </data>
+  <data name="Validation.Project.IntroductionsOneRowPerLanguage" xml:space="preserve">
+    <value>Introducties mogen maar één regel per taal bevatten.</value>
+  </data>
+  <data name="Validation.Project.InactiveLanguageNotAllowed" xml:space="preserve">
+    <value>Inactieve talen kunnen niet aan een project worden toegewezen.</value>
+  </data>
+  <data name="Validation.Translation.AtLeastOne" xml:space="preserve">
+    <value>Er is ten minste één vertaling vereist.</value>
+  </data>
+  <data name="Validation.Translation.OneRowPerLanguage" xml:space="preserve">
+    <value>Vertalingen mogen maar één regel per taal bevatten.</value>
+  </data>
+  <data name="Validation.Language.UnknownCodes" xml:space="preserve">
+    <value>Onbekende taalcode(s): {0}.</value>
+  </data>
+  <data name="Validation.Category.AllProjectLanguagesNeedTranslation" xml:space="preserve">
+    <value>Elke door het project ondersteunde taal moet een vertalingsregel hebben.</value>
+  </data>
+  <data name="Validation.Question.ParentNotFound" xml:space="preserve">
+    <value>Bovenliggende vraag {0} niet gevonden.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexNullWhenNoParent" xml:space="preserve">
+    <value>ChoiceIndex moet null zijn wanneer er geen bovenliggende vraag is ingesteld.</value>
+  </data>
+  <data name="Validation.Question.CannotBeOwnParent" xml:space="preserve">
+    <value>Een vraag kan niet haar eigen bovenliggende vraag zijn.</value>
+  </data>
+  <data name="Validation.Question.ParentInDifferentQuestionnaire" xml:space="preserve">
+    <value>De bovenliggende vraag moet bij dezelfde vragenlijst horen.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexNullWhenTopLevel" xml:space="preserve">
+    <value>ChoiceIndex moet null zijn bij het verplaatsen naar het hoogste niveau.</value>
+  </data>
+  <data name="Validation.Question.MissingMandatoryAnswers" xml:space="preserve">
+    <value>Ontbrekende antwoorden op verplichte vragen: {0}</value>
+  </data>
+  <data name="Validation.Question.OpenCannotHaveSubQuestions" xml:space="preserve">
+    <value>Open vragen kunnen geen subvragen hebben.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexRequiredForNesting" xml:space="preserve">
+    <value>ChoiceIndex is verplicht bij het nesten onder een bovenliggende vraag.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexOutOfRange" xml:space="preserve">
+    <value>ChoiceIndex {0} valt buiten het bereik van de bovenliggende vraag (0..{1}).</value>
+  </data>
+  <data name="Validation.Question.MoveCreatesCycle" xml:space="preserve">
+    <value>Verplaatsen zou een cyclus veroorzaken.</value>
+  </data>
+  <data name="Validation.Question.CannotReduceChoiceCount" xml:space="preserve">
+    <value>Kan het aantal antwoordkeuzes niet verlagen: subvragen verwijzen naar keuzes die zouden verdwijnen.</value>
+  </data>
+  <data name="Validation.Question.AnswerChoicesCountMismatch" xml:space="preserve">
+    <value>Vertaling '{0}' heeft {1} antwoordkeuzes maar AnswerChoiceCount is {2}.</value>
+  </data>
 </root>

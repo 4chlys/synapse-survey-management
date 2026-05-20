@@ -38,13 +38,12 @@ public class ResponseRepository(DbContext context) : Repository<Response>(contex
             .Where(r => r.Participant.ParticipantId == participantId)
             .ToListAsync();
 
+    // Issues a single DELETE outside the change tracker; callers must wrap in IUnitOfWork.ExecuteInTransactionAsync to preserve rollback.
     public async Task DeleteAllByParticipantIdAsync(int participantId)
     {
-        var rows = await Context.Set<Response>()
+        await Context.Set<Response>()
             .Where(r => r.Participant.ParticipantId == participantId)
-            .ToListAsync();
-        if (rows.Count == 0) return;
-        Context.Set<Response>().RemoveRange(rows);
+            .ExecuteDeleteAsync();
     }
 
     public async Task<IEnumerable<Response>> ReadCommittedByProjectWithQuestionReadOnlyAsync(int projectId)

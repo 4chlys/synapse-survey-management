@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.API.DTOs.Stats;
 
-public class PlatformStatsDto
+public record PlatformStatsDto
 {
-    public int ActiveCount { get; set; }
-    public int DraftCount { get; set; }
-    public int ArchivedCount { get; set; }
-    public int ParticipantCount { get; set; }
+    public int ActiveCount { get; init; }
+    public int DraftCount { get; init; }
+    public int ArchivedCount { get; init; }
+    public int ParticipantCount { get; init; }
 }

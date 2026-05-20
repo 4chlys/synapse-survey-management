@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.API.DTOs.Dashboard;
 
-public class IdeaMetricDto
+public record IdeaMetricDto
 {
-    public int IdeaId { get; set; }
-    public string Description { get; set; }
-    public int ReactionCount { get; set; }
-    public int CommentCount { get; set; }
+    public int IdeaId { get; init; }
+    public string Description { get; init; }
+    public int ReactionCount { get; init; }
+    public int CommentCount { get; init; }
 }

@@ -1,8 +1,8 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public sealed class IdeaIndexResult
+public sealed record IdeaIndexResult
 {
-    public List<IdeaViewModel> Ideas { get; set; } = new();
-    public string ResolvedSort { get; set; } = "diverse";
-    public bool HasOwnIdeas { get; set; }
+    public List<IdeaViewModel> Ideas { get; init; } = new();
+    public string ResolvedSort { get; init; } = "diverse";
+    public bool HasOwnIdeas { get; init; }
 }

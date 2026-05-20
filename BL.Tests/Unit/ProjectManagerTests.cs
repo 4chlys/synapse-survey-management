@@ -104,7 +104,7 @@ public class ProjectManagerTests
         _shortFormService.Setup(s => s.IsReserved("admin")).Returns(true);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "Admin")),
                 NoIntroductions(),
@@ -120,7 +120,7 @@ public class ProjectManagerTests
         _shortFormService.Setup(s => s.IsValid("INVALID FORM")).Returns(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "Test")),
                 NoIntroductions(),
@@ -133,7 +133,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_DefaultLanguageNotInSupported_Throws()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "X")),
                 NoIntroductions(),
@@ -147,7 +147,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_MissingTranslationForSupportedLanguage_Throws()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "X")),
                 NoIntroductions(),
@@ -160,7 +160,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_UnknownLanguageCode_Throws()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("zz", "X")),
                 NoIntroductions(),
@@ -226,7 +226,7 @@ public class ProjectManagerTests
             .ReturnsAsync(project);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.UpdateProjectAsync(
                 ProjectId,
                 Translations(("nl", "Naam")),

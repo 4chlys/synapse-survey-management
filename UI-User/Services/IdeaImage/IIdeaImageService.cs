@@ -3,10 +3,10 @@ namespace SynapseEnqueteManagement.UI.User.Services.IdeaImage;
 public interface IIdeaImageService
 {
     Task<IdeaImageUploadResult> UploadAsync(IFormFile file, int projectId, CancellationToken ct = default);
-    Task<ImageDescriptionResult> DescribeAsync(IFormFile file, string categoryName, string categoryDescription, string language, CancellationToken ct = default);
+    Task<ImageDescriptionResult> DescribeAsync(IFormFile file, int projectId, string categoryName, string categoryDescription, string language, CancellationToken ct = default);
 }
 
-public class IdeaImageUploadResult
+public record IdeaImageUploadResult
 {
     public bool IsSuccess { get; init; }
     public bool IsAcceptable { get; init; }
@@ -24,7 +24,7 @@ public class IdeaImageUploadResult
         new() { IsSuccess = false, Reason = reason };
 }
 
-public class ImageDescriptionResult
+public record ImageDescriptionResult
 {
     public bool IsSuccess { get; init; }
     public string Description { get; init; }

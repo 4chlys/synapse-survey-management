@@ -26,8 +26,8 @@ public class QuestionMediaService(HttpClient httpClient) : IQuestionMediaService
         return new QuestionMediaUploadResult { Success = true, Url = result!.Url };
     }
 
-    private sealed class UploadResult
+    private sealed record UploadResult
     {
-        public string Url { get; set; }
+        public string Url { get; init; }
     }
 }
