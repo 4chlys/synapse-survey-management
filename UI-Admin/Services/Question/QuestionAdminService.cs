@@ -6,41 +6,36 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 public class QuestionAdminService(HttpClient httpClient)
 {
-    private class QuestionTranslationDto
+    private record QuestionTranslationDto
     {
-        public string LanguageCode { get; set; }
-        public string Text { get; set; }
-        public ICollection<string> AnswerChoices { get; set; }
-        public string MediaText { get; set; }
+        public string LanguageCode { get; init; }
+        public string Text { get; init; }
+        public ICollection<string> AnswerChoices { get; init; }
+        public string MediaText { get; init; }
     }
 
-    private class EndingAnswerTranslationDto
+    private record EndingAnswerTranslationDto
     {
-        public string LanguageCode { get; set; }
-        public string Value { get; set; }
+        public string LanguageCode { get; init; }
+        public string Value { get; init; }
     }
 
-    private class QuestionRequest
+    private record QuestionRequest
     {
-        public int AnswerChoiceCount { get; set; }
-        public string QuestionFormat { get; set; }
-        public bool IsMandatory { get; set; }
-        public int? SectionId { get; set; }
-        public int? ParentQuestionId { get; set; }
-        public int? ChoiceIndex { get; set; }
-        public ICollection<QuestionTranslationDto> Translations { get; set; }
-        public ICollection<ICollection<EndingAnswerTranslationDto>> EndingAnswers { get; set; }
-        public string MediaUrl { get; set; }
-        public QuestionMediaType? MediaType { get; set; }
-        public bool MediaIsEmbed { get; set; }
+        public int AnswerChoiceCount { get; init; }
+        public string QuestionFormat { get; init; }
+        public bool IsMandatory { get; init; }
+        public int? SectionId { get; init; }
+        public int? ParentQuestionId { get; init; }
+        public int? ChoiceIndex { get; init; }
+        public ICollection<QuestionTranslationDto> Translations { get; init; }
+        public ICollection<ICollection<EndingAnswerTranslationDto>> EndingAnswers { get; init; }
+        public string MediaUrl { get; init; }
+        public QuestionMediaType? MediaType { get; init; }
+        public bool MediaIsEmbed { get; init; }
     }
 
-    private class MoveRequest
-    {
-        public int? ParentQuestionId { get; set; }
-        public int? ChoiceIndex { get; set; }
-        public int Position { get; set; }
-    }
+    private record MoveRequest(int? ParentQuestionId, int? ChoiceIndex, int Position);
 
     public async Task<List<QuestionViewModel>> GetQuestionsAsync(int projectId)
     {
@@ -136,12 +131,7 @@ public class QuestionAdminService(HttpClient httpClient)
     public async Task MoveQuestionAsync(int projectId, int questionId,
         int? parentQuestionId, int? choiceIndex, int position)
     {
-        var payload = new MoveRequest
-        {
-            ParentQuestionId = parentQuestionId,
-            ChoiceIndex = choiceIndex,
-            Position = position
-        };
+        var payload = new MoveRequest(parentQuestionId, choiceIndex, position);
         var response = await httpClient.PutAsJsonAsync(
             $"api/projects/{projectId}/questionnaire/questions/{questionId}/location", payload);
         response.EnsureSuccessStatusCode();

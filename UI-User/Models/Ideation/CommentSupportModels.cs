@@ -1,22 +1,22 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public sealed class CommentSupportMessage
+public sealed record CommentSupportMessage
 {
-    public string Role    { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
+    public string Role    { get; init; } = string.Empty;
+    public string Content { get; init; } = string.Empty;
 }
 
-public sealed class CommentSupportChatRequest
+public sealed record CommentSupportChatRequest
 {
-    public IReadOnlyList<CommentSupportMessage> History      { get; set; } = [];
-    public string                               UserMessage  { get; set; } = string.Empty;
-    public string                               IdeaText     { get; set; } = string.Empty;
-    public string                               CategoryName { get; set; } = string.Empty;
+    public IReadOnlyList<CommentSupportMessage> History      { get; init; } = [];
+    public string                               UserMessage  { get; init; } = string.Empty;
+    public string                               IdeaText     { get; init; } = string.Empty;
+    public string                               CategoryName { get; init; } = string.Empty;
 }
 
-public sealed class CommentSupportChatResponse
+public sealed record CommentSupportChatResponse
 {
-    public string AssistantMessage { get; set; } = string.Empty;
-    public string Suggestion       { get; set; }
-    public bool   IsFinal          { get; set; }
+    public string AssistantMessage { get; init; } = string.Empty;
+    public string Suggestion       { get; init; }
+    public bool   IsFinal          { get; init; }
 }

@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.BL.AiModeration;
 
-public class ModerationResult
+public record ModerationResult
 {
     /// <summary>Whether the content passed moderation (i.e. is acceptable).</summary>
     public bool IsAcceptable { get; init; }

@@ -1,19 +1,19 @@
 namespace SynapseEnqueteManagement.UI.Admin.Models.QuestionSupport;
 
-public sealed class QuestionSupportMessage
+public sealed record QuestionSupportMessage
 {
-    public string Role    { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
+    public string Role    { get; init; } = string.Empty;
+    public string Content { get; init; } = string.Empty;
 }
 
-public sealed class QuestionSupportChatRequest
+public sealed record QuestionSupportChatRequest
 {
-    public IReadOnlyList<QuestionSupportMessage> History     { get; set; } = [];
-    public string                                UserMessage { get; set; } = string.Empty;
-    public bool                                  IsFirstTurn { get; set; }
+    public IReadOnlyList<QuestionSupportMessage> History     { get; init; } = [];
+    public string                                UserMessage { get; init; } = string.Empty;
+    public bool                                  IsFirstTurn { get; init; }
 }
 
-public sealed class QuestionSupportChatResponse
+public sealed record QuestionSupportChatResponse
 {
-    public string AssistantMessage { get; set; } = string.Empty;
+    public string AssistantMessage { get; init; } = string.Empty;
 }

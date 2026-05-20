@@ -175,46 +175,46 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         response.EnsureSuccessStatusCode();
     }
 
-    private class ApiQuestionDto
+    private record ApiQuestionDto
     {
-        public int QuestionId { get; set; }
-        public string Text { get; set; }
-        public string QuestionFormat { get; set; }
-        public List<string> AnswerChoices { get; set; } = new();
-        public int AnswerChoiceCount { get; set; }
-        public int? ChoiceIndex { get; set; }
-        public bool IsMandatory { get; set; }
-        public int Position { get; set; }
-        public string MediaUrl { get; set; }
-        public byte? MediaType { get; set; }
-        public bool MediaIsEmbed { get; set; }
-        public string MediaText { get; set; }
+        public int QuestionId { get; init; }
+        public string Text { get; init; }
+        public string QuestionFormat { get; init; }
+        public List<string> AnswerChoices { get; init; } = new();
+        public int AnswerChoiceCount { get; init; }
+        public int? ChoiceIndex { get; init; }
+        public bool IsMandatory { get; init; }
+        public int Position { get; init; }
+        public string MediaUrl { get; init; }
+        public byte? MediaType { get; init; }
+        public bool MediaIsEmbed { get; init; }
+        public string MediaText { get; init; }
     }
 
-    private class ParticipantStatusDto
+    private record ParticipantStatusDto
     {
-        public bool HasResponded { get; set; }
+        public bool HasResponded { get; init; }
     }
 
-    private class ApiParticipantDto
+    private record ApiParticipantDto
     {
-        public string ParticipantToken { get; set; } = string.Empty;
+        public string ParticipantToken { get; init; } = string.Empty;
     }
 
-    private class ApiResponseDto
+    private record ApiResponseDto
     {
-        public int ResponseId { get; set; }
-        public string Value { get; set; }
-        public int QuestionId { get; set; }
+        public int ResponseId { get; init; }
+        public string Value { get; init; }
+        public int QuestionId { get; init; }
     }
 
-    private class NavigationResult
+    private record NavigationResult
     {
-        public int? QuestionId { get; set; }
+        public int? QuestionId { get; init; }
     }
 
-    private class VisiblePathResult
+    private record VisiblePathResult
     {
-        public List<int> QuestionIds { get; set; } = [];
+        public List<int> QuestionIds { get; init; } = [];
     }
 }

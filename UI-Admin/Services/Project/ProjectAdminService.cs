@@ -4,34 +4,34 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 public class ProjectAdminService(HttpClient httpClient)
 {
-    private class ProjectTranslationPayload
+    private record ProjectTranslationPayload
     {
-        public string LanguageCode { get; set; }
-        public string Name { get; set; }
-        public string Topic { get; set; }
-        public string Introduction { get; set; }
+        public string LanguageCode { get; init; }
+        public string Name { get; init; }
+        public string Topic { get; init; }
+        public string Introduction { get; init; }
     }
 
-    private class ProjectRequest
+    private record ProjectRequest
     {
-        public string ShortForm { get; set; }
-        public string ImageUrl { get; set; }
-        public string InteractionMode { get; set; }
-        public string AiAssistance { get; set; }
-        public int? MinAge { get; set; }
-        public int? MaxAge { get; set; }
-        public bool RequestContactInfo { get; set; }
-        public bool AllowCrossLanguageIdeas { get; set; }
-        public int IdeaPageSize { get; set; }
-        public bool ExtraIdeasReplaceExisting { get; set; }
-        public int MaxExtraIdeaRequests { get; set; }
-        public int PlatformId { get; set; }
-        public string DefaultLanguageCode { get; set; }
-        public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
-        public ICollection<ProjectTranslationPayload> Translations { get; set; } = new List<ProjectTranslationPayload>();
-        public string Theme { get; set; } = "Default";
-        public string PrimaryColor { get; set; }
-        public string CustomCss { get; set; }
+        public string ShortForm { get; init; }
+        public string ImageUrl { get; init; }
+        public string InteractionMode { get; init; }
+        public string AiAssistance { get; init; }
+        public int? MinAge { get; init; }
+        public int? MaxAge { get; init; }
+        public bool RequestContactInfo { get; init; }
+        public bool AllowCrossLanguageIdeas { get; init; }
+        public int IdeaPageSize { get; init; }
+        public bool ExtraIdeasReplaceExisting { get; init; }
+        public int MaxExtraIdeaRequests { get; init; }
+        public int PlatformId { get; init; }
+        public string DefaultLanguageCode { get; init; }
+        public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
+        public ICollection<ProjectTranslationPayload> Translations { get; init; } = new List<ProjectTranslationPayload>();
+        public string Theme { get; init; } = "Default";
+        public string PrimaryColor { get; init; }
+        public string CustomCss { get; init; }
     }
 
     public async Task<List<ProjectAdminViewModel>> GetAllProjectsAsync(int? platformId = null)
@@ -98,12 +98,12 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<PlatformStats>() ?? new PlatformStats();
     }
 
-    public class PlatformStats
+    public record PlatformStats
     {
-        public int ActiveCount { get; set; }
-        public int DraftCount { get; set; }
-        public int ArchivedCount { get; set; }
-        public int ParticipantCount { get; set; }
+        public int ActiveCount { get; init; }
+        public int DraftCount { get; init; }
+        public int ArchivedCount { get; init; }
+        public int ParticipantCount { get; init; }
     }
 
     public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)
@@ -117,8 +117,8 @@ public class ProjectAdminService(HttpClient httpClient)
         return dto?.ProjectId == excludeProjectId;
     }
 
-    private sealed class ShortFormLookup
+    private sealed record ShortFormLookup
     {
-        public int ProjectId { get; set; }
+        public int ProjectId { get; init; }
     }
 }
