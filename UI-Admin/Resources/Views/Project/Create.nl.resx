@@ -58,6 +58,8 @@
   <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Thema</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Voorbeeld</value></data>
+  <data name="PreviewLight" xml:space="preserve"><value>Licht</value></data>
+  <data name="PreviewDark" xml:space="preserve"><value>Donker</value></data>
   <data name="PreviewHint" xml:space="preserve"><value>Live voorbeeld van thema, primaire kleur en aangepaste CSS.</value></data>
   <data name="PrimaryColorLabel" xml:space="preserve"><value>Primaire kleur (optioneel)</value></data>
   <data name="UseThemeColorLabel" xml:space="preserve"><value>Themakleur gebruiken</value></data>

@@ -237,9 +237,6 @@ Before shipping any UI change, walk through:
 
 Honest gaps, kept here so they don't get forgotten:
 
-- **Skip-to-content link** — first-tab "jump to main content" link is not yet implemented.
-- **Headings audit** — heading levels (`<h1>` … `<h6>`) are not yet audited per view; a screen-reader user navigating by headings may not get a perfectly clean outline.
-- **Form-error summary** — validation errors appear next to fields but there is no top-of-form summary linking to each invalid field.
 - **Image alt text on ideas and question media.** Both surfaces render `<img alt="">`. For ideas the "Describe image" AI output is the obvious fix — bind it to a dedicated `IdeaImageDescription` field and reuse it as the rendered `alt`. For question images the admin needs a new alt-text field next to `MediaUrl`. Highest-priority a11y gap in the codebase.
 - **Captions on uploaded video.** `<video>` elements have no `<track kind="captions">`. The admin UI should let admins upload a `.vtt` caption file alongside the video, OR require that the source already carries captions (e.g., YouTube auto-captions enabled).
 - **Audio transcripts.** First-class transcript field on questions with `MediaType = Audio`, surfaced in the participant UI in a `<details>` block so it doesn't dominate the layout.

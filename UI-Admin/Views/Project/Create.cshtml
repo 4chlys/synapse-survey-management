@@ -189,9 +189,19 @@
 
                 <div class="form-control">
                     <span class="label-text">@L["PreviewLabel"]</span>
-                    <div id="theme-preview-host"
-                         class="mt-1"
-                         data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())">
+                    <div class="grid grid-cols-2 gap-3 mt-1">
+                        <div>
+                            <span class="text-xs opacity-60">@L["PreviewLight"]</span>
+                            <div id="theme-preview-light"
+                                 data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())"
+                                 data-mode="light"></div>
+                        </div>
+                        <div>
+                            <span class="text-xs opacity-60">@L["PreviewDark"]</span>
+                            <div id="theme-preview-dark"
+                                 data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())"
+                                 data-mode="dark"></div>
+                        </div>
                     </div>
                     <span class="label-text-alt mt-1 opacity-70">
                         @L["PreviewHint"]

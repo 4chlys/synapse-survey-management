@@ -84,10 +84,69 @@ const PROJECT_THEME_CSS = `
 }
 `;
 
+// Mirror of UI-User/src/main.css daisyUI synapse-light / synapse-dark @plugin blocks.
+// Keep in sync when theme tokens change. Injected into the shadow root so
+// light-dark() resolves correctly for the forced-mode preview.
+const SYNAPSE_BASE_THEMES_CSS = `
+[data-theme="synapse-light"] {
+    color-scheme: light;
+    --color-base-100: oklch(100% 0 0);
+    --color-base-200: oklch(97% 0.01 277);
+    --color-base-300: oklch(91% 0.02 277);
+    --color-base-content: oklch(15% 0.04 278);
+    --color-primary: oklch(52% 0.22 277);
+    --color-primary-content: oklch(100% 0 0);
+    --color-secondary: oklch(61% 0.16 162);
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: oklch(62% 0.22 37);
+    --color-accent-content: oklch(100% 0 0);
+    --color-neutral: oklch(47% 0.04 278);
+    --color-neutral-content: oklch(97% 0.01 277);
+    --color-info: oklch(61% 0.14 230);
+    --color-info-content: oklch(98% 0.01 230);
+    --color-success: oklch(61% 0.16 162);
+    --color-success-content: oklch(100% 0 0);
+    --color-warning: oklch(75% 0.16 80);
+    --color-warning-content: oklch(20% 0.05 80);
+    --color-error: oklch(62% 0.22 37);
+    --color-error-content: oklch(100% 0 0);
+    --radius-selector: 0.75rem;
+    --radius-field: 0.75rem;
+    --radius-box: 1rem;
+}
+[data-theme="synapse-dark"] {
+    color-scheme: dark;
+    --color-base-100: oklch(15% 0.04 278);
+    --color-base-200: oklch(20% 0.04 278);
+    --color-base-300: oklch(27% 0.04 278);
+    --color-base-content: oklch(97% 0.01 277);
+    --color-primary: oklch(64% 0.22 277);
+    --color-primary-content: oklch(100% 0 0);
+    --color-secondary: oklch(65% 0.14 162);
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: oklch(67% 0.20 37);
+    --color-accent-content: oklch(100% 0 0);
+    --color-neutral: oklch(55% 0.04 278);
+    --color-neutral-content: oklch(97% 0.01 277);
+    --color-info: oklch(65% 0.14 230);
+    --color-info-content: oklch(98% 0.01 230);
+    --color-success: oklch(65% 0.14 162);
+    --color-success-content: oklch(100% 0 0);
+    --color-warning: oklch(78% 0.14 80);
+    --color-warning-content: oklch(20% 0.05 80);
+    --color-error: oklch(67% 0.20 37);
+    --color-error-content: oklch(100% 0 0);
+    --radius-selector: 0.75rem;
+    --radius-field: 0.75rem;
+    --radius-box: 1rem;
+}
+`;
+
 // ── Live theme preview ─────────────────────────────────────────────
-const themeSelect = document.getElementById('Theme')              as HTMLSelectElement | null;
-const cssTextarea = document.getElementById('CustomCss')          as HTMLTextAreaElement | null;
-const previewHost = document.getElementById('theme-preview-host') as HTMLDivElement | null;
+const themeSelect      = document.getElementById('Theme')               as HTMLSelectElement | null;
+const cssTextarea      = document.getElementById('CustomCss')           as HTMLTextAreaElement | null;
+const previewHostLight = document.getElementById('theme-preview-light') as HTMLDivElement | null;
+const previewHostDark  = document.getElementById('theme-preview-dark')  as HTMLDivElement | null;
 
 interface PreviewRefs {
     shadow:     ShadowRoot;
@@ -97,11 +156,11 @@ interface PreviewRefs {
     wrapper:    HTMLDivElement;
 }
 
-function buildPreview(host: HTMLDivElement): PreviewRefs {
+function buildPreview(host: HTMLDivElement, mode: 'light' | 'dark'): PreviewRefs {
     const shadow = host.attachShadow({ mode: 'open' });
 
     const themeStyle = document.createElement('style');
-    themeStyle.textContent = PROJECT_THEME_CSS + `
+    themeStyle.textContent = SYNAPSE_BASE_THEMES_CSS + PROJECT_THEME_CSS + `
         .preview-root {
             display: block;
             padding: 1rem;
@@ -169,6 +228,7 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
     const wrapper = document.createElement('div');
     wrapper.className = 'preview-root';
     wrapper.setAttribute('data-project-theme', host.dataset.initialTheme ?? 'default');
+    wrapper.setAttribute('data-theme', mode === 'dark' ? 'synapse-dark' : 'synapse-light');
     wrapper.innerHTML = `
         <div id="ideas-list">
             <a>
@@ -187,7 +247,8 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
     return { shadow, themeStyle, primaryStyle, userStyle, wrapper };
 }
 
-const refs = previewHost ? buildPreview(previewHost) : null;
+const lightRefs = previewHostLight ? buildPreview(previewHostLight, 'light') : null;
+const darkRefs  = previewHostDark  ? buildPreview(previewHostDark,  'dark')  : null;
 
 // Mirror of UI-User/Helpers/ColorHelpers.cs — keep threshold in sync (0.45).
 function hexRelativeLuminance(hex: string): number {
@@ -257,24 +318,21 @@ function complementaryHue(hex: string): string {
 }
 
 function applyPreview(): void {
-    if (!refs) return;
     // GetEnumSelectList sets option values to integer strings ("0","1"…);
     // the option text is the enum member name ("Default","Playful"…).
     const themeValue = themeSelect?.options[themeSelect.selectedIndex]?.text.toLowerCase() ?? 'default';
-    refs.wrapper.setAttribute('data-project-theme', themeValue);
 
     // Use a <style> rule (not an inline style) so CustomCss can still override
     // --color-primary, matching the real page where both are stylesheet rules
     // and CustomCss comes last.
     const color = hidden?.value.trim() ?? '';
-    if (color === '') {
-        refs.primaryStyle.textContent = '';
-    } else {
+    let primaryStyleContent = '';
+    if (color !== '') {
         const fg     = contrastingForeground(color);
         const hover  = shiftLightness(color, -0.06);
         const focus  = shiftLightness(color, -0.12);
         const accent = complementaryHue(color);
-        refs.primaryStyle.textContent =
+        primaryStyleContent =
             `[data-project-theme]{` +
             `--color-primary:${color};` +
             `--color-primary-content:${fg};` +
@@ -283,7 +341,14 @@ function applyPreview(): void {
             `--color-accent:${accent}}`;
     }
 
-    refs.userStyle.textContent = cssTextarea?.value ?? '';
+    const userStyleContent = cssTextarea?.value ?? '';
+
+    for (const refs of [lightRefs, darkRefs]) {
+        if (!refs) continue;
+        refs.wrapper.setAttribute('data-project-theme', themeValue);
+        refs.primaryStyle.textContent = primaryStyleContent;
+        refs.userStyle.textContent = userStyleContent;
+    }
 }
 
 themeSelect?.addEventListener('change', applyPreview);
