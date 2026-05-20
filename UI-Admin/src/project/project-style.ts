@@ -36,46 +36,47 @@ if (picker && hidden && useDefault) {
 // when UI-User adds or changes a theme. Injected into the shadow root so
 // the preview renders identically to the participant page.
 const PROJECT_THEME_CSS = `
+:host { color-scheme: light dark; }
 [data-project-theme="default"] {
-    --color-primary: oklch(52% 0.22 277);
+    --color-primary: light-dark(oklch(52% 0.22 277), oklch(64% 0.22 277));
     --color-primary-content: oklch(100% 0 0);
-    --color-base-100: oklch(100% 0 0);
-    --color-base-200: oklch(97% 0.01 277);
-    --color-base-300: oklch(91% 0.02 277);
-    --color-base-content: oklch(15% 0.04 278);
+    --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
+    --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
+    --color-base-content: light-dark(oklch(15% 0.04 278), oklch(97% 0.01 277));
     --font-heading: 'Space Grotesk', ui-sans-serif, sans-serif;
     --radius-field: 0.75rem;
     --radius-box: 1rem;
 }
 [data-project-theme="playful"] {
-    --color-primary: oklch(78% 0.16 80);
+    --color-primary: light-dark(oklch(62% 0.18 65), oklch(78% 0.16 65));
     --color-primary-content: oklch(20% 0.05 80);
-    --color-base-100: oklch(100% 0 0);
-    --color-base-200: oklch(97% 0.01 277);
-    --color-base-300: oklch(91% 0.02 277);
-    --color-base-content: oklch(15% 0.04 278);
+    --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
+    --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
+    --color-base-content: light-dark(oklch(15% 0.04 278), oklch(97% 0.01 277));
     --font-heading: 'Nunito', ui-sans-serif, sans-serif;
     --radius-field: 1rem;
     --radius-box: 1.25rem;
 }
 [data-project-theme="professional"] {
-    --color-primary: oklch(35% 0.04 250);
+    --color-primary: light-dark(oklch(35% 0.04 250), oklch(55% 0.06 250));
     --color-primary-content: oklch(100% 0 0);
-    --color-base-100: oklch(100% 0 0);
-    --color-base-200: oklch(97% 0.01 277);
-    --color-base-300: oklch(91% 0.02 277);
-    --color-base-content: oklch(15% 0.04 278);
+    --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
+    --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
+    --color-base-content: light-dark(oklch(15% 0.04 278), oklch(97% 0.01 277));
     --font-heading: 'Source Sans 3', ui-sans-serif, sans-serif;
     --radius-field: 0.25rem;
     --radius-box: 0.375rem;
 }
 [data-project-theme="highcontrast"] {
-    --color-primary: oklch(0% 0 0);
-    --color-primary-content: oklch(100% 0 0);
-    --color-base-100: oklch(100% 0 0);
-    --color-base-200: oklch(100% 0 0);
-    --color-base-300: oklch(80% 0 0);
-    --color-base-content: oklch(0% 0 0);
+    --color-primary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(0% 0 0));
+    --color-base-100: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+    --color-base-200: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+    --color-base-300: light-dark(oklch(80% 0 0), oklch(20% 0 0));
+    --color-base-content: light-dark(oklch(0% 0 0), oklch(100% 0 0));
     --color-warning: oklch(95% 0.20 100);
     --font-heading: 'Arial', sans-serif;
     --radius-field: 0;
