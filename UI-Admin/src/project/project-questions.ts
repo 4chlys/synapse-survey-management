@@ -1,8 +1,14 @@
 import { toast } from '../lib/notify';
 import { wireQuestionMediaPanel, hydrateMediaPanel } from '../lib/question-media';
+import { readQuestionsI18n, readFormI18n } from '../lib/questions-i18n';
 
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal') as HTMLDivElement | null;
+    const typePicker = document.getElementById('type-picker') as HTMLDivElement | null;
+    const typePickerClose = document.getElementById('type-picker-close') as HTMLButtonElement | null;
+    const typePickerBackdrop = document.getElementById('type-picker-backdrop') as HTMLButtonElement | null;
+    const drawerTypeIcon = document.getElementById('drawer-type-icon') as HTMLElement | null;
+    const drawerTypeLabel = document.getElementById('drawer-type-label') as HTMLElement | null;
 
     const questionForm = document.getElementById('question-form') as HTMLFormElement | null;
     const questionsList = document.getElementById('questions-list') as HTMLDivElement | null;
@@ -14,8 +20,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const textError = document.getElementById('text-error') as HTMLElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
 
+    const i18n = { ...readQuestionsI18n(questionsList), ...readFormI18n(questionForm) };
+
+    // pending section when picker → drawer; cleared after drawer opens
+    let pendingSectionId = '';
+
+    const TYPE_META: Record<string, { label: string; iconBg: string; iconText: string; svg: string }> = {
+        MultipleChoice: { label: i18n.formatMCQ,    iconBg: 'bg-primary/15',   iconText: 'text-primary',   svg: 'M9 12l2 2 4-4M5 8h14M5 16h10' },
+        SingleChoice:   { label: i18n.formatSCQ,    iconBg: 'bg-secondary/15', iconText: 'text-secondary', svg: 'M9 12l2 2 4-4M3 12a9 9 0 1018 0 9 9 0 00-18 0z' },
+        Open:           { label: i18n.formatOpen,   iconBg: 'bg-info/15',      iconText: 'text-info',      svg: 'M4 6h16M4 10h16M4 14h10' },
+        Likert:         { label: i18n.formatLikert, iconBg: 'bg-warning/15',   iconText: 'text-warning',   svg: 'M7 20V10M12 20V4M17 20V14' },
+    };
+
+    function updateDrawerTypeHeader(type: string): void {
+        const m = TYPE_META[type] ?? TYPE_META.MultipleChoice;
+        if (drawerTypeLabel) drawerTypeLabel.textContent = m.label;
+        if (drawerTypeIcon) {
+            drawerTypeIcon.className = `w-10 h-10 rounded-xl ${m.iconBg} ${m.iconText} flex items-center justify-center flex-shrink-0`;
+            drawerTypeIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="${m.svg}"/></svg>`;
+        }
+    }
+
+    function openTypePicker(sectionId = ''): void {
+        pendingSectionId = sectionId;
+        typePicker?.classList.add('modal-open');
+    }
+    function closeTypePicker(): void {
+        typePicker?.classList.remove('modal-open');
+    }
+
     if (new URLSearchParams(window.location.search).get('saved') === '1')
-        toast('Opgeslagen', 'success');
+        toast(i18n.savedToast, 'success');
 
     const projectId = parseInt(questionForm?.dataset.projectId ?? questionsList?.dataset.projectId ?? '0', 10);
 
@@ -25,8 +60,15 @@ document.addEventListener('DOMContentLoaded', () => {
         wireQuestionMediaPanel('card-', projectId);
     }
 
-    function openModal(): void {
+    function openModal(sectionId = '', type = 'MultipleChoice'): void {
         resetModal();
+        const formatBtn = document.querySelector<HTMLElement>(`.type-btn[data-type="${type}"]`);
+        if (formatBtn) selectType(type, formatBtn);
+        updateDrawerTypeHeader(type);
+        if (sectionId) {
+            const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
+            if (sectionSelect) sectionSelect.value = sectionId;
+        }
         modal?.classList.add('modal-open');
     }
 
@@ -53,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mandatoryCb) mandatoryCb.checked = true;
         if (questionForm) questionForm.action = createUrl;
         const title = document.getElementById('modal-title');
-        if (title) title.textContent = 'Vraag aanmaken';
+        if (title) title.textContent = i18n.modalTitleCreate;
     }
 
     function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string, isMandatory: boolean, mediaUrl = '', mediaType = 0, mediaIsEmbed = false, mediaText = ''): void {
@@ -84,7 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (questionForm) questionForm.action = questionForm.dataset.updateUrl ?? '';
 
         const title = document.getElementById('modal-title');
-        if (title) title.textContent = 'Vraag bewerken';
+        if (title) title.textContent = i18n.modalTitleEdit;
+
+        updateDrawerTypeHeader(format);
 
         hydrateMediaPanel('', mediaUrl, mediaType, mediaIsEmbed, mediaText);
 
@@ -122,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'answer-input input input-bordered input-xs flex-1';
-        input.placeholder = 'Antwoord...';
+        input.placeholder = i18n.answerPlaceholder;
         input.maxLength = 500;
         input.addEventListener('input', () => answersError?.classList.add('hidden'));
         const removeBtn = document.createElement('button');
@@ -135,7 +179,33 @@ document.addEventListener('DOMContentLoaded', () => {
         list.appendChild(row);
     }
 
-    addQuestionBtn?.addEventListener('click', openModal);
+    addQuestionBtn?.addEventListener('click', () => openTypePicker());
+
+    // Dashed add button rendered inside #questions-list by questionnaire-tree
+    questionsList?.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('.open-add-modal');
+        if (btn) openTypePicker();
+    });
+
+    // Section-scoped add button in section headers / empty-state buttons
+    questionsList?.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('.add-in-section-btn');
+        if (btn) openTypePicker(btn.dataset.sectionId ?? '');
+    });
+
+    // Type picker tile → opens drawer with chosen type + pending section
+    document.querySelectorAll<HTMLElement>('.picker-tile').forEach(tile => {
+        tile.addEventListener('click', () => {
+            const type = tile.dataset.type ?? 'MultipleChoice';
+            const sec = pendingSectionId;
+            closeTypePicker();
+            openModal(sec, type);
+        });
+    });
+    typePickerClose?.addEventListener('click', closeTypePicker);
+    typePickerBackdrop?.addEventListener('click', closeTypePicker);
+    typePicker?.addEventListener('click', (e) => { if (e.target === typePicker) closeTypePicker(); });
+
     modalClose?.addEventListener('click', closeModal);
     modalCancel?.addEventListener('click', closeModal);
     modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
@@ -157,19 +227,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
         if (!textArea?.value.trim()) {
             e.preventDefault();
-            if (textError) textError.textContent = 'Dit veld moet ingevuld zijn.';
+            if (textError) textError.textContent = i18n.fieldRequired;
             textError?.classList.remove('hidden');
             valid = false;
         } else if ((textArea?.value.trim().length ?? 0) > 500) {
             e.preventDefault();
-            if (textError) textError.textContent = 'Vraagtekst mag maximaal 500 tekens bevatten.';
+            if (textError) textError.textContent = i18n.maxQuestionText;
             textError?.classList.remove('hidden');
             valid = false;
         } else {
             textError?.classList.add('hidden');
         }
 
-        // Validate answers for MCQ and SCQ
+        // Validate answers for MCQ and SCQ — read before the validation block so both branches see it
         const currentType = (document.getElementById('QuestionFormat') as HTMLInputElement | null)?.value;
         if (currentType === 'MultipleChoice' || currentType === 'SingleChoice') {
             const answerInputs = Array.from(document.querySelectorAll<HTMLInputElement>('.answer-input'));
@@ -177,14 +247,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (answerInputs.length < 2) {
                 e.preventDefault();
                 if (answersError) {
-                    answersError.textContent = 'Voeg minimaal 2 antwoorden toe.';
+                    answersError.textContent = i18n.minTwoAnswers;
                     answersError.classList.remove('hidden');
                 }
                 valid = false;
             } else if (answerInputs.some(a => !a.value.trim())) {
                 e.preventDefault();
                 if (answersError) {
-                    answersError.textContent = 'Alle antwoorden moeten ingevuld zijn.';
+                    answersError.textContent = i18n.allAnswersFilled;
                     answersError.classList.remove('hidden');
                 }
                 valid = false;
@@ -290,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'input input-bordered input-xs flex-1';
-        input.placeholder = 'Antwoord…';
+        input.placeholder = i18n.answerPlaceholder;
         input.maxLength = 500;
         input.value = value;
         input.addEventListener('input', () => cardAnswersError?.classList.add('hidden'));
@@ -315,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const values = inputs.map(i => i.value.trim()).filter(v => v);
             if (values.length < 2) {
                 if (cardAnswersError) {
-                    cardAnswersError.textContent = 'Voeg minimaal 2 antwoorden toe.';
+                    cardAnswersError.textContent = i18n.minTwoAnswers;
                     cardAnswersError.classList.remove('hidden');
                 }
                 return;
@@ -337,12 +407,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 cardAnswersError?.classList.add('hidden');
                 updateCardVisibility();
                 document.dispatchEvent(new CustomEvent('questions-reload'));
-                toast('Opgeslagen', 'success');
+                toast(i18n.savedToast, 'success');
             } else {
-                toast('Opslaan mislukt', 'error');
+                toast(i18n.saveFailedToast, 'error');
             }
         } catch {
-            toast('Opslaan mislukt', 'error');
+            toast(i18n.saveFailedToast, 'error');
         }
     });
 });
