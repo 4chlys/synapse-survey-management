@@ -1,4 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Nunito:wght@400;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+/* ─── Self-hosted fonts ─────────────────────────────────────
+   Variable WOFF2 (latin subset) served from wwwroot/fonts/.
+   Keep in sync with <link rel="preload"> in _Layout.cshtml. */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/latin.woff2') format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('/fonts/nunito/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fonts/source-sans-3/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 @plugin "daisyui";
 
@@ -409,30 +443,46 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 /* ─── Per-project theming ─────────────────────────────────────────────
-   Each block overrides primary/font/radius only. Surfaces stay from
-   daisyUI synapse-light/synapse-dark so the user dark-mode toggle keeps
-   working across all 5 project themes. The "dark" and "highcontrast"
-   themes additionally pin their own surfaces & color-scheme. */
+   Each preset declares a coherent triad (primary + secondary + accent)
+   plus font and radii. Surfaces stay from daisyUI synapse-light /
+   synapse-dark so the user dark-mode toggle keeps working across every
+   preset. HighContrast additionally pins surfaces. */
 
 [data-project-theme="default"] {
     --color-primary: light-dark(oklch(52% 0.22 277), oklch(64% 0.22 277));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(61% 0.16 162), oklch(65% 0.14 162));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(62% 0.22 37), oklch(67% 0.20 37));
+    --color-accent-content: oklch(100% 0 0);
     --font-heading: 'Space Grotesk', ui-sans-serif, sans-serif;
     --radius-field: 0.75rem;
     --radius-box: 1rem;
 }
 
 [data-project-theme="playful"] {
+    /* Warm amber primary, fresh cyan-green secondary, hot-pink accent —
+       energetic triad tuned for the 12-15 audience. */
     --color-primary: light-dark(oklch(62% 0.18 65), oklch(78% 0.16 65));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-secondary: light-dark(oklch(64% 0.16 180), oklch(72% 0.14 180));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(64% 0.22 350), oklch(72% 0.20 350));
+    --color-accent-content: oklch(100% 0 0);
     --font-heading: 'Nunito', ui-sans-serif, sans-serif;
     --radius-field: 1rem;
     --radius-box: 1.25rem;
 }
 
 [data-project-theme="professional"] {
+    /* Deep navy primary, muted teal secondary, deep mustard accent —
+       reserved triad tuned for 22-30 / civic contexts. No bright coral. */
     --color-primary: light-dark(oklch(35% 0.04 250), oklch(55% 0.06 250));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(48% 0.08 200), oklch(60% 0.08 200));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(55% 0.12 70), oklch(68% 0.12 70));
+    --color-accent-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --font-heading: 'Source Sans 3', ui-sans-serif, sans-serif;
     --radius-field: 0.25rem;
     --radius-box: 0.375rem;

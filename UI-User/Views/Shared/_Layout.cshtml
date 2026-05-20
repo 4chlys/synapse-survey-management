@@ -17,6 +17,22 @@
     <title>@ViewData["Title"] - @ViewData["OrganisationName"]</title>
     <link rel="icon" type="image/png" href="~/favicon.png" />
 
+    @* Font preloads — body font always; heading font conditional on project theme.
+       Keep in sync with @font-face declarations in UI-User/src/main.css. *@
+    <link rel="preload" href="/fonts/inter/latin.woff2" as="font" type="font/woff2" crossorigin />
+    @{
+        var _headingFontPath = (ViewData["ProjectTheme"] as string) switch {
+            "playful"      => "/fonts/nunito/latin.woff2",
+            "professional" => "/fonts/source-sans-3/latin.woff2",
+            "highcontrast" => null,
+            _              => "/fonts/space-grotesk/latin.woff2",
+        };
+    }
+    @if (_headingFontPath != null)
+    {
+        <link rel="preload" href="@_headingFontPath" as="font" type="font/woff2" crossorigin />
+    }
+
     @* Read by ideahub.ts → getProjectId() *@
     <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)" />
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@

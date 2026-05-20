@@ -6,6 +6,53 @@ const picker     = document.getElementById('primary-color-picker') as HTMLInputE
 const hidden     = document.getElementById('PrimaryColor')         as HTMLInputElement | null;
 const useDefault = document.getElementById('use-theme-color')      as HTMLInputElement | null;
 
+// ── Client-side contrast advisory ──────────────────────────────────
+// Mirror of BL/Helpers/ColorHelpers.cs. Server validation is authoritative;
+// this just shows the admin the problem before they hit submit.
+function srgbToLinear(c: number): number {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(hex: string): number {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+}
+
+function contrastRatio(hex1: string, hex2: string): number {
+    const l1 = relativeLuminance(hex1);
+    const l2 = relativeLuminance(hex2);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+const contrastWarning = document.getElementById('primary-color-contrast-warning');
+const contrastWarningText = contrastWarning?.querySelector<HTMLSpanElement>('[data-warning-text]');
+
+function updateContrastWarning(hex: string): void {
+    if (!contrastWarning || !contrastWarningText) return;
+    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        contrastWarning.classList.add('hidden');
+        return;
+    }
+    const lightBase = contrastWarning.dataset.lightBase ?? '#FFFFFF';
+    const darkBase  = contrastWarning.dataset.darkBase  ?? '#1A1430';
+    const minRatio  = parseFloat(contrastWarning.dataset.minRatio ?? '3');
+    const failsLight = contrastRatio(hex, lightBase) < minRatio;
+    const failsDark  = contrastRatio(hex, darkBase)  < minRatio;
+    if (!failsLight && !failsDark) {
+        contrastWarning.classList.add('hidden');
+        return;
+    }
+    const msg = failsLight && failsDark
+        ? contrastWarning.dataset.msgBoth
+        : failsLight
+            ? contrastWarning.dataset.msgLight
+            : contrastWarning.dataset.msgDark;
+    contrastWarningText.textContent = msg ?? '';
+    contrastWarning.classList.remove('hidden');
+}
+
 if (picker && hidden && useDefault) {
     const initial = hidden.value.trim();
     if (initial === '') {
@@ -15,20 +62,24 @@ if (picker && hidden && useDefault) {
         useDefault.checked = false;
         picker.disabled = false;
         picker.value = initial;
+        updateContrastWarning(initial);
     }
 
     useDefault.addEventListener('change', () => {
         if (useDefault.checked) {
             picker.disabled = true;
             hidden.value = '';
+            updateContrastWarning('');
         } else {
             picker.disabled = false;
             hidden.value = picker.value;
+            updateContrastWarning(picker.value);
         }
     });
 
     picker.addEventListener('input', () => {
         if (!useDefault.checked) hidden.value = picker.value;
+        updateContrastWarning(useDefault.checked ? '' : picker.value);
     });
 }
 

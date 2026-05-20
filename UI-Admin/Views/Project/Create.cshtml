@@ -222,6 +222,22 @@
                     </div>
                     <input asp-for="PrimaryColor" type="hidden" />
                     <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
+                    @* Client-side contrast advisory. Server validation in BL is authoritative;
+                       this just surfaces the problem in real time so the admin can react before submit. *@
+                    <div id="primary-color-contrast-warning"
+                         class="hidden mt-1 flex items-start gap-1 text-warning text-xs"
+                         role="status" aria-live="polite"
+                         data-light-base="#FFFFFF"
+                         data-dark-base="#1A1430"
+                         data-min-ratio="3"
+                         data-msg-light="@L["PrimaryColor_LowContrast_Light"]"
+                         data-msg-dark="@L["PrimaryColor_LowContrast_Dark"]"
+                         data-msg-both="@L["PrimaryColor_LowContrast_Both"]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5">
+                            <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        </svg>
+                        <span data-warning-text></span>
+                    </div>
                 </div>
 
                 <div class="form-control">
