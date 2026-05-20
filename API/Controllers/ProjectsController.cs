@@ -163,22 +163,6 @@ public class ProjectsController(
     public async Task<ActionResult<AdminProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
     {
         var imageUrl = dto.ImageUrl ?? string.Empty;
-        var defaultName = dto.Translations
-            .FirstOrDefault(t => t.LanguageCode == dto.DefaultLanguageCode)?.Name
-            ?? dto.Translations.FirstOrDefault()?.Name
-            ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            // projectId=0: image is generated before the project exists, so the call is not attributed to a project.
-            var result = await imageGenerationService.GenerateProjectImageAsync(defaultName, 0, ct);
-            if (result.IsSuccess)
-            {
-                var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
-                imageUrl = await storageService.UploadBytesAsync(
-                    result.ImageBytes, "projects", $"generated{extension}", result.MimeType);
-            }
-        }
 
         var project = await projectManager.CreateProjectAsync(
             MapTranslations(dto.Translations),
@@ -258,6 +242,23 @@ public class ProjectsController(
 
         var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
         return Ok(MapToAdminDto(project));
+    }
+
+    [HttpPost("generate-image")]
+    public async Task<IActionResult> GenerateImage([FromQuery] string name, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { error = "Project name is required." });
+
+        var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
+        var url = await storageService.UploadBytesAsync(
+            result.ImageBytes, "projects", $"generated{extension}", result.MimeType);
+
+        return Ok(new { url });
     }
 
     private static bool IsAiGeneratedImageUrl(string imageUrl) =>
