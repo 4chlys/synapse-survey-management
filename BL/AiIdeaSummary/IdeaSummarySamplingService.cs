@@ -4,7 +4,12 @@ using SynapseEnqueteManagement.BL.Sorting.Embeddings;
 
 namespace SynapseEnqueteManagement.BL.AiIdeaSummary;
 
-public sealed class IdeaSummarySamplingService
+public interface IIdeaSummarySamplingService
+{
+    List<Idea> Sample(IReadOnlyList<Idea> ideas, IdeaSummarySamplingStrategy strategy, int? cap);
+}
+
+public sealed class IdeaSummarySamplingService : IIdeaSummarySamplingService
 {
     public List<Idea> Sample(
         IReadOnlyList<Idea> ideas,
