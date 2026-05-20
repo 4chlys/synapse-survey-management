@@ -2,18 +2,35 @@
 
 This platform collects input from people aged roughly 12–30, across cities, schools, and youth organisations. A participant who cannot use the app is a missed voice. Accessibility is not a feature here — it is the entire point of the product.
 
-This document maps every accessibility and inclusion mechanism the app currently implements, why it exists, and where it lives in the code.
+This document has two jobs:
+
+1. **Baseline** — it maps every accessibility and inclusion mechanism the app currently implements, why it exists, and where it lives in the code.
+2. **Audit starting point** — the [Audit backlog](#audit-backlog--known-gaps) at the end is the honest list of known gaps, each mapped to a WCAG success criterion and a rough severity, so a full audit has a head start instead of a blank page.
+
+Status legend used throughout: ✅ implemented · ⚠️ partial / depends on admin · ❌ gap (in the backlog).
 
 ## Guiding principles
 
 1. **The participant's environment is authoritative.** If the user has reduced-motion on at the OS level, dark mode on at the OS level, or a specific language, the app respects that without asking.
 2. **Multiple input modalities.** Every action must be reachable by keyboard, by touch, and (where it makes sense) by voice. No path is mouse-only.
 3. **No login = no per-user settings.** Participants are anonymous behind a session cookie. The app cannot remember preferences across devices, so it must read the right signal from the browser every time.
-4. **Visual content is content.** Color carries no information that is not also conveyed by shape, text, or icon. Contrast and font sizing are tested against WCAG AA at minimum.
+4. **Visual content is content.** Colour carries no information that is not also conveyed by shape, text, or icon. Contrast and font sizing are tested against WCAG AA at minimum.
+5. **Be honest about gaps.** A known, documented gap is safer than an assumed-solved one. The backlog below is deliberately exhaustive.
 
-## Reduced motion
+## How to use this document for an audit
 
-`prefers-reduced-motion` is an OS-level setting that the browser exposes to CSS. The app reads it and neutralises every animation when set.
+- Sections marked ✅ are *claims to verify*, not proof — confirm each against the live app and a screen reader.
+- The [Audit backlog](#audit-backlog--known-gaps) is the work list. Each item has a WCAG reference and severity.
+- The [Manual testing checklist](#manual-testing-checklist) and [Automated testing](#automated-testing) sections describe how to run the audit.
+- Target conformance: **WCAG 2.2 Level AA**. A youth-civic platform should not aim lower.
+
+---
+
+# Implemented mechanisms
+
+## Reduced motion ✅
+
+`prefers-reduced-motion` is an OS-level setting the browser exposes to CSS. The app reads it and neutralises every animation when set.
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -26,57 +43,27 @@ This document maps every accessibility and inclusion mechanism the app currently
 }
 ```
 
-Lives in `UI-User/src/main.css`. The `!important` is the documented project exception — accessibility resets must beat any per-element animation declaration.
+Lives in `UI-User/src/main.css`. The `!important` is the documented project exception — accessibility resets must beat any per-element animation declaration. The app does **not** expose an in-app toggle: the OS signal is authoritative. See `Documentation/prefers-reduced-motion.md` for the full rationale, OS paths, and who relies on it.
 
-### Who has it on
+Neutralises: `survey-slide`, `survey-card`, `page-enter`, `chat-bubble-*`, `typing-dot`, `landing-float-up`, `orbit-spin`, `slide-up`, `fade-up`, `shake`. Content still changes — only motion is stripped.
 
-| Group | Why |
-|---|---|
-| Users with vestibular disorders (motion sickness, vertigo) | Motion triggers physical symptoms |
-| Many users with ADHD / autism | Animation is cognitively distracting |
-| Users on battery-saver mode | Windows and some Android OEMs auto-enable it |
-| Older users on inherited devices | Apple defaults it on for new iCloud-restored devices over a threshold |
-| Anyone who hit it accidentally | And never turned it back off |
+## Dark mode ✅
 
-Industry estimates 2–5 % of users globally. For a 12–30 youth platform probably 1–3 %, still hundreds of participants over a long-running survey.
+The user toggles light/dark from the header at any time; the choice is stored in a cookie (`synapse-theme`) and persists across page loads. On first visit the toggle follows the OS `prefers-color-scheme`. Both daisyUI themes (`synapse-light`, `synapse-dark`) and every project preset are tuned for both modes via `light-dark()` tokens — a project's brand stays recognisable in dark mode; only lightness shifts, not hue.
 
-### How users enable it
+## High-contrast theme ⚠️
 
-| Platform | Path |
-|---|---|
-| Windows 10 / 11 | Settings → Accessibility → Visual effects → "Animation effects" off |
-| macOS | System Settings → Accessibility → Display → "Reduce motion" |
-| iOS / iPadOS | Settings → Accessibility → Motion → "Reduce Motion" |
-| Android | Settings → Accessibility → "Remove animations" |
-| Firefox override | `about:config` → `ui.prefersReducedMotion` = 1 |
-| Chrome DevTools (test) | Rendering panel → "Emulate CSS media feature prefers-reduced-motion" |
+A project admin can set `Theme = ProjectTheme.HighContrast`. This is a **project-level** choice, not a per-user toggle — used when the audience or context demands maximum legibility (school accessibility programmes, vision-impaired cohorts, wall projection).
 
-The app does NOT expose an in-app toggle. The OS signal is authoritative; duplicating it would force users to find it twice and remember it on every site.
+The `[data-project-theme="highcontrast"]` block in `UI-User/src/main.css`:
 
-### What it neutralises in this codebase
-
-- `survey-slide` — card-reel translate
-- `survey-card` — vacuum-scale entrance / exit
-- `page-enter` — slide-up on view mount
-- `chat-bubble-left` / `chat-bubble-right` / `typing-dot` — chat animations
-- `landing-float-up` — floating background cards on landing
-- `orbit-spin` — traveling-border CTA hover
-- `slide-up`, `fade-up`, `shake` — small-element keyframes
-
-Content still changes — only the motion is stripped.
-
-## High-contrast theme
-
-A project admin can set `Theme = ProjectTheme.HighContrast` on a project. This is a project-level choice — not a per-user toggle — used when the audience or context demands maximum legibility (school accessibility programmes, vision-impaired participants, projection on a wall, etc.).
-
-The HighContrast block in `UI-User/src/main.css`:
-
-- **Pure-black primary** (`oklch(0% 0 0)`), **pure-white surfaces** (`oklch(100% 0 0)`), pure-black text.
-- **Bright-yellow warnings** (`oklch(95% 0.20 100)`) so they remain distinguishable from semantic blue/red.
-- **Arial font** — system-installed everywhere, no web-font load, predictable letter shapes.
-- **Zero border-radius** — sharper edges read more clearly for users with low vision.
-- **Forced-opaque text** — Tailwind utilities like `text-base-content/60` are translucent by default; under HighContrast they are reset to full opacity so low-emphasis text becomes high-emphasis.
-- **3px focus outline** with `outline-offset: 2px` — keyboard-focused element is unmissable.
+- **Maximum-contrast primary** — `light-dark(oklch(0% 0 0), oklch(95% 0 0))`: pure black on light surfaces, near-white on dark.
+- **Pinned surfaces** — white / near-black (`oklch(8% 0 0)`) base, so the contrast holds in both modes.
+- **Bright-yellow warnings** (`oklch(95% 0.20 100)`) — distinguishable from semantic colours.
+- **Arial font** — system-installed, no web-font load, predictable letterforms.
+- **Zero border-radius** — sharper edges read more clearly for low vision.
+- **Forced-opaque text** — Tailwind's translucent utilities (`text-base-content/40…80`, `border-base-content/10…30`) are reset to full opacity.
+- **3px focus outline** with `outline-offset: 2px`:
 
 ```css
 [data-project-theme="highcontrast"] :focus-visible {
@@ -85,172 +72,210 @@ The HighContrast block in `UI-User/src/main.css`:
 }
 ```
 
-## Color contrast guard
+⚠️ **Limitation:** this is opt-in per project. The app does **not** respond to the OS `forced-colors` (Windows High Contrast Mode) or `prefers-contrast` media queries — a Windows-HC user on a normally-themed project gets no adaptation. See the backlog.
 
-Every project admin can pick a custom primary brand color. The Business Layer rejects any pick that fails WCAG AA (3:1) contrast against either the light surface or the dark surface, so an admin cannot accidentally ship buttons that are unreadable for half the users.
+## Colour contrast guard ✅
 
-Lives in `BL/Implementation/ProjectManager.cs`, next to the existing hex-format regex. The error surfaces in both Dutch and English via `Validation.PrimaryColor.LowContrast` in `Resources/SharedResource.{nl,en}.resx`.
+A project admin can pick a custom primary brand colour. Three layers keep that legible:
 
-Additionally, the foreground color used on primary buttons (`--color-primary-content`) is auto-computed from the picked color's perceived luminance — pick a dark brand color, get white text; pick a light one, get black text. The admin never has to think about it.
+1. **Save-time rejection** — `BL/Implementation/ProjectManager.cs` rejects any pick whose WCAG contrast ratio falls below 3:1 against *either* the light surface (`#FFFFFF`) or the dark surface (`#1A1430`). Throws `Validation.PrimaryColor.LowContrast`, localised NL + EN.
+2. **Auto-computed foreground** — `--color-primary-content` (text on primary buttons) is derived from the picked colour's perceived luminance: dark brand → white text, light brand → black text. The admin never sets it.
+3. **Live advisory chip** — in the admin project form, a warning chip under the colour picker (`#primary-color-contrast-warning`, wired in `UI-Admin/src/project/project-style.ts`) flags a failing pick in real time, before submit. Advisory only — the BL stays authoritative.
 
-## Dark mode
+Supporting hotfix: `ProjectAdminService` now surfaces the API's localised rejection message inline + as a toast (`ApiValidationException`), instead of the previous unhandled 500. The curated topic colour swatches (Sports / Nature / Culture / Health) all sit inside the contrast-safe luminance band, so they never trip the guard.
 
-The user toggles light/dark from the header at any time. The state is stored in a cookie (`synapse-theme`) so it persists across page loads. The toggle reads the OS preference (`prefers-color-scheme`) on first visit, then switches to the user's explicit choice once they interact.
+## Touch-target sizing ✅ (partial coverage)
 
-Both daisyUI themes (`synapse-light`, `synapse-dark`) and every project preset are tuned for both modes. A project's brand stays recognisable in dark mode — only the lightness shifts, not the hue.
+`UI-User/src/main.css` defines a `--tap-target` token:
 
-## Multi-language i18n
+```css
+:root { --tap-target: 2.75rem; }                 /* 44px — WCAG 2.5.5 / Apple HIG floor */
+[data-project-theme="friendly"] { --tap-target: 3rem; }  /* 48px — younger audience */
+@media (pointer: coarse) {                         /* any touch device gets the floor */
+    :root { --tap-target: max(var(--tap-target), 2.75rem); }
+}
+```
 
-The platform ships full Dutch and English translations across:
+Applied as `min-height` / `min-width` on the survey navigation buttons (`.btn-next`, `.btn-prev`) and the mic button (`button[data-stt-target]`). The survey choice-option labels are already ~60px tall and need no rule.
 
-- All shared resource strings (`Resources/SharedResource.{nl,en}.resx`)
-- Per-view localised strings
-- Per-project content (project name, intro, questions, categories) — admins can author every text in every supported language
-- AI assistance — moderation, idea refinement, comment refinement all operate in the participant's language
-- Speech-to-text — transcription runs against the participant's culture, so Dutch is transcribed as Dutch
+⚠️ **Coverage is intentionally narrow.** Header controls — language pills, theme toggle, privacy link (`w-7 h-7` ≈ 28px) — are **not** yet covered by `--tap-target`. See the backlog.
 
-Language is switched via the header pill (segmented control with `aria-current="true"` on the active locale) or via the participant's stored language preference. All form validation messages are also localised.
+## Keyboard and screen-reader support ⚠️
 
-Cultures are wired in `UI-User/Program.cs` via `AddSupportedCultures` / `AddSupportedUICultures`.
-
-## Keyboard and screen-reader support
-
-### ARIA attributes
-
-The app uses semantic ARIA across the interactive surface:
+### ARIA inventory ✅
 
 | Attribute | Where |
 |---|---|
-| `aria-label` | Theme toggle, language switcher, microphone button, conversation history, image describe, cancel buttons |
-| `aria-live="polite"` | Chat message log, speech-to-text status text, validation feedback |
+| `aria-label` | Theme toggle, language switcher, mic button, conversation history, image-describe, cancel buttons |
+| `aria-live="polite"` | Chat message log, speech-to-text status, validation feedback, admin contrast advisory |
 | `aria-current="true"` | Active language pill |
+| `aria-hidden="true"` | Decorative typing-dot spans in chat |
 | `sr-only` text | Theme toggle's hidden text label backing the icon-only button |
-| `alt` attributes | Organisation logos (descriptive); idea images and question media currently ship `alt=""` — see gaps below |
+| `alt` | Organisation logos (descriptive). ❌ Idea images and question media ship `alt=""` — see backlog |
 
-### Focus management
+### Focus management ⚠️
 
-Every focusable element shows a `focus-visible` ring. Chat suggestion chips use a custom ring (`focus-visible:ring-2 focus-visible:ring-primary/40`) so the focused chip stands out without clashing with the brand color.
+Every focusable element shows a `focus-visible` ring; chat suggestion chips use a custom `focus-visible:ring-2 focus-visible:ring-primary/40`. HighContrast bumps the ring to a 3px solid outline.
 
-Under HighContrast theme, the focus ring is bumped to a 3px solid outline so it is unmissable.
+⚠️ **Known weak spot:** the survey is a stack of absolutely-positioned `.survey-slide` sections. Inactive slides are `pointer-events: none` but are **not** `inert` / `aria-hidden`, so their form controls may remain in the tab order and reachable by screen readers. This needs an audit (backlog).
 
-### Tab order
+### Tab order ✅
 
-The app uses native HTML form elements (`<button>`, `<input>`, `<select>`, `<textarea>`) wherever possible, so the browser supplies tab order for free. Custom interactive elements have explicit `type="button"` to prevent accidental form-submit traps.
+Native HTML form elements (`<button>`, `<input>`, `<select>`, `<textarea>`) are used throughout, so the browser supplies tab order. Custom interactive elements carry explicit `type="button"` to avoid accidental form submits.
 
-## Voice input (speech-to-text)
+## Voice input (speech-to-text) ✅
 
-Many participants cannot type — motor impairment, dyslexia, slow typing on mobile, or simply preferring to talk. Every text input that takes free-form participant content has a microphone button next to it (see `Views/Shared/_MicButton.cshtml`).
+Many participants cannot type — motor impairment, dyslexia, slow mobile typing, or simple preference. Every free-text input has a microphone button (`Views/Shared/_MicButton.cshtml`, wired by `src/lib/speechtotext-attach.ts`).
 
-Tapping the mic:
+Flow: request mic permission → record → transcribe in the participant's culture → drop text into the input, editable before submit. Mic state is announced via `aria-live`. Every failure mode (no microphone, permission denied, unsupported browser, nothing heard, too long, unsupported format) has a dedicated localised message.
 
-1. Asks for microphone permission (browser-handled — no platform prompt).
-2. Records audio.
-3. Sends to the moderation pipeline for transcription in the participant's culture.
-4. Drops the transcribed text into the input.
+## AI assistance for expression ✅
 
-The participant can edit or discard the transcription before submitting. Mic state is announced via `aria-live` so screen-reader users know when recording has started, stopped, or failed. Errors (no microphone, permission denied, unsupported browser, nothing heard, too long, unsupported format) all have dedicated localised messages.
+For participants who find it hard to phrase ideas — younger users, second-language speakers, dyslexic users:
 
-## AI assistance for expression
+- **Idea support** — participant types a rough idea; the AI offers a clearer version; the participant picks. The AI never replaces the participant's voice — it offers a parallel option.
+- **Comment support** — same flow for comments.
+- **Image describe** — the AI proposes a text description of an uploaded image (see idea images below).
 
-Some participants — especially younger ones, second-language speakers, or those with dyslexia — find it hard to phrase their ideas clearly. The app offers AI-driven refinement:
+All AI flows are opt-in and always show both versions for an explicit choice.
 
-- **Idea support popup** — participant types a rough idea, the AI suggests a clearer version. Participant chooses between their version and the suggestion. The AI does not replace the participant's voice; it offers a parallel option.
-- **Comment support popup** — same flow for comments on ideas.
-- **Image describe** — participants can upload an image with an idea, and the AI proposes a textual description of what's in the image. Useful for participants whose vocabulary doesn't match the visual, and produces alt text for downstream accessibility.
+## Multi-language i18n ✅
 
-All AI flows are opt-in. The participant always sees both versions and explicitly picks one.
+Full Dutch and English across: shared resource strings (`Resources/SharedResource.{nl,en}.resx`), per-view strings, per-project authored content (name, intro, questions, categories), AI flows (moderation / refinement run in the participant's language), and speech-to-text (transcription matches the participant's culture). Validation messages are localised too.
 
-## Mobile and touch
+Switched via the header pill (segmented control, `aria-current` on the active locale) or the participant's stored preference. Cultures are wired in `UI-User/Program.cs`. `<html lang="…">` is set per request.
 
-- **Minimum 16px input font on small screens** so iOS Safari does not zoom on focus and shove the layout sideways. Lives in `UI-User/src/main.css`.
-- **`100dvh` viewport units** instead of `100vh`, so fixed positioning tracks the actual visible viewport when the iOS / Android address bar shows or hides. Avoids the survey header sliding under address-bar chrome.
-- **Touch-target padding** on all primary actions meets the 44px (iOS HIG) / 48dp (Material) minimum.
-- **Scroll lock on landing and survey pages** delegates scroll to inner containers so the fixed header can never be visually crossed by scrolling content.
+⚠️ Per-element `lang` for mixed-language content is not handled (backlog, low severity).
 
-## Age-appropriate UX
+## Mobile and viewport ✅
 
-Project admins set a `MinAge` and `MaxAge` on each project (`Domain/Project/Entities/Project.cs`). The presets at `[data-project-theme="..."]` are tuned to different sub-audiences across the 12–30 range:
+- **16px minimum input font** on small screens — stops iOS Safari zooming on focus and shoving the layout.
+- **`100dvh` viewport units** instead of `100vh`, so fixed positioning tracks the visible viewport as the mobile address bar shows/hides.
+- **Scroll lock** on landing + survey pages delegates scroll to inner containers so the fixed header is never crossed by content.
+- Touch-target floor — see [Touch-target sizing](#touch-target-sizing--partial-coverage).
 
-- **Playful** — softer rounded corners, casual heading font, bright primaries. Designed for 12–17.
-- **Default** — neutral modern minimal. Designed for 16–24.
-- **Professional** — sharper corners, denser layout, muted brand. Designed for 22–30 or formal civic contexts.
-- **HighContrast** — orthogonal accessibility mode, available for any age band.
+## Typography and font loading ✅
 
-A non-technical admin picks one preset; the visual character flows to every page without further configuration.
+Heading and body fonts are self-hosted (`UI-User/src/public/fonts/`, served at `/dist/fonts/`) with `font-display: swap`, so text renders immediately in a fallback and swaps in — no invisible-text (FOIT) period. Only the active preset's heading font is preloaded.
 
-## Supporting media on questions
+## Age-appropriate character presets ⚠️
 
-Project admins can attach one of three media types to a question (`Domain/Project/Enums/QuestionMediaType.cs`): **Image**, **Video** (uploaded or embed from YouTube / Vimeo), or **Audio**. The participant sees the media rendered above the question text in `Views/Survey/Scrollform.cshtml`.
+Project admins set `MinAge` / `MaxAge` per project. Presets are **character** presets (not topic or mode variants); the admin picks one and the character flows to every page. Current set in `Domain/Project/Enums/ProjectTheme.cs`:
 
-What works today:
+- **Minimal** — neutral modern; default character, ~16–24.
+- **Friendly** — soft, rounded, warm; larger radii and a **48px tap-target** for the 12–15 audience and their developing fine motor control.
+- **Bold** — punchy, high-energy, sharp; sports / events / campaigns.
+- **Formal** — restrained, tight, sober; 22–30 / civic contexts.
+- **HighContrast** — accessibility character (see above), available for any age band.
 
-- **`MediaText` field** — markdown block rendered next to the media. Admins can use this as a transcript, image description, or summary of an audio clip. It is currently optional and not labelled as a transcript in the admin UI; participants who rely on it depend on the admin remembering to fill it in.
-- **Native controls** — `<video controls>` and `<audio controls>` give participants pause / seek / volume keyboard control out of the box.
-- **`preload="metadata"`** — media does not auto-download or auto-play, respecting low-bandwidth and data-cost concerns.
-- **Embed sandbox** — YouTube / Vimeo iframes ship with `sandbox="allow-scripts allow-same-origin allow-presentation"` and a strict referrer policy, limiting what the embed can do.
+Topic (sports, nature, …) is expressed through the colour picker and curated swatches, not a preset.
 
-What is broken or missing today (honest gaps):
+## Supporting media on questions ⚠️
 
-- **Image alt text is empty.** `<img alt="">` ships unconditionally for every question image. Admins cannot provide alt text. Fails WCAG 1.1.1.
-- **No video captions.** `<video>` elements have no `<track kind="captions">`. Hearing-impaired participants cannot follow uploaded video unless the admin separately fills `MediaText`. Fails WCAG 1.2.2 for prerecorded video. For YouTube embeds the platform's own captions can be turned on by the participant, but our admin UI does not require captions to be present on the source.
-- **No audio transcript field.** Same problem for audio: no first-class transcript field, only the optional `MediaText`. Fails WCAG 1.2.1.
-- **Static iframe title.** Embedded video iframes have `title="Video"` instead of the actual question title — a screen-reader user gets no context. Fails WCAG 4.1.2 / 2.4.1.
+Admins can attach **Image**, **Video** (uploaded or YouTube/Vimeo embed), or **Audio** to a question (`Domain/Project/Enums/QuestionMediaType.cs`), rendered above the question in `Views/Survey/Scrollform.cshtml`.
 
-These are tracked in "What we do NOT do (yet)" below as concrete next steps, not assumed done.
+Works today:
 
-## Participant-uploaded idea images
+- **`MediaText` field** — markdown block beside the media; can serve as transcript / description / summary. ⚠️ Optional and not labelled as a transcript — depends on the admin filling it in.
+- **Native controls** — `<video controls>` / `<audio controls>` give keyboard pause/seek/volume.
+- **`preload="metadata"`** — no auto-download / auto-play; respects data cost.
+- **Embed sandbox** — YouTube/Vimeo iframes ship `sandbox="allow-scripts allow-same-origin allow-presentation"` + strict referrer policy.
 
-Participants can attach an image to an idea (`Views/Ideation/IdeaHub.cshtml` — "Add image" button). The image is stored server-side, validated for MIME type (`image/jpeg`, `image/png`, `image/webp`, `image/gif`) and size, and rendered on the idea card in the hub, on the idea detail page, and on the participant's "my ideas" view.
+Gaps — see backlog: empty image `alt`, no video `<track>` captions, no first-class audio transcript, static iframe `title="Video"`.
 
-What works today:
+## Participant-uploaded idea images ⚠️
 
-- **AI "Describe image" button.** After uploading, the participant can ask the AI to generate a text description of the image. This is a real inclusion feature — it helps participants who have limited vocabulary or who are writing in a second language to articulate what their image shows, AND it produces text content that screen-reader users could in principle benefit from.
-- **MIME-type whitelist** prevents unexpected media (no SVG with embedded scripts, no oversized formats).
-- **Server-side validation** in `UploadsController` rejects malformed or oversized uploads with a localised error.
-- **Lightbox preview** on the detail page lets low-vision participants zoom into an image without needing browser zoom or pinch-zoom on touch.
-- **Inline error feedback** when an upload fails (wrong type, too large, not allowed) so the participant knows immediately what to fix.
+Participants can attach an image to an idea (`Views/Ideation/IdeaHub.cshtml`), stored server-side, MIME-whitelisted (`jpeg`/`png`/`webp`/`gif`) and size-validated in `UploadsController`, rendered on the hub card, detail page, and "my ideas".
 
-What is broken or missing today (honest gaps):
+Works today:
 
-- **`alt=""` everywhere.** Every rendered idea image — on the hub card, on the detail page, on "my ideas", inside the lightbox — ships `alt=""`. Screen-reader users get nothing. This is despite the "Describe image" feature already producing a usable description; the description is dropped into the idea TEXT, not bound to the `<img>` element. Fixing this is a high-leverage change: a `data-image-description` field on the idea, used both for the idea text suggestion AND for the rendered alt attribute, would close the loop.
-- **No required-alt prompt on upload.** Participants can post an image without describing it. For a fully accessible product the "Describe image" step would be either required or strongly prompted (with a "decorative — skip" opt-out) before submit.
-- **No image content moderation for accessibility.** Moderation today flags inappropriate content but does not check for embedded text in the image that should be reproduced in alt text (e.g., a photo of a poster). Out of scope for now.
+- **AI "Describe image"** — generates a text description; helps limited-vocabulary / second-language participants AND produces text a screen reader could use.
+- **MIME whitelist** — no script-bearing SVG, no oversized formats.
+- **Lightbox** on the detail page — low-vision zoom without browser/pinch zoom.
+- **Inline upload-error feedback** — immediate, localised.
 
-## Privacy and consent
+Gaps — see backlog: every rendered idea `<img>` has `alt=""`; the "Describe image" output goes into idea *text*, not the `alt`; no required-description prompt.
 
-Accessibility includes informed consent. A privacy icon sits in every page header, linking to the project's privacy policy in the participant's language. Participants are anonymous by default; contact info is opt-in via a clear popup.
+## Privacy and consent ✅
 
-## Testing checklist
+A privacy icon in every page header links to the project's privacy policy in the participant's language. Participants are anonymous by default; contact info is opt-in via an explicit popup.
 
-Before shipping any UI change, walk through:
+---
 
-1. **Keyboard-only.** Reach every action with Tab, Shift+Tab, Enter, Space, arrow keys. No focus traps.
-2. **Screen reader.** Verify labels and live regions announce sensibly (VoiceOver on macOS / NVDA on Windows / TalkBack on Android).
-3. **Reduced motion.** Toggle Chrome DevTools' reduced-motion emulation, reload, verify content swaps but nothing animates.
-4. **High contrast.** Switch a test project to `HighContrast`, verify focus rings, opaque text, readable buttons.
-5. **Dark mode.** Toggle via the header, verify every surface, brand color, and image looks intentional.
-6. **Languages.** Switch the language pill, verify the page reloads in the new culture with no missing strings.
-7. **Mobile viewport.** Test on a real iOS Safari and Android Chrome — confirm no zoom on input focus, no header obscured by address bar.
-8. **Color blindness.** Use a Chrome DevTools emulator (Rendering → Emulate vision deficiencies) for protanopia, deuteranopia, and tritanopia — verify nothing critical relies on color alone.
+# Manual testing checklist
 
-## What we do NOT do (yet)
+Walk through before shipping any UI change:
 
-Honest gaps, kept here so they don't get forgotten:
+1. **Keyboard-only** — every action via Tab / Shift+Tab / Enter / Space / arrows. No focus traps; focus never lands on off-screen survey slides.
+2. **Screen reader** — labels and live regions announce sensibly (VoiceOver / NVDA / TalkBack).
+3. **Reduced motion** — DevTools emulation on; content swaps, nothing animates.
+4. **High contrast (project theme)** — a `HighContrast` project: focus rings, opaque text, readable buttons.
+5. **Forced colors** — DevTools → Rendering → "Emulate prefers-color-scheme" and Windows High Contrast — note what breaks (currently unhandled).
+6. **Dark mode** — header toggle; every surface, brand colour, image intentional.
+7. **Languages** — switch the pill; page reloads in-culture with no missing strings.
+8. **Mobile viewport** — real iOS Safari + Android Chrome; no zoom on input focus, no header obscured.
+9. **Colour blindness** — DevTools → Rendering → Emulate vision deficiencies (protanopia/deuteranopia/tritanopia); nothing critical relies on colour alone.
+10. **Zoom to 200%** — browser zoom 200% and 400%; no clipped content or horizontal scroll traps.
+11. **Target size** — spot-check tap targets ≥ 44px, especially header controls.
 
-- **Image alt text on ideas and question media.** Both surfaces render `<img alt="">`. For ideas the "Describe image" AI output is the obvious fix — bind it to a dedicated `IdeaImageDescription` field and reuse it as the rendered `alt`. For question images the admin needs a new alt-text field next to `MediaUrl`. Highest-priority a11y gap in the codebase.
-- **Captions on uploaded video.** `<video>` elements have no `<track kind="captions">`. The admin UI should let admins upload a `.vtt` caption file alongside the video, OR require that the source already carries captions (e.g., YouTube auto-captions enabled).
-- **Audio transcripts.** First-class transcript field on questions with `MediaType = Audio`, surfaced in the participant UI in a `<details>` block so it doesn't dominate the layout.
-- **Iframe titles.** Embedded video iframes use the static `title="Video"`; should use the question's actual title.
-- **Required-alt-text prompt on idea image upload.** Participants can post an image without describing it. The "Describe image" AI step should be either required or explicitly opt-out ("decorative image") before submit.
-- **Skip-to-content link.** First-tab "jump to main content" link is not yet implemented.
-- **Headings audit.** Heading levels (`<h1>` … `<h6>`) are not yet audited per view; a screen-reader user navigating by headings may not get a perfectly clean outline.
-- **Form-error summary.** Validation errors appear next to fields but there is no top-of-form summary linking to each invalid field.
+# Automated testing
 
-These are tracked separately and intentionally left to future work, not assumed done.
+Not yet wired up — recommended for the audit:
 
-## References
+- **axe DevTools** browser extension for per-page scans.
+- **Lighthouse** accessibility category (CI-friendly).
+- **Pa11y** or **axe-core/playwright** for automated regression coverage of key flows (landing, survey, idea hub).
 
-- [W3C — Web Content Accessibility Guidelines (WCAG) 2.1](https://www.w3.org/WAI/WCAG21/quickref/)
+Automated tools catch ~30–40% of WCAG issues; the manual checklist covers the rest.
+
+---
+
+# Audit backlog — known gaps
+
+Honest, deliberately exhaustive. Each item: WCAG success criterion + rough severity. This is the audit work list.
+
+## High severity
+
+| # | Gap | WCAG SC | Notes |
+|---|---|---|---|
+| 1 | **Idea & question images render `alt=""`** | 1.1.1 Non-text Content | Highest-leverage fix. For ideas: bind the "Describe image" AI output to an `IdeaImageDescription` field and reuse it as `alt`. For question media: add an alt-text field next to `MediaUrl`. |
+| 2 | **Uploaded video has no captions** | 1.2.2 Captions (Prerecorded) | `<video>` has no `<track kind="captions">`. Admin UI should accept a `.vtt` upload or require captioned sources. |
+| 3 | **Audio has no transcript** | 1.2.1 Audio-only | No first-class transcript field — only the optional `MediaText`. Add a transcript field; surface it in a `<details>`. |
+| 4 | **Inactive survey slides not `inert`** | 2.4.3 Focus Order; 4.1.2 | Off-screen `.survey-slide` form controls may stay tabbable / SR-reachable. Apply `inert` (or `aria-hidden` + remove from tab order) to non-active slides. |
+| 5 | **Modal/popup semantics unverified** | 4.1.2; 2.1.2; 2.4.3 | Only `_ThankYouPopup` uses dialog semantics. `_ModerationPopup`, `_ContactInfoPopup`, `_IdeaSupportPopup`, `_CommentSupportPopup`, `_FinalThankYouPopup` need `role="dialog"`/`aria-modal`, focus trap, Escape-to-close, and focus return on close. |
+
+## Medium severity
+
+| # | Gap | WCAG SC | Notes |
+|---|---|---|---|
+| 6 | **Embedded video iframe `title="Video"` is static** | 2.4.1; 4.1.2 | Should use the question's actual title. |
+| 7 | **No required alt-text prompt on idea image upload** | Process / 1.1.1 | "Describe image" should be required or explicit opt-out ("decorative") before submit. |
+| 8 | **No skip-to-content link** | 2.4.1 Bypass Blocks | First-tab "jump to main content" link is missing. |
+| 9 | **Heading hierarchy not audited** | 1.3.1; 2.4.6 | `<h1>`–`<h6>` order per view not verified; SR heading navigation may be messy. |
+| 10 | **No form-error summary** | 3.3.1 Error Identification | Errors appear by the field but there is no top-of-form summary linking to each invalid field. |
+| 11 | **Header controls below 44px** | 2.5.5 / 2.5.8 Target Size | Language pills, theme toggle, privacy link (~28px) not covered by `--tap-target`. |
+| 12 | **No `forced-colors` / `prefers-contrast` support** | 1.4.x adjacent | Windows High Contrast Mode users on non-HC projects get no adaptation. Add a `@media (forced-colors: active)` pass. |
+| 13 | **Colour-only meaning unverified** | 1.4.1 Use of Color | E.g. idea status dots (`bg-warning` / `bg-primary`) — confirm a non-colour cue (icon/text) accompanies every colour signal. |
+| 14 | **Zoom / reflow to 200–400% unverified** | 1.4.4; 1.4.10 | Not tested. |
+| 15 | **Survey validation announcement unverified** | 4.1.3 Status Messages | Confirm `Survey_AnswerRequired` etc. reach an `aria-live` region. |
+
+## Low severity
+
+| # | Gap | WCAG SC | Notes |
+|---|---|---|---|
+| 16 | **Theme toggle lacks `aria-pressed`** | 4.1.2 | `#theme-toggle` exposes `aria-label` but not its on/off state. |
+| 17 | **No per-element `lang`** | 3.1.2 Language of Parts | Mixed-language content within a page isn't marked. |
+| 18 | **Admin UI (`UI-Admin`) not audited** | — | This doc covers the participant app. The admin panel deserves its own pass. |
+| 19 | **No automated a11y testing in CI** | — | Wire axe-core / Lighthouse (see Automated testing). |
+
+---
+
+# References
+
+- [W3C — WCAG 2.2 Quick Reference](https://www.w3.org/WAI/WCAG22/quickref/)
+- [W3C — Understanding WCAG 2.2](https://www.w3.org/WAI/WCAG22/Understanding/)
 - [MDN — prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion)
+- [MDN — forced-colors](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors)
 - [MDN — ARIA](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA)
 - [Inclusive Components — Heydon Pickering](https://inclusive-components.design/)
+- Project docs: `Documentation/prefers-reduced-motion.md`, `Documentation/OKLCH.md`, `Documentation/ThemingStrategy.md`

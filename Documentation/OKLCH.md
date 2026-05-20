@@ -41,7 +41,7 @@ For a single static brand this is fine. For a multi-tenant platform with hundred
 
 HSL solves readability (`hsl(245, 75%, 59%)` is "blue, saturated, mid-bright") but its **L is mathematical, not perceptual**. The eye does not see lightness uniformly across hues. `hsl(60, 100%, 50%)` (yellow) looks much brighter than `hsl(240, 100%, 50%)` (blue) — same L, very different perceived brightness.
 
-This breaks derived palettes. If we wrote "hover state = primary minus 10% lightness", the result would look correct in blue and wrong in yellow. We saw exactly this in the audit: the original Playful theme at `hsl`-equivalent L=78% rendered as nearly-invisible pale yellow on white because HSL's L is not what the eye reads.
+This breaks derived palettes. If we wrote "hover state = primary minus 10% lightness", the result would look correct in blue and wrong in yellow. We saw exactly this in the audit: the original Playful preset (now `Friendly`) at `hsl`-equivalent L=78% rendered as nearly-invisible pale yellow on white because HSL's L is not what the eye reads.
 
 ### OKLCH — perceptual, predictable
 
@@ -53,7 +53,7 @@ This is the property that makes one-color-picker theming work.
 
 ### Every theme token
 
-`UI-User/src/main.css` defines daisyUI's two base themes (`synapse-light`, `synapse-dark`) and four project presets (`default`, `playful`, `professional`, `highcontrast`). Every color token is OKLCH.
+`UI-User/src/main.css` defines daisyUI's two base themes (`synapse-light`, `synapse-dark`) and five project presets (`minimal`, `friendly`, `bold`, `formal`, `highcontrast`). Every color token is OKLCH.
 
 ```css
 @plugin "daisyui/theme" {
@@ -108,7 +108,7 @@ The `in oklch` keyword tells the browser to interpolate perceptually, not in RGB
 Every project preset uses `light-dark()` to nominate two OKLCH values — one for `synapse-light`, one for `synapse-dark` — so the same preset stays visually intentional when the participant toggles dark mode:
 
 ```css
-[data-project-theme="playful"] {
+[data-project-theme="friendly"] {
     --color-primary: light-dark(
         oklch(62% 0.18 65),    /* deeper amber on white surfaces */
         oklch(78% 0.16 65)     /* lighter amber on near-black surfaces */
