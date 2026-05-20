@@ -226,31 +226,33 @@ public class ProjectManager(
             if (!project.SupportedLanguages.Any(l => l.Code == code))
                 project.SupportedLanguages.Add(languages[code]);
 
-        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
-        foreach (var stale in project.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
-            project.Translations.Remove(stale);
-
-        foreach (var input in translationList)
+        void ValidateProjectTranslation(ProjectTranslationInput input)
         {
             EntityValidator.ValidateProperty(new ProjectTranslation(), input.Name, nameof(ProjectTranslation.Name));
             EntityValidator.ValidateProperty(new ProjectTranslation(), input.Topic, nameof(ProjectTranslation.Topic));
+        }
 
-            var existing = project.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
-            if (existing is null)
+        TranslationUpserter.Upsert(
+            project.Translations,
+            translationList,
+            inputLanguageCode: i => i.LanguageCode,
+            existingLanguageCode: t => t.Language.Code,
+            create: input =>
             {
-                project.Translations.Add(new ProjectTranslation
+                ValidateProjectTranslation(input);
+                return new ProjectTranslation
                 {
                     Language = languages[input.LanguageCode],
                     Name = input.Name,
                     Topic = input.Topic,
-                });
-            }
-            else
+                };
+            },
+            update: (existing, input) =>
             {
+                ValidateProjectTranslation(input);
                 existing.Name = input.Name;
                 existing.Topic = input.Topic;
-            }
-        }
+            });
 
         var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
         if (nonEmptyIntros.Count == 0)
@@ -261,28 +263,25 @@ public class ProjectManager(
         {
             project.Introduction ??= new Introduction();
 
-            var inputByCodes = nonEmptyIntros.ToDictionary(i => i.LanguageCode);
-            foreach (var stale in project.Introduction.Translations
-                         .Where(t => !inputByCodes.ContainsKey(t.Language.Code)).ToList())
-                project.Introduction.Translations.Remove(stale);
-
-            foreach (var introInput in nonEmptyIntros)
-            {
-                EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
-                var existing = project.Introduction.Translations.FirstOrDefault(t => t.Language.Code == introInput.LanguageCode);
-                if (existing is null)
+            TranslationUpserter.Upsert(
+                project.Introduction.Translations,
+                nonEmptyIntros,
+                inputLanguageCode: i => i.LanguageCode,
+                existingLanguageCode: t => t.Language.Code,
+                create: introInput =>
                 {
-                    project.Introduction.Translations.Add(new IntroductionTranslation
+                    EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
+                    return new IntroductionTranslation
                     {
                         Language = languages[introInput.LanguageCode],
                         Text = introInput.Text,
-                    });
-                }
-                else
+                    };
+                },
+                update: (existing, introInput) =>
                 {
+                    EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
                     existing.Text = introInput.Text;
-                }
-            }
+                });
         }
 
         projectRepository.Update(project);
