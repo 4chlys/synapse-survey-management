@@ -1,7 +1,9 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -14,7 +16,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ProjectsController(
     IProjectManager projectManager,
     IAiImageGenerationService imageGenerationService,
-    IStorageService storageService) : ControllerBase
+    IStorageService storageService,
+    IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
     private static FormType ParseFormType(string interactionMode) =>
         Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
@@ -248,7 +251,7 @@ public class ProjectsController(
     public async Task<IActionResult> GenerateImage([FromQuery] string name, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return BadRequest(new { error = "Project name is required." });
+            return BadRequest(new { error = localizer["Validation.Project.NameRequired"].Value });
 
         var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, ct);
         if (!result.IsSuccess)

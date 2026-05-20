@@ -66,6 +66,9 @@
   <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
     <value>MinAge must not be greater than MaxAge.</value>
   </data>
+  <data name="Validation.Project.NameRequired" xml:space="preserve">
+    <value>Project name is required.</value>
+  </data>
   <data name="Validation.Project.DefaultLanguageCodeRequired" xml:space="preserve">
     <value>DefaultLanguageCode is required.</value>
   </data>
