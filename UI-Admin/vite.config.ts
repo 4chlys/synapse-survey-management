@@ -6,8 +6,6 @@ import path from 'path';
 export default defineConfig(async () => {
     // Recursively collect entry .ts files under ./src, skipping ./src/lib
     // (lib contains shared modules imported by entries, not entries themselves).
-    // Entry-point keys are the file's basename without extension so URLs stay
-    // stable when files are moved into feature subfolders.
     const inputEntries: Record<string, string> = {};
     const walk = (dir: string): void => {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
