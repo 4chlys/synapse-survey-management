@@ -220,6 +220,29 @@
                             <span class="label-text">@L["UseThemeColorLabel"]</span>
                         </label>
                     </div>
+                    @* Topic shortcuts — curated, contrast-safe starting colours. Each just
+                       writes a hex into the picker; no theme/enum involved. *@
+                    <div class="mt-2">
+                        <span class="label-text-alt opacity-70">@L["ColorSwatches_Label"]</span>
+                        <div id="primary-color-swatches" class="flex flex-wrap gap-2 mt-1">
+                            <button type="button" data-swatch-color="#EA580C"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#EA580C" title="@L["ColorSwatch_Sports"]"
+                                    aria-label="@L["ColorSwatch_Sports"]"></button>
+                            <button type="button" data-swatch-color="#16A34A"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#16A34A" title="@L["ColorSwatch_Nature"]"
+                                    aria-label="@L["ColorSwatch_Nature"]"></button>
+                            <button type="button" data-swatch-color="#7C3AED"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#7C3AED" title="@L["ColorSwatch_Culture"]"
+                                    aria-label="@L["ColorSwatch_Culture"]"></button>
+                            <button type="button" data-swatch-color="#0D9488"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#0D9488" title="@L["ColorSwatch_Health"]"
+                                    aria-label="@L["ColorSwatch_Health"]"></button>
+                        </div>
+                    </div>
                     <input asp-for="PrimaryColor" type="hidden" />
                     <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
                     @* Client-side contrast advisory. Server validation in BL is authoritative;

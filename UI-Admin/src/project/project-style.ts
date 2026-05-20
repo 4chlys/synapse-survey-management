@@ -81,6 +81,20 @@ if (picker && hidden && useDefault) {
         if (!useDefault.checked) hidden.value = picker.value;
         updateContrastWarning(useDefault.checked ? '' : picker.value);
     });
+
+    // Topic swatches: a click just fills the picker with a curated hex. Dispatching
+    // a synthetic 'input' reuses every existing picker listener (hidden value,
+    // contrast warning, preview) — no duplicated wiring.
+    document.getElementById('primary-color-swatches')
+        ?.querySelectorAll<HTMLButtonElement>('[data-swatch-color]')
+        .forEach(btn => btn.addEventListener('click', () => {
+            const hex = btn.dataset.swatchColor;
+            if (!hex) return;
+            useDefault.checked = false;
+            picker.disabled = false;
+            picker.value = hex;
+            picker.dispatchEvent(new Event('input', { bubbles: true }));
+        }));
 }
 
 // Mirror of UI-User/src/main.css per-project-theme blocks. Keep in sync

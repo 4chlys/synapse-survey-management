@@ -66,6 +66,11 @@
   <data name="PrimaryColor_LowContrast_Light" xml:space="preserve"><value>Deze kleur is mogelijk moeilijk leesbaar op lichte achtergronden. De server zal deze weigeren bij opslaan.</value></data>
   <data name="PrimaryColor_LowContrast_Dark" xml:space="preserve"><value>Deze kleur is mogelijk moeilijk leesbaar op donkere achtergronden. De server zal deze weigeren bij opslaan.</value></data>
   <data name="PrimaryColor_LowContrast_Both" xml:space="preserve"><value>Deze kleur is moeilijk leesbaar op zowel lichte als donkere achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="ColorSwatches_Label" xml:space="preserve"><value>Snelkeuze per onderwerp</value></data>
+  <data name="ColorSwatch_Sports" xml:space="preserve"><value>Sport</value></data>
+  <data name="ColorSwatch_Nature" xml:space="preserve"><value>Natuur</value></data>
+  <data name="ColorSwatch_Culture" xml:space="preserve"><value>Cultuur</value></data>
+  <data name="ColorSwatch_Health" xml:space="preserve"><value>Gezondheid</value></data>
   <data name="CustomCssLabel" xml:space="preserve"><value>Aangepaste CSS (optioneel)</value></data>
   <data name="CustomCssHint" xml:space="preserve"><value>Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</value></data>
   <data name="CustomCssHelperSummary" xml:space="preserve"><value>Beschikbare CSS-variabelen en selectors (klikken om in te voegen)</value></data>

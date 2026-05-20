@@ -66,6 +66,11 @@
   <data name="PrimaryColor_LowContrast_Light" xml:space="preserve"><value>This color may be hard to read on light backgrounds. The server will reject it on save.</value></data>
   <data name="PrimaryColor_LowContrast_Dark" xml:space="preserve"><value>This color may be hard to read on dark backgrounds. The server will reject it on save.</value></data>
   <data name="PrimaryColor_LowContrast_Both" xml:space="preserve"><value>This color is hard to read on both light and dark backgrounds. The server will reject it on save.</value></data>
+  <data name="ColorSwatches_Label" xml:space="preserve"><value>Quick start by topic</value></data>
+  <data name="ColorSwatch_Sports" xml:space="preserve"><value>Sports</value></data>
+  <data name="ColorSwatch_Nature" xml:space="preserve"><value>Nature</value></data>
+  <data name="ColorSwatch_Culture" xml:space="preserve"><value>Culture</value></data>
+  <data name="ColorSwatch_Health" xml:space="preserve"><value>Health</value></data>
   <data name="CustomCssLabel" xml:space="preserve"><value>Custom CSS (optional)</value></data>
   <data name="CustomCssHint" xml:space="preserve"><value>For developers — leave blank if theme + color is enough.</value></data>
   <data name="CustomCssHelperSummary" xml:space="preserve"><value>Available CSS variables and selectors (click to insert)</value></data>

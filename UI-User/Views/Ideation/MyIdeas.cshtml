@@ -40,7 +40,7 @@
         @if (!Model.Ideas.Any())
         {
             <div class="text-center py-16 flex flex-col items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-field bg-base-200 border border-base-300 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-neutral" fill="none" viewBox="0 0 24 24"
                          stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -56,7 +56,7 @@
             {
                 <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
                        asp-route-categoryId="@Model.CategoryId" asp-route-ideaId="@idea.IdeaId"
-                       class="block relative rounded-xl border p-5 transition-all duration-150 active:scale-[0.99]
+                       class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99]
                     @(idea.IsFlagged
                                                                                                                                 ? "bg-warning/5 border-warning/30 hover:border-warning/50"
                                                                                                                                 : "bg-primary/5 border-primary/20 hover:border-primary/40")">
@@ -79,7 +79,7 @@
 
                     @if (!string.IsNullOrEmpty(idea.ImageUrl))
                     {
-                        <img src="@idea.ImageUrl" alt="" class="mt-3 rounded-xl max-h-64 w-full object-cover" />
+                        <img src="@idea.ImageUrl" alt="" class="mt-3 rounded-field max-h-64 w-full object-cover" />
                     }
 
                     @if (idea.Emojis.Any())
