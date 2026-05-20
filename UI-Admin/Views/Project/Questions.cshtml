@@ -140,8 +140,8 @@
 </div>
 
 @* Right-side slide-in drawer for editing/creating a question — controlled by project-questions.ts *@
-<div id="modal" class="modal !items-stretch !justify-end !p-0">
-    <div class="modal-box w-[480px] max-w-[92vw] h-screen !max-h-screen !rounded-none rounded-l-2xl overflow-y-auto p-7 flex flex-col gap-4">
+<div id="modal" class="modal !items-center !justify-center">
+    <div class="modal-box w-[520px] max-w-[92vw] max-h-[90vh] rounded-2xl overflow-y-auto p-7 flex flex-col gap-4">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0">
                 <div id="drawer-type-icon" class="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
@@ -219,16 +219,6 @@
                 </div>
                 <input type="checkbox" id="IsMandatory-cb" name="IsMandatory" value="true" class="toggle toggle-primary toggle-sm" checked />
             </label>
-
-            <div class="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-                <div class="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-primary/60 text-primary-content flex items-center justify-center flex-shrink-0">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l3.5 7L23 11.5l-6.5 4L13 22l-3.5-6.5L3 11.5 9.5 10z"/></svg>
-                </div>
-                <div class="min-w-0">
-                    <div class="text-xs font-bold text-primary mb-0.5">@L["AiTipLabel"]</div>
-                    <div class="text-xs text-base-content/70 leading-relaxed">@L["AiTipText"]</div>
-                </div>
-            </div>
 
             <div class="divider my-1"></div>
 
