@@ -1,7 +1,7 @@
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
-import { toast, bindDirtyTracking } from './lib/notify';
+import { toast, bindDirtyTracking } from '../lib/notify';
 
 function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
     return new Promise((resolve) => {

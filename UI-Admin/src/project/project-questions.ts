@@ -1,5 +1,5 @@
-import { toast } from './lib/notify';
-import { wireQuestionMediaPanel, hydrateMediaPanel } from './lib/question-media';
+import { toast } from '../lib/notify';
+import { wireQuestionMediaPanel, hydrateMediaPanel } from '../lib/question-media';
 
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal') as HTMLDivElement | null;
