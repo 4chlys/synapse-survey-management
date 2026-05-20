@@ -30,6 +30,7 @@ using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -200,6 +201,7 @@ builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton(aiConfig.ImageDescription);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
+builder.Services.AddSingleton(aiConfig.SocialMedia);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -290,6 +292,7 @@ if (useAi)
     builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
     builder.Services.AddScoped<IAiImageDescriptionService, AiImageDescriptionService>();
+    builder.Services.AddScoped<ISocialPostGenerator, GoogleVertexAiSocialPostGenerator>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -325,6 +328,7 @@ else
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
     builder.Services.AddScoped<IAiImageDescriptionService, MockImageDescriptionService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
+    builder.Services.AddSingleton<ISocialPostGenerator, MockSocialPostGenerator>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.

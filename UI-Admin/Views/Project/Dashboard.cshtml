@@ -38,6 +38,7 @@
         {
             var widgetType = Model.WidgetLayout[i];
             var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
+            var isTall  = widgetType is "SocialMediaPost";
             <div data-widget="@widgetType"
                  data-project-id="@Model.ProjectId"
                  data-api-base="@Model.ApiBaseUrl"
