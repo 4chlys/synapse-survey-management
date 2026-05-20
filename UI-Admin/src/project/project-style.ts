@@ -271,7 +271,7 @@ function buildPreview(host: HTMLDivElement, mode: 'light' | 'dark'): PreviewRefs
             background: var(--color-base-100);
             color: var(--color-base-content);
             padding: 0.75rem 1rem;
-            border-radius: var(--radius-box);
+            border-radius: var(--radius-field);
             border: 1px solid var(--color-base-300);
             text-decoration: none;
         }
@@ -306,7 +306,7 @@ function buildPreview(host: HTMLDivElement, mode: 'light' | 'dark'): PreviewRefs
             background: var(--color-base-100);
             border: 1px solid var(--color-base-300);
             color: var(--color-base-content);
-            border-radius: 1rem;
+            border-radius: var(--radius-box);
             border-top-left-radius: 0;
             padding: 0.5rem 0.85rem;
             font-size: 0.875rem;
