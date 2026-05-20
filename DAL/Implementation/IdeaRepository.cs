@@ -136,4 +136,30 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         return ideas;
     }
 
+    public async Task<List<Idea>> ReadForSummaryAsync(
+        int projectId,
+        int? categoryId,
+        ModerationStatus? status,
+        string languageCode,
+        CancellationToken ct = default)
+    {
+        var query = Context.Set<Idea>()
+            .AsNoTracking()
+            .Include(i => i.Comments)
+            .Include(i => i.Category).ThenInclude(c => c.Project)
+            .Include(i => i.Language)
+            .Where(i => i.Category.Project.ProjectId == projectId);
+
+        if (categoryId.HasValue)
+            query = query.Where(i => i.Category.CategoryId == categoryId.Value);
+
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(languageCode))
+            query = query.Where(i => i.Language.Code == languageCode);
+
+        return await query.ToListAsync(ct);
+    }
+
 }

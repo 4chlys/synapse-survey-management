@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -35,4 +36,11 @@ public interface IIdeaRepository : IRepository<Idea>
     // Description of the participant's most recent idea in this category, used as
     // the anchor for similar/different/diverse embedding sorts. Null = no idea yet.
     Task<string> ReadMostRecentDescriptionByCategoryAndParticipantAsync(int categoryId, int participantId);
+
+    Task<List<Idea>> ReadForSummaryAsync(
+        int projectId,
+        int? categoryId,
+        ModerationStatus? status,
+        string languageCode,
+        CancellationToken ct = default);
 }
