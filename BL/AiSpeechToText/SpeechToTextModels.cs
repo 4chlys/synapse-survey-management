@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.BL.AiSpeechToText;
 
 /// <summary>Audio data + metadata sent to the transcription service.</summary>
-public sealed class SpeechToTextRequest
+public sealed record SpeechToTextRequest
 {
     /// <summary>Raw audio bytes to transcribe.</summary>
     public byte[] AudioData { get; init; } = [];
@@ -17,7 +17,7 @@ public sealed class SpeechToTextRequest
 }
 
 /// <summary>Outcome of a transcription call.</summary>
-public sealed class SpeechToTextResult
+public sealed record SpeechToTextResult
 {
     public bool IsSuccess { get; private init; }
 

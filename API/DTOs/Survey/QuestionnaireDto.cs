@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class QuestionnaireDto
+public record QuestionnaireDto
 {
-    public int QuestionnaireId { get; set; }
-    public ICollection<QuestionDto> Questions { get; set; } = new List<QuestionDto>();
+    public int QuestionnaireId { get; init; }
+    public ICollection<QuestionDto> Questions { get; init; } = new List<QuestionDto>();
 }

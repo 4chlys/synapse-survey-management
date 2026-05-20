@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.API.DTOs.Project;
 
-public class ParticipantStatusDto
+public record ParticipantStatusDto
 {
-    public bool HasResponded { get; set; }
+    public bool HasResponded { get; init; }
 }

@@ -2,11 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.AiSupport;
 
-public class AiSupportMessageDto
+public record AiSupportMessageDto
 {
     [Required, RegularExpression("^(user|assistant)$", ErrorMessage = "Role must be 'user' or 'assistant'.")]
-    public string Role    { get; set; } = string.Empty;
+    public string Role    { get; init; } = string.Empty;
 
     [Required, MaxLength(2000)]
-    public string Content { get; set; } = string.Empty;
+    public string Content { get; init; } = string.Empty;
 }

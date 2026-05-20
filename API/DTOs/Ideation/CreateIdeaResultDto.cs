@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class CreateIdeaResultDto
+public record CreateIdeaResultDto
 {
-    public int IdeaId { get; set; }
-    public bool ShouldAskForContactInfo { get; set; }
+    public int IdeaId { get; init; }
+    public bool ShouldAskForContactInfo { get; init; }
 }

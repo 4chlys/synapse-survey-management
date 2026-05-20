@@ -113,8 +113,4 @@ public class SurveyApiController(
     }
 }
 
-public class SaveResponseRequest
-{
-    public int QuestionId { get; set; }
-    public string Value { get; set; }
-}
+public record SaveResponseRequest(int QuestionId, string Value);

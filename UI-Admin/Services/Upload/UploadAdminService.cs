@@ -17,8 +17,8 @@ public class UploadAdminService(HttpClient httpClient)
         return result!.Url;
     }
 
-    private sealed class UploadResult
+    private sealed record UploadResult
     {
-        public string Url { get; set; } = string.Empty;
+        public string Url { get; init; } = string.Empty;
     }
 }

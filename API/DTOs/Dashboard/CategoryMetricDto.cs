@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.API.DTOs.Dashboard;
 
-public class CategoryMetricDto
+public record CategoryMetricDto
 {
-    public int CategoryId { get; set; }
-    public string Name { get; set; }
-    public int IdeaCount { get; set; }
-    public int TotalReactions { get; set; }
+    public int CategoryId { get; init; }
+    public string Name { get; init; }
+    public int IdeaCount { get; init; }
+    public int TotalReactions { get; init; }
 }
