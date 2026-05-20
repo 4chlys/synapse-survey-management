@@ -54,7 +54,6 @@ build-api:
   only:
     - development
     - main
-    - release/staging
 
 build-ui:
   stage: build
@@ -69,7 +68,6 @@ build-ui:
   only:
     - development
     - main
-    - release/staging
 
 build-admin:
   stage: build
@@ -84,7 +82,6 @@ build-admin:
   only:
     - development
     - main
-    - release/staging
 
 scan-api:
   stage: scan
@@ -103,7 +100,6 @@ scan-api:
   only:
     - development
     - main
-    - release/staging
 
 scan-ui:
   stage: scan
@@ -122,7 +118,6 @@ scan-ui:
   only:
     - development
     - main
-    - release/staging
 
 scan-admin:
   stage: scan
@@ -141,7 +136,6 @@ scan-admin:
   only:
     - development
     - main
-    - release/staging
 
 scan-nginx:
   stage: scan
@@ -180,7 +174,6 @@ push-test:
     - docker push "${IMAGE_ADMIN}:test-latest"
   only:
     - development
-    - release/staging
 
 push-prod:
   stage: push
@@ -200,7 +193,6 @@ push-prod:
     - docker push "${IMAGE_ADMIN}:latest"
   only:
     - main #reverse
-    - release/staging
 
 sign-prod:
   stage: sign
@@ -218,7 +210,6 @@ sign-prod:
     - rm -f /tmp/cosign.key
   only:
     - main
-    - release/staging
 
 deploy-test:
   stage: deploy
@@ -266,7 +257,6 @@ deploy-test:
       done
   only:
     - development
-    - release/staging
   environment:
     name: test
 
@@ -290,7 +280,6 @@ deploy-production:
       gcloud compute instance-groups managed wait-until synapse-prod-admin-mig --stable --zone="${ZONE}"
   only:
     - main #reverse
-    - release/staging
   when: manual
   environment:
     name: production
