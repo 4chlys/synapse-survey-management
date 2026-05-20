@@ -416,6 +416,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 [data-project-theme="default"] {
     --color-primary: light-dark(oklch(52% 0.22 277), oklch(64% 0.22 277));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
     --font-heading: 'Space Grotesk', ui-sans-serif, sans-serif;
     --radius-field: 0.75rem;
     --radius-box: 1rem;
@@ -423,6 +424,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 [data-project-theme="playful"] {
     --color-primary: light-dark(oklch(62% 0.18 65), oklch(78% 0.16 65));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --font-heading: 'Nunito', ui-sans-serif, sans-serif;
     --radius-field: 1rem;
     --radius-box: 1.25rem;
@@ -430,6 +432,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 [data-project-theme="professional"] {
     --color-primary: light-dark(oklch(35% 0.04 250), oklch(55% 0.06 250));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
     --font-heading: 'Source Sans 3', ui-sans-serif, sans-serif;
     --radius-field: 0.25rem;
     --radius-box: 0.375rem;
@@ -437,6 +440,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 
 [data-project-theme="highcontrast"] {
     --color-primary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-100: light-dark(oklch(100% 0 0), oklch(8% 0 0));
     --color-base-content: light-dark(oklch(0% 0 0), oklch(100% 0 0));
     --color-warning: oklch(95% 0.20 100);

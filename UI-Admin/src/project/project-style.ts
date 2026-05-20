@@ -39,7 +39,7 @@ const PROJECT_THEME_CSS = `
 :host { color-scheme: light dark; }
 [data-project-theme="default"] {
     --color-primary: light-dark(oklch(52% 0.22 277), oklch(64% 0.22 277));
-    --color-primary-content: oklch(100% 0 0);
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
     --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
     --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
@@ -50,7 +50,7 @@ const PROJECT_THEME_CSS = `
 }
 [data-project-theme="playful"] {
     --color-primary: light-dark(oklch(62% 0.18 65), oklch(78% 0.16 65));
-    --color-primary-content: oklch(20% 0.05 80);
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
     --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
@@ -61,7 +61,7 @@ const PROJECT_THEME_CSS = `
 }
 [data-project-theme="professional"] {
     --color-primary: light-dark(oklch(35% 0.04 250), oklch(55% 0.06 250));
-    --color-primary-content: oklch(100% 0 0);
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
     --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
     --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
@@ -72,7 +72,7 @@ const PROJECT_THEME_CSS = `
 }
 [data-project-theme="highcontrast"] {
     --color-primary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
-    --color-primary-content: light-dark(oklch(100% 0 0), oklch(0% 0 0));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-100: light-dark(oklch(100% 0 0), oklch(8% 0 0));
     --color-base-200: light-dark(oklch(100% 0 0), oklch(8% 0 0));
     --color-base-300: light-dark(oklch(80% 0 0), oklch(20% 0 0));
