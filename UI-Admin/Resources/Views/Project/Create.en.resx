@@ -68,4 +68,8 @@
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
   <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Unbalanced braces ({0} {  vs  {1} }).</value></data>
   <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS looks balanced.</value></data>
+  <data name="Snippet_PrimaryColor" xml:space="preserve"><value>Override primary colour</value></data>
+  <data name="Snippet_RoundedButtons" xml:space="preserve"><value>Rounded buttons</value></data>
+  <data name="Snippet_IdeaCardShadow" xml:space="preserve"><value>Idea card shadow</value></data>
+  <data name="Snippet_HeadingFont" xml:space="preserve"><value>Heading font</value></data>
 </root>

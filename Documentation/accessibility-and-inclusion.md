@@ -125,7 +125,7 @@ The app uses semantic ARIA across the interactive surface:
 | `aria-live="polite"` | Chat message log, speech-to-text status text, validation feedback |
 | `aria-current="true"` | Active language pill |
 | `sr-only` text | Theme toggle's hidden text label backing the icon-only button |
-| `alt` attributes | Every uploaded idea image, every organisation logo |
+| `alt` attributes | Organisation logos (descriptive); idea images and question media currently ship `alt=""` — see gaps below |
 
 ### Focus management
 
@@ -198,6 +198,24 @@ What is broken or missing today (honest gaps):
 
 These are tracked in "What we do NOT do (yet)" below as concrete next steps, not assumed done.
 
+## Participant-uploaded idea images
+
+Participants can attach an image to an idea (`Views/Ideation/IdeaHub.cshtml` — "Add image" button). The image is stored server-side, validated for MIME type (`image/jpeg`, `image/png`, `image/webp`, `image/gif`) and size, and rendered on the idea card in the hub, on the idea detail page, and on the participant's "my ideas" view.
+
+What works today:
+
+- **AI "Describe image" button.** After uploading, the participant can ask the AI to generate a text description of the image. This is a real inclusion feature — it helps participants who have limited vocabulary or who are writing in a second language to articulate what their image shows, AND it produces text content that screen-reader users could in principle benefit from.
+- **MIME-type whitelist** prevents unexpected media (no SVG with embedded scripts, no oversized formats).
+- **Server-side validation** in `UploadsController` rejects malformed or oversized uploads with a localised error.
+- **Lightbox preview** on the detail page lets low-vision participants zoom into an image without needing browser zoom or pinch-zoom on touch.
+- **Inline error feedback** when an upload fails (wrong type, too large, not allowed) so the participant knows immediately what to fix.
+
+What is broken or missing today (honest gaps):
+
+- **`alt=""` everywhere.** Every rendered idea image — on the hub card, on the detail page, on "my ideas", inside the lightbox — ships `alt=""`. Screen-reader users get nothing. This is despite the "Describe image" feature already producing a usable description; the description is dropped into the idea TEXT, not bound to the `<img>` element. Fixing this is a high-leverage change: a `data-image-description` field on the idea, used both for the idea text suggestion AND for the rendered alt attribute, would close the loop.
+- **No required-alt prompt on upload.** Participants can post an image without describing it. For a fully accessible product the "Describe image" step would be either required or strongly prompted (with a "decorative — skip" opt-out) before submit.
+- **No image content moderation for accessibility.** Moderation today flags inappropriate content but does not check for embedded text in the image that should be reproduced in alt text (e.g., a photo of a poster). Out of scope for now.
+
 ## Privacy and consent
 
 Accessibility includes informed consent. A privacy icon sits in every page header, linking to the project's privacy policy in the participant's language. Participants are anonymous by default; contact info is opt-in via a clear popup.
@@ -222,7 +240,14 @@ Honest gaps, kept here so they don't get forgotten:
 - **Skip-to-content link** — first-tab "jump to main content" link is not yet implemented.
 - **Headings audit** — heading levels (`<h1>` … `<h6>`) are not yet audited per view; a screen-reader user navigating by headings may not get a perfectly clean outline.
 - **Form-error summary** — validation errors appear next to fields but there is no top-of-form summary linking to each invalid field.
-- **Captions / transcripts** — there is no video or audio content yet, but if introduced (e.g., a video question type), captions must ship with it.
+- **Image alt text on ideas and question media.** Both surfaces render `<img alt="">`. For ideas the "Describe image" AI output is the obvious fix — bind it to a dedicated `IdeaImageDescription` field and reuse it as the rendered `alt`. For question images the admin needs a new alt-text field next to `MediaUrl`. Highest-priority a11y gap in the codebase.
+- **Captions on uploaded video.** `<video>` elements have no `<track kind="captions">`. The admin UI should let admins upload a `.vtt` caption file alongside the video, OR require that the source already carries captions (e.g., YouTube auto-captions enabled).
+- **Audio transcripts.** First-class transcript field on questions with `MediaType = Audio`, surfaced in the participant UI in a `<details>` block so it doesn't dominate the layout.
+- **Iframe titles.** Embedded video iframes use the static `title="Video"`; should use the question's actual title.
+- **Required-alt-text prompt on idea image upload.** Participants can post an image without describing it. The "Describe image" AI step should be either required or explicitly opt-out ("decorative image") before submit.
+- **Skip-to-content link.** First-tab "jump to main content" link is not yet implemented.
+- **Headings audit.** Heading levels (`<h1>` … `<h6>`) are not yet audited per view; a screen-reader user navigating by headings may not get a perfectly clean outline.
+- **Form-error summary.** Validation errors appear next to fields but there is no top-of-form summary linking to each invalid field.
 
 These are tracked separately and intentionally left to future work, not assumed done.
 

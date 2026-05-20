@@ -110,13 +110,18 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
             font-family: var(--font-heading);
             border-radius: var(--radius-box);
         }
-        .preview-card {
+        /* Idea card — mirrors #ideas-list > a on the participant IdeaHub page */
+        #ideas-list {
+            margin-bottom: 0.75rem;
+        }
+        #ideas-list a {
+            display: block;
             background: var(--color-base-100);
             color: var(--color-base-content);
             padding: 0.75rem 1rem;
             border-radius: var(--radius-box);
-            margin-bottom: 0.75rem;
             border: 1px solid var(--color-base-300);
+            text-decoration: none;
         }
         .preview-heading {
             font-weight: 700;
@@ -124,8 +129,17 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
             margin: 0 0 0.25rem 0;
         }
         .preview-body { margin: 0; font-size: 0.875rem; opacity: 0.85; }
-        .preview-actions { display: flex; gap: 0.5rem; align-items: center; }
-        .btn-primary {
+        /* Accent strip — mirrors .accent-strip on IdeaHub and thank-you pages */
+        .accent-strip {
+            background: var(--color-primary);
+            height: 2px;
+            width: 2rem;
+            border-radius: 9999px;
+            margin-bottom: 0.5rem;
+        }
+        .preview-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+        /* Primary button — mirrors .btn.btn-primary (daisyUI) on participant pages */
+        .btn.btn-primary {
             background: var(--color-primary);
             color: var(--color-primary-content);
             border: none;
@@ -135,13 +149,17 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
             font-weight: 500;
             cursor: pointer;
         }
-        .chip {
+        /* Survey chat bubble — mirrors .chat-bubble-left on the chatform page */
+        .chat-bubble-left {
             background: var(--color-base-100);
             border: 1px solid var(--color-base-300);
             color: var(--color-base-content);
-            border-radius: var(--radius-field);
-            padding: 0.2rem 0.5rem;
-            font-size: 0.75rem;
+            border-radius: 1rem;
+            border-top-left-radius: 0;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: inline-block;
         }
     `;
 
@@ -152,14 +170,17 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
     wrapper.className = 'preview-root';
     wrapper.setAttribute('data-project-theme', host.dataset.initialTheme ?? 'default');
     wrapper.innerHTML = `
-        <div class="preview-card">
-            <h3 class="preview-heading">Voorbeeldproject</h3>
-            <p class="preview-body">Dit is hoe deelnemers de stijl zien.</p>
+        <div id="ideas-list">
+            <a>
+                <div class="accent-strip"></div>
+                <h3 class="preview-heading">Voorbeeldproject</h3>
+                <p class="preview-body">Dit is hoe deelnemers de stijl zien.</p>
+            </a>
         </div>
         <div class="preview-actions">
-            <button class="btn-primary" type="button">Primaire knop</button>
-            <span class="chip">Chip</span>
+            <button class="btn btn-primary" type="button">Idee toevoegen</button>
         </div>
+        <div class="chat-bubble-left">Wat vind jij hiervan?</div>
     `;
 
     shadow.append(themeStyle, primaryStyle, userStyle, wrapper);
@@ -293,19 +314,19 @@ const CSS_VARIABLES: ReadonlyArray<{ name: string; hint: string }> = [
 
 const SNIPPETS: ReadonlyArray<{ label: string; body: string }> = [
     {
-        label: 'Override primaire kleur',
+        label: snippetsEl?.dataset.labelPrimaryColor ?? 'Override primaire kleur',
         body: '[data-project-theme] {\n    --color-primary: #16A34A;\n}\n',
     },
     {
-        label: 'Aangepaste knopstijl',
-        body: '[data-project-theme] .btn-primary {\n    border-radius: 9999px;\n}\n',
+        label: snippetsEl?.dataset.labelRoundedButtons ?? 'Afgeronde knoppen',
+        body: '[data-project-theme] .btn.btn-primary {\n    border-radius: 9999px;\n}\n',
     },
     {
-        label: 'Aangepaste kaart',
-        body: '[data-project-theme] .preview-card {\n    box-shadow: 0 4px 12px rgba(0,0,0,0.08);\n}\n',
+        label: snippetsEl?.dataset.labelIdeaCardShadow ?? 'Schaduw op ideekaarten',
+        body: '[data-project-theme] #ideas-list a {\n    box-shadow: 0 4px 12px rgba(0,0,0,0.08);\n}\n',
     },
     {
-        label: 'Koplettertype',
+        label: snippetsEl?.dataset.labelHeadingFont ?? 'Koplettertype',
         body: '[data-project-theme] {\n    --font-heading: "Georgia", serif;\n}\n',
     },
 ];

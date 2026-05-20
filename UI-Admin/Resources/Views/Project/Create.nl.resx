@@ -68,4 +68,8 @@
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
   <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Niet-gebalanceerde accolades ({0} {  vs  {1} }).</value></data>
   <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS ziet er gebalanceerd uit.</value></data>
+  <data name="Snippet_PrimaryColor" xml:space="preserve"><value>Override primaire kleur</value></data>
+  <data name="Snippet_RoundedButtons" xml:space="preserve"><value>Afgeronde knoppen</value></data>
+  <data name="Snippet_IdeaCardShadow" xml:space="preserve"><value>Schaduw op ideekaarten</value></data>
+  <data name="Snippet_HeadingFont" xml:space="preserve"><value>Koplettertype</value></data>
 </root>
