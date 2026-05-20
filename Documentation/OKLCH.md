@@ -147,6 +147,183 @@ OKLCH can describe colors outside sRGB — including the wider P3 gamut that mod
 
 Our supported-browser baseline (January 2026) covers all of the above on >97 % of devices. The `@supports not` fallback handles the remaining 3 %.
 
+## Server-side OKLab math — the relative-color fallback
+
+The `oklch(from var(--color-primary) calc(l - 0.06) c h)` syntax only works on Chrome 119+, Safari 16.4+, Firefox 128+. For older browsers we ship the same derived colors as static hex values inside a `@supports not (color: oklch(from red l c h))` block. Those hex values are computed **once, server-side**, in C# — not at request time per element, not in the browser.
+
+### Where the code lives
+
+| File | Purpose |
+|---|---|
+| `BL/Helpers/ColorHelpers.cs` | Authoritative implementation. WCAG luminance / contrast helpers + the OKLab derivation (`ShiftLightness`, `ComplementaryHue`). Used by `ProjectManager` for save-time contrast guards. |
+| `UI-User/Helpers/ColorHelpers.cs` | Duplicate of the same helpers. Exists because `UI-User` does NOT reference `BL` directly — it talks to the platform over HTTP. The duplication is intentional and must stay in sync. |
+| `UI-User/Extensions/ControllerLayoutExtensions.cs` | Calls `ShiftLightness(-0.06)`, `ShiftLightness(-0.12)`, and `ComplementaryHue` on the picked `PrimaryColor`. Exposes the three hex fallbacks via `ViewData["ProjectPrimaryHover" / "ProjectPrimaryFocus" / "ProjectAccent"]`. |
+| `UI-User/Views/Shared/_Layout.cshtml` | Emits the `<style>` block containing the relative-color OKLCH rules plus the `@supports not` block with the precomputed hex fallbacks. |
+| `UI-Admin/src/project/project-style.ts` | TypeScript mirror used in the admin preview shadow root. Must produce byte-identical hex to the C# helpers so WYSIWYG holds. |
+
+### The pipeline at a glance
+
+Going from a stored hex (`#RRGGBB`) to an adjusted hex follows a fixed five-step round-trip. Every node below maps to one block of code in `ColorHelpers.cs` and `project-style.ts`:
+
+```
+        #RRGGBB                            #RRGGBB
+           │                                   ▲
+           ▼                                   │
+     sRGB ∈ [0, 1]                       sRGB ∈ [0, 1]
+           │                                   ▲
+           │  gamma decode                     │  gamma encode
+           ▼                                   │
+     linear sRGB                          linear sRGB
+           │                                   ▲
+           │  × M₁                             │  × M₁⁻¹
+           ▼                                   │
+        LMS cones                          LMS cones
+           │                                   ▲
+           │  ∛  (perceptual compression)      │  ( · )³
+           ▼                                   │
+     cube-rooted LMS                    cube-rooted LMS
+           │                                   ▲
+           │  × M₂                             │  × M₂⁻¹
+           ▼                                   │
+       OKLab (L, a, b) ─── adjust ─── OKLab (L, a, b)
+                              │
+                              ├─ ShiftLightness(Δ):    L ← clamp(L + Δ, 0, 1)
+                              └─ ComplementaryHue:     (a, b) ← (−a, −b)
+```
+
+The adjustments happen in OKLab because lightness and hue are linearly separable there — exactly the property that hex, HSL, and linear sRGB do not have.
+
+### Step 1 — gamma decode (sRGB → linear sRGB)
+
+Display values are gamma-encoded to spread perceptual resolution across the low end. We undo that before doing any color math:
+
+$$
+c_{\text{linear}} =
+\begin{cases}
+  \dfrac{c}{12.92} & c \leq 0.04045 \\[4pt]
+  \left(\dfrac{c + 0.055}{1.055}\right)^{2.4} & c > 0.04045
+\end{cases}
+$$
+
+Applied independently to each of `r`, `g`, `b` in `[0, 1]`.
+
+### Step 2 — linear sRGB → LMS cone responses
+
+LMS approximates how the human retina's three cone cells respond to light. The transformation is a fixed 3×3 matrix from Björn Ottosson's OKLab definition:
+
+$$
+\begin{bmatrix} l_{\text{LMS}} \\ m_{\text{LMS}} \\ s_{\text{LMS}} \end{bmatrix}
+=
+\begin{bmatrix}
+  0.4122214708 & 0.5363325363 & 0.0514459929 \\
+  0.2119034982 & 0.6806995451 & 0.1073969566 \\
+  0.0883024619 & 0.2817188376 & 0.6299787005
+\end{bmatrix}
+\cdot
+\begin{bmatrix} r \\ g \\ b \end{bmatrix}
+$$
+
+We call this matrix $\mathbf{M_1}$. Note the rows sum to roughly 1 — pure white in linear sRGB lands at LMS ≈ (1, 1, 1).
+
+### Step 3 — perceptual compression (cube root)
+
+The cone response is then cube-rooted, channel-wise. This is where "perceptual" enters the model: the cube root approximates how the visual cortex compresses luminance.
+
+$$
+l' = \sqrt[3]{l_{\text{LMS}}}, \quad
+m' = \sqrt[3]{m_{\text{LMS}}}, \quad
+s' = \sqrt[3]{s_{\text{LMS}}}
+$$
+
+### Step 4 — cube-rooted LMS → OKLab
+
+A second fixed 3×3 matrix maps the compressed LMS triple to the (L, a, b) axes:
+
+$$
+\begin{bmatrix} L \\ a \\ b \end{bmatrix}
+=
+\begin{bmatrix}
+  0.2104542553 &  0.7936177850 & -0.0040720468 \\
+  1.9779984951 & -2.4285922050 &  0.4505937099 \\
+  0.0259040371 &  0.7827717662 & -0.8086757660
+\end{bmatrix}
+\cdot
+\begin{bmatrix} l' \\ m' \\ s' \end{bmatrix}
+$$
+
+We call this matrix $\mathbf{M_2}$. The L axis is perceptual lightness in `[0, 1]`; the `a` axis runs green ↔ red; the `b` axis runs blue ↔ yellow.
+
+### Step 5 — adjust in OKLab
+
+This is the entire reason we did the trip. With L isolated, "hover" and "focus" are one subtraction each:
+
+$$
+\text{ShiftLightness}(\Delta): \quad L' = \text{clamp}(L + \Delta, \; 0, \; 1)
+$$
+
+And the complementary hue, which in polar form would be $h \mathrel{+}= 180°$, becomes a sign flip in Cartesian a/b (skipping the `atan2` round-trip entirely):
+
+$$
+\text{ComplementaryHue}: \quad (a', b') = (-a, \; -b)
+$$
+
+### Step 6 — back to hex
+
+The inverse trip uses the inverse matrices and the inverse gamma curve. The two inverses are also constants from Ottosson's definition:
+
+$$
+\mathbf{M_2^{-1}} =
+\begin{bmatrix}
+  1 &  0.3963377774 &  0.2158037573 \\
+  1 & -0.1055613458 & -0.0638541728 \\
+  1 & -0.0894841775 & -1.2914855480
+\end{bmatrix}
+\qquad
+\mathbf{M_1^{-1}} =
+\begin{bmatrix}
+   4.0767416621 & -3.3077115913 &  0.2309699292 \\
+  -1.2684380046 &  2.6097574011 & -0.3413193965 \\
+  -0.0041960863 & -0.7034186147 &  1.7076147010
+\end{bmatrix}
+$$
+
+Cubing the LMS row undoes the cube-root compression, and the inverse gamma curve produces final sRGB values:
+
+$$
+c_{\text{srgb}} =
+\begin{cases}
+  12.92 \cdot c_{\text{linear}} & c_{\text{linear}} \leq 0.0031308 \\[4pt]
+  1.055 \cdot c_{\text{linear}}^{\,1/2.4} - 0.055 & c_{\text{linear}} > 0.0031308
+\end{cases}
+$$
+
+Channels are clamped to `[0, 1]` before encoding (a 180° rotation can push a vivid color out of the sRGB gamut), then scaled to `[0, 255]` and formatted as two hex digits each.
+
+### Why the magic numbers Δ = −0.06 and Δ = −0.12
+
+OKLab's L is normalised to `[0, 1]`, matching the way modern CSS reads OKLCH lightness as either a decimal or a percentage. The hover token drops L by 0.06 (≈ 6 percentage points) and the focus token drops it by a further 0.06. These were tuned against the existing daisyUI primaries:
+
+- Light enough to leave a clearly perceptible step between primary → hover → focus,
+- Dark enough not to wash the primary out at first contact,
+- Large enough that the difference survives the cube-root rounding back to sRGB even on already-dark primaries.
+
+Going beyond `−0.12` on a primary that started near `L = 0.20` (e.g. high-contrast dark) clips into pure black, at which point the picker is rejected upstream by Stage 7's contrast guard — so we never need to handle "no further darkening possible" in the helper itself. The clamp at `[0, 1]` is defensive only.
+
+### Why fallbacks are computed in C#, not JS, on the participant page
+
+The participant page must render correctly on first paint, without waiting for a JS bundle, on browsers that may not support relative-color OKLCH. Computing the fallback in the controller and inlining it as a `@supports not` rule means:
+
+1. No layout shift — the browser knows the resolved color before any JS runs.
+2. No `requestAnimationFrame` flash where the page paints with the wrong color and corrects itself.
+3. Older browsers (3 % of our traffic at the January 2026 baseline) get pixel-correct rendering.
+4. Modern browsers ignore the `@supports not` block entirely and use the live OKLCH derivation, which stays in sync if the admin updates the primary later (CSS recomputes; the server doesn't have to re-render).
+
+The admin **preview** in `UI-Admin` is a different story: it lives behind JS already (the picker drives a shadow root), so we just compute the hex in TypeScript and emit it directly — no `@supports` needed inside the preview.
+
+### Keeping the three implementations in sync
+
+There is no compile-time link between `BL/Helpers/ColorHelpers.cs`, `UI-User/Helpers/ColorHelpers.cs`, and `UI-Admin/src/project/project-style.ts` — treat divergence as a bug. The cheap regression test is to pick a saturated brand color in the admin preview, compare hover/focus/accent rendering side-by-side with the participant page, and check they match exactly. If any of the eighteen matrix coefficients above is mistyped in one file, this test will surface it on the first try.
+
 ## How to read an OKLCH value
 
 A handful of mental anchors will let you parse any value in this codebase:
@@ -182,8 +359,6 @@ For storage in the database we keep hex (`^#[0-9A-Fa-f]{6}$`). Reasons:
 OKLCH is purely a **render-time** format in this codebase. The conversion happens once, server-side, when the inline `<style>` is emitted into `_Layout.cshtml`.
 
 ## Briefing summary for non-technical readers
-
-If a teammate or client asks "why this strange color format", here is the elevator version:
 
 > OKLCH lets us derive a full visual identity — buttons, hovers, accents, dark-mode variants — from a single brand color the admin picks, and guarantees it stays accessible across every variation. Without it, every tenant would need a designer; with it, every tenant gets a designer's palette automatically. We chose it specifically because this is a multi-tenant platform with non-technical admins.
 

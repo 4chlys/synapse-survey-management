@@ -110,6 +110,9 @@
     @{
         var _primary        = ViewData["ProjectPrimaryColor"] as string;
         var _primaryContent = ViewData["ProjectPrimaryContent"] as string;
+        var _primaryHover   = ViewData["ProjectPrimaryHover"] as string;
+        var _primaryFocus   = ViewData["ProjectPrimaryFocus"] as string;
+        var _accent         = ViewData["ProjectAccent"] as string;
         var _customCss      = ViewData["ProjectCustomCss"] as string;
     }
     @if (!string.IsNullOrWhiteSpace(_primary))
@@ -118,6 +121,16 @@
             body[data-project-theme] {
                 --color-primary: @_primary;
                 --color-primary-content: @_primaryContent;
+                --color-primary-hover:  oklch(from @_primary calc(l - 0.06) c h);
+                --color-primary-focus:  oklch(from @_primary calc(l - 0.12) c h);
+                --color-accent:         oklch(from @_primary l c calc(h + 180));
+            }
+            @@supports not (color: oklch(from red l c h)) {
+                body[data-project-theme] {
+                    --color-primary-hover: @_primaryHover;
+                    --color-primary-focus: @_primaryFocus;
+                    --color-accent:        @_accent;
+                }
             }
         </style>
     }

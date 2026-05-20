@@ -178,6 +178,26 @@ Project admins set a `MinAge` and `MaxAge` on each project (`Domain/Project/Enti
 
 A non-technical admin picks one preset; the visual character flows to every page without further configuration.
 
+## Supporting media on questions
+
+Project admins can attach one of three media types to a question (`Domain/Project/Enums/QuestionMediaType.cs`): **Image**, **Video** (uploaded or embed from YouTube / Vimeo), or **Audio**. The participant sees the media rendered above the question text in `Views/Survey/Scrollform.cshtml`.
+
+What works today:
+
+- **`MediaText` field** — markdown block rendered next to the media. Admins can use this as a transcript, image description, or summary of an audio clip. It is currently optional and not labelled as a transcript in the admin UI; participants who rely on it depend on the admin remembering to fill it in.
+- **Native controls** — `<video controls>` and `<audio controls>` give participants pause / seek / volume keyboard control out of the box.
+- **`preload="metadata"`** — media does not auto-download or auto-play, respecting low-bandwidth and data-cost concerns.
+- **Embed sandbox** — YouTube / Vimeo iframes ship with `sandbox="allow-scripts allow-same-origin allow-presentation"` and a strict referrer policy, limiting what the embed can do.
+
+What is broken or missing today (honest gaps):
+
+- **Image alt text is empty.** `<img alt="">` ships unconditionally for every question image. Admins cannot provide alt text. Fails WCAG 1.1.1.
+- **No video captions.** `<video>` elements have no `<track kind="captions">`. Hearing-impaired participants cannot follow uploaded video unless the admin separately fills `MediaText`. Fails WCAG 1.2.2 for prerecorded video. For YouTube embeds the platform's own captions can be turned on by the participant, but our admin UI does not require captions to be present on the source.
+- **No audio transcript field.** Same problem for audio: no first-class transcript field, only the optional `MediaText`. Fails WCAG 1.2.1.
+- **Static iframe title.** Embedded video iframes have `title="Video"` instead of the actual question title — a screen-reader user gets no context. Fails WCAG 4.1.2 / 2.4.1.
+
+These are tracked in "What we do NOT do (yet)" below as concrete next steps, not assumed done.
+
 ## Privacy and consent
 
 Accessibility includes informed consent. A privacy icon sits in every page header, linking to the project's privacy policy in the participant's language. Participants are anonymous by default; contact info is opt-in via a clear popup.
