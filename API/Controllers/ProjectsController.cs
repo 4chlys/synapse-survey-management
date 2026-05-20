@@ -4,6 +4,7 @@ using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -251,7 +252,7 @@ public class ProjectsController(
     public async Task<IActionResult> GenerateImage([FromQuery] string name, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return BadRequest(new { error = localizer["Validation.Project.NameRequired"].Value });
+            throw new LocalizedValidationException("Validation.Project.NameRequired");
 
         var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, ct);
         if (!result.IsSuccess)
