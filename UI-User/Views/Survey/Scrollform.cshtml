@@ -42,9 +42,15 @@
                         <div class="flex-1 flex flex-col gap-5 overflow-y-auto min-h-0">
                             @if (!string.IsNullOrWhiteSpace(project!.ProjectImage))
                             {
-                                <div class="shrink-0">
+                                <div class="shrink-0 relative">
                                     <img src="@project.ProjectImage" alt=""
                                          class="rounded-xl max-h-64 w-full object-contain bg-base-200" />
+                                    @if (project.IsAiGeneratedImage)
+                                    {
+                                        <span class="absolute bottom-2 right-2 bg-base-100/80 backdrop-blur-sm text-base-content/60 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-base-300">
+                                            AI
+                                        </span>
+                                    }
                                 </div>
                             }
 

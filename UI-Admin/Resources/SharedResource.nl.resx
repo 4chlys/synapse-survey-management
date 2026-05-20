@@ -18,7 +18,9 @@
   <data name="Nav_Categories" xml:space="preserve"><value>Categorieën</value></data>
   <data name="Nav_Questions" xml:space="preserve"><value>Vragen</value></data>
   <data name="Nav_Settings" xml:space="preserve"><value>Instellingen</value></data>
+  <data name="Nav_AiSettings" xml:space="preserve"><value>AI instellingen</value></data>
   <data name="Nav_SystemDashboard" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
 
   <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projecten</value></data>
   <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platformen</value></data>
@@ -65,4 +67,30 @@
   <data name="Project_InvalidFormat" xml:space="preserve"><value>Ongeldig formaat.</value></data>
   <data name="Project_ExportOnlyActive" xml:space="preserve"><value>Export is enkel beschikbaar voor actieve of gearchiveerde projecten.</value></data>
   <data name="Project_NoFileReceived" xml:space="preserve"><value>Geen bestand ontvangen.</value></data>
+
+  <data name="Platform_AdminAdded" xml:space="preserve"><value>Beheerder toegevoegd.</value></data>
+  <data name="Platform_AdminRemoved" xml:space="preserve"><value>Beheerder verwijderd.</value></data>
+  <data name="Platform_BasicInfoSaved" xml:space="preserve"><value>Basisinformatie opgeslagen.</value></data>
+  <data name="Platform_SettingsSaved" xml:space="preserve"><value>Instellingen opgeslagen.</value></data>
+  <data name="Platform_AiSettingsSaved" xml:space="preserve"><value>AI-instellingen opgeslagen.</value></data>
+  <data name="Platform_AiModelRequired" xml:space="preserve"><value>Minstens één AI-model moet geselecteerd zijn.</value></data>
+  <data name="Platform_AiModelConfiguredRequired" xml:space="preserve"><value>Minstens één geconfigureerd AI-model moet geselecteerd zijn.</value></data>
+
+  <data name="Settings_InvalidModel" xml:space="preserve"><value>Ongeldig model geselecteerd.</value></data>
+  <data name="Settings_AiModelSaved" xml:space="preserve"><value>AI-model opgeslagen.</value></data>
+  <data name="Settings_InvalidPromptType" xml:space="preserve"><value>Ongeldig prompt-type.</value></data>
+  <data name="Settings_PromptTooLong" xml:space="preserve"><value>Systeemprompt mag maximaal {0} tekens bevatten.</value></data>
+  <data name="Settings_PromptSaved" xml:space="preserve"><value>Systeemprompt opgeslagen.</value></data>
+  <data name="Settings_PromptReset" xml:space="preserve"><value>Systeemprompt hersteld naar standaard.</value></data>
+
+  <data name="Prompt_Moderation" xml:space="preserve"><value>Moderatie</value></data>
+  <data name="Prompt_CommentModeration" xml:space="preserve"><value>Commentaarmoderatie</value></data>
+  <data name="Prompt_Rewrite" xml:space="preserve"><value>Herschrijven</value></data>
+  <data name="Prompt_ImageModeration" xml:space="preserve"><value>Beeldmoderatie</value></data>
+  <data name="Prompt_IdeaSupport" xml:space="preserve"><value>Ideeondersteuning</value></data>
+  <data name="Prompt_CommentSupport" xml:space="preserve"><value>Commentaarondersteuning</value></data>
+  <data name="Prompt_QuestionSupport" xml:space="preserve"><value>Vraagondersteuning</value></data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value></data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value></data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, de AI-assistent is even niet beschikbaar.</value></data>
 </root>

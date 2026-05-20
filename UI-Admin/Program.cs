@@ -134,6 +134,8 @@ builder.Services.AddHttpClient<IQuestionMediaService, QuestionMediaService>(Conf
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddRateLimiter(options =>
 {

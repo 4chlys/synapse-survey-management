@@ -10,6 +10,7 @@ public class ProjectViewModel
     public string OrganisationLogoUrl { get; set; } = string.Empty;
     public string OrganisationWebsiteUrl { get; set; } = string.Empty;
     public string ProjectImage { get; set; } = string.Empty;
+    public bool IsAiGeneratedImage { get; set; }
     public string Introduction { get; set; } = string.Empty;
     public bool RequestContactInfo { get; set; }
     public bool ExtraIdeasReplaceExisting { get; set; }

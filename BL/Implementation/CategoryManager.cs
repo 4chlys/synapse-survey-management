@@ -98,9 +98,7 @@ public class CategoryManager(
     public async Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, string languageCode, string defaultLanguageCode, int topCount = 5)
     {
         var categories = await categoryRepository.ReadTopCategoriesAsync(projectId, topCount, languageCode, defaultLanguageCode);
-        var rawIdeas = await categoryRepository.ReadTopIdeasAsync(projectId, topCount);
-
-        var ideas = rawIdeas.Select(i => i with
+        var ideas = (await categoryRepository.ReadTopIdeasAsync(projectId, topCount)).Select(i => i with
         {
             Description = i.Description.Length > 100 ? i.Description[..100] + "…" : i.Description
         }).ToList();

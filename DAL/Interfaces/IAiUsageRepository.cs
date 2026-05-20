@@ -11,6 +11,12 @@ public interface IAiUsageRepository : IRepository<AiUsageEvent>
     Task<IEnumerable<PlatformCostAggregate>> ReadPlatformAggregatesReadOnlyAsync(DateTime? from);
 
     Task<IEnumerable<ServiceCostAggregate>> ReadServiceBreakdownByProjectReadOnlyAsync(int projectId, DateTime? from);
+
+    Task<IEnumerable<ServiceCostAggregate>> ReadServiceBreakdownSystemReadOnlyAsync(int? platformId, DateTime? from);
+
+    Task<IEnumerable<PlatformServiceCostAggregate>> ReadServiceBreakdownByPlatformReadOnlyAsync(int? platformId, DateTime? from);
+
+    Task<IEnumerable<ProjectServiceCostAggregate>> ReadServiceBreakdownByProjectsReadOnlyAsync(int? platformId, DateTime? from);
 }
 
 public record ProjectCostAggregate(
@@ -32,6 +38,28 @@ public record PlatformCostAggregate(
     decimal CostEur);
 
 public record ServiceCostAggregate(
+    AiServiceKind Service,
+    string Model,
+    long InputTokens,
+    long OutputTokens,
+    int RequestCount,
+    decimal CostEur);
+
+public sealed record PlatformServiceCostAggregate(
+    int ProjectPlatformId,
+    string ProjectPlatformName,
+    AiServiceKind Service,
+    string Model,
+    long InputTokens,
+    long OutputTokens,
+    int RequestCount,
+    decimal CostEur);
+
+public sealed record ProjectServiceCostAggregate(
+    int ProjectId,
+    string ShortForm,
+    int ProjectPlatformId,
+    string ProjectPlatformName,
     AiServiceKind Service,
     string Model,
     long InputTokens,

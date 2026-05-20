@@ -4,6 +4,7 @@ import { initTheme } from './lib/theme';
 import { initSurvey } from './survey/init';
 import { initChat } from './survey/chat';
 import { initIdeation } from "./ideation/ideahub";
+import { initThankYouPopup } from './lib/thank-you-popup';
 import { initSpeechToTextButtons } from './lib/speechtotext-attach';
 
 function init() {
@@ -11,6 +12,7 @@ function init() {
     initSurvey();
     initChat();
     initIdeation();
+    initThankYouPopup();
     initSpeechToTextButtons();
 
     requestAnimationFrame(() => {

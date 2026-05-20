@@ -9,6 +9,7 @@ public class AdminProjectDto
     public string FormType { get; set; }
     public string OrganisationName { get; set; }
     public string ProjectImage { get; set; }
+    public bool IsAiGeneratedImage { get; set; }
     public string OrganisationLogoUrl { get; set; }
     public string OrganisationWebsiteUrl { get; set; }
     public string AiAssistance { get; set; }

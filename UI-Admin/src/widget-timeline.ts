@@ -1,5 +1,6 @@
 import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js';
 import { POLL_INTERVAL_MS } from './dashboard';
+import { attachDownloadButton } from './lib/system-stats';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
@@ -54,6 +55,8 @@ export function initTimelineWidget(el: HTMLElement): () => void {
             // ignore
         }
     }
+
+    attachDownloadButton(el, canvas, 'participation-timeline.png');
 
     fetch_and_render();
     const interval = setInterval(fetch_and_render, POLL_INTERVAL_MS);
