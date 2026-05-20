@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const nameInput = document.getElementById('project-name-input') as HTMLInputElement | null;
     const browseBtn = document.getElementById('browse-btn') as HTMLButtonElement | null;
     const fileInput = document.getElementById('image-file-input') as HTMLInputElement | null;
     const imagePreview = document.getElementById('image-preview') as HTMLImageElement | null;
@@ -98,6 +99,39 @@ document.addEventListener('DOMContentLoaded', () => {
             imagePreview.classList.remove('hidden');
         }
         imagePlaceholder?.classList.add('hidden');
+    });
+
+    // Generate image with AI
+    const generateBtn = document.getElementById('generate-btn') as HTMLButtonElement | null;
+
+    generateBtn?.addEventListener('click', async () => {
+        const name = nameInput?.value?.trim();
+        if (!name) {
+            nameInput?.focus();
+            return;
+        }
+
+        const originalText = generateBtn.textContent!;
+        generateBtn.disabled = true;
+        generateBtn.textContent = generateBtn.dataset.generatingText ?? 'Generating…';
+
+        try {
+            const response = await fetch(`/Project/GenerateImage?name=${encodeURIComponent(name)}`, { method: 'POST' });
+            if (!response.ok) return;
+
+            const data = await response.json() as { url: string };
+            if (imageUrlInput) imageUrlInput.value = data.url;
+            if (imagePreview) {
+                imagePreview.src = data.url;
+                imagePreview.classList.remove('hidden');
+            }
+            imagePlaceholder?.classList.add('hidden');
+        } catch {
+            // silently fail
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.textContent = originalText;
+        }
     });
 
     // Pre-fill image preview on page load if a URL is already stored
@@ -153,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Blur-time field validation
-    const nameInput = document.getElementById('project-name-input') as HTMLInputElement | null;
     if (nameInput) bindBlurValidation(nameInput, getErrorSpan('Name'), (inp) => {
         if (!inp.value.trim()) return 'Projectnaam is verplicht.';
         if (inp.value.length > 100) return 'Projectnaam mag maximaal 100 tekens zijn.';

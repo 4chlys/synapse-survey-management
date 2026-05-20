@@ -67,6 +67,9 @@
   <data name="Project_InvalidFormat" xml:space="preserve"><value>Invalid format.</value></data>
   <data name="Project_ExportOnlyActive" xml:space="preserve"><value>Export is only available for active or archived projects.</value></data>
   <data name="Project_NoFileReceived" xml:space="preserve"><value>No file received.</value></data>
+  <data name="Project_NameRequired" xml:space="preserve"><value>Project name is required.</value></data>
+  <data name="Project_ImageGenerationFailed" xml:space="preserve"><value>Image generation failed.</value></data>
+  <data name="Project_UploadFailed" xml:space="preserve"><value>Upload failed.</value></data>
 
   <data name="Platform_AdminAdded" xml:space="preserve"><value>Admin added.</value></data>
   <data name="Platform_AdminRemoved" xml:space="preserve"><value>Admin removed.</value></data>
