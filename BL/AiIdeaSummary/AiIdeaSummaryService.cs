@@ -62,7 +62,7 @@ public sealed class AiIdeaSummaryService(
     }
 
     private async Task<string> SendAsync(
-        List<ChatMessage> messages,
+        IReadOnlyList<ChatMessage> messages,
         IChatClient client,
         string modelId,
         int projectId,
@@ -86,13 +86,9 @@ public sealed class AiIdeaSummaryService(
         if (isSample)
             lines.Add("(Dit is een steekproef van alle ingediende ideeën.)");
 
-        int n = 1;
-        foreach (var idea in ideas)
-        {
-            int commentCount = idea.Comments?.Count ?? 0;
-            lines.Add($"{n}. [{commentCount} reacties] {idea.Description}");
-            n++;
-        }
+        lines.AddRange(ideas.Select((idea, i) =>
+            $"{i + 1}. [{idea.Comments?.Count ?? 0} reacties] {idea.Description}"));
+
         return string.Join("\n", lines);
     }
 }

@@ -64,6 +64,6 @@ public class AiIdeaSummaryServiceTests
             MakeIdeas(7), mock.Object, "model-id", "Prompt.", batchSize: 3, projectId: 1);
 
         Assert.Equal(4, callCount);
-        Assert.False(string.IsNullOrWhiteSpace(result));
+        Assert.Equal("Partial 4", result); // merge call returns last partial reply
     }
 }
