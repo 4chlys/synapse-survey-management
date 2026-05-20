@@ -168,6 +168,19 @@ function buildPreview(host: HTMLDivElement): PreviewRefs {
 
 const refs = previewHost ? buildPreview(previewHost) : null;
 
+// Mirror of UI-User/Helpers/ColorHelpers.cs — keep threshold in sync (0.45).
+function hexRelativeLuminance(hex: string): number {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const lin = (c: number): number => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function contrastingForeground(hex: string): string {
+    return hexRelativeLuminance(hex) > 0.45 ? '#000000' : '#FFFFFF';
+}
+
 function applyPreview(): void {
     if (!refs) return;
     // GetEnumSelectList sets option values to integer strings ("0","1"…);
@@ -179,7 +192,12 @@ function applyPreview(): void {
     // --color-primary, matching the real page where both are stylesheet rules
     // and CustomCss comes last.
     const color = hidden?.value.trim() ?? '';
-    refs.primaryStyle.textContent = color === '' ? '' : `[data-project-theme]{--color-primary:${color}}`;
+    if (color === '') {
+        refs.primaryStyle.textContent = '';
+    } else {
+        const fg = contrastingForeground(color);
+        refs.primaryStyle.textContent = `[data-project-theme]{--color-primary:${color};--color-primary-content:${fg}}`;
+    }
 
     refs.userStyle.textContent = cssTextarea?.value ?? '';
 }
