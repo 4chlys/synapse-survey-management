@@ -20,7 +20,7 @@ public class SocialMediaController(
 {
     [HttpPost("generate")]
     public async Task<ActionResult<GenerateSocialPostResponseDto>> Generate(
-        int projectId, [FromBody] GenerateSocialPostRequestDto dto, CancellationToken ct)
+        int projectId, GenerateSocialPostRequestDto dto, CancellationToken ct)
     {
         if (!Enum.TryParse<SocialPlatform>(dto.Platform, ignoreCase: true, out var platform))
             return BadRequest(new { error = "Invalid platform. Use LinkedIn, Facebook, or Instagram." });
