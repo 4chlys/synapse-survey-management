@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.SocialMedia;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
@@ -11,7 +12,8 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId:int}/social")]
 public class SocialMediaController(
-    ISocialPostGenerator generator,
+    IAiSocialPostService socialPostService,
+    IPlatformAiConfigService platformAiConfig,
     IProjectManager projectManager,
     IParticipantManager participantManager,
     ICategoryManager categoryManager,
@@ -62,7 +64,8 @@ public class SocialMediaController(
             dto.UserDescription,
             stats);
 
-        var reply = await generator.GenerateAsync(request, ct);
+        var platformConfig = await platformAiConfig.ResolveAsync(project.ProjectPlatformId, ct);
+        var reply = await socialPostService.ChatAsync(request, platformConfig, projectId, ct);
 
         return Ok(new GenerateSocialPostResponseDto
         {
