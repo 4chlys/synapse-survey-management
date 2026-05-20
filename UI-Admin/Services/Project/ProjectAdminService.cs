@@ -4,6 +4,23 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 public class ProjectAdminService(HttpClient httpClient)
 {
+    private record ApiErrorBody(string Error);
+
+    // 400 from the API carries a localised message in {"error": "..."}.
+    // Surface it as ApiValidationException so the controller can show it
+    // in the form instead of letting EnsureSuccessStatusCode wipe the body.
+    private static async Task EnsureSuccessOrApiValidationAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return;
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var body = await response.Content.ReadFromJsonAsync<ApiErrorBody>();
+            if (!string.IsNullOrWhiteSpace(body?.Error))
+                throw new ApiValidationException(body.Error);
+        }
+        response.EnsureSuccessStatusCode();
+    }
+
     private record ProjectTranslationPayload
     {
         public string LanguageCode { get; init; }
@@ -58,10 +75,10 @@ public class ProjectAdminService(HttpClient httpClient)
     {
         var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = languageCode, SupportedLanguageCodes = new List<string> { languageCode }, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = name, Topic = topic, Introduction = introduction } } };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessOrApiValidationAsync(response);
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
-    
+
     public async Task<ProjectAdminViewModel> CopyProjectAsync(int projectId, string newName, int platformId, string newShortForm = null, string languageCode = "nl")
     {
         var payload = new { NewShortForm = newShortForm, PlatformId = platformId, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = newName } } };
@@ -87,7 +104,7 @@ public class ProjectAdminService(HttpClient httpClient)
     {
         var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, AiAssistance = aiAssistance, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = languageCode, SupportedLanguageCodes = new List<string> { languageCode }, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = name, Topic = topic, Introduction = introduction } } };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessOrApiValidationAsync(response);
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 

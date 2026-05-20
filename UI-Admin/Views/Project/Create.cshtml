@@ -227,6 +227,8 @@
                 <div class="form-control">
                     <label asp-for="CustomCss" class="label">
                         <span class="label-text">@L["CustomCssLabel"]</span>
+                        <button id="customcss-reset" type="button" class="btn btn-xs btn-ghost"
+                                data-confirm="@L["CustomCss_ResetConfirm"].Value">@L["CustomCss_ResetButton"]</button>
                     </label>
                     <textarea asp-for="CustomCss" rows="6"
                               class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
@@ -249,10 +251,34 @@
                                      data-label-primary-color="@L["Snippet_PrimaryColor"]"
                                      data-label-rounded-buttons="@L["Snippet_RoundedButtons"]"
                                      data-label-idea-card-shadow="@L["Snippet_IdeaCardShadow"]"
-                                     data-label-heading-font="@L["Snippet_HeadingFont"]">
+                                     data-label-heading-font="@L["Snippet_HeadingFont"]"
+                                     data-label-rounded-buttons-everywhere="@L["Snippet_RoundedButtonsEverywhere"]"
+                                     data-label-brand-gradient-header="@L["Snippet_BrandGradientHeader"]"
+                                     data-label-stronger-focus-ring="@L["Snippet_StrongerFocusRing"]">
                                     @* Snippets injected by project-style.ts on load *@
                                 </div>
                             </div>
+                            <div>
+                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCss_SelectorsLabel"]</div>
+                                <p class="text-xs opacity-70 mb-1">@L["CustomCss_SelectorsHelp"]</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">[data-project-theme]</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.btn.btn-primary</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">#ideas-list a</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.chat-bubble-left</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.accent-strip</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">header</code>
+                                </div>
+                            </div>
+                            <details>
+                                <summary class="cursor-pointer label-text opacity-70">@L["CustomCss_AvoidLabel"]</summary>
+                                <ul class="mt-1 ml-4 list-disc opacity-70 text-xs flex flex-col gap-0.5">
+                                    <li>@L["CustomCss_Avoid_Overflow"]</li>
+                                    <li>@L["CustomCss_Avoid_FixedPosition"]</li>
+                                    <li>@L["CustomCss_Avoid_Important"]</li>
+                                    <li>@L["CustomCss_Avoid_ExternalImports"]</li>
+                                </ul>
+                            </details>
                             <div id="customcss-syntax-hint"
                                  class="text-xs opacity-70" aria-live="polite"
                                  data-unbalanced-label="@L["CustomCss_Unbalanced"].Value"

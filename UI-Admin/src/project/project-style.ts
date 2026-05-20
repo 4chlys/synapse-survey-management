@@ -394,6 +394,18 @@ const SNIPPETS: ReadonlyArray<{ label: string; body: string }> = [
         label: snippetsEl?.dataset.labelHeadingFont ?? 'Koplettertype',
         body: '[data-project-theme] {\n    --font-heading: "Georgia", serif;\n}\n',
     },
+    {
+        label: snippetsEl?.dataset.labelRoundedButtonsEverywhere ?? 'Afgeronde knoppen overal',
+        body: '[data-project-theme] {\n    --radius-field: 9999px;\n}\n',
+    },
+    {
+        label: snippetsEl?.dataset.labelBrandGradientHeader ?? 'Kleurverloop in kopbal',
+        body: '[data-project-theme] header {\n    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));\n}\n',
+    },
+    {
+        label: snippetsEl?.dataset.labelStrongerFocusRing ?? 'Sterkere focusring',
+        body: '[data-project-theme] :focus-visible {\n    outline: 3px solid var(--color-primary);\n}\n',
+    },
 ];
 
 function insertAtCaret(text: string): void {
@@ -459,3 +471,12 @@ function updateSyntaxHint(): void {
 
 cssTextarea?.addEventListener('input', updateSyntaxHint);
 updateSyntaxHint();
+
+const resetBtn = document.getElementById('customcss-reset') as HTMLButtonElement | null;
+resetBtn?.addEventListener('click', () => {
+    const msg = resetBtn.dataset.confirm ?? '';
+    if (msg && !confirm(msg)) return;
+    if (!cssTextarea) return;
+    cssTextarea.value = '';
+    cssTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+});
