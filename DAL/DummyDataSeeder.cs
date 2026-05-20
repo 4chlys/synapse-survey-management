@@ -596,7 +596,7 @@ public class DummyDataSeeder
             Questionnaire = new Questionnaire(),
             ShortForm = "gearchiveerd-project",
             ProjectPlatform = platformSynapse,
-            Theme = ProjectTheme.Dark,
+            Theme = ProjectTheme.Default,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>

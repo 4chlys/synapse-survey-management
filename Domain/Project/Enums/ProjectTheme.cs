@@ -5,6 +5,5 @@ public enum ProjectTheme
     Default,
     Playful,
     Professional,
-    Dark,
     HighContrast
 }

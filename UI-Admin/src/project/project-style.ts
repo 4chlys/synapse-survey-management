@@ -69,15 +69,6 @@ const PROJECT_THEME_CSS = `
     --radius-field: 0.25rem;
     --radius-box: 0.375rem;
 }
-[data-project-theme="dark"] {
-    color-scheme: dark;
-    --color-primary: oklch(70% 0.20 277);
-    --color-primary-content: oklch(100% 0 0);
-    --color-base-100: oklch(20% 0.04 278);
-    --color-base-200: oklch(15% 0.04 278);
-    --color-base-300: oklch(27% 0.04 278);
-    --color-base-content: oklch(97% 0.01 277);
-}
 [data-project-theme="highcontrast"] {
     --color-primary: oklch(0% 0 0);
     --color-primary-content: oklch(100% 0 0);
