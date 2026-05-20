@@ -9,5 +9,6 @@ public enum AiServiceKind
     SpeechToText,
     ImageDescription,
     ImageGeneration,
-    Embedding
+    Embedding,
+    SocialPost
 }

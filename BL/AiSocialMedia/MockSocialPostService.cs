@@ -1,8 +1,14 @@
+using SynapseEnqueteManagement.BL.Ai;
+
 namespace SynapseEnqueteManagement.BL.AiSocialMedia;
 
-public sealed class MockSocialPostGenerator : ISocialPostGenerator
+public sealed class MockSocialPostService : IAiSocialPostService
 {
-    public Task<SocialPostReply> GenerateAsync(SocialPostRequest req, CancellationToken ct = default)
+    public Task<SocialPostReply> ChatAsync(
+        SocialPostRequest req,
+        ResolvedPlatformAiConfig platformConfig,
+        int projectId,
+        CancellationToken ct = default)
     {
         var copy = req.Platform switch
         {

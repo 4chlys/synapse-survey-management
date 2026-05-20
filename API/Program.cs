@@ -292,7 +292,7 @@ if (useAi)
     builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
     builder.Services.AddScoped<IAiImageDescriptionService, AiImageDescriptionService>();
-    builder.Services.AddScoped<ISocialPostGenerator, GoogleVertexAiSocialPostGenerator>();
+    builder.Services.AddScoped<IAiSocialPostService, AiSocialPostService>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -328,7 +328,7 @@ else
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
     builder.Services.AddScoped<IAiImageDescriptionService, MockImageDescriptionService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
-    builder.Services.AddSingleton<ISocialPostGenerator, MockSocialPostGenerator>();
+    builder.Services.AddSingleton<IAiSocialPostService, MockSocialPostService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
