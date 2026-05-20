@@ -48,4 +48,88 @@
   <data name="Mock_Idea_Draft_Body" xml:space="preserve">
     <value>I propose improving {0} by: {1}. This would have a positive impact on the people involved and is achievable with the right approach.</value>
   </data>
+  <data name="Validation.ShortForm.Invalid" xml:space="preserve">
+    <value>'{0}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.</value>
+  </data>
+  <data name="Validation.ShortForm.Reserved" xml:space="preserve">
+    <value>'{0}' is a reserved shortform and cannot be used.</value>
+  </data>
+  <data name="Validation.ShortForm.CannotChangeAfterPublish" xml:space="preserve">
+    <value>ShortForm cannot be changed after the project has been published.</value>
+  </data>
+  <data name="Validation.PrimaryColor.Invalid" xml:space="preserve">
+    <value>Invalid color code. Use a hex value (e.g. #FF5733).</value>
+  </data>
+  <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
+    <value>Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).</value>
+  </data>
+  <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
+    <value>MinAge must not be greater than MaxAge.</value>
+  </data>
+  <data name="Validation.Project.DefaultLanguageCodeRequired" xml:space="preserve">
+    <value>DefaultLanguageCode is required.</value>
+  </data>
+  <data name="Validation.Project.AtLeastOneSupportedLanguage" xml:space="preserve">
+    <value>At least one supported language is required.</value>
+  </data>
+  <data name="Validation.Project.DefaultLanguageMustBeSupported" xml:space="preserve">
+    <value>DefaultLanguageCode must be one of the SupportedLanguageCodes.</value>
+  </data>
+  <data name="Validation.Project.AllSupportedLanguagesNeedTranslation" xml:space="preserve">
+    <value>Every supported language must have a translation row.</value>
+  </data>
+  <data name="Validation.Project.IntroductionsOneRowPerLanguage" xml:space="preserve">
+    <value>Introductions must contain a single row per language.</value>
+  </data>
+  <data name="Validation.Project.InactiveLanguageNotAllowed" xml:space="preserve">
+    <value>Inactive languages cannot be assigned to a project.</value>
+  </data>
+  <data name="Validation.Translation.AtLeastOne" xml:space="preserve">
+    <value>At least one translation is required.</value>
+  </data>
+  <data name="Validation.Translation.OneRowPerLanguage" xml:space="preserve">
+    <value>Translations must contain a single row per language.</value>
+  </data>
+  <data name="Validation.Language.UnknownCodes" xml:space="preserve">
+    <value>Unknown language code(s): {0}.</value>
+  </data>
+  <data name="Validation.Category.AllProjectLanguagesNeedTranslation" xml:space="preserve">
+    <value>Every project-supported language must have a translation row.</value>
+  </data>
+  <data name="Validation.Question.ParentNotFound" xml:space="preserve">
+    <value>Parent question {0} not found.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexNullWhenNoParent" xml:space="preserve">
+    <value>ChoiceIndex must be null when no parent is set.</value>
+  </data>
+  <data name="Validation.Question.CannotBeOwnParent" xml:space="preserve">
+    <value>A question cannot be its own parent.</value>
+  </data>
+  <data name="Validation.Question.ParentInDifferentQuestionnaire" xml:space="preserve">
+    <value>Parent must belong to the same questionnaire.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexNullWhenTopLevel" xml:space="preserve">
+    <value>ChoiceIndex must be null when moving to top-level.</value>
+  </data>
+  <data name="Validation.Question.MissingMandatoryAnswers" xml:space="preserve">
+    <value>Missing answers for mandatory questions: {0}</value>
+  </data>
+  <data name="Validation.Question.OpenCannotHaveSubQuestions" xml:space="preserve">
+    <value>Open questions cannot have sub-questions.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexRequiredForNesting" xml:space="preserve">
+    <value>ChoiceIndex is required when nesting under a parent.</value>
+  </data>
+  <data name="Validation.Question.ChoiceIndexOutOfRange" xml:space="preserve">
+    <value>ChoiceIndex {0} is out of range for the parent (0..{1}).</value>
+  </data>
+  <data name="Validation.Question.MoveCreatesCycle" xml:space="preserve">
+    <value>Move would create a cycle.</value>
+  </data>
+  <data name="Validation.Question.CannotReduceChoiceCount" xml:space="preserve">
+    <value>Cannot reduce answer choice count: child questions reference choices that would be removed.</value>
+  </data>
+  <data name="Validation.Question.AnswerChoicesCountMismatch" xml:space="preserve">
+    <value>Translation '{0}' has {1} answer choices but AnswerChoiceCount is {2}.</value>
+  </data>
 </root>

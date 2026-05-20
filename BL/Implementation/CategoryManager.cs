@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain.Project.Stats;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -176,21 +177,21 @@ public class CategoryManager(
         ICollection<CategoryTranslationInput> translations, Project project)
     {
         if (translations.Count == 0)
-            throw new ValidationException("At least one translation is required.");
+            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
 
         var codes = translations.Select(t => t.LanguageCode).ToList();
         if (codes.Distinct().Count() != codes.Count)
-            throw new ValidationException("Translations must contain a single row per language.");
+            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
 
         var supportedCodes = project?.SupportedLanguages?.Select(l => l.Code).ToHashSet() ?? new HashSet<string>();
         if (supportedCodes.Count > 0 && !supportedCodes.All(codes.Contains))
-            throw new ValidationException("Every project-supported language must have a translation row.");
+            throw new LocalizedValidationException("Validation.Category.AllProjectLanguagesNeedTranslation");
 
         var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
         var byCode = resolved.ToDictionary(l => l.Code);
         var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
         if (missing.Count > 0)
-            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
 
         return byCode;
     }
