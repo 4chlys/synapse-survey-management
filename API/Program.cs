@@ -349,12 +349,11 @@ var app = builder.Build();
 
         try
         {
-            bool isNewDatabase = context.CreateDatabase(deleteIfExists);
-            if (isNewDatabase)
-            {
-                var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
-                DummyDataSeeder.Seed(context, apiBaseUrl);
-            }
+            if (context.Database.IsNpgsql())
+                context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS vector;");
+            context.CreateDatabase(deleteIfExists);
+            var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+            DummyDataSeeder.Seed(context, apiBaseUrl);
 
             try
             {
