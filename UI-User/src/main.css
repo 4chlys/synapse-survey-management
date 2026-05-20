@@ -445,6 +445,22 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     --radius-box: 0;
 }
 
+/* Restore full opacity on translucent text/border utilities — Tailwind's
+   opacity-suffixed classes would otherwise fail WCAG AAA under HC. */
+[data-project-theme="highcontrast"] :is(
+    .text-base-content\/40, .text-base-content\/50, .text-base-content\/60,
+    .text-base-content\/70, .text-base-content\/80
+) { color: var(--color-base-content); }
+
+[data-project-theme="highcontrast"] :is(
+    .border-base-content\/10, .border-base-content\/20, .border-base-content\/30
+) { border-color: var(--color-base-content); }
+
+[data-project-theme="highcontrast"] :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 /* ─── Accessibility: reduced-motion ──────────────────────
    Neutralises survey-slide, page-enter, chat-bubble-*, landing-float-up,
    orbit-spin, and the survey-card vacuum animation for users who prefer it.
