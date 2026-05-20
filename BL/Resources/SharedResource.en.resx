@@ -60,6 +60,9 @@
   <data name="Validation.PrimaryColor.Invalid" xml:space="preserve">
     <value>Invalid color code. Use a hex value (e.g. #FF5733).</value>
   </data>
+  <data name="Validation.PrimaryColor.LowContrast" xml:space="preserve">
+    <value>This color isn't readable enough on light or dark backgrounds — try a darker or lighter shade.</value>
+  </data>
   <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
     <value>Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).</value>
   </data>

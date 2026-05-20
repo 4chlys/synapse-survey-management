@@ -4,6 +4,7 @@ using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Exceptions;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -119,6 +120,14 @@ public class ProjectManager(
         if (!string.IsNullOrEmpty(primaryColor) &&
             !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
             throw new LocalizedValidationException("Validation.PrimaryColor.Invalid");
+        if (!string.IsNullOrEmpty(primaryColor))
+        {
+            const string lightBase = "#FFFFFF";
+            const string darkBase = "#1A1430"; // approx of oklch(15% 0.04 278)
+            if (ColorHelpers.ContrastRatio(primaryColor, lightBase) < 3.0
+             || ColorHelpers.ContrastRatio(primaryColor, darkBase) < 3.0)
+                throw new LocalizedValidationException("Validation.PrimaryColor.LowContrast");
+        }
         if (!string.IsNullOrEmpty(customCss) &&
             Regex.IsMatch(customCss,
                 @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
@@ -193,6 +202,14 @@ public class ProjectManager(
         if (!string.IsNullOrEmpty(primaryColor) &&
             !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
             throw new LocalizedValidationException("Validation.PrimaryColor.Invalid");
+        if (!string.IsNullOrEmpty(primaryColor))
+        {
+            const string lightBase = "#FFFFFF";
+            const string darkBase = "#1A1430"; // approx of oklch(15% 0.04 278)
+            if (ColorHelpers.ContrastRatio(primaryColor, lightBase) < 3.0
+             || ColorHelpers.ContrastRatio(primaryColor, darkBase) < 3.0)
+                throw new LocalizedValidationException("Validation.PrimaryColor.LowContrast");
+        }
         if (!string.IsNullOrEmpty(customCss) &&
             Regex.IsMatch(customCss,
                 @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
