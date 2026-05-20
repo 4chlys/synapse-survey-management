@@ -4,7 +4,8 @@
 // toggle. Event handlers are attached once to the stable #questions-list
 // container; re-rendering its innerHTML does not invalidate them.
 
-import { renderTree, Question, RenderContext } from './lib/questionnaire-tree';
+import { renderTree, Question, RenderContext, QuestionsI18n } from './lib/questionnaire-tree';
+import { loadQuestionsI18n } from './lib/questions-i18n';
 import { toast } from './lib/notify';
 
 interface MovePayload {
@@ -76,7 +77,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiAssistance = list.dataset.aiAssistance ?? 'ProActive';
     const locked = list.dataset.locked === 'true';
 
-    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId, locked };
+    const i18n: QuestionsI18n = loadQuestionsI18n();
+    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId, locked, i18n };
 
     async function reload(): Promise<void> {
         const expanded = captureExpandedIds(list!);
@@ -87,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const nextBtn = document.getElementById('questions-next-btn') as HTMLButtonElement | null;
             if (nextBtn) nextBtn.dataset.questionCount = String(questions.length);
         } catch (err) {
-            list!.innerHTML = `<p class="text-red-400 text-sm">Kon vragen niet laden: ${String(err)}</p>`;
+            list!.innerHTML = `<p class="text-red-400 text-sm">${String(err)}</p>`;
         }
     }
 

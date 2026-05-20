@@ -7,6 +7,7 @@
 
   <data name="PageTitle" xml:space="preserve"><value>Questions</value></data>
   <data name="Heading" xml:space="preserve"><value>Questions</value></data>
+  <data name="Subtitle" xml:space="preserve"><value>Drag to reorder · Click to edit · Section headers are clickable</value></data>
   <data name="LockedActive" xml:space="preserve"><value>This project is active. Questions can no longer be changed.</value></data>
   <data name="LockedArchived" xml:space="preserve"><value>This project is archived. Questions can no longer be changed.</value></data>
   <data name="LoadingQuestions" xml:space="preserve"><value>Loading questions…</value></data>
@@ -52,4 +53,36 @@
   <data name="SectionOptionalLabel" xml:space="preserve"><value>Section (optional)</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
   <data name="OkButton" xml:space="preserve"><value>OK</value></data>
+  <data name="PickerHeading" xml:space="preserve"><value>What type of question?</value></data>
+  <data name="PickerSubtitle" xml:space="preserve"><value>Pick the kind of answer you want to collect</value></data>
+  <data name="Picker_MCQDesc" xml:space="preserve"><value>Multiple options, multiple answers possible.</value></data>
+  <data name="Picker_SCQDesc" xml:space="preserve"><value>Multiple options, only one answer.</value></data>
+  <data name="Picker_OpenDesc" xml:space="preserve"><value>Free-text answer from the respondent.</value></data>
+  <data name="Picker_LikertDesc" xml:space="preserve"><value>Scale from disagree to agree.</value></data>
+  <data name="MandatoryHelper" xml:space="preserve"><value>An answer is required</value></data>
+  <data name="AiTipLabel" xml:space="preserve"><value>AI tip</value></data>
+  <data name="AiTipText" xml:space="preserve"><value>Keep questions short and concrete. One topic per question yields the best answers.</value></data>
+  <data name="AiSupportSubtitle" xml:space="preserve"><value>helps phrase questions</value></data>
+  <data name="ModalTitleEdit" xml:space="preserve"><value>Edit question</value></data>
+  <data name="EmptyNoQuestions" xml:space="preserve"><value>No questions added yet.</value></data>
+  <data name="EmptySectionAdd" xml:space="preserve"><value>No questions yet — add one</value></data>
+  <data name="AddInSection" xml:space="preserve"><value>Question in section</value></data>
+  <data name="FollowupsSingular" xml:space="preserve"><value>follow-up</value></data>
+  <data name="FollowupsPlural" xml:space="preserve"><value>follow-ups</value></data>
+  <data name="SubDropZone" xml:space="preserve"><value>Drop here for sub-question</value></data>
+  <data name="PromoteDropZone" xml:space="preserve"><value>Drag a sub-question here to make it a top-level question</value></data>
+  <data name="EndsSurveyLabel" xml:space="preserve"><value>Ends survey</value></data>
+  <data name="EndsSurveyToggle" xml:space="preserve"><value>End survey</value></data>
+  <data name="DragTitle" xml:space="preserve"><value>Drag to reorder</value></data>
+  <data name="QuestionSingular" xml:space="preserve"><value>question</value></data>
+  <data name="QuestionPlural" xml:space="preserve"><value>questions</value></data>
+  <data name="AnswerPlaceholder" xml:space="preserve"><value>Answer…</value></data>
+  <data name="SavedToast" xml:space="preserve"><value>Saved</value></data>
+  <data name="SaveFailedToast" xml:space="preserve"><value>Save failed</value></data>
+  <data name="AllAnswersRequired" xml:space="preserve"><value>All answers must be filled in.</value></data>
+  <data name="MaxQuestionTextError" xml:space="preserve"><value>Question text may not exceed 500 characters.</value></data>
+  <data name="MediaShort_Image" xml:space="preserve"><value>Img</value></data>
+  <data name="MediaShort_Video" xml:space="preserve"><value>Vid</value></data>
+  <data name="MediaShort_Audio" xml:space="preserve"><value>Aud</value></data>
+  <data name="MediaShort_Generic" xml:space="preserve"><value>Media</value></data>
 </root>
