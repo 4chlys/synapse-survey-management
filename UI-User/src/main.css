@@ -444,3 +444,16 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     --radius-field: 0;
     --radius-box: 0;
 }
+
+/* ─── Accessibility: reduced-motion ──────────────────────
+   Neutralises survey-slide, page-enter, chat-bubble-*, landing-float-up,
+   orbit-spin, and the survey-card vacuum animation for users who prefer it.
+   !important is the documented exception for accessibility resets. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
