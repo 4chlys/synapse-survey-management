@@ -157,6 +157,15 @@ public class QuestionnaireApiService : IQuestionnaireApiService
         return result!.ParticipantToken;
     }
 
+    public async Task SaveContactAsync(int projectId, string email, string participantToken)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return;
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"api/projects/{projectId}/participants/me/contact");
+        request.Headers.Add(TokenHeader, participantToken);
+        request.Content = JsonContent.Create(new { Email = email });
+        await _httpClient.SendAsync(request);
+    }
+
     public async Task SubmitAsync(int projectId, string participantToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/submit");

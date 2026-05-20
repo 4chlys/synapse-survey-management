@@ -35,12 +35,20 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
     public DbSet<Comment> Comments { get; set; }
     public DbSet<EndingAnswer> EndingAnswers { get; set; }
     public DbSet<AiUsageEvent> AiUsageEvents { get; set; }
+    public DbSet<EmailTemplate> EmailTemplates { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.HasPostgresExtension("vector");
+
+        // EmailTemplate
+        builder.Entity<EmailTemplate>()
+            .HasOne(e => e.Project)
+            .WithMany()
+            .HasForeignKey(e => e.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Language
         builder.Entity<Language>()
@@ -432,12 +440,9 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
                 // Delete the database
                 Database.EnsureDeleted();
             }
-            catch (IOException ex)
+            catch (IOException)
             {
-                throw new InvalidOperationException(
-                    "Cannot delete the database. Please close any applications accessing the database file (e.g., DB Browser for SQLite).",
-                    ex
-                );
+                // File locked by another process — skip delete and reuse existing database
             }
         }
 

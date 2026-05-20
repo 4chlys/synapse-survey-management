@@ -6,4 +6,5 @@ public class SurveyViewModel
     public List<QuestionViewModel> Questions { get; set; }
     public Dictionary<int, string> ExistingResponses { get; set; } = new();
     public bool HasSession { get; set; }
+    public bool RequestContactInfo { get; set; }
 }

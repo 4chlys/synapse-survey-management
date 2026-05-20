@@ -18,6 +18,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -135,6 +136,8 @@ builder.Services.AddHttpClient<IQuestionMediaService, QuestionMediaService>(Conf
 builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<EmailTemplateAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddRateLimiter(options =>

@@ -30,6 +30,7 @@ using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
+using Resend;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -180,6 +181,22 @@ builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
+
+// Email
+builder.Services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
+builder.Services.AddScoped<IEmailTemplateManager, EmailTemplateManager>();
+var resendApiKey = builder.Configuration["RESEND_API_KEY"];
+var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "onboarding@resend.dev";
+if (!string.IsNullOrEmpty(resendApiKey))
+{
+    builder.Services.AddResend(options => options.ApiToken = resendApiKey);
+    builder.Services.AddScoped<IEmailService>(sp =>
+        new ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, LogEmailService>();
+}
 
 // AI usage tracking
 builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));

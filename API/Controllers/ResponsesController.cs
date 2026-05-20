@@ -16,7 +16,10 @@ public class ResponsesController(
     IResponseManager responseManager,
     ISubmissionManager submissionManager,
     IProjectManager projectManager,
-    IParticipantLanguageCoordinator participantLanguageCoordinator)
+    IParticipantLanguageCoordinator participantLanguageCoordinator,
+    IEmailTemplateManager emailTemplateManager,
+    IEmailService emailService,
+    ILogger<ResponsesController> logger)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPatch("participants/me/language")]
@@ -43,6 +46,17 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
+
+        if (!string.IsNullOrEmpty(dto.Email))
+        {
+            var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
+            if (template is { IsEnabled: true })
+            {
+                try { await emailService.SendAsync(dto.Email, template.Subject, template.Body, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Email verzenden mislukt voor participant {Id}", participant.ParticipantId); }
+            }
+        }
+
         return NoContent();
     }
 
@@ -60,6 +74,20 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await submissionManager.SubmitAsync(projectId, participant, ct);
+
+        var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
+if (template is { IsEnabled: true } && !string.IsNullOrEmpty(participant.Email))
+        {
+            try
+            {
+                await emailService.SendAsync(participant.Email, template.Subject, template.Body, ct);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Email verzenden mislukt voor participant {Id}", participant.ParticipantId);
+            }
+        }
+
         return Ok();
     }
 
