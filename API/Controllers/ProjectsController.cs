@@ -17,8 +17,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ProjectsController(
     IProjectManager projectManager,
     IAiImageGenerationService imageGenerationService,
-    IStorageService storageService,
-    IStringLocalizer<SharedResource> localizer) : ControllerBase
+    IStorageService storageService) : ControllerBase
 {
     private static FormType ParseFormType(string interactionMode) =>
         Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
