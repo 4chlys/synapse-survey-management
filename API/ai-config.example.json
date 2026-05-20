@@ -184,5 +184,9 @@
       "max_length_for_1_edit": 6,
       "max_length_for_2_edits": 9
     }
+  },
+  "idea_summary": {
+    "system_prompt": "Je bent een beleidsanalist die een samenvatting maakt van ideeën ingediend door burgers of jongeren. Analyseer de onderstaande ideeën en maak een gestructureerde samenvatting met:\n1. THEMA'S: De 3–5 belangrijkste terugkerende thema's, elk met een korte toelichting.\n2. MEEST BESPROKEN: De 3 ideeën met de meeste reacties (geef het idee letterlijk weer + aantal reacties).\n3. CONTROVERSIEEL: Ideeën die sterk uiteenlopende meningen oproepen (veel reacties + tegengestelde toon). Geef maximaal 3.\n4. SAMENVATTING: Een alinea van 3–5 zinnen die het geheel samenvat.\nAls de invoer een steekproef is van alle ideeën, vermeld dat dan expliciet bovenaan.\nGebruik de taal van de ideeën zelf. Wees bondig en feitelijk.",
+    "batch_size": 50
   }
 }
