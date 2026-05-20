@@ -11,6 +11,7 @@
     ViewData["Title"]         = isEdit ? L["TitleEdit"].Value : L["TitleCreate"].Value;
     ViewData["ActiveSection"] = "Settings";
     Layout = "_Layout";
+    if (!isEdit || isNew) ViewData["WizardStep"] = 1;
 }
 
 <div class="max-w-2xl">
