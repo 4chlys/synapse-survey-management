@@ -70,6 +70,34 @@ public class PlatformAiConfigService(
         return resolved;
     }
 
+    public async Task<IdeaSummaryAiConfig> ResolveIdeaSummaryAsync(int platformId, CancellationToken ct)
+    {
+        var cacheKey = $"platform-ai-summary:{platformId}";
+        if (cache.TryGetValue(cacheKey, out IdeaSummaryAiConfig cached))
+            return cached;
+
+        SystemAiSettingsReadModel settings = null;
+        PlatformSettingsReadModel platform = null;
+        try
+        {
+            settings = await adminDb.SystemAiSettings.FirstOrDefaultAsync(ct);
+            platform = await adminDb.PlatformSettings
+                .FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId, ct);
+        }
+        catch (DbException ex)
+        {
+            logger.LogWarning(ex,
+                "[AI] Admin DB unavailable for summary config on platform {PlatformId}.", platformId);
+        }
+
+        var resolved = Build(settings, platform);
+        var prompt = platform?.PromptIdeaSummary ?? globalConfig.IdeaSummary.SystemPrompt;
+        var maxIdeas = platform?.IdeaSummaryMaxIdeas is > 0 ? platform.IdeaSummaryMaxIdeas : 200;
+        var result = new IdeaSummaryAiConfig(resolved.ChatClient, resolved.SelectedModelId, prompt, maxIdeas);
+        cache.Set(cacheKey, result, CacheTtl);
+        return result;
+    }
+
     private ResolvedPlatformAiConfig Build(SystemAiSettingsReadModel settings, PlatformSettingsReadModel platform)
     {
         var allowedIds = settings is not null
