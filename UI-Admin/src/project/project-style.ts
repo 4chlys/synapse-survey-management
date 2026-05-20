@@ -88,9 +88,13 @@ if (picker && hidden && useDefault) {
 // the preview renders identically to the participant page.
 const PROJECT_THEME_CSS = `
 :host { color-scheme: light dark; }
-[data-project-theme="default"] {
+[data-project-theme="minimal"] {
     --color-primary: light-dark(oklch(52% 0.22 277), oklch(64% 0.22 277));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(61% 0.16 162), oklch(65% 0.14 162));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(62% 0.22 37), oklch(67% 0.20 37));
+    --color-accent-content: oklch(100% 0 0);
     --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
     --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
@@ -99,9 +103,13 @@ const PROJECT_THEME_CSS = `
     --radius-field: 0.75rem;
     --radius-box: 1rem;
 }
-[data-project-theme="playful"] {
+[data-project-theme="friendly"] {
     --color-primary: light-dark(oklch(62% 0.18 65), oklch(78% 0.16 65));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-secondary: light-dark(oklch(64% 0.16 180), oklch(72% 0.14 180));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(64% 0.22 350), oklch(72% 0.20 350));
+    --color-accent-content: oklch(100% 0 0);
     --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
     --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
@@ -109,10 +117,30 @@ const PROJECT_THEME_CSS = `
     --font-heading: 'Nunito', ui-sans-serif, sans-serif;
     --radius-field: 1rem;
     --radius-box: 1.25rem;
+    --tap-target: 3rem;
 }
-[data-project-theme="professional"] {
+[data-project-theme="bold"] {
+    --color-primary: light-dark(oklch(55% 0.21 32), oklch(70% 0.18 32));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(18% 0.03 32));
+    --color-secondary: light-dark(oklch(52% 0.18 250), oklch(64% 0.17 250));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(60% 0.19 320), oklch(70% 0.18 320));
+    --color-accent-content: oklch(100% 0 0);
+    --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
+    --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
+    --color-base-content: light-dark(oklch(15% 0.04 278), oklch(97% 0.01 277));
+    --font-heading: 'Space Grotesk', ui-sans-serif, sans-serif;
+    --radius-field: 0.125rem;
+    --radius-box: 0.25rem;
+}
+[data-project-theme="formal"] {
     --color-primary: light-dark(oklch(35% 0.04 250), oklch(55% 0.06 250));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(48% 0.08 200), oklch(60% 0.08 200));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(55% 0.12 70), oklch(68% 0.12 70));
+    --color-accent-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-100: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-base-200: light-dark(oklch(97% 0.01 277), oklch(20% 0.04 278));
     --color-base-300: light-dark(oklch(91% 0.02 277), oklch(27% 0.04 278));
@@ -278,7 +306,7 @@ function buildPreview(host: HTMLDivElement, mode: 'light' | 'dark'): PreviewRefs
 
     const wrapper = document.createElement('div');
     wrapper.className = 'preview-root';
-    wrapper.setAttribute('data-project-theme', host.dataset.initialTheme ?? 'default');
+    wrapper.setAttribute('data-project-theme', host.dataset.initialTheme ?? 'minimal');
     wrapper.setAttribute('data-theme', mode === 'dark' ? 'synapse-dark' : 'synapse-light');
     wrapper.innerHTML = `
         <div id="ideas-list">
@@ -317,9 +345,7 @@ function contrastingForeground(hex: string): string {
 // OKLab derivation mirror — must produce identical hex to BL/UI-User ColorHelpers
 // ShiftLightness / ComplementaryHue. Used to drive the preview palette without
 // relying on relative-color OKLCH support inside the shadow root.
-function srgbToLinear(c: number): number {
-    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-}
+// (srgbToLinear is defined once near the top, in the contrast-advisory block.)
 function linearToSrgb(c: number): number {
     return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1.0 / 2.4) - 0.055;
 }
@@ -370,8 +396,8 @@ function complementaryHue(hex: string): string {
 
 function applyPreview(): void {
     // GetEnumSelectList sets option values to integer strings ("0","1"…);
-    // the option text is the enum member name ("Default","Playful"…).
-    const themeValue = themeSelect?.options[themeSelect.selectedIndex]?.text.toLowerCase() ?? 'default';
+    // the option text is the enum member name ("Minimal","Friendly"…).
+    const themeValue = themeSelect?.options[themeSelect.selectedIndex]?.text.toLowerCase() ?? 'minimal';
 
     // Use a <style> rule (not an inline style) so CustomCss can still override
     // --color-primary, matching the real page where both are stylesheet rules

@@ -9,7 +9,7 @@ import { initSystemParticipantsWidget } from '../widgets/widget-system-participa
 import { initSystemProjectStatesWidget } from '../widgets/widget-system-project-states';
 import { initSystemAiCostWidget } from '../widgets/widget-system-ai-cost';
 import { initSystemCompletionBoxplotWidget } from '../widgets/widget-system-completion-boxplot';
-import { initSocialMediaWidget } from '../widget-social-media';
+import { initSocialMediaWidget } from '../lib/widget-social-media';
 
 const POLL_INTERVAL_MS = 30_000;
 

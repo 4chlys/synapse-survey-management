@@ -32,7 +32,7 @@ public class ProjectsController(
     private static ProjectTheme ParseTheme(string theme) =>
         Enum.TryParse<ProjectTheme>(theme, ignoreCase: true, out var themeResult)
             ? themeResult
-            : ProjectTheme.Default;
+            : ProjectTheme.Minimal;
 
     private static string ActiveCulture() =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;

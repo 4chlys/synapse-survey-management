@@ -51,7 +51,7 @@ public class ProjectManager(
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
         bool allowCrossLanguageIdeas = false,
-        ProjectTheme theme = ProjectTheme.Default,
+        ProjectTheme theme = ProjectTheme.Minimal,
         string primaryColor = null,
         string customCss = null)
     {
@@ -167,7 +167,7 @@ public class ProjectManager(
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
         bool allowCrossLanguageIdeas = false,
-        ProjectTheme theme = ProjectTheme.Default,
+        ProjectTheme theme = ProjectTheme.Minimal,
         string primaryColor = null,
         string customCss = null)
     {

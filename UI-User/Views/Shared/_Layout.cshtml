@@ -18,14 +18,15 @@
     <link rel="icon" type="image/png" href="~/favicon.png" />
 
     @* Font preloads — body font always; heading font conditional on project theme.
-       Keep in sync with @font-face declarations in UI-User/src/main.css. *@
-    <link rel="preload" href="/fonts/inter/latin.woff2" as="font" type="font/woff2" crossorigin />
+       Paths match the @font-face declarations in UI-User/src/main.css — fonts
+       live in src/public/fonts/ and are served at /dist/fonts/ in dev & prod. *@
+    <link rel="preload" href="/dist/fonts/inter/latin.woff2" as="font" type="font/woff2" crossorigin />
     @{
         var _headingFontPath = (ViewData["ProjectTheme"] as string) switch {
-            "playful"      => "/fonts/nunito/latin.woff2",
-            "professional" => "/fonts/source-sans-3/latin.woff2",
+            "friendly"     => "/dist/fonts/nunito/latin.woff2",
+            "formal"       => "/dist/fonts/source-sans-3/latin.woff2",
             "highcontrast" => null,
-            _              => "/fonts/space-grotesk/latin.woff2",
+            _              => "/dist/fonts/space-grotesk/latin.woff2",
         };
     }
     @if (_headingFontPath != null)
@@ -121,7 +122,7 @@
     </environment>
 </head>
 
-<body class="bg-base-200 min-h-[100dvh]" data-project-theme="@(ViewData["ProjectTheme"] ?? "default")">
+<body class="bg-base-200 min-h-[100dvh]" data-project-theme="@(ViewData["ProjectTheme"] ?? "minimal")">
 
     @{
         var _primary        = ViewData["ProjectPrimaryColor"] as string;

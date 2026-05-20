@@ -36,7 +36,7 @@ public class Project : IHasCreatedAt
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
     public FormType FormType { get; set; } = FormType.VerticalScroll;
 
-    public ProjectTheme Theme { get; set; } = ProjectTheme.Default;
+    public ProjectTheme Theme { get; set; } = ProjectTheme.Minimal;
 
     [MaxLength(7)]
     [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
