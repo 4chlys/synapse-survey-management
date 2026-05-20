@@ -10,5 +10,5 @@ public class IdeaDto
     public bool IsOwnedByCurrentUser { get; set; }
     public bool IsFlagged { get; set; }
     public string LanguageCode { get; set; }
-    public List<IconCommentDto> Emojis { get; set; } = new();
+    public ICollection<IconCommentDto> Emojis { get; set; } = new List<IconCommentDto>();
 }

@@ -9,9 +9,9 @@ public class ProjectExportDataDto
     public int ViewCount { get; set; }
     public int CompletionCount { get; set; }
     public double CompletionRate { get; set; }
-    public List<string> TimelineDates { get; set; } = [];
-    public List<int> TimelineStarts { get; set; } = [];
-    public List<int> TimelineCompletions { get; set; } = [];
-    public List<CategoryMetricDto> TopCategories { get; set; } = [];
-    public List<IdeaMetricDto> TopIdeas { get; set; } = [];
+    public ICollection<string> TimelineDates { get; set; } = new List<string>();
+    public ICollection<int> TimelineStarts { get; set; } = new List<int>();
+    public ICollection<int> TimelineCompletions { get; set; } = new List<int>();
+    public ICollection<CategoryMetricDto> TopCategories { get; set; } = new List<CategoryMetricDto>();
+    public ICollection<IdeaMetricDto> TopIdeas { get; set; } = new List<IdeaMetricDto>();
 }

@@ -21,11 +21,13 @@ public class Repository<T>(DbContext context) : IRepository<T> where T : class
 
     public void Update(T entity) => Context.Set<T>().Update(entity);
 
+    // Issues a single DELETE outside the change tracker; callers must wrap in IUnitOfWork.ExecuteInTransactionAsync to preserve rollback.
     public async Task<bool> DeleteByIdAsync(int id)
     {
-        var entity = await Context.Set<T>().FindAsync(id);
-        if (entity == null) return false;
-        Context.Set<T>().Remove(entity);
-        return true;
+        var pkName = typeof(T).Name + "Id";
+        var rows = await Context.Set<T>()
+            .Where(e => EF.Property<int>(e, pkName) == id)
+            .ExecuteDeleteAsync();
+        return rows > 0;
     }
 }

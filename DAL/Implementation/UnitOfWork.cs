@@ -37,6 +37,31 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _tx = null;
     }
 
+    public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> work, CancellationToken ct = default)
+    {
+        await ExecuteInTransactionAsync<object>(async innerCt =>
+        {
+            await work(innerCt);
+            return null;
+        }, ct);
+    }
+
+    public async Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct = default)
+    {
+        await BeginTransactionAsync(ct);
+        try
+        {
+            var result = await work(ct);
+            await CommitAsync(ct);
+            return result;
+        }
+        catch
+        {
+            await RollbackAsync(ct);
+            throw;
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_tx != null) await _tx.DisposeAsync();

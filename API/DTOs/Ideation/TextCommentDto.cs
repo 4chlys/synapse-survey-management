@@ -9,5 +9,5 @@ public class TextCommentDto
     public bool IsPostedByIdeaAuthor { get; set; }
     public bool IsFlagged { get; set; }
     public string LanguageCode { get; set; }
-    public List<IconCommentDto> Emojis { get; set; } = new();
+    public ICollection<IconCommentDto> Emojis { get; set; } = new List<IconCommentDto>();
 }

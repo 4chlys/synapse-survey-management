@@ -15,12 +15,14 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 public class CommentSupportApiController(
     CommentSupportService commentSupportService,
     ISessionService sessionService,
-    IStringLocalizer<SharedResource> localizer) : ControllerBase
+    IStringLocalizer<SharedResource> localizer,
+    ILogger<CommentSupportApiController> logger) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<CommentSupportChatResponse>> Chat(
         int projectId,
-        CommentSupportChatRequest body)
+        CommentSupportChatRequest body,
+        CancellationToken ct)
     {
         var token = sessionService.GetToken(projectId);
         if (string.IsNullOrWhiteSpace(token))
@@ -34,10 +36,13 @@ public class CommentSupportApiController(
                 body.History,
                 body.UserMessage,
                 body.IdeaText,
-                body.CategoryName);
+                body.CategoryName,
+                ct);
         }
-        catch (Exception)
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "AI CommentSupport call failed for project {ProjectId}", projectId);
             return Ok(new CommentSupportChatResponse
             {
                 AssistantMessage = localizer["AiSupport_CommentFallback"],
