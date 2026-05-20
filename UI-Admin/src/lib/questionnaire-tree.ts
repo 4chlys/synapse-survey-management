@@ -148,6 +148,16 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                             class="border-l border-base-300 px-3 text-base-content/50 hover:text-error hover:bg-error/10 transition h-full">✕</button>
                 </form>`;
 
+    const statsBtn = `
+                <button type="button"
+                        class="question-stats-btn border-l border-base-300 px-3 text-base-content/50 hover:text-primary hover:bg-base-200 transition"
+                        data-question-id="${q.questionId}"
+                        data-format="${escapeHtml(q.questionFormat)}"
+                        data-text="${escapeHtml(q.text)}"
+                        title="Statistieken">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                </button>`;
+
     return `
         <div class="question-card border border-base-300 bg-base-100 mb-2 rounded-lg overflow-hidden"
              ${ctx.locked ? '' : 'draggable="true"'}
@@ -166,6 +176,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                     <span class="text-base-content">${escapeHtml(q.text)}${mediaBadge(q)} <span class="text-base-content/40 ml-2">[${escapeHtml(q.questionFormat)}]</span>${q.sectionName ? ` <span class="text-base-content/50 ml-2 italic">${escapeHtml(q.sectionName)}</span>` : ''}</span>
                     <span id="arrow-${q.questionId}" class="text-base-content/60 ml-2">${arrow}</span>
                 </button>
+                ${statsBtn}
                 ${editBtn}
                 ${deleteBtn}
             </div>

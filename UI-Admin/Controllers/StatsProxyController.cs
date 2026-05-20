@@ -67,6 +67,62 @@ public class StatsProxyController(
         return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
     }
 
+    [HttpGet("stats/questions")]
+    public async Task<IActionResult> GetQuestionLookup(int projectId, [FromQuery] string format = null)
+    {
+        if (!await CanAccessProjectAsync(projectId))
+            return Forbid();
+
+        var qs = format is not null ? $"?format={Uri.EscapeDataString(format)}" : string.Empty;
+        var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/questions{qs}");
+        return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
+    }
+
+    [HttpGet("stats/questions/{questionId:int}/single-stats")]
+    public async Task<IActionResult> GetQuestionSingleStats(int projectId, int questionId)
+    {
+        if (!await CanAccessProjectAsync(projectId))
+            return Forbid();
+
+        var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/questions/{questionId}/single-stats");
+        return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
+    }
+
+    [HttpGet("stats/questions/{questionId:int}/multi-stats")]
+    public async Task<IActionResult> GetQuestionMultiStats(int projectId, int questionId)
+    {
+        if (!await CanAccessProjectAsync(projectId))
+            return Forbid();
+
+        var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/questions/{questionId}/multi-stats");
+        return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
+    }
+
+    [HttpGet("stats/questions/{questionId:int}/likert-stats")]
+    public async Task<IActionResult> GetQuestionLikertStats(int projectId, int questionId)
+    {
+        if (!await CanAccessProjectAsync(projectId))
+            return Forbid();
+
+        var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/questions/{questionId}/likert-stats");
+        return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
+    }
+
+    [HttpGet("stats/questions/{questionId:int}/open-answers")]
+    public async Task<IActionResult> GetQuestionOpenAnswers(
+        int projectId,
+        int questionId,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50)
+    {
+        if (!await CanAccessProjectAsync(projectId))
+            return Forbid();
+
+        var (status, body) = await proxy.ProxyGetAsync(
+            $"api/projects/{projectId}/questions/{questionId}/open-answers?skip={skip}&take={take}");
+        return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
+    }
+
     [HttpGet("stats/export")]
     public async Task<IActionResult> ExportStats(
         int projectId,

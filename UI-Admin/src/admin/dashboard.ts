@@ -9,6 +9,9 @@ import { initSystemParticipantsWidget } from '../widgets/widget-system-participa
 import { initSystemProjectStatesWidget } from '../widgets/widget-system-project-states';
 import { initSystemAiCostWidget } from '../widgets/widget-system-ai-cost';
 import { initSystemCompletionBoxplotWidget } from '../widgets/widget-system-completion-boxplot';
+import { initQuestionSinglePieWidget } from '../widgets/widget-question-single-pie';
+import { initQuestionMultiBarWidget } from '../widgets/widget-question-multi-bar';
+import { initQuestionLikertBarWidget } from '../widgets/widget-question-likert-bar';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -28,6 +31,9 @@ const widgetRegistry: Record<string, WidgetInit> = {
     SystemProjectStates: initSystemProjectStatesWidget,
     SystemAiCost: initSystemAiCostWidget,
     SystemCompletionBoxplot: initSystemCompletionBoxplotWidget,
+    QuestionSinglePie: initQuestionSinglePieWidget,
+    QuestionMultiBar: initQuestionMultiBarWidget,
+    QuestionLikertBar: initQuestionLikertBarWidget,
 };
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -8,6 +8,7 @@
     Layout = "_Layout";
 }
 <div class="w-full">
+    @Html.AntiForgeryToken()
     <div class="flex items-center justify-between mb-6">
         <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
         <div class="flex items-center gap-2">
@@ -34,17 +35,78 @@
         </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        @for (var i = 0; i < Model.WidgetLayout.Length; i++)
+        @for (var i = 0; i < Model.WidgetSlots.Length; i++)
         {
-            var widgetType = Model.WidgetLayout[i];
-            var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
-            <div data-widget="@widgetType"
-                 data-project-id="@Model.ProjectId"
-                 data-api-base="@Model.ApiBaseUrl"
-                 data-survey-url="@Model.SurveyUrl"
-                 class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : "min-h-28")">
-                <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
-            </div>
+            var slot = Model.WidgetSlots[i];
+            var widgetType = slot.WidgetType;
+            @if (widgetType == "QuestionSinglePie")
+            {
+                <div data-widget="QuestionSinglePie"
+                     data-position="@i"
+                     data-project-id="@Model.ProjectId"
+                     data-question-id="@slot.QuestionId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
+                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
+                     data-i18n-no-question="@L["Widget_NoQuestion"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
+                    <div data-widget-body class="relative flex-1 min-h-0">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            }
+            else if (widgetType == "QuestionMultiBar")
+            {
+                <div data-widget="QuestionMultiBar"
+                     data-position="@i"
+                     data-project-id="@Model.ProjectId"
+                     data-question-id="@slot.QuestionId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-x-axis-label="@L["Widget_XAxisLabel"]"
+                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
+                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
+                     data-i18n-no-question="@L["Widget_NoQuestion"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
+                    <div data-widget-body class="relative flex-1 min-h-0">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            }
+            else if (widgetType == "QuestionLikertBar")
+            {
+                <div data-widget="QuestionLikertBar"
+                     data-position="@i"
+                     data-project-id="@Model.ProjectId"
+                     data-question-id="@slot.QuestionId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
+                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
+                     data-i18n-no-question="@L["Widget_NoQuestion"]"
+                     data-i18n-likert-1="@L["Widget_Likert_1"]"
+                     data-i18n-likert-2="@L["Widget_Likert_2"]"
+                     data-i18n-likert-3="@L["Widget_Likert_3"]"
+                     data-i18n-likert-4="@L["Widget_Likert_4"]"
+                     data-i18n-likert-5="@L["Widget_Likert_5"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
+                    <div data-widget-body class="relative flex-1 min-h-0">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
+                <div data-widget="@widgetType"
+                     data-project-id="@Model.ProjectId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-survey-url="@Model.SurveyUrl"
+                     class="card bg-base-100 shadow-sm p-4 @(isChart ? "h-56" : "min-h-28")">
+                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                </div>
+            }
         }
     </div>
 </div>

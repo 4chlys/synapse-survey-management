@@ -52,4 +52,14 @@
   <data name="SectionOptionalLabel" xml:space="preserve"><value>Section (optional)</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
   <data name="OkButton" xml:space="preserve"><value>OK</value></data>
+  <data name="DetailNoAnswers" xml:space="preserve"><value>No answers yet</value></data>
+  <data name="DetailLoadMore" xml:space="preserve"><value>Load more</value></data>
+  <data name="DetailLoadFailed" xml:space="preserve"><value>Loading failed</value></data>
+  <data name="DetailResponsesUnit" xml:space="preserve"><value>response(s)</value></data>
+  <data name="DetailXAxisLabel" xml:space="preserve"><value>Answers</value></data>
+  <data name="DetailLikert_1" xml:space="preserve"><value>Strongly disagree (1)</value></data>
+  <data name="DetailLikert_2" xml:space="preserve"><value>Disagree (2)</value></data>
+  <data name="DetailLikert_3" xml:space="preserve"><value>Neutral (3)</value></data>
+  <data name="DetailLikert_4" xml:space="preserve"><value>Agree (4)</value></data>
+  <data name="DetailLikert_5" xml:space="preserve"><value>Strongly agree (5)</value></data>
 </root>

@@ -13,12 +13,13 @@
             <form asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId" method="post" class="flex flex-col gap-3">
                 @for (var i = 0; i < 9; i++)
                 {
+                    var slot = Model.Slots[i];
                     <div class="flex items-center gap-3">
                         <span class="text-base-content/40 text-xs w-20">@L["PositionLabel"] @(i + 1)</span>
-                        <select name="Layout[@i]" class="select select-bordered select-sm flex-1">
+                        <select name="Slots[@i].WidgetType" class="select select-bordered select-sm flex-1">
                             @foreach (var type in Model.AllWidgetTypes)
                             {
-                                var isSelected = i < Model.Layout.Length && Model.Layout[i] == type;
+                                var isSelected = slot.WidgetType == type;
                                 var label = type switch {
                                     "ViewCount" => L["Widget_ViewCount"].Value,
                                     "CompletionCount" => L["Widget_CompletionCount"].Value,
@@ -29,6 +30,9 @@
                                     "SurveyDistribution" => L["Widget_SurveyDistribution"].Value,
                                     "IdeaFeed" => L["Widget_IdeaFeed"].Value,
                                     "ModerationQueue" => L["Widget_ModerationQueue"].Value,
+                                    "QuestionSinglePie" => L["Widget_QuestionSinglePie"].Value,
+                                    "QuestionMultiBar" => L["Widget_QuestionMultiBar"].Value,
+                                    "QuestionLikertBar" => L["Widget_QuestionLikertBar"].Value,
                                     _ => type
                                 };
                                 if (isSelected)
@@ -41,6 +45,9 @@
                                 }
                             }
                         </select>
+                        @* QuestionId is chosen via the live dropdown on the dashboard;
+                           carried through here so a layout save does not clear it. *@
+                        <input type="hidden" name="Slots[@i].QuestionId" value="@(slot.QuestionId?.ToString() ?? string.Empty)" />
                     </div>
                 }
                 <div class="card-actions justify-end gap-2 pt-2">
