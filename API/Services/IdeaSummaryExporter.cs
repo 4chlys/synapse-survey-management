@@ -18,6 +18,7 @@ public sealed class IdeaSummaryExporter
         IdeaSummaryExportFormat format,
         int projectId)
     {
+        ArgumentNullException.ThrowIfNull(summaryText);
         return format switch
         {
             IdeaSummaryExportFormat.Pdf => ExportPdf(summaryText, projectId),
@@ -66,8 +67,10 @@ public sealed class IdeaSummaryExporter
     {
         const int width = 1200;
         const float fontSize = 18f;
+        const float titleFontSize = 24f;
         const float padding = 40f;
         const float lineHeight = fontSize * 1.6f;
+        const float titleAreaHeight = titleFontSize * 2.5f; // vertical space reserved for title row
 
         using var paint = new SKPaint
         {
@@ -78,17 +81,17 @@ public sealed class IdeaSummaryExporter
         };
 
         var lines = WrapText(text, paint, width - padding * 2);
-        int height = (int)(padding * 2 + lines.Count * lineHeight + 60);
+        int height = (int)(padding * 2 + lines.Count * lineHeight + titleAreaHeight);
 
         using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.White);
 
-        float y = padding + 50;
+        float y = padding + titleAreaHeight;
         using var titlePaint = new SKPaint
         {
             Color = SKColors.Black,
-            TextSize = 24f,
+            TextSize = titleFontSize,
             IsAntialias = true,
             FakeBoldText = true,
         };
