@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.API.DTOs.SocialMedia;
 
-public class GenerateSocialImageResponseDto
+public record GenerateSocialImageResponseDto
 {
-    public string ImageUrl { get; set; } = "";
+    public string ImageUrl { get; init; } = "";
 }

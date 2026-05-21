@@ -52,8 +52,7 @@ public class SurveyController(
             else
             {
                 // empty dict = participant exists, just no answers yet — still a valid session
-                model.ExistingResponses = existingResponses;
-                model.HasSession = true;
+                model = model with { ExistingResponses = existingResponses, HasSession = true };
             }
         }
 
