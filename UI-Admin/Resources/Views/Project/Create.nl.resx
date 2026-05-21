@@ -66,4 +66,8 @@
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
   <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Niet-gebalanceerde accolades ({0} {  vs  {1} }).</value></data>
   <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS ziet er gebalanceerd uit.</value></data>
+  <data name="EmailTemplate" xml:space="preserve"><value>E-mailsjabloon</value></data>
+  <data name="EmailTemplate_Subject" xml:space="preserve"><value>Onderwerp</value></data>
+  <data name="EmailTemplate_Body" xml:space="preserve"><value>Berichttekst</value></data>
+  <data name="EmailTemplate_Enabled" xml:space="preserve"><value>E-mails versturen inschakelen</value></data>
 </root>
