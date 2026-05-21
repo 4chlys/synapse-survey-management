@@ -295,19 +295,29 @@ defence-in-depth rather than a perimeter against untrusted input.
 ## 6. Light/dark mode — how it interacts with theming
 
 Brightness is **user-owned**, not project-owned. Every project supports both light
-and dark, and the participant chooses.
+and dark: a first-time visitor sees their operating system's preference, and the
+participant can override it at any time.
 
-- **The toggle.** A header button (`theme.ts`) flips a `data-theme` attribute on
-  `<html>` between `synapse-light` and `synapse-dark`. The choice is stored in
-  `localStorage` *and* in a cookie named `synapse-theme` (one-year max-age,
-  `SameSite=Lax`).
-- **No flash of wrong theme.** `_Layout.cshtml` reads that cookie server-side and
-  sets `data-theme` on `<html>` before the page is sent, so the correct brightness
-  is painted on the very first frame.
-- **OS preference.** The daisyUI `synapse-dark` theme is declared with
-  `prefersdark: true`, registering it as the theme for `prefers-color-scheme: dark`.
-  Once a visitor has used the toggle, their explicit cookie value is authoritative;
-  a first visit with no cookie renders `synapse-light`.
+- **First visit follows the OS.** Until a choice is made, `_Layout.cshtml` omits
+  the `data-theme` attribute entirely. daisyUI's `synapse-dark` theme is declared
+  with `prefersdark: true`, which generates a pure-CSS rule —
+  `@media (prefers-color-scheme: dark) { :root:not([data-theme]) }` — that applies
+  dark mode whenever the page carries no explicit `data-theme`. An OS set to dark
+  renders dark, light renders light, with no flash: the stylesheet resolves it at
+  parse time, before any JavaScript runs.
+- **The toggle records an explicit choice.** A header button (`theme.ts`) flips
+  between `synapse-light` and `synapse-dark` and stores the result in both
+  `localStorage` and a cookie named `synapse-theme` (one-year max-age,
+  `SameSite=Lax`). The click flips off `effectiveTheme()` — the currently
+  *resolved* theme, taken from the `data-theme` attribute or, when it is absent,
+  from `matchMedia` — so the first click always moves away from what the visitor
+  is actually seeing.
+- **A returning visitor's choice is painted with no flash.** Once the cookie holds
+  a value, `_Layout.cshtml` emits it as `data-theme` on `<html>` server-side,
+  before the page is sent. On load, `theme.ts` enforces a stored theme only when
+  `localStorage` actually holds one; with no stored choice it leaves the CSS in
+  control and merely mirrors the effective theme onto the toggle button — a
+  `matchMedia` listener keeps that mirror in sync if the OS preference flips.
 - **`light-dark()` everywhere.** Every theme token — base themes *and* project
   presets — is defined with the CSS `light-dark()` function, which nominates a
   light value and a dark value in a single declaration. The active `color-scheme`
