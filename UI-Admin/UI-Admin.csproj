@@ -6,10 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SynapseEnqueteManagement.UI.Admin</AssemblyName>
     <RootNamespace>SynapseEnqueteManagement.UI.Admin</RootNamespace>
+    <UserSecretsId>synapse-admin-secrets</UserSecretsId>
   </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
+        <PackageReference Include="Resend" Version="0.5.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>

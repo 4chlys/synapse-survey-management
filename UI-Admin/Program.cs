@@ -19,6 +19,8 @@ using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Email;
+using SynapseEnqueteManagement.BL.Interfaces;
+using Resend;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -161,6 +163,19 @@ builder.Services.AddSingleton(AiConfigLoader.Load(
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<WidgetPreferenceService>();
+
+var resendKey = builder.Configuration["RESEND_API_KEY"];
+var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "noreply@synapse-ip.xyz";
+if (!string.IsNullOrEmpty(resendKey))
+{
+    builder.Services.AddResend(opt => opt.ApiToken = resendKey);
+    builder.Services.AddScoped<IEmailService>(sp =>
+        new AdminEmailService(sp.GetRequiredService<IResend>(), emailFrom));
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, AdminLogEmailService>();
+}
 
 // Rate limiting — protect expensive AI image-generation via project creation
 builder.Services.AddRateLimiter(options =>

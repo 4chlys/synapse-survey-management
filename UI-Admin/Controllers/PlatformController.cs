@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.BL.Domain.Ai;
+using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
@@ -19,6 +20,8 @@ public class PlatformController(
     AiAdminService aiAdminService,
     SystemStatsAdminService systemStatsAdminService,
     UserManager<ApplicationUser> userManager,
+    IEmailService emailService,
+    ILogger<PlatformController> logger,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
@@ -235,6 +238,11 @@ public class PlatformController(
                 ModelState.AddModelError(string.Empty, error.Description);
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
         }
+
+        var loginUrl = Url.Action("Login", "Auth", null, Request.Scheme);
+        var body = $"Hallo,\n\nJe bent toegevoegd als beheerder van platform '{platform.Name}' in Synapse.\n\nJe aanmeldgegevens:\nE-mail: {model.Email}\nWachtwoord: {model.Password}\n\nLog in via: {loginUrl}\n\nWij raden aan je wachtwoord na de eerste login te wijzigen.";
+        try { await emailService.SendAsync(model.Email, $"Welkom bij Synapse — {platform.Name}", body); }
+        catch (Exception ex) { logger.LogWarning(ex, "Welkomstmail mislukt voor {Email}", model.Email); }
 
         TempData["Success"] = localizer["Platform_AdminAdded"].Value;
         return RedirectToAction(nameof(Admins), new { id });

@@ -17,6 +17,14 @@
             <h1 class="font-heading font-bold text-lg text-base-content">@Shared["AppName"]</h1>
         </div>
 
+        @if (TempData["ResetSuccess"] is not null)
+        {
+            <div class="alert alert-success text-sm">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                @L["ResetSuccessMessage"]
+            </div>
+        }
+
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="alert alert-error text-sm">
@@ -44,6 +52,8 @@
 
             <button type="submit" class="btn btn-primary w-full mt-1">@L["SubmitButton"]</button>
         </form>
+
+        <a asp-action="ForgotPassword" class="text-xs text-center text-base-content/60 hover:text-base-content">@L["ForgotPasswordLink"]</a>
     </div>
 </div>
 
