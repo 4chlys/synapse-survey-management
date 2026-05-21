@@ -67,6 +67,9 @@
   <data name="Project_InvalidFormat" xml:space="preserve"><value>Ongeldig formaat.</value></data>
   <data name="Project_ExportOnlyActive" xml:space="preserve"><value>Export is enkel beschikbaar voor actieve of gearchiveerde projecten.</value></data>
   <data name="Project_NoFileReceived" xml:space="preserve"><value>Geen bestand ontvangen.</value></data>
+  <data name="Project_NameRequired" xml:space="preserve"><value>Projectnaam is verplicht.</value></data>
+  <data name="Project_ImageGenerationFailed" xml:space="preserve"><value>Afbeelding genereren mislukt.</value></data>
+  <data name="Project_UploadFailed" xml:space="preserve"><value>Uploaden mislukt.</value></data>
 
   <data name="Platform_AdminAdded" xml:space="preserve"><value>Beheerder toegevoegd.</value></data>
   <data name="Platform_AdminRemoved" xml:space="preserve"><value>Beheerder verwijderd.</value></data>

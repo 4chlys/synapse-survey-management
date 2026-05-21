@@ -6,6 +6,7 @@ using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 namespace SynapseEnqueteManagement.BL.Ai;
 
@@ -25,6 +26,7 @@ public sealed class AiConfig
     [JsonPropertyName("image_description")]  public AiImageDescriptionConfig  ImageDescription  { get; init; } = new();
     [JsonPropertyName("image_generation")]   public AiImageGenerationConfig   ImageGeneration   { get; init; } = new();
     [JsonPropertyName("fuzzy")]              public FuzzyConfig               Fuzzy             { get; init; } = new();
+    [JsonPropertyName("social_media")]     public SocialMediaConfig       SocialMedia     { get; init; } = new();
 }
 
 /// <summary>Platform identity tokens used for prompt substitution across all features.</summary>

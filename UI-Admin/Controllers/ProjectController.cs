@@ -329,6 +329,25 @@ public class ProjectController(
 
     [HttpPost]
     [IgnoreAntiforgeryToken]
+    [EnableRateLimiting("ai-image-generation")]
+    public async Task<IActionResult> GenerateImage([FromQuery] string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { error = localizer["Project_NameRequired"].Value });
+
+        try
+        {
+            var url = await uploadService.GenerateImageAsync(name);
+            return Ok(new { url });
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(502, new { error = localizer["Project_ImageGenerationFailed"].Value });
+        }
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UploadImage(IFormFile file)
     {
         if (file is null || file.Length == 0)
@@ -341,7 +360,7 @@ public class ProjectController(
         }
         catch (HttpRequestException)
         {
-            return StatusCode(502, new { error = "Uploaden mislukt." });
+            return StatusCode(502, new { error = localizer["Project_UploadFailed"].Value });
         }
     }
 
