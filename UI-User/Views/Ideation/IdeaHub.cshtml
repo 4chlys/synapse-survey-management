@@ -2,6 +2,8 @@
 @inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer L
 @{
     ViewData["Title"] = Model.Category.Name;
+    // Active page culture — used to mark idea text whose language differs from it (WCAG 3.1.2).
+    var pageLang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 
 @* Idea Support chat overlay *@
@@ -312,7 +314,8 @@
                         </span>
                     }
 
-                    <p class="text-base-content text-sm leading-relaxed pr-8">@idea.Description</p>
+                    <p class="text-base-content text-sm leading-relaxed pr-8"
+                       lang="@(string.Equals(idea.LanguageCode, pageLang, StringComparison.OrdinalIgnoreCase) ? null : idea.LanguageCode)">@idea.Description</p>
 
                     @if (!string.IsNullOrEmpty(idea.ImageUrl))
                     {

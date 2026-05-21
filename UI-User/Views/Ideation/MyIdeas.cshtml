@@ -2,6 +2,8 @@
 @inject IViewLocalizer L
 @{
     ViewData["Title"] = L["Heading"];
+    // Active page culture — used to mark idea text whose language differs from it (WCAG 3.1.2).
+    var pageLang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 
 <div class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-[calc(100dvh-64px)] page-enter">
@@ -75,7 +77,8 @@
                         </span>
                     }
 
-                    <p class="text-base-content text-sm leading-relaxed pr-6">@idea.Description</p>
+                    <p class="text-base-content text-sm leading-relaxed pr-6"
+                       lang="@(string.Equals(idea.LanguageCode, pageLang, StringComparison.OrdinalIgnoreCase) ? null : idea.LanguageCode)">@idea.Description</p>
 
                     @if (!string.IsNullOrEmpty(idea.ImageUrl))
                     {
