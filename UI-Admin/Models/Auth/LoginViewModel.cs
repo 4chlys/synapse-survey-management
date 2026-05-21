@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Auth;
 
-public class LoginViewModel
+public record LoginViewModel
 {
-    [Required] [EmailAddress] public string Email { get; set; }
-    [Required] [DataType(DataType.Password)] public string Password { get; set; }
-    public string ReturnUrl { get; set; }
+    [Required] [EmailAddress] public string Email { get; init; }
+    [Required] [DataType(DataType.Password)] public string Password { get; init; }
+    public string ReturnUrl { get; init; }
 }

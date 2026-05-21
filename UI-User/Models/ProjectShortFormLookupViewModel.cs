@@ -1,8 +1,8 @@
 namespace SynapseEnqueteManagement.UI.User.Models;
 
-public class ProjectShortFormLookupViewModel
+public record ProjectShortFormLookupViewModel
 {
-    public int ProjectId { get; set; }
-    public string ShortForm { get; set; }
-    public string ProjectState { get; set; }
+    public int ProjectId { get; init; }
+    public string ShortForm { get; init; }
+    public string ProjectState { get; init; }
 }

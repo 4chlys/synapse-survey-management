@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Survey;
 
-public class ThankYouViewModel
+public record ThankYouViewModel
 {
-    public int ProjectId { get; set; }
-    public string OrganisationName { get; set; } = string.Empty;
-    public string OrganisationLogoUrl { get; set; } = string.Empty;
-    public string OrganisationWebsiteUrl { get; set; } = string.Empty;
+    public int ProjectId { get; init; }
+    public string OrganisationName { get; init; } = string.Empty;
+    public string OrganisationLogoUrl { get; init; } = string.Empty;
+    public string OrganisationWebsiteUrl { get; init; } = string.Empty;
 }

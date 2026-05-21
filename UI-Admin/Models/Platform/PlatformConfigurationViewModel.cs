@@ -1,15 +1,15 @@
 namespace SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
-public class PlatformConfigurationViewModel
+public record PlatformConfigurationViewModel
 {
-    public int ProjectPlatformId { get; set; }
-    public string ContactName { get; set; }
-    public string ContactEmail { get; set; }
-    public string BillingReference { get; set; }
-    public bool AiAssistanceEnabled { get; set; }
-    public bool IdeationEnabled { get; set; }
-    public int? MaxProjects { get; set; }
-    public int? MaxAdmins { get; set; }
-    public string AiModelName { get; set; }
-    public string CostDashboardUrl { get; set; }
+    public int ProjectPlatformId { get; init; }
+    public string ContactName { get; init; }
+    public string ContactEmail { get; init; }
+    public string BillingReference { get; init; }
+    public bool AiAssistanceEnabled { get; init; }
+    public bool IdeationEnabled { get; init; }
+    public int? MaxProjects { get; init; }
+    public int? MaxAdmins { get; init; }
+    public string AiModelName { get; init; }
+    public string CostDashboardUrl { get; init; }
 }
