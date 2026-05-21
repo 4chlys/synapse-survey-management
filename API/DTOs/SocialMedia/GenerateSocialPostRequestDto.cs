@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.SocialMedia;
 
-public class GenerateSocialPostRequestDto
+public record GenerateSocialPostRequestDto
 {
-    public string Platform { get; set; } = "";
-    public string UserDescription { get; set; } = "";
+    public string Platform { get; init; } = "";
+    public string UserDescription { get; init; } = "";
 }
