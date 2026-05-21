@@ -4,7 +4,6 @@ using SynapseEnqueteManagement.UI.User.Models.Survey;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
-using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
@@ -64,13 +63,4 @@ public class SurveyController(
         return View(strategy.GetViewName(), model);
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [RequireParticipantSession]
-    public async Task<IActionResult> Submit(int projectId)
-    {
-        var token = sessionService.GetToken(projectId);
-        await questionnaireService.SubmitAsync(projectId, token);
-        return NoContent();
-    }
 }
