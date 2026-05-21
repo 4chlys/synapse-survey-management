@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
 
@@ -7,12 +8,14 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 
 [ApiController]
 [Route("{projectId:int}/api/[controller]")]
+[RequireParticipantSession]
 public class SurveyApiController(
     IQuestionnaireApiService questionnaireService,
     ISessionService sessionService) : ControllerBase
 {
     [HttpPost("participants")]
     [EnableRateLimiting("participant-creation")]
+    [SkipParticipantSession]
     public async Task<ActionResult> StartSession(int projectId)
     {
         var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "nl", "en" };
@@ -28,9 +31,6 @@ public class SurveyApiController(
     public async Task<ActionResult> SaveResponse(int projectId, SaveResponseRequest request)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         await questionnaireService.SaveResponseAsync(projectId, request.QuestionId, request.Value, token);
         return Ok();
     }
@@ -39,9 +39,6 @@ public class SurveyApiController(
     public async Task<ActionResult> GetNextQuestion(int projectId, [FromQuery] int currentQuestionId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         var questionId = await questionnaireService.GetNextQuestionAsync(projectId, currentQuestionId, token);
         return Ok(new { questionId });
     }
@@ -50,9 +47,6 @@ public class SurveyApiController(
     public async Task<ActionResult> GetPreviousQuestion(int projectId, [FromQuery] int currentQuestionId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         var questionId = await questionnaireService.GetPreviousQuestionAsync(projectId, currentQuestionId, token);
         return Ok(new { questionId });
     }
@@ -61,9 +55,6 @@ public class SurveyApiController(
     public async Task<ActionResult> GetResumeQuestion(int projectId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         var questionId = await questionnaireService.GetResumeQuestionAsync(projectId, token);
         return Ok(new { questionId });
     }
@@ -72,9 +63,6 @@ public class SurveyApiController(
     public async Task<ActionResult> GetVisiblePath(int projectId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         var questionIds = await questionnaireService.GetVisiblePathAsync(projectId, token);
         return Ok(new { questionIds });
     }
@@ -83,9 +71,6 @@ public class SurveyApiController(
     public async Task<ActionResult> GetResponses(int projectId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         var responses = await questionnaireService.GetResponsesAsync(projectId, token);
         return Ok(responses);
     }
@@ -94,9 +79,6 @@ public class SurveyApiController(
     public async Task<ActionResult> Submit(int projectId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         await questionnaireService.SubmitAsync(projectId, token);
         return Ok();
     }
@@ -105,9 +87,6 @@ public class SurveyApiController(
     public async Task<ActionResult> RemoveAllResponses(int projectId)
     {
         var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
         await questionnaireService.RemoveAllResponsesAsync(projectId, token);
         return NoContent();
     }

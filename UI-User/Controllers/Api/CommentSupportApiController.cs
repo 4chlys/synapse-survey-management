@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
-using SynapseEnqueteManagement.UI.User.Services.Session;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 
@@ -12,9 +12,9 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 /// </summary>
 [ApiController]
 [Route("{projectId:int}/api/[controller]")]
+[RequireParticipantSession]
 public class CommentSupportApiController(
     CommentSupportService commentSupportService,
-    ISessionService sessionService,
     IStringLocalizer<SharedResource> localizer,
     ILogger<CommentSupportApiController> logger) : ControllerBase
 {
@@ -24,10 +24,6 @@ public class CommentSupportApiController(
         CommentSupportChatRequest body,
         CancellationToken ct)
     {
-        var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized("Participant session required.");
-
         CommentSupportChatResponse result;
         try
         {
