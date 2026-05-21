@@ -2,6 +2,8 @@
 @inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer L
 @{
     ViewData["Title"] = L["Title"];
+    // Active page culture — used to mark idea/comment text whose language differs from it (WCAG 3.1.2).
+    var pageLang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 
 <div class="max-w-2xl mx-auto px-6 pt-10 pb-32 min-h-[calc(100dvh-64px)] page-enter">
@@ -42,7 +44,8 @@
                 <p class="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
                     @Model.Category?.Name
                 </p>
-                <p class="text-base-content text-[15px] leading-relaxed">@Model.Idea.Description</p>
+                <p class="text-base-content text-[15px] leading-relaxed"
+                   lang="@(string.Equals(Model.Idea.LanguageCode, pageLang, StringComparison.OrdinalIgnoreCase) ? null : Model.Idea.LanguageCode)">@Model.Idea.Description</p>
 
                 @if (!string.IsNullOrEmpty(Model.Idea.ImageUrl))
                 {
@@ -251,7 +254,8 @@
                                 }
                             </div>
                         }
-                        <p class="text-base-content text-[15px] leading-relaxed">@comment.Text</p>
+                        <p class="text-base-content text-[15px] leading-relaxed"
+                           lang="@(string.Equals(comment.LanguageCode, pageLang, StringComparison.OrdinalIgnoreCase) ? null : comment.LanguageCode)">@comment.Text</p>
 
                         <div class="flex gap-2 mt-3 items-center flex-wrap" data-emoji-container
                              data-project-id="@Model.ProjectId" data-category-id="@Model.CategoryId"

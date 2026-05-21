@@ -4,7 +4,7 @@ import { wireIdeaImageField } from './ideaimage';
 import { wireImageDescribeButton } from './imagedescribe';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
-import { t } from '../lib/i18n';
+import { t, currentCulture } from '../lib/i18n';
 
 interface EmojiReaction {
     emojiId: number;
@@ -327,6 +327,7 @@ interface IdeaResponse {
     commentsCount: number;
     isOwnedByCurrentUser: boolean;
     isFlagged: boolean;
+    languageCode?: string;
     emojis: EmojiReaction[];
 }
 
@@ -414,6 +415,12 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         </span>`;
     }).join('');
 
+    // Mark the description with `lang` when the idea was written in another language (WCAG 3.1.2).
+    const pageLang = currentCulture().split('-')[0];
+    const langAttr = idea.languageCode && idea.languageCode !== pageLang
+        ? ` lang="${idea.languageCode}"`
+        : '';
+
     return `<a href="/${projectId}/Ideation/Detail?categoryId=${categoryId}&ideaId=${idea.ideaId}"
        class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] ${borderClass}">
         <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
@@ -423,7 +430,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
             <span class="text-xs font-bold text-base-content tabular-nums">${idea.commentsCount}</span>
         </div>
         ${statusLabel}
-        <p class="text-base-content text-sm leading-relaxed pr-8">${escapeHtml(idea.description)}</p>
+        <p class="text-base-content text-sm leading-relaxed pr-8"${langAttr}>${escapeHtml(idea.description)}</p>
         <div class="mt-3">
             <button type="button" data-action="copy-idea"
                     data-idea-description="${escapeAttr(idea.description)}"

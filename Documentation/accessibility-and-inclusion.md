@@ -145,7 +145,7 @@ Full Dutch and English across: shared resource strings (`Resources/SharedResourc
 
 Switched via the header pill (segmented control, `aria-current` on the active locale) or the participant's stored preference. Cultures are wired in `UI-User/Program.cs`. `<html lang="…">` is set per request.
 
-⚠️ Per-element `lang` for mixed-language content is not handled (backlog, low severity).
+Mixed-language content within a page is marked too: when a project enables cross-language ideas, an idea or comment shown in a language other than the page's carries a per-element `lang` attribute, so assistive technology switches voice for it (WCAG 3.1.2 Language of Parts).
 
 ## Mobile and viewport ✅
 
@@ -264,9 +264,8 @@ Honest, deliberately exhaustive. Each item: WCAG success criterion + rough sever
 | # | Gap | WCAG SC | Notes |
 |---|---|---|---|
 | 16 | **Theme toggle lacks `aria-pressed`** | 4.1.2 | `#theme-toggle` exposes `aria-label` but not its on/off state. |
-| 17 | **No per-element `lang`** | 3.1.2 Language of Parts | Mixed-language content within a page isn't marked. |
-| 18 | **Admin UI (`UI-Admin`) not audited** | — | This doc covers the participant app. The admin panel deserves its own pass. |
-| 19 | **No automated a11y testing in CI** | — | Wire axe-core / Lighthouse (see Automated testing). |
+| 17 | **Admin UI (`UI-Admin`) not audited** | — | This doc covers the participant app. The admin panel deserves its own pass. |
+| 18 | **No automated a11y testing in CI** | — | Wire axe-core / Lighthouse (see Automated testing). |
 
 ---
 
