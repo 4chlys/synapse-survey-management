@@ -170,6 +170,10 @@ const PROJECT_THEME_CSS = `
     --color-base-200: light-dark(oklch(100% 0 0), oklch(8% 0 0));
     --color-base-300: light-dark(oklch(80% 0 0), oklch(20% 0 0));
     --color-base-content: light-dark(oklch(0% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-secondary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-accent: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-accent-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-warning: oklch(95% 0.20 100);
     --font-heading: 'Arial', sans-serif;
     --radius-field: 0;

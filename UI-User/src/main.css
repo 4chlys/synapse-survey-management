@@ -319,7 +319,9 @@ button[data-stt-target] {
 .btn-travel-wrap {
   position: relative;
   display: inline-flex;
-  border-radius: calc(1rem + 2px);
+  /* Track the inner .btn's rounded-box (= --radius-box) so the orbit ring
+     stays concentric across every preset (sharp under Bold/HighContrast). */
+  border-radius: calc(var(--radius-box) + 2px);
   padding: 2px;
   isolation: isolate;
   cursor: pointer;
@@ -532,8 +534,18 @@ button[data-stt-target] {
 [data-project-theme="highcontrast"] {
     --color-primary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
     --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    /* Pin every surface — without this the synapse base leaks a violet tint
+       into base-200/300 (chips, sections), so the page looks unlike the preview. */
     --color-base-100: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+    --color-base-200: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+    --color-base-300: light-dark(oklch(80% 0 0), oklch(20% 0 0));
     --color-base-content: light-dark(oklch(0% 0 0), oklch(100% 0 0));
+    /* Monochrome secondary/accent — otherwise bg-secondary/10, text-accent,
+       border-secondary/30 stay tinted teal/coral and lose contrast under HC. */
+    --color-secondary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-secondary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-accent: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-accent-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-warning: oklch(95% 0.20 100);
     --font-heading: 'Arial', sans-serif;
     --radius-field: 0;
