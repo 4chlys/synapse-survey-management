@@ -369,4 +369,4 @@ OKLCH is purely a **render-time** format in this codebase. The conversion happen
 - [W3C — CSS Color Module Level 4](https://www.w3.org/TR/css-color-4/#ok-lab)
 - [MDN — oklch()](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch)
 - [MDN — color-mix()](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix)
-- Project docs: `Documentation/accessibility-and-inclusion.md`, `JonasAssignment/ThemingStrategy.md`
+- Project docs: `Documentation/accessibility-and-inclusion.md`
