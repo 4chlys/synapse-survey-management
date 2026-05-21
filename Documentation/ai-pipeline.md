@@ -74,6 +74,33 @@ for 30 seconds so that prompt or model changes made in the admin panel are picke
 quickly without a database hit on every request. If the admin database is unavailable
 the service falls back to global defaults rather than failing.
 
+```mermaid
+flowchart TB
+    subgraph Startup["Application startup (once)"]
+        F[ai-config.json] -->|AiConfigLoader| AC["AiConfig<br/>+ ApplyPlatformSubstitutions:<br/>{platform_name}, {language},<br/>{country}, {age_range}"]
+        AC --> REG["ChatClientRegistry<br/>Vertex / OpenAI / Anthropic / Grok"]
+    end
+
+    subgraph Request["Per request"]
+        CTRL[Controller] -->|"ResolveAsync(platformId)"| SVC[PlatformAiConfigService]
+        SVC --> CACHE{30s cache hit?}
+        CACHE -->|yes| RES["ResolvedPlatformAiConfig<br/>(IChatClient + modelId<br/>+ feature config blocks)"]
+        CACHE -->|no| ADMIN[("UI-Admin DB<br/>SystemAiSettings — allowed models<br/>PlatformSettings — selected model")]
+        ADMIN -->|"if unavailable: fall back to global defaults"| PICK[Pick IChatClient<br/>from registry]
+        PICK --> RES
+    end
+
+    REG -.-> PICK
+    AC -.-> RES
+    RES --> CALL["AI service substitutes<br/>per-request tokens:<br/>{category_name}, {idea_text},<br/>{draft}, {language}"]
+    CALL --> LLM[(LLM provider)]
+```
+
+The diagram makes the **two-phase** nature of prompt resolution explicit. Startup-time
+substitutions bake the platform identity into the prompt templates once and never
+change; request-time substitutions inject per-participant values on every call. Both
+streams meet inside the AI service before it talks to the provider.
+
 The platform supports multiple AI providers. At startup, `Program.cs` registers chat
 clients for Vertex AI (Google Gemini), OpenAI, Anthropic, and Grok, depending on which
 API keys are configured. Every AI feature talks to the provider-neutral `IChatClient`
@@ -506,6 +533,18 @@ and Grok if keys are present) and the real AI service implementations are regist
 When it is false, no provider client is created and the mock implementation of every AI
 service is registered instead. Switching the whole AI layer between real and mock is
 therefore a one-line config change plus a restart.
+
+```mermaid
+flowchart LR
+    A["ai-config.json<br/>moderation.use_ai"] --> B{"useAi flag<br/>(Program.cs)"}
+    B -->|true| C["Build provider chat clients:<br/>Vertex / OpenAI / Anthropic / Grok"]
+    B -->|false| D["No provider client built<br/>no API keys read"]
+    C --> E["Real services:<br/>AiModerationService<br/>AiIdeaSupportService<br/>AiEmbeddingService<br/>…"]
+    D --> F["Mock services:<br/>MockModerationService<br/>MockIdeaSupportService<br/>MockEmbeddingService<br/>…"]
+    E --> G[("Same interfaces<br/>IAi*Service")]
+    F --> G
+    G --> H["Controllers / managers<br/>(unaware which is active)"]
+```
 
 ### Why every AI service has a mock
 

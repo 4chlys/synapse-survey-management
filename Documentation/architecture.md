@@ -233,6 +233,70 @@ The distinction exists to keep dependency graphs acyclic and reasoning local: re
 managers stay focused on one aggregate and do not inject other managers; cross-feature
 *navigation* is lifted into a thin coordinator that has nothing to persist of its own.
 
+```mermaid
+flowchart TB
+    subgraph CoordLayer["Coordinator managers — own no repository, compose other managers"]
+        SM[SubmissionManager]
+        PLC[ParticipantLanguageCoordinator]
+    end
+
+    subgraph RegLayer["Regular managers — own one aggregate + its repository"]
+        IM[IdeaManager]
+        CM[CommentManager]
+        PM[ProjectManager]
+        CAM[CategoryManager]
+        QM[QuestionnaireManager]
+        RM[ResponseManager]
+        SFM[SurveyFlowManager]
+        PartM[ParticipantManager]
+        LM[LanguageManager]
+    end
+
+    subgraph RepoLayer["Per-entity repositories (DAL)"]
+        IR[(IIdeaRepository)]
+        CR[(ICommentRepository)]
+        PR[(IProjectRepository)]
+        CaR[(ICategoryRepository)]
+        QnR[(IQuestionnaireRepository)]
+        QR[(IQuestionRepository)]
+        SR[(ISectionRepository)]
+        RR[(IResponseRepository)]
+        PaR[(IParticipantRepository)]
+        LR[(ILanguageRepository)]
+        ER[(IEmojiRepository)]
+    end
+
+    SM --> QM
+    SM --> SFM
+    SM --> RM
+    SM --> PartM
+    PLC --> PartM
+    PLC --> RM
+
+    IM ==> IR
+    IM -. justified .-> CaR
+    CM ==> CR
+    CM -. justified .-> IR
+    PM ==> PR
+    PM -. justified .-> ER
+    PM -. justified .-> LR
+    CAM ==> CaR
+    CAM -. justified .-> LR
+    QM ==> QnR
+    QM -. justified .-> QR
+    QM -. justified .-> SR
+    QM -. justified .-> LR
+    RM ==> RR
+    RM -. justified .-> QR
+    PartM ==> PaR
+    PartM -. justified .-> LR
+    LM ==> LR
+```
+
+Thick arrows (`==>`) are a regular manager's **own** repository; dotted arrows are the
+explicitly justified cross-aggregate exceptions enumerated above. Coordinators (top
+band) carry no thick arrow at all — they hold no repository.
+
 **Justified cross-aggregate repository injections.** A regular manager normally injects
 only its own repository. A few managers need a *foreign* repository to enforce an invariant
 that spans aggregates. These exceptions are explicitly enumerated and may not be extended

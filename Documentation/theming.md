@@ -52,6 +52,23 @@ and Layer 3 is the last `<style>` element on the page so it beats both. An
 administrator who only picks a preset gets a coherent design; one who also picks a
 colour gets it re-branded; one who pastes CSS can change anything.
 
+```mermaid
+flowchart TB
+    PROJ[("Project entity<br/>Theme · PrimaryColor · CustomCss")]
+    PROJ --> L1["<b>Layer 1 — preset block</b><br/>main.css selector<br/>[data-project-theme='friendly'] { … }<br/>specificity 0,1,0"]
+    PROJ --> L2["<b>Layer 2 — derived palette</b><br/>inline &lt;style&gt; from _Layout.cshtml<br/>body[data-project-theme] { --color-primary: … }<br/>specificity 0,1,1 ⇒ overrides Layer 1"]
+    PROJ --> L3["<b>Layer 3 — Custom CSS</b><br/>inline &lt;style&gt; with @Html.Raw(CustomCss)<br/>last in source order ⇒ wins specificity ties"]
+    L1 --> R[Resolved CSS custom properties<br/>--color-primary, --color-secondary, --color-accent,<br/>--font-heading, --radius-field, --radius-box, --tap-target]
+    L2 --> R
+    L3 --> R
+    R --> U["Tailwind utilities &amp; components<br/>(bg-primary, btn-primary, rounded-box, …)"]
+```
+
+Each Project row produces the three CSS sources independently; only the tokens they
+*explicitly* redefine flow downstream. A Layer-2 picker therefore re-brands the colour
+triad without touching radii or fonts, and a Layer-3 paste of pure CSS can target the
+already-resolved component classes without redefining tokens at all.
+
 ## 3. Layer 1 — Theme presets
 
 A theme preset is a **character**, not a topic. It sets the structural feel of a

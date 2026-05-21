@@ -24,6 +24,28 @@ These two models never mix. The participant-facing application (`UI-User`) and t
 (`UI-Admin`) are separate ASP.NET MVC applications, and the shared backend (`API`) is a third
 application that both of them call. The sections below describe each layer in turn.
 
+```mermaid
+flowchart LR
+    subgraph PartFlow["Participant — pseudonymous"]
+        PB[Browser] -->|"HttpOnly cookie<br/>ParticipantToken_{projectId}"| UU[UI-User MVC]
+        UU -->|"X-Participant-Token (GUID)<br/>X-Api-Key"| API1[API]
+        API1 -->|"GetParticipantBySessionToken"| PDB[("Participant table<br/>SessionToken, CreatedAt,<br/>HasSubmitted, optional Email<br/>— no name, no password")]
+    end
+
+    subgraph AdminFlow["Admin — identified"]
+        AB[Browser] -->|"ASP.NET Identity cookie<br/>encrypted, 8h, HttpOnly"| UA[UI-Admin MVC]
+        UA -->|"X-Api-Key"| API2[API]
+        UA --> ADB[("AspNetUsers + Roles<br/>SystemAdmin, ProjectPlatformAdmin<br/>password hashes via Identity")]
+    end
+
+    Key["X-Api-Key — shared backend secret<br/>checked by ApiKeyMiddleware"] -.-> API1
+    Key -.-> API2
+```
+
+Two cookies, two header schemes, two databases — and one shared `X-Api-Key` that
+authenticates the *caller process* (UI-User or UI-Admin) to the API, not the human
+behind it.
+
 ## 2. Participant identification — session tokens
 
 ### No login, no password
@@ -127,6 +149,89 @@ message to read. Impersonating another participant would let an attacker, at mos
 participant's own ideas marked as "mine" — information of no value. The token is a *capability*
 to continue one anonymous survey session, nothing more. Combined with the unguessable size of
 a GUID and the HttpOnly + Secure cookie, that is a proportionate design.
+
+### What the cookie authorizes — survey-completion gating
+
+Identification (who the cookie refers to) is one concern; **authorization** (what that holder
+is allowed to reach) is a second. Because participants have no roles or claims, the platform
+needs another signal to decide *which* surfaces a given session may visit. That signal is
+`Participant.HasSubmitted`. It functions as a one-bit capability: a session with
+`HasSubmitted == false` may use the survey but not the ideation pages; a session with
+`HasSubmitted == true` may use the ideation pages but is denied a second survey run.
+
+The check is enforced **server-side** in three places in `UI-User`, all keyed on the same
+`HasParticipantRespondedAsync` call (which returns `HasSubmitted` from the API):
+
+- `LandingPageController.Index` — a returning cookie with `HasSubmitted == true` is redirected
+  from `/<projectId>/` straight to `Category/CategoryList`. The landing page is skipped.
+- `SurveyController.Index` — the same check at the top of the action. A submitted participant
+  who deep-links to the survey URL is also redirected away. The survey cannot be retaken.
+- `RequiresSurveyCompletionFilter` — a `[ServiceFilter]` applied to `CategoryController` and
+  `IdeationController`. A session **without** a finished submission that tries to deep-link
+  into ideation is bounced back to the landing page via `context.Result`, before the action
+  ever runs.
+
+Two security points follow from this design:
+
+1. **The gate is server-authoritative.** No part of it depends on a client flag, a URL
+   parameter, or a JavaScript check. A determined visitor crafting URLs by hand cannot reach
+   ideation before submitting, nor re-take the survey after submitting, because every entry
+   point re-asks the API for the participant's current `HasSubmitted` value.
+2. **Cookie capture inherits the cookie's capabilities, but nothing else.** The cookie alone
+   decides which side of the gate the holder is on — there is no extra password, MFA, or
+   second factor. This is acceptable because the gate is about *flow*, not secrets: a stolen
+   cookie can post comments under that pseudonym (which is the participant impersonation case
+   already analysed above), but it cannot bypass moderation, cannot read other participants'
+   draft answers, and cannot grant admin access. The HttpOnly + Secure + SameSite=Lax cookie
+   settings are the same defences against capture that apply to every other request.
+
+The end-to-end participant routing — *landing → survey → ideation*, with no way to step
+backwards once `HasSubmitted` flips — is documented in detail in
+[`survey-flow.md` §9 "Return-visitor routing"](./survey-flow.md). This section deliberately
+covers only the access-control angle.
+
+A participant's capability set therefore moves through three states. Each state is
+defined entirely by the `(cookie present?, HasSubmitted)` pair, and each state's
+authorization profile — which surfaces are reachable, which are redirected — is fixed:
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Anonymous : no cookie
+    Anonymous --> InProgress : first forward nav<br/>POST participants<br/>cookie issued
+    InProgress --> InProgress : save response drafts
+    InProgress --> Completed : Submit succeeds<br/>HasSubmitted set to true
+    Completed --> [*]
+
+    note right of Anonymous
+        Cookie absent
+        Reachable: Landing
+        Blocked: Category, Ideation
+        (RequiresSurveyCompletionFilter
+         redirects to Landing)
+    end note
+
+    note right of InProgress
+        Cookie present
+        HasSubmitted = false
+        Reachable: Landing, Survey
+        Blocked: Category, Ideation
+        (same filter)
+    end note
+
+    note right of Completed
+        Cookie present
+        HasSubmitted = true
+        Reachable: Category, Ideation
+        Landing and Survey auto-redirect
+        to Category/CategoryList
+    end note
+```
+
+The transitions are the only events that can change capabilities — a participant cannot
+cross between states by editing the cookie, since `HasSubmitted` is read server-side from
+the database on every gated request, not from any client-supplied data. There is no
+backwards transition: `HasSubmitted` is monotonic for the lifetime of a participant row.
 
 ## 3. Admin authentication
 
@@ -290,6 +395,26 @@ Three details matter for security:
 - **Tokens are single-use.** After a successful submission the token is passed to
   `ConsumeToken`, which records it in an in-memory set; a replayed token is then rejected by the
   first line above.
+
+The token therefore has a small fixed lifecycle — five distinct rejection reasons plus
+the happy path:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Issued : GenerateToken — HMAC over projectId, textHash, status, ts
+    Issued --> Consumed : ValidateToken passes, then ConsumeToken on submit
+    Issued --> R_Forged : HMAC mismatch
+    Issued --> R_WrongProject : projectId mismatch
+    Issued --> R_Edited : text hash mismatch
+    Issued --> R_Expired : age over 10 min or future ts
+    Issued --> R_Replay : already in consumedTokens
+    Consumed --> [*]
+    R_Forged --> [*] : text re-moderated server-side — image token rejected with 400
+    R_WrongProject --> [*]
+    R_Edited --> [*]
+    R_Expired --> [*]
+    R_Replay --> [*]
+```
 
 A separate pair of methods, `GenerateImageToken` / `ValidateImageToken`, applies the same
 construction to uploaded images, hashing the image bytes instead of text.

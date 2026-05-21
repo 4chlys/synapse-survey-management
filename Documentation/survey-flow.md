@@ -133,6 +133,16 @@ visible path (so answers to questions that branching skipped are kept in the DB 
 draft but never marked as final — see `ResponseManager.CommitResponsesAsync` and
 `ResponseRepository.ReadCommittedByProjectWithQuestionReadOnlyAsync`).
 
+```mermaid
+stateDiagram-v2
+    [*] --> Draft : POST saveResponse<br/>UpdateOrCreateResponseAsync
+    Draft --> Draft : participant edits answer<br/>(row updated in place)
+    Draft --> Committed : Submit succeeds<br/>question is on visible path
+    Committed --> Draft : earlier answer changed,<br/>question no longer on path<br/>(defensive re-flip on next Submit)
+    Draft --> [*] : question off visible path<br/>(stays IsCommitted = false,<br/>excluded from final dataset)
+    Committed --> [*] : included in final dataset
+```
+
 ## 3. Branching logic
 
 ### What branching means
@@ -189,6 +199,31 @@ WalkScope(parentId=null, triggerChoiceIndex=null)   # entry point: top-level que
 `SplitSelected` returns a single-element list for `Open` / `SingleChoice` / `Likert`,
 and the comma-separated list of selected options for `MultipleChoice` (so a multi-select
 can open *several* sibling subtrees at once).
+
+The same algorithm, as a flowchart of one `WalkScope` invocation:
+
+```mermaid
+flowchart TB
+    Start([WalkScope parentId, triggerChoice]) --> A["children = questions where<br/>parent == parentId AND choiceIndex == triggerChoice<br/>ordered by Position"]
+    A --> B{next child?}
+    B -->|none| End([return path])
+    B -->|already visited| B
+    B -->|new| C[mark visited<br/>append to path]
+    C --> D{has saved<br/>response?}
+    D -->|no| B
+    D -->|yes| E["SplitSelected by format<br/>(MultipleChoice → several)"]
+    E --> F{any selected value<br/>in EndingAnswers?}
+    F -->|yes| Stop([return STOP_SURVEY])
+    F -->|no| G{next selected value?}
+    G -->|none| B
+    G --> H{format == Likert?}
+    H -->|yes| I[idx = int value − 1]
+    H -->|no| J[idx = AnswerChoices<br/>.indexOf value]
+    I --> K["recurse:<br/>WalkScope child.id, idx"]
+    J --> K
+    K -->|returned STOP| Stop
+    K -->|returned path| G
+```
 
 Three convenience methods sit on top of the walk and are the only methods the front-end
 calls:
@@ -407,6 +442,38 @@ When the participant presses **Submit** on the last slide, the front-end calls
 6. `participantManager.MarkAsSubmittedAsync(participant.SessionToken)` — set
    `Participant.HasSubmitted = true` and `CompletedAt = UtcNow`.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser (TS)
+    participant U as UI-User MVC<br/>SurveyApiController
+    participant A as API<br/>ResponsesController
+    participant SM as SubmissionManager
+    participant Q as QuestionnaireManager
+    participant SF as SurveyFlowManager
+    participant R as ResponseManager
+    participant P as ParticipantManager
+    participant UoW as DbContext (UoW)
+
+    B->>U: POST /{projectId}/api/SurveyApi/submit
+    U->>A: forward (X-Api-Key + X-Participant-Token)
+    A->>SM: SubmitAsync(participant, projectId)
+    SM->>Q: ReadQuestionnaire (read-only)
+    SM->>SF: ComputeVisiblePathAsync
+    SF-->>SM: visibleSet
+    SM->>R: read all participant responses
+    SM->>Q: ValidateMandatoryAnswers(visibleSet)
+    alt missing mandatory
+        Q-->>SM: throw LocalizedValidationException
+        SM-->>B: 400 + localised missing-ids
+    else all answered
+        SM->>R: CommitResponsesAsync(visibleSet)
+        SM->>P: MarkAsSubmittedAsync (HasSubmitted, CompletedAt)
+        SM->>UoW: SaveChanges
+        SM-->>B: 200 → reveal _ThankYouPopup
+    end
+```
+
 After the request succeeds the UI reveals the localised `_ThankYouPopup` partial; there
 is no separate "contact info prompt" step on the survey side (email collection on the
 `Participant` entity exists, but it is set through the ideation flow, not survey
@@ -463,6 +530,44 @@ If the participant returns to the survey with a valid cookie:
    asks the server for the visible path + resume question. It jumps directly to the
    resume slide and marks every prior slide `is-above` so back-swiping animates
    downward naturally.
+
+### Return-visitor routing — survey-first, then ideation only
+
+Two surfaces in `UI-User` — the project landing page and the survey page — and one
+action filter together enforce a strict navigation order: a participant must finish
+the survey before they reach the ideation pages, and once they have finished they
+cannot accidentally land back on the survey.
+
+The gate is implemented in three places, all keyed on the same
+`HasParticipantRespondedAsync` check (which maps to `Participant.HasSubmitted`):
+
+| File | What it does |
+|------|--------------|
+| `UI-User/Controllers/LandingPageController.cs` | A returning participant whose cookie resolves to `HasSubmitted == true` is redirected from `/<projectId>/` to `Category/CategoryList`. Their first click on the project URL therefore jumps straight to the ideation hub. |
+| `UI-User/Controllers/SurveyController.cs` | Same check at the top of `Index`: a submitted participant trying to deep-link to the survey URL is also redirected to `Category/CategoryList`. The survey cannot be retaken. |
+| `UI-User/Filters/RequiresSurveyCompletionFilter.cs` | Applied as `[ServiceFilter(typeof(RequiresSurveyCompletionFilter))]` on **`CategoryController`** and **`IdeationController`**. A visitor who has *not* yet submitted is bounced back to `Landing/Index`. The filter reads `projectId` straight from the action arguments and short-circuits the request via `context.Result`. |
+
+```mermaid
+flowchart TB
+    R[Returning visitor] -->|cookie present<br/>ParticipantToken_id| RES["HasParticipantRespondedAsync<br/>(Participant.HasSubmitted?)"]
+    R -->|no cookie| LP[Landing page]
+    RES -->|false — not yet submitted| LP
+    RES -->|true — already submitted| CL[Category list<br/>ideation hub]
+    LP -->|Start / continue survey| SV[Survey page<br/>resume + prefill]
+    SV -->|Submit succeeds<br/>HasSubmitted = true| CL
+    DEEP[Deep-link attempt to<br/>/Category/* or /Ideation/*] --> F{RequiresSurveyCompletionFilter}
+    F -->|hasResponded = false| LP
+    F -->|hasResponded = true| CL
+```
+
+The net effect is a single straight line through the platform for any individual
+session — *landing → survey → ideation* — with no way to step backwards once the
+submit point has been crossed. The cookie alone is enough to short-circuit the
+landing page, so a returning participant on a familiar device lands directly on the
+ideas they came back to read or comment on. This is also why the `HasSubmitted`
+flag is the canonical "session is past the survey stage" signal everywhere in
+`UI-User`: it is consulted by the controllers that *show* surfaces and by the filter
+that *guards* surfaces, with no other source of truth involved.
 
 ### Idempotency of saves
 
