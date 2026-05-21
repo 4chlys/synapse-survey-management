@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
@@ -87,6 +88,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Auth/Login";
     options.AccessDeniedPath = "/Auth/Login";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 // API HTTP clients
@@ -233,7 +241,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapStaticAssets();
-app.MapGet("/health", () => Results.Ok("healthy"));
+app.MapGet("/health", () => Results.Ok("healthy")).AllowAnonymous();
 
 app.MapControllerRoute(
         name: "default",
