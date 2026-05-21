@@ -7,7 +7,11 @@
 @inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
 @{
-    var _theme = Context.Request.Cookies["synapse-theme"] is "synapse-dark" ? "synapse-dark" : "synapse-light";
+    // Emit data-theme only for an explicit prior choice; on a first visit leave it
+    // null so Razor omits the attribute and daisyUI's prefersdark (synapse-dark)
+    // can honour the OS prefers-color-scheme setting.
+    var _cookie = Context.Request.Cookies["synapse-theme"];
+    string? _theme = _cookie is "synapse-dark" or "synapse-light" ? _cookie : null;
 }
 <html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@_theme">
 
