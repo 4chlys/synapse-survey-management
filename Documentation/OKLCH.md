@@ -1,6 +1,6 @@
 # OKLCH — why we use it
 
-This document explains the color model behind every visual decision in this codebase. It is written so a team member or a client can read it once and understand both *what* OKLCH is and *why* we chose it for a multi-tenant youth platform.
+This document explains the color model behind every visual decision in this codebase.
 
 ## TL;DR
 

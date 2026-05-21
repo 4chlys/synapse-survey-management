@@ -1,9 +1,7 @@
 # Unit of Work — why we use it
 
 This document explains the persistence-coordination pattern behind every database write in this
-codebase. It is written so a team member or a client can read it once and understand both *what* the
-Unit of Work pattern is and *why* we chose it for an N-layer architecture with a per-entity
-repository layer.
+codebase.
 
 ## TL;DR
 
