@@ -534,3 +534,87 @@ The codebase contains a mock for every AI service:
 
 Each implements the same interface as its real counterpart, so no code outside the DI
 registration in `Program.cs` is aware of which implementation is active.
+
+## 11. Secrets and Credentials
+
+The AI pipeline depends on several secrets — most importantly the HMAC signing key
+used by the moderation token service and the optional API keys for third-party LLM
+providers. How these reach the running application differs by environment, and the
+indirection is deliberately kept out of the application code.
+
+### The kinds of secrets in play
+
+- **`ApiKey`** — a single shared secret with two roles. It is the HMAC key that signs
+  every moderation token (`ModerationTokenService`), and it is also the value that
+  must appear in the `X-Api-Key` header on every incoming request
+  (`ApiKeyMiddleware`). The application refuses to start if `ApiKey` is missing.
+- **`DB_HOST` / `DB_PASSWORD`** — PostgreSQL connection details for the production
+  database (Cloud SQL).
+- **`OpenAi:ApiKey`, `Anthropic:ApiKey`, `Grok:ApiKey`** — optional per-provider API
+  keys. When present they unlock those providers in the `ChatClientRegistry`; when
+  absent the provider is silently skipped and the app continues to work with whichever
+  providers do have keys.
+- **Vertex AI** — uses no secret string. Authentication is via Google **Application
+  Default Credentials**, i.e. whichever service account is attached to the runtime
+  environment (local `gcloud auth application-default login` for developers; the VM's
+  attached service account in production).
+
+### Local development
+
+Secrets live in `API/appsettings.Development.json` (committed, with non-sensitive
+placeholder values such as `"ApiKey": "REDACTED"`) and/or .NET user secrets
+for anything a developer does not want to commit. Vertex AI uses the developer's
+`gcloud` credentials. When `moderation.use_ai = false` in `ai-config.json`, no LLM
+provider client is built and no provider keys are read at all — the mock services
+take over, so a contributor can run the full application without any cloud
+credentials.
+
+### Cloud Run test environment
+
+The temporary test deployment described in `cloudrun-test-api.yaml` passes
+configuration as plain `env:` entries on the container spec. The values there
+(`dev-api-key-synapse-2026`, the test database password, etc.) are intentionally
+non-sensitive test credentials scoped to that ephemeral environment.
+
+### Production — Google Secret Manager via the VM startup script
+
+In production the application runs in a Docker container on a Google Compute Engine
+VM. Secrets are stored in **Google Secret Manager** and pulled into the container by
+the VM startup script `infra/startup-api.sh`. The .NET application itself does **not**
+talk to Secret Manager: from its point of view it is reading ordinary environment
+variables, and the entire Secret Manager indirection lives in the shell script.
+
+The flow is:
+
+1. **Authenticate using the VM's service account.** The script queries the GCE
+   metadata server at `metadata.google.internal` to obtain a short-lived OAuth access
+   token for the service account attached to the instance. No key file is mounted, no
+   `gcloud auth` runs — the token is fetched on demand.
+
+2. **Read the environment selector.** The script reads an `env` attribute (and the
+   `project-id`) from instance metadata. That selector — `prod`, `test`, `staging`,
+   etc. — both decides the image tag to deploy and namespaces the secret names:
+   `prod-api-key`, `test-api-key`, and so on can coexist in the same Secret Manager
+   project.
+
+3. **Fetch each secret over the REST API.** A `get_secret` helper calls
+   `https://secretmanager.googleapis.com/v1/projects/{PROJECT_ID}/secrets/{ENV}-{name}/versions/latest:access`
+   with the metadata token, base64-decodes the payload and trims trailing `\r`. Five
+   secrets are pulled this way: `db-host`, `db-password`, `api-key`, and `gcs-bucket`
+   (each prefixed with the environment).
+
+4. **Inject the secrets as container environment variables.** The script then runs
+   `docker run` with `-e DB_HOST=...`, `-e DB_PASSWORD=REDACTED, `-e ApiKey=REDACTED,
+   `-e GCS_BUCKET=...` populated from the fetched values, alongside the static
+   settings (`ASPNETCORE_ENVIRONMENT=Production`, `AllowedHosts=*`, etc.). The .NET
+   configuration system then reads those env vars exactly as it would in any other
+   environment.
+
+### Why the indirection lives in the startup script
+
+Keeping Secret Manager out of the application code has two benefits. First, the .NET
+code is portable: the same image runs locally with values from
+`appsettings.Development.json`, on Cloud Run with inline env values, and on GCE with
+values from Secret Manager, without any conditional configuration providers. Second,
+secret rotation is an infrastructure concern: rotating a secret means publishing a new
+version in Secret Manager and restarting the VM, with no code change or redeploy.
