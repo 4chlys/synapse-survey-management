@@ -16,7 +16,7 @@
   RUN dotnet publish "API/API.csproj" -c Release -o /app/publish
 
   FROM base AS final
-  RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+  RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
   WORKDIR /app
   COPY --from=publish /app/publish .
   ENTRYPOINT ["dotnet", "SynapseEnqueteManagement.API.dll"]
