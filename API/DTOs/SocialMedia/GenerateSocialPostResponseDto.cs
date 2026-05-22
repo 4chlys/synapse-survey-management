@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.API.DTOs.SocialMedia;
 
-public class GenerateSocialPostResponseDto
+public record GenerateSocialPostResponseDto
 {
-    public string Copy { get; set; } = "";
-    public List<string> SuggestedHashtags { get; set; } = [];
-    public int CharacterCount { get; set; }
-    public string Platform { get; set; } = "";
+    public string Copy { get; init; } = "";
+    public ICollection<string> SuggestedHashtags { get; init; } = [];
+    public int CharacterCount { get; init; }
+    public string Platform { get; init; } = "";
 }

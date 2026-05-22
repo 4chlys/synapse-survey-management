@@ -1,14 +1,14 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public class IdeaViewModel
+public record IdeaViewModel
 {
-    public int IdeaId { get; set; }
-    public string Description { get; set; }
-    public string ImageUrl { get; set; }
-    public string Category { get; set; }
-    public int EmojiCount { get; set; }
-    public int CommentsCount { get; set; }
-    public bool IsOwnedByCurrentUser { get; set; }
-    public bool IsFlagged { get; set; }
-    public List<EmojiReactionViewModel> Emojis { get; set; } = new();
+    public int IdeaId { get; init; }
+    public string Description { get; init; }
+    public string ImageUrl { get; init; }
+    public string Category { get; init; }
+    public int EmojiCount { get; init; }
+    public int CommentsCount { get; init; }
+    public bool IsOwnedByCurrentUser { get; init; }
+    public bool IsFlagged { get; init; }
+    public ICollection<EmojiReactionViewModel> Emojis { get; init; } = new List<EmojiReactionViewModel>();
 }

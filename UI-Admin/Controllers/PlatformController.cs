@@ -299,7 +299,7 @@ public class PlatformController(
     [HttpPost]
     public async Task<IActionResult> SaveConfiguration(int id, PlatformConfigurationViewModel model)
     {
-        model.ProjectPlatformId = id;
+        model = model with { ProjectPlatformId = id };
         await platformService.SavePlatformSettingsAsync(id, model);
         TempData["Success"] = localizer["Platform_SettingsSaved"].Value;
         return RedirectToAction(nameof(Settings), new { id });

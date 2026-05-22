@@ -480,11 +480,14 @@ public class ProjectController(
         var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
         var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
 
-        dashboard.WidgetLayout = layout;
-        dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
         var participantDomain = adminSettings.Value.ParticipantDomain;
         var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
-        dashboard.SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}";
+        dashboard = dashboard with
+        {
+            WidgetLayout = layout,
+            ApiBaseUrl = $"{Request.Scheme}://{Request.Host}",
+            SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
+        };
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;

@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public class MyIdeasViewModel
+public record MyIdeasViewModel
 {
-    public int ProjectId { get; set; }
-    public int CategoryId { get; set; }
-    public CategoryViewModel Category { get; set; } = null!;
-    public List<IdeaViewModel> Ideas { get; set; } = new();
+    public int ProjectId { get; init; }
+    public int CategoryId { get; init; }
+    public CategoryViewModel Category { get; init; } = null!;
+    public ICollection<IdeaViewModel> Ideas { get; init; } = new List<IdeaViewModel>();
 }
