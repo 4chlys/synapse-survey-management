@@ -18,9 +18,12 @@ export function initTopCategoriesWidget(el: HTMLElement): () => void {
     const projectId = el.dataset.projectId ?? '';
     const apiBase = el.dataset.apiBase ?? '';
     const url = `${apiBase}/api/projects/${projectId}/dashboard`;
+    const titleText = el.dataset.i18nTopCategoriesTitle ?? '';
+    const ideasLabel = el.dataset.i18nSeriesIdeas ?? '';
+    const reactionsLabel = el.dataset.i18nSeriesReactions ?? '';
 
     const canvas = document.createElement('canvas');
-    el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Top categorieën</p>';
+    el.innerHTML = `<p class="text-xs text-base-content/50 mb-2">${titleText}</p>`;
     el.appendChild(canvas);
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'synapse-dark';
@@ -31,8 +34,8 @@ export function initTopCategoriesWidget(el: HTMLElement): () => void {
     const chart = new Chart(canvas, {
         type: 'bar',
         data: { labels: [], datasets: [
-            { label: 'Ideeën', data: [], backgroundColor: '#60a5fa' },
-            { label: 'Reacties', data: [], backgroundColor: '#a78bfa' },
+            { label: ideasLabel, data: [], backgroundColor: '#60a5fa' },
+            { label: reactionsLabel, data: [], backgroundColor: '#a78bfa' },
         ]},
         options: {
             responsive: true,

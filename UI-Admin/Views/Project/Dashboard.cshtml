@@ -91,6 +91,44 @@
                     </div>
                 </div>
             }
+            else if (widgetType == "SurveyDistribution")
+            {
+                <div data-widget="SurveyDistribution"
+                     data-project-id="@Model.ProjectId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-survey-url="@Model.SurveyUrl"
+                     data-i18n-survey-link-title="@L["Widget_SurveyLink_Title"]"
+                     data-i18n-copy="@L["Widget_Copy"]"
+                     data-i18n-copied="@L["Widget_Copied"]"
+                     data-i18n-download-qr="@L["Widget_DownloadQr"]"
+                     data-i18n-qr-alt="@L["Widget_QrAlt"]"
+                     class="card bg-base-100 shadow-sm p-4 min-h-28">
+                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                </div>
+            }
+            else if (widgetType == "SocialMediaPost")
+            {
+                <div data-widget="SocialMediaPost"
+                     data-project-id="@Model.ProjectId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-survey-url="@Model.SurveyUrl"
+                     data-i18n-title="@L["Widget_Social_Title"]"
+                     data-i18n-desc-placeholder="@L["Widget_Social_DescPlaceholder"]"
+                     data-i18n-ai-image="@L["Widget_Social_AiImage"]"
+                     data-i18n-generate="@L["Widget_Social_Generate"]"
+                     data-i18n-generating="@L["Widget_Social_Generating"]"
+                     data-i18n-copy-text="@L["Widget_Social_CopyText"]"
+                     data-i18n-copied="@L["Widget_Copied"]"
+                     data-i18n-open-platform="@L["Widget_Social_OpenPlatform"]"
+                     data-i18n-open-in="@L["Widget_Social_OpenIn"]"
+                     data-i18n-char-count="@L["Widget_Social_CharCount"]"
+                     data-i18n-note-linkedin="@L["Widget_Social_Note_LinkedIn"]"
+                     data-i18n-note-facebook="@L["Widget_Social_Note_Facebook"]"
+                     data-i18n-note-instagram="@L["Widget_Social_Note_Instagram"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56">
+                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                </div>
+            }
             else
             {
                 var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
@@ -99,6 +137,23 @@
                      data-project-id="@Model.ProjectId"
                      data-api-base="@Model.ApiBaseUrl"
                      data-survey-url="@Model.SurveyUrl"
+                     data-i18n-stat-view-count="@L["Widget_Stat_ViewCount"]"
+                     data-i18n-stat-completion-count="@L["Widget_Stat_CompletionCount"]"
+                     data-i18n-stat-completion-rate="@L["Widget_Stat_CompletionRate"]"
+                     data-i18n-no-ideas="@L["Widget_NoIdeas"]"
+                     data-i18n-idea-feed-title="@L["Widget_IdeaFeed_Title"]"
+                     data-i18n-top-ideas-title="@L["Widget_TopIdeas_Title"]"
+                     data-i18n-top-categories-title="@L["Widget_TopCategories_Title"]"
+                     data-i18n-series-ideas="@L["Widget_Series_Ideas"]"
+                     data-i18n-series-reactions="@L["Widget_Series_Reactions"]"
+                     data-i18n-timeline-title="@L["Widget_Timeline_Title"]"
+                     data-i18n-series-started="@L["Widget_Series_Started"]"
+                     data-i18n-series-completed="@L["Widget_Series_Completed"]"
+                     data-i18n-moderation-title="@L["Widget_Moderation_Title"]"
+                     data-i18n-moderation-approved="@L["Widget_Moderation_Approved"]"
+                     data-i18n-moderation-new="@L["Widget_Moderation_New"]"
+                     data-i18n-moderation-flagged="@L["Widget_Moderation_Flagged"]"
+                     data-i18n-moderation-declined="@L["Widget_Moderation_Declined"]"
                      class="card bg-base-100 shadow-sm p-4 @(isChart || isTall ? "h-56" : "min-h-28")">
                     <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
                 </div>

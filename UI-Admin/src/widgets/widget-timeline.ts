@@ -14,10 +14,13 @@ export function initTimelineWidget(el: HTMLElement): () => void {
     const projectId = el.dataset.projectId ?? '';
     const apiBase = el.dataset.apiBase ?? '';
     const url = `${apiBase}/api/projects/${projectId}/stats/timeline?days=30`;
+    const titleText = el.dataset.i18nTimelineTitle ?? '';
+    const startedLabel = el.dataset.i18nSeriesStarted ?? '';
+    const completedLabel = el.dataset.i18nSeriesCompleted ?? '';
 
     const canvas = document.createElement('canvas');
     canvas.style.width = '100%';
-    el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Deelname (30 dagen)</p>';
+    el.innerHTML = `<p class="text-xs text-base-content/50 mb-2">${titleText}</p>`;
     el.appendChild(canvas);
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'synapse-dark';
@@ -28,8 +31,8 @@ export function initTimelineWidget(el: HTMLElement): () => void {
     const chart = new Chart(canvas, {
         type: 'line',
         data: { labels: [], datasets: [
-            { label: 'Gestart', data: [], borderColor: '#60a5fa', backgroundColor: 'transparent', tension: 0.3, pointRadius: 2 },
-            { label: 'Voltooid', data: [], borderColor: '#34d399', backgroundColor: 'transparent', tension: 0.3, pointRadius: 2 },
+            { label: startedLabel, data: [], borderColor: '#60a5fa', backgroundColor: 'transparent', tension: 0.3, pointRadius: 2 },
+            { label: completedLabel, data: [], borderColor: '#34d399', backgroundColor: 'transparent', tension: 0.3, pointRadius: 2 },
         ]},
         options: {
             responsive: true,

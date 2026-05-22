@@ -6,12 +6,6 @@ interface DashboardStats {
     completionRate: number;
 }
 
-const LABELS: Record<string, string> = {
-    ViewCount: 'Bekeken',
-    CompletionCount: 'Ingevuld',
-    CompletionRate: 'Voltooiingsgraad',
-};
-
 function formatValue(type: string, stats: DashboardStats): string {
     if (type === 'ViewCount') return String(stats.viewCount);
     if (type === 'CompletionCount') return String(stats.completionCount);
@@ -19,10 +13,10 @@ function formatValue(type: string, stats: DashboardStats): string {
     return '–';
 }
 
-function renderStat(el: HTMLElement, type: string, value: string): void {
+function renderStat(el: HTMLElement, label: string, value: string): void {
     el.innerHTML = `
         <p class="text-3xl font-bold text-base-content">${value}</p>
-        <p class="text-xs text-base-content/50 mt-1">${LABELS[type] ?? type}</p>
+        <p class="text-xs text-base-content/50 mt-1">${label}</p>
     `;
 }
 
@@ -32,10 +26,16 @@ export function initStatWidget(el: HTMLElement): () => void {
     const apiBase = el.dataset.apiBase ?? '';
     const url = `${apiBase}/api/projects/${projectId}/dashboard`;
 
+    const labels: Record<string, string> = {
+        ViewCount: el.dataset.i18nStatViewCount ?? type,
+        CompletionCount: el.dataset.i18nStatCompletionCount ?? type,
+        CompletionRate: el.dataset.i18nStatCompletionRate ?? type,
+    };
+
     async function fetch_and_render(): Promise<void> {
         try {
             const stats = await fetchJson<DashboardStats>(url);
-            renderStat(el, type, formatValue(type, stats));
+            renderStat(el, labels[type] ?? type, formatValue(type, stats));
         } catch {
             // ignore network errors during polling
         }

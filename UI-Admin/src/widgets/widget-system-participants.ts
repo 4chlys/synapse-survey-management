@@ -12,13 +12,15 @@ export function initSystemParticipantsWidget(el: HTMLElement): () => void {
     const canvas = document.createElement('canvas');
     el.appendChild(canvas);
 
+    const seriesLabel = el.dataset.i18nSeriesParticipants ?? 'Participants';
+
     const isDark = document.documentElement.getAttribute('data-theme') === 'synapse-dark';
     const tickColor = isDark ? '#9ca3af' : '#6b7280';
     const gridColor = isDark ? '#374151' : '#e5e7eb';
 
     const chart = new Chart(canvas, {
         type: 'bar',
-        data: { labels: [], datasets: [{ label: 'Participants', data: [], backgroundColor: '#60a5fa' }] },
+        data: { labels: [], datasets: [{ label: seriesLabel, data: [], backgroundColor: '#60a5fa' }] },
         options: {
             responsive: true,
             maintainAspectRatio: false,
