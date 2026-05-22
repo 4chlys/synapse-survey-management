@@ -7,11 +7,11 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 public class EmailTemplateManager(IEmailTemplateRepository repository, IUnitOfWork uow) : IEmailTemplateManager
 {
     public Task<EmailTemplate> GetByProjectIdAsync(int projectId)
-        => repository.GetByProjectIdAsync(projectId);
+        => repository.ReadByProjectIdForUpdateAsync(projectId);
 
     public async Task UpsertAsync(int projectId, string subject, string body, bool isEnabled, CancellationToken ct = default)
     {
-        var template = await repository.GetByProjectIdAsync(projectId);
+        var template = await repository.ReadByProjectIdForUpdateAsync(projectId);
         if (template is null)
             template = await repository.CreateForProjectAsync(projectId, ct);
 

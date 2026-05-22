@@ -247,7 +247,7 @@ public class PlatformController(
             var body = localizer["Email_Welcome_Body", platform.Name, model.Email, resetUrl].Value;
             var subject = localizer["Email_Welcome_Subject", platform.Name].Value;
             try { await emailService.SendAsync(model.Email, subject, body); }
-            catch (Exception ex) { logger.LogWarning(ex, "Welkomstmail mislukt voor {Email}", model.Email); }
+            catch (Exception ex) { logger.LogWarning(ex, "Failed to send welcome email to {Email}", model.Email); }
         }
 
         TempData["Success"] = localizer["Platform_AdminAdded"].Value;

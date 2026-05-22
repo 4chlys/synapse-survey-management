@@ -120,7 +120,7 @@ public class AuthController(
             var body = localizer["Email_ForgotPassword_Body", resetUrl].Value;
             var subject = localizer["Email_ForgotPassword_Subject"].Value;
             try { await emailService.SendAsync(model.Email, subject, body); }
-            catch (Exception ex) { logger.LogWarning(ex, "Wachtwoord reset mail mislukt voor {Email}", model.Email); }
+            catch (Exception ex) { logger.LogWarning(ex, "Failed to send password reset email to {Email}", model.Email); }
         }
 
         // Altijd dezelfde boodschap tonen — ongeacht of het e-mailadres bestaat (beveiliging)
