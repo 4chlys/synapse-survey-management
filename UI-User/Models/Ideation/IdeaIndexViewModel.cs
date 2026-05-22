@@ -1,19 +1,19 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public class IdeaIndexViewModel
+public record IdeaIndexViewModel
 {
-    public int ProjectId { get; set; }
-    public int CategoryId { get; set; }
-    public CategoryViewModel Category { get; set; } = null!;
-    public List<IdeaViewModel> Ideas { get; set; } = new();
-    public List<EmojiViewModel> Emojis { get; set; } = new();
-    public bool ShowContactInfoPopup { get; set; }
-    public string CurrentSort { get; set; } = "diverse";
-    public bool HasOwnIdeas { get; set; }
-    public bool ExtraIdeasReplaceExisting { get; set; }
-    public int MaxExtraIdeaRequests { get; set; }
-    public int RemainingExtraRequests { get; set; }
-    public bool AllowCrossLanguageIdeas { get; set; }
-    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
-    public string ParticipantLanguageCode { get; set; }
+    public int ProjectId { get; init; }
+    public int CategoryId { get; init; }
+    public CategoryViewModel Category { get; init; } = null!;
+    public ICollection<IdeaViewModel> Ideas { get; init; } = new List<IdeaViewModel>();
+    public ICollection<EmojiViewModel> Emojis { get; init; } = new List<EmojiViewModel>();
+    public bool ShowContactInfoPopup { get; init; }
+    public string CurrentSort { get; init; } = "diverse";
+    public bool HasOwnIdeas { get; init; }
+    public bool ExtraIdeasReplaceExisting { get; init; }
+    public int MaxExtraIdeaRequests { get; init; }
+    public int RemainingExtraRequests { get; init; }
+    public bool AllowCrossLanguageIdeas { get; init; }
+    public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
+    public string ParticipantLanguageCode { get; init; }
 }

@@ -60,11 +60,17 @@
   <data name="Validation.PrimaryColor.Invalid" xml:space="preserve">
     <value>Ongeldige kleurcode. Gebruik een hexadecimale waarde (bijv. #FF5733).</value>
   </data>
+  <data name="Validation.PrimaryColor.LowContrast" xml:space="preserve">
+    <value>Deze kleur is niet leesbaar genoeg op licht of donker — kies een donkerder of lichter tint.</value>
+  </data>
   <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
     <value>Aangepaste CSS bevat niet-toegestane inhoud (scripts, expression(), javascript: urls, @import of behavior).</value>
   </data>
   <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
     <value>MinAge mag niet groter zijn dan MaxAge.</value>
+  </data>
+  <data name="Validation.Project.NameRequired" xml:space="preserve">
+    <value>Projectnaam is verplicht.</value>
   </data>
   <data name="Validation.Project.DefaultLanguageCodeRequired" xml:space="preserve">
     <value>DefaultLanguageCode is verplicht.</value>

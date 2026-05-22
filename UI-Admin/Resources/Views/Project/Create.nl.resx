@@ -31,6 +31,8 @@
   <data name="AgeRangeError" xml:space="preserve"><value>MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</value></data>
   <data name="ImageLabel" xml:space="preserve"><value>Afbeelding</value></data>
   <data name="BrowseButton" xml:space="preserve"><value>Bladeren</value></data>
+  <data name="GenerateButton" xml:space="preserve"><value>Genereren</value></data>
+  <data name="GeneratingText" xml:space="preserve"><value>Genereren…</value></data>
   <data name="ContactOptInLabel" xml:space="preserve"><value>Contactgegevens opvragen bij deelnemers</value></data>
   <data name="CrossLanguageLabel" xml:space="preserve"><value>Meertalige ideeën toestaan</value></data>
   <data name="CrossLanguageHint" xml:space="preserve"><value>Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</value></data>
@@ -56,9 +58,19 @@
   <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Thema</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Voorbeeld</value></data>
+  <data name="PreviewLight" xml:space="preserve"><value>Licht</value></data>
+  <data name="PreviewDark" xml:space="preserve"><value>Donker</value></data>
   <data name="PreviewHint" xml:space="preserve"><value>Live voorbeeld van thema, primaire kleur en aangepaste CSS.</value></data>
   <data name="PrimaryColorLabel" xml:space="preserve"><value>Primaire kleur (optioneel)</value></data>
   <data name="UseThemeColorLabel" xml:space="preserve"><value>Themakleur gebruiken</value></data>
+  <data name="PrimaryColor_LowContrast_Light" xml:space="preserve"><value>Deze kleur is mogelijk moeilijk leesbaar op lichte achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="PrimaryColor_LowContrast_Dark" xml:space="preserve"><value>Deze kleur is mogelijk moeilijk leesbaar op donkere achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="PrimaryColor_LowContrast_Both" xml:space="preserve"><value>Deze kleur is moeilijk leesbaar op zowel lichte als donkere achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="ColorSwatches_Label" xml:space="preserve"><value>Snelkeuze per onderwerp</value></data>
+  <data name="ColorSwatch_Sports" xml:space="preserve"><value>Sport</value></data>
+  <data name="ColorSwatch_Nature" xml:space="preserve"><value>Natuur</value></data>
+  <data name="ColorSwatch_Culture" xml:space="preserve"><value>Cultuur</value></data>
+  <data name="ColorSwatch_Health" xml:space="preserve"><value>Gezondheid</value></data>
   <data name="CustomCssLabel" xml:space="preserve"><value>Aangepaste CSS (optioneel)</value></data>
   <data name="CustomCssHint" xml:space="preserve"><value>Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</value></data>
   <data name="CustomCssHelperSummary" xml:space="preserve"><value>Beschikbare CSS-variabelen en selectors (klikken om in te voegen)</value></data>
@@ -66,4 +78,20 @@
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
   <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Niet-gebalanceerde accolades ({0} {  vs  {1} }).</value></data>
   <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS ziet er gebalanceerd uit.</value></data>
+  <data name="Snippet_PrimaryColor" xml:space="preserve"><value>Override primaire kleur</value></data>
+  <data name="Snippet_RoundedButtons" xml:space="preserve"><value>Afgeronde knoppen</value></data>
+  <data name="Snippet_IdeaCardShadow" xml:space="preserve"><value>Schaduw op ideekaarten</value></data>
+  <data name="Snippet_HeadingFont" xml:space="preserve"><value>Koplettertype</value></data>
+  <data name="Snippet_RoundedButtonsEverywhere" xml:space="preserve"><value>Afgeronde knoppen overal</value></data>
+  <data name="Snippet_BrandGradientHeader" xml:space="preserve"><value>Kleurverloop in kopbal</value></data>
+  <data name="Snippet_StrongerFocusRing" xml:space="preserve"><value>Sterkere focusring</value></data>
+  <data name="CustomCss_SelectorsLabel" xml:space="preserve"><value>Targeteerbare componenten</value></data>
+  <data name="CustomCss_SelectorsHelp" xml:space="preserve"><value>Gebruik deze selectors in je CSS-regels om specifieke onderdelen van de deelnemerspagina te stijlen.</value></data>
+  <data name="CustomCss_AvoidLabel" xml:space="preserve"><value>Vermijd</value></data>
+  <data name="CustomCss_Avoid_Overflow" xml:space="preserve"><value>Pas de overflow van body / html niet aan.</value></data>
+  <data name="CustomCss_Avoid_FixedPosition" xml:space="preserve"><value>Gebruik geen position: fixed op het root-element.</value></data>
+  <data name="CustomCss_Avoid_Important" xml:space="preserve"><value>Vermijd !important-ketens.</value></data>
+  <data name="CustomCss_Avoid_ExternalImports" xml:space="preserve"><value>Importeer geen externe CSS / lettertypen (geblokkeerd door de validator).</value></data>
+  <data name="CustomCss_ResetButton" xml:space="preserve"><value>Wis aangepaste CSS</value></data>
+  <data name="CustomCss_ResetConfirm" xml:space="preserve"><value>Weet je zeker dat je de aangepaste CSS wilt wissen?</value></data>
 </root>

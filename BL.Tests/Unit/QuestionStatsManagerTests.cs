@@ -64,6 +64,19 @@ public class QuestionStatsManagerTests
 
     #region Correct stats record per format
 
+    private static Question QuestionWithTranslations(params (string Code, string[] Choices)[] translations)
+        => new()
+        {
+            QuestionId = QuestionId,
+            Translations = translations
+                .Select(t => new QuestionTranslation
+                {
+                    Language = new Language { Code = t.Code },
+                    AnswerChoices = t.Choices.ToList()
+                })
+                .ToList()
+        };
+
     [Fact]
     public async Task ReadSingleChoiceStatsAsync_ValidQuestion_ReturnsCorrectStats()
     {
@@ -73,6 +86,8 @@ public class QuestionStatsManagerTests
             .ReturnsAsync(counts);
         _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(10);
+        _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
+            .ReturnsAsync(QuestionWithTranslations(("en", new[] { "Yes", "No" })));
 
         var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId);
 
@@ -84,6 +99,29 @@ public class QuestionStatsManagerTests
     }
 
     [Fact]
+    public async Task ReadSingleChoiceStatsAsync_MergesSameOptionAcrossLanguages()
+    {
+        SetupOwnership(true);
+        // Raw counts arrive once per language: same option index, different text.
+        var counts = new OptionCount[] { new("Yes", 7), new("Ja", 5), new("No", 3), new("Nee", 1) };
+        _responseRepo.Setup(r => r.ReadCountsBySingleChoiceQuestionReadOnlyAsync(QuestionId))
+            .ReturnsAsync(counts);
+        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+            .ReturnsAsync(16);
+        _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
+            .ReturnsAsync(QuestionWithTranslations(
+                ("en", new[] { "Yes", "No" }),
+                ("nl", new[] { "Ja", "Nee" })));
+
+        var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId);
+
+        // Two logical options, summed across languages, labelled in the default (first) translation.
+        Assert.Equal(2, result.Counts.Count);
+        Assert.Contains(result.Counts, c => c.Option == "Yes" && c.Count == 12);
+        Assert.Contains(result.Counts, c => c.Option == "No" && c.Count == 4);
+    }
+
+    [Fact]
     public async Task ReadMultipleChoiceStatsAsync_ValidQuestion_ReturnsCorrectStats()
     {
         SetupOwnership(true);
@@ -92,6 +130,8 @@ public class QuestionStatsManagerTests
             .ReturnsAsync(counts);
         _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(11);
+        _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
+            .ReturnsAsync(QuestionWithTranslations(("en", new[] { "A", "B", "C" })));
 
         var result = await _manager.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId);
 

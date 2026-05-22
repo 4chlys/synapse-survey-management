@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 

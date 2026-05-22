@@ -6,11 +6,11 @@ public class WidgetSlotInput
     public int? QuestionId { get; set; }
 }
 
-public class ConfigureDashboardViewModel
+public record ConfigureDashboardViewModel
 {
-    public int ProjectId { get; set; }
-    public string ProjectName { get; set; } = string.Empty;
-    public string[] Layout { get; set; } = [];
-    public WidgetSlotInput[] Slots { get; set; } = [];
-    public string[] AllWidgetTypes { get; set; } = [];
+    public int ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public string[] Layout { get; init; } = [];
+    public WidgetSlotInput[] Slots { get; init; } = [];
+    public string[] AllWidgetTypes { get; init; } = [];
 }

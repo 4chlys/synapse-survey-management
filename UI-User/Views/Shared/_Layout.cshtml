@@ -1,4 +1,3 @@
-@using Microsoft.AspNetCore.Localization
 @using Microsoft.Extensions.Options
 @using System.Globalization
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
@@ -7,15 +6,36 @@
 @inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
 @{
-    var _theme = Context.Request.Cookies["synapse-theme"] is "synapse-dark" ? "synapse-dark" : "synapse-light";
+    // Emit data-theme only for an explicit prior choice; on a first visit leave it
+    // null so Razor omits the attribute and daisyUI's prefersdark (synapse-dark)
+    // can honour the OS prefers-color-scheme setting.
+    var cookie = Context.Request.Cookies["synapse-theme"];
+    string theme = cookie is "synapse-dark" or "synapse-light" ? cookie : null;
 }
-<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@_theme">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@theme">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - @ViewData["OrganisationName"]</title>
     <link rel="icon" type="image/png" href="~/favicon.png" />
+
+    @* Font preloads — body font always; heading font conditional on project theme.
+       Paths match the @font-face declarations in UI-User/src/main.css — fonts
+       live in src/public/fonts/ and are served at /dist/fonts/ in dev & prod. *@
+    <link rel="preload" href="/dist/fonts/inter/latin.woff2" as="font" type="font/woff2" crossorigin />
+    @{
+        var headingFontPath = (ViewData["ProjectTheme"] as string) switch {
+            "friendly"     => "/dist/fonts/nunito/latin.woff2",
+            "formal"       => "/dist/fonts/source-sans-3/latin.woff2",
+            "highcontrast" => null,
+            _              => "/dist/fonts/space-grotesk/latin.woff2",
+        };
+    }
+    @if (headingFontPath != null)
+    {
+        <link rel="preload" href="@headingFontPath" as="font" type="font/woff2" crossorigin />
+    }
 
     @* Read by ideahub.ts → getProjectId() *@
     <meta name="project-id" content="@(ViewData["ProjectId"] ?? Context.GetRouteValue("projectId") ?? 1)" />
@@ -105,19 +125,38 @@
     </environment>
 </head>
 
-<body class="bg-base-200 min-h-[100dvh]" data-project-theme="@(ViewData["ProjectTheme"] ?? "default")">
+<body class="bg-base-200 min-h-[100dvh]" data-project-theme="@(ViewData["ProjectTheme"] ?? "minimal")">
 
     @{
-        var _primary   = ViewData["ProjectPrimaryColor"] as string;
-        var _customCss = ViewData["ProjectCustomCss"] as string;
+        var primary        = ViewData["ProjectPrimaryColor"] as string;
+        var primaryContent = ViewData["ProjectPrimaryContent"] as string;
+        var primaryHover   = ViewData["ProjectPrimaryHover"] as string;
+        var primaryFocus   = ViewData["ProjectPrimaryFocus"] as string;
+        var accent         = ViewData["ProjectAccent"] as string;
+        var customCss      = ViewData["ProjectCustomCss"] as string;
     }
-    @if (!string.IsNullOrWhiteSpace(_primary))
+    @if (!string.IsNullOrWhiteSpace(primary))
     {
-        <style>[data-project-theme] { --color-primary: @_primary; }</style>
+        <style>
+            body[data-project-theme] {
+                --color-primary: @primary;
+                --color-primary-content: @primaryContent;
+                --color-primary-hover:  oklch(from @primary calc(l - 0.06) c h);
+                --color-primary-focus:  oklch(from @primary calc(l - 0.12) c h);
+                --color-accent:         oklch(from @primary l c calc(h + 180));
+            }
+            @@supports not (color: oklch(from red l c h)) {
+                body[data-project-theme] {
+                    --color-primary-hover: @primaryHover;
+                    --color-primary-focus: @primaryFocus;
+                    --color-accent:        @accent;
+                }
+            }
+        </style>
     }
-    @if (!string.IsNullOrWhiteSpace(_customCss))
+    @if (!string.IsNullOrWhiteSpace(customCss))
     {
-        <style>@Html.Raw(_customCss)</style>
+        <style>@Html.Raw(customCss)</style>
     }
 
     @if (ViewData["ShowModerationPopup"] is true)
@@ -145,14 +184,14 @@
             <div class="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
 
                 @* Language switcher — segmented pill *@
-                @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
+                @{ var activeCulture = CultureInfo.CurrentUICulture.Name; }
                 <form asp-controller="Culture" asp-action="SetCulture" method="post"
                       class="flex items-center rounded-full border border-base-content/20 bg-base-200 overflow-hidden"
                       aria-label="@Shared["LanguageMenu_Switch"]">
                     <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
                     @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
                     {
-                        var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
+                        var isActive = string.Equals(c.Name, activeCulture, StringComparison.OrdinalIgnoreCase);
                         <button type="submit" name="culture" value="@c.Name"
                                 class="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer @(isActive ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-primary")"
                                 aria-current="@(isActive ? "true" : "false")">

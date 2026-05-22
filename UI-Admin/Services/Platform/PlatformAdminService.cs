@@ -59,7 +59,14 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
         };
         var result = await userManager.CreateAsync(user, password);
         if (!result.Succeeded) return result;
-        await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+
+        var roleResult = await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+        if (!roleResult.Succeeded)
+        {
+            // Compensating delete: the user was created but has no role — undo it so AddAdminAsync stays all-or-nothing.
+            await userManager.DeleteAsync(user);
+            return roleResult;
+        }
         return result;
     }
 

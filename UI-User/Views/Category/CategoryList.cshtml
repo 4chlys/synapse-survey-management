@@ -37,7 +37,7 @@
         @foreach (var category in Model.Categories)
         {
             <a asp-controller="Ideation" asp-action="IdeaHub" asp-route-projectId="@Model.ProjectId"
-                   asp-route-categoryId="@category.CategoryId" class="group relative flex items-center gap-4 px-5 py-7 rounded-xl
+                   asp-route-categoryId="@category.CategoryId" class="group relative flex items-center gap-4 px-5 py-7 rounded-field
                 bg-base-100 border border-base-300
                 hover:border-primary/40 hover:shadow-sm
                 active:scale-[0.99] transition-all duration-150">

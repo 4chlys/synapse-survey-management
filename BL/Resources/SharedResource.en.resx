@@ -60,11 +60,17 @@
   <data name="Validation.PrimaryColor.Invalid" xml:space="preserve">
     <value>Invalid color code. Use a hex value (e.g. #FF5733).</value>
   </data>
+  <data name="Validation.PrimaryColor.LowContrast" xml:space="preserve">
+    <value>This color isn't readable enough on light or dark backgrounds — try a darker or lighter shade.</value>
+  </data>
   <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
     <value>Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).</value>
   </data>
   <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
     <value>MinAge must not be greater than MaxAge.</value>
+  </data>
+  <data name="Validation.Project.NameRequired" xml:space="preserve">
+    <value>Project name is required.</value>
   </data>
   <data name="Validation.Project.DefaultLanguageCodeRequired" xml:space="preserve">
     <value>DefaultLanguageCode is required.</value>

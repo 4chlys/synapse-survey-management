@@ -19,7 +19,8 @@ public class WidgetPreferenceService(AdminDbContext db)
         "ViewCount", "CompletionCount", "CompletionRate",
         "ParticipationTimeline", "TopCategories", "TopIdeas",
         "SurveyDistribution", "IdeaFeed", "ModerationQueue",
-        "QuestionSinglePie", "QuestionMultiBar", "QuestionLikertBar"
+        "QuestionSinglePie", "QuestionMultiBar", "QuestionLikertBar",
+        "SocialMediaPost"
     ];
 
     // Legacy: replaced by GetSlotsAsync/SaveSlotsAsync for question-bound widgets.

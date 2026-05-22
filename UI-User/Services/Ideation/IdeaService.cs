@@ -53,8 +53,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         var result = await response.Content.ReadFromJsonAsync<CreateIdeaResultViewModel>();
         if (result is null) return new CreateIdeaResultViewModel { Success = false };
 
-        result.Success = true;
-        return result;
+        return result with { Success = true };
     }
 
     public async Task<List<IdeaViewModel>> GetMyIdeasAsync(int projectId, int categoryId)
