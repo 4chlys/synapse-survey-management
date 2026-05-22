@@ -1,6 +1,7 @@
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Interfaces;
 
-namespace SynapseEnqueteManagement.API.Services;
+namespace SynapseEnqueteManagement.BL.Services;
 
 public class LogEmailService(ILogger<LogEmailService> logger) : IEmailService
 {

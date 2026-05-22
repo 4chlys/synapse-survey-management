@@ -1,9 +1,9 @@
 using Resend;
 using SynapseEnqueteManagement.BL.Interfaces;
 
-namespace SynapseEnqueteManagement.UI.Admin.Services.Email;
+namespace SynapseEnqueteManagement.BL.Services;
 
-public class AdminEmailService(IResend resend, string fromEmail) : IEmailService
+public class ResendEmailService(IResend resend, string fromEmail) : IEmailService
 {
     public async Task SendAsync(string toEmail, string subject, string body, CancellationToken ct = default)
     {

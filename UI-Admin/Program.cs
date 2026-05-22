@@ -172,11 +172,11 @@ if (!string.IsNullOrEmpty(resendKey))
 {
     builder.Services.AddResend(opt => opt.ApiToken = resendKey);
     builder.Services.AddScoped<IEmailService>(sp =>
-        new AdminEmailService(sp.GetRequiredService<IResend>(), emailFrom));
+        new SynapseEnqueteManagement.BL.Services.ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
 }
 else
 {
-    builder.Services.AddScoped<IEmailService, AdminLogEmailService>();
+    builder.Services.AddScoped<IEmailService, SynapseEnqueteManagement.BL.Services.LogEmailService>();
 }
 
 // Rate limiting — protect expensive AI image-generation via project creation

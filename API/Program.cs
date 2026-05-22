@@ -192,11 +192,11 @@ if (!string.IsNullOrEmpty(resendApiKey))
 {
     builder.Services.AddResend(options => options.ApiToken = resendApiKey);
     builder.Services.AddScoped<IEmailService>(sp =>
-        new ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
+        new SynapseEnqueteManagement.BL.Services.ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
 }
 else
 {
-    builder.Services.AddScoped<IEmailService, LogEmailService>();
+    builder.Services.AddScoped<IEmailService, SynapseEnqueteManagement.BL.Services.LogEmailService>();
 }
 
 // AI usage tracking
