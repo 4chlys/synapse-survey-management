@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -182,6 +183,22 @@ builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
+
+// Rate limiting — cap email sends per source so a leaked API key can't be used to
+// blast mail through our Resend account / sender domain.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("admin-email-send", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
+                QueueLimit  = 0,
+            }));
+});
 
 // Email
 var resendApiKey = builder.Configuration["RESEND_API_KEY"];
@@ -420,6 +437,7 @@ app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet("/health", async (SynapseEnqueteContext db) =>
 {

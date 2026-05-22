@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.API.DTOs.Email;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -6,6 +7,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/emails")]
+[EnableRateLimiting("admin-email-send")]
 public class AdminEmailController(IEmailService emailService) : ControllerBase
 {
     [HttpPost]
