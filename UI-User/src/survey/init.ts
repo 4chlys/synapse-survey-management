@@ -4,7 +4,7 @@ import {initGestures} from './gestures';
 import {updateProgressBar} from './animation';
 import {initCharCounter} from './validation';
 import {getSubmitSlideIndex, prefillAnswers, questionIdToSlideIndex, updateQuestionCounters} from './branching';
-import {getResumeQuestion, getVisiblePath, submitSurvey, saveContactInfo} from './api';
+import {getResumeQuestion, getVisiblePath, submitSurvey} from './api';
 import {t} from '../lib/i18n';
 
 function syncButtons(state: SurveyState): void {
@@ -120,8 +120,6 @@ export function initSurvey(): void {
         }
 
         try {
-            const emailInput = form.querySelector<HTMLInputElement>('#survey-email');
-            if (emailInput?.value) await saveContactInfo(projectId, emailInput.value);
             await submitSurvey(projectId);
             const popup = document.getElementById('thank-you-popup');
             if (popup) popup.classList.remove('hidden');

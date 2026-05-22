@@ -57,7 +57,6 @@ public class SurveyController(
             }
         }
 
-        model.RequestContactInfo = project.RequestContactInfo;
         this.SetLayoutData(project, projectId);
         ViewData["Project"] = project;
         var strategy = formStrategyFactory.Create(project.FormType);

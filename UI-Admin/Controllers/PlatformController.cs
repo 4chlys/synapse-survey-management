@@ -239,10 +239,15 @@ public class PlatformController(
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
         }
 
-        var loginUrl = Url.Action("Login", "Auth", null, Request.Scheme);
-        var body = $"Hallo,\n\nJe bent toegevoegd als beheerder van platform '{platform.Name}' in Synapse.\n\nJe aanmeldgegevens:\nE-mail: {model.Email}\nWachtwoord: {model.Password}\n\nLog in via: {loginUrl}\n\nWij raden aan je wachtwoord na de eerste login te wijzigen.";
-        try { await emailService.SendAsync(model.Email, $"Welkom bij Synapse — {platform.Name}", body); }
-        catch (Exception ex) { logger.LogWarning(ex, "Welkomstmail mislukt voor {Email}", model.Email); }
+        var newUser = await userManager.FindByEmailAsync(model.Email);
+        if (newUser is not null)
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(newUser);
+            var resetUrl = Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme);
+            var body = $"Hallo,\n\nJe bent toegevoegd als beheerder van platform '{platform.Name}' in Synapse.\n\nJe aanmeldgegevens:\nE-mail: {model.Email}\n\nStel je wachtwoord in via de onderstaande link (geldig 24 uur):\n{resetUrl}";
+            try { await emailService.SendAsync(model.Email, $"Welkom bij Synapse — {platform.Name}", body); }
+            catch (Exception ex) { logger.LogWarning(ex, "Welkomstmail mislukt voor {Email}", model.Email); }
+        }
 
         TempData["Success"] = localizer["Platform_AdminAdded"].Value;
         return RedirectToAction(nameof(Admins), new { id });

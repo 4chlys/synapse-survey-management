@@ -61,15 +61,6 @@ export async function getResumeQuestion(projectId: number): Promise<number | nul
     return data.questionId;
 }
 
-export async function saveContactInfo(projectId: number, email: string): Promise<void> {
-    if (!email) return;
-    await fetch(`/${projectId}/api/SurveyApi/contact`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify({ email }),
-    });
-}
-
 export async function submitSurvey(projectId: number): Promise<void> {
     const res = await fetch(`/${projectId}/api/SurveyApi/submit`, {
         method: 'POST',
