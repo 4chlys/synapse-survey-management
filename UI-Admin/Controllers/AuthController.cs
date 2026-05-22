@@ -101,7 +101,7 @@ public class AuthController(
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel(string.Empty));
 
     [HttpPost]
     [AllowAnonymous]

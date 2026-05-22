@@ -8,11 +8,12 @@ public class EmailTemplateAdminService(HttpClient http)
     public async Task<EmailTemplateViewModel> GetAsync(int projectId)
     {
         return await http.GetFromJsonAsync<EmailTemplateViewModel>($"api/projects/{projectId}/email-template")
-               ?? new EmailTemplateViewModel();
+               ?? new EmailTemplateViewModel(string.Empty, string.Empty, false);
     }
 
     public async Task SaveAsync(int projectId, EmailTemplateViewModel vm)
     {
-        await http.PutAsJsonAsync($"api/projects/{projectId}/email-template", vm);
+        var response = await http.PutAsJsonAsync($"api/projects/{projectId}/email-template", vm);
+        response.EnsureSuccessStatusCode();
     }
 }

@@ -56,5 +56,5 @@ public class CreateProjectViewModel
     [MaxLength(4000)]
     public string CustomCss { get; set; }
 
-    public EmailTemplateViewModel EmailTemplate { get; set; } = new();
+    public EmailTemplateViewModel EmailTemplate { get; set; } = new(string.Empty, string.Empty, false);
 }

@@ -12,13 +12,8 @@ public class EmailTemplatesController(IEmailTemplateManager emailTemplateManager
     public async Task<ActionResult<EmailTemplateDto>> Get(int projectId)
     {
         var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
-        if (template is null) return Ok(new EmailTemplateDto());
-        return Ok(new EmailTemplateDto
-        {
-            Subject = template.Subject,
-            Body = template.Body,
-            IsEnabled = template.IsEnabled
-        });
+        if (template is null) return Ok(new EmailTemplateDto(string.Empty, string.Empty, false));
+        return Ok(new EmailTemplateDto(template.Subject, template.Body, template.IsEnabled));
     }
 
     [HttpPut]
