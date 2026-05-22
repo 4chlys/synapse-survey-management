@@ -24,9 +24,4 @@
   <data name="Widget_NoAnswers" xml:space="preserve"><value>Nog geen antwoorden</value></data>
   <data name="Widget_NoQuestion" xml:space="preserve"><value>Geen vraag geselecteerd</value></data>
   <data name="Widget_XAxisLabel" xml:space="preserve"><value>Antwoorden</value></data>
-  <data name="Widget_Likert_1" xml:space="preserve"><value>Helemaal mee oneens (1)</value></data>
-  <data name="Widget_Likert_2" xml:space="preserve"><value>Mee oneens (2)</value></data>
-  <data name="Widget_Likert_3" xml:space="preserve"><value>Neutraal (3)</value></data>
-  <data name="Widget_Likert_4" xml:space="preserve"><value>Mee eens (4)</value></data>
-  <data name="Widget_Likert_5" xml:space="preserve"><value>Helemaal mee eens (5)</value></data>
 </root>

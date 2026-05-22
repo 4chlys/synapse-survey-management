@@ -58,11 +58,6 @@
   <data name="DetailLoadFailed" xml:space="preserve"><value>Loading failed</value></data>
   <data name="DetailResponsesUnit" xml:space="preserve"><value>response(s)</value></data>
   <data name="DetailXAxisLabel" xml:space="preserve"><value>Answers</value></data>
-  <data name="DetailLikert_1" xml:space="preserve"><value>Strongly disagree (1)</value></data>
-  <data name="DetailLikert_2" xml:space="preserve"><value>Disagree (2)</value></data>
-  <data name="DetailLikert_3" xml:space="preserve"><value>Neutral (3)</value></data>
-  <data name="DetailLikert_4" xml:space="preserve"><value>Agree (4)</value></data>
-  <data name="DetailLikert_5" xml:space="preserve"><value>Strongly agree (5)</value></data>
   <data name="PickerHeading" xml:space="preserve"><value>What type of question?</value></data>
   <data name="PickerSubtitle" xml:space="preserve"><value>Pick the kind of answer you want to collect</value></data>
   <data name="Picker_MCQDesc" xml:space="preserve"><value>Multiple options, multiple answers possible.</value></data>

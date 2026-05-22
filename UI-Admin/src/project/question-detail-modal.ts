@@ -10,11 +10,6 @@ interface ModalStrings {
     loadFailed: string;
     responsesUnit: string;
     xAxisLabel: string;
-    likertL1: string;
-    likertL2: string;
-    likertL3: string;
-    likertL4: string;
-    likertL5: string;
 }
 
 interface OpenAnswerPage {
@@ -70,11 +65,6 @@ export function init(): void {
             loadFailed:    dialog.dataset.i18nLoadFailed    ?? '',
             responsesUnit: dialog.dataset.i18nResponsesUnit ?? '',
             xAxisLabel:    dialog.dataset.i18nXAxisLabel    ?? '',
-            likertL1:      dialog.dataset.i18nLikert1       ?? '',
-            likertL2:      dialog.dataset.i18nLikert2       ?? '',
-            likertL3:      dialog.dataset.i18nLikert3       ?? '',
-            likertL4:      dialog.dataset.i18nLikert4       ?? '',
-            likertL5:      dialog.dataset.i18nLikert5       ?? '',
         };
 
         if (format === 'Open') {
@@ -142,13 +132,7 @@ async function fetchAndRender(
             if (canvas) canvas.classList.add('hidden');
             return;
         }
-        if (canvas) activeChart = renderLikert(canvas, stats, {
-            l1: strings.likertL1,
-            l2: strings.likertL2,
-            l3: strings.likertL3,
-            l4: strings.likertL4,
-            l5: strings.likertL5,
-        });
+        if (canvas) activeChart = renderLikert(canvas, stats);
     }
 }
 

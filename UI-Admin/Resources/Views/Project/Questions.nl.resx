@@ -58,11 +58,6 @@
   <data name="DetailLoadFailed" xml:space="preserve"><value>Laden mislukt</value></data>
   <data name="DetailResponsesUnit" xml:space="preserve"><value>antwoord(en)</value></data>
   <data name="DetailXAxisLabel" xml:space="preserve"><value>Antwoorden</value></data>
-  <data name="DetailLikert_1" xml:space="preserve"><value>Helemaal mee oneens (1)</value></data>
-  <data name="DetailLikert_2" xml:space="preserve"><value>Mee oneens (2)</value></data>
-  <data name="DetailLikert_3" xml:space="preserve"><value>Neutraal (3)</value></data>
-  <data name="DetailLikert_4" xml:space="preserve"><value>Mee eens (4)</value></data>
-  <data name="DetailLikert_5" xml:space="preserve"><value>Helemaal mee eens (5)</value></data>
   <data name="PickerHeading" xml:space="preserve"><value>Welk type vraag?</value></data>
   <data name="PickerSubtitle" xml:space="preserve"><value>Kies het soort antwoord dat je wilt verzamelen</value></data>
   <data name="Picker_MCQDesc" xml:space="preserve"><value>Meerdere opties, meerdere antwoorden mogelijk.</value></data>

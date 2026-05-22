@@ -24,9 +24,4 @@
   <data name="Widget_NoAnswers" xml:space="preserve"><value>No answers yet</value></data>
   <data name="Widget_NoQuestion" xml:space="preserve"><value>No question selected</value></data>
   <data name="Widget_XAxisLabel" xml:space="preserve"><value>Responses</value></data>
-  <data name="Widget_Likert_1" xml:space="preserve"><value>Strongly disagree (1)</value></data>
-  <data name="Widget_Likert_2" xml:space="preserve"><value>Disagree (2)</value></data>
-  <data name="Widget_Likert_3" xml:space="preserve"><value>Neutral (3)</value></data>
-  <data name="Widget_Likert_4" xml:space="preserve"><value>Agree (4)</value></data>
-  <data name="Widget_Likert_5" xml:space="preserve"><value>Strongly agree (5)</value></data>
 </root>

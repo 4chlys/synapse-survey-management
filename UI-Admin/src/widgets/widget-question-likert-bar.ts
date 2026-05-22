@@ -1,24 +1,18 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
+import type { Plugin } from 'chart.js';
 import { initQuestionWidget, freshCanvas, showMessage } from '../lib/question-widget-shell';
 import type { WidgetStrings } from '../lib/question-widget-shell';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 
-interface LikertLabels {
-    l1: string;
-    l2: string;
-    l3: string;
-    l4: string;
-    l5: string;
-}
+// Likert questions are a fixed 1–10 magnitude scale (no UI exists to configure another scale;
+// AnswerChoiceCount stays 0 and the backend treats that as 1–10). The chart is therefore a plain
+// histogram: one bar per point, all 10 points always shown so the scale is not distorted.
+const MIN_POINT = 1;
+const MAX_POINT = 10;
 
-const DEFAULT_LABELS: LikertLabels = {
-    l1: 'Strongly disagree (1)',
-    l2: 'Disagree (2)',
-    l3: 'Neutral (3)',
-    l4: 'Agree (4)',
-    l5: 'Strongly agree (5)',
-};
+const BAR_COLOR = '#60a5fa';        // blue-400
+const MEDIAN_COLOR = '#1f2937';     // gray-800
 
 interface LikertPointCount {
     point: number;
@@ -31,87 +25,101 @@ export interface LikertStats {
     distribution: LikertPointCount[];
 }
 
-// Tailwind palette hex values — do not import Tailwind into TS
-const COLOR_STRONGLY_DISAGREE = '#ef4444'; // red-500
-const COLOR_DISAGREE          = '#f59e0b'; // amber-500
-const COLOR_NEUTRAL           = '#9ca3af'; // gray-400
-const COLOR_AGREE             = '#86efac'; // green-300
-const COLOR_STRONGLY_AGREE    = '#22c55e'; // green-500
-
-function getCount(distribution: LikertPointCount[], point: number): number {
+function countFor(distribution: LikertPointCount[], point: number): number {
     return distribution.find(d => d.point === point)?.count ?? 0;
 }
 
-// Datasets are ordered so Chart.js stacks from the zero line outward on each side:
-//   neg side (innermost→outermost): neutral-neg, disagree, strongly-disagree
-//   pos side (innermost→outermost): neutral-pos, agree, strongly-agree
-// rawCounts is parallel to this dataset order and holds the actual response count
-// for each segment (neutral halves both map back to the full c3).
-export function renderInto(canvasEl: HTMLCanvasElement, stats: LikertStats, labels: LikertLabels = DEFAULT_LABELS): Chart {
-    const c1 = getCount(stats.distribution, 1);
-    const c2 = getCount(stats.distribution, 2);
-    const c3 = getCount(stats.distribution, 3);
-    const c4 = getCount(stats.distribution, 4);
-    const c5 = getCount(stats.distribution, 5);
-    const c3Neg = Math.floor(c3 / 2);
-    const c3Pos = c3 - c3Neg;
+// Median of the discrete distribution: the value at the middle response position, averaging the
+// two middle values when the response count is even (the usual sample-median convention).
+function median(distribution: LikertPointCount[], total: number): number {
+    if (total === 0) return NaN;
+    const lower = Math.floor((total - 1) / 2);
+    const upper = Math.ceil((total - 1) / 2);
+    let cumulative = 0;
+    let low = NaN;
+    let high = NaN;
+    for (let point = MIN_POINT; point <= MAX_POINT; point++) {
+        const end = cumulative + countFor(distribution, point) - 1;
+        if (Number.isNaN(low) && lower <= end) low = point;
+        if (upper <= end) { high = point; break; }
+        cumulative = end + 1;
+    }
+    return (low + high) / 2;
+}
 
-    const rawCounts: number[] = [c3, c2, c1, c3, c4, c5];
+// Draws the median as a vertical dashed line plus language-neutral "n =" / "x̃ =" captions,
+// avoiding any extra i18n plumbing for what is universally understood statistical notation.
+function summaryPlugin(total: number, medianValue: number): Plugin {
+    return {
+        id: 'likertSummary',
+        afterDatasetsDraw(chart) {
+            const { ctx, chartArea, scales } = chart;
+            ctx.save();
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = MEDIAN_COLOR;
+            ctx.textBaseline = 'top';
+            ctx.fillText(`n = ${total}`, chartArea.left + 4, chartArea.top + 2);
+
+            if (!Number.isNaN(medianValue)) {
+                // The category axis places point p at data index p - 1; interpolate for a fractional median.
+                const idx = medianValue - MIN_POINT;
+                const lo = Math.floor(idx);
+                const hi = Math.ceil(idx);
+                const xLo = scales.x.getPixelForValue(lo);
+                const xHi = scales.x.getPixelForValue(hi);
+                const x = xLo + (xHi - xLo) * (idx - lo);
+
+                ctx.setLineDash([5, 4]);
+                ctx.strokeStyle = MEDIAN_COLOR;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x, chartArea.top);
+                ctx.lineTo(x, chartArea.bottom);
+                ctx.stroke();
+
+                ctx.setLineDash([]);
+                ctx.textAlign = x > (chartArea.left + chartArea.right) / 2 ? 'right' : 'left';
+                const labelX = ctx.textAlign === 'right' ? x - 4 : x + 4;
+                ctx.fillText(`x̃ = ${medianValue}`, labelX, chartArea.top + 2);
+            }
+            ctx.restore();
+        },
+    };
+}
+
+export function renderInto(canvasEl: HTMLCanvasElement, stats: LikertStats): Chart {
+    const points = Array.from({ length: MAX_POINT - MIN_POINT + 1 }, (_, i) => MIN_POINT + i);
+    const counts = points.map(p => countFor(stats.distribution, p));
+    const medianValue = median(stats.distribution, stats.totalResponses);
 
     return new Chart(canvasEl, {
         type: 'bar',
         data: {
-            labels: [''],
-            datasets: [
-                { label: labels.l3, data: [-c3Neg], backgroundColor: COLOR_NEUTRAL },
-                { label: labels.l2, data: [-c2],    backgroundColor: COLOR_DISAGREE },
-                { label: labels.l1, data: [-c1],    backgroundColor: COLOR_STRONGLY_DISAGREE },
-                { label: labels.l3, data: [c3Pos],  backgroundColor: COLOR_NEUTRAL },
-                { label: labels.l4, data: [c4],     backgroundColor: COLOR_AGREE },
-                { label: labels.l5, data: [c5],     backgroundColor: COLOR_STRONGLY_AGREE },
-            ],
+            labels: points.map(String),
+            datasets: [{ data: counts, backgroundColor: BAR_COLOR }],
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => {
-                            const raw = rawCounts[ctx.datasetIndex];
-                            return ` ${ctx.dataset.label ?? ''}: ${raw}`;
-                        },
+                        title: (items) => `${items[0].label}`,
+                        label: (ctx) => ` ${ctx.parsed.y}`,
                     },
                 },
             },
             scales: {
-                x: {
-                    stacked: true,
-                    ticks: {
-                        precision: 0,
-                        callback: (val) => typeof val === 'number' ? Math.abs(val) : val,
-                    },
-                },
-                y: {
-                    stacked: true,
-                    display: false,
-                },
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, ticks: { precision: 0 } },
             },
         },
+        plugins: [summaryPlugin(stats.totalResponses, medianValue)],
     });
 }
 
 export function initQuestionLikertBarWidget(el: HTMLElement): void {
-    const labels: LikertLabels = {
-        l1: el.dataset.i18nLikert1 ?? DEFAULT_LABELS.l1,
-        l2: el.dataset.i18nLikert2 ?? DEFAULT_LABELS.l2,
-        l3: el.dataset.i18nLikert3 ?? DEFAULT_LABELS.l3,
-        l4: el.dataset.i18nLikert4 ?? DEFAULT_LABELS.l4,
-        l5: el.dataset.i18nLikert5 ?? DEFAULT_LABELS.l5,
-    };
-
     const render = async (
         body: HTMLElement,
         projectId: number,
@@ -135,7 +143,7 @@ export function initQuestionLikertBarWidget(el: HTMLElement): void {
             return;
         }
 
-        renderInto(freshCanvas(body), stats, labels);
+        renderInto(freshCanvas(body), stats);
     };
 
     initQuestionWidget(el, { format: 'Likert', render });
