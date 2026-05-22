@@ -11,7 +11,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 [Authorize(Roles = "SystemAdmin,ProjectPlatformAdmin")]
 public class AdminController(
     PlatformAdminService platformService,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    AdminInviteService adminInviteService) : Controller
 {
     [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> Index(int? platformId = null)
@@ -72,7 +73,10 @@ public class AdminController(
 
         var platformId = user.ProjectPlatformId!.Value;
 
-        var result = await platformService.AddAdminAsync(platformId, model.Email, model.Password);
+        var platform = await platformService.GetPlatformByIdAsync(platformId);
+
+        var result = await adminInviteService.InviteAdminAsync(platformId, platform.Name, model.Email,
+            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme));
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)

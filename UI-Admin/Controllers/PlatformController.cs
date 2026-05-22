@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.BL.Domain.Ai;
-using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
@@ -20,8 +19,7 @@ public class PlatformController(
     AiAdminService aiAdminService,
     SystemStatsAdminService systemStatsAdminService,
     UserManager<ApplicationUser> userManager,
-    IEmailService emailService,
-    ILogger<PlatformController> logger,
+    AdminInviteService adminInviteService,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
@@ -231,23 +229,13 @@ public class PlatformController(
         if (!ModelState.IsValid)
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
 
-        var result = await platformService.AddAdminAsync(id, model.Email, model.Password);
+        var result = await adminInviteService.InviteAdminAsync(id, platform.Name, model.Email,
+            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme));
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)
                 ModelState.AddModelError(string.Empty, error.Description);
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
-        }
-
-        var newUser = await userManager.FindByEmailAsync(model.Email);
-        if (newUser is not null)
-        {
-            var token = await userManager.GeneratePasswordResetTokenAsync(newUser);
-            var resetUrl = Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme);
-            var body = localizer["Email_Welcome_Body", platform.Name, model.Email, resetUrl].Value;
-            var subject = localizer["Email_Welcome_Subject", platform.Name].Value;
-            try { await emailService.SendAsync(model.Email, subject, body); }
-            catch (Exception ex) { logger.LogWarning(ex, "Failed to send welcome email to {Email}", model.Email); }
         }
 
         TempData["Success"] = localizer["Platform_AdminAdded"].Value;

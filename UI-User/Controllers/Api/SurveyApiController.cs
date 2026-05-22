@@ -90,17 +90,6 @@ public class SurveyApiController(
         return Ok(responses);
     }
 
-    [HttpPatch("contact")]
-    public async Task<ActionResult> SaveContact(int projectId, [FromBody] SaveContactRequest request)
-    {
-        var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized();
-
-        await questionnaireService.SaveContactAsync(projectId, request.Email, token);
-        return Ok();
-    }
-
     [HttpPost("submit")]
     public async Task<ActionResult> Submit(int projectId)
     {
@@ -125,4 +114,3 @@ public class SurveyApiController(
 }
 
 public record SaveResponseRequest(int QuestionId, string Value);
-public record SaveContactRequest(string Email);

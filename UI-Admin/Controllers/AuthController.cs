@@ -2,16 +2,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Auth;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
-    IEmailService emailService,
+    EmailApiService emailApiService,
     ILogger<AuthController> logger,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
@@ -119,11 +119,11 @@ public class AuthController(
 
             var body = localizer["Email_ForgotPassword_Body", resetUrl].Value;
             var subject = localizer["Email_ForgotPassword_Subject"].Value;
-            try { await emailService.SendAsync(model.Email, subject, body); }
+            try { await emailApiService.SendAsync(model.Email, subject, body); }
             catch (Exception ex) { logger.LogWarning(ex, "Failed to send password reset email to {Email}", model.Email); }
         }
 
-        // Altijd dezelfde boodschap tonen — ongeacht of het e-mailadres bestaat (beveiliging)
+        // Always show the same message whether or not the email address exists (security)
         TempData["ResetEmailSent"] = true;
         return RedirectToAction(nameof(ForgotPassword));
     }

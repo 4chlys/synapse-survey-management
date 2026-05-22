@@ -1,7 +1,6 @@
 using SynapseEnqueteManagement.API.DTOs.Participants;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.DTOs.Survey;
-using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -12,9 +11,6 @@ public class ResponsesControllerTests
     private readonly Mock<ISubmissionManager> _submissionManager = new();
     private readonly Mock<IProjectManager> _projectManager = new();
     private readonly Mock<IParticipantLanguageCoordinator> _participantLanguageCoordinator = new();
-    private readonly Mock<IEmailTemplateManager> _emailTemplateManager = new();
-    private readonly Mock<IEmailService> _emailService = new();
-    private readonly Mock<ILogger<ResponsesController>> _logger = new();
     private readonly ResponsesController _controller;
 
     private const int ProjectId = 1;
@@ -26,9 +22,7 @@ public class ResponsesControllerTests
         _participant = new Participant { ParticipantId = 5, SessionToken = Guid.NewGuid(), Project = new Project { ProjectId = ProjectId } };
         _participantManager.Setup(p => p.GetParticipantBySessionTokenForUpdateAsync(_sessionToken))
             .ReturnsAsync(_participant);
-        _emailTemplateManager.Setup(e => e.GetByProjectIdAsync(It.IsAny<int>()))
-            .ReturnsAsync((BL.Domain.Project.Entities.EmailTemplate)null);
-        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object, _projectManager.Object, _participantLanguageCoordinator.Object, _emailTemplateManager.Object, _emailService.Object, _logger.Object);
+        _controller = new ResponsesController(_participantManager.Object, _responseManager.Object, _submissionManager.Object, _projectManager.Object, _participantLanguageCoordinator.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -146,10 +140,7 @@ public class ResponsesControllerTests
             _responseManager.Object,
             _submissionManager.Object,
             _projectManager.Object,
-            _participantLanguageCoordinator.Object,
-            _emailTemplateManager.Object,
-            _emailService.Object,
-            _logger.Object);
+            _participantLanguageCoordinator.Object);
         controllerWithoutToken.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

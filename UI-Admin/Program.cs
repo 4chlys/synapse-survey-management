@@ -19,8 +19,6 @@ using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Email;
-using SynapseEnqueteManagement.BL.Interfaces;
-using Resend;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -141,9 +139,8 @@ builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
-builder.Services.AddHttpClient<EmailTemplateAdminService>(ConfigureApiClient)
+builder.Services.AddHttpClient<EmailApiService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
-
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("question-media-upload", context =>
@@ -163,21 +160,9 @@ builder.Services.AddSingleton(AiConfigLoader.Load(
     LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
+builder.Services.AddScoped<AdminInviteService>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<WidgetPreferenceService>();
-
-var resendKey = builder.Configuration["RESEND_API_KEY"];
-var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "noreply@synapse-ip.xyz";
-if (!string.IsNullOrEmpty(resendKey))
-{
-    builder.Services.AddResend(opt => opt.ApiToken = resendKey);
-    builder.Services.AddScoped<IEmailService>(sp =>
-        new SynapseEnqueteManagement.BL.Services.ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
-}
-else
-{
-    builder.Services.AddScoped<IEmailService, SynapseEnqueteManagement.BL.Services.LogEmailService>();
-}
 
 // Rate limiting — protect expensive AI image-generation via project creation
 builder.Services.AddRateLimiter(options =>

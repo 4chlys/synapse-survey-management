@@ -116,8 +116,7 @@ public class RecordViewModelBindingTests
         {
             ["ProjectPlatformId"] = "5",
             ["PlatformName"] = "Acme",
-            ["Email"] = "new.admin@example.com",
-            ["Password"] = "InitPass1"
+            ["Email"] = "new.admin@example.com"
         };
 
         var (model, modelState) = await FormBinderTestHarness.BindAsync<AddAdminViewModel>(form);
@@ -126,7 +125,6 @@ public class RecordViewModelBindingTests
         Assert.Equal(5, model.ProjectPlatformId);
         Assert.Equal("Acme", model.PlatformName);
         Assert.Equal("new.admin@example.com", model.Email);
-        Assert.Equal("InitPass1", model.Password);
     }
 
     [Fact]

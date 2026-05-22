@@ -68,8 +68,4 @@
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
   <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Unbalanced braces ({0} {  vs  {1} }).</value></data>
   <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS looks balanced.</value></data>
-  <data name="EmailTemplate" xml:space="preserve"><value>Email template</value></data>
-  <data name="EmailTemplate_Subject" xml:space="preserve"><value>Subject</value></data>
-  <data name="EmailTemplate_Body" xml:space="preserve"><value>Message body</value></data>
-  <data name="EmailTemplate_Enabled" xml:space="preserve"><value>Enable email sending</value></data>
 </root>

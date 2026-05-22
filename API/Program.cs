@@ -184,10 +184,8 @@ builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 
 // Email
-builder.Services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
-builder.Services.AddScoped<IEmailTemplateManager, EmailTemplateManager>();
 var resendApiKey = builder.Configuration["RESEND_API_KEY"];
-var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "onboarding@resend.dev";
+var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "noreply@synapse-ip.xyz";
 if (!string.IsNullOrEmpty(resendApiKey))
 {
     builder.Services.AddResend(options => options.ApiToken = resendApiKey);

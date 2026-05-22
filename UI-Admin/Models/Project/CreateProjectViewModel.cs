@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using SynapseEnqueteManagement.UI.Admin.Models.Email;
 namespace SynapseEnqueteManagement.UI.Admin.Models.Project;
 
 public record CreateProjectViewModel
@@ -55,6 +54,4 @@ public record CreateProjectViewModel
 
     [MaxLength(4000)]
     public string CustomCss { get; init; }
-
-    public EmailTemplateViewModel EmailTemplate { get; init; } = new(string.Empty, string.Empty, false);
 }

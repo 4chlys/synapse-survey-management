@@ -315,51 +315,6 @@
                 </dialog>
             }
 
-            @if (Model.ProjectId.HasValue)
-            {
-                <div class="divider my-0"></div>
-
-                <button type="button" class="btn btn-outline btn-sm gap-1.5"
-                        onclick="document.getElementById('email-template-modal').showModal()">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                    @L["EmailTemplate"]
-                </button>
-
-                <dialog id="email-template-modal" class="modal">
-                    <div class="modal-box">
-                        <h3 class="font-bold text-lg mb-4">@L["EmailTemplate"]</h3>
-                        <form method="post" asp-action="SaveEmailTemplate" asp-route-projectId="@Model.ProjectId">
-                            @Html.AntiForgeryToken()
-                            <div class="form-control mb-3">
-                                <label class="label"><span class="label-text">@L["EmailTemplate_Subject"]</span></label>
-                                <input type="text" name="Subject" value="@Model.EmailTemplate.Subject"
-                                       class="input input-bordered input-sm" maxlength="200" />
-                            </div>
-                            <div class="form-control mb-3">
-                                <label class="label"><span class="label-text">@L["EmailTemplate_Body"]</span></label>
-                                <textarea name="Body" class="textarea textarea-bordered text-sm" rows="6"
-                                          maxlength="5000">@Model.EmailTemplate.Body</textarea>
-                            </div>
-                            <div class="form-control mb-4">
-                                <label class="label cursor-pointer justify-start gap-3">
-                                    <input type="checkbox" name="IsEnabled" value="true"
-                                           class="checkbox checkbox-sm" @(Model.EmailTemplate.IsEnabled ? "checked" : "") />
-                                    <span class="label-text">@L["EmailTemplate_Enabled"]</span>
-                                </label>
-                            </div>
-                            <div class="modal-action">
-                                <form method="dialog">
-                                    <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
-                                </form>
-                                <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
-                            </div>
-                        </form>
-                    </div>
-                    <form method="dialog" class="modal-backdrop"><button>close</button></form>
-                </dialog>
-            }
 
             <div class="card-actions justify-end gap-2 pt-2">
                 @if (!isLocked)

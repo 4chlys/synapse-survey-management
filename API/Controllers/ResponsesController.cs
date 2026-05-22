@@ -16,10 +16,7 @@ public class ResponsesController(
     IResponseManager responseManager,
     ISubmissionManager submissionManager,
     IProjectManager projectManager,
-    IParticipantLanguageCoordinator participantLanguageCoordinator,
-    IEmailTemplateManager emailTemplateManager,
-    IEmailService emailService,
-    ILogger<ResponsesController> logger)
+    IParticipantLanguageCoordinator participantLanguageCoordinator)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPatch("participants/me/language")]
@@ -46,7 +43,6 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
-        await TrySendEmailTemplateAsync(projectId, dto.Email, participant.ParticipantId, ct);
 
         return NoContent();
     }
@@ -111,15 +107,6 @@ public class ResponsesController(
 
         var hasSubmitted = await HasParticipantSubmittedAsync(token);
         return Ok(new ParticipantStatusDto { HasResponded = hasSubmitted });
-    }
-
-    private async Task TrySendEmailTemplateAsync(int projectId, string email, int participantId, CancellationToken ct)
-    {
-        if (string.IsNullOrEmpty(email)) return;
-        var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
-        if (template is not { IsEnabled: true }) return;
-        try { await emailService.SendAsync(email, template.Subject, template.Body, ct); }
-        catch (Exception ex) { logger.LogWarning(ex, "Failed to send email for participant {Id}", participantId); }
     }
 
     private static ResponseDto MapToDto(Response response)

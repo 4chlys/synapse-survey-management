@@ -17,8 +17,6 @@ using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
-using SynapseEnqueteManagement.UI.Admin.Services.Email;
-using SynapseEnqueteManagement.UI.Admin.Models.Email;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -36,7 +34,6 @@ public class ProjectController(
     IdeaAdminService ideaService,
     ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings,
-    EmailTemplateAdminService emailTemplateService,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
@@ -87,8 +84,7 @@ public class ProjectController(
             Theme = project.Theme,
             PrimaryColor = project.PrimaryColor,
             CustomCss = project.CustomCss,
-            Sections = sections.Select(s => s.Name).ToList(),
-            EmailTemplate = await emailTemplateService.GetAsync(projectId.Value)
+            Sections = sections.Select(s => s.Name).ToList()
         };
         ViewData["Project"] = project;
         ViewData["ProjectId"]     = projectId.Value;
@@ -649,13 +645,6 @@ public class ProjectController(
         ViewData["ProjectState"]  = projectForConfigure?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> SaveEmailTemplate(int projectId, EmailTemplateViewModel model)
-    {
-        await emailTemplateService.SaveAsync(projectId, model);
-        return RedirectToAction(nameof(Create), new { projectId });
     }
 
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>
