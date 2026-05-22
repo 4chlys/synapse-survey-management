@@ -46,16 +46,7 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
-
-        if (!string.IsNullOrEmpty(dto.Email))
-        {
-            var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
-            if (template is { IsEnabled: true })
-            {
-                try { await emailService.SendAsync(dto.Email, template.Subject, template.Body, ct); }
-                catch (Exception ex) { logger.LogWarning(ex, "Email verzenden mislukt voor participant {Id}", participant.ParticipantId); }
-            }
-        }
+        await TrySendEmailTemplateAsync(projectId, dto.Email, participant.ParticipantId, ct);
 
         return NoContent();
     }
@@ -74,19 +65,6 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await submissionManager.SubmitAsync(projectId, participant, ct);
-
-        var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
-if (template is { IsEnabled: true } && !string.IsNullOrEmpty(participant.Email))
-        {
-            try
-            {
-                await emailService.SendAsync(participant.Email, template.Subject, template.Body, ct);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Email verzenden mislukt voor participant {Id}", participant.ParticipantId);
-            }
-        }
 
         return Ok();
     }
@@ -133,6 +111,15 @@ if (template is { IsEnabled: true } && !string.IsNullOrEmpty(participant.Email))
 
         var hasSubmitted = await HasParticipantSubmittedAsync(token);
         return Ok(new ParticipantStatusDto { HasResponded = hasSubmitted });
+    }
+
+    private async Task TrySendEmailTemplateAsync(int projectId, string email, int participantId, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(email)) return;
+        var template = await emailTemplateManager.GetByProjectIdAsync(projectId);
+        if (template is not { IsEnabled: true }) return;
+        try { await emailService.SendAsync(email, template.Subject, template.Body, ct); }
+        catch (Exception ex) { logger.LogWarning(ex, "Failed to send email for participant {Id}", participantId); }
     }
 
     private static ResponseDto MapToDto(Response response)
