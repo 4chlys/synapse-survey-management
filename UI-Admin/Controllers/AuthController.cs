@@ -117,8 +117,9 @@ public class AuthController(
                 new { email = model.Email, token },
                 protocol: Request.Scheme);
 
-            var body = $"Hallo,\n\nJe hebt een wachtwoordreset aangevraagd voor je Synapse-account.\n\nKlik op de onderstaande link om je wachtwoord te resetten:\n{resetUrl}\n\nDeze link is 24 uur geldig.\n\nAls je dit niet hebt aangevraagd, kan je deze e-mail negeren.";
-            try { await emailService.SendAsync(model.Email, "Wachtwoord resetten — Synapse", body); }
+            var body = localizer["Email_ForgotPassword_Body", resetUrl].Value;
+            var subject = localizer["Email_ForgotPassword_Subject"].Value;
+            try { await emailService.SendAsync(model.Email, subject, body); }
             catch (Exception ex) { logger.LogWarning(ex, "Wachtwoord reset mail mislukt voor {Email}", model.Email); }
         }
 

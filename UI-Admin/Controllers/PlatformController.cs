@@ -244,8 +244,9 @@ public class PlatformController(
         {
             var token = await userManager.GeneratePasswordResetTokenAsync(newUser);
             var resetUrl = Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme);
-            var body = $"Hallo,\n\nJe bent toegevoegd als beheerder van platform '{platform.Name}' in Synapse.\n\nJe aanmeldgegevens:\nE-mail: {model.Email}\n\nStel je wachtwoord in via de onderstaande link (geldig 24 uur):\n{resetUrl}";
-            try { await emailService.SendAsync(model.Email, $"Welkom bij Synapse — {platform.Name}", body); }
+            var body = localizer["Email_Welcome_Body", platform.Name, model.Email, resetUrl].Value;
+            var subject = localizer["Email_Welcome_Subject", platform.Name].Value;
+            try { await emailService.SendAsync(model.Email, subject, body); }
             catch (Exception ex) { logger.LogWarning(ex, "Welkomstmail mislukt voor {Email}", model.Email); }
         }
 
