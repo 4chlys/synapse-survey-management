@@ -2,9 +2,8 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.DAL.Interfaces;
 
-public interface IEmailTemplateRepository
+public interface IEmailTemplateRepository : IRepository<EmailTemplate>
 {
     Task<EmailTemplate> GetByProjectIdAsync(int projectId);
-    Task AddAsync(EmailTemplate template, CancellationToken ct = default);
-    Task SaveAsync(CancellationToken ct = default);
+    Task<EmailTemplate> CreateForProjectAsync(int projectId, CancellationToken ct = default);
 }

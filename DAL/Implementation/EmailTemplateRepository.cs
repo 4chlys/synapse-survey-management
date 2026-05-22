@@ -4,14 +4,16 @@ using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.DAL.Implementation;
 
-public class EmailTemplateRepository(SynapseEnqueteContext context) : IEmailTemplateRepository
+public class EmailTemplateRepository(DbContext context) : Repository<EmailTemplate>(context), IEmailTemplateRepository
 {
     public Task<EmailTemplate> GetByProjectIdAsync(int projectId)
-        => context.EmailTemplates.FirstOrDefaultAsync(e => e.ProjectId == projectId);
+        => Context.Set<EmailTemplate>().FirstOrDefaultAsync(e => EF.Property<int>(e, "ProjectId") == projectId);
 
-    public async Task AddAsync(EmailTemplate template, CancellationToken ct = default)
-        => await context.EmailTemplates.AddAsync(template, ct);
-
-    public Task SaveAsync(CancellationToken ct = default)
-        => context.SaveChangesAsync(ct);
+    public async Task<EmailTemplate> CreateForProjectAsync(int projectId, CancellationToken ct = default)
+    {
+        var template = new EmailTemplate();
+        var entry = await Context.Set<EmailTemplate>().AddAsync(template, ct);
+        entry.Property("ProjectId").CurrentValue = projectId;
+        return template;
+    }
 }

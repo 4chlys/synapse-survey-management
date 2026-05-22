@@ -47,7 +47,7 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
         builder.Entity<EmailTemplate>()
             .HasOne(e => e.Project)
             .WithMany()
-            .HasForeignKey(e => e.ProjectId)
+            .HasForeignKey("ProjectId")
             .OnDelete(DeleteBehavior.Cascade);
 
         // Language

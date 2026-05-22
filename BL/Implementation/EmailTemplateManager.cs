@@ -4,7 +4,7 @@ using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-public class EmailTemplateManager(IEmailTemplateRepository repository) : IEmailTemplateManager
+public class EmailTemplateManager(IEmailTemplateRepository repository, IUnitOfWork uow) : IEmailTemplateManager
 {
     public Task<EmailTemplate> GetByProjectIdAsync(int projectId)
         => repository.GetByProjectIdAsync(projectId);
@@ -13,13 +13,11 @@ public class EmailTemplateManager(IEmailTemplateRepository repository) : IEmailT
     {
         var template = await repository.GetByProjectIdAsync(projectId);
         if (template is null)
-        {
-            template = new EmailTemplate { ProjectId = projectId };
-            await repository.AddAsync(template, ct);
-        }
+            template = await repository.CreateForProjectAsync(projectId, ct);
+
         template.Subject = subject;
         template.Body = body;
         template.IsEnabled = isEnabled;
-        await repository.SaveAsync(ct);
+        await uow.SaveChangesAsync(ct);
     }
 }
