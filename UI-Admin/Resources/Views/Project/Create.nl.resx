@@ -11,7 +11,7 @@
   <data name="HeadingNew" xml:space="preserve"><value>Nieuw project</value></data>
   <data name="LockedActive" xml:space="preserve"><value>Dit project is actief. Instellingen kunnen niet meer worden gewijzigd.</value></data>
   <data name="LockedArchived" xml:space="preserve"><value>Dit project is gearchiveerd. Instellingen kunnen niet meer worden gewijzigd.</value></data>
-  <data name="NameLabel" xml:space="preserve"><value>Projectnaam *</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Projectnaam</value></data>
   <data name="NamePlaceholder" xml:space="preserve"><value>Bijv. Mentaal Welzijn</value></data>
   <data name="ShortformLabel" xml:space="preserve"><value>Shortform</value></data>
   <data name="ShortformPlaceholder" xml:space="preserve"><value>automatisch ingevuld vanuit de naam</value></data>
@@ -54,7 +54,7 @@
   <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
   <data name="NextButton" xml:space="preserve"><value>Volgende</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Taal *</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Taal</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Thema</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Voorbeeld</value></data>

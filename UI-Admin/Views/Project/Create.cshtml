@@ -22,7 +22,7 @@
             "<span class=\"text-base-content/35 hover:text-base-content/60 cursor-help text-xs select-none\">ⓘ</span></div>");
 }
 
-<div class="max-w-5xl mx-auto">
+<div class="w-full">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">
         @(isEdit ? L["HeadingEdit"].Value : L["HeadingNew"].Value)
     </h1>
@@ -84,59 +84,61 @@
 
                         <div class="form-control gap-1.5">
                             <div class="flex items-center gap-1.5">
-                                <label class="text-sm font-semibold text-base-content">@L["TopicLabel"]</label>
+                                <label class="text-sm font-semibold text-base-content">@L["TopicLabel"] <span class="text-error">*</span></label>
                             </div>
                             <input asp-for="Topic" class="input input-bordered w-full" placeholder="@L["TopicPlaceholder"]" maxlength="100" />
                             <span asp-validation-for="Topic" class="text-xs text-error"></span>
                         </div>
                     </div>
 
-                    <div class="form-control gap-1.5">
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-sm font-semibold text-base-content">@L["IntroductionLabel"]</span>
-                            @InfoIcon(L["IntroductionHint"].Value)
-                        </div>
-                        @if (isLocked)
-                        {
-                            <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
-                                @Html.Raw(Model.Introduction)
+                    <div class="grid grid-cols-2 gap-4 items-start">
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-semibold text-base-content">@L["IntroductionLabel"] <span class="text-error">*</span></span>
+                                @InfoIcon(L["IntroductionHint"].Value)
                             </div>
-                        }
-                        else
-                        {
-                            <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
-                        }
-                        <input type="hidden" asp-for="Introduction" id="Introduction" />
-                        <div class="flex justify-between">
-                            <span asp-validation-for="Introduction" class="text-xs text-error"></span>
-                            <span id="intro-char-count" class="text-xs text-base-content/40"></span>
+                            @if (isLocked)
+                            {
+                                <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
+                                    @Html.Raw(Model.Introduction)
+                                </div>
+                            }
+                            else
+                            {
+                                <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
+                            }
+                            <input type="hidden" asp-for="Introduction" id="Introduction" />
+                            <div class="flex justify-between">
+                                <span asp-validation-for="Introduction" class="text-xs text-error"></span>
+                                <span id="intro-char-count" class="text-xs text-base-content/40"></span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-control gap-1.5">
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-sm font-semibold text-base-content">@L["ImageLabel"]</span>
-                            @InfoIcon(L["ImageHint"].Value)
-                        </div>
-                        <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative overflow-hidden bg-base-200">
-                            <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                                <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                            </svg>
-                            <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
-                                 class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
-                        </div>
-                        @if (!isLocked)
-                        {
-                            <div class="flex gap-2">
-                                <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
-                                <button type="button" id="generate-btn" class="btn btn-outline btn-sm"
-                                        data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-semibold text-base-content">@L["ImageLabel"]</span>
+                                @InfoIcon(L["ImageHint"].Value)
                             </div>
-                            <input type="file" id="image-file-input" accept="image/*" class="hidden" />
-                        }
-                        <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
-                        <span asp-validation-for="ImageUrl" class="text-xs text-error"></span>
+                            <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative overflow-hidden bg-base-200">
+                                <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                                </svg>
+                                <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
+                                     class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
+                            </div>
+                            @if (!isLocked)
+                            {
+                                <div class="flex gap-2">
+                                    <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
+                                    <button type="button" id="generate-btn" class="btn btn-outline btn-sm"
+                                            data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
+                                </div>
+                                <input type="file" id="image-file-input" accept="image/*" class="hidden" />
+                            }
+                            <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
+                            <span asp-validation-for="ImageUrl" class="text-xs text-error"></span>
+                        </div>
                     </div>
 
                     <div class="form-control">
