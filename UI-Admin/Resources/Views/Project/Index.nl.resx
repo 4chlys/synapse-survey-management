@@ -20,4 +20,5 @@
   <data name="CopyButton" xml:space="preserve"><value>Kopiëren</value></data>
   <data name="DeleteModalTitle" xml:space="preserve"><value>Project verwijderen</value></data>
   <data name="DeleteModalBody" xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</value></data>
+  <data name="MoreActions" xml:space="preserve"><value>Meer acties</value></data>
 </root>

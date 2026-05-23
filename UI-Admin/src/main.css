@@ -2,6 +2,8 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+@custom-variant dark ([data-theme="synapse-dark"] &);
+
 @plugin "daisyui/theme" {
   name: "synapse-light";
   default: true;

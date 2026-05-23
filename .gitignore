@@ -499,6 +499,7 @@ CLAUDE.md
 start-up.bat
 stop.bat
 CasperContext/
+seeded-credentials.txt
 
 # manually by Romeo
 start.sh
