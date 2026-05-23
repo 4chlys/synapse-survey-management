@@ -168,6 +168,8 @@ builder.Services.AddSingleton(AiConfigLoader.Load(
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<WidgetPreferenceService>();
+builder.Services.AddScoped<SynapseEnqueteManagement.UI.Admin.Filters.IProjectOwnershipLookup,
+                          SynapseEnqueteManagement.UI.Admin.Filters.ProjectOwnershipLookup>();
 
 // Rate limiting — protect expensive AI image-generation via project creation
 builder.Services.AddRateLimiter(options =>

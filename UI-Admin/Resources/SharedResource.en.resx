@@ -60,6 +60,7 @@
   <data name="Project_IntroductionRequired" xml:space="preserve"><value>Introduction is required.</value></data>
   <data name="Project_AgeRange" xml:space="preserve"><value>Min age cannot be greater than max age.</value></data>
   <data name="Project_LockedNotEditable" xml:space="preserve"><value>This project is active or archived and can no longer be edited.</value></data>
+  <data name="Project_DeleteActiveBlocked" xml:space="preserve"><value>This project is active and cannot be deleted. Archive it first.</value></data>
   <data name="Project_NoPlatform" xml:space="preserve"><value>Your account is not linked to a platform.</value></data>
   <data name="Project_NotFoundOrNoAccess" xml:space="preserve"><value>Project not found or no access.</value></data>
   <data name="Project_CopySuccess" xml:space="preserve"><value>Project copied as template!</value></data>

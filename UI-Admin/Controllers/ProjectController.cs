@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
@@ -21,6 +22,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 [Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
@@ -378,7 +380,7 @@ public class ProjectController(
             return Forbid();
 
         var source = await projectService.GetProjectByIdAsync(projectId);
-        if (source is null || source.PlatformId != platformId)
+        if (source is null)
         {
             TempData["Error"] = localizer["Project_NotFoundOrNoAccess"].Value;
             return RedirectToAction(nameof(Index));
@@ -405,6 +407,12 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> DeleteProject(int projectId)
     {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState == "Active")
+        {
+            TempData["Error"] = localizer["Project_DeleteActiveBlocked"].Value;
+            return RedirectToAction(nameof(Index));
+        }
         await projectService.DeleteProjectAsync(projectId);
         return RedirectToAction(nameof(Index));
     }
@@ -500,9 +508,6 @@ public class ProjectController(
         string status = null,
         int page = 1)
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null) return RedirectToAction("Login", "Auth");
-
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
@@ -543,8 +548,6 @@ public class ProjectController(
 
     public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null) return RedirectToAction("Login", "Auth");
         if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
 
         var normalized = (format ?? "csv").Trim().ToLowerInvariant();
@@ -557,9 +560,6 @@ public class ProjectController(
 
     public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx", string tables = "")
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null) return RedirectToAction("Login", "Auth");
-
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
         if (project.ProjectState is not ("Active" or "Archived"))
