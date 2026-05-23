@@ -97,8 +97,12 @@
                 </p>
             </div>
 
-            <div class="relative text-xs text-primary-content/60">
-                © @DateTime.UtcNow.Year SynapseIP
+            <div class="relative flex flex-col gap-1 text-xs text-primary-content/60">
+                <span>© @DateTime.UtcNow.Year SynapseIP</span>
+                <a asp-controller="Privacy" asp-action="Index"
+                   class="w-fit hover:text-primary-content underline underline-offset-2 transition-colors">
+                    Privacy
+                </a>
             </div>
         </aside>
 
@@ -148,11 +152,11 @@
                 @RenderBody()
             </div>
 
-            <footer class="px-6 pb-4 flex items-center justify-between text-xs text-base-content/50">
+            <footer class="lg:hidden px-6 pb-4 flex items-center justify-between text-xs text-base-content/50">
                 <a asp-controller="Privacy" asp-action="Index" class="hover:text-base-content/80 underline transition-colors">
                     Privacy
                 </a>
-                <span class="lg:hidden">© @DateTime.UtcNow.Year SynapseIP</span>
+                <span>© @DateTime.UtcNow.Year SynapseIP</span>
             </footer>
         </main>
     </div>

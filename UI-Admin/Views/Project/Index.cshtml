@@ -127,6 +127,18 @@
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
             </dialog>
         }
+
+        @* "Add new" tile — secondary entry point alongside the top-right primary button. *@
+        <a asp-action="Create"
+           class="group relative flex flex-col items-center justify-center gap-3 min-h-[280px] rounded-2xl
+                  border-2 border-dashed border-base-300 bg-base-100/40
+                  text-base-content/50 hover:text-primary hover:border-primary hover:bg-primary/5
+                  transition-all duration-200 ease-out">
+            <span class="w-12 h-12 rounded-full bg-base-200 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            <span class="text-sm font-semibold">@L["NewButton"]</span>
+        </a>
     </div>
 </div>
 

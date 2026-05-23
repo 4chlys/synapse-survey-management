@@ -154,7 +154,17 @@
             }
             else
             {
-                <span class="font-semibold text-base-content">@TopBarLabel(activeSection)</span>
+                @* Root pages: H1 already states the section, so show the brand wordmark instead of a redundant breadcrumb. *@
+                @if (isSystemAdmin)
+                {
+                    <a asp-controller="Platform" asp-action="SystemDashboard"
+                       class="font-heading font-bold text-base text-primary tracking-tight hover:opacity-80 transition">@Shared["AppName"]</a>
+                }
+                else
+                {
+                    <a asp-controller="Project" asp-action="Index"
+                       class="font-heading font-bold text-base text-primary tracking-tight hover:opacity-80 transition">@Shared["AppName"]</a>
+                }
             }
         </nav>
 
