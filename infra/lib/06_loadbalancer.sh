@@ -61,8 +61,11 @@ create_url_map() {
 
 create_ssl_and_proxy() {
   echo ">>> SSL certificaat + HTTPS proxy aanmaken (omgeving: ${ENV})..."
+  # *.${DOMAIN} dekt project-subdomains (vb. mentaal-welzijn.test.synapse-ip.xyz).
+  # Wildcard vereist DNS-01 verificatie: voeg na aanmaken het CNAME-record toe dat
+  # gcloud aangeeft via: gcloud compute ssl-certificates describe synapse-${ENV}-ssl-cert --global
   gcloud compute ssl-certificates create "synapse-${ENV}-ssl-cert" \
-    --domains="${DOMAIN},api.${DOMAIN},admin.${DOMAIN}" \
+    --domains="${DOMAIN},*.${DOMAIN},api.${DOMAIN},admin.${DOMAIN}" \
     --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-ssl-cert al aanwezig)"
 
   gcloud compute target-https-proxies create "synapse-${ENV}-https-proxy" \
