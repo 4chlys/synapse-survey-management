@@ -4,12 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Auth;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
+    EmailApiService emailApiService,
+    ILogger<AuthController> logger,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     [HttpGet]
@@ -94,6 +97,75 @@ public class AuthController(
 
         TempData["SuccessMessage"] = localizer["Auth_PasswordChanged"].Value;
         return RedirectToAction(nameof(ChangePassword));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel(string.Empty));
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await userManager.FindByEmailAsync(model.Email);
+        if (user is not null)
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            var resetUrl = Url.Action("ResetPassword", "Auth",
+                new { email = model.Email, token },
+                protocol: Request.Scheme);
+
+            var body = localizer["Email_ForgotPassword_Body", resetUrl].Value;
+            var subject = localizer["Email_ForgotPassword_Subject"].Value;
+            try { await emailApiService.SendAsync(model.Email, subject, body, ct); }
+            catch (OperationCanceledException) { logger.LogInformation("Password reset email send cancelled for {Email}", model.Email); }
+            catch (Exception ex) { logger.LogWarning(ex, "Failed to send password reset email to {Email}", model.Email); }
+        }
+
+        // Always show the same message whether or not the email address exists (security)
+        TempData["ResetEmailSent"] = true;
+        return RedirectToAction(nameof(ForgotPassword));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ResetPassword(string email, string token)
+    {
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+            return RedirectToAction(nameof(Login));
+
+        return View(new ResetPasswordViewModel
+        {
+            Email = email,
+            Token = token
+        });
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await userManager.FindByEmailAsync(model.Email);
+        if (user is null)
+        {
+            TempData["ResetSuccess"] = true;
+            return RedirectToAction(nameof(Login));
+        }
+
+        var result = await userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        TempData["ResetSuccess"] = true;
+        return RedirectToAction(nameof(Login));
     }
 
     private async Task<IActionResult> RedirectAfterLogin(string email)

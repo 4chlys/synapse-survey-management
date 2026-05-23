@@ -92,6 +92,11 @@ else
     API_KEY="${API_KEY_INPUT}"
   fi
 
+  ask "Resend API sleutel (re_...):"
+  read -rs RESEND_API_KEY
+  echo ""
+  [[ -z "${RESEND_API_KEY}" ]] && error "Resend API sleutel mag niet leeg zijn."
+
   GCS_BUCKET="${PROJECT_ID}-assets-${ENV}"
   VERTEX_AI_LOCATION="${REGION}"
 
@@ -103,6 +108,7 @@ ZONE="${ZONE}"
 DOMAIN="${DOMAIN}"
 DB_PASSWORD="${DB_PASSWORD}"
 API_KEY="${API_KEY}"
+RESEND_API_KEY="${RESEND_API_KEY}"
 GCS_BUCKET="${GCS_BUCKET}"
 VERTEX_AI_LOCATION="${VERTEX_AI_LOCATION}"
 EOF
@@ -111,6 +117,16 @@ fi
 
 # GCS_BUCKET standaardwaarde als niet in config
 GCS_BUCKET="${GCS_BUCKET:-${PROJECT_ID}-assets-${ENV}}"
+
+# Fallback: RESEND_API_KEY kan ontbreken in een oudere config
+if [[ -z "${RESEND_API_KEY:-}" ]]; then
+  ask "Resend API sleutel (re_...) — ontbreekt in config.${ENV}.env:"
+  read -rs RESEND_API_KEY
+  echo ""
+  [[ -z "${RESEND_API_KEY}" ]] && error "Resend API sleutel mag niet leeg zijn."
+  echo "RESEND_API_KEY=\"${RESEND_API_KEY}\"" >> "${CONFIG_FILE}"
+  success "RESEND_API_KEY toegevoegd aan config.${ENV}.env"
+fi
 
 # ── Stap 4: Samenvatten en bevestigen ─────────────────────────
 echo ""
@@ -146,7 +162,7 @@ success "Ingelogd bij project ${PROJECT_ID} (${PROJECT_NUMBER})"
 # ── Stap 6: Lib functies laden ─────────────────────────────────
 info "Infra functies laden..."
 export PROJECT_ID REGION ZONE GCS_BUCKET PROJECT_NUMBER ENV
-export DB_PASSWORD API_KEY DOMAIN
+export DB_PASSWORD API_KEY RESEND_API_KEY DOMAIN
 export CICD_SA="synapse-cicd@${PROJECT_ID}.iam.gserviceaccount.com"
 export API_BASE_URL="https://api.${DOMAIN}"
 

@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -30,6 +31,7 @@ using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
+using Resend;
 using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
@@ -182,6 +184,36 @@ builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 builder.Services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
+
+// Rate limiting — cap email sends per source so a leaked API key can't be used to
+// blast mail through our Resend account / sender domain.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("admin-email-send", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
+                QueueLimit  = 0,
+            }));
+});
+
+// Email
+var resendApiKey = builder.Configuration["RESEND_API_KEY"];
+var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "noreply@synapse-ip.xyz";
+if (!string.IsNullOrEmpty(resendApiKey))
+{
+    builder.Services.AddResend(options => options.ApiToken = resendApiKey);
+    builder.Services.AddScoped<IEmailService>(sp =>
+        new SynapseEnqueteManagement.BL.Services.ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, SynapseEnqueteManagement.BL.Services.LogEmailService>();
+}
 
 // AI usage tracking
 builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));
@@ -406,6 +438,7 @@ app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet("/health", async (SynapseEnqueteContext db) =>
 {

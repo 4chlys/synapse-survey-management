@@ -44,16 +44,6 @@
                     <span asp-validation-for="Email" class="text-xs text-error mt-1 block"></span>
                 </label>
 
-                <label class="form-control">
-                    <div class="label">
-                        <span class="label-text text-xs font-medium">@L["PasswordLabel"]</span>
-                    </div>
-                    <input asp-for="Password"
-                           class="input input-bordered w-full"
-                           placeholder="@L["PasswordPlaceholder"]" />
-                    <span asp-validation-for="Password" class="text-xs text-error mt-1 block"></span>
-                </label>
-
                 <div class="flex items-center gap-3 mt-2">
                     <button type="submit" class="btn btn-primary w-full">
                         @L["SubmitButton"]

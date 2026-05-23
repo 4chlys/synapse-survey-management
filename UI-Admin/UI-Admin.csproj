@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SynapseEnqueteManagement.UI.Admin</AssemblyName>
     <RootNamespace>SynapseEnqueteManagement.UI.Admin</RootNamespace>
+    <UserSecretsId>synapse-admin-secrets</UserSecretsId>
   </PropertyGroup>
 
     <ItemGroup>

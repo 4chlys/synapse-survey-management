@@ -13,4 +13,6 @@
   <data name="Heading" xml:space="preserve"><value>Welcome back</value></data>
   <data name="Subheading" xml:space="preserve"><value>Sign in to manage your platform and projects.</value></data>
   <data name="TogglePassword" xml:space="preserve"><value>Show or hide password</value></data>
+  <data name="ForgotPasswordLink" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="ResetSuccessMessage" xml:space="preserve"><value>Password reset successfully. You can now log in.</value></data>
 </root>

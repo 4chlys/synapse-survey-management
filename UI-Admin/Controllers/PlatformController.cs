@@ -19,6 +19,7 @@ public class PlatformController(
     AiAdminService aiAdminService,
     SystemStatsAdminService systemStatsAdminService,
     UserManager<ApplicationUser> userManager,
+    AdminInviteService adminInviteService,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
@@ -216,7 +217,7 @@ public class PlatformController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model)
+    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model, CancellationToken ct)
     {
         var platform = await platformService.GetPlatformByIdAsync(id);
         if (platform is null) return NotFound();
@@ -228,7 +229,8 @@ public class PlatformController(
         if (!ModelState.IsValid)
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
 
-        var result = await platformService.AddAdminAsync(id, model.Email, model.Password);
+        var result = await adminInviteService.InviteAdminAsync(id, platform.Name, model.Email,
+            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme), ct);
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)
