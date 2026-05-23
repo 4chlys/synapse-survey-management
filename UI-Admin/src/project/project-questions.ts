@@ -1,9 +1,8 @@
 import { toast } from '../lib/notify';
 import { wireQuestionMediaPanel, hydrateMediaPanel } from '../lib/question-media';
-import { loadQuestionsPageI18n } from '../lib/questions-i18n';
+import { readQuestionsI18n, readFormI18n } from '../lib/questions-i18n';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const i18n = loadQuestionsPageI18n();
     const modal = document.getElementById('modal') as HTMLDivElement | null;
     const typePicker = document.getElementById('type-picker') as HTMLDivElement | null;
     const typePickerClose = document.getElementById('type-picker-close') as HTMLButtonElement | null;
@@ -20,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const askFirstJa = document.getElementById('ask-first-ja') as HTMLButtonElement | null;
     const textError = document.getElementById('text-error') as HTMLElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
+
+    const i18n = { ...readQuestionsI18n(questionsList), ...readFormI18n(questionForm) };
 
     // pending section when picker → drawer; cleared after drawer opens
     let pendingSectionId = '';

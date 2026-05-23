@@ -5,7 +5,7 @@
 // container; re-rendering its innerHTML does not invalidate them.
 
 import { renderTree, Question, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
-import { loadQuestionsI18n } from '../lib/questions-i18n';
+import { readQuestionsI18n } from '../lib/questions-i18n';
 import { toast } from '../lib/notify';
 
 interface MovePayload {
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const aiAssistance = list.dataset.aiAssistance ?? 'ProActive';
     const locked = list.dataset.locked === 'true';
 
-    const i18n: QuestionsI18n = loadQuestionsI18n();
+    const i18n: QuestionsI18n = readQuestionsI18n(list);
     const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId, locked, i18n };
 
     async function reload(): Promise<void> {
@@ -148,10 +148,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const response = await sendJson(`${questionsEndpoint}/${questionId}/location`, 'PUT', payload);
         if (response?.ok) {
-            toast('Opgeslagen', 'success');
+            toast(i18n.savedToast, 'success');
             await reload();
         } else {
-            toast('Opslaan mislukt — opnieuw proberen', 'error');
+            toast(i18n.saveFailedToast, 'error');
         }
     });
 
@@ -171,9 +171,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const payload: EndingPayload = { endingAnswers: values };
         const endingResponse = await sendJson(`${questionsEndpoint}/${questionId}/ending-answers`, 'PUT', payload);
         if (endingResponse?.ok) {
-            toast('Opgeslagen', 'success');
+            toast(i18n.savedToast, 'success');
         } else {
-            toast('Opslaan mislukt — opnieuw proberen', 'error');
+            toast(i18n.saveFailedToast, 'error');
         }
     });
 });

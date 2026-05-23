@@ -47,6 +47,9 @@ export interface QuestionsI18n {
     mediaVideo: string;
     mediaAudio: string;
     mediaGeneric: string;
+    statsTitle: string;
+    savedToast: string;
+    saveFailedToast: string;
 }
 
 export interface RenderContext {
@@ -246,6 +249,18 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
             </button>
         </form>`;
 
+    const statsBtn = `
+        <button type="button"
+                class="question-stats-btn btn btn-ghost btn-xs btn-circle text-base-content/70 hover:text-primary flex-shrink-0"
+                data-question-id="${q.questionId}"
+                data-format="${escapeHtml(q.questionFormat)}"
+                data-text="${escapeHtml(q.text)}"
+                title="${escapeHtml(i18n.statsTitle)}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/>
+            </svg>
+        </button>`;
+
     const numDisplay = String(index).padStart(2, '0');
 
     const mandatoryBadge = q.isMandatory
@@ -283,6 +298,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                     </button>
                     <span id="arrow-${q.questionId}" class="text-base-content/60 text-xs flex-shrink-0">${canBranch ? 'v' : ''}</span>
                     <span class="text-base-content/60 text-xs tabular-nums flex-shrink-0">${numDisplay}</span>
+                    ${statsBtn}
                     ${editBtn}
                     ${deleteBtn}
                 </div>
@@ -314,6 +330,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                     </div>
                 </button>
                 <span id="arrow-${q.questionId}" class="text-base-content/25 text-xs flex-shrink-0">${canBranch ? '>' : ''}</span>
+                ${statsBtn}
                 ${editBtn}
                 ${deleteBtn}
             </div>

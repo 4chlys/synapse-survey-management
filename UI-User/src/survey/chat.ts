@@ -55,27 +55,27 @@ interface Ctx {
 
 // ─── Visual class constants ──────────────────────────────
 const SYSTEM_BUBBLE_CLASS =
-    'self-start max-w-[80%] rounded-2xl rounded-tl-none ' +
+    'self-start max-w-[80%] rounded-box rounded-tl-none ' +
     'bg-base-100 border border-base-300/60 ' +
     'text-base-content px-4 py-3 text-sm leading-relaxed shadow-sm chat-bubble-left';
 
 const USER_BUBBLE_CLASS =
-    'self-end max-w-[80%] rounded-2xl rounded-tr-none ' +
+    'self-end max-w-[80%] rounded-box rounded-tr-none ' +
     'bg-primary text-primary-content px-4 py-3 text-sm leading-relaxed ' +
     'shadow-lg shadow-primary/20 chat-bubble-right';
 
 const TYPING_BUBBLE_CLASS =
-    'self-start rounded-2xl rounded-tl-none ' +
+    'self-start rounded-box rounded-tl-none ' +
     'bg-base-100 border border-base-300/60 ' +
     'px-4 py-3.5 text-base-content/50 shadow-sm chat-bubble-left flex gap-1.5 items-center';
 
 const USER_TYPING_BUBBLE_CLASS =
-    'self-end rounded-2xl rounded-tr-none ' +
+    'self-end rounded-box rounded-tr-none ' +
     'bg-primary text-primary-content/60 ' +
     'px-4 py-3.5 shadow-lg shadow-primary/20 chat-bubble-right flex gap-1.5 items-center';
 
 const CHIP_BASE_CLASS =
-    'group relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ' +
+    'group relative inline-flex items-center justify-center gap-2 rounded-field px-4 py-2.5 text-sm font-medium ' +
     'text-primary cursor-pointer transition-all duration-200 ' +
     'bg-gradient-to-br from-primary/5 to-primary/10 ' +
     'border-2 border-dashed border-primary/40 ' +
@@ -157,14 +157,14 @@ async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true, med
         const img = document.createElement('img');
         img.src = media.imageUrl;
         img.alt = '';
-        img.className = 'rounded-xl max-h-56 w-full object-contain bg-base-200 mb-2';
+        img.className = 'rounded-field max-h-56 w-full object-contain bg-base-200 mb-2';
         img.addEventListener('load', () => scrollToBottom(ctx));
         bubble.appendChild(img);
     }
     if (media?.videoUrl) {
         if (media.isEmbed && (media.videoUrl.includes('youtube.com/embed') || media.videoUrl.includes('player.vimeo.com'))) {
             const wrap = document.createElement('div');
-            wrap.className = 'aspect-video rounded-xl overflow-hidden bg-black mb-2';
+            wrap.className = 'aspect-video rounded-field overflow-hidden bg-black mb-2';
             const iframe = document.createElement('iframe');
             iframe.src = media.videoUrl;
             iframe.className = 'w-full h-full';
@@ -178,7 +178,7 @@ async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true, med
             video.controls = true;
             video.preload = 'metadata';
             video.src = media.videoUrl;
-            video.className = 'rounded-xl max-h-56 w-full bg-black mb-2';
+            video.className = 'rounded-field max-h-56 w-full bg-black mb-2';
             bubble.appendChild(video);
         }
     }

@@ -145,8 +145,8 @@ public static class AiConfigLoader
         var q = config.QuestionSupport;
         var substitutedQuestionSupport = new AiQuestionSupportConfig
         {
-            SystemPrompt    = Sub(q.SystemPrompt),         // {age_range} substituted per-request
-            ContextPrompt   = Sub(q.ContextPrompt),
+            SystemPrompt    = SubNoLang(q.SystemPrompt),   // {chat_language}/{question_language} substituted per-request
+            ContextPrompt   = SubNoLang(q.ContextPrompt),  // {chat_language}/{question_language} substituted per-request
             FallbackMessage = q.FallbackMessage,
             DefaultAgeRange = p.AgeRange,
         };

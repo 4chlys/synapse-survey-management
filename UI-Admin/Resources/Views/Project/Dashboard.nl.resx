@@ -19,4 +19,46 @@
   <data name="FormatLabel" xml:space="preserve"><value>Formaat</value></data>
   <data name="IncludeGraphicsLabel" xml:space="preserve"><value>Grafieken insluiten</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+
+  <data name="Widget_LoadFailed" xml:space="preserve"><value>Laden mislukt</value></data>
+  <data name="Widget_NoAnswers" xml:space="preserve"><value>Nog geen antwoorden</value></data>
+  <data name="Widget_NoQuestion" xml:space="preserve"><value>Geen vraag geselecteerd</value></data>
+  <data name="Widget_XAxisLabel" xml:space="preserve"><value>Antwoorden</value></data>
+
+  <data name="Widget_Stat_ViewCount" xml:space="preserve"><value>Bekeken</value></data>
+  <data name="Widget_Stat_CompletionCount" xml:space="preserve"><value>Ingevuld</value></data>
+  <data name="Widget_Stat_CompletionRate" xml:space="preserve"><value>Voltooiingsgraad</value></data>
+  <data name="Widget_NoIdeas" xml:space="preserve"><value>Nog geen ideeën</value></data>
+  <data name="Widget_IdeaFeed_Title" xml:space="preserve"><value>Nieuwste ideeën</value></data>
+  <data name="Widget_TopIdeas_Title" xml:space="preserve"><value>Top ideeën</value></data>
+  <data name="Widget_TopCategories_Title" xml:space="preserve"><value>Top categorieën</value></data>
+  <data name="Widget_Series_Ideas" xml:space="preserve"><value>Ideeën</value></data>
+  <data name="Widget_Series_Reactions" xml:space="preserve"><value>Reacties</value></data>
+  <data name="Widget_Timeline_Title" xml:space="preserve"><value>Deelname (30 dagen)</value></data>
+  <data name="Widget_Series_Started" xml:space="preserve"><value>Gestart</value></data>
+  <data name="Widget_Series_Completed" xml:space="preserve"><value>Voltooid</value></data>
+  <data name="Widget_Moderation_Title" xml:space="preserve"><value>Moderatiestatus</value></data>
+  <data name="Widget_Moderation_Approved" xml:space="preserve"><value>Goedgekeurd</value></data>
+  <data name="Widget_Moderation_New" xml:space="preserve"><value>Nieuw</value></data>
+  <data name="Widget_Moderation_Flagged" xml:space="preserve"><value>Gemarkeerd</value></data>
+  <data name="Widget_Moderation_Declined" xml:space="preserve"><value>Afgewezen</value></data>
+
+  <data name="Widget_Copy" xml:space="preserve"><value>Kopieer</value></data>
+  <data name="Widget_Copied" xml:space="preserve"><value>Gekopieerd!</value></data>
+  <data name="Widget_SurveyLink_Title" xml:space="preserve"><value>Survey-link</value></data>
+  <data name="Widget_DownloadQr" xml:space="preserve"><value>QR downloaden</value></data>
+  <data name="Widget_QrAlt" xml:space="preserve"><value>QR-code</value></data>
+
+  <data name="Widget_Social_Title" xml:space="preserve"><value>Social media post</value></data>
+  <data name="Widget_Social_DescPlaceholder" xml:space="preserve"><value>Optioneel: extra context voor de AI</value></data>
+  <data name="Widget_Social_AiImage" xml:space="preserve"><value>AI-afbeelding</value></data>
+  <data name="Widget_Social_Generate" xml:space="preserve"><value>Genereer post</value></data>
+  <data name="Widget_Social_Generating" xml:space="preserve"><value>Genereren…</value></data>
+  <data name="Widget_Social_CopyText" xml:space="preserve"><value>Kopieer tekst</value></data>
+  <data name="Widget_Social_OpenPlatform" xml:space="preserve"><value>Open platform</value></data>
+  <data name="Widget_Social_OpenIn" xml:space="preserve"><value>Open in {0}</value></data>
+  <data name="Widget_Social_CharCount" xml:space="preserve"><value>{0} tekens</value></data>
+  <data name="Widget_Social_Note_LinkedIn" xml:space="preserve"><value>LinkedIn share-knop opent je project-link. Plak de tekst handmatig in de composer.</value></data>
+  <data name="Widget_Social_Note_Facebook" xml:space="preserve"><value>Facebook share-knop opent met je project-link. Plak de tekst in de composer.</value></data>
+  <data name="Widget_Social_Note_Instagram" xml:space="preserve"><value>Instagram heeft geen web share-URL. Kopieer de tekst en post handmatig via je telefoon.</value></data>
 </root>

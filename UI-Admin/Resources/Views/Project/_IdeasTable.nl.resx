@@ -8,6 +8,7 @@
   <data name="TableIdea" xml:space="preserve"><value>Idee</value></data>
   <data name="TableCategory" xml:space="preserve"><value>Categorie</value></data>
   <data name="TableStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="TableAuthor" xml:space="preserve"><value>E-Mail</value></data>
   <data name="TableActions" xml:space="preserve"><value>Acties</value></data>
   <data name="Status_New" xml:space="preserve"><value>Nieuw</value></data>
   <data name="Status_Approved" xml:space="preserve"><value>Goedgekeurd</value></data>

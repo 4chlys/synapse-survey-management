@@ -181,6 +181,7 @@ builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
+builder.Services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
 
 // AI usage tracking
 builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));

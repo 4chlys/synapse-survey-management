@@ -33,6 +33,7 @@
                     <th class="w-auto">@L["TableIdea"]</th>
                     <th class="w-28">@L["TableCategory"]</th>
                     <th class="w-32">@L["TableStatus"]</th>
+                    <th class="w-48">@L["TableAuthor"]</th>
                     <th class="w-12 text-center">👍</th>
                     <th class="w-28">@L["TableActions"]</th>
                 </tr>
@@ -41,7 +42,7 @@
                 @if (!Model.Ideas.Any())
                 {
                     <tr>
-                        <td colspan="5" class="text-center text-base-content/40 py-10 italic">
+                        <td colspan="6" class="text-center text-base-content/40 py-10 italic">
                             @(hasFilters ? L["NoIdeasFiltered"] : L["NoIdeas"])
                         </td>
                     </tr>
@@ -64,6 +65,18 @@
                         </td>
                         <td>
                             <span class="badge @StatusBadge(idea.Status) badge-sm">@StatusLabel(idea.Status)</span>
+                        </td>
+                        <td class="text-xs">
+                            @if (!string.IsNullOrEmpty(idea.ParticipantEmail))
+                            {
+                                <a href="mailto:@idea.ParticipantEmail"
+                                   class="link link-primary block truncate max-w-[12rem]"
+                                   title="@idea.ParticipantEmail">@idea.ParticipantEmail</a>
+                            }
+                            else
+                            {
+                                <span class="text-base-content/30">—</span>
+                            }
                         </td>
                         <td class="text-center font-semibold text-sm">@idea.ReactionCount</td>
                         <td>

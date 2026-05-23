@@ -339,6 +339,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("QuestionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)

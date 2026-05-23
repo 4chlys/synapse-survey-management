@@ -1,4 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Nunito:wght@400;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+/* ─── Self-hosted fonts ─────────────────────────────────────
+   Variable WOFF2 (latin subset). Source files live in src/public/fonts/;
+   Vite serves them at /dist/fonts/ in dev and copies them into
+   wwwroot/dist/fonts/ on build — same URL in both modes.
+   Keep in sync with <link rel="preload"> in _Layout.cshtml. */
+@font-face {
+  font-family: 'Inter';
+  src: url('/dist/fonts/inter/latin.woff2') format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/dist/fonts/space-grotesk/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('/dist/fonts/nunito/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/dist/fonts/source-sans-3/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 @plugin "daisyui";
 
@@ -100,8 +136,18 @@
 
 /* ─── Global tokens ──────────────────────────────────── */
 :root {
+  color-scheme: light dark;
   --header-h: 64px;
   --slide-h: calc(100dvh - var(--header-h));
+  /* Minimum hit area for primary tappable controls — 44px is the WCAG 2.5.5
+     / Apple HIG floor. The "friendly" preset raises this for younger users. */
+  --tap-target: 2.75rem;
+}
+
+/* Any touch device gets the 44px floor regardless of preset — small fingers
+   on a phone don't care which character preset the project picked. */
+@media (pointer: coarse) {
+  :root { --tap-target: max(var(--tap-target), 2.75rem); }
 }
 
 /* Scroll lock — opt-in via .scroll-lock-marker emitted by lock-needing views.
@@ -201,6 +247,17 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   display: none;
 }
 
+/* ── Tap-target floor ──────────────────────────────────── */
+/* Primary survey controls and the mic button honour --tap-target so
+   they never drop below 44px (48px under the "friendly" preset). The
+   choice-option labels are already ~60px tall and need no rule. */
+.btn-next,
+.btn-prev,
+button[data-stt-target] {
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+}
+
 /* animation */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -262,7 +319,9 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .btn-travel-wrap {
   position: relative;
   display: inline-flex;
-  border-radius: calc(1rem + 2px);
+  /* Track the inner .btn's rounded-box (= --radius-box) so the orbit ring
+     stays concentric across every preset (sharp under Bold/HighContrast). */
+  border-radius: calc(var(--radius-box) + 2px);
   padding: 2px;
   isolation: isolate;
   cursor: pointer;
@@ -408,46 +467,116 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 /* ─── Per-project theming ─────────────────────────────────────────────
-   Each block overrides primary/font/radius only. Surfaces stay from
-   daisyUI synapse-light/synapse-dark so the user dark-mode toggle keeps
-   working across all 5 project themes. The "dark" and "highcontrast"
-   themes additionally pin their own surfaces & color-scheme. */
+   Each preset is a character (not a topic): it declares a coherent triad
+   (primary + secondary + accent), heading font, corner radii and a
+   --tap-target floor. Surfaces stay from daisyUI synapse-light /
+   synapse-dark so the user dark-mode toggle keeps working across every
+   preset. HighContrast additionally pins surfaces. Project topic is
+   expressed via the admin's colour pick, not the preset. */
 
-[data-project-theme="default"] {
-    --color-primary: oklch(52% 0.22 277);
+[data-project-theme="minimal"] {
+    --color-primary: light-dark(oklch(52% 0.22 277), oklch(64% 0.22 277));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(61% 0.16 162), oklch(65% 0.14 162));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(62% 0.22 37), oklch(67% 0.20 37));
+    --color-accent-content: oklch(100% 0 0);
     --font-heading: 'Space Grotesk', ui-sans-serif, sans-serif;
     --radius-field: 0.75rem;
     --radius-box: 1rem;
 }
 
-[data-project-theme="playful"] {
-    --color-primary: oklch(78% 0.16 80);
+[data-project-theme="friendly"] {
+    /* Warm amber primary, fresh cyan-green secondary, hot-pink accent —
+       soft, approachable triad with a larger tap-target for the younger
+       (12-15) audience and their developing fine motor control. */
+    --color-primary: light-dark(oklch(62% 0.18 65), oklch(78% 0.16 65));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-secondary: light-dark(oklch(64% 0.16 180), oklch(72% 0.14 180));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(64% 0.22 350), oklch(72% 0.20 350));
+    --color-accent-content: oklch(100% 0 0);
     --font-heading: 'Nunito', ui-sans-serif, sans-serif;
     --radius-field: 1rem;
     --radius-box: 1.25rem;
+    --tap-target: 3rem;
 }
 
-[data-project-theme="professional"] {
-    --color-primary: oklch(35% 0.04 250);
+[data-project-theme="bold"] {
+    /* Vivid red-orange primary, electric-blue secondary, magenta accent —
+       punchy, high-energy character for sports / events / campaigns.
+       Sharp corners reinforce the dynamic feel. */
+    --color-primary: light-dark(oklch(55% 0.21 32), oklch(70% 0.18 32));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(18% 0.03 32));
+    --color-secondary: light-dark(oklch(52% 0.18 250), oklch(64% 0.17 250));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(60% 0.19 320), oklch(70% 0.18 320));
+    --color-accent-content: oklch(100% 0 0);
+    --font-heading: 'Space Grotesk', ui-sans-serif, sans-serif;
+    --radius-field: 0.125rem;
+    --radius-box: 0.25rem;
+}
+
+[data-project-theme="formal"] {
+    /* Deep navy primary, muted teal secondary, deep mustard accent —
+       reserved triad tuned for 22-30 / civic contexts. No bright coral. */
+    --color-primary: light-dark(oklch(35% 0.04 250), oklch(55% 0.06 250));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(100% 0 0));
+    --color-secondary: light-dark(oklch(48% 0.08 200), oklch(60% 0.08 200));
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: light-dark(oklch(55% 0.12 70), oklch(68% 0.12 70));
+    --color-accent-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --font-heading: 'Source Sans 3', ui-sans-serif, sans-serif;
     --radius-field: 0.25rem;
     --radius-box: 0.375rem;
 }
 
-[data-project-theme="dark"] {
-    color-scheme: dark;
-    --color-primary: oklch(70% 0.20 277);
-    --color-base-100: oklch(20% 0.04 278);
-    --color-base-200: oklch(15% 0.04 278);
-    --color-base-content: oklch(97% 0.01 277);
-}
-
 [data-project-theme="highcontrast"] {
-    --color-primary: oklch(0% 0 0);
-    --color-base-100: oklch(100% 0 0);
-    --color-base-content: oklch(0% 0 0);
+    --color-primary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-primary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    /* Pin every surface — without this the synapse base leaks a violet tint
+       into base-200/300 (chips, sections), so the page looks unlike the preview. */
+    --color-base-100: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+    --color-base-200: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+    --color-base-300: light-dark(oklch(80% 0 0), oklch(20% 0 0));
+    --color-base-content: light-dark(oklch(0% 0 0), oklch(100% 0 0));
+    /* Monochrome secondary/accent — otherwise bg-secondary/10, text-accent,
+       border-secondary/30 stay tinted teal/coral and lose contrast under HC. */
+    --color-secondary: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-secondary-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
+    --color-accent: light-dark(oklch(0% 0 0), oklch(95% 0 0));
+    --color-accent-content: light-dark(oklch(100% 0 0), oklch(15% 0.04 278));
     --color-warning: oklch(95% 0.20 100);
     --font-heading: 'Arial', sans-serif;
     --radius-field: 0;
     --radius-box: 0;
+}
+
+/* Restore full opacity on translucent text/border utilities — Tailwind's
+   opacity-suffixed classes would otherwise fail WCAG AAA under HC. */
+[data-project-theme="highcontrast"] :is(
+    .text-base-content\/40, .text-base-content\/50, .text-base-content\/60,
+    .text-base-content\/70, .text-base-content\/80
+) { color: var(--color-base-content); }
+
+[data-project-theme="highcontrast"] :is(
+    .border-base-content\/10, .border-base-content\/20, .border-base-content\/30
+) { border-color: var(--color-base-content); }
+
+[data-project-theme="highcontrast"] :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* ─── Accessibility: reduced-motion ──────────────────────
+   Neutralises survey-slide, page-enter, chat-bubble-*, landing-float-up,
+   orbit-spin, and the survey-card vacuum animation for users who prefer it.
+   !important is the documented exception for accessibility resets. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

@@ -4,7 +4,7 @@ import { wireIdeaImageField } from './ideaimage';
 import { wireImageDescribeButton } from './imagedescribe';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
-import { t } from '../lib/i18n';
+import { t, currentCulture } from '../lib/i18n';
 
 interface EmojiReaction {
     emojiId: number;
@@ -327,6 +327,7 @@ interface IdeaResponse {
     commentsCount: number;
     isOwnedByCurrentUser: boolean;
     isFlagged: boolean;
+    languageCode?: string;
     emojis: EmojiReaction[];
 }
 
@@ -414,8 +415,14 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         </span>`;
     }).join('');
 
+    // Mark the description with `lang` when the idea was written in another language (WCAG 3.1.2).
+    const pageLang = currentCulture().split('-')[0];
+    const langAttr = idea.languageCode && idea.languageCode !== pageLang
+        ? ` lang="${idea.languageCode}"`
+        : '';
+
     return `<a href="/${projectId}/Ideation/Detail?categoryId=${categoryId}&ideaId=${idea.ideaId}"
-       class="block relative rounded-xl border p-5 transition-all duration-150 active:scale-[0.99] ${borderClass}">
+       class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] ${borderClass}">
         <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-neutral/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -423,7 +430,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
             <span class="text-xs font-bold text-base-content tabular-nums">${idea.commentsCount}</span>
         </div>
         ${statusLabel}
-        <p class="text-base-content text-sm leading-relaxed pr-8">${escapeHtml(idea.description)}</p>
+        <p class="text-base-content text-sm leading-relaxed pr-8"${langAttr}>${escapeHtml(idea.description)}</p>
         <div class="mt-3">
             <button type="button" data-action="copy-idea"
                     data-idea-description="${escapeAttr(idea.description)}"

@@ -36,7 +36,32 @@
          data-questions-endpoint="/api/admin/projects/@projectId/questions"
          data-delete-endpoint="@Url.Action("Delete", "Question")"
          data-ai-assistance="@aiAssistance"
-         data-locked="@(isLocked ? "true" : "false")">
+         data-locked="@(isLocked ? "true" : "false")"
+         data-i18n-add-question="@L["AddQuestionHeading"]"
+         data-i18n-empty-no-questions="@L["EmptyNoQuestions"]"
+         data-i18n-empty-section-add="@L["EmptySectionAdd"]"
+         data-i18n-add-in-section="@L["AddInSection"]"
+         data-i18n-followups-singular="@L["FollowupsSingular"]"
+         data-i18n-followups-plural="@L["FollowupsPlural"]"
+         data-i18n-sub-drop-zone="@L["SubDropZone"]"
+         data-i18n-promote-drop-zone="@L["PromoteDropZone"]"
+         data-i18n-ends-survey-label="@L["EndsSurveyLabel"]"
+         data-i18n-ends-survey-toggle="@L["EndsSurveyToggle"]"
+         data-i18n-drag-title="@L["DragTitle"]"
+         data-i18n-question-singular="@L["QuestionSingular"]"
+         data-i18n-question-plural="@L["QuestionPlural"]"
+         data-i18n-mandatory="@L["MandatoryLabel"]"
+         data-i18n-format-open="@L["Type_Open"]"
+         data-i18n-format-mcq="@L["Type_MultipleChoice"]"
+         data-i18n-format-scq="@L["Type_SingleChoice"]"
+         data-i18n-format-likert="@L["Type_Likert"]"
+         data-i18n-media-image="@L["MediaShort_Image"]"
+         data-i18n-media-video="@L["MediaShort_Video"]"
+         data-i18n-media-audio="@L["MediaShort_Audio"]"
+         data-i18n-media-generic="@L["MediaShort_Generic"]"
+         data-i18n-stats-title="@L["StatsTitle"]"
+         data-i18n-saved-toast="@L["SavedToast"]"
+         data-i18n-save-failed-toast="@L["SaveFailedToast"]">
         <p class="text-base-content/40 italic text-sm py-2">@L["LoadingQuestions"]</p>
     </div>
 
@@ -164,6 +189,13 @@
               data-delete-endpoint="@Url.Action("Delete", "Question")"
               data-project-id="@projectId"
               data-ai-assistance="@aiAssistance"
+              data-i18n-modal-title-create="@L["ModalTitleCreate"]"
+              data-i18n-modal-title-edit="@L["ModalTitleEdit"]"
+              data-i18n-answer-placeholder="@L["AnswerPlaceholder"]"
+              data-i18n-field-required="@L["FieldRequiredError"]"
+              data-i18n-max-question-text="@L["MaxQuestionTextError"]"
+              data-i18n-min-two-answers="@L["MinTwoAnswersError"]"
+              data-i18n-all-answers-filled="@L["AllAnswersRequired"]"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
             <input type="hidden" name="aiAssistance" value="@aiAssistance" />
@@ -286,6 +318,31 @@
         <button id="modal-backdrop-close">close</button>
     </form>
 </div>
+
+@* Modal for viewing per-question statistics — controlled by question-detail-modal.ts *@
+<dialog id="question-detail-modal" class="modal"
+        data-i18n-no-answers="@L["DetailNoAnswers"]"
+        data-i18n-load-more="@L["DetailLoadMore"]"
+        data-i18n-load-failed="@L["DetailLoadFailed"]"
+        data-i18n-responses-unit="@L["DetailResponsesUnit"]"
+        data-i18n-x-axis-label="@L["DetailXAxisLabel"]">
+    <div class="modal-box w-2/3 max-w-2xl">
+        <div class="flex justify-between items-center mb-3">
+            <h3 id="question-detail-title" class="font-bold text-base truncate pr-4"></h3>
+            <form method="dialog">
+                <button class="btn btn-ghost btn-sm btn-circle">×</button>
+            </form>
+        </div>
+        <div id="question-detail-stats" class="flex gap-4 text-sm text-base-content/60 mb-3"></div>
+        <div class="relative h-52">
+            <canvas id="question-detail-chart"></canvas>
+        </div>
+        <div id="question-detail-answers" class="hidden"></div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
 
 @section Scripts {
     <script type="module" vite-src="~/project/project-questions.ts"></script>

@@ -14,16 +14,18 @@ export function initTopIdeasWidget(el: HTMLElement): () => void {
     const projectId = el.dataset.projectId ?? '';
     const apiBase = el.dataset.apiBase ?? '';
     const url = `${apiBase}/api/projects/${projectId}/dashboard`;
+    const titleText = el.dataset.i18nTopIdeasTitle ?? '';
+    const emptyText = el.dataset.i18nNoIdeas ?? '';
 
     async function fetch_and_render(): Promise<void> {
         try {
             const data = await fetchJson<DashboardData>(url);
 
-            el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Top ideeën</p>';
+            el.innerHTML = `<p class="text-xs text-base-content/50 mb-2">${titleText}</p>`;
             if (data.topIdeas.length === 0) {
                 const empty = document.createElement('p');
                 empty.className = 'text-base-content/40 text-xs';
-                empty.textContent = 'Nog geen ideeën';
+                empty.textContent = emptyText;
                 el.appendChild(empty);
                 return;
             }

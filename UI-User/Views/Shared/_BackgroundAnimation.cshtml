@@ -69,7 +69,7 @@
             var idea = shuffledIdeas[i % shuffledIdeas.Length];
             <div class="landing-bg-card @c.Width"
                  style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
-                <div class="relative rounded-xl border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
+                <div class="relative rounded-field border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
 
                     @* Comment count badge *@
                     <div class="absolute -top-2.5 -right-2.5 bg-base-100/60 border border-base-300/50
@@ -108,7 +108,7 @@
             var q = shuffledQuestions[i % shuffledQuestions.Length];
             <div class="landing-bg-card @c.Width"
                  style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
-                <div class="rounded-2xl border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
+                <div class="rounded-box border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
 
                     @if (!string.IsNullOrEmpty(orgLogoUrl))
                     {

@@ -53,6 +53,11 @@
   <data name="SectionOptionalLabel" xml:space="preserve"><value>Section (optional)</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
   <data name="OkButton" xml:space="preserve"><value>OK</value></data>
+  <data name="DetailNoAnswers" xml:space="preserve"><value>No answers yet</value></data>
+  <data name="DetailLoadMore" xml:space="preserve"><value>Load more</value></data>
+  <data name="DetailLoadFailed" xml:space="preserve"><value>Loading failed</value></data>
+  <data name="DetailResponsesUnit" xml:space="preserve"><value>response(s)</value></data>
+  <data name="DetailXAxisLabel" xml:space="preserve"><value>Answers</value></data>
   <data name="PickerHeading" xml:space="preserve"><value>What type of question?</value></data>
   <data name="PickerSubtitle" xml:space="preserve"><value>Pick the kind of answer you want to collect</value></data>
   <data name="Picker_MCQDesc" xml:space="preserve"><value>Multiple options, multiple answers possible.</value></data>
@@ -85,4 +90,5 @@
   <data name="MediaShort_Video" xml:space="preserve"><value>Vid</value></data>
   <data name="MediaShort_Audio" xml:space="preserve"><value>Aud</value></data>
   <data name="MediaShort_Generic" xml:space="preserve"><value>Media</value></data>
+  <data name="StatsTitle" xml:space="preserve"><value>Statistics</value></data>
 </root>

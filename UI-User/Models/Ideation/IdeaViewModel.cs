@@ -10,5 +10,7 @@ public record IdeaViewModel
     public int CommentsCount { get; init; }
     public bool IsOwnedByCurrentUser { get; init; }
     public bool IsFlagged { get; init; }
+    // Language the idea was written in; drives the per-element `lang` attribute for cross-language ideas.
+    public string LanguageCode { get; init; }
     public ICollection<EmojiReactionViewModel> Emojis { get; init; } = new List<EmojiReactionViewModel>();
 }

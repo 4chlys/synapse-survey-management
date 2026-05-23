@@ -7,5 +7,7 @@ public record CommentViewModel
     public bool IsOwnedByCurrentUser { get; init; }
     public bool IsPostedByIdeaAuthor { get; init; }
     public bool IsFlagged { get; init; }
+    // Language the comment was written in; drives the per-element `lang` attribute for cross-language comments.
+    public string LanguageCode { get; init; }
     public ICollection<EmojiReactionViewModel> Emojis { get; init; } = new List<EmojiReactionViewModel>();
 }
