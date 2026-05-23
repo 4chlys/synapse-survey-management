@@ -62,7 +62,7 @@ public class AdminController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> Add(AddAdminViewModel model)
+    public async Task<IActionResult> Add(AddAdminViewModel model, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return View(model);
@@ -76,7 +76,7 @@ public class AdminController(
         var platform = await platformService.GetPlatformByIdAsync(platformId);
 
         var result = await adminInviteService.InviteAdminAsync(platformId, platform.Name, model.Email,
-            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme));
+            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme), ct);
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)

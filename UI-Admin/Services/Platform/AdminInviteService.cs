@@ -17,7 +17,7 @@ public class AdminInviteService(
     ILogger<AdminInviteService> logger)
 {
     public async Task<IdentityResult> InviteAdminAsync(
-        int platformId, string platformName, string email, Func<string, string> buildResetUrl)
+        int platformId, string platformName, string email, Func<string, string> buildResetUrl, CancellationToken ct = default)
     {
         var user = new ApplicationUser
         {
@@ -34,7 +34,8 @@ public class AdminInviteService(
 
         var subject = localizer["Email_Welcome_Subject", platformName].Value;
         var body = localizer["Email_Welcome_Body", platformName, email, resetUrl].Value;
-        try { await emailApiService.SendAsync(email, subject, body); }
+        try { await emailApiService.SendAsync(email, subject, body, ct); }
+        catch (OperationCanceledException) { logger.LogInformation("Admin invite email send cancelled for {Email}", email); }
         catch (Exception ex) { logger.LogWarning(ex, "Failed to send admin invite email to {Email}", email); }
 
         return result;

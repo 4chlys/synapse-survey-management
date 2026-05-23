@@ -105,7 +105,7 @@ public class AuthController(
 
     [HttpPost]
     [AllowAnonymous]
-    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken ct)
     {
         if (!ModelState.IsValid) return View(model);
 
@@ -119,7 +119,8 @@ public class AuthController(
 
             var body = localizer["Email_ForgotPassword_Body", resetUrl].Value;
             var subject = localizer["Email_ForgotPassword_Subject"].Value;
-            try { await emailApiService.SendAsync(model.Email, subject, body); }
+            try { await emailApiService.SendAsync(model.Email, subject, body, ct); }
+            catch (OperationCanceledException) { logger.LogInformation("Password reset email send cancelled for {Email}", model.Email); }
             catch (Exception ex) { logger.LogWarning(ex, "Failed to send password reset email to {Email}", model.Email); }
         }
 
