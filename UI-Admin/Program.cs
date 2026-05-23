@@ -19,6 +19,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -146,7 +147,8 @@ builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
-
+builder.Services.AddHttpClient<EmailApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("question-media-upload", context =>
@@ -166,6 +168,7 @@ builder.Services.AddSingleton(AiConfigLoader.Load(
     LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
+builder.Services.AddScoped<AdminInviteService>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<WidgetPreferenceService>();
 builder.Services.AddScoped<SynapseEnqueteManagement.UI.Admin.Filters.IProjectOwnershipLookup,

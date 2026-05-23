@@ -10,4 +10,6 @@
   <data name="EmailPlaceholder" xml:space="preserve"><value>name@example.com</value></data>
   <data name="PasswordLabel" xml:space="preserve"><value>Password</value></data>
   <data name="SubmitButton" xml:space="preserve"><value>Log in</value></data>
+  <data name="ForgotPasswordLink" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="ResetSuccessMessage" xml:space="preserve"><value>Password reset successfully. You can now log in.</value></data>
 </root>

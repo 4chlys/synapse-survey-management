@@ -97,4 +97,27 @@
   <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, the assistant is temporarily unavailable. You can type your idea directly below and submit it.</value></data>
   <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, the assistant is temporarily unavailable. You can type your reply directly below.</value></data>
   <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, the AI assistant is temporarily unavailable.</value></data>
+
+  <data name="Email_ForgotPassword_Subject" xml:space="preserve"><value>Reset your password — Synapse</value></data>
+  <data name="Email_ForgotPassword_Body" xml:space="preserve"><value>Hello,
+
+You requested a password reset for your Synapse account.
+
+Click the link below to reset your password:
+{0}
+
+This link is valid for 24 hours.
+
+If you did not request this, you can ignore this email.</value></data>
+
+  <data name="Email_Welcome_Subject" xml:space="preserve"><value>Welcome to Synapse — {0}</value></data>
+  <data name="Email_Welcome_Body" xml:space="preserve"><value>Hello,
+
+You have been added as an administrator of platform '{0}' in Synapse.
+
+Your login details:
+Email: {1}
+
+Set your password via the link below (valid for 24 hours):
+{2}</value></data>
 </root>

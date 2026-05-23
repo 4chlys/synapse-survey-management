@@ -43,6 +43,7 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
+
         return NoContent();
     }
 
@@ -60,6 +61,7 @@ public class ResponsesController(
         if (error is not null) return error;
 
         await submissionManager.SubmitAsync(projectId, participant, ct);
+
         return Ok();
     }
 

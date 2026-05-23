@@ -10,9 +10,4 @@ public record AddAdminViewModel
     [Required]
     [EmailAddress]
     public string Email { get; init; }
-
-    [Required]
-    [DataType(DataType.Password)]
-    [StringLength(100, MinimumLength = 6)]
-    public string Password { get; init; }
 }

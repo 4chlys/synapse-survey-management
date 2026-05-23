@@ -33,4 +33,6 @@ docker run -d --name mvp-admin --restart always -p 80:8080 \
   -e DB_NAME=mvp-db \
   -e DB_USER=mvp-user \
   -e DB_PASSWORD="$(get_secret db-password)" \
+  -e RESEND_API_KEY="$(get_secret resend-api-key)" \
+  -e EMAIL_FROM="noreply@synapse-ip.xyz" \
   "gcr.io/${PROJECT_ID}/mvp-admin:${IMAGE_TAG}"
