@@ -78,7 +78,7 @@
                                  data-project-id="@project.ProjectId"
                                  role="menu">
                                 <button type="button"
-                                        class="w-full text-left px-3 py-2 text-xs hover:bg-base-200 flex items-center gap-2"
+                                        class="w-full text-left px-3 py-2 text-xs hover:bg-base-200 flex items-center gap-2 cursor-pointer"
                                         role="menuitem"
                                         onclick="document.getElementById('copy-modal-@project.ProjectId').showModal();">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -87,16 +87,30 @@
                                     </svg>
                                     @L["CopyAsTemplate"]
                                 </button>
-                                <button type="button"
-                                        class="delete-project-btn w-full text-left px-3 py-2 text-xs text-error hover:bg-error/10 flex items-center gap-2"
-                                        role="menuitem"
-                                        data-project-id="@project.ProjectId"
-                                        data-project-name="@project.Name">
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
-                                    </svg>
-                                    @L["DeleteButton"]
-                                </button>
+                                @if (project.ProjectState == "Active")
+                                {
+                                    <a asp-action="Archive" asp-route-projectId="@project.ProjectId"
+                                       class="w-full text-left px-3 py-2 text-xs hover:bg-base-200 flex items-center gap-2"
+                                       role="menuitem">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+                                        </svg>
+                                        @L["ArchiveButton"]
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="delete-project-btn w-full text-left px-3 py-2 text-xs text-error hover:bg-error/10 flex items-center gap-2 cursor-pointer"
+                                            role="menuitem"
+                                            data-project-id="@project.ProjectId"
+                                            data-project-name="@project.Name">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
+                                        </svg>
+                                        @L["DeleteButton"]
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>

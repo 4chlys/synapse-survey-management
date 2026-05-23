@@ -21,4 +21,5 @@
   <data name="DeleteModalTitle" xml:space="preserve"><value>Delete project</value></data>
   <data name="DeleteModalBody" xml:space="preserve"><value>Are you sure you want to delete {0}? This cannot be undone.</value></data>
   <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
+  <data name="ArchiveButton" xml:space="preserve"><value>Archive project</value></data>
 </root>
