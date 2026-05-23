@@ -17,8 +17,18 @@ public class UploadAdminService(HttpClient httpClient)
         return result!.Url;
     }
 
-    private sealed class UploadResult
+    public async Task<string> GenerateImageAsync(string projectName)
     {
-        public string Url { get; set; } = string.Empty;
+        var response = await httpClient.PostAsync(
+            $"api/projects/generate-image?name={Uri.EscapeDataString(projectName)}", null);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<UploadResult>();
+        return result!.Url;
+    }
+
+    private sealed record UploadResult
+    {
+        public string Url { get; init; } = string.Empty;
     }
 }

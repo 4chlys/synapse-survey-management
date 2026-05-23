@@ -1,57 +1,57 @@
 using System.ComponentModel.DataAnnotations;
 namespace SynapseEnqueteManagement.UI.Admin.Models.Project;
 
-public class CreateProjectViewModel
+public record CreateProjectViewModel
 {
-    public int? ProjectId { get; set; }
+    public int? ProjectId { get; init; }
 
     [Required]
     [MaxLength(100)]
-    public string Name { get; set; }
+    public string Name { get; init; }
 
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
         ErrorMessage = "ShortForm_Invalid")]
-    public string ShortForm { get; set; }
+    public string ShortForm { get; init; }
 
     [MaxLength(100)]
-    public string Topic { get; set; }
+    public string Topic { get; init; }
 
     [MaxLength(5000, ErrorMessage = "Introduction_TooLong")]
-    public string Introduction { get; set; }
+    public string Introduction { get; init; }
 
-    public string InteractionMode { get; set; } = "VerticalScroll";
+    public string InteractionMode { get; init; } = "VerticalScroll";
 
-    public string AiAssistance { get; set; } = "ProActive";
-
-    [Range(0, 120)]
-    public int? MinAge { get; set; }
+    public string AiAssistance { get; init; } = "ProActive";
 
     [Range(0, 120)]
-    public int? MaxAge { get; set; }
+    public int? MinAge { get; init; }
+
+    [Range(0, 120)]
+    public int? MaxAge { get; init; }
 
     [MaxLength(500)]
-    public string ImageUrl { get; set; }
+    public string ImageUrl { get; init; }
 
-    public List<string> Sections { get; set; } = new();
+    public IList<string> Sections { get; init; } = new List<string>();
 
-    public bool ContactOptIn { get; set; } = true;
-    public bool AllowCrossLanguageIdeas { get; set; } = false;
+    public bool ContactOptIn { get; init; } = true;
+    public bool AllowCrossLanguageIdeas { get; init; } = false;
 
     [Required]
     [MaxLength(10)]
-    public string DefaultLanguageCode { get; set; } = "nl";
+    public string DefaultLanguageCode { get; init; } = "nl";
 
-    public ICollection<string> SupportedLanguageCodes { get; set; } = new List<string>();
+    public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
 
     [MaxLength(20)]
-    public string Theme { get; set; } = "Default";
+    public string Theme { get; init; } = "Default";
 
     [MaxLength(7)]
     [RegularExpression(@"^#[0-9A-Fa-f]{6}$",
         ErrorMessage = "PrimaryColor_Invalid")]
-    public string PrimaryColor { get; set; }
+    public string PrimaryColor { get; init; }
 
     [MaxLength(4000)]
-    public string CustomCss { get; set; }
+    public string CustomCss { get; init; }
 }

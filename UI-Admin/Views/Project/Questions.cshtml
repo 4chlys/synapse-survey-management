@@ -288,42 +288,6 @@
 </div>
 
 @section Scripts {
-    <script id="qs-i18n" type="application/json">
-        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
-            addQuestion       = L["AddQuestionHeading"].Value,
-            emptyNoQuestions  = L["EmptyNoQuestions"].Value,
-            emptySectionAdd   = L["EmptySectionAdd"].Value,
-            addInSection      = L["AddInSection"].Value,
-            followupsSingular = L["FollowupsSingular"].Value,
-            followupsPlural   = L["FollowupsPlural"].Value,
-            subDropZone       = L["SubDropZone"].Value,
-            promoteDropZone   = L["PromoteDropZone"].Value,
-            endsSurveyLabel   = L["EndsSurveyLabel"].Value,
-            endsSurveyToggle  = L["EndsSurveyToggle"].Value,
-            dragTitle         = L["DragTitle"].Value,
-            questionSingular  = L["QuestionSingular"].Value,
-            questionPlural    = L["QuestionPlural"].Value,
-            mandatory         = L["MandatoryLabel"].Value,
-            formatOpen        = L["Type_Open"].Value,
-            formatMCQ         = L["Type_MultipleChoice"].Value,
-            formatSCQ         = L["Type_SingleChoice"].Value,
-            formatLikert      = L["Type_Likert"].Value,
-            mediaImage        = L["MediaShort_Image"].Value,
-            mediaVideo        = L["MediaShort_Video"].Value,
-            mediaAudio        = L["MediaShort_Audio"].Value,
-            mediaGeneric      = L["MediaShort_Generic"].Value,
-            modalTitleCreate  = L["ModalTitleCreate"].Value,
-            modalTitleEdit    = L["ModalTitleEdit"].Value,
-            answerPlaceholder = L["AnswerPlaceholder"].Value,
-            savedToast        = L["SavedToast"].Value,
-            saveFailedToast   = L["SaveFailedToast"].Value,
-            fieldRequired     = L["FieldRequiredError"].Value,
-            maxQuestionText   = L["MaxQuestionTextError"].Value,
-            minTwoAnswers     = L["MinTwoAnswersError"].Value,
-            allAnswersFilled  = L["AllAnswersRequired"].Value,
-            addOneQuestion    = L["AddOneQuestionError"].Value
-        }))
-    </script>
-    <script type="module" vite-src="~/project-questions.ts"></script>
-    <script type="module" vite-src="~/questionsupportchat.ts"></script>
+    <script type="module" vite-src="~/project/project-questions.ts"></script>
+    <script type="module" vite-src="~/questionnaire/questionsupportchat.ts"></script>
 }

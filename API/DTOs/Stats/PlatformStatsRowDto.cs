@@ -1,13 +1,13 @@
 namespace SynapseEnqueteManagement.API.DTOs.Stats;
 
-public class PlatformStatsRowDto
+public record PlatformStatsRowDto
 {
-    public int PlatformId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public int ActiveCount { get; set; }
-    public int DraftCount { get; set; }
-    public int ArchivedCount { get; set; }
-    public int ParticipantCount { get; set; }
-    public double AvgCompletionSeconds { get; set; }
-    public double MedianCompletionSeconds { get; set; }
+    public int PlatformId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public int ActiveCount { get; init; }
+    public int DraftCount { get; init; }
+    public int ArchivedCount { get; init; }
+    public int ParticipantCount { get; init; }
+    public double AvgCompletionSeconds { get; init; }
+    public double MedianCompletionSeconds { get; init; }
 }

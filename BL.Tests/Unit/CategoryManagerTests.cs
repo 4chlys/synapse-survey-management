@@ -97,7 +97,7 @@ public class CategoryManagerTests
         var project = new Project { ProjectId = 1 };
         var translations = new[] { new CategoryTranslationInput("xx", "Test", null) };
 
-        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
             _manager.CreateCategoryAsync(project, translations));
 
         _languageRepo.VerifyAll();
@@ -113,7 +113,7 @@ public class CategoryManagerTests
             new CategoryTranslationInput("nl", "B", null),
         };
 
-        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
             _manager.CreateCategoryAsync(project, translations));
     }
 }

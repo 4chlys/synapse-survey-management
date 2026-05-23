@@ -2,18 +2,18 @@ using SynapseEnqueteManagement.API.DTOs.AiUsage;
 
 namespace SynapseEnqueteManagement.API.DTOs.Stats;
 
-public class SystemStatsDto
+public record SystemStatsDto
 {
-    public int PlatformCount { get; set; }
-    public int ActiveProjectCount { get; set; }
-    public int DraftProjectCount { get; set; }
-    public int ArchivedProjectCount { get; set; }
-    public int TotalParticipants { get; set; }
-    public double AvgCompletionSeconds { get; set; }
-    public double MedianCompletionSeconds { get; set; }
-    public ICollection<PlatformStatsRowDto> Platforms { get; set; } = [];
-    public ICollection<ProjectStatsRowDto> Projects { get; set; } = [];
-    public ICollection<ServiceCostAggregateDto> AiUsageBySystem { get; set; } = [];
-    public ICollection<PlatformServiceCostAggregateDto> AiUsageByPlatform { get; set; } = [];
-    public ICollection<ProjectServiceCostAggregateDto> AiUsageByProject { get; set; } = [];
+    public int PlatformCount { get; init; }
+    public int ActiveProjectCount { get; init; }
+    public int DraftProjectCount { get; init; }
+    public int ArchivedProjectCount { get; init; }
+    public int TotalParticipants { get; init; }
+    public double AvgCompletionSeconds { get; init; }
+    public double MedianCompletionSeconds { get; init; }
+    public ICollection<PlatformStatsRowDto> Platforms { get; init; } = [];
+    public ICollection<ProjectStatsRowDto> Projects { get; init; } = [];
+    public ICollection<ServiceCostAggregateDto> AiUsageBySystem { get; init; } = [];
+    public ICollection<PlatformServiceCostAggregateDto> AiUsageByPlatform { get; init; } = [];
+    public ICollection<ProjectServiceCostAggregateDto> AiUsageByProject { get; init; } = [];
 }

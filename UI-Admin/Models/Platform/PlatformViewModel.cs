@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
-public class PlatformViewModel
+public record PlatformViewModel
 {
-    public int ProjectPlatformId { get; set; }
-    public string Name { get; set; }
-    public string LogoUrl { get; set; }
-    public string WebsiteUrl { get; set; }
+    public int ProjectPlatformId { get; init; }
+    public string Name { get; init; }
+    public string LogoUrl { get; init; }
+    public string WebsiteUrl { get; init; }
 }

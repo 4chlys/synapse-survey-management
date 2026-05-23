@@ -12,14 +12,14 @@ public enum IdeaSupportPhase
     Error,
 }
 
-public sealed class IdeaSupportAiReply
+public sealed record IdeaSupportAiReply
 {
     [JsonPropertyName("phase")]   public string Phase   { get; init; } = string.Empty;
     [JsonPropertyName("message")] public string Message { get; init; } = string.Empty;
     [JsonPropertyName("draft")]   public string Draft   { get; init; }
 }
 
-public sealed class IdeaSupportChatRequest
+public sealed record IdeaSupportChatRequest
 {
     /// <summary>Full conversation so far (oldest first), NOT including the latest user turn.</summary>
     public IReadOnlyList<AiSupportMessage> History { get; init; } = [];
@@ -52,14 +52,14 @@ public sealed class IdeaSupportChatRequest
     public bool IsFirstTurn { get; init; }
 }
 
-public sealed class IdeaSupportChatReply
+public sealed record IdeaSupportChatReply
 {
     public string           AssistantMessage { get; init; } = string.Empty;
     public string           SuggestedDraft   { get; init; }
     public IdeaSupportPhase Phase            { get; init; } = IdeaSupportPhase.Ideation;
 }
 
-public sealed class IdeaSupportRefineResult
+public sealed record IdeaSupportRefineResult
 {
     public string RefinedText { get; init; }
 }

@@ -10,6 +10,7 @@ enable_apis() {
     servicenetworking.googleapis.com \
     artifactregistry.googleapis.com \
     storage.googleapis.com \
+    aiplatform.googleapis.com \
     --project="${PROJECT_ID}"
 }
 

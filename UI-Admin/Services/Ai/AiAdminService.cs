@@ -2,16 +2,14 @@ using System.Net.Http.Json;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Ai;
 
-public sealed class GlobalPromptsDto
-{
-    public string Moderation        { get; init; } = "";
-    public string CommentModeration { get; init; } = "";
-    public string Rewrite           { get; init; } = "";
-    public string ImageModeration   { get; init; } = "";
-    public string IdeaSupport       { get; init; } = "";
-    public string CommentSupport    { get; init; } = "";
-    public string QuestionSupport   { get; init; } = "";
-}
+public sealed record GlobalPromptsDto(
+    string Moderation        = "",
+    string CommentModeration = "",
+    string Rewrite           = "",
+    string ImageModeration   = "",
+    string IdeaSupport       = "",
+    string CommentSupport    = "",
+    string QuestionSupport   = "");
 
 public class AiAdminService(HttpClient httpClient)
 {

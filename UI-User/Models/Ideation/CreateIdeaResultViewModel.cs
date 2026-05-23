@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public class CreateIdeaResultViewModel
+public record CreateIdeaResultViewModel
 {
-    public bool Success { get; set; }
-    public bool ShouldAskForContactInfo { get; set; }
+    public bool Success { get; init; }
+    public bool ShouldAskForContactInfo { get; init; }
 }

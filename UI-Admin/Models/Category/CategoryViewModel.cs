@@ -1,9 +1,9 @@
-﻿namespace SynapseEnqueteManagement.UI.Admin.Models.Category;
+namespace SynapseEnqueteManagement.UI.Admin.Models.Category;
 
-public class CategoryViewModel
+public record CategoryViewModel
 {
-    public int CategoryId { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public int IdeaCount { get; set; }
+    public int CategoryId { get; init; }
+    public string Name { get; init; }
+    public string Description { get; init; }
+    public int IdeaCount { get; init; }
 }

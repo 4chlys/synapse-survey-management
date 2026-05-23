@@ -1,6 +1,6 @@
-import { toast } from './lib/notify';
-import { wireQuestionMediaPanel, hydrateMediaPanel } from './lib/question-media';
-import { loadQuestionsPageI18n } from './lib/questions-i18n';
+import { toast } from '../lib/notify';
+import { wireQuestionMediaPanel, hydrateMediaPanel } from '../lib/question-media';
+import { loadQuestionsPageI18n } from '../lib/questions-i18n';
 
 document.addEventListener('DOMContentLoaded', () => {
     const i18n = loadQuestionsPageI18n();

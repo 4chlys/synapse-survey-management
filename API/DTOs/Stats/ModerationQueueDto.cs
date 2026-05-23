@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.API.DTOs.Stats;
 
-public class ModerationQueueDto
+public record ModerationQueueDto
 {
-    public int Approved { get; set; }
-    public int Declined { get; set; }
-    public int Flagged { get; set; }
-    public int Unflagged { get; set; }
+    public int Approved { get; init; }
+    public int Declined { get; init; }
+    public int Flagged { get; init; }
+    public int Unflagged { get; init; }
 }

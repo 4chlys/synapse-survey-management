@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class AdminSectionDto
+public record AdminSectionDto
 {
-    public int SectionId { get; set; }
-    public ICollection<SectionTranslationDto> Translations { get; set; } = new List<SectionTranslationDto>();
+    public int SectionId { get; init; }
+    public ICollection<SectionTranslationDto> Translations { get; init; } = new List<SectionTranslationDto>();
 }

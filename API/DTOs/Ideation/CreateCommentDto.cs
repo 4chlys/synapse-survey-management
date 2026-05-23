@@ -2,17 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class CreateCommentDto
+public record CreateCommentDto
 {
     [Required]
     [MaxLength(500)]
-    public string Text { get; set; }
+    public string Text { get; init; }
 
     /// <summary>
     /// Signed token from the moderation endpoint. If valid and the text
     /// matches, the server uses the encoded status. If missing/invalid/expired,
     /// the server runs moderation again.
     /// </summary>
-    public string ModerationToken { get; set; }
-    public string LanguageCode { get; set; }
+    public string ModerationToken { get; init; }
+    public string LanguageCode { get; init; }
 }

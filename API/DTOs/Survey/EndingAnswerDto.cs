@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class EndingAnswerDto
+public record EndingAnswerDto
 {
-    public int EndingAnswerId { get; set; }
-    public ICollection<EndingAnswerTranslationDto> Translations { get; set; } = new List<EndingAnswerTranslationDto>();
+    public int EndingAnswerId { get; init; }
+    public ICollection<EndingAnswerTranslationDto> Translations { get; init; } = new List<EndingAnswerTranslationDto>();
 }

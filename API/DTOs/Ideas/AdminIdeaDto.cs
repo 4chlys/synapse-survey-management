@@ -1,15 +1,15 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideas;
 
-public class AdminIdeaDto
+public record AdminIdeaDto
 {
-    public int IdeaId { get; set; }
-    public string Description { get; set; } = string.Empty;
-    public string CategoryName { get; set; } = string.Empty;
-    public int CategoryId { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public int ReactionCount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string ParticipantEmail { get; set; }
-    public string ImageUrl { get; set; }
-    public string LanguageCode { get; set; }
+    public int IdeaId { get; init; }
+    public string Description { get; init; } = string.Empty;
+    public string CategoryName { get; init; } = string.Empty;
+    public int CategoryId { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public int ReactionCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public string ParticipantEmail { get; init; }
+    public string ImageUrl { get; init; }
+    public string LanguageCode { get; init; }
 }

@@ -1,10 +1,10 @@
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class ResponseDto
+public record ResponseDto
 {
-    public int ResponseId { get; set; }
-    public string Value { get; set; }
-    public int QuestionId { get; set; }
-    public int ParticipantId { get; set; }
-    public string LanguageCode { get; set; }
+    public int ResponseId { get; init; }
+    public string Value { get; init; }
+    public int QuestionId { get; init; }
+    public int ParticipantId { get; init; }
+    public string LanguageCode { get; init; }
 }

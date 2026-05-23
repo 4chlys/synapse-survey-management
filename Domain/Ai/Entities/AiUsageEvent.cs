@@ -8,7 +8,7 @@ public class AiUsageEvent : IHasCreatedAt
 
     [Required] public Project.Entities.Project Project { get; set; }
 
-    [Required] public AiServiceKind Service { get; set; }
+    public AiServiceKind Service { get; set; }
 
     [Required] [MaxLength(100)] public string Model { get; set; }
 

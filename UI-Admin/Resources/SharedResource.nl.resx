@@ -20,7 +20,6 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Instellingen</value></data>
   <data name="Nav_AiSettings" xml:space="preserve"><value>AI instellingen</value></data>
   <data name="Nav_SystemDashboard" xml:space="preserve"><value>Systeemdashboard</value></data>
-  <data name="Nav_AiSettings" xml:space="preserve"><value>AI Instellingen</value></data>
   <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
   <data name="Nav_Launch" xml:space="preserve"><value>Publiceer</value></data>
   <data name="Wizard_NewProject" xml:space="preserve"><value>Nieuw project</value></data>
@@ -70,6 +69,9 @@
   <data name="Project_InvalidFormat" xml:space="preserve"><value>Ongeldig formaat.</value></data>
   <data name="Project_ExportOnlyActive" xml:space="preserve"><value>Export is enkel beschikbaar voor actieve of gearchiveerde projecten.</value></data>
   <data name="Project_NoFileReceived" xml:space="preserve"><value>Geen bestand ontvangen.</value></data>
+  <data name="Project_NameRequired" xml:space="preserve"><value>Projectnaam is verplicht.</value></data>
+  <data name="Project_ImageGenerationFailed" xml:space="preserve"><value>Afbeelding genereren mislukt.</value></data>
+  <data name="Project_UploadFailed" xml:space="preserve"><value>Uploaden mislukt.</value></data>
 
   <data name="Platform_AdminAdded" xml:space="preserve"><value>Beheerder toegevoegd.</value></data>
   <data name="Platform_AdminRemoved" xml:space="preserve"><value>Beheerder verwijderd.</value></data>
@@ -93,4 +95,7 @@
   <data name="Prompt_IdeaSupport" xml:space="preserve"><value>Ideeondersteuning</value></data>
   <data name="Prompt_CommentSupport" xml:space="preserve"><value>Commentaarondersteuning</value></data>
   <data name="Prompt_QuestionSupport" xml:space="preserve"><value>Vraagondersteuning</value></data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value></data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value></data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, de AI-assistent is even niet beschikbaar.</value></data>
 </root>

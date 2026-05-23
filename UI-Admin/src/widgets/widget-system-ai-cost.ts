@@ -1,5 +1,5 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
-import { attachDownloadButton, fetchSystemStats } from './lib/system-stats';
+import { attachDownloadButton, fetchSystemStats } from '../lib/system-stats';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 

@@ -325,6 +325,25 @@ public class ProjectController(
 
     [HttpPost]
     [IgnoreAntiforgeryToken]
+    [EnableRateLimiting("ai-image-generation")]
+    public async Task<IActionResult> GenerateImage([FromQuery] string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { error = localizer["Project_NameRequired"].Value });
+
+        try
+        {
+            var url = await uploadService.GenerateImageAsync(name);
+            return Ok(new { url });
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(502, new { error = localizer["Project_ImageGenerationFailed"].Value });
+        }
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UploadImage(IFormFile file)
     {
         if (file is null || file.Length == 0)
@@ -337,7 +356,7 @@ public class ProjectController(
         }
         catch (HttpRequestException)
         {
-            return StatusCode(502, new { error = "Uploaden mislukt." });
+            return StatusCode(502, new { error = localizer["Project_UploadFailed"].Value });
         }
     }
 
@@ -457,11 +476,14 @@ public class ProjectController(
         var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
         var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
 
-        dashboard.WidgetLayout = layout;
-        dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
         var participantDomain = adminSettings.Value.ParticipantDomain;
         var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
-        dashboard.SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}";
+        dashboard = dashboard with
+        {
+            WidgetLayout = layout,
+            ApiBaseUrl = $"{Request.Scheme}://{Request.Host}",
+            SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
+        };
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;

@@ -1,4 +1,4 @@
-import { POLL_INTERVAL_MS } from './dashboard';
+import { POLL_INTERVAL_MS } from '../admin/dashboard';
 
 interface IdeaFeedItem {
     ideaId: number;

@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Participants;
 
-public class SetParticipantLanguageDto
+public record SetParticipantLanguageDto
 {
     [Required]
     [MaxLength(10)]
-    public string LanguageCode { get; set; }
+    public string LanguageCode { get; init; }
 }

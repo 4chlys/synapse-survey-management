@@ -2,32 +2,32 @@ using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 
-public class DashboardViewModel
+public record DashboardViewModel
 {
-    public int ProjectId { get; set; }
-    public string ProjectName { get; set; }
-    public int ViewCount { get; set; }
-    public int CompletionCount { get; set; }
-    public double CompletionRate { get; set; }
-    public string SurveyUrl { get; set; }
-    public List<CategoryMetricViewModel> TopCategories { get; set; } = new();
-    public List<IdeaMetricViewModel> TopIdeas { get; set; } = new();
-    public string[] WidgetLayout { get; set; } = WidgetPreferenceService.DefaultLayout;
-    public string ApiBaseUrl { get; set; } = string.Empty;
+    public int ProjectId { get; init; }
+    public string ProjectName { get; init; }
+    public int ViewCount { get; init; }
+    public int CompletionCount { get; init; }
+    public double CompletionRate { get; init; }
+    public string SurveyUrl { get; init; }
+    public ICollection<CategoryMetricViewModel> TopCategories { get; init; } = new List<CategoryMetricViewModel>();
+    public ICollection<IdeaMetricViewModel> TopIdeas { get; init; } = new List<IdeaMetricViewModel>();
+    public string[] WidgetLayout { get; init; } = WidgetPreferenceService.DefaultLayout;
+    public string ApiBaseUrl { get; init; } = string.Empty;
 }
 
-public class CategoryMetricViewModel
+public record CategoryMetricViewModel
 {
-    public int CategoryId { get; set; }
-    public string Name { get; set; }
-    public int IdeaCount { get; set; }
-    public int TotalReactions { get; set; }
+    public int CategoryId { get; init; }
+    public string Name { get; init; }
+    public int IdeaCount { get; init; }
+    public int TotalReactions { get; init; }
 }
 
-public class IdeaMetricViewModel
+public record IdeaMetricViewModel
 {
-    public int IdeaId { get; set; }
-    public string Description { get; set; }
-    public int ReactionCount { get; set; }
-    public int CommentCount { get; set; }
+    public int IdeaId { get; init; }
+    public string Description { get; init; }
+    public int ReactionCount { get; init; }
+    public int CommentCount { get; init; }
 }

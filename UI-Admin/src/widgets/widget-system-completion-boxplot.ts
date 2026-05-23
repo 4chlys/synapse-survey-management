@@ -1,6 +1,6 @@
 import { Chart, LinearScale, CategoryScale, Tooltip } from 'chart.js';
 import { BoxPlotController, BoxAndWiskers } from '@sgratzl/chartjs-chart-boxplot';
-import { attachDownloadButton, fetchSystemStats } from './lib/system-stats';
+import { attachDownloadButton, fetchSystemStats } from '../lib/system-stats';
 
 Chart.register(BoxPlotController, BoxAndWiskers, LinearScale, CategoryScale, Tooltip);
 

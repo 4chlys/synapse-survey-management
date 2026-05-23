@@ -4,9 +4,9 @@
 // toggle. Event handlers are attached once to the stable #questions-list
 // container; re-rendering its innerHTML does not invalidate them.
 
-import { renderTree, Question, RenderContext, QuestionsI18n } from './lib/questionnaire-tree';
-import { loadQuestionsI18n } from './lib/questions-i18n';
-import { toast } from './lib/notify';
+import { renderTree, Question, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
+import { loadQuestionsI18n } from '../lib/questions-i18n';
+import { toast } from '../lib/notify';
 
 interface MovePayload {
     parentQuestionId: number | null;
