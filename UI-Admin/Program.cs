@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
@@ -89,6 +90,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
 // API HTTP clients
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7128";
 var apiKey = builder.Configuration["ApiKey"]
@@ -160,6 +168,8 @@ builder.Services.AddSingleton(AiConfigLoader.Load(
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<WidgetPreferenceService>();
+builder.Services.AddScoped<SynapseEnqueteManagement.UI.Admin.Filters.IProjectOwnershipLookup,
+                          SynapseEnqueteManagement.UI.Admin.Filters.ProjectOwnershipLookup>();
 
 // Rate limiting — protect expensive AI image-generation via project creation
 builder.Services.AddRateLimiter(options =>
@@ -233,7 +243,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapStaticAssets();
-app.MapGet("/health", () => Results.Ok("healthy"));
+app.MapGet("/health", () => Results.Ok("healthy")).AllowAnonymous();
 
 app.MapControllerRoute(
         name: "default",
@@ -241,3 +251,6 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
+// Expose the implicit Program class to the test project (WebApplicationFactory<Program>).
+public partial class Program;

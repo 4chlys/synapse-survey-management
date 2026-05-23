@@ -372,9 +372,10 @@ public class ProjectManager(
 
     public async Task DeleteProjectAsync(int projectId)
     {
+        // Idempotent: a DELETE on an already-removed project is a no-op, not an error.
+        // Guards against double-submits where the second request would otherwise 500.
         var deleted = await projectRepository.DeleteWithRelationsAsync(projectId);
-        if (!deleted)
-            throw new KeyNotFoundException($"Project {projectId} not found.");
+        if (!deleted) return;
 
         await uow.SaveChangesAsync();
     }

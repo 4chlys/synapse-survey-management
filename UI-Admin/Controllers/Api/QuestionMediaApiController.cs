@@ -1,11 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questions/media")]
 public class QuestionMediaApiController(IQuestionMediaService mediaService) : ControllerBase
 {

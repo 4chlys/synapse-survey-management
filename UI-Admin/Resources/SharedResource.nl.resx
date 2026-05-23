@@ -64,6 +64,7 @@
   <data name="Project_IntroductionRequired" xml:space="preserve"><value>Introductie is verplicht.</value></data>
   <data name="Project_AgeRange" xml:space="preserve"><value>MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</value></data>
   <data name="Project_LockedNotEditable" xml:space="preserve"><value>Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.</value></data>
+  <data name="Project_DeleteActiveBlocked" xml:space="preserve"><value>Dit project is actief en kan niet worden verwijderd. Archiveer het project eerst.</value></data>
   <data name="Project_NoPlatform" xml:space="preserve"><value>Uw account is niet gekoppeld aan een platform.</value></data>
   <data name="Project_NotFoundOrNoAccess" xml:space="preserve"><value>Project niet gevonden of geen toegang.</value></data>
   <data name="Project_CopySuccess" xml:space="preserve"><value>Project gekopieerd als sjabloon!</value></data>
