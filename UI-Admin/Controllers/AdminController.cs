@@ -75,8 +75,13 @@ public class AdminController(
 
         var platform = await platformService.GetPlatformByIdAsync(platformId);
 
+        string inviteLink = null;
         var result = await adminInviteService.InviteAdminAsync(platformId, platform.Name, model.Email,
-            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme), ct);
+            token =>
+            {
+                inviteLink = Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme);
+                return inviteLink;
+            }, ct);
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)
@@ -84,6 +89,11 @@ public class AdminController(
             return View(model);
         }
 
-        return RedirectToAction(nameof(Add));
+        return View(new AddAdminViewModel
+        {
+            ProjectPlatformId = platformId,
+            PlatformName = platform.Name,
+            InviteLink = inviteLink
+        });
     }
 }

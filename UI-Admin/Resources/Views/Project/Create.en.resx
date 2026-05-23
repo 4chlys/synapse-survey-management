@@ -94,4 +94,13 @@
   <data name="CustomCss_Avoid_ExternalImports" xml:space="preserve"><value>Don't import external CSS / fonts (blocked by validator anyway).</value></data>
   <data name="CustomCss_ResetButton" xml:space="preserve"><value>Clear custom CSS</value></data>
   <data name="CustomCss_ResetConfirm" xml:space="preserve"><value>Are you sure you want to clear the custom CSS?</value></data>
+  <data name="SectionGeneral" xml:space="preserve"><value>General information</value></data>
+  <data name="SectionAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="SectionBehavior" xml:space="preserve"><value>Behavior &amp; settings</value></data>
+  <data name="ShortformHint" xml:space="preserve"><value>This becomes the URL for your project (e.g. /p/mental-wellbeing)</value></data>
+  <data name="IntroductionHint" xml:space="preserve"><value>Shown to participants on the welcome screen before the survey starts</value></data>
+  <data name="ImageHint" xml:space="preserve"><value>Cover image shown on the project landing page</value></data>
+  <data name="InteractionModeHint" xml:space="preserve"><value>Controls how participants navigate through the questionnaire — one question at a time (scroll) or as a conversation (chat)</value></data>
+  <data name="AiAssistanceHint" xml:space="preserve"><value>Whether AI suggests improvements when participants type their ideas</value></data>
+  <data name="SectionsHint" xml:space="preserve"><value>Sections group questions in the questionnaire. Participants see section names as dividers between question blocks.</value></data>
 </root>

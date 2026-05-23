@@ -229,8 +229,13 @@ public class PlatformController(
         if (!ModelState.IsValid)
             return View("Admins", await BuildAdminsViewModel(id, platform.Name));
 
+        string inviteLink = null;
         var result = await adminInviteService.InviteAdminAsync(id, platform.Name, model.Email,
-            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme), ct);
+            token =>
+            {
+                inviteLink = Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme);
+                return inviteLink;
+            }, ct);
         if (!result.Succeeded)
         {
             foreach (var error in result.Errors)
@@ -239,6 +244,7 @@ public class PlatformController(
         }
 
         TempData["Success"] = localizer["Platform_AdminAdded"].Value;
+        TempData["InviteLink"] = inviteLink;
         return RedirectToAction(nameof(Admins), new { id });
     }
 

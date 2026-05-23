@@ -18,4 +18,6 @@
   <data name="PasswordLabel" xml:space="preserve"><value>Wachtwoord</value></data>
   <data name="PasswordPlaceholder" xml:space="preserve"><value>Minimaal 6 tekens</value></data>
   <data name="AddButton" xml:space="preserve"><value>Beheerder toevoegen</value></data>
+  <data name="InviteLinkNotice" xml:space="preserve"><value>Beheerder toegevoegd. Deel deze link zodat zij hun wachtwoord kunnen instellen:</value></data>
+  <data name="CopyButton" xml:space="preserve"><value>Kopiëren</value></data>
 </root>

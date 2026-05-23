@@ -15,4 +15,6 @@
   <data name="PasswordPlaceholder" xml:space="preserve"><value>At least 6 characters</value></data>
   <data name="SubmitButton" xml:space="preserve"><value>Add admin</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="InviteLinkNotice" xml:space="preserve"><value>Admin added. Share this link so they can set their password:</value></data>
+  <data name="CopyButton" xml:space="preserve"><value>Copy</value></data>
 </root>

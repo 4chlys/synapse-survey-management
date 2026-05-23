@@ -10,4 +10,6 @@ public record AddAdminViewModel
     [Required]
     [EmailAddress]
     public string Email { get; init; }
+
+    public string InviteLink { get; init; }
 }

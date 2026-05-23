@@ -23,6 +23,19 @@
             <div asp-validation-summary="ModelOnly"
                  class="text-sm text-error border border-error bg-error/10 px-4 py-3 rounded"></div>
 
+            @if (Model.InviteLink != null)
+            {
+                <div class="alert alert-success flex flex-col items-start gap-2">
+                    <p class="text-sm font-medium">@L["InviteLinkNotice"]</p>
+                    <div class="flex items-center gap-2 w-full">
+                        <input id="invite-link" type="text" readonly value="@Model.InviteLink"
+                               class="input input-bordered input-sm w-full font-mono text-xs" />
+                        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('invite-link').value)"
+                                class="btn btn-sm btn-ghost">@L["CopyButton"]</button>
+                    </div>
+                </div>
+            }
+
             <form asp-controller="Admin" asp-action="Add" method="post" class="flex flex-col gap-4">
                 @Html.AntiForgeryToken()
                 <input asp-for="ProjectPlatformId" type="hidden" />

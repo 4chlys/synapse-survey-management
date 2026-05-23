@@ -49,6 +49,19 @@
         </div>
     </div>
 
+    @if (TempData["InviteLink"] is string inviteLink)
+    {
+        <div class="alert alert-success flex flex-col items-start gap-2 mb-6">
+            <p class="text-sm font-medium">@L["InviteLinkNotice"]</p>
+            <div class="flex items-center gap-2 w-full">
+                <input id="invite-link" type="text" readonly value="@inviteLink"
+                       class="input input-bordered input-sm w-full font-mono text-xs" />
+                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('invite-link').value)"
+                        class="btn btn-sm btn-ghost">@L["CopyButton"]</button>
+            </div>
+        </div>
+    }
+
     @* Add admin inline form *@
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-4">
