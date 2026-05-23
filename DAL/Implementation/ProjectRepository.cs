@@ -105,24 +105,11 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
 
     public async Task<bool> DeleteWithRelationsAsync(int projectId)
     {
-        var project = await Context.Set<Project>()
-            .Include(p => p.Categories)
-                .ThenInclude(c => c.Ideas)
-                    .ThenInclude(i => i.Comments)
-            .Include(p => p.Participants)
-                .ThenInclude(p => p.Comments)
-            .Include(p => p.Questionnaire)
-                .ThenInclude(q => q.Questions)
-                    .ThenInclude(q => q.Responses)
-            .Include(p => p.Questionnaire)
-                .ThenInclude(q => q.Questions)
-                    .ThenInclude(q => q.EndingAnswers)
-            .Include(p => p.Introduction)
-            .Include(p => p.Translations)
-            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
-
-        if (project is null)
-            return false;
+        // Cascade-deletes are configured on every Project child in SynapseEnqueteContext,
+        // so we only need to remove the aggregate root — the DB does the rest in one
+        // round-trip. Avoids loading the entire project graph just to discard it.
+        var project = await Context.Set<Project>().FindAsync(projectId);
+        if (project is null) return false;
 
         Context.Set<Project>().Remove(project);
         return true;

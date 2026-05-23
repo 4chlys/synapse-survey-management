@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Json;
-using SynapseEnqueteManagement.UI.Admin.Models.Section;
+﻿using SynapseEnqueteManagement.UI.Admin.Models.Section;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Section;
 

@@ -28,9 +28,8 @@
         <div id="survey-progress-bar" class="h-full bg-primary w-0 transition-[width] duration-500 ease-out"></div>
     </div>
 
-    @* form for the survey *@
-    <form id="survey-form" method="post" asp-controller="Survey" asp-action="Submit"
-          asp-route-projectId="@Context.GetRouteValue("projectId")" style="height: var(--slide-h)">
+    @* form for the survey — submit is hijacked by JS in survey/init.ts, which calls the SurveyApi controller *@
+    <form id="survey-form" method="post" style="height: var(--slide-h)">
 
         @if (hasIntro)
         {
