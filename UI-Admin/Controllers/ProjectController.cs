@@ -471,11 +471,16 @@ public class ProjectController(
         if (project is null)
             return NotFound();
 
+        var questions  = await questionService.GetQuestionsAsync(projectId);
+        var categories = await categoryService.GetCategoriesAsync(projectId);
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
         ViewData["ProjectState"]  = project.ProjectState ?? "";
         ViewData["ActiveSection"] = "Settings";
+        ViewData["QuestionCount"] = questions.Count;
+        ViewData["CategoryCount"] = categories.Count;
         return View(project);
     }
 

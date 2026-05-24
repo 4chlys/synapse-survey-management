@@ -75,6 +75,7 @@ async function autoOpenAndGreet(): Promise<void> {
         popup.classList.add('flex');
         iconOpen?.classList.add('hidden');
         iconClose?.classList.remove('hidden');
+        setActionBarPadding(true, popup.offsetWidth);
     }
 
     if (!activeSession) return;
@@ -214,6 +215,12 @@ function renderMarkdown(text: string): string {
     return s;
 }
 
+function setActionBarPadding(open: boolean, popupWidth: number): void {
+    const actionBar = document.getElementById('questions-action-bar');
+    if (!actionBar) return;
+    actionBar.style.paddingRight = open ? `${popupWidth + 16}px` : '';
+}
+
 function wireFloatingToggle(): void {
     const toggle = document.getElementById('qs-chat-toggle');
     const popup = document.getElementById('qs-chat-popup');
@@ -227,6 +234,7 @@ function wireFloatingToggle(): void {
         popup!.classList.toggle('flex', open);
         iconOpen?.classList.toggle('hidden', open);
         iconClose?.classList.toggle('hidden', !open);
+        setActionBarPadding(open, popup!.offsetWidth);
     }
 
     toggle.addEventListener('click', () => {
