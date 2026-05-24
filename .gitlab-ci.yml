@@ -1,6 +1,6 @@
 # Synapse CI/CD Pipeline
-# development branch: test environment op Cloud Run (automatisch)
-# main branch: productie MIG rolling deploy (handmatig)
+# development branch: automatic deploy to test environment
+# main branch: manual rolling deploy to production
 
 image: docker:27
 
@@ -171,7 +171,7 @@ push-test:
     - docker push "${IMAGE_API}:${IMAGE_TAG}"
     - docker push "${IMAGE_UI}:${IMAGE_TAG}"
     - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
-    # test-latest tag zodat de test-MIG startup scripts de juiste image pullen
+    # tag as test-latest so the test MIG startup scripts pull the correct image
     - docker tag "${IMAGE_API}:${IMAGE_TAG}"   "${IMAGE_API}:test-latest"
     - docker tag "${IMAGE_UI}:${IMAGE_TAG}"    "${IMAGE_UI}:test-latest"
     - docker tag "${IMAGE_ADMIN}:${IMAGE_TAG}" "${IMAGE_ADMIN}:test-latest"
@@ -199,7 +199,7 @@ push-prod:
     - docker push "${IMAGE_UI}:latest"
     - docker push "${IMAGE_ADMIN}:latest"
   only:
-    - main #reverse
+    - main
 
 sign-prod:
   stage: sign
@@ -229,9 +229,9 @@ deploy-test:
     - gcloud auth login --cred-file=gcp-wif-test.json
     - gcloud config set project "${PROJECT_ID}"
   script:
-    # Rolling replace op de test-MIGs (--max-unavailable=0 --max-surge=1: nieuwe instantie
-    # opstarten en gezond verklaren voor de oude wegvalt — zero downtime)
-    # Vereist: bootstrap.sh test is al eens uitgevoerd zodat de MIGs bestaan.
+    # Rolling replace on the test MIGs (--max-unavailable=0 --max-surge=1: bring up the new
+    # instance and wait for it to be healthy before removing the old one — zero downtime)
+    # Requires: bootstrap.sh test has been run at least once so the MIGs exist.
     - |
       gcloud compute instance-groups managed rolling-action replace synapse-test-api-mig \
         --zone="${ZONE}" --max-unavailable=0 --max-surge=1
@@ -287,7 +287,7 @@ deploy-production:
       gcloud compute instance-groups managed wait-until synapse-prod-ui-mig    --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-prod-admin-mig --stable --zone="${ZONE}"
   only:
-    - main #reverse
+    - main
   when: manual
   environment:
     name: production
