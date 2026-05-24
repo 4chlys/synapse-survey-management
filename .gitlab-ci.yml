@@ -17,11 +17,36 @@ variables:
   ZONE:      "europe-west1-b"
 
 stages:
+  - test
   - build
   - scan
   - push
   - sign
   - deploy
+
+test-dotnet:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  script:
+    - dotnet test SynapseEnqueteManagement.sln
+        --collect:"XPlat Code Coverage"
+        --logger:"junit;LogFilePath=TestResults/results.xml"
+        --results-directory TestResults
+        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+  coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?)/'
+  artifacts:
+    when: always
+    reports:
+      junit: "**/TestResults/results.xml"
+      coverage_report:
+        coverage_format: cobertura
+        path: "**/coverage.cobertura.xml"
+    expire_in: 1 week
+  allow_failure: true
+  only:
+    - development
+    - main
+    - merge_requests
 
 .gcr_login: &gcr_login
   before_script:
