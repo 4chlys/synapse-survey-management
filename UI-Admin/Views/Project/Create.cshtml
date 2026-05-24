@@ -249,7 +249,7 @@
                         </div>
                     </div>
 
-                    <details@(string.IsNullOrWhiteSpace(Model.CustomCss) ? "" : " open")>
+                    <details open="@(string.IsNullOrWhiteSpace(Model.CustomCss) ? null : "open")">
                         <summary class="cursor-pointer text-sm font-semibold text-base-content py-1">@L["CustomCssLabel"]</summary>
                         <div class="form-control mt-2 gap-1.5">
                             <div class="flex justify-end">
