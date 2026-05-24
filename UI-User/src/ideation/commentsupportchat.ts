@@ -186,8 +186,8 @@ function showSubmitUI(suggestion: string | null): void {
 function buildCommentCard(label: string, text: string, isPrimary: boolean): HTMLElement {
     const card = document.createElement('div');
     card.className = isPrimary
-        ? 'rounded-2xl border-2 border-primary/30 bg-primary/10 p-3 flex flex-col gap-2'
-        : 'rounded-2xl border-2 border-base-300 bg-base-100 p-3 flex flex-col gap-2';
+        ? 'rounded-box border-2 border-primary/30 bg-primary/10 p-3 flex flex-col gap-2'
+        : 'rounded-box border-2 border-base-300 bg-base-100 p-3 flex flex-col gap-2';
 
     const labelEl = document.createElement('p');
     labelEl.className = isPrimary
@@ -202,9 +202,9 @@ function buildCommentCard(label: string, text: string, isPrimary: boolean): HTML
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = isPrimary
-        ? 'w-full py-2 rounded-xl bg-primary text-primary-content text-sm font-semibold ' +
+        ? 'w-full py-2 rounded-field bg-primary text-primary-content text-sm font-semibold ' +
           'hover:bg-primary/90 active:scale-95 transition-all cursor-pointer'
-        : 'w-full py-2 rounded-xl border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
+        : 'w-full py-2 rounded-field border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
           'hover:bg-base-200 active:scale-95 transition-all cursor-pointer';
     btn.textContent = t('submitFallback');
 
@@ -250,7 +250,7 @@ function appendUserBubble(text: string): void {
     const bubble = document.createElement('div');
     bubble.className = 'flex justify-end';
     bubble.innerHTML = `
-        <div class="bg-primary text-primary-content rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
+        <div class="bg-primary text-primary-content rounded-box rounded-br-sm px-4 py-2.5 max-w-[80%]">
             <p class="text-sm leading-relaxed">${escapeHtml(text)}</p>
         </div>`;
     messagesContainer!.appendChild(bubble);
@@ -268,7 +268,7 @@ function appendAssistantBubble(text: string): void {
                       d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
         </div>
-        <div class="bg-base-200 rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%]">
+        <div class="bg-base-200 rounded-box rounded-bl-sm px-4 py-2.5 max-w-[80%]">
             <p class="text-sm text-base-content leading-relaxed">${renderMarkdown(text)}</p>
         </div>`;
     messagesContainer!.appendChild(bubble);
@@ -290,7 +290,7 @@ function showLoading(): void {
                       d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
         </div>
-        <div class="bg-base-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
+        <div class="bg-base-200 rounded-box rounded-bl-sm px-4 py-3 max-w-[80%]">
             <div class="flex gap-1 items-center h-4">
                 <span class="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style="animation-delay:0ms"></span>
                 <span class="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style="animation-delay:150ms"></span>

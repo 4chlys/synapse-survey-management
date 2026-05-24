@@ -58,9 +58,19 @@
   <data name="StyleDivider" xml:space="preserve"><value>Style</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Theme</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Preview</value></data>
+  <data name="PreviewLight" xml:space="preserve"><value>Light</value></data>
+  <data name="PreviewDark" xml:space="preserve"><value>Dark</value></data>
   <data name="PreviewHint" xml:space="preserve"><value>Live preview of theme, primary color and custom CSS.</value></data>
   <data name="PrimaryColorLabel" xml:space="preserve"><value>Primary color (optional)</value></data>
   <data name="UseThemeColorLabel" xml:space="preserve"><value>Use theme color</value></data>
+  <data name="PrimaryColor_LowContrast_Light" xml:space="preserve"><value>This color may be hard to read on light backgrounds. The server will reject it on save.</value></data>
+  <data name="PrimaryColor_LowContrast_Dark" xml:space="preserve"><value>This color may be hard to read on dark backgrounds. The server will reject it on save.</value></data>
+  <data name="PrimaryColor_LowContrast_Both" xml:space="preserve"><value>This color is hard to read on both light and dark backgrounds. The server will reject it on save.</value></data>
+  <data name="ColorSwatches_Label" xml:space="preserve"><value>Quick start by topic</value></data>
+  <data name="ColorSwatch_Sports" xml:space="preserve"><value>Sports</value></data>
+  <data name="ColorSwatch_Nature" xml:space="preserve"><value>Nature</value></data>
+  <data name="ColorSwatch_Culture" xml:space="preserve"><value>Culture</value></data>
+  <data name="ColorSwatch_Health" xml:space="preserve"><value>Health</value></data>
   <data name="CustomCssLabel" xml:space="preserve"><value>Custom CSS (optional)</value></data>
   <data name="CustomCssHint" xml:space="preserve"><value>For developers — leave blank if theme + color is enough.</value></data>
   <data name="CustomCssHelperSummary" xml:space="preserve"><value>Available CSS variables and selectors (click to insert)</value></data>
@@ -68,4 +78,20 @@
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
   <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Unbalanced braces ({0} {  vs  {1} }).</value></data>
   <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS looks balanced.</value></data>
+  <data name="Snippet_PrimaryColor" xml:space="preserve"><value>Override primary colour</value></data>
+  <data name="Snippet_RoundedButtons" xml:space="preserve"><value>Rounded buttons</value></data>
+  <data name="Snippet_IdeaCardShadow" xml:space="preserve"><value>Idea card shadow</value></data>
+  <data name="Snippet_HeadingFont" xml:space="preserve"><value>Heading font</value></data>
+  <data name="Snippet_RoundedButtonsEverywhere" xml:space="preserve"><value>Rounded buttons everywhere</value></data>
+  <data name="Snippet_BrandGradientHeader" xml:space="preserve"><value>Brand gradient header</value></data>
+  <data name="Snippet_StrongerFocusRing" xml:space="preserve"><value>Stronger focus ring</value></data>
+  <data name="CustomCss_SelectorsLabel" xml:space="preserve"><value>Components you can target</value></data>
+  <data name="CustomCss_SelectorsHelp" xml:space="preserve"><value>Use these selectors in your CSS rules to style specific parts of the participant page.</value></data>
+  <data name="CustomCss_AvoidLabel" xml:space="preserve"><value>Avoid</value></data>
+  <data name="CustomCss_Avoid_Overflow" xml:space="preserve"><value>Don't touch body / html overflow.</value></data>
+  <data name="CustomCss_Avoid_FixedPosition" xml:space="preserve"><value>Don't use position: fixed on the root.</value></data>
+  <data name="CustomCss_Avoid_Important" xml:space="preserve"><value>Avoid !important chains.</value></data>
+  <data name="CustomCss_Avoid_ExternalImports" xml:space="preserve"><value>Don't import external CSS / fonts (blocked by validator anyway).</value></data>
+  <data name="CustomCss_ResetButton" xml:space="preserve"><value>Clear custom CSS</value></data>
+  <data name="CustomCss_ResetConfirm" xml:space="preserve"><value>Are you sure you want to clear the custom CSS?</value></data>
 </root>

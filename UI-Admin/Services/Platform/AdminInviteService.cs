@@ -27,7 +27,14 @@ public class AdminInviteService(
         };
         var result = await userManager.CreateAsync(user);
         if (!result.Succeeded) return result;
-        await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+
+        var roleResult = await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
+        if (!roleResult.Succeeded)
+        {
+            // Compensating delete: the user was created but has no role — undo it so InviteAdminAsync stays all-or-nothing.
+            await userManager.DeleteAsync(user);
+            return roleResult;
+        }
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var resetUrl = buildResetUrl(token);

@@ -216,7 +216,7 @@ public class DummyDataSeeder
             ShortForm = "mentaal-welzijn",
             ImageUrl = "https://placehold.co/400x225?text=Synapse",
             ProjectPlatform = platformSynapse,
-            Theme = ProjectTheme.Default,
+            Theme = ProjectTheme.Minimal,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>
@@ -364,7 +364,7 @@ public class DummyDataSeeder
             ShortForm = "ledenbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FitLife",
             ProjectPlatform = platformFitLife,
-            Theme = ProjectTheme.Professional,
+            Theme = ProjectTheme.Formal,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>
@@ -513,7 +513,7 @@ public class DummyDataSeeder
             ShortForm = "clubbevraging",
             ImageUrl = "https://placehold.co/400x225?text=FC+Eendracht",
             ProjectPlatform = platformEendracht,
-            Theme = ProjectTheme.Professional,
+            Theme = ProjectTheme.Bold,
             PrimaryColor = "#16A34A",
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
@@ -596,7 +596,7 @@ public class DummyDataSeeder
             Questionnaire = new Questionnaire(),
             ShortForm = "gearchiveerd-project",
             ProjectPlatform = platformSynapse,
-            Theme = ProjectTheme.Dark,
+            Theme = ProjectTheme.Minimal,
             DefaultLanguage = languageNl,
             SupportedLanguages = new List<Language> { languageNl, languageEn },
             Translations = new List<ProjectTranslation>

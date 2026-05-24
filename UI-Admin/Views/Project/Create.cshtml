@@ -182,16 +182,30 @@
                     <label asp-for="Theme" class="label">
                         <span class="label-text">@L["ThemeLabel"]</span>
                     </label>
-                    <select asp-for="Theme" asp-items="Html.GetEnumSelectList<ProjectTheme>()"
+                    @* Option values must match the string the model holds (enum name, e.g.
+                       "HighContrast"); GetEnumSelectList would emit integer-string values
+                       that never match, so the saved theme never preselects. *@
+                    <select asp-for="Theme"
+                            asp-items="@(Enum.GetNames<ProjectTheme>().Select(n => new SelectListItem { Value = n, Text = n }))"
                             class="select select-bordered w-full"></select>
                     <span asp-validation-for="Theme" class="label-text-alt text-error mt-1"></span>
                 </div>
 
                 <div class="form-control">
                     <span class="label-text">@L["PreviewLabel"]</span>
-                    <div id="theme-preview-host"
-                         class="mt-1"
-                         data-initial-theme="@((Model.Theme ?? "Default").ToLowerInvariant())">
+                    <div class="grid grid-cols-2 gap-3 mt-1">
+                        <div>
+                            <span class="text-xs opacity-60">@L["PreviewLight"]</span>
+                            <div id="theme-preview-light"
+                                 data-initial-theme="@((Model.Theme ?? "Minimal").ToLowerInvariant())"
+                                 data-mode="light"></div>
+                        </div>
+                        <div>
+                            <span class="text-xs opacity-60">@L["PreviewDark"]</span>
+                            <div id="theme-preview-dark"
+                                 data-initial-theme="@((Model.Theme ?? "Minimal").ToLowerInvariant())"
+                                 data-mode="dark"></div>
+                        </div>
                     </div>
                     <span class="label-text-alt mt-1 opacity-70">
                         @L["PreviewHint"]
@@ -210,14 +224,58 @@
                             <span class="label-text">@L["UseThemeColorLabel"]</span>
                         </label>
                     </div>
+                    @* Topic shortcuts — curated, contrast-safe starting colours. Each just
+                       writes a hex into the picker; no theme/enum involved. *@
+                    <div class="mt-2">
+                        <span class="label-text-alt opacity-70">@L["ColorSwatches_Label"]</span>
+                        <div id="primary-color-swatches" class="flex flex-wrap gap-2 mt-1">
+                            <button type="button" data-swatch-color="#EA580C"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#EA580C" title="@L["ColorSwatch_Sports"]"
+                                    aria-label="@L["ColorSwatch_Sports"]"></button>
+                            <button type="button" data-swatch-color="#16A34A"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#16A34A" title="@L["ColorSwatch_Nature"]"
+                                    aria-label="@L["ColorSwatch_Nature"]"></button>
+                            <button type="button" data-swatch-color="#7C3AED"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#7C3AED" title="@L["ColorSwatch_Culture"]"
+                                    aria-label="@L["ColorSwatch_Culture"]"></button>
+                            <button type="button" data-swatch-color="#0D9488"
+                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                    style="background-color:#0D9488" title="@L["ColorSwatch_Health"]"
+                                    aria-label="@L["ColorSwatch_Health"]"></button>
+                        </div>
+                    </div>
                     <input asp-for="PrimaryColor" type="hidden" />
                     <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
+                    @* Client-side contrast advisory. Server validation in BL is authoritative;
+                       this just surfaces the problem in real time so the admin can react before submit. *@
+                    <div id="primary-color-contrast-warning"
+                         class="hidden mt-1 flex items-start gap-1 text-warning text-xs"
+                         role="status" aria-live="polite"
+                         data-light-base="#FFFFFF"
+                         data-dark-base="#1A1430"
+                         data-min-ratio="3"
+                         data-msg-light="@L["PrimaryColor_LowContrast_Light"]"
+                         data-msg-dark="@L["PrimaryColor_LowContrast_Dark"]"
+                         data-msg-both="@L["PrimaryColor_LowContrast_Both"]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5">
+                            <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        </svg>
+                        <span data-warning-text></span>
+                    </div>
                 </div>
 
-                <div class="form-control">
-                    <label asp-for="CustomCss" class="label">
-                        <span class="label-text">@L["CustomCssLabel"]</span>
-                    </label>
+                @* Custom CSS is an advanced, rarely-used escape hatch — collapsed by
+                   default, auto-opened when the project already has CSS saved. *@
+                <details@(string.IsNullOrWhiteSpace(Model.CustomCss) ? "" : " open")>
+                    <summary class="cursor-pointer label-text font-medium py-1">@L["CustomCssLabel"]</summary>
+                    <div class="form-control mt-1">
+                    <div class="flex justify-end">
+                        <button id="customcss-reset" type="button" class="btn btn-xs btn-ghost"
+                                data-confirm="@L["CustomCss_ResetConfirm"].Value">@L["CustomCss_ResetButton"]</button>
+                    </div>
                     <textarea asp-for="CustomCss" rows="6"
                               class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
                     <span class="label-text-alt">@L["CustomCssHint"]</span>
@@ -235,17 +293,46 @@
                             </div>
                             <div>
                                 <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssSnippets"]</div>
-                                <div data-helper-group="snippets" class="flex flex-wrap gap-1">
+                                <div data-helper-group="snippets" class="flex flex-wrap gap-1"
+                                     data-label-primary-color="@L["Snippet_PrimaryColor"]"
+                                     data-label-rounded-buttons="@L["Snippet_RoundedButtons"]"
+                                     data-label-idea-card-shadow="@L["Snippet_IdeaCardShadow"]"
+                                     data-label-heading-font="@L["Snippet_HeadingFont"]"
+                                     data-label-rounded-buttons-everywhere="@L["Snippet_RoundedButtonsEverywhere"]"
+                                     data-label-brand-gradient-header="@L["Snippet_BrandGradientHeader"]"
+                                     data-label-stronger-focus-ring="@L["Snippet_StrongerFocusRing"]">
                                     @* Snippets injected by project-style.ts on load *@
                                 </div>
                             </div>
+                            <div>
+                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCss_SelectorsLabel"]</div>
+                                <p class="text-xs opacity-70 mb-1">@L["CustomCss_SelectorsHelp"]</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">[data-project-theme]</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.btn.btn-primary</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">#ideas-list a</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.chat-bubble-left</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.accent-strip</code>
+                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">header</code>
+                                </div>
+                            </div>
+                            <details>
+                                <summary class="cursor-pointer label-text opacity-70">@L["CustomCss_AvoidLabel"]</summary>
+                                <ul class="mt-1 ml-4 list-disc opacity-70 text-xs flex flex-col gap-0.5">
+                                    <li>@L["CustomCss_Avoid_Overflow"]</li>
+                                    <li>@L["CustomCss_Avoid_FixedPosition"]</li>
+                                    <li>@L["CustomCss_Avoid_Important"]</li>
+                                    <li>@L["CustomCss_Avoid_ExternalImports"]</li>
+                                </ul>
+                            </details>
                             <div id="customcss-syntax-hint"
                                  class="text-xs opacity-70" aria-live="polite"
                                  data-unbalanced-label="@L["CustomCss_Unbalanced"].Value"
                                  data-balanced-label="@L["CustomCss_Balanced"]"></div>
                         </div>
                     </details>
-                </div>
+                    </div>
+                </details>
 
                 </fieldset>
             </form>
