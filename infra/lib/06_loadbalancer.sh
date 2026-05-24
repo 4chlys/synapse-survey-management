@@ -29,6 +29,7 @@ create_backend_services() {
     gcloud compute backend-services create "synapse-${ENV}-${svc}-backend" \
       --protocol=HTTP --port-name=http \
       --health-checks="synapse-${ENV}-${svc}-health" \
+      --connection-draining-timeout=30 \
       --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-${svc}-backend al aanwezig)"
 
     gcloud compute backend-services add-backend "synapse-${ENV}-${svc}-backend" \
