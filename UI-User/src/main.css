@@ -136,7 +136,6 @@
 
 /* ─── Global tokens ──────────────────────────────────── */
 :root {
-  color-scheme: light dark;
   --header-h: 64px;
   --slide-h: calc(100dvh - var(--header-h));
   /* Minimum hit area for primary tappable controls — 44px is the WCAG 2.5.5

@@ -413,8 +413,8 @@ function complementaryHue(hex: string): string {
 }
 
 function applyPreview(): void {
-    // GetEnumSelectList sets option values to integer strings ("0","1"…);
-    // the option text is the enum member name ("Minimal","Friendly"…).
+    // Option value and text are both the enum member name ("Minimal","HighContrast"…);
+    // lower-cased so it matches the CSS [data-project-theme="…"] selectors.
     const themeValue = themeSelect?.options[themeSelect.selectedIndex]?.text.toLowerCase() ?? 'minimal';
 
     // Use a <style> rule (not an inline style) so CustomCss can still override
