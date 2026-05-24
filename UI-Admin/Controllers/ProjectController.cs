@@ -212,7 +212,8 @@ public class ProjectController(
         var existingNames = existingSections.Select(s => s.Name).ToList();
         foreach (var name in newNames)
             if (!existingNames.Contains(name))
-                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty);
+                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty,
+                    model.DefaultLanguageCode ?? "nl");
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
@@ -253,6 +254,7 @@ public class ProjectController(
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
                 model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                parentQuestionId: model.ParentQuestionId, choiceIndex: model.ChoiceIndex,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
                 mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
         return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });

@@ -241,8 +241,31 @@ function renderMarkdown(text: string): string {
     return s;
 }
 
+function wireFloatingToggle(): void {
+    const toggle = document.getElementById('qs-chat-toggle');
+    const popup = document.getElementById('qs-chat-popup');
+    const closeBtn = document.getElementById('qs-chat-close');
+    const iconOpen = document.getElementById('qs-chat-icon-open');
+    const iconClose = document.getElementById('qs-chat-icon-close');
+    if (!toggle || !popup) return;
+
+    function setOpen(open: boolean): void {
+        popup!.classList.toggle('hidden', !open);
+        popup!.classList.toggle('flex', open);
+        iconOpen?.classList.toggle('hidden', open);
+        iconClose?.classList.toggle('hidden', !open);
+    }
+
+    toggle.addEventListener('click', () => {
+        const isOpen = !popup.classList.contains('hidden');
+        setOpen(!isOpen);
+    });
+    closeBtn?.addEventListener('click', () => setOpen(false));
+}
+
 // Auto-initialize when loaded as a Vite module
 document.addEventListener('DOMContentLoaded', () => {
+    wireFloatingToggle();
     const questionsListEl = document.getElementById('questions-list');
     if (!questionsListEl) return;
     const pid = parseInt(questionsListEl.dataset['projectId'] ?? '0', 10);
