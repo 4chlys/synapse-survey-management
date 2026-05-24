@@ -16,13 +16,7 @@ public sealed class RequireProjectPlatformOwnershipFilter(IProjectOwnershipLooku
 {
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (!context.ActionArguments.TryGetValue("projectId", out var raw) || raw is null)
-        {
-            await next();
-            return;
-        }
-
-        if (raw is not int projectId)
+        if (!context.ActionArguments.TryGetValue("projectId", out var raw) || raw is not int projectId)
         {
             await next();
             return;
