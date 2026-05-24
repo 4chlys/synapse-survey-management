@@ -251,10 +251,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sectionsContainer && addSectionBtn) {
         let idx = parseInt(sectionsContainer.dataset.sectionCount ?? '0', 10);
         addSectionBtn.addEventListener('click', () => {
+            const emptyInput = sectionsContainer.querySelector<HTMLInputElement>('input[type="text"][value=""]') ??
+                [...sectionsContainer.querySelectorAll<HTMLInputElement>('input[type="text"]')].find(i => !i.value.trim());
+            if (emptyInput) {
+                emptyInput.focus();
+                emptyInput.classList.add('input-error');
+                emptyInput.addEventListener('input', () => emptyInput.classList.remove('input-error'), { once: true });
+                return;
+            }
             const row = document.createElement('div');
-            row.className = 'flex gap-2 items-center section-row';
+            row.className = 'flex gap-1 items-center section-row';
             row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;
             sectionsContainer.appendChild(row);
+            row.querySelector('input')?.focus();
             idx++;
         });
         sectionsContainer.addEventListener('click', (e) => {
@@ -262,4 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 (e.target as HTMLElement).closest('.section-row')?.remove();
         });
     }
+
+    // Strip empty section rows before submit to prevent server exceptions
+    mainForm?.addEventListener('submit', () => {
+        sectionsContainer?.querySelectorAll<HTMLElement>('.section-row').forEach(row => {
+            const input = row.querySelector<HTMLInputElement>('input[type="text"]');
+            if (input && !input.value.trim()) row.remove();
+        });
+    });
 });
