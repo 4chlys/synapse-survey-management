@@ -11,5 +11,6 @@
   <data name="ModelsDescription" xml:space="preserve"><value>Vink de modellen aan die projectplatforms mogen gebruiken. Als je slechts één model selecteert, worden alle platforms verplicht dat model te gebruiken.</value></data>
   <data name="NoApiKeyTooltip" xml:space="preserve"><value>Geen API-sleutel geconfigureerd voor dit model</value></data>
   <data name="NoApiKeyBadge" xml:space="preserve"><value>geen API-sleutel</value></data>
+  <data name="RegionUnavailableBadge" xml:space="preserve"><value>niet beschikbaar in deze regio</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
 </root>

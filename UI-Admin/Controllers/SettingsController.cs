@@ -131,14 +131,9 @@ public class SettingsController(
         var allowedIds       = await GetAllowedModelIdsAsync();
         var modelAvailability = await aiAdminService.GetModelAvailabilityAsync();
         var globalPrompts    = await aiAdminService.GetGlobalPromptsAsync();
-        var configuredIds    = modelAvailability.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var allowedModels    = AiModelCatalog.All
-            .Where(m => allowedIds.Contains(m.Id) && configuredIds.Contains(m.Id))
+            .Where(m => allowedIds.Contains(m.Id) && modelAvailability.GetValueOrDefault(m.Id, false))
             .ToList();
-        var unavailableIds   = allowedModels
-            .Where(m => !modelAvailability.GetValueOrDefault(m.Id, false))
-            .Select(m => m.Id)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // API-fetched prompts are preferred; fall back to locally loaded AiConfig if the API is unreachable.
         string Fallback(string apiPrompt, string localPrompt) =>
@@ -152,8 +147,8 @@ public class SettingsController(
 
         var aiSettings = new PlatformAdminAiViewModel(
             allowedModels,
-            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault(m => !unavailableIds.Contains(m.Id))?.Id ?? string.Empty,
-            unavailableIds
+            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty,
+            new HashSet<string>()
         );
 
         var prompts = new PlatformAdminPromptsViewModel([
