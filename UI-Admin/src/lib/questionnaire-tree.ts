@@ -54,7 +54,6 @@ export interface QuestionsI18n {
 
 export interface RenderContext {
     deleteEndpoint: string;
-    aiAssistance: string;
     projectId: number;
     locked: boolean;
     isNew: boolean;
@@ -171,7 +170,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
     const i18n = ctx.i18n;
     const formatLabel = labelForFormat(q.questionFormat, i18n);
 
-    const deleteUrl = `${ctx.deleteEndpoint}?projectId=${ctx.projectId}&questionId=${q.questionId}&aiAssistance=${encodeURIComponent(ctx.aiAssistance)}&isNew=${ctx.isNew}`;
+    const deleteUrl = `${ctx.deleteEndpoint}?projectId=${ctx.projectId}&questionId=${q.questionId}&isNew=${ctx.isNew}`;
 
     const endingToggle = (trigger: string, endsSurvey: boolean) => ctx.locked
         ? (endsSurvey ? `<span class="text-xs text-base-content/40">${escapeHtml(i18n.endsSurveyLabel)}</span>` : '')

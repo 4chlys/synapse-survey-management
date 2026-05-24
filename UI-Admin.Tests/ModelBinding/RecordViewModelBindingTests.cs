@@ -3,7 +3,6 @@ using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
-using SynapseEnqueteManagement.UI.Admin.Models.Section;
 using DomainMediaType = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionMediaType;
 using BlQuestionFormat = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat;
 using AdminQuestionFormat = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionFormat;
@@ -69,24 +68,6 @@ public class RecordViewModelBindingTests
         Assert.Equal(42, model.CategoryId);
         Assert.Equal("Climate", model.Name);
         Assert.Equal("Ideas about the climate", model.Description);
-    }
-
-    [Fact]
-    public async Task SectionFormViewModel_BoundFromForm_PopulatesAllInitProperties()
-    {
-        var form = new Dictionary<string, StringValues>
-        {
-            ["SectionId"] = "7",
-            ["Name"] = "Intro",
-            ["Description"] = "First section"
-        };
-
-        var (model, modelState) = await FormBinderTestHarness.BindAsync<SectionFormViewModel>(form);
-
-        Assert.True(modelState.IsValid);
-        Assert.Equal(7, model.SectionId);
-        Assert.Equal("Intro", model.Name);
-        Assert.Equal("First section", model.Description);
     }
 
     [Fact]
