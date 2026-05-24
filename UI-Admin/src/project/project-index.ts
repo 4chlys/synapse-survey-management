@@ -6,29 +6,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!modal) return;
 
+    function closeAllMenus() {
+        document.querySelectorAll<HTMLElement>('.project-menu').forEach(m => {
+            m.classList.add('hidden');
+            const card = m.closest<HTMLElement>('.card');
+            if (card) {
+                card.style.zIndex = '';
+                card.style.transform = '';
+                card.style.transition = '';
+            }
+        });
+    }
+
     document.querySelectorAll<HTMLButtonElement>('.project-menu-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const id = btn.dataset.projectId;
-            document.querySelectorAll<HTMLElement>('.project-menu').forEach(m => {
-                if (m.dataset.projectId !== id) m.classList.add('hidden');
-            });
             const menu = document.querySelector<HTMLElement>(`.project-menu[data-project-id="${id}"]`);
-            menu?.classList.toggle('hidden');
+            const isOpen = menu && !menu.classList.contains('hidden');
+
+            closeAllMenus();
+
+            if (!isOpen && menu) {
+                menu.classList.remove('hidden');
+                // Freeze the card: kill hover-lift transform so it doesn't glitch,
+                // and elevate z-index so the dropdown paints above sibling cards.
+                const card = menu.closest<HTMLElement>('.card');
+                if (card) {
+                    card.style.transition = 'none';
+                    card.style.transform = 'none';
+                    card.style.zIndex = '30';
+                }
+            }
         });
     });
 
-    document.addEventListener('click', () => {
-        document.querySelectorAll<HTMLElement>('.project-menu').forEach(m => m.classList.add('hidden'));
-    });
+    document.addEventListener('click', () => closeAllMenus());
 
     document.querySelectorAll<HTMLButtonElement>('.delete-project-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             projectNameEl.textContent = btn.dataset.projectName ?? '';
             projectIdInput.value = btn.dataset.projectId ?? '';
-            document.querySelectorAll<HTMLElement>('.project-menu').forEach(m => m.classList.add('hidden'));
+            closeAllMenus();
             modal.classList.remove('hidden');
         });
     });

@@ -186,25 +186,35 @@
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_ParticipantsTitle"]</p>
-                <div data-widget="SystemParticipants" class="relative" style="height:320px;"></div>
+                <div data-widget="SystemParticipants"
+                     data-i18n-series-participants="@L["Series_Participants"]"
+                     class="relative" style="height:320px;"></div>
             </div>
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_ProjectStatesTitle"]</p>
-                <div data-widget="SystemProjectStates" class="relative" style="height:320px;"></div>
+                <div data-widget="SystemProjectStates"
+                     data-i18n-active="@L["StatActive"]"
+                     data-i18n-draft="@L["StatDraft"]"
+                     data-i18n-archived="@L["StatArchived"]"
+                     class="relative" style="height:320px;"></div>
             </div>
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_AiCostTitle"]</p>
-                <div data-widget="SystemAiCost" class="relative" style="height:320px;"></div>
+                <div data-widget="SystemAiCost"
+                     data-i18n-series-cost="@L["Series_AiCost"]"
+                     class="relative" style="height:320px;"></div>
             </div>
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_CompletionTimeTitle"]</p>
-                <div data-widget="SystemCompletionBoxplot" class="relative" style="height:320px;"></div>
+                <div data-widget="SystemCompletionBoxplot"
+                     data-i18n-series-completion-time="@L["Series_CompletionTime"]"
+                     class="relative" style="height:320px;"></div>
             </div>
         </div>
     </div>

@@ -11,6 +11,8 @@ export function initSystemCompletionBoxplotWidget(el: HTMLElement): () => void {
     const canvas = document.createElement('canvas');
     el.appendChild(canvas);
 
+    const seriesLabel = el.dataset.i18nSeriesCompletionTime ?? 'Completion time (s)';
+
     const isDark = document.documentElement.getAttribute('data-theme') === 'synapse-dark';
     const tickColor = isDark ? '#9ca3af' : '#6b7280';
     const gridColor = isDark ? '#374151' : '#e5e7eb';
@@ -21,7 +23,7 @@ export function initSystemCompletionBoxplotWidget(el: HTMLElement): () => void {
         data: {
             labels: [],
             datasets: [{
-                label: 'Completion time (s)',
+                label: seriesLabel,
                 data: [],
                 backgroundColor: 'rgba(96, 165, 250, 0.5)',
                 borderColor: '#3b82f6',

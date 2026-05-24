@@ -7,4 +7,5 @@ public class UserWidgetPreference
     public int ProjectId { get; set; }
     public int Position { get; set; }
     public string WidgetType { get; set; } = string.Empty;
+    public int? QuestionId { get; set; }
 }

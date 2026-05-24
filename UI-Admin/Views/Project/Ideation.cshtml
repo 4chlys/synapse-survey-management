@@ -10,6 +10,7 @@
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
     var project = ViewData["Project"] as ProjectAdminViewModel;
+    if (isNew) ViewData["WizardStep"] = 3;
 }
 <div class="max-w-2xl">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>

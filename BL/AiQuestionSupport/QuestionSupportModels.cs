@@ -11,6 +11,8 @@ public sealed record QuestionSupportChatRequest
     public IReadOnlyList<AiSupportMessage> History            { get; init; } = [];
     public string                          UserMessage        { get; init; } = string.Empty;
     public bool                            IsFirstTurn        { get; init; }
+    public string                          ChatLanguage       { get; init; } = string.Empty;
+    public string                          QuestionLanguage   { get; init; } = string.Empty;
 }
 
 public sealed record QuestionSupportChatReply

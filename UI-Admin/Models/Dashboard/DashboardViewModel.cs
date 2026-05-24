@@ -13,6 +13,8 @@ public record DashboardViewModel
     public ICollection<CategoryMetricViewModel> TopCategories { get; init; } = new List<CategoryMetricViewModel>();
     public ICollection<IdeaMetricViewModel> TopIdeas { get; init; } = new List<IdeaMetricViewModel>();
     public string[] WidgetLayout { get; init; } = WidgetPreferenceService.DefaultLayout;
+    public WidgetSlot[] WidgetSlots { get; init; } = Array.ConvertAll(
+        WidgetPreferenceService.DefaultLayout, t => new WidgetSlot(t, null));
     public string ApiBaseUrl { get; init; } = string.Empty;
 }
 

@@ -66,4 +66,7 @@
   <data name="Chart_ProjectStatesTitle" xml:space="preserve"><value>Projectstatussen</value></data>
   <data name="Chart_AiCostTitle" xml:space="preserve"><value>AI-kosten per service</value></data>
   <data name="Chart_CompletionTimeTitle" xml:space="preserve"><value>Voltooitijd per project</value></data>
+  <data name="Series_Participants" xml:space="preserve"><value>Deelnemers</value></data>
+  <data name="Series_CompletionTime" xml:space="preserve"><value>Voltooitijd (s)</value></data>
+  <data name="Series_AiCost" xml:space="preserve"><value>Kosten (EUR)</value></data>
 </root>

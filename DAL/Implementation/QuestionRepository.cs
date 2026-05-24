@@ -11,6 +11,12 @@ public class QuestionRepository(DbContext context) : Repository<Question>(contex
             .AsNoTracking()
             .FirstOrDefaultAsync(q => q.QuestionId == questionId);
 
+    public Task<Question> ReadByIdWithTranslationsReadOnlyAsync(int questionId)
+        => Context.Set<Question>()
+            .AsNoTracking()
+            .Include(q => q.Translations).ThenInclude(t => t.Language)
+            .FirstOrDefaultAsync(q => q.QuestionId == questionId);
+
     public Task<Question> ReadByIdWithTranslationsForUpdateAsync(int questionId)
         => Context.Set<Question>()
             .Include(q => q.Translations)

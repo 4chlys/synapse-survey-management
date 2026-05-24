@@ -117,6 +117,11 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
                 .WithOne(q => q.Questionnaire)
                 .HasForeignKey("QuestionnaireId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(q => q.Sections)
+                .WithOne(s => s.Questionnaire)
+                .HasForeignKey("QuestionnaireId")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Question
@@ -412,11 +417,12 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Optional: an IconComment can be a reaction on a TextComment.
+            // Cascade so reactions are removed when their parent TextComment is deleted.
             e.HasOne(ic => ic.TextComment)
                 .WithMany(tc => tc.EmojiReactions)
                 .HasForeignKey("TextCommentId")
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

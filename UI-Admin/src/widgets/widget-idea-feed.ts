@@ -12,6 +12,9 @@ export function initIdeaFeedWidget(el: HTMLElement): () => void {
     const projectId = el.dataset.projectId ?? '';
     const apiBase = el.dataset.apiBase ?? '';
     const url = `${apiBase}/api/projects/${projectId}/stats/idea-feed?count=10`;
+    const titleText = el.dataset.i18nIdeaFeedTitle ?? '';
+    const emptyText = el.dataset.i18nNoIdeas ?? '';
+    const locale = document.documentElement.lang || 'nl';
 
     async function fetch_and_render(): Promise<void> {
         try {
@@ -19,17 +22,17 @@ export function initIdeaFeedWidget(el: HTMLElement): () => void {
             if (!res.ok) return;
             const items: IdeaFeedItem[] = await res.json();
 
-            el.innerHTML = '<p class="text-xs text-base-content/50 mb-2">Nieuwste ideeën</p>';
+            el.innerHTML = `<p class="text-xs text-base-content/50 mb-2">${titleText}</p>`;
             if (items.length === 0) {
                 const empty = document.createElement('p');
                 empty.className = 'text-base-content/40 text-xs';
-                empty.textContent = 'Nog geen ideeën';
+                empty.textContent = emptyText;
                 el.appendChild(empty);
                 return;
             }
 
             items.forEach(item => {
-                const time = new Date(item.createdAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+                const time = new Date(item.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 
                 const row = document.createElement('div');
                 row.className = 'py-1 border-b border-base-300';

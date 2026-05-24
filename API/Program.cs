@@ -117,6 +117,7 @@ builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
 builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
+builder.Services.AddScoped<IQuestionStatsRepository, QuestionStatsRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
@@ -183,6 +184,7 @@ builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
+builder.Services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
 
 // Rate limiting — cap email sends per source so a leaked API key can't be used to
 // blast mail through our Resend account / sender domain.

@@ -11,6 +11,11 @@ export function initModerationQueueWidget(el: HTMLElement): () => void {
     const projectId = el.dataset.projectId ?? '';
     const apiBase = el.dataset.apiBase ?? '';
     const url = `${apiBase}/api/projects/${projectId}/stats/moderation-queue`;
+    const titleText = el.dataset.i18nModerationTitle ?? '';
+    const approvedLabel = el.dataset.i18nModerationApproved ?? '';
+    const newLabel = el.dataset.i18nModerationNew ?? '';
+    const flaggedLabel = el.dataset.i18nModerationFlagged ?? '';
+    const declinedLabel = el.dataset.i18nModerationDeclined ?? '';
 
     async function fetch_and_render(): Promise<void> {
         try {
@@ -19,23 +24,23 @@ export function initModerationQueueWidget(el: HTMLElement): () => void {
             const q: ModerationQueue = await res.json();
 
             el.innerHTML = `
-                <p class="text-xs text-base-content/50 mb-3">Moderatiestatus</p>
+                <p class="text-xs text-base-content/50 mb-3">${titleText}</p>
                 <div class="grid grid-cols-2 gap-2 text-center">
                     <div class="bg-base-200 rounded p-2">
                         <p id="modq-approved-${projectId}" class="text-lg font-bold text-success"></p>
-                        <p class="text-xs text-base-content/50">Goedgekeurd</p>
+                        <p class="text-xs text-base-content/50">${approvedLabel}</p>
                     </div>
                     <div class="bg-base-200 rounded p-2">
                         <p id="modq-unflagged-${projectId}" class="text-lg font-bold text-warning"></p>
-                        <p class="text-xs text-base-content/50">Nieuw</p>
+                        <p class="text-xs text-base-content/50">${newLabel}</p>
                     </div>
                     <div class="bg-base-200 rounded p-2">
                         <p id="modq-flagged-${projectId}" class="text-lg font-bold text-error"></p>
-                        <p class="text-xs text-base-content/50">Gemarkeerd</p>
+                        <p class="text-xs text-base-content/50">${flaggedLabel}</p>
                     </div>
                     <div class="bg-base-200 rounded p-2">
                         <p id="modq-declined-${projectId}" class="text-lg font-bold text-base-content/60"></p>
-                        <p class="text-xs text-base-content/50">Afgewezen</p>
+                        <p class="text-xs text-base-content/50">${declinedLabel}</p>
                     </div>
                 </div>
             `;

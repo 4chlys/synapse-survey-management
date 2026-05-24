@@ -6,6 +6,7 @@ import './project/project-setup';
 import './project/project-style';
 import './project/project-shortform-autofill';
 import './project/project-questions';
+import './project/question-detail-modal';
 import './questionnaire/questionnaire-dnd';
 import './project/project-ideation';
 import './admin/ideas-filter';

@@ -19,6 +19,7 @@ using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -506,13 +507,14 @@ public class ProjectController(
         if (project is null) return NotFound();
 
         var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
-        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        var slots = await widgetPreferenceService.GetSlotsAsync(user.Id, projectId);
 
         var participantDomain = adminSettings.Value.ParticipantDomain;
         var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
         dashboard = dashboard with
         {
-            WidgetLayout = layout,
+            WidgetSlots = slots,
+            WidgetLayout = Array.ConvertAll(slots, s => s.WidgetType),
             ApiBaseUrl = $"{Request.Scheme}://{Request.Host}",
             SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
         };
@@ -633,7 +635,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        var slots = await widgetPreferenceService.GetSlotsAsync(user.Id, projectId);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
@@ -643,7 +645,8 @@ public class ProjectController(
         {
             ProjectId = projectId,
             ProjectName = project.Name,
-            Layout = layout,
+            Layout = Array.ConvertAll(slots, s => s.WidgetType),
+            Slots = Array.ConvertAll(slots, s => new WidgetSlotInput { WidgetType = s.WidgetType, QuestionId = s.QuestionId }),
             AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
         });
     }
@@ -654,14 +657,20 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var source = model.Layout ?? WidgetPreferenceService.DefaultLayout;
+        var source = model.Slots ?? [];
         var sanitized = Enumerable.Range(0, 9)
-            .Select(i => i < source.Length && WidgetPreferenceService.AllWidgetTypes.Contains(source[i])
-                ? source[i]
-                : WidgetPreferenceService.DefaultLayout[i])
+            .Select(i =>
+            {
+                var input = i < source.Length ? source[i] : null;
+                var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
+                    ? input.WidgetType
+                    : WidgetPreferenceService.DefaultLayout[i];
+                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
+                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
+            })
             .ToArray();
 
-        await widgetPreferenceService.SaveLayoutAsync(user.Id, projectId, sanitized);
+        await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
         var projectForConfigure = await projectService.GetProjectByIdAsync(projectId);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = projectForConfigure?.Name ?? "";
@@ -669,6 +678,16 @@ public class ProjectController(
         ViewData["ProjectState"]  = projectForConfigure?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SetWidgetQuestion(int projectId, int position, int? questionId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        await widgetPreferenceService.UpdateSlotQuestionAsync(user.Id, projectId, position, questionId);
+        return Ok();
     }
 
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>

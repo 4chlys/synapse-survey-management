@@ -19,4 +19,7 @@
   <data name="Widget_SurveyDistribution" xml:space="preserve"><value>Survey-link &amp; QR</value></data>
   <data name="Widget_IdeaFeed" xml:space="preserve"><value>Nieuwste ideeën</value></data>
   <data name="Widget_ModerationQueue" xml:space="preserve"><value>Moderatiestatus</value></data>
+  <data name="Widget_QuestionSinglePie" xml:space="preserve"><value>Vraag: Enkelvoudige keuze (taartdiagram)</value></data>
+  <data name="Widget_QuestionMultiBar" xml:space="preserve"><value>Vraag: Meervoudige keuze (staafdiagram)</value></data>
+  <data name="Widget_QuestionLikertBar" xml:space="preserve"><value>Vraag: Likertschaal (histogram)</value></data>
 </root>

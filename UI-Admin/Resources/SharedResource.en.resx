@@ -5,9 +5,11 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
-  <data name="AppName" xml:space="preserve"><value>Synapse Admin</value></data>
+  <data name="AppName" xml:space="preserve"><value>Synapse</value></data>
   <data name="LanguageMenu_Switch" xml:space="preserve"><value>Switch language</value></data>
   <data name="ThemeToggleLabel" xml:space="preserve"><value>Toggle theme</value></data>
+  <data name="Login_Tagline" xml:space="preserve"><value>The platform where organisations turn voices into decisions.</value></data>
+  <data name="Login_Subtagline" xml:space="preserve"><value>Design participation surveys, gather ideas, and surface what your community really thinks, all in one place.</value></data>
 
   <data name="Nav_MainNavigation" xml:space="preserve"><value>Main navigation</value></data>
   <data name="Nav_Projects" xml:space="preserve"><value>Projects</value></data>
@@ -21,6 +23,8 @@
   <data name="Nav_AiSettings" xml:space="preserve"><value>AI settings</value></data>
   <data name="Nav_SystemDashboard" xml:space="preserve"><value>System dashboard</value></data>
   <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
+  <data name="Nav_Launch" xml:space="preserve"><value>Launch</value></data>
+  <data name="Wizard_NewProject" xml:space="preserve"><value>New project</value></data>
 
   <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projects</value></data>
   <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platforms</value></data>
