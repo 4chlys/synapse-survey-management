@@ -72,6 +72,20 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         return query.CountAsync();
     }
 
+    public async Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null)
+    {
+        var ids = categoryIds.ToHashSet();
+        var query = Context.Set<Idea>()
+            .Where(i => ids.Contains(i.Category.CategoryId)
+                         && i.Status != ModerationStatus.Flagged
+                         && i.Status != ModerationStatus.Declined);
+        if (filterLanguageCode != null)
+            query = query.Where(i => EF.Property<string>(i, "LanguageCode") == filterLanguageCode);
+        return await query
+            .GroupBy(i => i.Category.CategoryId)
+            .ToDictionaryAsync(g => g.Key, g => g.Count());
+    }
+
     public Task<int> CountByCategoryAsync(int categoryId)
         => Context.Set<Idea>()
             .CountAsync(i => i.Category.CategoryId == categoryId);

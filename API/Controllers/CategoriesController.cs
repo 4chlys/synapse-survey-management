@@ -20,8 +20,8 @@ public class CategoriesController(
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories(int projectId)
     {
         var categories = (await categoryManager.GetCategoriesForProjectReadOnlyAsync(projectId)).ToList();
-        var counts = await ideaManager.CountByCategoriesAsync(categories.Select(c => c.CategoryId));
         var lang = ActiveCulture();
+        var counts = await ideaManager.CountVisibleByCategoriesAsync(categories.Select(c => c.CategoryId), lang);
         return Ok(categories.Select(c => MapToDto(c, counts.GetValueOrDefault(c.CategoryId, 0), lang)));
     }
 
@@ -30,8 +30,9 @@ public class CategoriesController(
     {
         var category = await categoryManager.GetCategoryByIdWithProjectReadOnlyAsync(id);
         if (category is null || category.Project?.ProjectId != projectId) return NotFound();
-        var count = await ideaManager.CountByCategoryAsync(id);
-        return Ok(MapToDto(category, count, ActiveCulture()));
+        var lang = ActiveCulture();
+        var count = await ideaManager.CountVisibleByCategoryAsync(id, lang);
+        return Ok(MapToDto(category, count, lang));
     }
 
     [HttpPost]

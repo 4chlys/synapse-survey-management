@@ -16,6 +16,8 @@ public interface IIdeaRepository : IRepository<Idea>
 
     Task<int> CountVisibleByCategoryAsync(int categoryId, string filterLanguageCode = null);
 
+    Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null);
+
     Task<int> CountByCategoryAsync(int categoryId);
 
     Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds);
