@@ -4,13 +4,16 @@ const DARK = 'synapse-dark';
 
 function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* quota or privacy block */ }
+    try {
+        localStorage.setItem(STORAGE_KEY, theme);
+    } catch { /* quota or privacy block */
+    }
     syncToggle(theme);
 }
 
 function syncToggle(theme: string): void {
-    const btn  = document.getElementById('theme-toggle');
-    const sun  = document.getElementById('icon-sun');
+    const btn = document.getElementById('theme-toggle');
+    const sun = document.getElementById('icon-sun');
     const moon = document.getElementById('icon-moon');
     const knob = document.getElementById('toggle-knob');
     if (btn) btn.setAttribute('aria-label', theme === DARK ? 'Schakel naar licht' : 'Schakel naar donker');
@@ -32,10 +35,20 @@ function syncToggle(theme: string): void {
 export function initTheme(): void {
     const saved = localStorage.getItem(STORAGE_KEY);
     const valid = (saved === LIGHT || saved === DARK) ? saved : null;
-    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
-    const theme = valid ?? preferred;
+    const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const theme = valid ?? (darkQuery.matches ? DARK : LIGHT);    
     document.documentElement.setAttribute('data-theme', theme);
     syncToggle(theme);
+
+    // Follow live OS-theme changes only while the user has no explicit choice
+    // applyTheme() is the only write to STORAGE_KEY, so an empty value means
+    // they've never toggled and OS preference is still the source of truth.
+    darkQuery.addEventListener('change', (e) => {
+        if (localStorage.getItem(STORAGE_KEY)) return;
+        const next = e.matches ? DARK : LIGHT;
+        document.documentElement.setAttribute('data-theme', next);
+        syncToggle(next);
+    })
 }
 
 export function toggleTheme(): void {
