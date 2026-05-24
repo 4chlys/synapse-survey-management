@@ -1,18 +1,22 @@
 @using Microsoft.Extensions.Options
 @using System.Globalization
+@using Microsoft.AspNetCore.Html
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @inject IViewLocalizer L
 @inject IHtmlLocalizer<SharedResource> Shared
 @inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
 @{
-    // Emit data-theme only for an explicit prior choice; on a first visit leave it
-    // null so Razor omits the attribute and daisyUI's prefersdark (synapse-dark)
-    // can honour the OS prefers-color-scheme setting.
+    // Emit data-theme only for an explicit prior choice; on a first visit leave the
+    // attribute fully absent so daisyUI's `:root:not([data-theme])` rule fires —
+    // that's the selector carrying the @media (prefers-color-scheme: dark) block.
+    // Plain `data-theme="@theme"` renders `data-theme=""` when theme is null
+    // (which still defeats `:not([data-theme])`), so build the attribute conditionally.
     var cookie = Context.Request.Cookies["synapse-theme"];
     string theme = cookie is "synapse-dark" or "synapse-light" ? cookie : null;
+    var dataTheme = theme is null ? null : new HtmlString($" data-theme=\"{theme}\"");
 }
-<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@theme">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"@dataTheme>
 
 <head>
     <meta charset="utf-8" />
