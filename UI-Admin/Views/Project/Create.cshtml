@@ -170,7 +170,11 @@
                         <div class="flex items-center gap-1.5">
                             <label class="text-sm font-semibold text-base-content">@L["ThemeLabel"]</label>
                         </div>
-                        <select asp-for="Theme" asp-items="Html.GetEnumSelectList<ProjectTheme>()"
+                        @* Option values must match the string the model holds (enum name, e.g.
+                           "HighContrast"); GetEnumSelectList would emit integer-string values
+                           that never match, so the saved theme never preselects. *@
+                        <select asp-for="Theme"
+                                asp-items="@(Enum.GetNames<ProjectTheme>().Select(n => new SelectListItem { Value = n, Text = n }))"
                                 class="select select-bordered w-full max-w-xs"></select>
                         <span asp-validation-for="Theme" class="text-xs text-error"></span>
                     </div>
