@@ -49,32 +49,11 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
             .ToListAsync();
     }
 
-    public async Task<IdentityResult> AddAdminAsync(int platformId, string email, string password)
-    {
-        var user = new ApplicationUser
-        {
-            UserName = email,
-            Email = email,
-            ProjectPlatformId = platformId
-        };
-        var result = await userManager.CreateAsync(user, password);
-        if (!result.Succeeded) return result;
-
-        var roleResult = await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
-        if (!roleResult.Succeeded)
-        {
-            // Compensating delete: the user was created but has no role — undo it so AddAdminAsync stays all-or-nothing.
-            await userManager.DeleteAsync(user);
-            return roleResult;
-        }
-        return result;
-    }
-
     public async Task<IdentityResult> RemoveAdminAsync(int platformId, string userId)
     {
         var user = await userManager.FindByIdAsync(userId);
         if (user is null || user.ProjectPlatformId != platformId)
-            return IdentityResult.Failed(new IdentityError { Description = "Gebruiker niet gevonden." });
+            return IdentityResult.Failed(new IdentityError { Description = "User not found." });
         return await userManager.DeleteAsync(user);
     }
 

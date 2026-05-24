@@ -1,38 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
-using SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
-[Authorize]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 [Route("api/projects/{projectId:int}")]
-public class StatsProxyController(
-    StatsProxyService proxy,
-    ProjectAdminService projectService,
-    UserManager<ApplicationUser> userManager) : Controller
+public class StatsProxyController(StatsProxyService proxy) : Controller
 {
-    private async Task<bool> CanAccessProjectAsync(int projectId)
-    {
-        if (User.IsInRole("SystemAdmin"))
-            return true;
-
-        var user = await userManager.GetUserAsync(User);
-        if (user?.ProjectPlatformId is null)
-            return false;
-
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        return project?.PlatformId == user.ProjectPlatformId;
-    }
-
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard(int projectId)
     {
-        if (!await CanAccessProjectAsync(projectId))
-            return Forbid();
-
         var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/dashboard");
         return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
     }
@@ -40,9 +20,6 @@ public class StatsProxyController(
     [HttpGet("stats/timeline")]
     public async Task<IActionResult> GetTimeline(int projectId, [FromQuery] int days = 30)
     {
-        if (!await CanAccessProjectAsync(projectId))
-            return Forbid();
-
         var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/stats/timeline?days={days}");
         return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
     }
@@ -50,9 +27,6 @@ public class StatsProxyController(
     [HttpGet("stats/idea-feed")]
     public async Task<IActionResult> GetIdeaFeed(int projectId, [FromQuery] int count = 10)
     {
-        if (!await CanAccessProjectAsync(projectId))
-            return Forbid();
-
         var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/stats/idea-feed?count={count}");
         return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
     }
@@ -60,9 +34,6 @@ public class StatsProxyController(
     [HttpGet("stats/moderation-queue")]
     public async Task<IActionResult> GetModerationQueue(int projectId)
     {
-        if (!await CanAccessProjectAsync(projectId))
-            return Forbid();
-
         var (status, body) = await proxy.ProxyGetAsync($"api/projects/{projectId}/stats/moderation-queue");
         return new ContentResult { StatusCode = status, Content = body, ContentType = "application/json" };
     }
@@ -74,9 +45,6 @@ public class StatsProxyController(
         [FromQuery] string sections,
         [FromQuery] bool includeGraphics = false)
     {
-        if (!await CanAccessProjectAsync(projectId))
-            return Forbid();
-
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(format))
             parts.Add($"format={Uri.EscapeDataString(format)}");

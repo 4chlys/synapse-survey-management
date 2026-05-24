@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
-using SynapseEnqueteManagement.UI.User.Services.Session;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 
@@ -18,9 +18,9 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 /// </summary>
 [ApiController]
 [Route("{projectId:int}/api/[controller]")]
+[RequireParticipantSession]
 public class IdeaSupportApiController(
     IdeaSupportService ideaSupportService,
-    ISessionService sessionService,
     IStringLocalizer<SharedResource> localizer,
     ILogger<IdeaSupportApiController> logger) : ControllerBase
 {
@@ -30,11 +30,6 @@ public class IdeaSupportApiController(
         IdeaSupportChatRequest body,
         CancellationToken ct)
     {
-        // Gate behind a valid participant session (survey must have been completed)
-        var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized("Participant session required.");
-
         IdeaSupportChatResponse result;
         try
         {
@@ -64,10 +59,6 @@ public class IdeaSupportApiController(
         int projectId,
         IdeaSupportRefineRequest body)
     {
-        var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized("Participant session required.");
-
         var result = await ideaSupportService.RefineAsync(projectId, body.DraftText);
         return Ok(result);
     }

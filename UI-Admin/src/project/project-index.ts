@@ -37,4 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.classList.add('hidden');
     });
+
+    // Double-submit guard: a quick double-click on Delete fires two POSTs.
+    // The first commits, the second 500s on a now-missing project. Covers both
+    // the modal #delete-form and the inline per-card forms (action=…/DeleteProject).
+    document.querySelectorAll<HTMLFormElement>('form[action*="DeleteProject"]').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+            if (submitBtn?.disabled) {
+                e.preventDefault();
+                return;
+            }
+            if (submitBtn) submitBtn.disabled = true;
+        });
+    });
 });

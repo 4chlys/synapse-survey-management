@@ -60,6 +60,7 @@
   <data name="Project_IntroductionRequired" xml:space="preserve"><value>Introductie is verplicht.</value></data>
   <data name="Project_AgeRange" xml:space="preserve"><value>MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</value></data>
   <data name="Project_LockedNotEditable" xml:space="preserve"><value>Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.</value></data>
+  <data name="Project_DeleteActiveBlocked" xml:space="preserve"><value>Dit project is actief en kan niet worden verwijderd. Archiveer het project eerst.</value></data>
   <data name="Project_NoPlatform" xml:space="preserve"><value>Uw account is niet gekoppeld aan een platform.</value></data>
   <data name="Project_NotFoundOrNoAccess" xml:space="preserve"><value>Project niet gevonden of geen toegang.</value></data>
   <data name="Project_CopySuccess" xml:space="preserve"><value>Project gekopieerd als sjabloon!</value></data>
@@ -96,4 +97,27 @@
   <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value></data>
   <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value></data>
   <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, de AI-assistent is even niet beschikbaar.</value></data>
+
+  <data name="Email_ForgotPassword_Subject" xml:space="preserve"><value>Wachtwoord resetten — Synapse</value></data>
+  <data name="Email_ForgotPassword_Body" xml:space="preserve"><value>Hallo,
+
+Je hebt een wachtwoordreset aangevraagd voor je Synapse-account.
+
+Klik op de onderstaande link om je wachtwoord te resetten:
+{0}
+
+Deze link is 24 uur geldig.
+
+Als je dit niet hebt aangevraagd, kan je deze e-mail negeren.</value></data>
+
+  <data name="Email_Welcome_Subject" xml:space="preserve"><value>Welkom bij Synapse — {0}</value></data>
+  <data name="Email_Welcome_Body" xml:space="preserve"><value>Hallo,
+
+Je bent toegevoegd als beheerder van platform '{0}' in Synapse.
+
+Je aanmeldgegevens:
+E-mail: {1}
+
+Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
+{2}</value></data>
 </root>

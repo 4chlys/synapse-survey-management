@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
@@ -6,6 +8,8 @@ using SynapseEnqueteManagement.UI.Admin.Services.Question;
 namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questions")]
 public class QuestionsApiController(QuestionAdminService questionService, ProjectAdminService projectService) : ControllerBase
 {

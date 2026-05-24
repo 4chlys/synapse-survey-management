@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
@@ -18,6 +19,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -89,6 +91,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
 // API HTTP clients
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7128";
 var apiKey = builder.Configuration["ApiKey"]
@@ -138,7 +147,8 @@ builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
-
+builder.Services.AddHttpClient<EmailApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("question-media-upload", context =>
@@ -158,8 +168,11 @@ builder.Services.AddSingleton(AiConfigLoader.Load(
     LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
+builder.Services.AddScoped<AdminInviteService>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<WidgetPreferenceService>();
+builder.Services.AddScoped<SynapseEnqueteManagement.UI.Admin.Filters.IProjectOwnershipLookup,
+                          SynapseEnqueteManagement.UI.Admin.Filters.ProjectOwnershipLookup>();
 
 // Rate limiting — protect expensive AI image-generation via project creation
 builder.Services.AddRateLimiter(options =>
@@ -233,7 +246,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapStaticAssets();
-app.MapGet("/health", () => Results.Ok("healthy"));
+app.MapGet("/health", () => Results.Ok("healthy")).AllowAnonymous();
 
 app.MapControllerRoute(
         name: "default",
@@ -241,3 +254,6 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
+// Expose the implicit Program class to the test project (WebApplicationFactory<Program>).
+public partial class Program;

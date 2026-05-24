@@ -1,0 +1,10 @@
+global using Xunit;
+global using Moq;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.Abstractions;
+global using Microsoft.AspNetCore.Mvc.Filters;
+global using Microsoft.AspNetCore.Mvc.ModelBinding;
+global using Microsoft.AspNetCore.Routing;
+global using SynapseEnqueteManagement.UI.User.Filters;
+global using SynapseEnqueteManagement.UI.User.Services.Session;

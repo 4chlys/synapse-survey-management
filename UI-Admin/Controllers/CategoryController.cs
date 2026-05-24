@@ -1,10 +1,14 @@
 ﻿
+  using Microsoft.AspNetCore.Authorization;
   using Microsoft.AspNetCore.Mvc;
+  using SynapseEnqueteManagement.UI.Admin.Filters;
   using SynapseEnqueteManagement.UI.Admin.Models.Category;
   using SynapseEnqueteManagement.UI.Admin.Services.Category;
 
   namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
+  [Authorize(Roles = "ProjectPlatformAdmin")]
+  [RequireProjectPlatformOwnership]
   public class CategoryController(CategoryAdminService categoryService) :
   Controller
   {

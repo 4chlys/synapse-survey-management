@@ -1,11 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questionsupport")]
 public class QuestionSupportApiController(
     QuestionSupportService questionSupportService,
