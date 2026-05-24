@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class QuestionStatsManagerTests
 {
-    private readonly Mock<IResponseRepository> _responseRepo = new(MockBehavior.Strict);
+    private readonly Mock<IQuestionStatsRepository> _statsRepo = new(MockBehavior.Strict);
     private readonly Mock<IQuestionRepository> _questionRepo = new(MockBehavior.Strict);
     private readonly QuestionStatsManager _manager;
 
@@ -13,7 +13,7 @@ public class QuestionStatsManagerTests
 
     public QuestionStatsManagerTests()
     {
-        _manager = new QuestionStatsManager(_responseRepo.Object, _questionRepo.Object);
+        _manager = new QuestionStatsManager(_statsRepo.Object, _questionRepo.Object);
     }
 
     private void SetupOwnership(bool exists)
@@ -82,9 +82,9 @@ public class QuestionStatsManagerTests
     {
         SetupOwnership(true);
         var counts = new OptionCount[] { new("Yes", 7), new("No", 3) };
-        _responseRepo.Setup(r => r.ReadCountsBySingleChoiceQuestionReadOnlyAsync(QuestionId))
+        _statsRepo.Setup(r => r.ReadCountsBySingleChoiceQuestionReadOnlyAsync(QuestionId))
             .ReturnsAsync(counts);
-        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+        _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(10);
         _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(("en", new[] { "Yes", "No" })));
@@ -104,9 +104,9 @@ public class QuestionStatsManagerTests
         SetupOwnership(true);
         // Raw counts arrive once per language: same option index, different text.
         var counts = new OptionCount[] { new("Yes", 7), new("Ja", 5), new("No", 3), new("Nee", 1) };
-        _responseRepo.Setup(r => r.ReadCountsBySingleChoiceQuestionReadOnlyAsync(QuestionId))
+        _statsRepo.Setup(r => r.ReadCountsBySingleChoiceQuestionReadOnlyAsync(QuestionId))
             .ReturnsAsync(counts);
-        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+        _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(16);
         _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(
@@ -126,9 +126,9 @@ public class QuestionStatsManagerTests
     {
         SetupOwnership(true);
         var counts = new OptionCount[] { new("A", 4), new("B", 6), new("C", 1) };
-        _responseRepo.Setup(r => r.ReadCountsByMultipleChoiceQuestionReadOnlyAsync(QuestionId))
+        _statsRepo.Setup(r => r.ReadCountsByMultipleChoiceQuestionReadOnlyAsync(QuestionId))
             .ReturnsAsync(counts);
-        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+        _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(11);
         _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(("en", new[] { "A", "B", "C" })));
@@ -146,9 +146,9 @@ public class QuestionStatsManagerTests
     {
         SetupOwnership(true);
         var distribution = new LikertPointCount[] { new(1, 2), new(3, 5), new(5, 3) };
-        _responseRepo.Setup(r => r.ReadLikertDistributionReadOnlyAsync(QuestionId))
+        _statsRepo.Setup(r => r.ReadLikertDistributionReadOnlyAsync(QuestionId))
             .ReturnsAsync(distribution);
-        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+        _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(10);
 
         var result = await _manager.ReadLikertStatsAsync(ProjectId, QuestionId);
@@ -166,9 +166,9 @@ public class QuestionStatsManagerTests
         SetupOwnership(true);
         var now = DateTime.UtcNow;
         var answers = new OpenAnswer[] { new("Hello world", now), new("Another answer", now) };
-        _responseRepo.Setup(r => r.ReadOpenAnswersReadOnlyAsync(QuestionId, 0, 50))
+        _statsRepo.Setup(r => r.ReadOpenAnswersReadOnlyAsync(QuestionId, 0, 50))
             .ReturnsAsync(answers);
-        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+        _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(2);
 
         var result = await _manager.ReadOpenAnswerPageAsync(ProjectId, QuestionId, 0, 50);
@@ -188,11 +188,11 @@ public class QuestionStatsManagerTests
     {
         SetupOwnership(true);
         int capturedSkip = -1, capturedTake = -1;
-        _responseRepo
+        _statsRepo
             .Setup(r => r.ReadOpenAnswersReadOnlyAsync(QuestionId, It.IsAny<int>(), It.IsAny<int>()))
             .Callback<int, int, int>((_, skip, take) => { capturedSkip = skip; capturedTake = take; })
             .ReturnsAsync(Array.Empty<OpenAnswer>());
-        _responseRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
+        _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(0);
 
         await _manager.ReadOpenAnswerPageAsync(ProjectId, QuestionId, 25, 10);
