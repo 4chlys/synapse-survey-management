@@ -15,8 +15,6 @@
   <data name="ContactEmailPlaceholder" xml:space="preserve"><value>contact@voorbeeld.be</value></data>
   <data name="BillingReferenceLabel" xml:space="preserve"><value>Factuurreferentie</value></data>
   <data name="BillingReferencePlaceholder" xml:space="preserve"><value>bijv. PO-2026-001</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
-
   <data name="AiModelHeading" xml:space="preserve"><value>AI-model</value></data>
   <data name="SingleModelText" xml:space="preserve"><value>Uw platform gebruikt {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>Geen AI-modellen beschikbaar. Neem contact op met de systeembeheerder.</value></data>

@@ -9,7 +9,6 @@
   <data name="Heading" xml:space="preserve"><value>Widgets instellen</value></data>
   <data name="PositionLabel" xml:space="preserve"><value>Positie</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
   <data name="Widget_ViewCount" xml:space="preserve"><value>Bekeken (aantal)</value></data>
   <data name="Widget_CompletionCount" xml:space="preserve"><value>Ingevuld (aantal)</value></data>
   <data name="Widget_CompletionRate" xml:space="preserve"><value>Voltooiingsgraad (%)</value></data>

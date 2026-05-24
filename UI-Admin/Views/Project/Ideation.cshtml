@@ -2,6 +2,7 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Project
 @model List<CategoryViewModel>
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_Layout";
@@ -57,7 +58,7 @@
                 </label>
                 @if (!isLocked)
                 {
-                    <div><button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button></div>
+                    <div><button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button></div>
                 }
             </form>
         </div>
@@ -129,7 +130,7 @@
                     <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                     <input type="hidden" name="step" value="3" />
                     <input type="hidden" name="returnAction" value="Ideation" />
-                    <button type="submit" class="btn btn-outline btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
                 </form>
             }
             <a asp-action="@(isLocked ? "Dashboard" : "Activate")" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@(isLocked ? L["DashboardLink"].Value : L["NextLink"].Value) →</a>

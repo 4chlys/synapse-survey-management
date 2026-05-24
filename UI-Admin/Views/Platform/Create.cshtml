@@ -1,6 +1,7 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model PlatformFormViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Platform";
@@ -48,7 +49,7 @@
 
                 <div class="card-actions justify-end gap-2 pt-2">
                     <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                    <button type="submit" class="btn btn-primary">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>

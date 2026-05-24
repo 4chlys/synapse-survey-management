@@ -55,7 +55,6 @@
   <data name="FormatLabel" xml:space="preserve"><value>Formaat:</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
   <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
   <data name="NextButton" xml:space="preserve"><value>Volgende</value></data>
   <data name="LanguageLabel" xml:space="preserve"><value>Taal</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>

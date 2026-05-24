@@ -1,6 +1,7 @@
 @using SynapseEnqueteManagement.BL.Domain.Ai
 @model SynapseEnqueteManagement.UI.Admin.Models.Settings.PlatformAdminSettingsViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Settings";
@@ -28,7 +29,7 @@
                     <input name="BillingReference" value="@Model.BasicInfo.BillingReference" class="input input-bordered w-full" placeholder="@L["BillingReferencePlaceholder"]" />
                 </label>
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -66,7 +67,7 @@
                         </select>
                     </label>
                     <div class="card-actions justify-end">
-                        <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                        <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                     </div>
                 </form>
             }
@@ -106,7 +107,7 @@
                     </label>
                 </div>
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -149,7 +150,7 @@
                                         <button type="submit" class="btn btn-ghost btn-sm">@L["ResetButton"]</button>
                                     </form>
                                 }
-                                <button type="submit" class="btn btn-warning btn-sm">@L["SaveButton"]</button>
+                                <button type="submit" class="btn btn-warning btn-sm">@Shared["Common_Save"]</button>
                             </div>
                         </form>
                     </div>

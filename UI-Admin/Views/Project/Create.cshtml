@@ -461,7 +461,7 @@
             @if (!isLocked)
             {
                 <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@L["SaveButton"]</button>
+                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@Shared["Common_Save"]</button>
                 <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
             }
             else

@@ -1,6 +1,7 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model PlatformSettingsViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Settings";
@@ -38,7 +39,7 @@
                 </label>
 
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -130,7 +131,7 @@
                 </label>
 
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
