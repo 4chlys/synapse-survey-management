@@ -30,6 +30,7 @@ test-dotnet:
   before_script:
     - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     - apt-get install -y nodejs
+    - npm install -g pnpm
   script:
     - dotnet test SynapseEnqueteManagement.sln
         --collect:"XPlat Code Coverage"
