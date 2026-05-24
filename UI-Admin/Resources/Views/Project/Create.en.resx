@@ -11,7 +11,7 @@
   <data name="HeadingNew" xml:space="preserve"><value>New project</value></data>
   <data name="LockedActive" xml:space="preserve"><value>This project is active. Settings can no longer be changed.</value></data>
   <data name="LockedArchived" xml:space="preserve"><value>This project is archived. Settings can no longer be changed.</value></data>
-  <data name="NameLabel" xml:space="preserve"><value>Project name *</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Project name</value></data>
   <data name="NamePlaceholder" xml:space="preserve"><value>e.g. Mental Wellbeing</value></data>
   <data name="ShortformLabel" xml:space="preserve"><value>Shortform</value></data>
   <data name="ShortformPlaceholder" xml:space="preserve"><value>auto-filled from the name</value></data>
@@ -54,7 +54,7 @@
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="NextButton" xml:space="preserve"><value>Next</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Language *</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Style</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Theme</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Preview</value></data>
@@ -94,4 +94,13 @@
   <data name="CustomCss_Avoid_ExternalImports" xml:space="preserve"><value>Don't import external CSS / fonts (blocked by validator anyway).</value></data>
   <data name="CustomCss_ResetButton" xml:space="preserve"><value>Clear custom CSS</value></data>
   <data name="CustomCss_ResetConfirm" xml:space="preserve"><value>Are you sure you want to clear the custom CSS?</value></data>
+  <data name="SectionGeneral" xml:space="preserve"><value>General information</value></data>
+  <data name="SectionAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="SectionBehavior" xml:space="preserve"><value>Behavior &amp; settings</value></data>
+  <data name="ShortformHint" xml:space="preserve"><value>This becomes the URL for your project (e.g. /p/mental-wellbeing)</value></data>
+  <data name="IntroductionHint" xml:space="preserve"><value>Shown to participants on the welcome screen before the survey starts</value></data>
+  <data name="ImageHint" xml:space="preserve"><value>Cover image shown on the project landing page</value></data>
+  <data name="InteractionModeHint" xml:space="preserve"><value>Controls how participants navigate through the questionnaire — one question at a time (scroll) or as a conversation (chat)</value></data>
+  <data name="AiAssistanceHint" xml:space="preserve"><value>Whether AI suggests improvements when participants type their ideas</value></data>
+  <data name="SectionsHint" xml:space="preserve"><value>Sections group questions in the questionnaire. Participants see section names as dividers between question blocks.</value></data>
 </root>

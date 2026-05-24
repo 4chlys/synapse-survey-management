@@ -93,7 +93,7 @@
             <div class="card-body items-center text-center gap-1">
                 <p class="text-3xl font-bold text-base-content">@Model.ParticipantCount</p>
                 <p class="text-sm text-base-content/60">@L["StatParticipants"]</p>
-                <a asp-action="Admins" asp-route-id="@Model.ProjectPlatformId"
+                <a asp-controller="AdminMembership" asp-action="Index" asp-route-id="@Model.ProjectPlatformId"
                    class="btn btn-ghost btn-xs mt-2">@L["AdminsLink"] →</a>
             </div>
         </div>

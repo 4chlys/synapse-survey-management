@@ -19,7 +19,6 @@ public class PlatformController(
     AiAdminService aiAdminService,
     SystemStatsAdminService systemStatsAdminService,
     UserManager<ApplicationUser> userManager,
-    AdminInviteService adminInviteService,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
@@ -204,52 +203,6 @@ public class PlatformController(
         });
     }
 
-    public async Task<IActionResult> Admins(int id)
-    {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
-
-        ViewData["PlatformId"] = id;
-        ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Admins";
-
-        return View(await BuildAdminsViewModel(id, platform.Name));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model, CancellationToken ct)
-    {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
-
-        ViewData["PlatformId"] = id;
-        ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Admins";
-
-        if (!ModelState.IsValid)
-            return View("Admins", await BuildAdminsViewModel(id, platform.Name));
-
-        var result = await adminInviteService.InviteAdminAsync(id, platform.Name, model.Email,
-            token => Url.Action("ResetPassword", "Auth", new { email = model.Email, token }, Request.Scheme), ct);
-        if (!result.Succeeded)
-        {
-            foreach (var error in result.Errors)
-                ModelState.AddModelError(string.Empty, error.Description);
-            return View("Admins", await BuildAdminsViewModel(id, platform.Name));
-        }
-
-        TempData["Success"] = localizer["Platform_AdminAdded"].Value;
-        return RedirectToAction(nameof(Admins), new { id });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> RemoveAdmin(int id, string userId)
-    {
-        await platformService.RemoveAdminAsync(id, userId);
-        TempData["Success"] = localizer["Platform_AdminRemoved"].Value;
-        return RedirectToAction(nameof(Admins), new { id });
-    }
-
     public async Task<IActionResult> Settings(int id)
     {
         var platform = await platformService.GetPlatformByIdAsync(id);
@@ -291,21 +244,6 @@ public class PlatformController(
         await platformService.SavePlatformSettingsAsync(id, model);
         TempData["Success"] = localizer["Platform_SettingsSaved"].Value;
         return RedirectToAction(nameof(Settings), new { id });
-    }
-
-    private async Task<PlatformAdminsViewModel> BuildAdminsViewModel(int id, string platformName)
-    {
-        var admins = await platformService.GetAdminsForPlatformAsync(id);
-        return new PlatformAdminsViewModel(
-            id,
-            platformName,
-            admins.Select(a => new AdminSummaryViewModel
-            {
-                UserId = a.Id,
-                UserName = a.UserName ?? a.Email ?? string.Empty,
-                Email = a.Email ?? string.Empty
-            }).ToList()
-        );
     }
 
     private async Task<PlatformSettingsViewModel> BuildSettingsViewModel(

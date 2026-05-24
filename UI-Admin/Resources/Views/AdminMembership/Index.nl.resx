@@ -11,6 +11,7 @@
   <data name="TableUsername" xml:space="preserve"><value>Gebruikersnaam</value></data>
   <data name="TableEmail" xml:space="preserve"><value>E-mail</value></data>
   <data name="RemoveConfirm" xml:space="preserve"><value>Beheerder {0} verwijderen?</value></data>
+  <data name="RemoveConfirmLastAdmin" xml:space="preserve"><value>⚠ {0} is de LAATSTE beheerder op dit platform. Als je deze verwijdert, blijft het platform zonder beheerders achter. Weet je het zeker?</value></data>
   <data name="RemoveButton" xml:space="preserve"><value>Verwijderen</value></data>
   <data name="AddHeading" xml:space="preserve"><value>Beheerder toevoegen</value></data>
   <data name="EmailLabel" xml:space="preserve"><value>E-mailadres</value></data>
@@ -18,4 +19,8 @@
   <data name="PasswordLabel" xml:space="preserve"><value>Wachtwoord</value></data>
   <data name="PasswordPlaceholder" xml:space="preserve"><value>Minimaal 6 tekens</value></data>
   <data name="AddButton" xml:space="preserve"><value>Beheerder toevoegen</value></data>
+  <data name="InviteLinkNotice" xml:space="preserve"><value>Beheerder toegevoegd. Deel deze link zodat zij hun wachtwoord kunnen instellen:</value></data>
+  <data name="EmailFailedNotice" xml:space="preserve"><value>De welkomstmail kon niet worden verzonden. De account is aangemaakt — je moet de onderstaande link handmatig delen.</value></data>
+  <data name="SendEmailLabel" xml:space="preserve"><value>Welkomstmail met de link versturen</value></data>
+  <data name="CopyButton" xml:space="preserve"><value>Kopiëren</value></data>
 </root>

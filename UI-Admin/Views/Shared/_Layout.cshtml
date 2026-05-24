@@ -104,9 +104,13 @@
 
     var platformId = ViewData["PlatformId"] as int?;
 
+    string PlatformNavController(string section) => section switch {
+        "Admins" => "AdminMembership",
+        _        => "Platform"
+    };
     string PlatformNavAction(string section) => section switch {
         "Dashboard" => "Dashboard",
-        "Admins"    => "Admins",
+        "Admins"    => "Index",
         "Settings"  => "Settings",
         _           => "Dashboard"
     };
@@ -211,21 +215,35 @@
         <!-- User dropdown -->
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button"
-                 class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center cursor-pointer select-none">
+                 class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center cursor-pointer select-none hover:bg-primary/20 transition-colors">
                 @(User.Identity!.Name?.FirstOrDefault().ToString().ToUpper() ?? "U")
             </div>
-            <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-xl shadow-lg w-52 p-1 mt-2 z-50">
-                <li class="px-3 py-1.5 pointer-events-none">
-                    <span class="text-xs text-base-content/50 truncate block">@User.Identity.Name</span>
-                </li>
-                <li class="divider my-0.5"></li>
-                <li><a asp-controller="Auth" asp-action="ChangePassword" class="text-sm">@Shared["UserMenu_ChangePassword"]</a></li>
-                <li>
-                    <form asp-controller="Auth" asp-action="Logout" method="post" class="p-0">
-                        <button type="submit" class="w-full text-left text-sm text-error px-4 py-2 hover:bg-error/10 rounded-lg">@Shared["UserMenu_Logout"]</button>
+            <div tabindex="0" class="dropdown-content bg-base-100 border border-base-300 rounded-xl shadow-xl w-56 mt-2 z-50 overflow-hidden">
+                <!-- Email header -->
+                <div class="px-4 py-3 border-b border-base-300">
+                    <p class="text-[11px] font-medium text-base-content/40 uppercase tracking-wider mb-0.5">@Shared["AppName"]</p>
+                    <p class="text-sm font-medium text-base-content truncate">@User.Identity.Name</p>
+                </div>
+                <!-- Menu items -->
+                <div class="p-1.5 flex flex-col gap-0.5">
+                    <a asp-controller="Auth" asp-action="ChangePassword"
+                       class="flex items-center gap-2.5 px-3 py-2 text-sm text-base-content rounded-lg hover:bg-base-200 transition-colors">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="shrink-0 text-base-content/50">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                        </svg>
+                        @Shared["UserMenu_ChangePassword"]
+                    </a>
+                    <form asp-controller="Auth" asp-action="Logout" method="post">
+                        <button type="submit"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-error rounded-lg hover:bg-error/8 transition-colors cursor-pointer">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="shrink-0">
+                                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+                            </svg>
+                            @Shared["UserMenu_Logout"]
+                        </button>
                     </form>
-                </li>
-            </ul>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -246,13 +264,23 @@
                     </svg>
                 </a>
 
+                <!-- Admins (ProjectPlatformAdmin — scoped to own platform) -->
+                <a asp-controller="AdminMembership" asp-action="Index"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(IsNavActive("Admins") ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_Admins"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                </a>
+
                 <!-- Platform settings (ProjectPlatformAdmin) -->
                 <a asp-controller="Settings" asp-action="Index"
                    class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(activeSection == "Settings" ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
                    data-tip="@Shared["Nav_Settings"]">
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
                 </a>
             }
@@ -370,7 +398,7 @@
                             {
                                 var active = activeSection == section;
                                 <li>
-                                    <a asp-controller="Platform"
+                                    <a asp-controller="@PlatformNavController(section)"
                                        asp-action="@PlatformNavAction(section)"
                                        asp-route-id="@platformId"
                                        class="@(active ? "bg-primary/10 text-primary font-semibold" : "text-base-content/60") rounded-xl gap-2.5">
@@ -394,7 +422,7 @@
                 <main class="flex-1 p-6 min-h-[calc(100vh-3.5rem)]">
                     @if (wizardStep.HasValue && wizardStepLabels != null)
                     {
-                        <div class="-mx-6 -mt-6 mb-8 px-8 py-4 bg-base-100 border-b border-base-300">
+                        <div class="-mx-6 -mt-6 mb-5 px-8 py-4 bg-base-100 border-b border-base-300">
                             <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-3">@Shared["Wizard_NewProject"]</p>
                             <div class="flex items-center max-w-2xl">
                                 @for (int _s = 0; _s < wizardStepLabels.Length; _s++)

@@ -11,7 +11,7 @@
   <data name="HeadingNew" xml:space="preserve"><value>Nieuw project</value></data>
   <data name="LockedActive" xml:space="preserve"><value>Dit project is actief. Instellingen kunnen niet meer worden gewijzigd.</value></data>
   <data name="LockedArchived" xml:space="preserve"><value>Dit project is gearchiveerd. Instellingen kunnen niet meer worden gewijzigd.</value></data>
-  <data name="NameLabel" xml:space="preserve"><value>Projectnaam *</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Projectnaam</value></data>
   <data name="NamePlaceholder" xml:space="preserve"><value>Bijv. Mentaal Welzijn</value></data>
   <data name="ShortformLabel" xml:space="preserve"><value>Shortform</value></data>
   <data name="ShortformPlaceholder" xml:space="preserve"><value>automatisch ingevuld vanuit de naam</value></data>
@@ -54,7 +54,7 @@
   <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
   <data name="NextButton" xml:space="preserve"><value>Volgende</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Taal *</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Taal</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Thema</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Voorbeeld</value></data>
@@ -94,4 +94,13 @@
   <data name="CustomCss_Avoid_ExternalImports" xml:space="preserve"><value>Importeer geen externe CSS / lettertypen (geblokkeerd door de validator).</value></data>
   <data name="CustomCss_ResetButton" xml:space="preserve"><value>Wis aangepaste CSS</value></data>
   <data name="CustomCss_ResetConfirm" xml:space="preserve"><value>Weet je zeker dat je de aangepaste CSS wilt wissen?</value></data>
+  <data name="SectionGeneral" xml:space="preserve"><value>Algemene informatie</value></data>
+  <data name="SectionAppearance" xml:space="preserve"><value>Vormgeving</value></data>
+  <data name="SectionBehavior" xml:space="preserve"><value>Gedrag &amp; instellingen</value></data>
+  <data name="ShortformHint" xml:space="preserve"><value>Dit wordt de URL van je project (bijv. /p/mentaal-welzijn)</value></data>
+  <data name="IntroductionHint" xml:space="preserve"><value>Getoond aan deelnemers op het welkomstscherm vóór de enquête begint</value></data>
+  <data name="ImageHint" xml:space="preserve"><value>Omslagafbeelding op de projectpagina</value></data>
+  <data name="InteractionModeHint" xml:space="preserve"><value>Bepaalt hoe deelnemers door de enquête navigeren — één vraag tegelijk (scrollen) of als een gesprek (chat)</value></data>
+  <data name="AiAssistanceHint" xml:space="preserve"><value>Of AI verbeteringen voorstelt terwijl deelnemers hun ideeën typen</value></data>
+  <data name="SectionsHint" xml:space="preserve"><value>Secties groeperen vragen in de enquête. Deelnemers zien sectienamen als tussenkopjes tussen vraagblokken.</value></data>
 </root>

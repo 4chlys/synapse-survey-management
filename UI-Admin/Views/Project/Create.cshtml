@@ -14,7 +14,15 @@
     if (!isEdit || isNew) ViewData["WizardStep"] = 1;
 }
 
-<div class="max-w-2xl">
+@* Inline helper: label + optional tooltip icon *@
+@functions {
+    static Microsoft.AspNetCore.Html.IHtmlContent InfoIcon(string tip)
+        => new Microsoft.AspNetCore.Html.HtmlString(
+            $"<div class=\"tooltip tooltip-right\" data-tip=\"{System.Net.WebUtility.HtmlEncode(tip)}\">" +
+            "<span class=\"text-base-content/35 hover:text-base-content/60 cursor-help text-xs select-none\">ⓘ</span></div>");
+}
+
+<div class="w-full">
     <h1 class="font-heading font-bold text-2xl text-base-content mb-6">
         @(isEdit ? L["HeadingEdit"].Value : L["HeadingNew"].Value)
     </h1>
@@ -27,401 +35,435 @@
         </div>
     }
 
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body gap-5">
-            <form id="project-form" asp-action="Create" method="post" class="flex flex-col gap-5">
-                @Html.AntiForgeryToken()
-                @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
-                <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                <fieldset @(isLocked ? "disabled" : "") class="flex flex-col gap-5 contents">
+    <form id="project-form" asp-action="Create" method="post" class="flex flex-col gap-6">
+        @Html.AntiForgeryToken()
+        @if (isEdit) { <input type="hidden" asp-for="ProjectId" /> }
+        <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
 
-                <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["LanguageLabel"]</span></div>
-                    <select asp-for="DefaultLanguageCode" class="select select-bordered w-full">
-                        <option value="nl">Nederlands</option>
-                        <option value="en">English</option>
-                    </select>
-                    <span asp-validation-for="DefaultLanguageCode" class="label-text-alt text-error mt-1"></span>
-                </label>
+        <fieldset @(isLocked ? "disabled" : "") class="contents">
 
-                <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["NameLabel"]</span></div>
-                    <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="@L["NamePlaceholder"]" maxlength="100" required />
-                    <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
-                </label>
+            @* ── Card 1: General Info ── *@
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body gap-5">
+                    <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["SectionGeneral"]</h2>
 
-                <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["ShortformLabel"]</span></div>
-                    <input asp-for="ShortForm" id="project-shortform-input"
-                           class="input input-bordered w-full" placeholder="@L["ShortformPlaceholder"]"
-                           maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
-                           readonly="@shortFormReadonly" />
-                    <span asp-validation-for="ShortForm" class="label-text-alt text-error mt-1"></span>
-                    <span id="shortform-availability-msg" class="label-text-alt text-warning mt-1"></span>
-                </label>
-
-                <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["TopicLabel"]</span></div>
-                    <input asp-for="Topic" class="input input-bordered w-full" placeholder="@L["TopicPlaceholder"]" maxlength="100" />
-                    <span asp-validation-for="Topic" class="label-text-alt text-error mt-1"></span>
-                </label>
-
-                <div class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["IntroductionLabel"]</span></div>
-                    @if (isLocked)
-                    {
-                        <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
-                            @Html.Raw(Model.Introduction)
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-sm font-semibold text-base-content" for="project-name-input">@L["NameLabel"] <span class="text-error">*</span></label>
+                            </div>
+                            <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="@L["NamePlaceholder"]" maxlength="100" required />
+                            <span asp-validation-for="Name" class="text-xs text-error"></span>
                         </div>
-                    }
-                    else
-                    {
-                        <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
-                    }
-                    <input type="hidden" asp-for="Introduction" id="Introduction" />
-                    <div class="flex justify-between mt-1">
-                        <span asp-validation-for="Introduction" class="label-text-alt text-error"></span>
-                        <span id="intro-char-count" class="label-text-alt text-gray-500"></span>
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">@L["InteractionModeLabel"]</span></div>
-                        <select asp-for="InteractionMode" class="select select-bordered w-full">
-                            <option value="VerticalScroll">@L["InteractionMode_Scroll"]</option>
-                            <option value="Chat">@L["InteractionMode_Chat"]</option>
-                        </select>
-                    </label>
-                    <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">@L["AiAssistanceLabel"]</span></div>
-                        <select asp-for="AiAssistance" class="select select-bordered w-full">
-                            <option value="ProActive">@L["AiAssistance_ProActive"]</option>
-                            <option value="AskFirst">@L["AiAssistance_AskFirst"]</option>
-                            <option value="Never">@L["AiAssistance_Never"]</option>
-                        </select>
-                    </label>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">@L["MinAgeLabel"]</span></div>
-                        <input asp-for="MinAge" type="number" id="min-age-input" min="0" max="120"
-                               class="input input-bordered w-full no-spinner" placeholder="@L["AgeOptional"]" />
-                        <span asp-validation-for="MinAge" class="label-text-alt text-error mt-1"></span>
-                    </label>
-                    <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">@L["MaxAgeLabel"]</span></div>
-                        <input asp-for="MaxAge" type="number" id="max-age-input" min="0" max="120"
-                               class="input input-bordered w-full no-spinner" placeholder="@L["AgeOptional"]" />
-                        <span asp-validation-for="MaxAge" class="label-text-alt text-error mt-1"></span>
-                    </label>
-                </div>
-                <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">@L["AgeRangeError"]</span>
-
-                <div class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["ImageLabel"]</span></div>
-                    <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative mb-2 overflow-hidden bg-base-200">
-                        <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                        </svg>
-                        <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
-                             class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
-                    </div>
-                    @if (!isLocked)
-                    {
-                        <div class="flex gap-2">
-                            <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
-                            <button type="button" id="generate-btn" class="btn btn-outline btn-sm"
-                                    data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-sm font-semibold text-base-content">@L["LanguageLabel"] <span class="text-error">*</span></label>
+                            </div>
+                            <select asp-for="DefaultLanguageCode" class="select select-bordered w-full">
+                                <option value="nl">Nederlands</option>
+                                <option value="en">English</option>
+                            </select>
+                            <span asp-validation-for="DefaultLanguageCode" class="text-xs text-error"></span>
                         </div>
-                        <input type="file" id="image-file-input" accept="image/*" class="hidden" />
-                    }
-                    <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
-                    <span asp-validation-for="ImageUrl" class="label-text-alt text-error mt-1"></span>
-                </div>
+                    </div>
 
-                <div class="form-control">
-                    <label class="label cursor-pointer justify-start gap-3">
-                        <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
-                        <span class="label-text">@L["ContactOptInLabel"]</span>
-                    </label>
-                </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-sm font-semibold text-base-content" for="project-shortform-input">@L["ShortformLabel"]</label>
+                                @InfoIcon(L["ShortformHint"].Value)
+                            </div>
+                            <input asp-for="ShortForm" id="project-shortform-input"
+                                   class="input input-bordered w-full" placeholder="@L["ShortformPlaceholder"]"
+                                   maxlength="30" pattern="^[a-z0-9](-?[a-z0-9])*$"
+                                   readonly="@shortFormReadonly" />
+                            <span asp-validation-for="ShortForm" class="text-xs text-error"></span>
+                            <span id="shortform-availability-msg" class="text-xs text-warning"></span>
+                        </div>
 
-                @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
-                {
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-sm font-semibold text-base-content">@L["TopicLabel"] <span class="text-error">*</span></label>
+                            </div>
+                            <input asp-for="Topic" class="input input-bordered w-full" placeholder="@L["TopicPlaceholder"]" maxlength="100" />
+                            <span asp-validation-for="Topic" class="text-xs text-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 items-start">
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-semibold text-base-content">@L["IntroductionLabel"] <span class="text-error">*</span></span>
+                                @InfoIcon(L["IntroductionHint"].Value)
+                            </div>
+                            @if (isLocked)
+                            {
+                                <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
+                                    @Html.Raw(Model.Introduction)
+                                </div>
+                            }
+                            else
+                            {
+                                <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
+                            }
+                            <input type="hidden" asp-for="Introduction" id="Introduction" />
+                            <div class="flex justify-between">
+                                <span asp-validation-for="Introduction" class="text-xs text-error"></span>
+                                <span id="intro-char-count" class="text-xs text-base-content/40"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-semibold text-base-content">@L["ImageLabel"]</span>
+                                @InfoIcon(L["ImageHint"].Value)
+                            </div>
+                            <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative overflow-hidden bg-base-200">
+                                <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
+                                </svg>
+                                <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
+                                     class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
+                            </div>
+                            @if (!isLocked)
+                            {
+                                <div class="flex gap-2">
+                                    <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
+                                    <button type="button" id="generate-btn" class="btn btn-outline btn-sm"
+                                            data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
+                                </div>
+                                <input type="file" id="image-file-input" accept="image/*" class="hidden" />
+                            }
+                            <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
+                            <span asp-validation-for="ImageUrl" class="text-xs text-error"></span>
+                        </div>
+                    </div>
+
                     <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-3">
-                            <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
-                            <span class="label-text">@L["CrossLanguageLabel"]</span>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
+                            <span class="text-sm text-base-content">@L["ContactOptInLabel"]</span>
                         </label>
-                        <span class="label-text-alt">@L["CrossLanguageHint"]</span>
                     </div>
-                }
 
-                <div class="divider my-0">@L["SectionsDivider"]</div>
-
-                <div id="sections-container" class="flex flex-col gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
-                    @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
+                    @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
                     {
-                        <div class="flex gap-2 items-center section-row">
-                            <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
-                                   class="input input-bordered input-sm flex-1" placeholder="@L["SectionNamePlaceholder"]" />
-                            <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
+                        <div class="form-control gap-1">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
+                                <span class="text-sm text-base-content">@L["CrossLanguageLabel"]</span>
+                            </label>
+                            <span class="text-xs text-base-content/50 pl-9">@L["CrossLanguageHint"]</span>
                         </div>
                     }
                 </div>
-                <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                    @L["AddSectionButton"]
-                </button>
+            </div>
 
-                <div class="divider my-0">@L["StyleDivider"]</div>
+            @* ── Card 2: Appearance ── *@
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body gap-5">
+                    <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["SectionAppearance"]</h2>
 
-                <div class="form-control">
-                    <label asp-for="Theme" class="label">
-                        <span class="label-text">@L["ThemeLabel"]</span>
-                    </label>
-                    @* Option values must match the string the model holds (enum name, e.g.
-                       "HighContrast"); GetEnumSelectList would emit integer-string values
-                       that never match, so the saved theme never preselects. *@
-                    <select asp-for="Theme"
-                            asp-items="@(Enum.GetNames<ProjectTheme>().Select(n => new SelectListItem { Value = n, Text = n }))"
-                            class="select select-bordered w-full"></select>
-                    <span asp-validation-for="Theme" class="label-text-alt text-error mt-1"></span>
-                </div>
+                    <div class="form-control gap-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <label class="text-sm font-semibold text-base-content">@L["ThemeLabel"]</label>
+                        </div>
+                        @* Option values must match the string the model holds (enum name, e.g.
+                           "HighContrast"); GetEnumSelectList would emit integer-string values
+                           that never match, so the saved theme never preselects. *@
+                        <select asp-for="Theme"
+                                asp-items="@(Enum.GetNames<ProjectTheme>().Select(n => new SelectListItem { Value = n, Text = n }))"
+                                class="select select-bordered w-full max-w-xs"></select>
+                        <span asp-validation-for="Theme" class="text-xs text-error"></span>
+                    </div>
 
-                <div class="form-control">
-                    <span class="label-text">@L["PreviewLabel"]</span>
-                    <div class="grid grid-cols-2 gap-3 mt-1">
-                        <div>
-                            <span class="text-xs opacity-60">@L["PreviewLight"]</span>
-                            <div id="theme-preview-light"
-                                 data-initial-theme="@((Model.Theme ?? "Minimal").ToLowerInvariant())"
-                                 data-mode="light"></div>
+                    <div class="form-control gap-1.5">
+                        <span class="text-sm font-semibold text-base-content">@L["PreviewLabel"]</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <span class="text-xs text-base-content/50">@L["PreviewLight"]</span>
+                                <div id="theme-preview-light"
+                                     data-initial-theme="@((Model.Theme ?? "Minimal").ToLowerInvariant())"
+                                     data-mode="light"></div>
+                            </div>
+                            <div>
+                                <span class="text-xs text-base-content/50">@L["PreviewDark"]</span>
+                                <div id="theme-preview-dark"
+                                     data-initial-theme="@((Model.Theme ?? "Minimal").ToLowerInvariant())"
+                                     data-mode="dark"></div>
+                            </div>
+                        </div>
+                        <span class="text-xs text-base-content/40">@L["PreviewHint"]</span>
+                    </div>
+
+                    <div class="form-control gap-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sm font-semibold text-base-content">@L["PrimaryColorLabel"]</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input id="primary-color-picker" type="color" value="#16A34A"
+                                   class="h-10 w-16 rounded border border-base-300 cursor-pointer disabled:opacity-50" />
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input id="use-theme-color" type="checkbox" class="checkbox checkbox-sm" />
+                                <span class="text-sm text-base-content">@L["UseThemeColorLabel"]</span>
+                            </label>
                         </div>
                         <div>
-                            <span class="text-xs opacity-60">@L["PreviewDark"]</span>
-                            <div id="theme-preview-dark"
-                                 data-initial-theme="@((Model.Theme ?? "Minimal").ToLowerInvariant())"
-                                 data-mode="dark"></div>
+                            <span class="text-xs text-base-content/50">@L["ColorSwatches_Label"]</span>
+                            <div id="primary-color-swatches" class="flex flex-wrap gap-2 mt-1.5">
+                                <button type="button" data-swatch-color="#EA580C"
+                                        class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                        style="background-color:#EA580C" title="@L["ColorSwatch_Sports"]"
+                                        aria-label="@L["ColorSwatch_Sports"]"></button>
+                                <button type="button" data-swatch-color="#16A34A"
+                                        class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                        style="background-color:#16A34A" title="@L["ColorSwatch_Nature"]"
+                                        aria-label="@L["ColorSwatch_Nature"]"></button>
+                                <button type="button" data-swatch-color="#7C3AED"
+                                        class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                        style="background-color:#7C3AED" title="@L["ColorSwatch_Culture"]"
+                                        aria-label="@L["ColorSwatch_Culture"]"></button>
+                                <button type="button" data-swatch-color="#0D9488"
+                                        class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
+                                        style="background-color:#0D9488" title="@L["ColorSwatch_Health"]"
+                                        aria-label="@L["ColorSwatch_Health"]"></button>
+                            </div>
+                        </div>
+                        <input asp-for="PrimaryColor" type="hidden" />
+                        <span asp-validation-for="PrimaryColor" class="text-xs text-error"></span>
+                        <div id="primary-color-contrast-warning"
+                             class="hidden flex items-start gap-1 text-warning text-xs"
+                             role="status" aria-live="polite"
+                             data-light-base="#FFFFFF"
+                             data-dark-base="#1A1430"
+                             data-min-ratio="3"
+                             data-msg-light="@L["PrimaryColor_LowContrast_Light"]"
+                             data-msg-dark="@L["PrimaryColor_LowContrast_Dark"]"
+                             data-msg-both="@L["PrimaryColor_LowContrast_Both"]">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5">
+                                <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            </svg>
+                            <span data-warning-text></span>
                         </div>
                     </div>
-                    <span class="label-text-alt mt-1 opacity-70">
-                        @L["PreviewHint"]
-                    </span>
-                </div>
 
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">@L["PrimaryColorLabel"]</span>
-                    </label>
-                    <div class="flex items-center gap-3">
-                        <input id="primary-color-picker" type="color" value="#16A34A"
-                               class="h-10 w-16 rounded border border-base-300 cursor-pointer disabled:opacity-50" />
-                        <label class="label cursor-pointer justify-start gap-2 py-0">
-                            <input id="use-theme-color" type="checkbox" class="checkbox checkbox-sm" />
-                            <span class="label-text">@L["UseThemeColorLabel"]</span>
-                        </label>
-                    </div>
-                    @* Topic shortcuts — curated, contrast-safe starting colours. Each just
-                       writes a hex into the picker; no theme/enum involved. *@
-                    <div class="mt-2">
-                        <span class="label-text-alt opacity-70">@L["ColorSwatches_Label"]</span>
-                        <div id="primary-color-swatches" class="flex flex-wrap gap-2 mt-1">
-                            <button type="button" data-swatch-color="#EA580C"
-                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
-                                    style="background-color:#EA580C" title="@L["ColorSwatch_Sports"]"
-                                    aria-label="@L["ColorSwatch_Sports"]"></button>
-                            <button type="button" data-swatch-color="#16A34A"
-                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
-                                    style="background-color:#16A34A" title="@L["ColorSwatch_Nature"]"
-                                    aria-label="@L["ColorSwatch_Nature"]"></button>
-                            <button type="button" data-swatch-color="#7C3AED"
-                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
-                                    style="background-color:#7C3AED" title="@L["ColorSwatch_Culture"]"
-                                    aria-label="@L["ColorSwatch_Culture"]"></button>
-                            <button type="button" data-swatch-color="#0D9488"
-                                    class="h-7 w-7 rounded-full border border-base-300 cursor-pointer hover:scale-110 transition-transform"
-                                    style="background-color:#0D9488" title="@L["ColorSwatch_Health"]"
-                                    aria-label="@L["ColorSwatch_Health"]"></button>
-                        </div>
-                    </div>
-                    <input asp-for="PrimaryColor" type="hidden" />
-                    <span asp-validation-for="PrimaryColor" class="label-text-alt text-error mt-1"></span>
-                    @* Client-side contrast advisory. Server validation in BL is authoritative;
-                       this just surfaces the problem in real time so the admin can react before submit. *@
-                    <div id="primary-color-contrast-warning"
-                         class="hidden mt-1 flex items-start gap-1 text-warning text-xs"
-                         role="status" aria-live="polite"
-                         data-light-base="#FFFFFF"
-                         data-dark-base="#1A1430"
-                         data-min-ratio="3"
-                         data-msg-light="@L["PrimaryColor_LowContrast_Light"]"
-                         data-msg-dark="@L["PrimaryColor_LowContrast_Dark"]"
-                         data-msg-both="@L["PrimaryColor_LowContrast_Both"]">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5">
-                            <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        </svg>
-                        <span data-warning-text></span>
-                    </div>
-                </div>
-
-                @* Custom CSS is an advanced, rarely-used escape hatch — collapsed by
-                   default, auto-opened when the project already has CSS saved. *@
-                <details@(string.IsNullOrWhiteSpace(Model.CustomCss) ? "" : " open")>
-                    <summary class="cursor-pointer label-text font-medium py-1">@L["CustomCssLabel"]</summary>
-                    <div class="form-control mt-1">
-                    <div class="flex justify-end">
-                        <button id="customcss-reset" type="button" class="btn btn-xs btn-ghost"
-                                data-confirm="@L["CustomCss_ResetConfirm"].Value">@L["CustomCss_ResetButton"]</button>
-                    </div>
-                    <textarea asp-for="CustomCss" rows="6"
-                              class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
-                    <span class="label-text-alt">@L["CustomCssHint"]</span>
-                    <span asp-validation-for="CustomCss" class="label-text-alt text-error mt-1"></span>
-                    <details class="mt-2 text-sm">
-                        <summary class="cursor-pointer label-text">
-                            @L["CustomCssHelperSummary"]
-                        </summary>
-                        <div id="customcss-helper" class="mt-2 flex flex-col gap-3">
-                            <div>
-                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssVariables"]</div>
-                                <div data-helper-group="variables" class="flex flex-wrap gap-1">
-                                    @* Tokens injected by project-style.ts on load *@
-                                </div>
+                    <details open="@(string.IsNullOrWhiteSpace(Model.CustomCss) ? null : "open")">
+                        <summary class="cursor-pointer text-sm font-semibold text-base-content py-1">@L["CustomCssLabel"]</summary>
+                        <div class="form-control mt-2 gap-1.5">
+                            <div class="flex justify-end">
+                                <button id="customcss-reset" type="button" class="btn btn-xs btn-ghost"
+                                        data-confirm="@L["CustomCss_ResetConfirm"].Value">@L["CustomCss_ResetButton"]</button>
                             </div>
-                            <div>
-                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssSnippets"]</div>
-                                <div data-helper-group="snippets" class="flex flex-wrap gap-1"
-                                     data-label-primary-color="@L["Snippet_PrimaryColor"]"
-                                     data-label-rounded-buttons="@L["Snippet_RoundedButtons"]"
-                                     data-label-idea-card-shadow="@L["Snippet_IdeaCardShadow"]"
-                                     data-label-heading-font="@L["Snippet_HeadingFont"]"
-                                     data-label-rounded-buttons-everywhere="@L["Snippet_RoundedButtonsEverywhere"]"
-                                     data-label-brand-gradient-header="@L["Snippet_BrandGradientHeader"]"
-                                     data-label-stronger-focus-ring="@L["Snippet_StrongerFocusRing"]">
-                                    @* Snippets injected by project-style.ts on load *@
+                            <textarea asp-for="CustomCss" rows="6"
+                                      class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
+                            <span class="text-xs text-base-content/40">@L["CustomCssHint"]</span>
+                            <span asp-validation-for="CustomCss" class="text-xs text-error"></span>
+                            <details class="mt-1 text-sm">
+                                <summary class="cursor-pointer text-sm text-base-content/70">
+                                    @L["CustomCssHelperSummary"]
+                                </summary>
+                                <div id="customcss-helper" class="mt-2 flex flex-col gap-3">
+                                    <div>
+                                        <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssVariables"]</div>
+                                        <div data-helper-group="variables" class="flex flex-wrap gap-1"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCssSnippets"]</div>
+                                        <div data-helper-group="snippets" class="flex flex-wrap gap-1"
+                                             data-label-primary-color="@L["Snippet_PrimaryColor"]"
+                                             data-label-rounded-buttons="@L["Snippet_RoundedButtons"]"
+                                             data-label-idea-card-shadow="@L["Snippet_IdeaCardShadow"]"
+                                             data-label-heading-font="@L["Snippet_HeadingFont"]"
+                                             data-label-rounded-buttons-everywhere="@L["Snippet_RoundedButtonsEverywhere"]"
+                                             data-label-brand-gradient-header="@L["Snippet_BrandGradientHeader"]"
+                                             data-label-stronger-focus-ring="@L["Snippet_StrongerFocusRing"]"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCss_SelectorsLabel"]</div>
+                                        <p class="text-xs opacity-70 mb-1">@L["CustomCss_SelectorsHelp"]</p>
+                                        <div class="flex flex-wrap gap-1">
+                                            <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">[data-project-theme]</code>
+                                            <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.btn.btn-primary</code>
+                                            <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">#ideas-list a</code>
+                                            <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.chat-bubble-left</code>
+                                            <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.accent-strip</code>
+                                            <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">header</code>
+                                        </div>
+                                    </div>
+                                    <details>
+                                        <summary class="cursor-pointer text-sm opacity-70">@L["CustomCss_AvoidLabel"]</summary>
+                                        <ul class="mt-1 ml-4 list-disc opacity-70 text-xs flex flex-col gap-0.5">
+                                            <li>@L["CustomCss_Avoid_Overflow"]</li>
+                                            <li>@L["CustomCss_Avoid_FixedPosition"]</li>
+                                            <li>@L["CustomCss_Avoid_Important"]</li>
+                                            <li>@L["CustomCss_Avoid_ExternalImports"]</li>
+                                        </ul>
+                                    </details>
+                                    <div id="customcss-syntax-hint"
+                                         class="text-xs opacity-70" aria-live="polite"
+                                         data-unbalanced-label="@L["CustomCss_Unbalanced"].Value"
+                                         data-balanced-label="@L["CustomCss_Balanced"]"></div>
                                 </div>
-                            </div>
-                            <div>
-                                <div class="text-xs uppercase opacity-60 mb-1">@L["CustomCss_SelectorsLabel"]</div>
-                                <p class="text-xs opacity-70 mb-1">@L["CustomCss_SelectorsHelp"]</p>
-                                <div class="flex flex-wrap gap-1">
-                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">[data-project-theme]</code>
-                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.btn.btn-primary</code>
-                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">#ideas-list a</code>
-                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.chat-bubble-left</code>
-                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">.accent-strip</code>
-                                    <code class="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">header</code>
-                                </div>
-                            </div>
-                            <details>
-                                <summary class="cursor-pointer label-text opacity-70">@L["CustomCss_AvoidLabel"]</summary>
-                                <ul class="mt-1 ml-4 list-disc opacity-70 text-xs flex flex-col gap-0.5">
-                                    <li>@L["CustomCss_Avoid_Overflow"]</li>
-                                    <li>@L["CustomCss_Avoid_FixedPosition"]</li>
-                                    <li>@L["CustomCss_Avoid_Important"]</li>
-                                    <li>@L["CustomCss_Avoid_ExternalImports"]</li>
-                                </ul>
                             </details>
-                            <div id="customcss-syntax-hint"
-                                 class="text-xs opacity-70" aria-live="polite"
-                                 data-unbalanced-label="@L["CustomCss_Unbalanced"].Value"
-                                 data-balanced-label="@L["CustomCss_Balanced"]"></div>
                         </div>
                     </details>
-                    </div>
-                </details>
+                </div>
+            </div>
 
-                </fieldset>
-            </form>
+            @* ── Card 3: Behavior & Settings ── *@
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body gap-5">
+                    <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["SectionBehavior"]</h2>
 
-            @if (isLocked && Model.ProjectId.HasValue)
-            {
-                <div class="divider my-0">@L["ExportDivider"]</div>
-
-                <button type="button" class="btn btn-outline btn-sm gap-1.5"
-                        onclick="document.getElementById('rawdata-modal').showModal()">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
-                    </svg>
-                    @L["ExportRawDataButton"]
-                </button>
-
-                <dialog id="rawdata-modal" class="modal"
-                        data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
-                    <div class="modal-box">
-                        <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
-
-                        <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
-
-                        <div class="form-control gap-2 mb-4">
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
-                                <span class="label-text">@L["RawData_Questions"]</span>
-                            </label>
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
-                                <span class="label-text">@L["RawData_Answers"]</span>
-                            </label>
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
-                                <span class="label-text">@L["RawData_Categories"]</span>
-                            </label>
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
-                                <span class="label-text">@L["RawData_Ideas"]</span>
-                            </label>
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
-                                <span class="label-text">@L["RawData_Comments"]</span>
-                            </label>
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
-                                <span class="label-text">@L["RawData_EmojiReactions"]</span>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center gap-2 mb-4">
-                            <span class="text-sm font-medium">@L["FormatLabel"]</span>
-                            <select id="rawdata-format" class="select select-bordered select-sm w-40">
-                                <option value="xlsx">Excel (.xlsx)</option>
-                                <option value="csv">CSV (.zip)</option>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-semibold text-base-content">@L["InteractionModeLabel"]</span>
+                                @InfoIcon(L["InteractionModeHint"].Value)
+                            </div>
+                            <select asp-for="InteractionMode" class="select select-bordered w-full">
+                                <option value="VerticalScroll">@L["InteractionMode_Scroll"]</option>
+                                <option value="Chat">@L["InteractionMode_Chat"]</option>
                             </select>
                         </div>
 
-                        <div class="modal-action">
-                            <form method="dialog">
-                                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
-                            </form>
-                            <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
+                        <div class="form-control gap-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm font-semibold text-base-content">@L["AiAssistanceLabel"]</span>
+                                @InfoIcon(L["AiAssistanceHint"].Value)
+                            </div>
+                            <select asp-for="AiAssistance" class="select select-bordered w-full">
+                                <option value="ProActive">@L["AiAssistance_ProActive"]</option>
+                                <option value="AskFirst">@L["AiAssistance_AskFirst"]</option>
+                                <option value="Never">@L["AiAssistance_Never"]</option>
+                            </select>
                         </div>
                     </div>
-                    <form method="dialog" class="modal-backdrop"><button>close</button></form>
-                </dialog>
-            }
 
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control gap-1.5">
+                            <label class="text-sm font-semibold text-base-content" for="min-age-input">@L["MinAgeLabel"]</label>
+                            <input asp-for="MinAge" type="number" id="min-age-input" min="0" max="120"
+                                   class="input input-bordered w-full no-spinner" placeholder="@L["AgeOptional"]" />
+                            <span asp-validation-for="MinAge" class="text-xs text-error"></span>
+                        </div>
+                        <div class="form-control gap-1.5">
+                            <label class="text-sm font-semibold text-base-content" for="max-age-input">@L["MaxAgeLabel"]</label>
+                            <input asp-for="MaxAge" type="number" id="max-age-input" min="0" max="120"
+                                   class="input input-bordered w-full no-spinner" placeholder="@L["AgeOptional"]" />
+                            <span asp-validation-for="MaxAge" class="text-xs text-error"></span>
+                        </div>
+                    </div>
+                    <span id="age-range-error" class="hidden text-error text-xs -mt-3 block">@L["AgeRangeError"]</span>
 
-            <div class="card-actions justify-end gap-2 pt-2">
-                @if (!isLocked)
-                {
-                    <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                    <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@L["SaveButton"]</button>
-                    <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
-                }
-                else
-                {
-                    <a asp-action="Index" class="btn btn-ghost">@Shared["Common_Back"]</a>
-                    @if (Model.ProjectId.HasValue)
-                    {
-                        <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">@L["NextButton"] &rarr;</a>
-                    }
-                }
+                    <div class="form-control gap-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sm font-semibold text-base-content">@L["SectionsDivider"]</span>
+                            @InfoIcon(L["SectionsHint"].Value)
+                        </div>
+                        <div id="sections-container" class="flex flex-col gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
+                            @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
+                            {
+                                <div class="flex gap-2 items-center section-row">
+                                    <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
+                                           class="input input-bordered input-sm flex-1" placeholder="@L["SectionNamePlaceholder"]" />
+                                    <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
+                                </div>
+                            }
+                        </div>
+                        <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                            @L["AddSectionButton"]
+                        </button>
+                    </div>
+                </div>
             </div>
+
+        </fieldset>
+
+        @if (isLocked && Model.ProjectId.HasValue)
+        {
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200 mb-2">@L["ExportDivider"]</h2>
+                    <button type="button" class="btn btn-outline btn-sm gap-1.5 self-start"
+                            onclick="document.getElementById('rawdata-modal').showModal()">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                        </svg>
+                        @L["ExportRawDataButton"]
+                    </button>
+                </div>
+            </div>
+
+            <dialog id="rawdata-modal" class="modal"
+                    data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
+                    <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
+                    <div class="form-control gap-2 mb-4">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
+                            <span class="text-sm">@L["RawData_Questions"]</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
+                            <span class="text-sm">@L["RawData_Answers"]</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
+                            <span class="text-sm">@L["RawData_Categories"]</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
+                            <span class="text-sm">@L["RawData_Ideas"]</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
+                            <span class="text-sm">@L["RawData_Comments"]</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
+                            <span class="text-sm">@L["RawData_EmojiReactions"]</span>
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-sm font-medium">@L["FormatLabel"]</span>
+                        <select id="rawdata-format" class="select select-bordered select-sm w-40">
+                            <option value="xlsx">Excel (.xlsx)</option>
+                            <option value="csv">CSV (.zip)</option>
+                        </select>
+                    </div>
+                    <div class="modal-action">
+                        <form method="dialog">
+                            <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                        </form>
+                        <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
+        }
+
+        <div class="flex justify-end gap-2 pb-4">
+            @if (!isLocked)
+            {
+                <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
+                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@L["SaveButton"]</button>
+                <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
+            }
+            else
+            {
+                <a asp-action="Index" class="btn btn-ghost">@Shared["Common_Back"]</a>
+                @if (Model.ProjectId.HasValue)
+                {
+                    <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">@L["NextButton"] &rarr;</a>
+                }
+            }
         </div>
-    </div>
+    </form>
 </div>
 
 @section Scripts {
