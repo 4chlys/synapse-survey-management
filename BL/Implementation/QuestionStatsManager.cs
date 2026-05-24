@@ -8,15 +8,15 @@ using SynapseEnqueteManagement.DAL.Stats;
 namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class QuestionStatsManager(
-    IResponseRepository responseRepository,
+    IQuestionStatsRepository questionStatsRepository,
     IQuestionRepository questionRepository) : IQuestionStatsManager
 {
     public async Task<SingleChoiceStats> ReadSingleChoiceStatsAsync(int projectId, int questionId)
     {
         await ValidateOwnershipAsync(projectId, questionId);
         var question = await questionRepository.ReadByIdWithTranslationsReadOnlyAsync(questionId);
-        var counts = await responseRepository.ReadCountsBySingleChoiceQuestionReadOnlyAsync(questionId);
-        var total = await responseRepository.CountResponsesByQuestionAsync(questionId);
+        var counts = await questionStatsRepository.ReadCountsBySingleChoiceQuestionReadOnlyAsync(questionId);
+        var total = await questionStatsRepository.CountResponsesByQuestionAsync(questionId);
         // Order ascending by option index so the chart follows the question's choice order.
         var merged = MergeByChoiceIndex(counts, question).OrderBy(c => c.Index);
         return new SingleChoiceStats(questionId, total, merged.Select(c => c.Count).ToList());
@@ -26,8 +26,8 @@ public class QuestionStatsManager(
     {
         await ValidateOwnershipAsync(projectId, questionId);
         var question = await questionRepository.ReadByIdWithTranslationsReadOnlyAsync(questionId);
-        var counts = await responseRepository.ReadCountsByMultipleChoiceQuestionReadOnlyAsync(questionId);
-        var total = await responseRepository.CountResponsesByQuestionAsync(questionId);
+        var counts = await questionStatsRepository.ReadCountsByMultipleChoiceQuestionReadOnlyAsync(questionId);
+        var total = await questionStatsRepository.CountResponsesByQuestionAsync(questionId);
         // Keep the existing most-selected-first ordering for the bar chart.
         var merged = MergeByChoiceIndex(counts, question).OrderByDescending(c => c.Count.Count);
         return new MultipleChoiceStats(questionId, total, merged.Select(c => c.Count).ToList());
@@ -82,16 +82,16 @@ public class QuestionStatsManager(
     public async Task<LikertStats> ReadLikertStatsAsync(int projectId, int questionId)
     {
         await ValidateOwnershipAsync(projectId, questionId);
-        var distribution = await responseRepository.ReadLikertDistributionReadOnlyAsync(questionId);
-        var total = await responseRepository.CountResponsesByQuestionAsync(questionId);
+        var distribution = await questionStatsRepository.ReadLikertDistributionReadOnlyAsync(questionId);
+        var total = await questionStatsRepository.CountResponsesByQuestionAsync(questionId);
         return new LikertStats(questionId, total, distribution.ToList());
     }
 
     public async Task<OpenAnswerPage> ReadOpenAnswerPageAsync(int projectId, int questionId, int skip, int take)
     {
         await ValidateOwnershipAsync(projectId, questionId);
-        var answers = await responseRepository.ReadOpenAnswersReadOnlyAsync(questionId, skip, take);
-        var total = await responseRepository.CountResponsesByQuestionAsync(questionId);
+        var answers = await questionStatsRepository.ReadOpenAnswersReadOnlyAsync(questionId, skip, take);
+        var total = await questionStatsRepository.CountResponsesByQuestionAsync(questionId);
         return new OpenAnswerPage(questionId, total, answers.ToList());
     }
 

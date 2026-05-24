@@ -117,6 +117,7 @@ builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
 builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
+builder.Services.AddScoped<IQuestionStatsRepository, QuestionStatsRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
