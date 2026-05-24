@@ -61,6 +61,24 @@ public class SettingsController(
     }
 
     [HttpPost]
+    public async Task<IActionResult> SaveAiAssistanceMode(string aiAssistanceMode)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is null) return Forbid();
+
+        var validModes = new HashSet<string> { "ProActive", "AskFirst", "Never" };
+        if (!validModes.Contains(aiAssistanceMode))
+        {
+            TempData["Error"] = localizer["Settings_InvalidAiMode"].Value;
+            return RedirectToAction(nameof(Index));
+        }
+
+        await platformService.SaveAiAssistanceModeAsync(user.ProjectPlatformId.Value, aiAssistanceMode);
+        TempData["Success"] = localizer["Settings_AiModeSaved"].Value;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
     public async Task<IActionResult> SaveAiModel(string selectedModelId)
     {
         var user = await userManager.GetUserAsync(User);
@@ -147,7 +165,8 @@ public class SettingsController(
 
         var aiSettings = new PlatformAdminAiViewModel(
             allowedModels,
-            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty
+            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty,
+            settings?.AiAssistanceMode ?? "ProActive"
         );
 
         var prompts = new PlatformAdminPromptsViewModel([

@@ -15,7 +15,7 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -252,6 +252,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
 
                     b.Property<bool>("AiAssistanceEnabled")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("AiAssistanceMode")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("AiModelName")
                         .HasColumnType("TEXT");

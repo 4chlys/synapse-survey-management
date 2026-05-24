@@ -85,8 +85,8 @@
 
 </div>
 
-@* Floating AI chat bubble + popup *@
-<div id="qs-chat-panel" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+@* Floating AI chat bubble + popup — hidden entirely when mode is Never *@
+<div id="qs-chat-panel" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 @(aiAssistance == "Never" ? "hidden" : "")">
     <div id="qs-chat-popup" class="hidden w-[360px] max-h-[min(520px,70vh)] rounded-2xl bg-base-100 shadow-2xl border border-base-300 flex flex-col overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-3 border-b border-base-300">
             <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
@@ -98,13 +98,6 @@
                 <p class="font-semibold text-sm text-base-content">@L["AiSupportHeading"]</p>
                 <p class="text-xs text-base-content/50">@L["AiSupportSubtitle"]</p>
             </div>
-            <select id="qs-mode-select"
-                    class="select select-bordered select-xs w-auto flex-shrink-0"
-                    data-prev="@aiAssistance">
-                <option value="ProActive"  selected="@(aiAssistance == "ProActive"  ? "selected" : null)">@L["AiMode_ProActive"]</option>
-                <option value="AskFirst"   selected="@(aiAssistance == "AskFirst"   ? "selected" : null)">@L["AiMode_AskFirst"]</option>
-                <option value="Never"      selected="@(aiAssistance == "Never"      ? "selected" : null)">@L["AiMode_Never"]</option>
-            </select>
             <button id="qs-chat-close" type="button" class="btn btn-ghost btn-xs btn-circle">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
@@ -117,7 +110,7 @@
                  class="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0">
             </div>
 
-            <div id="qs-input-area" class="flex flex-col gap-2 @(aiAssistance == "Never" ? "hidden" : "")">
+            <div id="qs-input-area" class="flex flex-col gap-2">
                 <textarea id="qs-input"
                           rows="2"
                           class="textarea textarea-bordered textarea-sm w-full resize-none"
@@ -216,7 +209,6 @@
               data-i18n-all-answers-filled="@L["AllAnswersRequired"]"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
-            <input type="hidden" name="aiAssistance" value="@aiAssistance" />
             <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
             <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />

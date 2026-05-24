@@ -91,6 +91,8 @@
   <data name="Settings_PromptTooLong" xml:space="preserve"><value>System prompt may contain at most {0} characters.</value></data>
   <data name="Settings_PromptSaved" xml:space="preserve"><value>System prompt saved.</value></data>
   <data name="Settings_PromptReset" xml:space="preserve"><value>System prompt reset to default.</value></data>
+  <data name="Settings_InvalidAiMode" xml:space="preserve"><value>Invalid AI assistance mode.</value></data>
+  <data name="Settings_AiModeSaved" xml:space="preserve"><value>AI assistance mode saved.</value></data>
 
   <data name="Prompt_Moderation" xml:space="preserve"><value>Moderation</value></data>
   <data name="Prompt_CommentModeration" xml:space="preserve"><value>Comment moderation</value></data>

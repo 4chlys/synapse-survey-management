@@ -22,6 +22,15 @@
   <data name="NoModelsText" xml:space="preserve"><value>No AI models available. Please contact the system administrator.</value></data>
   <data name="SelectModelLabel" xml:space="preserve"><value>Select a model</value></data>
 
+  <data name="AiAssistanceHeading" xml:space="preserve"><value>AI assistance</value></data>
+  <data name="AiAssistanceDescription" xml:space="preserve"><value>Choose how the AI assistant behaves when adding questions.</value></data>
+  <data name="AiMode_ProActive" xml:space="preserve"><value>Proactive</value></data>
+  <data name="AiMode_ProActive_Desc" xml:space="preserve"><value>The AI chat is always visible and opens automatically with suggestions.</value></data>
+  <data name="AiMode_AskFirst" xml:space="preserve"><value>On request</value></data>
+  <data name="AiMode_AskFirst_Desc" xml:space="preserve"><value>The AI chat is available via a button but does not open automatically.</value></data>
+  <data name="AiMode_Never" xml:space="preserve"><value>Off</value></data>
+  <data name="AiMode_Never_Desc" xml:space="preserve"><value>No AI assistance when adding questions.</value></data>
+
   <data name="PromptsHeading" xml:space="preserve"><value>System prompts</value></data>
   <data name="WarningLabel" xml:space="preserve"><value>Warning:</value></data>
   <data name="WarningBody" xml:space="preserve"><value>the default system prompts have been carefully designed with safety measures for young users. Changes may weaken those protections.</value></data>

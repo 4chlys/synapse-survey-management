@@ -349,17 +349,7 @@
                             </select>
                         </div>
 
-                        <div class="form-control gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-sm font-semibold text-base-content">@L["AiAssistanceLabel"]</span>
-                                @InfoIcon(L["AiAssistanceHint"].Value)
-                            </div>
-                            <select asp-for="AiAssistance" class="select select-bordered w-full">
-                                <option value="ProActive">@L["AiAssistance_ProActive"]</option>
-                                <option value="AskFirst">@L["AiAssistance_AskFirst"]</option>
-                                <option value="Never">@L["AiAssistance_Never"]</option>
-                            </select>
-                        </div>
+                        <input type="hidden" asp-for="AiAssistance" value="ProActive" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">

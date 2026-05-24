@@ -18,7 +18,8 @@ public sealed record PlatformAdminBasicInfoViewModel(
 
 public sealed record PlatformAdminAiViewModel(
     IReadOnlyList<AiModelDefinition> AllowedModels,
-    string SelectedModelId
+    string SelectedModelId,
+    string AiAssistanceMode
 );
 
 public sealed record PlatformAdminPromptsViewModel(

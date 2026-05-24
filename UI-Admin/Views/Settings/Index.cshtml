@@ -73,7 +73,46 @@
         </div>
     </div>
 
-    @* Card 3 — Systeemprompts *@
+    @* Card 3 — AI-assistentie modus *@
+    <div class="card bg-base-100 shadow-sm mb-6">
+        <div class="card-body gap-4">
+            <h2 class="font-semibold text-base-content">@L["AiAssistanceHeading"]</h2>
+            <p class="text-sm text-base-content/70">@L["AiAssistanceDescription"]</p>
+            <form asp-action="SaveAiAssistanceMode" method="post" class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    @{
+                        var currentMode = Model.AiSettings.AiAssistanceMode;
+                    }
+                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == "ProActive" ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                        <input type="radio" name="aiAssistanceMode" value="ProActive" class="radio radio-primary radio-sm" checked="@(currentMode == "ProActive" ? "checked" : null)" />
+                        <div>
+                            <div class="text-sm font-semibold text-base-content">@L["AiMode_ProActive"]</div>
+                            <div class="text-xs text-base-content/50">@L["AiMode_ProActive_Desc"]</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == "AskFirst" ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                        <input type="radio" name="aiAssistanceMode" value="AskFirst" class="radio radio-primary radio-sm" checked="@(currentMode == "AskFirst" ? "checked" : null)" />
+                        <div>
+                            <div class="text-sm font-semibold text-base-content">@L["AiMode_AskFirst"]</div>
+                            <div class="text-xs text-base-content/50">@L["AiMode_AskFirst_Desc"]</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == "Never" ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                        <input type="radio" name="aiAssistanceMode" value="Never" class="radio radio-primary radio-sm" checked="@(currentMode == "Never" ? "checked" : null)" />
+                        <div>
+                            <div class="text-sm font-semibold text-base-content">@L["AiMode_Never"]</div>
+                            <div class="text-xs text-base-content/50">@L["AiMode_Never_Desc"]</div>
+                        </div>
+                    </label>
+                </div>
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Card 4 — Systeemprompts *@
     <div class="card bg-base-100 shadow-sm">
         <div class="card-body gap-4">
             <h2 class="font-semibold text-base-content">@L["PromptsHeading"]</h2>

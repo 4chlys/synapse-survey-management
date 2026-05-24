@@ -1,10 +1,9 @@
-import { QuestionSupportSession, updateAiAssistanceMode } from '../lib/questionsupport';
+import { QuestionSupportSession } from '../lib/questionsupport';
 
 // DOM references
 let messagesContainer: HTMLElement        | null = null;
 let inputEl:           HTMLTextAreaElement | null = null;
 let sendBtn:           HTMLButtonElement  | null = null;
-let modeSelect:        HTMLSelectElement  | null = null;
 let chatPanel:         HTMLElement        | null = null;
 let loadingBubbleEl:   HTMLElement        | null = null;
 
@@ -20,7 +19,11 @@ export function initQuestionSupportChat(pid: number): void {
     projectId = pid;
     if (!ensureRefs()) return;
 
-    const mode = modeSelect!.value;
+    const questionsListEl = document.getElementById('questions-list');
+    const mode = questionsListEl?.dataset['aiAssistance'] ?? 'Never';
+
+    if (mode === 'Never') return;
+
     applyMode(mode);
 }
 
@@ -30,10 +33,9 @@ function ensureRefs(): boolean {
     messagesContainer = document.getElementById('qs-messages');
     inputEl           = document.getElementById('qs-input') as HTMLTextAreaElement | null;
     sendBtn           = document.getElementById('qs-btn-send') as HTMLButtonElement | null;
-    modeSelect        = document.getElementById('qs-mode-select') as HTMLSelectElement | null;
     chatPanel         = document.getElementById('qs-chat-panel');
 
-    if (!messagesContainer || !inputEl || !sendBtn || !modeSelect || !chatPanel) return false;
+    if (!messagesContainer || !inputEl || !sendBtn || !chatPanel) return false;
 
     sendBtn.addEventListener('click', () => { void handleSend(); });
 
@@ -49,56 +51,32 @@ function ensureRefs(): boolean {
         }
     });
 
-    modeSelect.addEventListener('change', () => { void handleModeChange(); });
-
     isInitialised = true;
     return true;
 }
 
 function applyMode(mode: string): void {
-    const isNever = mode === 'Never';
-    const inputArea = document.getElementById('qs-input-area');
-
-    if (inputArea) inputArea.classList.toggle('hidden', isNever);
-
-    if (isNever) {
-        activeSession?.reset();
-        activeSession = null;
-        clearMessages();
-        return;
-    }
-
     activeSession = new QuestionSupportSession(projectId);
 
     if (mode === 'ProActive') {
-        void fireOpeningTurn();
+        void autoOpenAndGreet();
     }
-    // AskFirst: session ready, input enabled — user types first
+    // AskFirst: session ready, toggle button visible — user clicks to open
 }
 
-// Mode change
+// ProActive: auto-open popup and send opening turn
 
-async function handleModeChange(): Promise<void> {
-    const mode = modeSelect!.value;
-    const prev = modeSelect!.dataset['prev'] ?? mode;
-
-    try {
-        await updateAiAssistanceMode(projectId, mode);
-        modeSelect!.dataset['prev'] = mode;
-        activeSession?.reset();
-        activeSession = null;
-        clearMessages();
-        applyMode(mode);
-    } catch {
-        // Revert on failure
-        modeSelect!.value = prev;
-        appendAssistantBubble('Kon de instelling niet opslaan. Probeer opnieuw.');
+async function autoOpenAndGreet(): Promise<void> {
+    const popup = document.getElementById('qs-chat-popup');
+    const iconOpen = document.getElementById('qs-chat-icon-open');
+    const iconClose = document.getElementById('qs-chat-icon-close');
+    if (popup) {
+        popup.classList.remove('hidden');
+        popup.classList.add('flex');
+        iconOpen?.classList.add('hidden');
+        iconClose?.classList.remove('hidden');
     }
-}
 
-// Opening turn (ProActive)
-
-async function fireOpeningTurn(): Promise<void> {
     if (!activeSession) return;
     showLoading();
     setSendingState(true);
@@ -207,11 +185,6 @@ function setSendingState(sending: boolean): void {
     isSending = sending;
     if (sendBtn)  sendBtn.disabled  = sending;
     if (inputEl)  inputEl.disabled  = sending;
-}
-
-function clearMessages(): void {
-    if (messagesContainer) messagesContainer.innerHTML = '';
-    loadingBubbleEl = null;
 }
 
 function resetInput(): void {

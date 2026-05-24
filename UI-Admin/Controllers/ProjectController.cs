@@ -217,17 +217,23 @@ public class ProjectController(
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
-                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance, isNew = true });
+                new { projectId = project.ProjectId, isNew = true });
 
         return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, isNew = wizardActive, saved = 1 });
     }
 
-    public async Task<IActionResult> Questions(int projectId,
-        AiAssistanceType aiAssistance = AiAssistanceType.ProActive, bool isNew = false)
+    public async Task<IActionResult> Questions(int projectId, bool isNew = false)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
         var sections = await sectionService.GetSectionsAsync(projectId);
+
+        var user = await userManager.GetUserAsync(User);
+        var platformSettings = user?.ProjectPlatformId is not null
+            ? await platformService.GetPlatformSettingsAsync(user.ProjectPlatformId.Value)
+            : null;
+        var aiAssistance = platformSettings?.AiAssistanceMode ?? "ProActive";
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
@@ -242,14 +248,14 @@ public class ProjectController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
+    public async Task<IActionResult> CreateQuestion(int projectId,
         bool isNew, CreateQuestionViewModel model)
     {
         var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForCreate))
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
+            return RedirectToAction(nameof(Questions), new { projectId, isNew });
         }
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
@@ -257,25 +263,25 @@ public class ProjectController(
                 parentQuestionId: model.ParentQuestionId, choiceIndex: model.ChoiceIndex,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
                 mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
+        return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
+    public async Task<IActionResult> UpdateQuestion(int projectId,
         bool isNew, EditQuestionViewModel model)
     {
         var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForUpdate))
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
+            return RedirectToAction(nameof(Questions), new { projectId, isNew });
         }
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
                 model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
                 mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
+        return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
 
     public async Task<IActionResult> Ideation(int projectId, bool isNew = false)
