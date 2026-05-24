@@ -5,6 +5,8 @@
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Admins";
     Layout = "_Layout";
+    var isSystemAdmin = User.IsInRole("SystemAdmin");
+    var isLastAdmin = Model.Admins.Count == 1;
 }
 
 <div class="max-w-2xl">
@@ -34,12 +36,18 @@
                                 <td class="text-base-content">@admin.UserName</td>
                                 <td class="text-base-content/60">@admin.Email</td>
                                 <td>
-                                    <form asp-action="RemoveAdmin" asp-route-id="@Model.ProjectPlatformId"
-                                          method="post" class="inline"
-                                          onsubmit="return confirm('@string.Format(L["RemoveConfirm"].Value, admin.Email)')">
-                                        <input type="hidden" name="userId" value="@admin.UserId" />
-                                        <button type="submit" class="btn btn-ghost btn-xs text-error">@L["RemoveButton"]</button>
-                                    </form>
+                                    @if (isSystemAdmin || !isLastAdmin)
+                                    {
+                                        var confirmMsg = isLastAdmin
+                                            ? string.Format(L["RemoveConfirmLastAdmin"].Value, admin.Email)
+                                            : string.Format(L["RemoveConfirm"].Value, admin.Email);
+                                        <form asp-action="RemoveAdmin" asp-route-id="@Model.ProjectPlatformId"
+                                              method="post" class="inline"
+                                              onsubmit="return confirm('@confirmMsg')">
+                                            <input type="hidden" name="userId" value="@admin.UserId" />
+                                            <button type="submit" class="btn btn-ghost btn-xs text-error">@L["RemoveButton"]</button>
+                                        </form>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -49,13 +57,20 @@
         </div>
     </div>
 
+    @if (TempData["EmailFailed"] is true)
+    {
+        <div class="alert alert-warning mb-6">
+            <p class="text-sm">@L["EmailFailedNotice"]</p>
+        </div>
+    }
+
     @if (TempData["InviteLink"] is string inviteLink)
     {
         <div class="alert alert-success flex flex-col items-start gap-2 mb-6">
             <p class="text-sm font-medium">@L["InviteLinkNotice"]</p>
             <div class="flex items-center gap-2 w-full">
                 <input id="invite-link" type="text" readonly value="@inviteLink"
-                       class="input input-bordered input-sm w-full font-mono text-xs" />
+                       class="input input-bordered input-sm w-full font-mono text-xs bg-base-100 text-base-content" />
                 <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('invite-link').value)"
                         class="btn btn-sm btn-ghost">@L["CopyButton"]</button>
             </div>
@@ -77,6 +92,12 @@
                     <div class="label"><span class="label-text text-xs font-medium">@L["EmailLabel"]</span></div>
                     <input type="email" name="Email" class="input input-bordered w-full"
                            placeholder="@L["EmailPlaceholder"]" required />
+                </label>
+
+                <label class="label cursor-pointer justify-start gap-2">
+                    <input type="checkbox" name="SendEmail" value="true" checked class="checkbox checkbox-sm" />
+                    <input type="hidden" name="SendEmail" value="false" />
+                    <span class="label-text text-xs">@L["SendEmailLabel"]</span>
                 </label>
 
                 <div>
