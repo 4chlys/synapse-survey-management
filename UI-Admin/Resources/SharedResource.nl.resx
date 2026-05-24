@@ -127,4 +127,6 @@ E-mail: {1}
 
 Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
 {2}</value></data>
+
+  <data name="Common_ProgressSaved" xml:space="preserve"><value>Opgeslagen.</value></data>
 </root>

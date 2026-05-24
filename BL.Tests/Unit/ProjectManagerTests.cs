@@ -643,6 +643,59 @@ public class ProjectManagerTests
 
     #endregion
 
+    #region UpdateLastWizardStepAsync
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task UpdateLastWizardStepAsync_ValidStep_SetsStepAndSaves(int step)
+    {
+        // Arrange
+        var project = new Project { ProjectId = ProjectId, LastWizardStep = 1 };
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId)).ReturnsAsync(project);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.UpdateLastWizardStepAsync(ProjectId, step);
+
+        // Assert
+        Assert.Equal(step, project.LastWizardStep);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-5, 1)]
+    [InlineData(4, 3)]
+    [InlineData(99, 3)]
+    public async Task UpdateLastWizardStepAsync_OutOfRange_ClampsTo1Through3(int input, int expected)
+    {
+        // Arrange
+        var project = new Project { ProjectId = ProjectId, LastWizardStep = 1 };
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId)).ReturnsAsync(project);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.UpdateLastWizardStepAsync(ProjectId, input);
+
+        // Assert
+        Assert.Equal(expected, project.LastWizardStep);
+    }
+
+    [Fact]
+    public async Task UpdateLastWizardStepAsync_ProjectNotFound_Throws()
+    {
+        // Arrange
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(999)).ReturnsAsync((Project)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _manager.UpdateLastWizardStepAsync(999, 2));
+    }
+
+    #endregion
+
     #region DisableEmojiForProjectAsync
 
     [Fact]

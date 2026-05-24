@@ -68,17 +68,26 @@
 
     <div class="flex justify-between">
         <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["SettingsLink"]</a>
-        @if (!isLocked)
-        {
-            <button type="button" id="questions-next-btn"
-                    class="btn btn-primary btn-sm"
-                    data-question-count="@Model.Count"
-                    data-href="@Url.Action("Ideation", new { projectId, isNew })">@L["NextLink"] →</button>
-        }
-        else
-        {
-            <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">@L["NextLink"] →</a>
-        }
+        <div class="flex gap-2">
+            @if (!isLocked)
+            {
+                <form asp-action="SaveProgress" method="post" class="inline">
+                    <input type="hidden" name="projectId" value="@projectId" />
+                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                    <input type="hidden" name="step" value="2" />
+                    <input type="hidden" name="returnAction" value="Questions" />
+                    <button type="submit" class="btn btn-outline btn-sm">@L["SaveButton"]</button>
+                </form>
+                <button type="button" id="questions-next-btn"
+                        class="btn btn-primary btn-sm"
+                        data-question-count="@Model.Count"
+                        data-href="@Url.Action("Ideation", new { projectId, isNew })">@L["NextLink"] →</button>
+            }
+            else
+            {
+                <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">@L["NextLink"] →</a>
+            }
+        </div>
     </div>
     <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">@L["AddOneQuestionError"]</p>
 </div>

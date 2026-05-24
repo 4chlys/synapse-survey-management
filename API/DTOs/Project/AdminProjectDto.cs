@@ -25,6 +25,8 @@ public record AdminProjectDto
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
     public ICollection<ProjectTranslationDto> Translations { get; init; } = new List<ProjectTranslationDto>();
 
+    public int LastWizardStep { get; init; }
+
     public string Theme { get; init; }
     public string PrimaryColor { get; init; }
     public string CustomCss { get; init; }

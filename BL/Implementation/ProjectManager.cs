@@ -388,6 +388,14 @@ public class ProjectManager(
         await uow.SaveChangesAsync();
     }
 
+    public async Task UpdateLastWizardStepAsync(int projectId, int step)
+    {
+        var project = await projectRepository.ReadByIdForUpdateAsync(projectId)
+            ?? throw new ArgumentException($"Project {projectId} not found.", nameof(projectId));
+        project.LastWizardStep = Math.Clamp(step, 1, 3);
+        await uow.SaveChangesAsync();
+    }
+
     public async Task<Project> DuplicateProjectAsync(int sourceProjectId,
         IEnumerable<ProjectTranslationInput> translations,
         int platformId, string newShortForm = null, CancellationToken ct = default)

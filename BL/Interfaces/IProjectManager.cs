@@ -52,6 +52,7 @@ public interface IProjectManager
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
     Task DeleteProjectAsync(int projectId);
     Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode);
+    Task UpdateLastWizardStepAsync(int projectId, int step);
 
     Task<Project> DuplicateProjectAsync(int sourceProjectId,
         IEnumerable<ProjectTranslationInput> translations,

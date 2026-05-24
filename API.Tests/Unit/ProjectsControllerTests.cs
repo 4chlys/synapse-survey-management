@@ -357,4 +357,51 @@ public class ProjectsControllerTests
     }
 
     #endregion
+
+    #region UpdateWizardStep
+
+    [Fact]
+    public async Task UpdateWizardStep_ValidStep_ReturnsNoContentAndCallsManager()
+    {
+        // Arrange
+        _projectManager.Setup(m => m.UpdateLastWizardStepAsync(1, 2)).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _controller.UpdateWizardStep(1, new UpdateWizardStepDto { Step = 2 });
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _projectManager.Verify(m => m.UpdateLastWizardStepAsync(1, 2), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateWizardStep_ProjectNotFound_ManagerThrows_Propagates()
+    {
+        // Arrange
+        _projectManager.Setup(m => m.UpdateLastWizardStepAsync(999, 2))
+            .ThrowsAsync(new ArgumentException("Project 999 not found."));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _controller.UpdateWizardStep(999, new UpdateWizardStepDto { Step = 2 }));
+    }
+
+    [Fact]
+    public async Task GetProject_IncludesLastWizardStep_InDto()
+    {
+        // Arrange
+        var project = BilingualProject();
+        project.LastWizardStep = 3;
+        _projectManager.Setup(m => m.GetProjectByIdWithIntroductionReadOnlyAsync(1)).ReturnsAsync(project);
+
+        // Act
+        var result = await _controller.GetProject(1);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ProjectDto>(ok.Value);
+        Assert.Equal(3, dto.LastWizardStep);
+    }
+
+    #endregion
 }

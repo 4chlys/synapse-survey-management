@@ -234,6 +234,9 @@ public class ProjectController(
             : null;
         var aiAssistance = platformSettings?.AiAssistanceMode ?? "ProActive";
 
+        if (isNew && project?.ProjectState == "Draft")
+            _ = projectService.UpdateWizardStepAsync(projectId, 2);
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
@@ -245,6 +248,14 @@ public class ProjectController(
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         return View(questions);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveProgress(int projectId, bool isNew, int step, string returnAction)
+    {
+        await projectService.UpdateWizardStepAsync(projectId, step);
+        TempData["Success"] = localizer["Common_ProgressSaved"].Value;
+        return RedirectToAction(returnAction, new { projectId, isNew });
     }
 
     [HttpPost]
@@ -288,6 +299,10 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
+
+        if (isNew && project?.ProjectState == "Draft")
+            _ = projectService.UpdateWizardStepAsync(projectId, 3);
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";

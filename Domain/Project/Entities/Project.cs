@@ -53,6 +53,8 @@ public class Project : IHasCreatedAt
     public bool RequestContactInfo { get; set; } = false;
     public bool AllowCrossLanguageIdeas { get; set; } = false;
 
+    [Range(1, 3)] public int LastWizardStep { get; set; } = 1;
+
     public Questionnaire Questionnaire { get; set; }
 
     public Introduction Introduction { get; set; }

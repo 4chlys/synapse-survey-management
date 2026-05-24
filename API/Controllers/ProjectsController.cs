@@ -81,6 +81,7 @@ public class ProjectsController(
             LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
             DefaultLanguageCode = p.DefaultLanguage?.Code,
             SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            LastWizardStep = p.LastWizardStep,
             Theme = p.Theme.ToString(),
             PrimaryColor = p.PrimaryColor,
             CustomCss = p.CustomCss,
@@ -117,6 +118,7 @@ public class ProjectsController(
             Introduction = p.Introduction?.Translations
                 .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
         }).ToList(),
+        LastWizardStep = p.LastWizardStep,
         Theme = p.Theme.ToString(),
         PrimaryColor = p.PrimaryColor,
         CustomCss = p.CustomCss,
@@ -245,6 +247,13 @@ public class ProjectsController(
 
         var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
         return Ok(MapToAdminDto(project));
+    }
+
+    [HttpPatch("{projectId}/wizard-step")]
+    public async Task<IActionResult> UpdateWizardStep(int projectId, UpdateWizardStepDto dto)
+    {
+        await projectManager.UpdateLastWizardStepAsync(projectId, dto.Step);
+        return NoContent();
     }
 
     [HttpPost("generate-image")]

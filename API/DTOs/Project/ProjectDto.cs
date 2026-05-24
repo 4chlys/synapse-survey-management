@@ -28,6 +28,8 @@ public record ProjectDto
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
 
+    public int LastWizardStep { get; init; }
+
     public string Theme { get; init; }
     public string PrimaryColor { get; init; }
     public string CustomCss { get; init; }

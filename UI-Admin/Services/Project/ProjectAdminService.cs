@@ -123,6 +123,12 @@ public class ProjectAdminService(HttpClient httpClient)
         public int ParticipantCount { get; init; }
     }
 
+    public async Task UpdateWizardStepAsync(int projectId, int step)
+    {
+        var response = await httpClient.PatchAsJsonAsync($"api/projects/{projectId}/wizard-step", new { Step = step });
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)
     {
         var response = await httpClient.GetAsync($"api/projects/by-shortform/{Uri.EscapeDataString(shortForm)}");

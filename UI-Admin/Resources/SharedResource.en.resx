@@ -127,4 +127,6 @@ Email: {1}
 
 Set your password via the link below (valid for 24 hours):
 {2}</value></data>
+
+  <data name="Common_ProgressSaved" xml:space="preserve"><value>Saved.</value></data>
 </root>

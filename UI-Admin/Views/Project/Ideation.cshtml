@@ -121,6 +121,18 @@
 
     <div class="flex justify-between mt-6">
         <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["QuestionsLink"]</a>
-        <a asp-action="@(isLocked ? "Dashboard" : "Activate")" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@(isLocked ? L["DashboardLink"].Value : L["NextLink"].Value) →</a>
+        <div class="flex gap-2">
+            @if (!isLocked)
+            {
+                <form asp-action="SaveProgress" method="post" class="inline">
+                    <input type="hidden" name="projectId" value="@projectId" />
+                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                    <input type="hidden" name="step" value="3" />
+                    <input type="hidden" name="returnAction" value="Ideation" />
+                    <button type="submit" class="btn btn-outline btn-sm">@L["SaveButton"]</button>
+                </form>
+            }
+            <a asp-action="@(isLocked ? "Dashboard" : "Activate")" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@(isLocked ? L["DashboardLink"].Value : L["NextLink"].Value) →</a>
+        </div>
     </div>
 </div>

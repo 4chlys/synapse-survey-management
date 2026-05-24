@@ -25,6 +25,8 @@ public record ProjectAdminViewModel
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
 
+    public int LastWizardStep { get; init; } = 1;
+
     public string Theme { get; init; } = "Default";
     public string PrimaryColor { get; init; }
     public string CustomCss { get; init; }
