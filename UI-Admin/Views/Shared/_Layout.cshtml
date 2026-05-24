@@ -56,8 +56,6 @@
     var hideSidebar  = ViewData["HideSidebar"] is true;
     var isSystemAdmin = User.IsInRole("SystemAdmin");
 
-    string TopBarLabel(string s) => s == "Projects" ? Shared["Nav_Projects"].Value : s;
-
     string StateClass(string s) => s switch {
         "Active"   => "badge-success",
         "Draft"    => "badge-warning",
