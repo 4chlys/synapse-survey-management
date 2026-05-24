@@ -89,7 +89,10 @@ public class SocialMediaController(
                         ?? project.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
                         ?? project.Translations.FirstOrDefault();
 
-        var result = await imageGenerator.GenerateProjectImageAsync(projectTr?.Name ?? "", projectId, ct);
+        var result = await imageGenerator.GenerateProjectImageAsync(
+            projectTr?.Name ?? "", projectId,
+            projectTopic: projectTr?.Topic,
+            ct: ct);
         if (!result.IsSuccess)
             return StatusCode(502, new { error = result.ErrorMessage });
 

@@ -353,14 +353,17 @@ public class ProjectController(
     [HttpPost]
     [IgnoreAntiforgeryToken]
     [EnableRateLimiting("ai-image-generation")]
-    public async Task<IActionResult> GenerateImage([FromQuery] string name)
+    public async Task<IActionResult> GenerateImage(
+        [FromQuery] string name,
+        [FromQuery] string topic = null,
+        [FromQuery] string intro = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             return BadRequest(new { error = localizer["Project_NameRequired"].Value });
 
         try
         {
-            var url = await uploadService.GenerateImageAsync(name);
+            var url = await uploadService.GenerateImageAsync(name, topic, intro);
             return Ok(new { url });
         }
         catch (HttpRequestException)

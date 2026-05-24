@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Google.Cloud.AIPlatform.V1;
 using Microsoft.Extensions.Logging;
 
@@ -9,11 +10,37 @@ public sealed class AiImageGenerationService(
     AiImageGenerationConfig config,
     ILogger<AiImageGenerationService> logger) : IAiImageGenerationService
 {
-    public async Task<ImageGenerationResult> GenerateProjectImageAsync(string projectName, int projectId, CancellationToken ct = default)
+    // Strip HTML tags and collapse whitespace for use in a text prompt.
+    private static string StripHtml(string html) =>
+        Regex.Replace(Regex.Replace(html, "<[^>]+>", " "), @"\s{2,}", " ").Trim();
+
+    public async Task<ImageGenerationResult> GenerateProjectImageAsync(
+        string projectName,
+        int projectId,
+        string projectTopic = null,
+        string introText = null,
+        CancellationToken ct = default)
     {
         try
         {
-            var prompt = config.Prompt.Replace("{project_name}", projectName);
+            // Build optional context block: topic (highest priority), then intro snippet.
+            // Phrased as scene guidance so the model generates concrete real-world imagery.
+            var contextParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(projectTopic))
+                contextParts.Add($" Het gaat specifiek over: \"{projectTopic.Trim()}\".");
+            if (!string.IsNullOrWhiteSpace(introText))
+            {
+                var stripped = StripHtml(introText);
+                if (stripped.Length > 300)
+                    stripped = stripped[..300].TrimEnd() + "…";
+                if (!string.IsNullOrWhiteSpace(stripped))
+                    contextParts.Add($" Achtergrondinformatie: \"{stripped}\".");
+            }
+            var context = string.Concat(contextParts);
+
+            var prompt = config.Prompt
+                .Replace("{project_name}", projectName)
+                .Replace("{context}", context);
 
             var request = new GenerateContentRequest
             {

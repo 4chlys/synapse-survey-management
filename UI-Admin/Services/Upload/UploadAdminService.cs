@@ -17,10 +17,15 @@ public class UploadAdminService(HttpClient httpClient)
         return result!.Url;
     }
 
-    public async Task<string> GenerateImageAsync(string projectName)
+    public async Task<string> GenerateImageAsync(string projectName, string topic = null, string intro = null)
     {
-        var response = await httpClient.PostAsync(
-            $"api/projects/generate-image?name={Uri.EscapeDataString(projectName)}", null);
+        var url = $"api/projects/generate-image?name={Uri.EscapeDataString(projectName)}";
+        if (!string.IsNullOrWhiteSpace(topic))
+            url += $"&topic={Uri.EscapeDataString(topic)}";
+        if (!string.IsNullOrWhiteSpace(intro))
+            url += $"&intro={Uri.EscapeDataString(intro)}";
+
+        var response = await httpClient.PostAsync(url, null);
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<UploadResult>();

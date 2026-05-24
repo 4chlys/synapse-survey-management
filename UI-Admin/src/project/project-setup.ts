@@ -116,7 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
         generateBtn.textContent = generateBtn.dataset.generatingText ?? 'Generating…';
 
         try {
-            const response = await fetch(`/Project/GenerateImage?name=${encodeURIComponent(name)}`, { method: 'POST' });
+            // Build query string: name (required), topic and intro are optional context.
+            const topic = topicInput?.value?.trim();
+            const intro = (document.getElementById('Introduction') as HTMLInputElement | null)?.value?.trim();
+
+            let url = `/Project/GenerateImage?name=${encodeURIComponent(name)}`;
+            if (topic) url += `&topic=${encodeURIComponent(topic)}`;
+            if (intro) url += `&intro=${encodeURIComponent(intro)}`;
+
+            const response = await fetch(url, { method: 'POST' });
             if (!response.ok) return;
 
             const data = await response.json() as { url: string };

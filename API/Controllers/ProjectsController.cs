@@ -248,12 +248,16 @@ public class ProjectsController(
     }
 
     [HttpPost("generate-image")]
-    public async Task<IActionResult> GenerateImage([FromQuery] string name, CancellationToken ct)
+    public async Task<IActionResult> GenerateImage(
+        [FromQuery] string name,
+        [FromQuery] string topic,
+        [FromQuery] string intro,
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new LocalizedValidationException("Validation.Project.NameRequired");
 
-        var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, ct);
+        var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, topic, intro, ct);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
 
