@@ -271,7 +271,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
 
     if (depth === 0) {
         return `
-            <div class="question-card bg-base-100 border border-base-200 rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all"
+            <div class="question-card bg-base-100 border border-base-200 rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
                  ${ctx.locked ? '' : 'draggable="true"'}
                  data-question-id="${q.questionId}"
                  data-format="${escapeHtml(q.questionFormat)}"
