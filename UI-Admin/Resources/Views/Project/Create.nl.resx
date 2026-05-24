@@ -33,6 +33,9 @@
   <data name="BrowseButton" xml:space="preserve"><value>Bladeren</value></data>
   <data name="GenerateButton" xml:space="preserve"><value>Genereren</value></data>
   <data name="GeneratingText" xml:space="preserve"><value>Genereren…</value></data>
+  <data name="DropzonePrimary" xml:space="preserve"><value>Sleep een afbeelding neer</value></data>
+  <data name="DropzoneSecondary" xml:space="preserve"><value>of klik om te bladeren</value></data>
+  <data name="DropzoneDropHere" xml:space="preserve"><value>Loslaten om te uploaden</value></data>
   <data name="ContactOptInLabel" xml:space="preserve"><value>Contactgegevens opvragen bij deelnemers</value></data>
   <data name="CrossLanguageLabel" xml:space="preserve"><value>Meertalige ideeën toestaan</value></data>
   <data name="CrossLanguageHint" xml:space="preserve"><value>Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</value></data>

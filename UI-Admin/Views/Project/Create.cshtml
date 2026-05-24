@@ -119,33 +119,57 @@
                                 <span class="text-sm font-semibold text-base-content">@L["ImageLabel"]</span>
                                 @InfoIcon(L["ImageHint"].Value)
                             </div>
-                            <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative overflow-hidden bg-base-200">
-                                <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                                </svg>
+                            <div id="image-drop-zone"
+                                 class="relative border-2 border-dashed border-base-300 rounded-xl bg-base-200
+                                        flex items-center justify-center min-h-44 w-full overflow-hidden -mt-0.5
+                                        transition-colors @(!isLocked ? "cursor-pointer hover:border-primary/50 hover:bg-base-200/60" : "")">
+                                <div id="image-placeholder"
+                                     class="flex flex-col items-center gap-2 text-base-content/35 pointer-events-none select-none @(!string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")">
+                                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M4 16.2A5 5 0 0 1 6.5 7a7 7 0 0 1 13.5 2.1 4 4 0 0 1-.5 7.9H5"/>
+                                        <path d="M12 13v8M9 18l3-3 3 3"/>
+                                    </svg>
+                                    <p class="text-sm text-center leading-snug px-6">
+                                        <span class="font-medium">@L["DropzonePrimary"]</span><br/>
+                                        <span class="text-xs opacity-75">@L["DropzoneSecondary"]</span>
+                                    </p>
+                                </div>
                                 <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
                                      class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
+                                @if (!isLocked)
+                                {
+                                    <div id="image-drag-overlay"
+                                         class="hidden absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none">
+                                        <span class="bg-base-100/80 text-primary font-semibold text-sm rounded-lg px-4 py-2">@L["DropzoneDropHere"]</span>
+                                    </div>
+                                    <button type="button" id="image-clear-btn"
+                                            class="absolute top-2 right-2 btn btn-xs btn-circle btn-error shadow @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")">
+                                        ✕
+                                    </button>
+                                }
                             </div>
-                            @if (!isLocked)
-                            {
-                                <div class="flex gap-2">
-                                    <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
-                                    <button type="button" id="generate-btn" class="btn btn-outline btn-sm"
-                                            data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
-                                </div>
-                                <input type="file" id="image-file-input" accept="image/*" class="hidden" />
-                            }
                             <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
                             <span asp-validation-for="ImageUrl" class="text-xs text-error"></span>
                         </div>
                     </div>
 
-                    <div class="form-control">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
-                            <span class="text-sm text-base-content">@L["ContactOptInLabel"]</span>
-                        </label>
+                    @* Checkbox (left) aligned with image buttons (right) *@
+                    <div class="grid grid-cols-2 gap-4 items-center">
+                        <div class="form-control">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
+                                <span class="text-sm text-base-content">@L["ContactOptInLabel"]</span>
+                            </label>
+                        </div>
+                        @if (!isLocked)
+                        {
+                            <div class="flex gap-2">
+                                <button type="button" id="browse-btn" class="btn btn-outline btn-sm flex-1">@L["BrowseButton"]</button>
+                                <button type="button" id="generate-btn" class="btn btn-outline btn-sm flex-1"
+                                        data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
+                            </div>
+                            <input type="file" id="image-file-input" accept="image/*" class="hidden" />
+                        }
                     </div>
 
                     @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
