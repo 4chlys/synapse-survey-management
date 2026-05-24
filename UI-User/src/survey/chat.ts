@@ -132,6 +132,8 @@ interface BubbleMedia {
     audioUrl?: string | null;
     isEmbed?: boolean;
     extraText?: string | null;
+    // Set to true when `text` passed to appendSystemBubble contains trusted HTML (e.g. Quill intro).
+    isHtml?: boolean;
 }
 
 // Async: shows typing indicator, then resolves with the real bubble element
@@ -198,7 +200,12 @@ async function appendSystemBubble(ctx: Ctx, text: string, withTyping = true, med
     }
 
     const textEl = document.createElement('div');
-    textEl.textContent = text;
+    // Use innerHTML when the caller signals HTML content (e.g. intro from Quill editor),
+    // otherwise fall back to textContent to prevent XSS from untrusted strings.
+    if (media?.isHtml)
+        textEl.innerHTML = text;
+    else
+        textEl.textContent = text;
     bubble.appendChild(textEl);
 
     ctx.messagesEl.appendChild(bubble);
@@ -718,6 +725,7 @@ async function showIntro(ctx: Ctx): Promise<void> {
     const text = hasText ? ctx.introText : '';
     await appendSystemBubble(ctx, text, true, {
         imageUrl: hasImage ? ctx.introImage : null,
+        isHtml: hasText,
     });
 }
 

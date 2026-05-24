@@ -60,7 +60,7 @@
                             @if (!string.IsNullOrWhiteSpace(project.Introduction))
                             {
                                 <div class="prose prose-sm max-w-none text-base-content/80">
-                                    @Html.Raw(MarkdownRenderer.Render(project.Introduction))
+                                    @Html.Raw(project.Introduction)
                                 </div>
                             }
                         </div>
