@@ -21,6 +21,7 @@
   <data name="SingleModelText" xml:space="preserve"><value>Uw platform gebruikt {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>Geen AI-modellen beschikbaar. Neem contact op met de systeembeheerder.</value></data>
   <data name="SelectModelLabel" xml:space="preserve"><value>Selecteer een model</value></data>
+  <data name="ModelNotAvailable" xml:space="preserve"><value>Niet beschikbaar in deze regio</value></data>
 
   <data name="PromptsHeading" xml:space="preserve"><value>Systeemprompts</value></data>
   <data name="WarningLabel" xml:space="preserve"><value>Waarschuwing:</value></data>

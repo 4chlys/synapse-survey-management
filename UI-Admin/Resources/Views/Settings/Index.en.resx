@@ -21,6 +21,7 @@
   <data name="SingleModelText" xml:space="preserve"><value>Your platform uses {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>No AI models available. Please contact the system administrator.</value></data>
   <data name="SelectModelLabel" xml:space="preserve"><value>Select a model</value></data>
+  <data name="ModelNotAvailable" xml:space="preserve"><value>Not available in this region</value></data>
 
   <data name="PromptsHeading" xml:space="preserve"><value>System prompts</value></data>
   <data name="WarningLabel" xml:space="preserve"><value>Warning:</value></data>
