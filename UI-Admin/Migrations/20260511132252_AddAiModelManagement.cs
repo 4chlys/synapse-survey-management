@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -62,7 +63,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                 name: "SystemAiSettings",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
                         .Annotation("Sqlite:Autoincrement", true),
                     AllowedModelIds = table.Column<string>(type: "TEXT", nullable: false)
                 },

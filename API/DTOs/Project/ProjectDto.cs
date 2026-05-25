@@ -15,7 +15,6 @@ public record ProjectDto
     public string OrganisationLogoUrl { get; init; }
     public string OrganisationWebsiteUrl { get; init; }
     public string Introduction { get; init; }
-    public string AiAssistance { get; init; }
     public bool RequestContactInfo { get; init; }
     public int IdeaPageSize { get; init; }
     public bool ExtraIdeasReplaceExisting { get; init; }
@@ -27,6 +26,8 @@ public record ProjectDto
     public string LanguageCode { get; init; }
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
+
+    public int LastWizardStep { get; init; }
 
     public string Theme { get; init; }
     public string PrimaryColor { get; init; }

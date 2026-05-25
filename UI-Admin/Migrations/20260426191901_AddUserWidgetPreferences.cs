@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -14,7 +15,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                 name: "UserWidgetPreferences",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
                         .Annotation("Sqlite:Autoincrement", true),
                     UserId = table.Column<string>(type: "TEXT", maxLength: 450, nullable: false),
                     ProjectId = table.Column<int>(type: "INTEGER", nullable: false),

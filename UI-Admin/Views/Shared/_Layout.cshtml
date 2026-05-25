@@ -56,6 +56,7 @@
     var projectState = ViewData["ProjectState"] as string;
     var activeSection = ViewData["ActiveSection"] as string ?? ViewData["Title"] as string ?? "";
     var hideSidebar  = ViewData["HideSidebar"] is true;
+    var isWizard     = hideSidebar && projectId.HasValue;
     var isSystemAdmin = User.IsInRole("SystemAdmin");
 
     string StateClass(string s) => s switch {
@@ -101,6 +102,7 @@
         Shared["Nav_Categories"].Value,
         Shared["Nav_Launch"].Value
     } : null;
+    var wizardStepActions = new[] { "Create", "Questions", "Ideation", "Activate" };
 
     var platformId = ViewData["PlatformId"] as int?;
 
@@ -127,7 +129,7 @@
         _           => section
     };
     bool IsNavActive(string section) => activeSection == section
-        || (section == "Projects" && projectId.HasValue)
+        || (section == "Projects" && projectId.HasValue && !isWizard)
         || (section == "Platform" && platformId.HasValue);
 }
 
@@ -430,13 +432,19 @@
                                     var _num    = _s + 1;
                                     var _done   = _num < wizardStep.Value;
                                     var _active = _num == wizardStep.Value;
+                                    var _clickable = _done || _active;
+                                    var _href = _clickable && projectId.HasValue
+                                        ? Url.Action(wizardStepActions[_s], "Project", _s < 3
+                                            ? new { projectId = projectId.Value, isNew = true }
+                                            : (object)new { projectId = projectId.Value })
+                                        : null;
 
                                     if (_s > 0)
                                     {
                                         <div class="flex-1 h-px mx-3 @(_done ? "bg-primary" : "bg-base-300")"></div>
                                     }
-
-                                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <a href="@(_href ?? "javascript:void(0)")"
+                                       class="flex items-center gap-1.5 flex-shrink-0 no-underline @(_clickable ? "cursor-pointer" : "cursor-default pointer-events-none")">
                                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0
                                             @(_done   ? "bg-primary text-primary-content"
                                             : _active ? "bg-primary text-primary-content ring-2 ring-primary ring-offset-2 ring-offset-base-100"
@@ -456,7 +464,7 @@
                                                       : "text-base-content/30")">
                                             @wizardStepLabels[_s]
                                         </span>
-                                    </div>
+                                    </a>
                                 }
                             </div>
                         </div>
@@ -475,7 +483,7 @@ else
 
 @if (TempData["Success"] is string successMsg)
 {
-    <div id="tempdata-success" class="alert alert-success fixed bottom-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
+    <div id="tempdata-success" class="alert alert-success fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M5 13l4 4L19 7"/></svg>
         <span>@successMsg</span>
     </div>
@@ -484,7 +492,7 @@ else
 
 @if (TempData["Error"] is string errorMsg)
 {
-    <div id="tempdata-error" class="alert alert-error fixed bottom-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
+    <div id="tempdata-error" class="alert alert-error fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
         <span>@errorMsg</span>
     </div>

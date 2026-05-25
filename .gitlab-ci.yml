@@ -27,6 +27,12 @@ stages:
 test-dotnet:
   stage: test
   image: mcr.microsoft.com/dotnet/sdk:9.0
+  before_script:
+    - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    - apt-get install -y nodejs
+    - npm install -g pnpm
+    - cd UI-User && pnpm install && pnpm build && cd ..
+    - cd UI-Admin && pnpm install && pnpm build && cd ..
   script:
     - dotnet test SynapseEnqueteManagement.sln
         --collect:"XPlat Code Coverage"

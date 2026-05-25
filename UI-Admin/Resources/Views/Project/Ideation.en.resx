@@ -6,7 +6,8 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
   <data name="PageTitle" xml:space="preserve"><value>Categories</value></data>
-  <data name="Heading" xml:space="preserve"><value>Ideation</value></data>
+  <data name="Heading" xml:space="preserve"><value>Categories</value></data>
+  <data name="Subtitle" xml:space="preserve"><value>Create categories where participants can share ideas</value></data>
   <data name="LockedActive" xml:space="preserve"><value>This project is active. Settings can no longer be changed.</value></data>
   <data name="LockedArchived" xml:space="preserve"><value>This project is archived. Settings can no longer be changed.</value></data>
   <data name="SettingsHeading" xml:space="preserve"><value>Settings</value></data>
@@ -15,12 +16,13 @@
   <data name="ExtraBehavior_Append" xml:space="preserve"><value>Append (add to existing)</value></data>
   <data name="ExtraBehavior_Replace" xml:space="preserve"><value>Replace (replace existing)</value></data>
   <data name="MaxExtraRequestsLabel" xml:space="preserve"><value>Maximum number of extra requests</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="CategoriesHeading" xml:space="preserve"><value>Categories</value></data>
   <data name="TableName" xml:space="preserve"><value>Name</value></data>
   <data name="TableDescription" xml:space="preserve"><value>Description</value></data>
   <data name="NoCategories" xml:space="preserve"><value>No categories yet.</value></data>
   <data name="AddCategoryHeading" xml:space="preserve"><value>Add category</value></data>
+  <data name="EmptyHint" xml:space="preserve"><value>Add your first category to get started. Participants will be able to post ideas within each category.</value></data>
+  <data name="DescriptionLabel" xml:space="preserve"><value>Description</value></data>
   <data name="NameRequired" xml:space="preserve"><value>Name *</value></data>
   <data name="CategoryNamePlaceholder" xml:space="preserve"><value>Category name</value></data>
   <data name="OptionalPlaceholder" xml:space="preserve"><value>Optional</value></data>

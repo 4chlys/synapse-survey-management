@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -42,7 +43,7 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     PhoneNumber = table.Column<string>(type: "TEXT", nullable: true),
                     PhoneNumberConfirmed = table.Column<bool>(type: "boolean", nullable: false),
                     TwoFactorEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     LockoutEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     AccessFailedCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
@@ -57,7 +58,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
                         .Annotation("Sqlite:Autoincrement", true),
                     RoleId = table.Column<string>(type: "TEXT", nullable: false),
                     ClaimType = table.Column<string>(type: "TEXT", nullable: true),
@@ -78,7 +80,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
                         .Annotation("Sqlite:Autoincrement", true),
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
                     ClaimType = table.Column<string>(type: "TEXT", nullable: true),

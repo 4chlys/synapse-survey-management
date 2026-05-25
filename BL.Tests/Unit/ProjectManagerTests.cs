@@ -62,7 +62,7 @@ public class ProjectManagerTests
             NoIntroductions(),
             defaultLanguageCode: "en",
             supportedLanguageCodes: new[] { "nl", "en" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1, shortForm: null,
             allowCrossLanguageIdeas: true);
 
@@ -89,7 +89,7 @@ public class ProjectManagerTests
             Translations(("nl", "Naam")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1);
 
         // Assert
@@ -109,7 +109,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Admin")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1, shortForm: "admin"));
     }
 
@@ -125,7 +125,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Test")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1, shortForm: "INVALID FORM"));
     }
 
@@ -139,7 +139,7 @@ public class ProjectManagerTests
                 NoIntroductions(),
                 defaultLanguageCode: "en",
                 supportedLanguageCodes: new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
 
@@ -152,7 +152,7 @@ public class ProjectManagerTests
                 Translations(("nl", "X")),
                 NoIntroductions(),
                 "nl", new[] { "nl", "en" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
 
@@ -165,7 +165,7 @@ public class ProjectManagerTests
                 Translations(("zz", "X")),
                 NoIntroductions(),
                 "zz", new[] { "zz" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
 
@@ -186,7 +186,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Test")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1,
                 primaryColor: primaryColor));
     }
@@ -207,7 +207,7 @@ public class ProjectManagerTests
             Translations(("nl", "Test")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1,
             primaryColor: "#5C6BC0");
 
@@ -233,7 +233,7 @@ public class ProjectManagerTests
             Translations(("nl", "Test")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1,
             primaryColor: primaryColor);
 
@@ -280,7 +280,7 @@ public class ProjectManagerTests
             Translations(("nl", "Naam")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, shortForm: "new-form",
             allowCrossLanguageIdeas: true);
 
@@ -304,7 +304,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Naam")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, shortForm: "changed-form"));
     }
 
@@ -324,7 +324,7 @@ public class ProjectManagerTests
             Translations(("nl", "Naam")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, shortForm: "same-form");
 
         // Assert
@@ -501,7 +501,6 @@ public class ProjectManagerTests
             ShortForm = "source",
             ImageUrl = "img.png",
             FormType = FormType.VerticalScroll,
-            AiAssistance = AiAssistanceType.ProActive,
             IdeaPageSize = 5,
             MaxExtraIdeaRequests = 3,
             CommentPageSize = 20,
@@ -639,6 +638,59 @@ public class ProjectManagerTests
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _manager.DuplicateProjectAsync(999, Translations(("nl", "X")), platformId: 1));
+    }
+
+    #endregion
+
+    #region UpdateLastWizardStepAsync
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task UpdateLastWizardStepAsync_ValidStep_SetsStepAndSaves(int step)
+    {
+        // Arrange
+        var project = new Project { ProjectId = ProjectId, LastWizardStep = 1 };
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId)).ReturnsAsync(project);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.UpdateLastWizardStepAsync(ProjectId, step);
+
+        // Assert
+        Assert.Equal(step, project.LastWizardStep);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-5, 1)]
+    [InlineData(4, 3)]
+    [InlineData(99, 3)]
+    public async Task UpdateLastWizardStepAsync_OutOfRange_ClampsTo1Through3(int input, int expected)
+    {
+        // Arrange
+        var project = new Project { ProjectId = ProjectId, LastWizardStep = 1 };
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId)).ReturnsAsync(project);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        await _manager.UpdateLastWizardStepAsync(ProjectId, input);
+
+        // Assert
+        Assert.Equal(expected, project.LastWizardStep);
+    }
+
+    [Fact]
+    public async Task UpdateLastWizardStepAsync_ProjectNotFound_Throws()
+    {
+        // Arrange
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(999)).ReturnsAsync((Project)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _manager.UpdateLastWizardStepAsync(999, 2));
     }
 
     #endregion

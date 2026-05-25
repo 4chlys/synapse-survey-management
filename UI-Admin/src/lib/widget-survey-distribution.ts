@@ -1,7 +1,8 @@
+import QRCode from 'qrcode';
+
 export function initSurveyDistributionWidget(el: HTMLElement): void {
     const surveyUrl = el.dataset.surveyUrl ?? '';
     const projectId = el.dataset.projectId ?? '';
-    const qrSrc = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(surveyUrl)}`;
 
     const titleText = el.dataset.i18nSurveyLinkTitle ?? '';
     const copyText = el.dataset.i18nCopy ?? '';
@@ -30,10 +31,12 @@ export function initSurveyDistributionWidget(el: HTMLElement): void {
     if (urlText) urlText.textContent = surveyUrl;
 
     const img = el.querySelector<HTMLImageElement>(`#qr-img-${projectId}`);
-    if (img) img.src = qrSrc;
-
     const link = el.querySelector<HTMLAnchorElement>(`#qr-link-${projectId}`);
-    if (link) link.href = qrSrc;
+
+    QRCode.toDataURL(surveyUrl, { width: 200, margin: 1 }).then(dataUrl => {
+        if (img) img.src = dataUrl;
+        if (link) link.href = dataUrl;
+    });
 
     const btn = el.querySelector<HTMLButtonElement>(`#copy-btn-${projectId}`);
     btn?.addEventListener('click', () => {

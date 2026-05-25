@@ -54,9 +54,9 @@ export interface QuestionsI18n {
 
 export interface RenderContext {
     deleteEndpoint: string;
-    aiAssistance: string;
     projectId: number;
     locked: boolean;
+    isNew: boolean;
     i18n: QuestionsI18n;
 }
 
@@ -152,21 +152,14 @@ function getAntiforgeryToken(): string {
 function addQuestionDashedBtn(i18n: QuestionsI18n): string {
     return `
     <button type="button"
-            class="open-add-modal w-full border-2 border-dashed border-base-300 hover:border-blue-500 hover:bg-blue-50 rounded-xl py-4 text-base-content/40 hover:text-blue-600 text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+            class="open-add-modal drop-zone promote-zone w-full border-2 border-dashed border-base-300 hover:border-primary hover:bg-primary/5 rounded-xl py-4 text-base-content/40 hover:text-primary text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            data-parent-id=""
+            data-parent-choice-index="">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
         </svg>
         ${escapeHtml(i18n.addQuestion)}
     </button>`;
-}
-
-function promoteDropZoneHtml(i18n: QuestionsI18n): string {
-    return `
-    <div class="drop-zone promote-zone border-2 border-dashed border-base-content/15 text-base-content/40 text-center py-3 text-xs rounded-xl"
-         data-parent-id=""
-         data-parent-choice-index="">
-        ${escapeHtml(i18n.promoteDropZone)}
-    </div>`;
 }
 
 function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[]>, ctx: RenderContext, index = 0): string {
@@ -177,7 +170,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
     const i18n = ctx.i18n;
     const formatLabel = labelForFormat(q.questionFormat, i18n);
 
-    const deleteUrl = `${ctx.deleteEndpoint}?projectId=${ctx.projectId}&questionId=${q.questionId}&aiAssistance=${encodeURIComponent(ctx.aiAssistance)}`;
+    const deleteUrl = `${ctx.deleteEndpoint}?projectId=${ctx.projectId}&questionId=${q.questionId}&isNew=${ctx.isNew}`;
 
     const endingToggle = (trigger: string, endsSurvey: boolean) => ctx.locked
         ? (endsSurvey ? `<span class="text-xs text-base-content/40">${escapeHtml(i18n.endsSurveyLabel)}</span>` : '')
@@ -199,11 +192,15 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
             const children = buckets.get(scopeKey(q.questionId, idx)) ?? [];
             const endsSurvey = q.endingAnswers.includes(trigger);
             const dropZone = ctx.locked ? '' : `
-                <div class="drop-zone border border-dashed border-base-content/20 text-base-content/40 text-center py-2 my-1 text-xs rounded-lg"
-                     data-parent-id="${q.questionId}"
-                     data-parent-choice-index="${idx}">
+                <button type="button"
+                        class="drop-zone add-sub-question-btn w-full border border-dashed border-base-content/20 hover:border-primary/40 hover:bg-primary/5 text-base-content/40 hover:text-primary text-center py-2 my-1 text-xs rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                        data-parent-id="${q.questionId}"
+                        data-parent-choice-index="${idx}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
                     ${escapeHtml(i18n.subDropZone)}
-                </div>`;
+                </button>`;
             return `
                 <div class="answer-group pl-4 border-l-2 border-base-300 ml-2 mt-2">
                     <div class="flex items-center gap-2 py-1.5 text-base-content/70 text-sm">
@@ -239,7 +236,7 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
         </button>`;
 
     const deleteBtn = ctx.locked ? '' : `
-        <form method="post" action="${escapeHtml(deleteUrl)}" class="flex flex-shrink-0">
+        <form method="post" action="${escapeHtml(deleteUrl)}" class="question-delete-form flex flex-shrink-0">
             <input type="hidden" name="__RequestVerificationToken" value="${getAntiforgeryToken()}" />
             <button type="submit"
                     class="btn btn-ghost btn-xs btn-circle text-base-content/70 hover:text-error">
@@ -273,20 +270,20 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
 
     if (depth === 0) {
         return `
-            <div class="question-card bg-base-100 border border-base-200 rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all"
+            <div class="question-card bg-base-100 border border-base-200 rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
                  ${ctx.locked ? '' : 'draggable="true"'}
                  data-question-id="${q.questionId}"
                  data-format="${escapeHtml(q.questionFormat)}"
                  data-parent-id="${q.parentQuestionId ?? ''}"
                  data-parent-choice-index="${q.choiceIndex ?? ''}"
                  data-position="${q.position}">
-                <div class="flex items-center gap-2 px-4 py-3 transition-colors">
+                <div class="flex items-center gap-2 px-4 py-3 transition-colors cursor-pointer">
                     ${grip}
                     ${formatIconHtml(q.questionFormat)}
                     <button type="button"
-                            class="question-toggle flex-1 text-left min-w-0"
+                            class="question-toggle flex-1 text-left min-w-0 cursor-pointer"
                             data-question-id="${q.questionId}">
-                        <div class="min-w-0">
+                        <div class="min-w-0 pointer-events-none">
                             <p class="text-sm font-medium text-base-content leading-snug">${escapeHtml(q.text)}</p>
                             <div class="flex gap-1 mt-1 flex-wrap items-center">
                                 <span class="badge badge-sm ${escapeHtml(cfg.badge)} font-normal">${escapeHtml(formatLabel)}</span>
@@ -296,8 +293,8 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                             </div>
                         </div>
                     </button>
-                    <span id="arrow-${q.questionId}" class="text-base-content/60 text-xs flex-shrink-0">${canBranch ? 'v' : ''}</span>
-                    <span class="text-base-content/60 text-xs tabular-nums flex-shrink-0">${numDisplay}</span>
+                    <span id="arrow-${q.questionId}" class="text-base-content/60 text-xs flex-shrink-0 pointer-events-none">${canBranch ? 'v' : ''}</span>
+                    <span class="text-base-content/60 text-xs tabular-nums flex-shrink-0 pointer-events-none">${numDisplay}</span>
                     ${statsBtn}
                     ${editBtn}
                     ${deleteBtn}
@@ -402,8 +399,7 @@ export function renderTree(list: HTMLElement, questions: Question[], ctx: Render
     if (topLevel.length === 0) {
         list.innerHTML = `
             <p class="text-base-content/40 italic mb-4 text-sm">${escapeHtml(ctx.i18n.emptyNoQuestions)}</p>
-            ${ctx.locked ? '' : promoteDropZoneHtml(ctx.i18n)}
-            ${ctx.locked ? '' : `<div class="mt-3">${addQuestionDashedBtn(ctx.i18n)}</div>`}`;
+            ${ctx.locked ? '' : addQuestionDashedBtn(ctx.i18n)}`;
         return;
     }
 
@@ -429,9 +425,7 @@ export function renderTree(list: HTMLElement, questions: Question[], ctx: Render
     }
 
     if (!ctx.locked) {
-        html += `
-            <div class="mb-3">${promoteDropZoneHtml(ctx.i18n)}</div>
-            <div>${addQuestionDashedBtn(ctx.i18n)}</div>`;
+        html += addQuestionDashedBtn(ctx.i18n);
     }
 
     list.innerHTML = html;

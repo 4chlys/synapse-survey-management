@@ -172,7 +172,7 @@ public class ProjectsControllerTests
                 It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
                 "nl",
                 It.IsAny<IEnumerable<string>>(),
-                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<string>(), It.IsAny<FormType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>(),
@@ -214,7 +214,7 @@ public class ProjectsControllerTests
                 It.IsAny<IEnumerable<ProjectTranslationInput>>(),
                 It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<string>(), It.IsAny<FormType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<bool>(), It.IsAny<int>(), true,
@@ -241,7 +241,7 @@ public class ProjectsControllerTests
             It.IsAny<IEnumerable<ProjectTranslationInput>>(),
             It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
             It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
-            It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+            It.IsAny<string>(), It.IsAny<FormType>(),
             It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
             It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(),
             It.IsAny<bool>(), It.IsAny<int>(), true,
@@ -257,7 +257,7 @@ public class ProjectsControllerTests
                 It.IsAny<IEnumerable<ProjectTranslationInput>>(),
                 It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<string>(), It.IsAny<FormType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<int>(), "admin", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>(),
                 It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
@@ -295,7 +295,7 @@ public class ProjectsControllerTests
                 It.IsAny<IEnumerable<ProjectTranslationInput>>(),
                 It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<string>(), It.IsAny<FormType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true,
                 It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
@@ -321,7 +321,7 @@ public class ProjectsControllerTests
             It.IsAny<IEnumerable<ProjectTranslationInput>>(),
             It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
             It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
-            It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+            It.IsAny<string>(), It.IsAny<FormType>(),
             It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
             It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), true,
             It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -337,7 +337,7 @@ public class ProjectsControllerTests
                 It.IsAny<IEnumerable<ProjectTranslationInput>>(),
                 It.IsAny<IEnumerable<IntroductionTranslationInput>>(),
                 It.IsAny<string>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<string>(), It.IsAny<FormType>(), It.IsAny<AiAssistanceType>(),
+                It.IsAny<string>(), It.IsAny<FormType>(),
                 It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(),
                 "new-form", It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<bool>(),
                 It.IsAny<ProjectTheme>(), It.IsAny<string>(), It.IsAny<string>()))
@@ -357,6 +357,53 @@ public class ProjectsControllerTests
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() =>
             _controller.UpdateProject(1, dto));
+    }
+
+    #endregion
+
+    #region UpdateWizardStep
+
+    [Fact]
+    public async Task UpdateWizardStep_ValidStep_ReturnsNoContentAndCallsManager()
+    {
+        // Arrange
+        _projectManager.Setup(m => m.UpdateLastWizardStepAsync(1, 2)).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _controller.UpdateWizardStep(1, new UpdateWizardStepDto { Step = 2 });
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _projectManager.Verify(m => m.UpdateLastWizardStepAsync(1, 2), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateWizardStep_ProjectNotFound_ManagerThrows_Propagates()
+    {
+        // Arrange
+        _projectManager.Setup(m => m.UpdateLastWizardStepAsync(999, 2))
+            .ThrowsAsync(new ArgumentException("Project 999 not found."));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _controller.UpdateWizardStep(999, new UpdateWizardStepDto { Step = 2 }));
+    }
+
+    [Fact]
+    public async Task GetProject_IncludesLastWizardStep_InDto()
+    {
+        // Arrange
+        var project = BilingualProject();
+        project.LastWizardStep = 3;
+        _projectManager.Setup(m => m.GetProjectByIdWithIntroductionReadOnlyAsync(1)).ReturnsAsync(project);
+
+        // Act
+        var result = await _controller.GetProject(1);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ProjectDto>(ok.Value);
+        Assert.Equal(3, dto.LastWizardStep);
     }
 
     #endregion

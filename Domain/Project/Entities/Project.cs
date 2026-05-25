@@ -31,8 +31,6 @@ public class Project : IHasCreatedAt
     [MaxLength(500)]
     public string ImageUrl { get; set; }
 
-    public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
-
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
     public FormType FormType { get; set; } = FormType.VerticalScroll;
 
@@ -52,6 +50,8 @@ public class Project : IHasCreatedAt
     [Range(1, 200)] public int CommentPageSize { get; set; } = 20;
     public bool RequestContactInfo { get; set; } = false;
     public bool AllowCrossLanguageIdeas { get; set; } = false;
+
+    [Range(1, 3)] public int LastWizardStep { get; set; } = 1;
 
     public Questionnaire Questionnaire { get; set; }
 
