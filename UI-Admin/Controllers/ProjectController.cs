@@ -235,7 +235,7 @@ public class ProjectController(
         var aiAssistance = platformSettings?.AiAssistanceMode ?? "ProActive";
 
         if (isNew && project?.ProjectState == "Draft")
-            _ = projectService.UpdateWizardStepAsync(projectId, 2);
+            await projectService.UpdateWizardStepAsync(projectId, 2);
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
@@ -304,7 +304,7 @@ public class ProjectController(
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
         if (isNew && project?.ProjectState == "Draft")
-            _ = projectService.UpdateWizardStepAsync(projectId, 3);
+            await projectService.UpdateWizardStepAsync(projectId, 3);
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
