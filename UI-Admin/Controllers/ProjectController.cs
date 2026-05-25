@@ -78,7 +78,6 @@ public class ProjectController(
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
             InteractionMode = project.FormType,
-            AiAssistance = project.AiAssistance,
             MinAge = project.MinAge,
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
@@ -150,7 +149,7 @@ public class ProjectController(
                 }
                 project = await projectService.UpdateProjectAsync(
                     model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                    model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                    model.ImageUrl, model.InteractionMode, model.MinAge, model.MaxAge,
                     model.ContactOptIn, model.ShortForm,
                     lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
                     model.AllowCrossLanguageIdeas,
@@ -166,7 +165,7 @@ public class ProjectController(
                 }
                 project = await projectService.CreateProjectAsync(
                     model.Name, model.Topic, model.Introduction,
-                    model.ImageUrl, model.InteractionMode, model.AiAssistance,
+                    model.ImageUrl, model.InteractionMode,
                     model.MinAge, model.MaxAge, model.ContactOptIn,
                     platformId: user.ProjectPlatformId.Value,
                     shortForm: model.ShortForm,
@@ -329,7 +328,7 @@ public class ProjectController(
 
         await projectService.UpdateProjectAsync(
             projectId, project.Name, project.Topic, project.Introduction,
-            project.ProjectImage, project.FormType, project.AiAssistance,
+            project.ProjectImage, project.FormType,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
             project.AllowCrossLanguageIdeas,

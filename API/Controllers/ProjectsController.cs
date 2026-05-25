@@ -24,11 +24,6 @@ public class ProjectsController(
             ? formResult
             : FormType.VerticalScroll;
 
-    private static AiAssistanceType ParseAiAssistanceType(string aiAssistance) =>
-        Enum.TryParse<AiAssistanceType>(aiAssistance, ignoreCase: true, out var aiResult)
-            ? aiResult
-            : AiAssistanceType.ProActive;
-
     private static ProjectTheme ParseTheme(string theme) =>
         Enum.TryParse<ProjectTheme>(theme, ignoreCase: true, out var themeResult)
             ? themeResult
@@ -70,7 +65,6 @@ public class ProjectsController(
             OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
             Introduction = introText,
-            AiAssistance = p.AiAssistance.ToString(),
             RequestContactInfo = p.RequestContactInfo,
             AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
             IdeaPageSize = p.IdeaPageSize,
@@ -100,7 +94,6 @@ public class ProjectsController(
         IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
         OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
-        AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
         AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
         IdeaPageSize = p.IdeaPageSize,
@@ -176,7 +169,6 @@ public class ProjectsController(
             dto.SupportedLanguageCodes,
             imageUrl,
             ParseFormType(dto.InteractionMode),
-            ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
@@ -204,7 +196,6 @@ public class ProjectsController(
             dto.SupportedLanguageCodes,
             dto.ImageUrl ?? string.Empty,
             ParseFormType(dto.InteractionMode),
-            ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,

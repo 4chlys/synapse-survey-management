@@ -14,7 +14,6 @@ public record ProjectAdminViewModel
     public string OrganisationLogoUrl { get; init; }
     public int PlatformId { get; init; }
     public string Introduction { get; init; }
-    public string AiAssistance { get; init; } = "ProActive";
     public bool RequestContactInfo { get; init; }
     public int IdeaPageSize { get; init; } = 5;
     public bool ExtraIdeasReplaceExisting { get; init; }

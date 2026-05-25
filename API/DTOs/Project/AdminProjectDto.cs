@@ -12,7 +12,6 @@ public record AdminProjectDto
     public bool IsAiGeneratedImage { get; init; }
     public string OrganisationLogoUrl { get; init; }
     public string OrganisationWebsiteUrl { get; init; }
-    public string AiAssistance { get; init; }
     public bool RequestContactInfo { get; init; }
     public int IdeaPageSize { get; init; }
     public bool ExtraIdeasReplaceExisting { get; init; }

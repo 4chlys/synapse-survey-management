@@ -217,7 +217,6 @@ public class RecordViewModelBindingTests
             ["Topic"] = "Civic ideas",
             ["Introduction"] = "Welcome to the project",
             ["InteractionMode"] = "HorizontalScroll",
-            ["AiAssistance"] = "AskFirst",
             ["MinAge"] = "13",
             ["MaxAge"] = "25",
             ["ImageUrl"] = "https://images.example/cover.png",
@@ -243,7 +242,6 @@ public class RecordViewModelBindingTests
         Assert.Equal("Civic ideas", model.Topic);
         Assert.Equal("Welcome to the project", model.Introduction);
         Assert.Equal("HorizontalScroll", model.InteractionMode);
-        Assert.Equal("AskFirst", model.AiAssistance);
         Assert.Equal(13, model.MinAge);
         Assert.Equal(25, model.MaxAge);
         Assert.Equal("https://images.example/cover.png", model.ImageUrl);

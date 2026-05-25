@@ -14,9 +14,6 @@ public record CreateProjectDto
     [MaxLength(20)]
     public string InteractionMode { get; init; }
 
-    [MaxLength(20)]
-    public string AiAssistance { get; init; }
-
     [Range(0, 120)] public int? MinAge { get; init; }
     [Range(0, 120)] public int? MaxAge { get; init; }
 

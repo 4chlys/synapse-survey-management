@@ -15,7 +15,6 @@ public record ProjectDto
     public string OrganisationLogoUrl { get; init; }
     public string OrganisationWebsiteUrl { get; init; }
     public string Introduction { get; init; }
-    public string AiAssistance { get; init; }
     public bool RequestContactInfo { get; init; }
     public int IdeaPageSize { get; init; }
     public bool ExtraIdeasReplaceExisting { get; init; }
