@@ -253,6 +253,9 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> SaveProgress(int projectId, bool isNew, int step, string returnAction)
     {
+        if (returnAction != nameof(Questions) && returnAction != nameof(Ideation))
+            return BadRequest();
+
         await projectService.UpdateWizardStepAsync(projectId, step);
         TempData["Success"] = localizer["Common_ProgressSaved"].Value;
         return RedirectToAction(returnAction, new { projectId, isNew });
