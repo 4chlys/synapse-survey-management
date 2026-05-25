@@ -66,19 +66,4 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script>
-        (function () {
-            var btn = document.getElementById('toggle-password');
-            var input = document.getElementById('login-password');
-            var eye = document.getElementById('pw-eye');
-            var eyeOff = document.getElementById('pw-eye-off');
-            if (!btn || !input) return;
-            btn.addEventListener('click', function () {
-                var show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                eye.classList.toggle('hidden', show);
-                eyeOff.classList.toggle('hidden', !show);
-            });
-        })();
-    </script>
 }

@@ -13,7 +13,7 @@
 @* Platform filter *@
 <form method="get" asp-action="Index" class="flex flex-wrap gap-2 mb-6 items-center">
     <select name="platformId" class="select select-bordered select-sm min-w-48"
-            onchange="this.form.submit()">
+            data-submit-on-change>
         <option value="">@L["FilterAllPlatforms"]</option>
         @foreach (var platform in Model.Platforms)
         {

@@ -91,7 +91,7 @@
                                 <button type="button"
                                         class="w-full text-left px-3 py-2 text-xs hover:bg-base-200 flex items-center gap-2 cursor-pointer"
                                         role="menuitem"
-                                        onclick="document.getElementById('copy-modal-@project.ProjectId').showModal();">
+                                        data-open-modal="copy-modal-@project.ProjectId">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="9" y="9" width="13" height="13" rx="2"/>
                                         <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
@@ -142,7 +142,7 @@
                         </label>
                         <div class="modal-action">
                             <button type="button" class="btn btn-ghost"
-                                    onclick="document.getElementById('copy-modal-@project.ProjectId').close();">
+                                    data-close-modal="copy-modal-@project.ProjectId">
                                 @L["CancelButton"]
                             </button>
                             <button type="submit" class="btn btn-primary">@L["CopyButton"]</button>

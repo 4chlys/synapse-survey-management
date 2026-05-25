@@ -66,11 +66,10 @@ type Strings = {
     speechToTextErrorUnexpectedResponse: string;
 };
 
-declare global {
-    interface Window {
-        __i18n: { culture: string; strings: Strings };
-    }
-}
+const el = document.getElementById('i18n-data');
+const data: { culture: string; strings: Strings } = el
+    ? JSON.parse(el.textContent ?? '{}')
+    : { culture: '', strings: {} as Strings };
 
-export const t = <K extends keyof Strings>(key: K): string => window.__i18n.strings[key];
-export const currentCulture = (): string => window.__i18n.culture;
+export const t = <K extends keyof Strings>(key: K): string => data.strings[key];
+export const currentCulture = (): string => data.culture;
