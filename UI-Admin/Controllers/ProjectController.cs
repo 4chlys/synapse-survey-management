@@ -231,7 +231,9 @@ public class ProjectController(
         var platformSettings = user?.ProjectPlatformId is not null
             ? await platformService.GetPlatformSettingsAsync(user.ProjectPlatformId.Value)
             : null;
-        var aiAssistance = platformSettings?.AiAssistanceMode ?? "ProActive";
+        var aiAssistance = Enum.TryParse<AiAssistanceType>(platformSettings?.AiAssistanceMode, out var assistanceMode)
+            ? assistanceMode
+            : AiAssistanceType.ProActive;
 
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 2);
@@ -241,7 +243,7 @@ public class ProjectController(
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Questions";
-        ViewData["AiAssistance"]  = aiAssistance;
+        ViewData["AiAssistance"]  = aiAssistance.ToString();
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
         ViewData["IsNew"]         = isNew;
