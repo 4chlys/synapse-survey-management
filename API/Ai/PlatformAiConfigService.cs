@@ -106,8 +106,7 @@ public class PlatformAiConfigService(
             ? JsonSerializer.Deserialize<List<string>>(settings.AllowedModelIds) ?? []
             : AiModelCatalog.All.Where(m => m.Provider == AiProvider.VertexAi).Select(m => m.Id).ToList();
 
-        var selectedModel = platform?.SelectedAiModel
-            ?? (settings is null ? registry.DefaultModelId : null);
+        var selectedModel = platform?.SelectedAiModel ?? registry.DefaultModelId;
         var effectiveModel = allowedIds.Contains(selectedModel ?? string.Empty)
             ? selectedModel
             : allowedIds.FirstOrDefault(id => registry.TryGet(id, out _));

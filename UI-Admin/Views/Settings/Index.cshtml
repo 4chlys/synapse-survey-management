@@ -60,12 +60,18 @@
                             <p class="text-xs text-base-content/50 uppercase tracking-wide mt-1">@provider.ToString()</p>
                             @foreach (var aiModel in group)
                             {
-                                var isSelected = aiModel.Id == Model.AiSettings.SelectedModelId;
-                                <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer border-base-300 hover:border-primary">
+                                var isSelected    = aiModel.Id == Model.AiSettings.SelectedModelId;
+                                var isUnavailable = Model.AiSettings.UnavailableModelIds.Contains(aiModel.Id);
+                                <label class="flex items-start gap-3 p-3 rounded-lg border border-base-300 @(isUnavailable ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:border-primary")">
                                     <input type="radio" name="selectedModelId" value="@aiModel.Id"
                                            class="radio radio-primary mt-0.5"
-                                           checked="@isSelected" />
+                                           checked="@isSelected"
+                                           disabled="@isUnavailable" />
                                     <span class="text-sm font-medium text-base-content">@aiModel.DisplayName</span>
+                                    @if (isUnavailable)
+                                    {
+                                        <span class="badge badge-error badge-xs">@L["ModelNotAvailable"]</span>
+                                    }
                                 </label>
                             }
                         }

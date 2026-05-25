@@ -15,8 +15,11 @@ import webbrowser
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-CONFIG_FILE = SCRIPT_DIR / "config.env"
-PORT = 8080
+PORT = 8090
+
+# Accept optional env argument: python dashboard.py test  |  python dashboard.py prod
+ENV_ARG     = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("test", "prod") else None
+CONFIG_FILE = SCRIPT_DIR / (f"config.{ENV_ARG}.env" if ENV_ARG else "config.env")
 
 # ── Config ─────────────────────────────────────────────────────
 config = {}
@@ -31,11 +34,14 @@ PROJECT_ID = config.get("PROJECT_ID", "")
 REGION     = config.get("REGION", "europe-west1")
 ZONE       = config.get("ZONE", REGION + "-b") if "REGION" in config else config.get("ZONE", "europe-west1-b")
 DOMAIN     = config.get("DOMAIN", "synapse-ip.xyz")
+ENV        = ENV_ARG or ("test" if "test" in DOMAIN else "prod")
+
+SQL_INSTANCE = f"mvp-postgres-{ENV}"
 
 MIGS = [
-    {"id": "synapse-api-mig",   "label": "API",   "url": f"https://api.{DOMAIN}",   "port": "8080"},
-    {"id": "synapse-ui-mig",    "label": "UI",    "url": f"https://{DOMAIN}",        "port": "80"},
-    {"id": "synapse-admin-mig", "label": "Admin", "url": f"https://admin.{DOMAIN}", "port": "8081"},
+    {"id": f"synapse-{ENV}-api-mig",   "label": "API",   "url": f"https://api.{DOMAIN}",   "port": "8080"},
+    {"id": f"synapse-{ENV}-ui-mig",    "label": "UI",    "url": f"https://{DOMAIN}",        "port": "80"},
+    {"id": f"synapse-{ENV}-admin-mig", "label": "Admin", "url": f"https://admin.{DOMAIN}", "port": "80"},
 ]
 
 # ── GCloud helpers ─────────────────────────────────────────────
@@ -103,15 +109,15 @@ def get_mig_instances(mig_id):
 
 def get_lb_ip():
     out, code = gcloud(
-        "compute", "addresses", "describe", "synapse-lb-ip",
+        "compute", "addresses", "describe", f"synapse-{ENV}-lb-ip",
         "--global", f"--project={PROJECT_ID}", "--format=value(address)"
     )
     return out if (code == 0 and out) else None
 
 def get_ssl_certs():
     out, code = gcloud(
-        "compute", "ssl-certificates", "list",
-        f"--project={PROJECT_ID}", "--format=value(name,managed.status)"
+        "certificate-manager", "certificates", "list",
+        f"--project={PROJECT_ID}", "--format=value(name,managed.state)"
     )
     if code != 0 or not out:
         return []
@@ -124,13 +130,13 @@ def get_ssl_certs():
 
 def get_cloud_sql_status():
     out, code = gcloud(
-        "sql", "instances", "describe", "mvp-postgres",
+        "sql", "instances", "describe", SQL_INSTANCE,
         f"--project={PROJECT_ID}", "--format=value(state,ipAddresses[0].ipAddress)"
     )
     if code != 0 or not out:
-        return {"state": "UNKNOWN", "ip": ""}
+        return {"state": "UNKNOWN", "ip": "", "name": SQL_INSTANCE}
     parts = out.split()
-    return {"state": parts[0], "ip": parts[1] if len(parts) > 1 else ""}
+    return {"state": parts[0], "ip": parts[1] if len(parts) > 1 else "", "name": SQL_INSTANCE}
 
 def get_recent_logs(limit=50):
     out, code = gcloud(
@@ -228,9 +234,9 @@ _COSTS = {
 def estimate_cost(mig_sizes):
     """Returns estimated monthly cost based on running VMs."""
     # API + UI = e2-small, Admin = e2-micro
-    api_count   = mig_sizes.get("synapse-api-mig", 0)
-    ui_count    = mig_sizes.get("synapse-ui-mig", 0)
-    admin_count = mig_sizes.get("synapse-admin-mig", 0)
+    api_count   = mig_sizes.get(f"synapse-{ENV}-api-mig", 0)
+    ui_count    = mig_sizes.get(f"synapse-{ENV}-ui-mig", 0)
+    admin_count = mig_sizes.get(f"synapse-{ENV}-admin-mig", 0)
 
     vm_cost = (
         max(api_count, 0)   * _COSTS["e2-small"] +
@@ -279,7 +285,7 @@ def fetch_all_status():
         "admin_url": f"https://admin.{domain}",
         "console_url": f"https://console.cloud.google.com/compute/instanceGroups?project={PROJECT_ID}",
         "logs_url":    f"https://console.cloud.google.com/logs/query?project={PROJECT_ID}",
-        "sql_console": f"https://console.cloud.google.com/sql/instances/mvp-postgres/overview?project={PROJECT_ID}",
+        "sql_console": f"https://console.cloud.google.com/sql/instances/{SQL_INSTANCE}/overview?project={PROJECT_ID}",
         "ssl": ssl_future.result(),
         "sql": sql,
         "project_id": PROJECT_ID,
@@ -785,7 +791,7 @@ function renderSummary(data) {
   sqlLbl.className = 'summary-card-label'; sqlLbl.textContent = 'CLOUD SQL';
   sqlTop.append(sqlLbl, Object.assign(document.createElement('div'), {className:'summary-card-icon',textContent:'⛁'}));
   const sqlVal = document.createElement('div');
-  sqlVal.className = 'summary-card-value'; sqlVal.style.fontSize = '16px'; sqlVal.textContent = 'mvp-postgres';
+  sqlVal.className = 'summary-card-value'; sqlVal.style.fontSize = '16px'; sqlVal.textContent = sql.name || 'Cloud SQL';
   const sqlSub = document.createElement('div');
   sqlSub.className = 'summary-card-sub'; sqlSub.textContent = sql.ip || 'privaat IP';
   const sqlStatus = document.createElement('div');
@@ -1214,12 +1220,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
             out1, c1 = gcloud("config", "get-value", "project")
             out2, c2 = gcloud("compute", "instance-groups", "managed", "list",
                               f"--project={PROJECT_ID}", "--format=value(name,targetSize)")
-            out3, c3 = gcloud("compute", "addresses", "describe", "synapse-lb-ip",
+            out3, c3 = gcloud("compute", "addresses", "describe", f"synapse-{ENV}-lb-ip",
                               "--global", f"--project={PROJECT_ID}", "--format=value(address)")
-            out4, c4 = gcloud("compute", "instance-groups", "managed", "describe", "synapse-ui-mig",
+            out4, c4 = gcloud("compute", "instance-groups", "managed", "describe", f"synapse-{ENV}-ui-mig",
                               f"--zone={ZONE}", f"--project={PROJECT_ID}", "--format=value(targetSize)")
             self.send_json({
                 "gcloud_cmd": _GCLOUD,
+                "env": ENV,
                 "platform": sys.platform,
                 "project_id": PROJECT_ID,
                 "zone": ZONE,
@@ -1255,13 +1262,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
 # ── Main ───────────────────────────────────────────────────────
 if __name__ == "__main__":
     if not PROJECT_ID:
-        print("Geen config.env gevonden. Voer eerst deploy/bootstrap.sh uit.")
+        print("Geen config gevonden. Gebruik: python deploy/dashboard.py <test|prod>")
         raise SystemExit(1)
 
     server = http.server.HTTPServer(("localhost", PORT), Handler)
     url = f"http://localhost:{PORT}"
-    print(f"Synapse Console → {url}")
-    print(f"Project: {PROJECT_ID} | Domein: {DOMAIN} | Regio: {REGION}")
+    print(f"Synapse Console → {url}  [{ENV}]")
+    print(f"Project: {PROJECT_ID} | Domein: {DOMAIN} | Regio: {REGION} | SQL: {SQL_INSTANCE}")
     print("Ctrl+C om te stoppen.\n")
 
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
