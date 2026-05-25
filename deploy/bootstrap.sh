@@ -220,6 +220,7 @@ fi
 
 # 4. MIGs aanmaken
 create_migs
+configure_autohealing
 
 # 5. Load Balancer
 create_backend_services
