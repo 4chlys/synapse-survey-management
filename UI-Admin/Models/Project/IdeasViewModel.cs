@@ -14,6 +14,7 @@ public class IdeasViewModel
     public int PendingCount { get; set; }
     public int FlaggedCount { get; set; }
     public bool RequestContactInfo { get; set; }
+    public int PlatformId { get; set; }
     public List<IdeaRowViewModel> Ideas { get; set; } = new();
     public List<CategoryOptionViewModel> Categories { get; set; } = new();
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);

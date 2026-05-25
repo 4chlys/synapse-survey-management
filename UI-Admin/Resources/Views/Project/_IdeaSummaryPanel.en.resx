@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PanelTitle" xml:space="preserve"><value>Generate summary</value></data>
+  <data name="CategoryLabel" xml:space="preserve"><value>Category</value></data>
+  <data name="AllCategories" xml:space="preserve"><value>All categories</value></data>
+  <data name="StatusLabel" xml:space="preserve"><value>Status</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>All statuses</value></data>
+  <data name="Status_Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Status_New" xml:space="preserve"><value>New</value></data>
+  <data name="Status_Flagged" xml:space="preserve"><value>Flagged</value></data>
+  <data name="SamplingStrategyLabel" xml:space="preserve"><value>Selection strategy</value></data>
+  <data name="Strategy_Newest" xml:space="preserve"><value>Newest first</value></data>
+  <data name="Strategy_MostCommented" xml:space="preserve"><value>Most commented</value></data>
+  <data name="Strategy_Diverse" xml:space="preserve"><value>Semantically diverse</value></data>
+  <data name="IdeaSelectionLabel" xml:space="preserve"><value>Idea selection</value></data>
+  <data name="SelectFirst" xml:space="preserve"><value>First N ideas (platform setting)</value></data>
+  <data name="SelectAll" xml:space="preserve"><value>All ideas (batch mode)</value></data>
+  <data name="ExportFormatLabel" xml:space="preserve"><value>Export format</value></data>
+  <data name="Format_Pdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="Format_Txt" xml:space="preserve"><value>Text (.txt)</value></data>
+  <data name="Format_Png" xml:space="preserve"><value>Image (.png)</value></data>
+  <data name="GenerateButton" xml:space="preserve"><value>Generate summary</value></data>
+  <data name="StatusQueued" xml:space="preserve"><value>Queued…</value></data>
+  <data name="StatusProcessing" xml:space="preserve"><value>Processing…</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>Summary ready!</value></data>
+  <data name="StatusFailed" xml:space="preserve"><value>Failed.</value></data>
+  <data name="StatusStartError" xml:space="preserve"><value>Error while starting.</value></data>
+  <data name="StatusUnknownError" xml:space="preserve"><value>Unknown error.</value></data>
+  <data name="DownloadButton" xml:space="preserve"><value>Download summary</value></data>
+  <data name="RetryButton" xml:space="preserve"><value>Try again</value></data>
+</root>

@@ -31,6 +31,13 @@
                     <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
                 </ul>
             </div>
+
+            <button id="open-summary-panel" type="button" class="btn btn-secondary btn-sm gap-1.5">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                </svg>
+                @L["AiSummaryButton"]
+            </button>
         </div>
     </div>
 
@@ -86,6 +93,8 @@
         @await Html.PartialAsync("_IdeasTable", Model)
     </div>
 </div>
+
+@await Html.PartialAsync("_IdeaSummaryPanel", Model)
 
 @section Scripts {
     <script>

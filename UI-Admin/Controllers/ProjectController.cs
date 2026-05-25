@@ -17,6 +17,7 @@ using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
+using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -34,7 +35,8 @@ public class ProjectController(
     IdeaAdminService ideaService,
     ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings,
-    IStringLocalizer<SharedResource> localizer) : Controller
+    IStringLocalizer<SharedResource> localizer,
+    IdeaSummaryAdminService ideaSummaryService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -508,6 +510,7 @@ public class ProjectController(
             ApprovedCount = approved,
             PendingCount  = pending,
             FlaggedCount  = flagged,
+            PlatformId    = user.ProjectPlatformId ?? 0,
             Ideas         = items,
             Categories    = categories.Select(c => new CategoryOptionViewModel
             {
@@ -625,6 +628,48 @@ public class ProjectController(
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> GenerateSummary(
+        int projectId,
+        [FromBody] GenerateSummaryRequest req)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is null) return Forbid();
+
+        var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value,
+            new EnqueueSummaryRequest(req.Format, req.SamplingStrategy, req.CategoryId, req.Status, req.LanguageCode, req.SelectAll));
+
+        if (jobId is null)
+            return BadRequest(new { error = "Samenvatting kon niet worden gestart." });
+
+        return Ok(new { jobId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SummaryStatus(int projectId, Guid jobId)
+    {
+        var status = await ideaSummaryService.GetStatusAsync(projectId, jobId);
+        if (status is null) return NotFound();
+        return Ok(status);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DownloadSummary(int projectId, Guid jobId)
+    {
+        var result = await ideaSummaryService.DownloadAsync(projectId, jobId);
+        if (result is null) return NotFound();
+        var (bytes, contentType, fileName) = result.Value;
+        return File(bytes, contentType, fileName);
+    }
+
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>
         project?.ProjectState is "Active" or "Archived";
 }
+
+public sealed record GenerateSummaryRequest(
+    string Format,
+    string SamplingStrategy,
+    int? CategoryId,
+    string Status,
+    string LanguageCode,
+    bool SelectAll);
