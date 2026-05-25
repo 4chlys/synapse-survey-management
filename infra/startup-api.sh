@@ -14,6 +14,10 @@ PROJECT_ID=$(curl -s "http://metadata.google.internal/computeMetadata/v1/project
 # prod gebruikt :latest, andere omgevingen gebruiken :{ENV}-latest
 IMAGE_TAG="$([ "${ENV}" = "prod" ] && echo "latest" || echo "${ENV}-latest")"
 
+# Wipe & reseed the shared Postgres DB on every container start for non-prod
+# environments. Production preserves data across deploys.
+RESET_DB_ON_STARTUP="$([ "${ENV}" = "prod" ] && echo "false" || echo "true")"
+
 get_secret() {
   curl -s "https://secretmanager.googleapis.com/v1/projects/${PROJECT_ID}/secrets/${ENV}-$1/versions/latest:access" \
     -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)['payload']['data']).decode())" | tr -d '\r'
@@ -25,6 +29,7 @@ docker stop mvp-api 2>/dev/null; docker rm mvp-api 2>/dev/null
 
 docker run -d --name mvp-api --restart always -p 8080:8080 \
   -e ASPNETCORE_ENVIRONMENT=Production \
+  -e RESET_DB_ON_STARTUP="$RESET_DB_ON_STARTUP" \
   -e AllowedHosts='*' \
   -e DB_HOST="$(get_secret db-host)" \
   -e DB_PORT=5432 \
