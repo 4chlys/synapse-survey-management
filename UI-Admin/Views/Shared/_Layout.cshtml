@@ -92,12 +92,12 @@
         "Ideas"       => Shared["Nav_Ideas"].Value,
         "Categories"  => Shared["Nav_Categories"].Value,
         "Questions"   => Shared["Nav_Questions"].Value,
-        "Settings"    => Shared["Nav_Settings"].Value,
+        "Settings"    => Shared["Nav_General"].Value,
         _             => section
     };
     var wizardStep = ViewData["WizardStep"] as int?;
     var wizardStepLabels = wizardStep.HasValue ? new[] {
-        Shared["Nav_Settings"].Value,
+        Shared["Nav_General"].Value,
         Shared["Nav_Questions"].Value,
         Shared["Nav_Categories"].Value,
         Shared["Nav_Launch"].Value
@@ -278,7 +278,7 @@
 
                 <!-- Platform settings (ProjectPlatformAdmin) -->
                 <a asp-controller="Settings" asp-action="Index"
-                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(activeSection == "Settings" ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(activeSection == "Settings" && !projectId.HasValue ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
                    data-tip="@Shared["Nav_Settings"]">
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="3"/>
@@ -350,8 +350,31 @@
                         <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5 truncate">@(platformName ?? "Synapse")</p>
                         <p class="font-heading font-bold text-base-content text-sm mb-4 leading-snug">@projectName</p>
 
+                        <p class="text-[9px] font-bold text-base-content/30 uppercase tracking-widest mb-1">@Shared["Nav_Group_Management"]</p>
                         <ul class="menu menu-sm gap-0.5 -mx-2 w-[calc(100%+1rem)]">
-                            @foreach (var section in new[]{"Settings","Questions","Categories","Ideas","Dashboard"})
+                            @foreach (var section in new[]{"Dashboard","Questions","Ideas"})
+                            {
+                                var navLabel = NavLabel(section);
+                                var active = activeSection == section || activeSection == navLabel;
+                                <li>
+                                    <a asp-controller="Project"
+                                       asp-action="@NavAction(section)"
+                                       asp-route-projectId="@projectId"
+                                       class="@(active ? "bg-primary/10 text-primary font-semibold" : "text-base-content/60") rounded-xl gap-2.5">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            @Html.Raw(NavIcon(section))
+                                        </svg>
+                                        @navLabel
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+
+                        <div class="border-t border-base-200 my-3"></div>
+
+                        <p class="text-[9px] font-bold text-base-content/30 uppercase tracking-widest mb-1">@Shared["Nav_Group_Configuration"]</p>
+                        <ul class="menu menu-sm gap-0.5 -mx-2 w-[calc(100%+1rem)]">
+                            @foreach (var section in new[]{"Settings","Categories"})
                             {
                                 var navLabel = NavLabel(section);
                                 var active = activeSection == section || activeSection == navLabel;

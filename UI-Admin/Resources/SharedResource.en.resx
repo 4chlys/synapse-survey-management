@@ -22,6 +22,9 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Nav_AiSettings" xml:space="preserve"><value>AI settings</value></data>
   <data name="Nav_SystemDashboard" xml:space="preserve"><value>System dashboard</value></data>
+  <data name="Nav_General" xml:space="preserve"><value>General</value></data>
+  <data name="Nav_Group_Management" xml:space="preserve"><value>Management</value></data>
+  <data name="Nav_Group_Configuration" xml:space="preserve"><value>Configuration</value></data>
   <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
   <data name="Nav_Launch" xml:space="preserve"><value>Launch</value></data>
   <data name="Wizard_NewProject" xml:space="preserve"><value>New project</value></data>
