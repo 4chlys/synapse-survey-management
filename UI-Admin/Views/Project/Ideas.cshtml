@@ -24,17 +24,41 @@
             <h1 class="font-heading font-bold text-2xl text-base-content">@Model.CategoryName</h1>
             <p class="text-sm text-base-content/50 mt-0.5">@string.Format(L["TotalCountText"].Value, Model.TotalCount)</p>
         </div>
-        <div class="flex flex-wrap gap-2 items-center">
-            <span class="badge badge-success gap-1">✓ @string.Format(L["BadgeApproved"].Value, Model.ApprovedCount)</span>
-            <span class="badge badge-warning gap-1">⏳ @string.Format(L["BadgeNew"].Value, Model.PendingCount)</span>
-            <span class="badge badge-error gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.FlaggedCount)</span>
+        <div class="flex flex-wrap gap-2 items-center" data-status-badges>
+            <button type="button"
+                    class="badge badge-success gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Approved"
+                    data-active="@(Model.Status == "Approved" ? "true" : "false")">
+                ✓ @string.Format(L["BadgeApproved"].Value, Model.ApprovedCount)
+            </button>
+            <button type="button"
+                    class="badge badge-info gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Unflagged"
+                    data-active="@(Model.Status == "Unflagged" ? "true" : "false")">
+                ● @string.Format(L["BadgeNew"].Value, Model.PendingCount)
+            </button>
+            <button type="button"
+                    class="badge badge-warning gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Flagged"
+                    data-active="@(Model.Status == "Flagged" ? "true" : "false")">
+                ⚑ @string.Format(L["BadgeFlagged"].Value, Model.FlaggedCount)
+            </button>
+            <button type="button"
+                    class="badge badge-error gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Declined"
+                    data-active="@(Model.Status == "Declined" ? "true" : "false")">
+                ✕ @string.Format(L["BadgeDeclined"].Value, Model.DeclinedCount)
+            </button>
         </div>
     </div>
 
     <!-- Filter bar -->
-    <form method="get" asp-action="Ideas" asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
+    <form method="get" asp-action="Ideas"
           class="flex flex-wrap gap-2 mb-6 items-center"
           data-ideas-filter>
+        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+        <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+
         <label class="input input-bordered input-sm flex items-center gap-2 flex-1 min-w-48">
             <svg class="text-base-content/40" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -43,7 +67,7 @@
                    placeholder="@L["SearchPlaceholder"]" class="grow" />
         </label>
 
-        <select name="status" class="select select-bordered select-sm min-w-36" data-submit-on-change>
+        <select name="status" class="select select-bordered select-sm min-w-36">
             <option value="">@L["AllStatuses"]</option>
             @if (Model.Status == "Unflagged") { <option value="Unflagged" selected>@L["Status_New"]</option> }
             else { <option value="Unflagged">@L["Status_New"]</option> }

@@ -15,8 +15,9 @@
         </div>
         <div class="flex flex-wrap gap-2 items-center">
             <span class="badge badge-success gap-1">✓ @string.Format(L["BadgeApproved"].Value, Model.TotalApproved)</span>
-            <span class="badge badge-warning gap-1">⏳ @string.Format(L["BadgeNew"].Value, Model.TotalPending)</span>
-            <span class="badge badge-error gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.TotalFlagged)</span>
+            <span class="badge badge-info gap-1">● @string.Format(L["BadgeNew"].Value, Model.TotalPending)</span>
+            <span class="badge badge-warning gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.TotalFlagged)</span>
+            <span class="badge badge-error gap-1">✕ @string.Format(L["BadgeDeclined"].Value, Model.TotalDeclined)</span>
 
             <div class="dropdown dropdown-end" data-export-emails
                  data-project-id="@Model.ProjectId"

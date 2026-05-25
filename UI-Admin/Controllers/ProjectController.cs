@@ -583,6 +583,7 @@ public class ProjectController(
             TotalApproved  = approved,
             TotalPending   = pending,
             TotalFlagged   = flagged,
+            TotalDeclined  = Math.Max(0, total - approved - pending - flagged),
             Categories     = categories
         };
 
@@ -624,6 +625,7 @@ public class ProjectController(
             ApprovedCount = approved,
             PendingCount  = pending,
             FlaggedCount  = flagged,
+            DeclinedCount = Math.Max(0, total - approved - pending - flagged),
             Ideas         = items,
             Categories    = categories.Select(c => new CategoryOptionViewModel
             {
@@ -632,7 +634,35 @@ public class ProjectController(
             }).ToList()
         };
 
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return PartialView("_IdeasTable", vm);
+
         return View(vm);
+    }
+
+    public async Task<IActionResult> IdeaDetail(
+        int projectId, int ideaId,
+        int categoryId = 0, string categoryName = null,
+        string returnUrl = null)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName;
+        ViewData["ProjectState"]  = project.ProjectState;
+        ViewData["ActiveSection"] = "Ideas";
+
+        var vm = await ideaService.GetIdeaDetailAsync(projectId, ideaId);
+        if (vm is null) return NotFound();
+
+        return View(vm with
+        {
+            CategoryId   = categoryId,
+            CategoryName = categoryName ?? string.Empty,
+            BackUrl      = returnUrl ?? Url.Action(nameof(IdeasCategories), new { projectId })!
+        });
     }
 
     public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")

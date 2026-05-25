@@ -5,6 +5,7 @@
         "Approved"  => "badge-success",
         "Declined"  => "badge-error",
         "Flagged"   => "badge-warning",
+        "Unflagged" => "badge-info",
         _           => "badge-ghost"
     };
     string StatusLabel(string s) => s switch {
@@ -61,7 +62,13 @@ else
                     }
 
                     <!-- Description -->
-                    <p class="text-sm text-base-content leading-relaxed line-clamp-4 flex-1">@idea.Description</p>
+                    <a asp-action="IdeaDetail"
+                       asp-route-projectId="@Model.ProjectId"
+                       asp-route-ideaId="@idea.IdeaId"
+                       asp-route-categoryId="@idea.CategoryId"
+                       asp-route-categoryName="@idea.CategoryName"
+                       asp-route-returnUrl="@ideasUrl"
+                       class="text-sm text-base-content leading-relaxed line-clamp-4 flex-1 hover:text-primary transition-colors block">@idea.Description</a>
 
                     <!-- Footer: author + reactions -->
                     <div class="flex items-center justify-between gap-2 pt-1 border-t border-base-200">

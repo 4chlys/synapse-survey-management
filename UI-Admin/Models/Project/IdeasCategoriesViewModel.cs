@@ -10,5 +10,6 @@ public record IdeasCategoriesViewModel
     public int TotalApproved { get; init; }
     public int TotalPending { get; init; }
     public int TotalFlagged { get; init; }
+    public int TotalDeclined { get; init; }
     public ICollection<CategoryViewModel> Categories { get; init; } = new List<CategoryViewModel>();
 }

@@ -11,6 +11,7 @@
   <data name="BadgeApproved" xml:space="preserve"><value>{0} goedgekeurd</value></data>
   <data name="BadgeNew" xml:space="preserve"><value>{0} nieuw</value></data>
   <data name="BadgeFlagged" xml:space="preserve"><value>{0} gemarkeerd</value></data>
+  <data name="BadgeDeclined" xml:space="preserve"><value>{0} afgewezen</value></data>
   <data name="ExportEmailsButton" xml:space="preserve"><value>E-mails exporteren</value></data>
   <data name="ExportFormat_Text" xml:space="preserve"><value>Tekst (.txt)</value></data>
   <data name="ExportFormat_TextDescription" xml:space="preserve"><value>Tekstbestand</value></data>

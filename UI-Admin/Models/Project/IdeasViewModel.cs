@@ -14,6 +14,7 @@ public record IdeasViewModel
     public int ApprovedCount { get; init; }
     public int PendingCount { get; init; }
     public int FlaggedCount { get; init; }
+    public int DeclinedCount { get; init; }
     public bool RequestContactInfo { get; init; }
     public ICollection<IdeaRowViewModel> Ideas { get; init; } = new List<IdeaRowViewModel>();
     public ICollection<CategoryOptionViewModel> Categories { get; init; } = new List<CategoryOptionViewModel>();

@@ -63,6 +63,65 @@ public class AdminIdeasController(
         });
     }
 
+    [HttpGet("{ideaId:int}")]
+    public async Task<ActionResult<AdminIdeaDetailDto>> GetIdeaDetail(int projectId, int ideaId)
+    {
+        if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
+            return NotFound();
+
+        var idea = await ideaManager.GetIdeaByIdWithCommentsReadOnlyAsync(ideaId);
+        if (idea is null)
+            return NotFound();
+
+        var directReactions = idea.Comments
+            .OfType<SynapseEnqueteManagement.BL.Domain.Project.Entities.IconComment>()
+            .Where(ic => ic.TextComment == null)
+            .GroupBy(ic => ic.Emoji.EmojiId)
+            .Select(g => new AdminIdeaEmojiReactionDto
+            {
+                Symbol = g.First().Emoji.Symbol,
+                Name   = g.First().Emoji.Name,
+                Count  = g.Count()
+            })
+            .ToList();
+
+        var comments = idea.Comments
+            .OfType<SynapseEnqueteManagement.BL.Domain.Project.Entities.TextComment>()
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new AdminCommentDto
+            {
+                CommentId        = c.CommentId,
+                Text             = c.Text,
+                ModerationStatus = c.ModerationStatus.ToString(),
+                CreatedAt        = c.CreatedAt,
+                ParticipantEmail = c.Participant?.Email,
+                LanguageCode     = c.Language?.Code,
+                EmojiReactions   = c.EmojiReactions
+                    .GroupBy(r => r.Emoji.EmojiId)
+                    .Select(g => new AdminIdeaEmojiReactionDto
+                    {
+                        Symbol = g.First().Emoji.Symbol,
+                        Name   = g.First().Emoji.Name,
+                        Count  = g.Count()
+                    })
+                    .ToList()
+            })
+            .ToList();
+
+        return Ok(new AdminIdeaDetailDto
+        {
+            IdeaId      = idea.IdeaId,
+            Description = idea.Description,
+            Status      = idea.Status.ToString(),
+            CreatedAt        = idea.CreatedAt,
+            ParticipantEmail = idea.Participant?.Email,
+            ImageUrl         = idea.ImageUrl,
+            LanguageCode     = idea.Language?.Code,
+            EmojiReactions   = directReactions,
+            Comments         = comments
+        });
+    }
+
     [HttpDelete("{ideaId:int}/image")]
     public async Task<IActionResult> DeleteIdeaImage(int projectId, int ideaId, CancellationToken ct)
     {
