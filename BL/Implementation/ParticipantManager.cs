@@ -41,7 +41,6 @@ public class ParticipantManager(
             throw new KeyNotFoundException($"Participant {participantId} not found.");
 
         participant.Language = language;
-        participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
         return language;
     }
@@ -65,7 +64,6 @@ public class ParticipantManager(
             throw new KeyNotFoundException("Participant not found.");
         participant.HasSubmitted = true;
         participant.CompletedAt = DateTime.UtcNow;
-        participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
     }
 
@@ -105,7 +103,6 @@ public class ParticipantManager(
             throw new KeyNotFoundException($"Participant with id {participantId} not found.");
         EntityValidator.ValidateProperty(participant, email, nameof(Participant.Email));
         participant.Email = email;
-        participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
     }
 

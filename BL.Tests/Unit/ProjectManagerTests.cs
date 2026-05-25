@@ -10,6 +10,7 @@ public class ProjectManagerTests
     private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
     private readonly Mock<ILanguageRepository> _languageRepository = new(MockBehavior.Strict);
     private readonly Mock<IShortFormService> _shortFormService = new(MockBehavior.Strict);
+    private readonly Mock<IProjectDuplicationService> _duplicationService = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ProjectManager _manager;
 
@@ -26,6 +27,7 @@ public class ProjectManagerTests
             _emojiRepository.Object,
             _languageRepository.Object,
             _shortFormService.Object,
+            _duplicationService.Object,
             _uow.Object);
 
         _languageRepository
@@ -345,7 +347,6 @@ public class ProjectManagerTests
             .ReturnsAsync(project);
         _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
-        _projectRepository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -440,181 +441,49 @@ public class ProjectManagerTests
     #region DuplicateProjectAsync
 
     [Fact]
-    public async Task DuplicateProjectAsync_HappyPath_CopiesGraphAndTranslations()
+    public async Task DuplicateProjectAsync_HappyPath_DelegatesToDuplicationServiceAndPersists()
     {
-        // Arrange
+        // Manager-level concern is orchestration: resolve source, validate, normalise the short-form,
+        // hand the validated inputs to IProjectDuplicationService, persist the result. The deep-clone
+        // graph itself is covered by ProjectDuplicationServiceTests.
         const int srcId = 10;
         const int platformId = 5;
-        const int emojiId = 42;
-
-        var srcSection = new Section
-        {
-            SectionId = 1,
-            Translations = new List<SectionTranslation>
-            {
-                new() { Language = LanguageNl, Name = "Sectie 1", Description = "desc" }
-            }
-        };
-        var srcParent = new Question
-        {
-            QuestionId = 101, QuestionFormat = QuestionFormat.Open, IsMandatory = true,
-            AnswerChoiceCount = 0, Position = 1,
-            Translations = new List<QuestionTranslation>
-            {
-                new() { Language = LanguageNl, Text = "Parent?", AnswerChoices = new List<string>() }
-            }
-        };
-        var srcChild = new Question
-        {
-            QuestionId = 102, QuestionFormat = QuestionFormat.MultipleChoice, IsMandatory = false,
-            AnswerChoiceCount = 2, ChoiceIndex = 0, Position = 2, Section = srcSection, ParentQuestion = srcParent,
-            Translations = new List<QuestionTranslation>
-            {
-                new() { Language = LanguageNl, Text = "Child?", AnswerChoices = new List<string> { "A", "B" } }
-            }
-        };
-        srcChild.EndingAnswers.Add(new EndingAnswer
-        {
-            Translations = new List<EndingAnswerTranslation>
-            {
-                new() { Language = LanguageNl, Value = "end" }
-            }
-        });
-
-        var srcEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
-        var srcCat   = new Category
-        {
-            CategoryId = 9,
-            Translations = new List<CategoryTranslation>
-            {
-                new() { Language = LanguageNl, Name = "Cat A", Description = "cat desc" },
-            }
-        };
-
-        var srcNlTrans = new ProjectTranslation { Language = LanguageNl, Name = "Source", Topic = "T-nl" };
-        var srcEnTrans = new ProjectTranslation { Language = LanguageEn, Name = "Source EN", Topic = "T-en" };
 
         var source = new Project
         {
             ProjectId = srcId,
             ProjectPlatformId = platformId,
             ShortForm = "source",
-            ImageUrl = "img.png",
-            FormType = FormType.VerticalScroll,
-            IdeaPageSize = 5,
-            MaxExtraIdeaRequests = 3,
-            CommentPageSize = 20,
             DefaultLanguage = LanguageNl,
             SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
-            Translations = new List<ProjectTranslation> { srcNlTrans, srcEnTrans },
-            Introduction = new Introduction
-            {
-                Translations = new List<IntroductionTranslation>
-                {
-                    new() { Language = LanguageNl, Text = "Intro text" },
-                }
-            },
-            Questionnaire = new Questionnaire
-            {
-                Sections = new List<Section> { srcSection },
-                Questions = new List<Question> { srcParent, srcChild },
-            },
-            Categories = new List<Category> { srcCat },
-            Emojis = new List<Emoji> { srcEmoji },
         };
-
-        var trackedEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
+        var built = new Project { ShortForm = "new-project" };
 
         _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
         _shortFormService.Setup(s => s.Normalize("New Project")).Returns("new-project");
         _shortFormService.Setup(s => s.IsValid("new-project")).Returns(true);
         _shortFormService.Setup(s => s.IsReserved("new-project")).Returns(false);
         _shortFormService.Setup(s => s.EnsureUniqueAsync("new-project", null)).ReturnsAsync("new-project");
-        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(emojiId)).ReturnsAsync(trackedEmoji);
-        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
-        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _duplicationService
+            .Setup(s => s.BuildCloneAsync(
+                source,
+                It.IsAny<IReadOnlyList<ProjectTranslationInput>>(),
+                It.IsAny<IReadOnlyDictionary<string, Language>>(),
+                "new-project",
+                platformId))
+            .ReturnsAsync(built)
+            .Verifiable(Times.Exactly(1));
+        _projectRepository.Setup(r => r.CreateAsync(built)).ReturnsAsync(built).Verifiable(Times.Exactly(1));
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1).Verifiable(Times.Exactly(1));
 
-        // Act
         var result = await _manager.DuplicateProjectAsync(srcId,
             Translations(("nl", "New Project"), ("en", "New Project EN")),
             platformId);
 
-        // Assert
-        Assert.Equal("new-project", result.ShortForm);
-        Assert.Equal(ProjectState.Draft, result.ProjectState);
-        Assert.Equal(0, result.ViewCount);
-        Assert.NotNull(result.Introduction);
-        Assert.Single(result.Introduction.Translations);
-        Assert.Equal("Intro text", result.Introduction.Translations.First().Text);
-
-        Assert.Equal(2, result.Translations.Count);
-        var nlClone = result.Translations.First(t => t.Language.Code == "nl");
-        var enClone = result.Translations.First(t => t.Language.Code == "en");
-        Assert.Equal("New Project", nlClone.Name);
-        Assert.Equal("New Project EN", enClone.Name);
-
-        Assert.Single(result.Questionnaire.Sections);
-        Assert.Equal("Sectie 1", result.Questionnaire.Sections.First().Translations.First(t => t.Language.Code == "nl").Name);
-
-        Assert.Equal(2, result.Questionnaire.Questions.Count);
-        var newParent = result.Questionnaire.Questions.First(q => q.Position == 1);
-        var newChild  = result.Questionnaire.Questions.First(q => q.Position == 2);
-
-        // Parent-child remap: child's ParentQuestion must point to the NEW parent, not the source
-        Assert.Same(newParent, newChild.ParentQuestion);
-        Assert.NotSame(srcParent, newChild.ParentQuestion);
-
-        Assert.Equal(0, newChild.ChoiceIndex);
-        Assert.Single(newChild.EndingAnswers);
-        Assert.Equal("end", newChild.EndingAnswers.First().Translations.First().Value);
-        Assert.Same(result.Questionnaire.Sections.First(), newChild.Section);
-
-        Assert.Single(result.Categories);
-        Assert.Single(result.Categories.First().Translations);
-        Assert.Equal("Cat A", result.Categories.First().Translations.First().Name);
-
-        Assert.Single(result.Emojis);
-        Assert.Same(trackedEmoji, result.Emojis.First());
-    }
-
-    [Fact]
-    public async Task DuplicateProjectAsync_ClonesAllowCrossLanguageIdeas()
-    {
-        // Arrange
-        const int srcId = 20;
-        const int platformId = 5;
-
-        var source = new Project
-        {
-            ProjectId = srcId,
-            ProjectPlatformId = platformId,
-            ShortForm = "source",
-            AllowCrossLanguageIdeas = true,
-            DefaultLanguage = LanguageNl,
-            SupportedLanguages = new List<Language> { LanguageNl },
-            Translations = new List<ProjectTranslation>
-            {
-                new() { Language = LanguageNl, Name = "Clone Me", Topic = "T" }
-            },
-            Questionnaire = new Questionnaire(),
-            Categories = new List<Category>(),
-            Emojis = new List<Emoji>(),
-        };
-
-        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
-        _shortFormService.Setup(s => s.Normalize("Clone Me")).Returns("clone-me");
-        _shortFormService.Setup(s => s.IsValid("clone-me")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("clone-me")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("clone-me", null)).ReturnsAsync("clone-me");
-        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
-        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        // Act
-        var result = await _manager.DuplicateProjectAsync(srcId,
-            Translations(("nl", "Clone Me")), platformId);
-
-        // Assert
-        Assert.True(result.AllowCrossLanguageIdeas);
+        Assert.Same(built, result);
+        _duplicationService.VerifyAll();
+        _projectRepository.Verify(r => r.CreateAsync(built), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -705,7 +574,6 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _projectRepository.Setup(r => r.Update(project)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

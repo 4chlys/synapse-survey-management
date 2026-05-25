@@ -66,6 +66,9 @@
   <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
     <value>Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).</value>
   </data>
+  <data name="Validation.Image.InvalidToken" xml:space="preserve">
+    <value>Invalid or missing image token.</value>
+  </data>
   <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
     <value>MinAge must not be greater than MaxAge.</value>
   </data>

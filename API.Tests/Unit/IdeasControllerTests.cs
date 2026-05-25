@@ -93,4 +93,33 @@ public class IdeasControllerTests
         // Assert
         _ideaManager.VerifyAll();
     }
+
+    [Fact]
+    public async Task CreateIdea_InvalidImageToken_ThrowsLocalizedValidationException()
+    {
+        // Arrange — dto has an image URL but the moderation token is rejected by the token service
+        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId,
+                It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<CancellationToken>(), It.IsAny<string>()))
+            .ReturnsAsync(ModerationStatus.Approved);
+        _moderationTokenService.Setup(s => s.ValidateImageToken("bad-token", ProjectId))
+            .Returns((ModerationStatus?)null);
+
+        var dto = new CreateIdeaDto
+        {
+            Description = "desc",
+            ImageUrl = "tmp.png",
+            ImageModerationToken = "bad-token"
+        };
+
+        // Act + Assert — the controller throws the localized exception so the middleware can translate it
+        var ex = await Assert.ThrowsAsync<SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException>(() =>
+            _controller.CreateIdea(ProjectId, CategoryId, dto, CancellationToken.None));
+        Assert.Equal("Validation.Image.InvalidToken", ex.Code);
+
+        // Storage promotion and idea creation must not happen on the reject path
+        _storageService.Verify(s => s.PromoteAsync(It.IsAny<string>()), Times.Never);
+        _ideaManager.Verify(i => i.AddIdeaAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+            It.IsAny<ModerationStatus>(), It.IsAny<Participant>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

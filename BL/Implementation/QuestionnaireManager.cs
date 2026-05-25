@@ -199,7 +199,6 @@ public class QuestionnaireManager(
         question.MediaType = mediaType;
         question.MediaIsEmbed = mediaIsEmbed;
 
-        questionRepository.Update(question);
         await uow.SaveChangesAsync(ct);
         return true;
     }
@@ -239,7 +238,6 @@ public class QuestionnaireManager(
 
         question.ParentQuestion = newParent;
         question.ChoiceIndex = newParent is null ? null : newChoiceIndex;
-        questionRepository.Update(question);
 
         await RepackScopeAsync(questionnaireId, oldParentId, oldChoiceIndex, excludeId: questionId);
         await RepackScopeAsync(questionnaireId, newParentQuestionId, newParent is null ? null : newChoiceIndex,
@@ -356,7 +354,6 @@ public class QuestionnaireManager(
                 existing.Description = input.Description;
             });
 
-        sectionRepository.Update(section);
         await uow.SaveChangesAsync(ct);
         return true;
     }
@@ -418,7 +415,6 @@ public class QuestionnaireManager(
             if (siblings[i].Position != desired)
             {
                 siblings[i].Position = desired;
-                questionRepository.Update(siblings[i]);
             }
         }
     }

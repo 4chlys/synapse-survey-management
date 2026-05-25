@@ -49,7 +49,6 @@ public class ResponseManager(
             EntityValidator.ValidateProperty(existing, value, nameof(Response.Value));
             existing.Value = value;
             existing.IsCommitted = false;
-            responseRepository.Update(existing);
             await uow.SaveChangesAsync(ct);
             return existing;
         }
@@ -80,7 +79,6 @@ public class ResponseManager(
             if (response.IsCommitted != shouldCommit)
             {
                 response.IsCommitted = shouldCommit;
-                responseRepository.Update(response);
                 changed = true;
             }
         }
@@ -122,7 +120,6 @@ public class ResponseManager(
                 response.Language = targetLanguage;
                 changed = true;
             }
-            if (changed) responseRepository.Update(response);
         }
         if (changed) await uow.SaveChangesAsync(ct);
     }

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 using SynapseEnqueteManagement.BL.Embeddings;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Sorting;
@@ -170,5 +171,26 @@ public class IdeaManager(
 
     public Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null)
         => ideaRepository.CountVisibleByCategoriesAsync(categoryIds, filterLanguageCode);
+
+    public Task<List<IdeaMetric>> GetTopIdeasAsync(int projectId, int count)
+        => ideaRepository.ReadTopByProjectReadOnlyAsync(projectId, count);
+
+    public Task<List<Idea>> GetLatestApprovedWithCommentsAsync(int projectId, int count)
+        => ideaRepository.ReadLatestByProjectWithCommentsReadOnlyAsync(projectId, count);
+
+    public Task<Dictionary<ModerationStatus, int>> CountByStatusAsync(int projectId)
+        => ideaRepository.CountByStatusForProjectAsync(projectId);
+
+    public Task<(List<Idea> Items, int Total)> GetIdeasPageAsync(
+        int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize)
+        => ideaRepository.ReadPagedByProjectWithCommentsReadOnlyAsync(projectId, search, categoryId, status, page, pageSize);
+
+    public async Task SetModerationStatusAsync(int ideaId, ModerationStatus status, int? projectId = null)
+    {
+        var idea = await ideaRepository.ReadByIdInProjectForUpdateAsync(ideaId, projectId)
+            ?? throw new KeyNotFoundException($"Idea {ideaId} not found.");
+        idea.Status = status;
+        await uow.SaveChangesAsync();
+    }
 
 }

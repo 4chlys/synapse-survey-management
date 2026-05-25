@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -72,7 +73,7 @@ public class IdeasController(
             if (imageStatus is null)
             {
                 logger.LogWarning("Invalid or missing image moderation token for project {ProjectId}", projectId);
-                return BadRequest(new { error = "Ongeldige afbeeldingstoken." });
+                throw new LocalizedValidationException("Validation.Image.InvalidToken");
             }
 
             permanentImageUrl = await storageService.PromoteAsync(dto.ImageUrl);

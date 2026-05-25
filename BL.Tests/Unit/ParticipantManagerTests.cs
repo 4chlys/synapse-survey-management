@@ -76,7 +76,6 @@ public class ParticipantManagerTests
         var participant = new Participant { SessionToken = token, HasSubmitted = false };
         _participantRepository.Setup(r => r.ReadBySessionTokenForUpdateAsync(token))
             .ReturnsAsync(participant);
-        _participantRepository.Setup(r => r.Update(participant)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -116,7 +115,6 @@ public class ParticipantManagerTests
         var participant = new Participant { ParticipantId = 1 };
         _participantRepository.Setup(r => r.ReadByIdForUpdateAsync(1))
             .ReturnsAsync(participant);
-        _participantRepository.Setup(r => r.Update(participant)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -156,7 +154,6 @@ public class ParticipantManagerTests
         var language = new Language { Code = "en", IsActive = true };
         _languageRepository.Setup(r => r.ReadByCodeForUpdateAsync("en")).ReturnsAsync(language);
         _participantRepository.Setup(r => r.ReadByIdForUpdateAsync(1)).ReturnsAsync(participant);
-        _participantRepository.Setup(r => r.Update(participant)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

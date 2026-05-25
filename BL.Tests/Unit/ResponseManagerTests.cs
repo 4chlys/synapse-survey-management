@@ -82,7 +82,6 @@ public class ResponseManagerTests
         var existing = new Response { ResponseId = 1, Question = _question, Participant = _participant, Value = "old", IsCommitted = true };
         _responseRepository.Setup(r => r.ReadByQuestionAndParticipantForUpdateAsync(_question.QuestionId, _participant.ParticipantId))
             .ReturnsAsync(existing);
-        _responseRepository.Setup(r => r.Update(existing)).Verifiable(Times.Exactly(1));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -150,7 +149,6 @@ public class ResponseManagerTests
         };
         _responseRepository.Setup(r => r.ReadByParticipantWithQuestionForUpdateAsync(_participant.ParticipantId))
             .ReturnsAsync(responses);
-        _responseRepository.Setup(r => r.Update(It.IsAny<Response>())).Verifiable(Times.Exactly(2));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2)
             .Verifiable(Times.Exactly(1));
