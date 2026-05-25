@@ -1,4 +1,4 @@
-type Strings = {
+export type Strings = {
     submit: string;
     cancel: string;
     back: string;
