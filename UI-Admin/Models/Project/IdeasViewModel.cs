@@ -15,6 +15,7 @@ public record IdeasViewModel
     public int FlaggedCount { get; init; }
     public bool RequestContactInfo { get; init; }
     public int PlatformId { get; init; }
+    public int IdeaSummaryMaxIdeas { get; init; }
     public ICollection<IdeaRowViewModel> Ideas { get; init; } = new List<IdeaRowViewModel>();
     public ICollection<CategoryOptionViewModel> Categories { get; init; } = new List<CategoryOptionViewModel>();
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);

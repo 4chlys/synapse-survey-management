@@ -1,15 +1,11 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasViewModel
 @inject IViewLocalizer L
 
-<div id="summary-panel" class="fixed inset-0 z-50 hidden" aria-modal="true">
-    <div class="absolute inset-0 bg-black/40" id="summary-overlay"></div>
-    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-base-100 shadow-2xl flex flex-col">
-        <div class="flex items-center justify-between p-4 border-b">
-            <h2 class="font-semibold text-base-content">@L["PanelTitle"]</h2>
-            <button id="summary-close" class="btn btn-ghost btn-sm btn-square">✕</button>
-        </div>
+<dialog id="summary-modal" class="modal">
+    <div class="modal-box max-w-lg">
+        <h3 class="font-bold text-lg mb-4">@L["PanelTitle"]</h3>
 
-        <form id="summary-form" class="flex flex-col gap-4 p-4 flex-1 overflow-y-auto">
+        <form id="summary-form" class="flex flex-col gap-4">
             <label class="form-control">
                 <div class="label"><span class="label-text font-medium">@L["CategoryLabel"]</span></div>
                 <select name="CategoryId" class="select select-bordered select-sm">
@@ -44,7 +40,7 @@
                 <legend class="label-text font-medium mb-1">@L["IdeaSelectionLabel"]</legend>
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="SelectAll" value="false" class="radio radio-sm" checked />
-                    <span class="text-sm">@L["SelectFirst"]</span>
+                    <span class="text-sm">@string.Format(L["SelectFirst"].Value, Model.IdeaSummaryMaxIdeas)</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="SelectAll" value="true" class="radio radio-sm" />
@@ -68,69 +64,77 @@
                 </label>
             </fieldset>
 
-            <button type="submit" id="summary-submit" class="btn btn-primary btn-sm mt-2">
-                @L["GenerateButton"]
-            </button>
+            <div id="summary-status" class="hidden flex flex-col gap-2 p-3 bg-base-200 rounded-box">
+                <div id="summary-status-text" class="text-sm text-base-content/70">@L["StatusQueued"]</div>
+                <a id="summary-download-link" href="#" class="btn btn-success btn-sm hidden">
+                    @L["DownloadButton"]
+                </a>
+                <div id="summary-error" class="text-sm text-error hidden"></div>
+            </div>
         </form>
 
-        <div id="summary-status" class="hidden p-4 border-t flex flex-col gap-2">
-            <div id="summary-status-text" class="text-sm text-base-content/70">@L["StatusQueued"]</div>
-            <a id="summary-download-link" href="#" class="btn btn-success btn-sm hidden">
-                @L["DownloadButton"]
-            </a>
-            <div id="summary-error" class="text-sm text-error hidden"></div>
-            <button id="summary-retry" class="btn btn-ghost btn-sm hidden">@L["RetryButton"]</button>
+        <div class="modal-action">
+            <form method="dialog">
+                <button id="summary-cancel" class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+            </form>
+            <button type="button" id="summary-submit" class="btn btn-primary btn-sm">
+                @L["GenerateButton"]
+            </button>
+            <button id="summary-retry" type="button" class="btn btn-ghost btn-sm hidden">
+                @L["RetryButton"]
+            </button>
         </div>
     </div>
-</div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
 
 @Html.AntiForgeryToken()
 
 <script>
 (function () {
-    const panel      = document.getElementById('summary-panel');
-    const overlay    = document.getElementById('summary-overlay');
-    const closeBtn   = document.getElementById('summary-close');
-    const form       = document.getElementById('summary-form');
-    const statusDiv  = document.getElementById('summary-status');
-    const statusText = document.getElementById('summary-status-text');
-    const dlLink     = document.getElementById('summary-download-link');
-    const errDiv     = document.getElementById('summary-error');
-    const retryBtn   = document.getElementById('summary-retry');
-    const submitBtn  = document.getElementById('summary-submit');
-    const projectId  = @Model.ProjectId;
-    const token      = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const modal     = document.getElementById('summary-modal');
+    const form      = document.getElementById('summary-form');
+    const statusDiv = document.getElementById('summary-status');
+    const statusTxt = document.getElementById('summary-status-text');
+    const dlLink    = document.getElementById('summary-download-link');
+    const errDiv    = document.getElementById('summary-error');
+    const submitBtn = document.getElementById('summary-submit');
+    const retryBtn  = document.getElementById('summary-retry');
+    const cancelBtn = document.getElementById('summary-cancel');
+    const projectId = @Model.ProjectId;
+    const token     = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
     const msg = {
-        queued:      '@Html.Raw(L["StatusQueued"].Value)',
-        processing:  '@Html.Raw(L["StatusProcessing"].Value)',
-        ready:       '@Html.Raw(L["StatusReady"].Value)',
-        failed:      '@Html.Raw(L["StatusFailed"].Value)',
-        startError:  '@Html.Raw(L["StatusStartError"].Value)',
-        unknownError:'@Html.Raw(L["StatusUnknownError"].Value)',
+        queued:       '@Html.Raw(L["StatusQueued"].Value)',
+        processing:   '@Html.Raw(L["StatusProcessing"].Value)',
+        ready:        '@Html.Raw(L["StatusReady"].Value)',
+        failed:       '@Html.Raw(L["StatusFailed"].Value)',
+        startError:   '@Html.Raw(L["StatusStartError"].Value)',
+        unknownError: '@Html.Raw(L["StatusUnknownError"].Value)',
     };
-    let pollTimer    = null;
+    let pollTimer = null;
 
-    document.getElementById('open-summary-panel')?.addEventListener('click', () => {
-        panel.classList.remove('hidden');
-    });
-    overlay.addEventListener('click', closePanel);
-    closeBtn.addEventListener('click', closePanel);
-    retryBtn.addEventListener('click', () => {
-        statusDiv.classList.add('hidden');
-        submitBtn.disabled = false;
-    });
-
-    function closePanel() {
-        panel.classList.add('hidden');
+    function resetForm() {
         clearPoll();
+        statusDiv.classList.add('hidden');
+        dlLink.classList.add('hidden');
+        errDiv.classList.add('hidden');
+        retryBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+        submitBtn.disabled = false;
     }
 
     function clearPoll() {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    modal?.addEventListener('close', resetForm);
+    retryBtn.addEventListener('click', resetForm);
+
+    cancelBtn.addEventListener('click', () => {
+        clearPoll();
+    });
+
+    submitBtn.addEventListener('click', async () => {
         const raw = Object.fromEntries(new FormData(form));
         const payload = {
             Format:           raw.Format,
@@ -143,7 +147,7 @@
 
         submitBtn.disabled = true;
         statusDiv.classList.remove('hidden');
-        statusText.textContent = msg.queued;
+        statusTxt.textContent = msg.queued;
         dlLink.classList.add('hidden');
         errDiv.classList.add('hidden');
         retryBtn.classList.add('hidden');
@@ -158,12 +162,13 @@
         });
 
         if (!resp.ok) {
-            statusText.textContent = msg.startError;
+            statusTxt.textContent = msg.startError;
             submitBtn.disabled = false;
             return;
         }
 
         const { jobId } = await resp.json();
+        submitBtn.classList.add('hidden');
         pollTimer = setInterval(() => pollStatus(jobId), 3000);
     });
 
@@ -174,19 +179,18 @@
 
         if (data.status === 'Completed') {
             clearPoll();
-            statusText.textContent = msg.ready;
+            statusTxt.textContent = msg.ready;
             dlLink.href = `/Project/DownloadSummary?projectId=${projectId}&jobId=${jobId}`;
             dlLink.classList.remove('hidden');
-            submitBtn.disabled = false;
+            retryBtn.classList.remove('hidden');
         } else if (data.status === 'Failed') {
             clearPoll();
-            statusText.textContent = msg.failed;
+            statusTxt.textContent = msg.failed;
             errDiv.textContent = data.errorMessage ?? msg.unknownError;
             errDiv.classList.remove('hidden');
             retryBtn.classList.remove('hidden');
-            submitBtn.disabled = false;
         } else {
-            statusText.textContent = msg.processing;
+            statusTxt.textContent = msg.processing;
         }
     }
 })();

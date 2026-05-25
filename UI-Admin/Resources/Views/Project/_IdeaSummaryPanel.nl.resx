@@ -18,7 +18,7 @@
   <data name="Strategy_MostCommented" xml:space="preserve"><value>Meest becommentarieerd</value></data>
   <data name="Strategy_Diverse" xml:space="preserve"><value>Semantisch divers</value></data>
   <data name="IdeaSelectionLabel" xml:space="preserve"><value>Ideeënselectie</value></data>
-  <data name="SelectFirst" xml:space="preserve"><value>Eerste N ideeën (platforminstelling)</value></data>
+  <data name="SelectFirst" xml:space="preserve"><value>Eerste {0} ideeën (platforminstelling)</value></data>
   <data name="SelectAll" xml:space="preserve"><value>Alle ideeën (batchmodus)</value></data>
   <data name="ExportFormatLabel" xml:space="preserve"><value>Exportformaat</value></data>
   <data name="Format_Pdf" xml:space="preserve"><value>PDF</value></data>
@@ -32,5 +32,6 @@
   <data name="StatusStartError" xml:space="preserve"><value>Fout bij starten.</value></data>
   <data name="StatusUnknownError" xml:space="preserve"><value>Onbekende fout.</value></data>
   <data name="DownloadButton" xml:space="preserve"><value>Download samenvatting</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
   <data name="RetryButton" xml:space="preserve"><value>Opnieuw proberen</value></data>
 </root>

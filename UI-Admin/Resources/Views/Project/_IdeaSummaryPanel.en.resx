@@ -18,7 +18,7 @@
   <data name="Strategy_MostCommented" xml:space="preserve"><value>Most commented</value></data>
   <data name="Strategy_Diverse" xml:space="preserve"><value>Semantically diverse</value></data>
   <data name="IdeaSelectionLabel" xml:space="preserve"><value>Idea selection</value></data>
-  <data name="SelectFirst" xml:space="preserve"><value>First N ideas (platform setting)</value></data>
+  <data name="SelectFirst" xml:space="preserve"><value>First {0} ideas (platform setting)</value></data>
   <data name="SelectAll" xml:space="preserve"><value>All ideas (batch mode)</value></data>
   <data name="ExportFormatLabel" xml:space="preserve"><value>Export format</value></data>
   <data name="Format_Pdf" xml:space="preserve"><value>PDF</value></data>
@@ -32,5 +32,6 @@
   <data name="StatusStartError" xml:space="preserve"><value>Error while starting.</value></data>
   <data name="StatusUnknownError" xml:space="preserve"><value>Unknown error.</value></data>
   <data name="DownloadButton" xml:space="preserve"><value>Download summary</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
   <data name="RetryButton" xml:space="preserve"><value>Try again</value></data>
 </root>

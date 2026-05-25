@@ -582,22 +582,24 @@ public class ProjectController(
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var platformSettings = await platformService.GetPlatformSettingsAsync(project.PlatformId);
 
         var vm = new IdeasViewModel
         {
-            ProjectId     = projectId,
-            ProjectName   = project.Name,
-            Search        = search,
-            CategoryId    = categoryId,
-            Status        = status,
-            Page          = page,
-            TotalCount    = total,
-            ApprovedCount = approved,
-            PendingCount  = pending,
-            FlaggedCount  = flagged,
-            PlatformId    = project.PlatformId,
-            Ideas         = items,
-            Categories    = categories.Select(c => new CategoryOptionViewModel
+            ProjectId             = projectId,
+            ProjectName           = project.Name,
+            Search                = search,
+            CategoryId            = categoryId,
+            Status                = status,
+            Page                  = page,
+            TotalCount            = total,
+            ApprovedCount         = approved,
+            PendingCount          = pending,
+            FlaggedCount          = flagged,
+            PlatformId            = project.PlatformId,
+            IdeaSummaryMaxIdeas   = platformSettings?.IdeaSummaryMaxIdeas ?? 200,
+            Ideas                 = items,
+            Categories            = categories.Select(c => new CategoryOptionViewModel
             {
                 CategoryId = c.CategoryId,
                 Name       = c.Name
