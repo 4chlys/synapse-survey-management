@@ -2,12 +2,28 @@
 @inject IViewLocalizer L
 
 <dialog id="summary-modal" class="modal">
-    <div class="modal-box max-w-lg">
-        <h3 class="font-bold text-lg mb-4">@L["PanelTitle"]</h3>
+    <div class="modal-box w-[480px] max-w-[92vw] max-h-[90vh] rounded-2xl overflow-y-auto p-7 flex flex-col gap-4">
 
-        <form id="summary-form" class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[11px] uppercase font-bold tracking-wide text-base-content/50">AI</div>
+                    <div class="font-heading font-bold text-base text-base-content truncate">@L["PanelTitle"]</div>
+                </div>
+            </div>
+            <form method="dialog">
+                <button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button>
+            </form>
+        </div>
+
+        <form id="summary-form" class="flex flex-col gap-3">
             <label class="form-control">
-                <div class="label"><span class="label-text font-medium">@L["CategoryLabel"]</span></div>
+                <div class="label"><span class="label-text text-xs">@L["CategoryLabel"]</span></div>
                 <select name="CategoryId" class="select select-bordered select-sm">
                     <option value="">@L["AllCategories"]</option>
                     @foreach (var cat in Model.Categories)
@@ -18,7 +34,7 @@
             </label>
 
             <label class="form-control">
-                <div class="label"><span class="label-text font-medium">@L["StatusLabel"]</span></div>
+                <div class="label"><span class="label-text text-xs">@L["StatusLabel"]</span></div>
                 <select name="Status" class="select select-bordered select-sm">
                     <option value="">@L["AllStatuses"]</option>
                     <option value="Approved">@L["Status_Approved"]</option>
@@ -28,7 +44,7 @@
             </label>
 
             <label class="form-control">
-                <div class="label"><span class="label-text font-medium">@L["SamplingStrategyLabel"]</span></div>
+                <div class="label"><span class="label-text text-xs">@L["SamplingStrategyLabel"]</span></div>
                 <select name="SamplingStrategy" class="select select-bordered select-sm">
                     <option value="Newest">@L["Strategy_Newest"]</option>
                     <option value="MostCommented">@L["Strategy_MostCommented"]</option>
@@ -36,52 +52,50 @@
                 </select>
             </label>
 
-            <fieldset class="flex flex-col gap-1">
-                <legend class="label-text font-medium mb-1">@L["IdeaSelectionLabel"]</legend>
-                <label class="flex items-center gap-2 cursor-pointer">
+            <fieldset class="flex flex-col gap-1.5">
+                <legend class="label-text text-xs mb-1">@L["IdeaSelectionLabel"]</legend>
+                <label class="flex items-center gap-2.5 cursor-pointer">
                     <input type="radio" name="SelectAll" value="false" class="radio radio-sm" checked />
                     <span class="text-sm">@string.Format(L["SelectFirst"].Value, Model.IdeaSummaryMaxIdeas)</span>
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-2.5 cursor-pointer">
                     <input type="radio" name="SelectAll" value="true" class="radio radio-sm" />
                     <span class="text-sm">@L["SelectAll"]</span>
                 </label>
             </fieldset>
 
-            <fieldset class="flex flex-col gap-1">
-                <legend class="label-text font-medium mb-1">@L["ExportFormatLabel"]</legend>
-                <label class="flex items-center gap-2 cursor-pointer">
+            <fieldset class="flex flex-col gap-1.5">
+                <legend class="label-text text-xs mb-1">@L["ExportFormatLabel"]</legend>
+                <label class="flex items-center gap-2.5 cursor-pointer">
                     <input type="radio" name="Format" value="Pdf" class="radio radio-sm" checked />
                     <span class="text-sm">@L["Format_Pdf"]</span>
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-2.5 cursor-pointer">
                     <input type="radio" name="Format" value="Txt" class="radio radio-sm" />
                     <span class="text-sm">@L["Format_Txt"]</span>
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-2.5 cursor-pointer">
                     <input type="radio" name="Format" value="Png" class="radio radio-sm" />
                     <span class="text-sm">@L["Format_Png"]</span>
                 </label>
             </fieldset>
-
-            <div id="summary-status" class="hidden flex flex-col gap-2 p-3 bg-base-200 rounded-box">
-                <div id="summary-status-text" class="text-sm text-base-content/70">@L["StatusQueued"]</div>
-                <a id="summary-download-link" href="#" class="btn btn-success btn-sm hidden">
-                    @L["DownloadButton"]
-                </a>
-                <div id="summary-error" class="text-sm text-error hidden"></div>
-            </div>
         </form>
 
-        <div class="modal-action">
-            <form method="dialog">
-                <button id="summary-cancel" class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
-            </form>
-            <button type="button" id="summary-submit" class="btn btn-primary btn-sm">
+        <div id="summary-status" class="hidden flex flex-col gap-2 px-4 py-3 bg-base-200/60 rounded-xl text-sm">
+            <div id="summary-status-text" class="text-base-content/70">@L["StatusQueued"]</div>
+            <a id="summary-download-link" href="#" class="btn btn-success btn-sm hidden">
+                @L["DownloadButton"]
+            </a>
+            <div id="summary-error" class="text-error hidden"></div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
+            <button id="summary-retry" type="button" class="btn btn-ghost btn-sm hidden">@L["RetryButton"]</button>
+            <button type="button" id="summary-submit" class="btn btn-primary btn-sm gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                </svg>
                 @L["GenerateButton"]
-            </button>
-            <button id="summary-retry" type="button" class="btn btn-ghost btn-sm hidden">
-                @L["RetryButton"]
             </button>
         </div>
     </div>
@@ -100,7 +114,6 @@
     const errDiv    = document.getElementById('summary-error');
     const submitBtn = document.getElementById('summary-submit');
     const retryBtn  = document.getElementById('summary-retry');
-    const cancelBtn = document.getElementById('summary-cancel');
     const projectId = @Model.ProjectId;
     const token     = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
     const msg = {
