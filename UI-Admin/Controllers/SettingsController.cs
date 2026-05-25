@@ -146,12 +146,13 @@ public class SettingsController(
     private async Task<PlatformAdminSettingsViewModel> BuildViewModel(int platformId, string platformName)
     {
         var settings       = await platformService.GetPlatformSettingsAsync(platformId);
-        var allowedIds     = await GetAllowedModelIdsAsync();
-        var availableIds   = await aiAdminService.GetAvailableModelIdsAsync();
-        var globalPrompts  = await aiAdminService.GetGlobalPromptsAsync();
-        var allowedModels  = AiModelCatalog.All
-            .Where(m => allowedIds.Contains(m.Id) && availableIds.Contains(m.Id))
+        var allowedIds       = await GetAllowedModelIdsAsync();
+        var modelAvailability = await aiAdminService.GetModelAvailabilityAsync();
+        var globalPrompts    = await aiAdminService.GetGlobalPromptsAsync();
+        var allowedModels    = AiModelCatalog.All
+            .Where(m => allowedIds.Contains(m.Id) && modelAvailability.ContainsKey(m.Id))
             .ToList();
+        var unavailableModelIds = modelAvailability.Where(kv => !kv.Value).Select(kv => kv.Key).ToHashSet();
 
         // API-fetched prompts are preferred; fall back to locally loaded AiConfig if the API is unreachable.
         string Fallback(string apiPrompt, string localPrompt) =>
@@ -165,8 +166,12 @@ public class SettingsController(
 
         var aiSettings = new PlatformAdminAiViewModel(
             allowedModels,
-            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty,
-            Enum.TryParse<AiAssistanceType>(settings?.AiAssistanceMode, out var aiMode) ? aiMode : AiAssistanceType.ProActive
+            settings?.SelectedAiModel
+                ?? allowedModels.FirstOrDefault(m => !unavailableModelIds.Contains(m.Id))?.Id
+                ?? allowedModels.FirstOrDefault()?.Id
+                ?? string.Empty,
+            Enum.TryParse<AiAssistanceType>(settings?.AiAssistanceMode, out var aiMode) ? aiMode : AiAssistanceType.ProActive,
+            unavailableModelIds
         );
 
         var prompts = new PlatformAdminPromptsViewModel([
