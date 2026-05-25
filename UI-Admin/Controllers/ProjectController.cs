@@ -80,7 +80,6 @@ public class ProjectController(
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
             InteractionMode = project.FormType,
-            AiAssistance = project.AiAssistance,
             MinAge = project.MinAge,
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
@@ -152,7 +151,7 @@ public class ProjectController(
                 }
                 project = await projectService.UpdateProjectAsync(
                     model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                    model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                    model.ImageUrl, model.InteractionMode, model.MinAge, model.MaxAge,
                     model.ContactOptIn, model.ShortForm,
                     lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
                     model.AllowCrossLanguageIdeas,
@@ -168,7 +167,7 @@ public class ProjectController(
                 }
                 project = await projectService.CreateProjectAsync(
                     model.Name, model.Topic, model.Introduction,
-                    model.ImageUrl, model.InteractionMode, model.AiAssistance,
+                    model.ImageUrl, model.InteractionMode,
                     model.MinAge, model.MaxAge, model.ContactOptIn,
                     platformId: user.ProjectPlatformId.Value,
                     shortForm: model.ShortForm,
@@ -214,27 +213,39 @@ public class ProjectController(
         var existingNames = existingSections.Select(s => s.Name).ToList();
         foreach (var name in newNames)
             if (!existingNames.Contains(name))
-                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty);
+                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty,
+                    model.DefaultLanguageCode ?? "nl");
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
-                new { projectId = project.ProjectId, aiAssistance = model.AiAssistance, isNew = true });
+                new { projectId = project.ProjectId, isNew = true });
 
         return RedirectToAction(nameof(Create), new { projectId = project.ProjectId, isNew = wizardActive, saved = 1 });
     }
 
-    public async Task<IActionResult> Questions(int projectId,
-        AiAssistanceType aiAssistance = AiAssistanceType.ProActive, bool isNew = false)
+    public async Task<IActionResult> Questions(int projectId, bool isNew = false)
     {
         var questions = await questionService.GetQuestionsAsync(projectId);
         var project = await projectService.GetProjectByIdAsync(projectId);
         var sections = await sectionService.GetSectionsAsync(projectId);
+
+        var user = await userManager.GetUserAsync(User);
+        var platformSettings = user?.ProjectPlatformId is not null
+            ? await platformService.GetPlatformSettingsAsync(user.ProjectPlatformId.Value)
+            : null;
+        var aiAssistance = Enum.TryParse<AiAssistanceType>(platformSettings?.AiAssistanceMode, out var assistanceMode)
+            ? assistanceMode
+            : AiAssistanceType.ProActive;
+
+        if (isNew && project?.ProjectState == "Draft")
+            await projectService.UpdateWizardStepAsync(projectId, 2);
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Questions";
-        ViewData["AiAssistance"]  = aiAssistance;
+        ViewData["AiAssistance"]  = aiAssistance.ToString();
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
         ViewData["IsNew"]         = isNew;
@@ -243,45 +254,61 @@ public class ProjectController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion(int projectId, AiAssistanceType aiAssistance,
+    public async Task<IActionResult> SaveProgress(int projectId, bool isNew, int step, string returnAction)
+    {
+        if (returnAction != nameof(Questions) && returnAction != nameof(Ideation))
+            return BadRequest();
+
+        await projectService.UpdateWizardStepAsync(projectId, step);
+        TempData["Success"] = localizer["Common_ProgressSaved"].Value;
+        return RedirectToAction(returnAction, new { projectId, isNew });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateQuestion(int projectId,
         bool isNew, CreateQuestionViewModel model)
     {
         var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForCreate))
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
+            return RedirectToAction(nameof(Questions), new { projectId, isNew });
         }
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
                 model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+                parentQuestionId: model.ParentQuestionId, choiceIndex: model.ChoiceIndex,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
                 mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
+        return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateQuestion(int projectId, AiAssistanceType aiAssistance,
+    public async Task<IActionResult> UpdateQuestion(int projectId,
         bool isNew, EditQuestionViewModel model)
     {
         var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForUpdate))
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew });
+            return RedirectToAction(nameof(Questions), new { projectId, isNew });
         }
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
                 model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
                 mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
-        return RedirectToAction(nameof(Questions), new { projectId, aiAssistance, isNew, saved = 1 });
+        return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
 
     public async Task<IActionResult> Ideation(int projectId, bool isNew = false)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
+
+        if (isNew && project?.ProjectState == "Draft")
+            await projectService.UpdateWizardStepAsync(projectId, 3);
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
@@ -305,7 +332,7 @@ public class ProjectController(
 
         await projectService.UpdateProjectAsync(
             projectId, project.Name, project.Topic, project.Introduction,
-            project.ProjectImage, project.FormType, project.AiAssistance,
+            project.ProjectImage, project.FormType,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
             project.AllowCrossLanguageIdeas,
@@ -355,14 +382,14 @@ public class ProjectController(
     [HttpPost]
     [IgnoreAntiforgeryToken]
     [EnableRateLimiting("ai-image-generation")]
-    public async Task<IActionResult> GenerateImage([FromQuery] string name)
+    public async Task<IActionResult> GenerateImage([FromBody] GenerateImageRequest request)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(request?.Name))
             return BadRequest(new { error = localizer["Project_NameRequired"].Value });
 
         try
         {
-            var url = await uploadService.GenerateImageAsync(name);
+            var url = await uploadService.GenerateImageAsync(request.Name, request.Topic, request.Intro);
             return Ok(new { url });
         }
         catch (HttpRequestException)
@@ -450,11 +477,16 @@ public class ProjectController(
         if (project is null)
             return NotFound();
 
+        var questions  = await questionService.GetQuestionsAsync(projectId);
+        var categories = await categoryService.GetCategoriesAsync(projectId);
+
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
         ViewData["ProjectState"]  = project.ProjectState ?? "";
         ViewData["ActiveSection"] = "Settings";
+        ViewData["QuestionCount"] = questions.Count;
+        ViewData["CategoryCount"] = categories.Count;
         return View(project);
     }
 
@@ -738,3 +770,9 @@ public sealed record GenerateSummaryRequest(
     string Status,
     string LanguageCode,
     bool SelectAll);
+
+// Request body for ProjectController.GenerateImage.
+// [FromBody] avoids query-string length limits: the intro field can hold
+// up to 5000 chars of Quill HTML which, after URI-encoding, exceeds the ~8 KB
+// limit enforced by many proxies and servers.
+public sealed record GenerateImageRequest(string Name, string Topic, string Intro);

@@ -73,32 +73,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const browseBtn = document.getElementById('browse-btn') as HTMLButtonElement | null;
     const fileInput = document.getElementById('image-file-input') as HTMLInputElement | null;
     const imagePreview = document.getElementById('image-preview') as HTMLImageElement | null;
-    const imagePlaceholder = document.getElementById('image-placeholder') as SVGElement | null;
+    const imagePlaceholder = document.getElementById('image-placeholder') as HTMLElement | null;
     const imageUrlInput = document.getElementById('ImageUrl') as HTMLInputElement | null;
+    const dropZone = document.getElementById('image-drop-zone') as HTMLElement | null;
+    const dragOverlay = document.getElementById('image-drag-overlay') as HTMLElement | null;
+    const clearBtn = document.getElementById('image-clear-btn') as HTMLButtonElement | null;
 
-    // Open file picker when Bladeren is clicked
-    browseBtn?.addEventListener('click', () => fileInput?.click());
+    function setImage(url: string) {
+        if (imageUrlInput) imageUrlInput.value = url;
+        if (imagePreview) { imagePreview.src = url; imagePreview.classList.remove('hidden'); }
+        imagePlaceholder?.classList.add('hidden');
+        clearBtn?.classList.remove('hidden');
+    }
 
-    // Upload selected file to server
-    fileInput?.addEventListener('change', async () => {
-        const file = fileInput.files?.[0];
-        if (!file) return;
+    function clearImage() {
+        if (imageUrlInput) imageUrlInput.value = '';
+        if (imagePreview) { imagePreview.src = ''; imagePreview.classList.add('hidden'); }
+        imagePlaceholder?.classList.remove('hidden');
+        clearBtn?.classList.add('hidden');
+    }
 
+    async function uploadFile(file: File) {
         const compressed = await compressImage(file, 1200, 0.8);
-
         const formData = new FormData();
         formData.append('file', compressed, 'image.jpg');
-
         const response = await fetch('/Project/UploadImage', { method: 'POST', body: formData });
         if (!response.ok) return;
-
         const data = await response.json() as { url: string };
-        if (imageUrlInput) imageUrlInput.value = data.url;
-        if (imagePreview) {
-            imagePreview.src = data.url;
-            imagePreview.classList.remove('hidden');
-        }
-        imagePlaceholder?.classList.add('hidden');
+        setImage(data.url);
+    }
+
+    browseBtn?.addEventListener('click', () => fileInput?.click());
+
+    // Clicking the drop zone also opens the file picker
+    dropZone?.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('#image-clear-btn')) return;
+        fileInput?.click();
+    });
+
+    fileInput?.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (file) await uploadFile(file);
+    });
+
+    // Drag & drop onto the drop zone
+    if (dropZone && fileInput) {
+        let dragDepth = 0;
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            if (++dragDepth === 1) dragOverlay?.classList.remove('hidden');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            if (--dragDepth === 0) dragOverlay?.classList.add('hidden');
+        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); });
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dragDepth = 0;
+            dragOverlay?.classList.add('hidden');
+            const file = e.dataTransfer?.files?.[0];
+            if (file?.type.startsWith('image/')) await uploadFile(file);
+        });
+    }
+
+    clearBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearImage();
     });
 
     // Generate image with AI
@@ -106,28 +146,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     generateBtn?.addEventListener('click', async () => {
         const name = nameInput?.value?.trim();
-        if (!name) {
-            nameInput?.focus();
-            return;
-        }
+        if (!name) { nameInput?.focus(); return; }
 
         const originalText = generateBtn.textContent!;
         generateBtn.disabled = true;
         generateBtn.textContent = generateBtn.dataset.generatingText ?? 'Generating…';
 
         try {
-            const response = await fetch(`/Project/GenerateImage?name=${encodeURIComponent(name)}`, { method: 'POST' });
-            if (!response.ok) return;
+            // Send as JSON body to avoid query-string length limits.
+            // The intro field can hold up to 5000 chars of Quill HTML; URI-encoding
+            // that would exceed the ~8 KB limit many proxies enforce.
+            const topic = topicInput?.value?.trim();
+            const intro = (document.getElementById('Introduction') as HTMLInputElement | null)?.value?.trim();
+
+            const response = await fetch('/Project/GenerateImage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    topic: topic || null,
+                    intro: intro || null,
+                }),
+            });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({})) as { error?: string };
+                toast(body.error ?? generateBtn.dataset.errorText ?? '', 'error');
+                return;
+            }
 
             const data = await response.json() as { url: string };
-            if (imageUrlInput) imageUrlInput.value = data.url;
-            if (imagePreview) {
-                imagePreview.src = data.url;
-                imagePreview.classList.remove('hidden');
-            }
-            imagePlaceholder?.classList.add('hidden');
+            setImage(data.url);
         } catch {
-            // silently fail
+            toast(generateBtn.dataset.errorText ?? '', 'error');
         } finally {
             generateBtn.disabled = false;
             generateBtn.textContent = originalText;
@@ -136,10 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Pre-fill image preview on page load if a URL is already stored
     if (imageUrlInput?.value) {
-        if (imagePreview) {
-            imagePreview.src = imageUrlInput.value;
-            imagePreview.classList.remove('hidden');
-        }
+        if (imagePreview) { imagePreview.src = imageUrlInput.value; imagePreview.classList.remove('hidden'); }
         imagePlaceholder?.classList.add('hidden');
     }
 
@@ -223,10 +270,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sectionsContainer && addSectionBtn) {
         let idx = parseInt(sectionsContainer.dataset.sectionCount ?? '0', 10);
         addSectionBtn.addEventListener('click', () => {
+            const emptyInput = sectionsContainer.querySelector<HTMLInputElement>('input[type="text"][value=""]') ??
+                [...sectionsContainer.querySelectorAll<HTMLInputElement>('input[type="text"]')].find(i => !i.value.trim());
+            if (emptyInput) {
+                emptyInput.focus();
+                emptyInput.classList.add('input-error');
+                emptyInput.addEventListener('input', () => emptyInput.classList.remove('input-error'), { once: true });
+                return;
+            }
             const row = document.createElement('div');
-            row.className = 'flex gap-2 items-center section-row';
+            row.className = 'flex gap-1 items-center section-row';
             row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;
             sectionsContainer.appendChild(row);
+            row.querySelector('input')?.focus();
             idx++;
         });
         sectionsContainer.addEventListener('click', (e) => {
@@ -234,4 +290,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 (e.target as HTMLElement).closest('.section-row')?.remove();
         });
     }
+
+    // Strip empty section rows before submit to prevent server exceptions
+    mainForm?.addEventListener('submit', () => {
+        sectionsContainer?.querySelectorAll<HTMLElement>('.section-row').forEach(row => {
+            const input = row.querySelector<HTMLInputElement>('input[type="text"]');
+            if (input && !input.value.trim()) row.remove();
+        });
+    });
 });

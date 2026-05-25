@@ -1,4 +1,5 @@
 using System.Globalization;
+using Ganss.Xss;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
@@ -23,11 +24,6 @@ public class ProjectsController(
         Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
             ? formResult
             : FormType.VerticalScroll;
-
-    private static AiAssistanceType ParseAiAssistanceType(string aiAssistance) =>
-        Enum.TryParse<AiAssistanceType>(aiAssistance, ignoreCase: true, out var aiResult)
-            ? aiResult
-            : AiAssistanceType.ProActive;
 
     private static ProjectTheme ParseTheme(string theme) =>
         Enum.TryParse<ProjectTheme>(theme, ignoreCase: true, out var themeResult)
@@ -70,7 +66,6 @@ public class ProjectsController(
             OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
             OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
             Introduction = introText,
-            AiAssistance = p.AiAssistance.ToString(),
             RequestContactInfo = p.RequestContactInfo,
             AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
             IdeaPageSize = p.IdeaPageSize,
@@ -81,6 +76,7 @@ public class ProjectsController(
             LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
             DefaultLanguageCode = p.DefaultLanguage?.Code,
             SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            LastWizardStep = p.LastWizardStep,
             Theme = p.Theme.ToString(),
             PrimaryColor = p.PrimaryColor,
             CustomCss = p.CustomCss,
@@ -99,7 +95,6 @@ public class ProjectsController(
         IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
         OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
         OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
-        AiAssistance = p.AiAssistance.ToString(),
         RequestContactInfo = p.RequestContactInfo,
         AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
         IdeaPageSize = p.IdeaPageSize,
@@ -117,6 +112,7 @@ public class ProjectsController(
             Introduction = p.Introduction?.Translations
                 .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
         }).ToList(),
+        LastWizardStep = p.LastWizardStep,
         Theme = p.Theme.ToString(),
         PrimaryColor = p.PrimaryColor,
         CustomCss = p.CustomCss,
@@ -125,9 +121,14 @@ public class ProjectsController(
     private static IEnumerable<ProjectTranslationInput> MapTranslations(ICollection<ProjectTranslationDto> dtos) =>
         dtos.Select(t => new ProjectTranslationInput(t.LanguageCode, t.Name, t.Topic ?? string.Empty));
 
+    // Shared sanitizer instance — HtmlSanitizer is thread-safe and lightweight to reuse.
+    // Default allowlist retains the tags Quill emits (p, br, strong, em, a, ul, ol, li, u)
+    // and strips <script>, event-handler attributes, and javascript: hrefs.
+    private static readonly HtmlSanitizer _introSanitizer = new();
+
     private static IEnumerable<IntroductionTranslationInput> MapIntroductions(ICollection<ProjectTranslationDto> dtos) =>
         dtos.Where(t => !string.IsNullOrEmpty(t.Introduction))
-            .Select(t => new IntroductionTranslationInput(t.LanguageCode, t.Introduction));
+            .Select(t => new IntroductionTranslationInput(t.LanguageCode, _introSanitizer.Sanitize(t.Introduction)));
 
     [HttpGet("{projectId}")]
     public async Task<ActionResult<ProjectDto>> GetProject(int projectId)
@@ -174,7 +175,6 @@ public class ProjectsController(
             dto.SupportedLanguageCodes,
             imageUrl,
             ParseFormType(dto.InteractionMode),
-            ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
@@ -202,7 +202,6 @@ public class ProjectsController(
             dto.SupportedLanguageCodes,
             dto.ImageUrl ?? string.Empty,
             ParseFormType(dto.InteractionMode),
-            ParseAiAssistanceType(dto.AiAssistance),
             dto.MinAge,
             dto.MaxAge,
             dto.RequestContactInfo,
@@ -247,13 +246,22 @@ public class ProjectsController(
         return Ok(MapToAdminDto(project));
     }
 
-    [HttpPost("generate-image")]
-    public async Task<IActionResult> GenerateImage([FromQuery] string name, CancellationToken ct)
+    [HttpPatch("{projectId}/wizard-step")]
+    public async Task<IActionResult> UpdateWizardStep(int projectId, UpdateWizardStepDto dto)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        await projectManager.UpdateLastWizardStepAsync(projectId, dto.Step);
+        return NoContent();
+    }
+
+    [HttpPost("generate-image")]
+    public async Task<IActionResult> GenerateImage(
+        GenerateImageRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Name))
             throw new LocalizedValidationException("Validation.Project.NameRequired");
 
-        var result = await imageGenerationService.GenerateProjectImageAsync(name, 0, ct);
+        var result = await imageGenerationService.GenerateProjectImageAsync(request.Name, 0, request.Topic, request.Intro, ct);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
 
@@ -268,3 +276,8 @@ public class ProjectsController(
         !string.IsNullOrWhiteSpace(imageUrl)
         && Path.GetFileNameWithoutExtension(imageUrl).Contains("generated", StringComparison.OrdinalIgnoreCase);
 }
+
+// [FromBody] keeps large intro payloads out of the URL.
+// The intro field can hold up to 5000 chars of Quill HTML; URI-encoding it would
+// exceed the ~8 KB query-string limit enforced by many proxies and servers.
+public sealed record GenerateImageRequest(string Name, string Topic, string Intro);

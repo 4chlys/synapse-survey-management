@@ -18,7 +18,11 @@
             <span class="badge badge-warning gap-1">⏳ @string.Format(L["BadgeNew"].Value, Model.PendingCount)</span>
             <span class="badge badge-error gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.FlaggedCount)</span>
 
-            <div class="dropdown dropdown-end" data-export-emails data-project-id="@Model.ProjectId">
+            <div class="dropdown dropdown-end" data-export-emails
+                 data-project-id="@Model.ProjectId"
+                 data-export-url="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId })"
+                 data-failed-message="@L["ExportFailedAlert"].Value"
+                 data-text-format-description="@L["ExportFormat_TextDescription"].Value">
                 <button type="button" class="btn btn-primary btn-sm gap-1.5" data-export-trigger>
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -52,7 +56,7 @@
         </label>
 
         <select name="categoryId" class="select select-bordered select-sm min-w-40"
-                onchange="this.form.submit()">
+                data-submit-on-change>
             <option value="">@L["AllCategories"]</option>
             @foreach (var cat in Model.Categories)
             {
@@ -68,7 +72,7 @@
         </select>
 
         <select name="status" class="select select-bordered select-sm min-w-36"
-                onchange="this.form.submit()">
+                data-submit-on-change>
             <option value="">@L["AllStatuses"]</option>
             @if (Model.Status == "Unflagged") { <option value="Unflagged" selected>@L["Status_New"]</option> }
             else { <option value="Unflagged">@L["Status_New"]</option> }
@@ -95,53 +99,3 @@
 </div>
 
 @await Html.PartialAsync("_IdeaSummaryPanel", Model)
-
-@section Scripts {
-    <script>
-        (() => {
-            const root = document.querySelector('[data-export-emails]');
-            if (!root) return;
-            const projectId = root.dataset.projectId;
-            const trigger = root.querySelector('[data-export-trigger]');
-            const fallback = root.querySelector('[data-export-fallback]');
-            const baseUrl = '@Url.Action("ExportParticipantEmails", new { projectId = "__PID__" })'.replace('__PID__', projectId);
-            const types = [
-                { description: 'CSV', accept: { 'text/csv': ['.csv'] } },
-                { description: '@L["ExportFormat_TextDescription"]', accept: { 'text/plain': ['.txt'] } },
-                { description: 'Excel', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }
-            ];
-            const extToFormat = { '.csv': 'csv', '.txt': 'txt', '.xlsx': 'xlsx' };
-
-            if (typeof window.showSaveFilePicker !== 'function') {
-                trigger.addEventListener('click', () => fallback.classList.toggle('hidden'));
-                return;
-            }
-
-            trigger.addEventListener('click', async () => {
-                let handle;
-                try {
-                    handle = await window.showSaveFilePicker({
-                        suggestedName: `participants-${projectId}`,
-                        types
-                    });
-                } catch (e) {
-                    if (e?.name === 'AbortError') return;
-                    console.error(e);
-                    return;
-                }
-                const name = handle.name.toLowerCase();
-                const ext = Object.keys(extToFormat).find(x => name.endsWith(x)) || '.csv';
-                const format = extToFormat[ext];
-
-                const resp = await fetch(`${baseUrl}&format=${format}`);
-                if (!resp.ok) {
-                    alert('@L["ExportFailedAlert"]');
-                    return;
-                }
-
-                const writable = await handle.createWritable();
-                await resp.body.pipeTo(writable);
-            });
-        })();
-    </script>
-}

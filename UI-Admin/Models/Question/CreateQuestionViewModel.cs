@@ -19,6 +19,9 @@ public record CreateQuestionViewModel
 
     public int? SectionId { get; init; }
 
+    public int? ParentQuestionId { get; init; }
+    public int? ChoiceIndex { get; init; }
+
     public string MediaUrl { get; init; }
     public QuestionMediaType? MediaType { get; init; }
     public bool MediaIsEmbed { get; init; }

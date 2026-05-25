@@ -119,33 +119,58 @@
                                 <span class="text-sm font-semibold text-base-content">@L["ImageLabel"]</span>
                                 @InfoIcon(L["ImageHint"].Value)
                             </div>
-                            <div id="image-preview-box" class="border border-dashed border-base-300 rounded w-44 h-36 relative overflow-hidden bg-base-200">
-                                <svg id="image-placeholder" class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" stroke-width="1" class="text-base-300" />
-                                </svg>
+                            <div id="image-drop-zone"
+                                 class="relative border-2 border-dashed border-base-300 rounded-xl bg-base-200
+                                        flex items-center justify-center min-h-44 w-full overflow-hidden -mt-0.5
+                                        transition-colors @(!isLocked ? "cursor-pointer hover:border-primary/50 hover:bg-base-200/60" : "")">
+                                <div id="image-placeholder"
+                                     class="flex flex-col items-center gap-2 text-base-content/35 pointer-events-none select-none @(!string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")">
+                                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M4 16.2A5 5 0 0 1 6.5 7a7 7 0 0 1 13.5 2.1 4 4 0 0 1-.5 7.9H5"/>
+                                        <path d="M12 13v8M9 18l3-3 3 3"/>
+                                    </svg>
+                                    <p class="text-sm text-center leading-snug px-6">
+                                        <span class="font-medium">@L["DropzonePrimary"]</span><br/>
+                                        <span class="text-xs opacity-75">@L["DropzoneSecondary"]</span>
+                                    </p>
+                                </div>
                                 <img id="image-preview" src="@(Model.ImageUrl ?? "")" alt=""
                                      class="absolute inset-0 w-full h-full object-cover @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")" />
+                                @if (!isLocked)
+                                {
+                                    <div id="image-drag-overlay"
+                                         class="hidden absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none">
+                                        <span class="bg-base-100/80 text-primary font-semibold text-sm rounded-lg px-4 py-2">@L["DropzoneDropHere"]</span>
+                                    </div>
+                                    <button type="button" id="image-clear-btn"
+                                            class="absolute top-2 right-2 btn btn-xs btn-circle btn-error shadow @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")">
+                                        ✕
+                                    </button>
+                                }
                             </div>
-                            @if (!isLocked)
-                            {
-                                <div class="flex gap-2">
-                                    <button type="button" id="browse-btn" class="btn btn-outline btn-sm">@L["BrowseButton"]</button>
-                                    <button type="button" id="generate-btn" class="btn btn-outline btn-sm"
-                                            data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
-                                </div>
-                                <input type="file" id="image-file-input" accept="image/*" class="hidden" />
-                            }
                             <input type="hidden" asp-for="ImageUrl" id="ImageUrl" />
                             <span asp-validation-for="ImageUrl" class="text-xs text-error"></span>
                         </div>
                     </div>
 
-                    <div class="form-control">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
-                            <span class="text-sm text-base-content">@L["ContactOptInLabel"]</span>
-                        </label>
+                    @* Checkbox (left) aligned with image buttons (right) *@
+                    <div class="grid grid-cols-2 gap-4 items-center">
+                        <div class="form-control">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input asp-for="ContactOptIn" type="checkbox" class="checkbox checkbox-primary" />
+                                <span class="text-sm text-base-content">@L["ContactOptInLabel"]</span>
+                            </label>
+                        </div>
+                        @if (!isLocked)
+                        {
+                            <div class="flex gap-2">
+                                <button type="button" id="browse-btn" class="btn btn-outline btn-sm flex-1">@L["BrowseButton"]</button>
+                                <button type="button" id="generate-btn" class="btn btn-outline btn-sm flex-1"
+                                        data-generating-text="@L["GeneratingText"]"
+                                        data-error-text="@L["GenerateErrorText"]">@L["GenerateButton"]</button>
+                            </div>
+                            <input type="file" id="image-file-input" accept="image/*" class="hidden" />
+                        }
                     </div>
 
                     @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
@@ -328,18 +353,6 @@
                                 <option value="Chat">@L["InteractionMode_Chat"]</option>
                             </select>
                         </div>
-
-                        <div class="form-control gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-sm font-semibold text-base-content">@L["AiAssistanceLabel"]</span>
-                                @InfoIcon(L["AiAssistanceHint"].Value)
-                            </div>
-                            <select asp-for="AiAssistance" class="select select-bordered w-full">
-                                <option value="ProActive">@L["AiAssistance_ProActive"]</option>
-                                <option value="AskFirst">@L["AiAssistance_AskFirst"]</option>
-                                <option value="Never">@L["AiAssistance_Never"]</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -363,10 +376,10 @@
                             <span class="text-sm font-semibold text-base-content">@L["SectionsDivider"]</span>
                             @InfoIcon(L["SectionsHint"].Value)
                         </div>
-                        <div id="sections-container" class="flex flex-col gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
+                        <div id="sections-container" class="grid grid-cols-2 gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
                             @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                             {
-                                <div class="flex gap-2 items-center section-row">
+                                <div class="flex gap-1 items-center section-row">
                                     <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
                                            class="input input-bordered input-sm flex-1" placeholder="@L["SectionNamePlaceholder"]" />
                                     <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
@@ -389,7 +402,7 @@
                 <div class="card-body">
                     <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200 mb-2">@L["ExportDivider"]</h2>
                     <button type="button" class="btn btn-outline btn-sm gap-1.5 self-start"
-                            onclick="document.getElementById('rawdata-modal').showModal()">
+                            data-open-modal="rawdata-modal">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
                         </svg>
@@ -398,60 +411,13 @@
                 </div>
             </div>
 
-            <dialog id="rawdata-modal" class="modal"
-                    data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
-                <div class="modal-box">
-                    <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
-                    <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
-                    <div class="form-control gap-2 mb-4">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
-                            <span class="text-sm">@L["RawData_Questions"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
-                            <span class="text-sm">@L["RawData_Answers"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
-                            <span class="text-sm">@L["RawData_Categories"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
-                            <span class="text-sm">@L["RawData_Ideas"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
-                            <span class="text-sm">@L["RawData_Comments"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
-                            <span class="text-sm">@L["RawData_EmojiReactions"]</span>
-                        </label>
-                    </div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-sm font-medium">@L["FormatLabel"]</span>
-                        <select id="rawdata-format" class="select select-bordered select-sm w-40">
-                            <option value="xlsx">Excel (.xlsx)</option>
-                            <option value="csv">CSV (.zip)</option>
-                        </select>
-                    </div>
-                    <div class="modal-action">
-                        <form method="dialog">
-                            <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
-                        </form>
-                        <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
-                    </div>
-                </div>
-                <form method="dialog" class="modal-backdrop"><button>close</button></form>
-            </dialog>
         }
 
         <div class="flex justify-end gap-2 pb-4">
             @if (!isLocked)
             {
                 <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@L["SaveButton"]</button>
+                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@Shared["Common_Save"]</button>
                 <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
             }
             else
@@ -464,6 +430,59 @@
             }
         </div>
     </form>
+
+    @* Dialog lives outside the main <form> — nested <form method="dialog"> inside a
+       Razor form tag helper causes RZ1034. Position in the DOM doesn't affect showModal(). *@
+    @if (isLocked && Model.ProjectId.HasValue)
+    {
+        <dialog id="rawdata-modal" class="modal"
+                data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
+            <div class="modal-box">
+                <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
+                <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
+                <div class="form-control gap-2 mb-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
+                        <span class="text-sm">@L["RawData_Questions"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
+                        <span class="text-sm">@L["RawData_Answers"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
+                        <span class="text-sm">@L["RawData_Categories"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
+                        <span class="text-sm">@L["RawData_Ideas"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
+                        <span class="text-sm">@L["RawData_Comments"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
+                        <span class="text-sm">@L["RawData_EmojiReactions"]</span>
+                    </label>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-sm font-medium">@L["FormatLabel"]</span>
+                    <select id="rawdata-format" class="select select-bordered select-sm w-40">
+                        <option value="xlsx">Excel (.xlsx)</option>
+                        <option value="csv">CSV (.zip)</option>
+                    </select>
+                </div>
+                <div class="modal-action">
+                    <form method="dialog">
+                        <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                    </form>
+                    <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        </dialog>
+    }
 </div>
 
 @section Scripts {

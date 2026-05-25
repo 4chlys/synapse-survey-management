@@ -9,6 +9,7 @@ using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Settings;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
+using AiAssistanceType = SynapseEnqueteManagement.UI.Admin.Models.Enums.AiAssistanceType;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -57,6 +58,23 @@ public class SettingsController(
         });
 
         TempData["Success"] = localizer["Platform_BasicInfoSaved"].Value;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveAiAssistanceMode(string aiAssistanceMode)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is null) return Forbid();
+
+        if (!Enum.TryParse<AiAssistanceType>(aiAssistanceMode, out var parsed))
+        {
+            TempData["Error"] = localizer["Settings_InvalidAiMode"].Value;
+            return RedirectToAction(nameof(Index));
+        }
+
+        await platformService.SaveAiAssistanceModeAsync(user.ProjectPlatformId.Value, parsed.ToString());
+        TempData["Success"] = localizer["Settings_AiModeSaved"].Value;
         return RedirectToAction(nameof(Index));
     }
 
@@ -139,11 +157,11 @@ public class SettingsController(
     private async Task<PlatformAdminSettingsViewModel> BuildViewModel(int platformId, string platformName)
     {
         var settings       = await platformService.GetPlatformSettingsAsync(platformId);
-        var allowedIds     = await GetAllowedModelIdsAsync();
-        var availableIds   = await aiAdminService.GetAvailableModelIdsAsync();
-        var globalPrompts  = await aiAdminService.GetGlobalPromptsAsync();
-        var allowedModels  = AiModelCatalog.All
-            .Where(m => allowedIds.Contains(m.Id) && availableIds.Contains(m.Id))
+        var allowedIds       = await GetAllowedModelIdsAsync();
+        var modelAvailability = await aiAdminService.GetModelAvailabilityAsync();
+        var globalPrompts    = await aiAdminService.GetGlobalPromptsAsync();
+        var allowedModels    = AiModelCatalog.All
+            .Where(m => allowedIds.Contains(m.Id) && modelAvailability.GetValueOrDefault(m.Id, false))
             .ToList();
 
         // API-fetched prompts are preferred; fall back to locally loaded AiConfig if the API is unreachable.
@@ -158,7 +176,9 @@ public class SettingsController(
 
         var aiSettings = new PlatformAdminAiViewModel(
             allowedModels,
-            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty
+            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty,
+            Enum.TryParse<AiAssistanceType>(settings?.AiAssistanceMode, out var aiMode) ? aiMode : AiAssistanceType.ProActive,
+            modelAvailability.Where(kv => !kv.Value).Select(kv => kv.Key).ToHashSet()
         );
 
         var prompts = new PlatformAdminPromptsViewModel([

@@ -81,15 +81,15 @@ public class QuestionController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> Delete(int projectId, int questionId, AiAssistanceType aiAssistance)
+    public async Task<IActionResult> Delete(int projectId, int questionId, bool isNew = false)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project?.ProjectState is "Active" or "Archived")
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
+            return RedirectToAction("Questions", "Project", new { projectId, isNew });
         }
         await questionService.DeleteQuestionAsync(projectId, questionId);
-        return RedirectToAction("Questions", "Project", new { projectId, aiAssistance });
+        return RedirectToAction("Questions", "Project", new { projectId, isNew });
     }
 }

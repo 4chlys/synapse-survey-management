@@ -20,9 +20,20 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach (var project in Model)
         {
-            var href = project.ProjectState == "Draft"
-                ? Url.Action("Create", new { projectId = project.ProjectId })
-                : Url.Action("Dashboard", new { projectId = project.ProjectId });
+            string href;
+            if (project.ProjectState == "Draft")
+            {
+                href = project.LastWizardStep switch
+                {
+                    2 => Url.Action("Questions", new { projectId = project.ProjectId, isNew = true }),
+                    3 => Url.Action("Ideation", new { projectId = project.ProjectId, isNew = true }),
+                    _ => Url.Action("Create", new { projectId = project.ProjectId, isNew = true })
+                };
+            }
+            else
+            {
+                href = Url.Action("Dashboard", new { projectId = project.ProjectId });
+            }
 
             <div class="card relative bg-base-100 shadow-sm transition-all duration-200 ease-out group
                         hover:-translate-y-0.5 hover:scale-[1.015]
@@ -80,7 +91,7 @@
                                 <button type="button"
                                         class="w-full text-left px-3 py-2 text-xs hover:bg-base-200 flex items-center gap-2 cursor-pointer"
                                         role="menuitem"
-                                        onclick="document.getElementById('copy-modal-@project.ProjectId').showModal();">
+                                        data-open-modal="copy-modal-@project.ProjectId">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="9" y="9" width="13" height="13" rx="2"/>
                                         <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
@@ -131,7 +142,7 @@
                         </label>
                         <div class="modal-action">
                             <button type="button" class="btn btn-ghost"
-                                    onclick="document.getElementById('copy-modal-@project.ProjectId').close();">
+                                    data-close-modal="copy-modal-@project.ProjectId">
                                 @L["CancelButton"]
                             </button>
                             <button type="submit" class="btn btn-primary">@L["CopyButton"]</button>

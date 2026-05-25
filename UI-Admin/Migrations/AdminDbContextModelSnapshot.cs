@@ -253,6 +253,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     b.Property<bool>("AiAssistanceEnabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AiAssistanceMode")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("AiModelName")
                         .HasColumnType("TEXT");
 

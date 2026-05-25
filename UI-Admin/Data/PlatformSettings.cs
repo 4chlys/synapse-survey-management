@@ -23,6 +23,7 @@ public class PlatformSettings
     public string CostDashboardUrl { get; set; }
 
     // AI configuration
+    public string AiAssistanceMode { get; set; } = "ProActive";
     public string SelectedAiModel { get; set; }
     public string PromptModeration { get; set; }
     public string PromptCommentModeration { get; set; }

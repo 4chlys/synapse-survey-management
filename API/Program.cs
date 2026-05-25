@@ -327,6 +327,7 @@ if (useAi)
 
     var defaultModelId = builder.Configuration["VertexAi:Model"];
     builder.Services.AddSingleton(new ChatClientRegistry(chatClients, defaultModelId));
+    builder.Services.AddSingleton<ModelAvailabilityService>();
 
     // All AI features share the ChatClientRegistry.
     builder.Services.AddScoped<IAiModerationService, AiModerationService>();
@@ -363,6 +364,7 @@ if (useAi)
 else
 {
     builder.Services.AddSingleton(new ChatClientRegistry(new Dictionary<string, IChatClient>()));
+    builder.Services.AddSingleton<ModelAvailabilityService>();
     builder.Services.AddScoped<IAiModerationService, MockModerationService>();
     builder.Services.AddScoped<IEmbeddingService, MockEmbeddingService>();
     builder.Services.AddScoped<IAiIdeaSupportService, MockIdeaSupportService>();

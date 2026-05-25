@@ -74,11 +74,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const projectId = parseInt(list.dataset.projectId ?? '0', 10);
     const questionsEndpoint = list.dataset.questionsEndpoint ?? '';
     const deleteEndpoint = list.dataset.deleteEndpoint ?? '';
-    const aiAssistance = list.dataset.aiAssistance ?? 'ProActive';
     const locked = list.dataset.locked === 'true';
+    const isNew = list.dataset.isNew === 'true';
 
     const i18n: QuestionsI18n = readQuestionsI18n(list);
-    const ctx: RenderContext = { deleteEndpoint, aiAssistance, projectId, locked, i18n };
+    const ctx: RenderContext = { deleteEndpoint, projectId, locked, isNew, i18n };
 
     async function reload(): Promise<void> {
         const expanded = captureExpandedIds(list!);
@@ -173,6 +173,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (endingResponse?.ok) {
             toast(i18n.savedToast, 'success');
         } else {
+            toast(i18n.saveFailedToast, 'error');
+        }
+    });
+
+    list.addEventListener('submit', async (e) => {
+        const form = (e.target as HTMLElement).closest<HTMLFormElement>('.question-delete-form');
+        if (!form) return;
+        e.preventDefault();
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+            });
+            if (response.ok) {
+                toast(i18n.savedToast, 'success');
+                await reload();
+            } else {
+                toast(i18n.saveFailedToast, 'error');
+            }
+        } catch {
             toast(i18n.saveFailedToast, 'error');
         }
     });

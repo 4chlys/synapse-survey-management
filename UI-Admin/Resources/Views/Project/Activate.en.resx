@@ -10,4 +10,10 @@
   <data name="Body" xml:space="preserve"><value>{0} is currently in &lt;em&gt;Draft&lt;/em&gt;. Activating makes the project visible to participants.</value></data>
   <data name="ActivateButton" xml:space="preserve"><value>Activate project</value></data>
   <data name="NotYetButton" xml:space="preserve"><value>Not yet</value></data>
+  <data name="StatQuestions" xml:space="preserve"><value>Questions</value></data>
+  <data name="StatCategories" xml:space="preserve"><value>Categories</value></data>
+  <data name="StatFormType" xml:space="preserve"><value>Form type</value></data>
+  <data name="FormTypeChat" xml:space="preserve"><value>Chat</value></data>
+  <data name="FormTypeScroll" xml:space="preserve"><value>Scroll</value></data>
+  <data name="InfoText" xml:space="preserve"><value>Once activated, participants can access the project using a shared link. You can deactivate or archive the project at any time from the dashboard.</value></data>
 </root>

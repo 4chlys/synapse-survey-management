@@ -6,12 +6,15 @@ public sealed class AiImageGenerationConfig
 {
     [JsonPropertyName("prompt")]
     public string Prompt { get; init; } =
-        "Genereer een moderne, visueel aantrekkelijke realistische headerafbeelding voor een jongerenparticipatieproject." +
-        "Het centrale visuele onderwerp van de afbeelding is: '{project_name}'. " +
-        "Zorg ervoor dat dit onderwerp duidelijk en herkenbaar in beeld wordt gebracht, maar doe dit in een creatieve," +
-        " gestileerde en professionele stijl (niet fotorealistisch, maar artistiek). Gebruik een levendig en kleurrijk palet." +
-        "De compositie is bedoeld als een brede projectbanner. Belangrijk: genereer absoluut geen tekst, letters of logo's in de afbeelding." +
-        "Gebruik de aspect raitio 16:9.";
+        // Keep in sync with ai-config.example.json — that file takes priority at runtime.
+        "Maak een realistische reportagefoto (16:9 bannerformaat) van een echte, alledaagse situatie " +
+        "die direct verband houdt met het onderwerp \"{project_name}\".{context} " +
+        "Toon concrete mensen in een herkenbare echte omgeving — zoals een persfoto of documentairefoto. " +
+        "KLEUREN: gedempte, gewone kleuren zoals in het dagelijks leven. Geen felle, verzadigde of neonkleuren. " +
+        "BELICHTING: natuurlijk daglicht of gewone binnenverlichting. Geen dramatische of artistieke lichtval. " +
+        "VERBODEN: illustratie, digitale kunst, concept art, tekening, schilderij, cartoon, anime, " +
+        "abstracte kunst, symbolische voorstellingen, gloei-effecten, artistieke filters, HDR-kleuren. " +
+        "Geen tekst, letters, logo's of watermerken in de afbeelding.";
 
     [JsonPropertyName("aspect_ratio")]
     public string AspectRatio { get; init; } = "16:9";

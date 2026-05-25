@@ -46,11 +46,10 @@
     @* Read by moderation.ts → getCsrfToken() for fetch requests to /api *@
     <meta name="__RequestVerificationToken" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
-    @* Server-rendered i18n blob — must come before the JS module so window.__i18n is set when i18n.ts is imported *@
-    <script>
-      window.__i18n = {
-        culture: @Json.Serialize(CultureInfo.CurrentUICulture.Name),
-        strings: @Json.Serialize(new {
+    @* Server-rendered i18n data — read by lib/i18n.ts. type="application/json" is data, not executable script. *@
+    <script type="application/json" id="i18n-data">@Json.Serialize(new {
+        culture = CultureInfo.CurrentUICulture.Name,
+        strings = new {
           submit = Shared["Submit"].Value,
           cancel = Shared["Cancel"].Value,
           back   = Shared["Back"].Value,
@@ -116,9 +115,8 @@
           speechToTextErrorUnsupportedFormat = Shared["SpeechToText_ErrorUnsupportedFormat"].Value,
           speechToTextErrorInvalidAudioData = Shared["SpeechToText_ErrorInvalidAudioData"].Value,
           speechToTextErrorUnexpectedResponse = Shared["SpeechToText_ErrorUnexpectedResponse"].Value
-        })
-      };
-    </script>
+        }
+    })</script>
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">

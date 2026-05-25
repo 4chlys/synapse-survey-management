@@ -91,6 +91,8 @@
   <data name="Settings_PromptTooLong" xml:space="preserve"><value>Systeemprompt mag maximaal {0} tekens bevatten.</value></data>
   <data name="Settings_PromptSaved" xml:space="preserve"><value>Systeemprompt opgeslagen.</value></data>
   <data name="Settings_PromptReset" xml:space="preserve"><value>Systeemprompt hersteld naar standaard.</value></data>
+  <data name="Settings_InvalidAiMode" xml:space="preserve"><value>Ongeldige AI-assistentie modus.</value></data>
+  <data name="Settings_AiModeSaved" xml:space="preserve"><value>AI-assistentie modus opgeslagen.</value></data>
 
   <data name="Prompt_Moderation" xml:space="preserve"><value>Moderatie</value></data>
   <data name="Prompt_CommentModeration" xml:space="preserve"><value>Commentaarmoderatie</value></data>
@@ -126,4 +128,6 @@ E-mail: {1}
 
 Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
 {2}</value></data>
+
+  <data name="Common_ProgressSaved" xml:space="preserve"><value>Opgeslagen.</value></data>
 </root>
