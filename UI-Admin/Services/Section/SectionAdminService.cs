@@ -15,21 +15,17 @@ public class SectionAdminService(HttpClient httpClient)
                ?? new List<SectionViewModel>();
     }
 
-    public async Task CreateSectionAsync(int projectId, string name, string
-        description)
+    public async Task CreateSectionAsync(int projectId, string name, string description, string languageCode)
     {
-        var payload = new { Name = name, Description = description };
+        var payload = new
+        {
+            Translations = new[]
+            {
+                new { LanguageCode = languageCode, Name = name, Description = description }
+            }
+        };
         var response = await httpClient.PostAsJsonAsync(
             $"api/projects/{projectId}/sections", payload);
-        response.EnsureSuccessStatusCode();
-    }
-
-    public async Task UpdateSectionAsync(int projectId, int sectionId, string
-        name, string description)
-    {
-        var payload = new { Name = name, Description = description };
-        var response = await httpClient.PutAsJsonAsync(
-            $"api/projects/{projectId}/sections/{sectionId}", payload);
         response.EnsureSuccessStatusCode();
     }
 

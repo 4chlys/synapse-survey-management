@@ -9,6 +9,7 @@ using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Settings;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
+using AiAssistanceType = SynapseEnqueteManagement.UI.Admin.Models.Enums.AiAssistanceType;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -57,6 +58,23 @@ public class SettingsController(
         });
 
         TempData["Success"] = localizer["Platform_BasicInfoSaved"].Value;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveAiAssistanceMode(string aiAssistanceMode)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is null) return Forbid();
+
+        if (!Enum.TryParse<AiAssistanceType>(aiAssistanceMode, out var parsed))
+        {
+            TempData["Error"] = localizer["Settings_InvalidAiMode"].Value;
+            return RedirectToAction(nameof(Index));
+        }
+
+        await platformService.SaveAiAssistanceModeAsync(user.ProjectPlatformId.Value, parsed.ToString());
+        TempData["Success"] = localizer["Settings_AiModeSaved"].Value;
         return RedirectToAction(nameof(Index));
     }
 
@@ -147,7 +165,8 @@ public class SettingsController(
 
         var aiSettings = new PlatformAdminAiViewModel(
             allowedModels,
-            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty
+            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty,
+            Enum.TryParse<AiAssistanceType>(settings?.AiAssistanceMode, out var aiMode) ? aiMode : AiAssistanceType.ProActive
         );
 
         var prompts = new PlatformAdminPromptsViewModel([

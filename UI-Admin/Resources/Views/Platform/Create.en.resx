@@ -12,6 +12,5 @@
   <data name="NamePlaceholder" xml:space="preserve"><value>Platform name</value></data>
   <data name="LogoLabel" xml:space="preserve"><value>Logo URL</value></data>
   <data name="WebsiteLabel" xml:space="preserve"><value>Website URL</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
 </root>

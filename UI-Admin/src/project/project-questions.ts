@@ -22,8 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const i18n = { ...readQuestionsI18n(questionsList), ...readFormI18n(questionForm) };
 
-    // pending section when picker → drawer; cleared after drawer opens
+    // pending context when picker → drawer; cleared after drawer opens
     let pendingSectionId = '';
+    let pendingParentId = '';
+    let pendingChoiceIndex = '';
 
     const TYPE_META: Record<string, { label: string; iconBg: string; iconText: string; svg: string }> = {
         MultipleChoice: { label: i18n.formatMCQ,    iconBg: 'bg-primary/15',   iconText: 'text-primary',   svg: 'M9 12l2 2 4-4M5 8h14M5 16h10' },
@@ -69,6 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
             if (sectionSelect) sectionSelect.value = sectionId;
         }
+        const parentInput = document.getElementById('ParentQuestionId') as HTMLInputElement | null;
+        const choiceInput = document.getElementById('ChoiceIndex') as HTMLInputElement | null;
+        if (parentInput) parentInput.value = pendingParentId;
+        if (choiceInput) choiceInput.value = pendingChoiceIndex;
         modal?.classList.add('modal-open');
     }
 
@@ -91,6 +97,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sectionSelect) sectionSelect.value = '';
         const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
         if (qIdInput) qIdInput.value = '';
+        const parentInput = document.getElementById('ParentQuestionId') as HTMLInputElement | null;
+        if (parentInput) parentInput.value = '';
+        const choiceInput = document.getElementById('ChoiceIndex') as HTMLInputElement | null;
+        if (choiceInput) choiceInput.value = '';
         const mandatoryCb = document.getElementById('IsMandatory-cb') as HTMLInputElement | null;
         if (mandatoryCb) mandatoryCb.checked = true;
         if (questionForm) questionForm.action = createUrl;
@@ -179,18 +189,39 @@ document.addEventListener('DOMContentLoaded', () => {
         list.appendChild(row);
     }
 
-    addQuestionBtn?.addEventListener('click', () => openTypePicker());
+    addQuestionBtn?.addEventListener('click', () => {
+        pendingParentId = '';
+        pendingChoiceIndex = '';
+        openTypePicker();
+    });
 
     // Dashed add button rendered inside #questions-list by questionnaire-tree
     questionsList?.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLElement>('.open-add-modal');
-        if (btn) openTypePicker();
+        if (btn) {
+            pendingParentId = '';
+            pendingChoiceIndex = '';
+            openTypePicker();
+        }
     });
 
     // Section-scoped add button in section headers / empty-state buttons
     questionsList?.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLElement>('.add-in-section-btn');
-        if (btn) openTypePicker(btn.dataset.sectionId ?? '');
+        if (btn) {
+            pendingParentId = '';
+            pendingChoiceIndex = '';
+            openTypePicker(btn.dataset.sectionId ?? '');
+        }
+    });
+
+    // Sub-question add button (inside answer-group drop zones)
+    questionsList?.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('.add-sub-question-btn');
+        if (!btn) return;
+        pendingParentId = btn.dataset.parentId ?? '';
+        pendingChoiceIndex = btn.dataset.parentChoiceIndex ?? '';
+        openTypePicker();
     });
 
     // Type picker tile → opens drawer with chosen type + pending section
@@ -220,18 +251,17 @@ document.addEventListener('DOMContentLoaded', () => {
         textError?.classList.add('hidden');
     });
 
-    questionForm?.addEventListener('submit', (e: SubmitEvent) => {
+    questionForm?.addEventListener('submit', async (e: SubmitEvent) => {
+        e.preventDefault();
         let valid = true;
 
         // Validate question text
         const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
         if (!textArea?.value.trim()) {
-            e.preventDefault();
             if (textError) textError.textContent = i18n.fieldRequired;
             textError?.classList.remove('hidden');
             valid = false;
         } else if ((textArea?.value.trim().length ?? 0) > 500) {
-            e.preventDefault();
             if (textError) textError.textContent = i18n.maxQuestionText;
             textError?.classList.remove('hidden');
             valid = false;
@@ -239,20 +269,18 @@ document.addEventListener('DOMContentLoaded', () => {
             textError?.classList.add('hidden');
         }
 
-        // Validate answers for MCQ and SCQ — read before the validation block so both branches see it
+        // Validate answers for MCQ and SCQ
         const currentType = (document.getElementById('QuestionFormat') as HTMLInputElement | null)?.value;
         if (currentType === 'MultipleChoice' || currentType === 'SingleChoice') {
             const answerInputs = Array.from(document.querySelectorAll<HTMLInputElement>('.answer-input'));
 
             if (answerInputs.length < 2) {
-                e.preventDefault();
                 if (answersError) {
                     answersError.textContent = i18n.minTwoAnswers;
                     answersError.classList.remove('hidden');
                 }
                 valid = false;
             } else if (answerInputs.some(a => !a.value.trim())) {
-                e.preventDefault();
                 if (answersError) {
                     answersError.textContent = i18n.allAnswersFilled;
                     answersError.classList.remove('hidden');
@@ -277,6 +305,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 raw.value = '';
             }
+        }
+
+        try {
+            const response = await fetch(questionForm.action, {
+                method: 'POST',
+                body: new FormData(questionForm),
+            });
+            if (response.ok) {
+                closeModal();
+                document.dispatchEvent(new CustomEvent('questions-reload'));
+                toast(i18n.savedToast, 'success');
+            } else {
+                toast(i18n.saveFailedToast, 'error');
+            }
+        } catch {
+            toast(i18n.saveFailedToast, 'error');
         }
     });
 

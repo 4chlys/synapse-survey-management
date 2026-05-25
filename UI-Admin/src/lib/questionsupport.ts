@@ -46,21 +46,6 @@ export async function sendQuestionSupportMessage(
     return res.json() as Promise<QuestionSupportChatResponse>;
 }
 
-export async function updateAiAssistanceMode(projectId: number, mode: string): Promise<void> {
-    const res = await fetchWithTimeout(
-        `/api/admin/projects/${projectId}/questionsupport/mode`,
-        {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': getCsrfToken(),
-            },
-            body: JSON.stringify(mode),
-        },
-    );
-    if (!res.ok) throw new Error(`UpdateMode returned HTTP ${res.status}`);
-}
-
 export class QuestionSupportSession {
     private readonly _projectId: number;
     private readonly _history:   QuestionSupportMessage[] = [];

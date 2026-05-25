@@ -12,7 +12,6 @@ public record AdminProjectDto
     public bool IsAiGeneratedImage { get; init; }
     public string OrganisationLogoUrl { get; init; }
     public string OrganisationWebsiteUrl { get; init; }
-    public string AiAssistance { get; init; }
     public bool RequestContactInfo { get; init; }
     public int IdeaPageSize { get; init; }
     public bool ExtraIdeasReplaceExisting { get; init; }
@@ -24,6 +23,8 @@ public record AdminProjectDto
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
     public ICollection<ProjectTranslationDto> Translations { get; init; } = new List<ProjectTranslationDto>();
+
+    public int LastWizardStep { get; init; }
 
     public string Theme { get; init; }
     public string PrimaryColor { get; init; }

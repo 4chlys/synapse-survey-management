@@ -46,7 +46,7 @@ public class ProjectManager(
         IEnumerable<IntroductionTranslationInput> introductions,
         string defaultLanguageCode,
         IEnumerable<string> supportedLanguageCodes,
-        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        string imageUrl, FormType formType,
         int? minAge, int? maxAge, bool requestContactInfo, int platformId,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
@@ -80,7 +80,6 @@ public class ProjectManager(
             ProjectPlatformId = platformId,
             ImageUrl = imageUrl,
             FormType = formType,
-            AiAssistance = aiAssistance,
             MinAge = minAge,
             MaxAge = maxAge,
             RequestContactInfo = requestContactInfo,
@@ -162,7 +161,7 @@ public class ProjectManager(
         IEnumerable<IntroductionTranslationInput> introductions,
         string defaultLanguageCode,
         IEnumerable<string> supportedLanguageCodes,
-        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        string imageUrl, FormType formType,
         int? minAge, int? maxAge, bool requestContactInfo,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
@@ -220,7 +219,6 @@ public class ProjectManager(
 
         project.ImageUrl = imageUrl;
         project.FormType = formType;
-        project.AiAssistance = aiAssistance;
         project.MinAge = minAge;
         project.MaxAge = maxAge;
         project.RequestContactInfo = requestContactInfo;
@@ -380,11 +378,11 @@ public class ProjectManager(
         await uow.SaveChangesAsync();
     }
 
-    public async Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode)
+    public async Task UpdateLastWizardStepAsync(int projectId, int step)
     {
         var project = await projectRepository.ReadByIdForUpdateAsync(projectId)
             ?? throw new ArgumentException($"Project {projectId} not found.", nameof(projectId));
-        project.AiAssistance = mode;
+        project.LastWizardStep = Math.Clamp(step, 1, 3);
         await uow.SaveChangesAsync();
     }
 
@@ -424,7 +422,6 @@ public class ProjectManager(
             ShortForm = uniqueShortForm,
             ImageUrl = src.ImageUrl,
             FormType = src.FormType,
-            AiAssistance = src.AiAssistance,
             MinAge = src.MinAge,
             MaxAge = src.MaxAge,
             RequestContactInfo = src.RequestContactInfo,

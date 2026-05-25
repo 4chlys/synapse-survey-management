@@ -14,7 +14,6 @@ public record ProjectAdminViewModel
     public string OrganisationLogoUrl { get; init; }
     public int PlatformId { get; init; }
     public string Introduction { get; init; }
-    public string AiAssistance { get; init; } = "ProActive";
     public bool RequestContactInfo { get; init; }
     public int IdeaPageSize { get; init; } = 5;
     public bool ExtraIdeasReplaceExisting { get; init; }
@@ -24,6 +23,8 @@ public record ProjectAdminViewModel
     public bool AllowCrossLanguageIdeas { get; init; }
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
+
+    public int LastWizardStep { get; init; } = 1;
 
     public string Theme { get; init; } = "Default";
     public string PrimaryColor { get; init; }

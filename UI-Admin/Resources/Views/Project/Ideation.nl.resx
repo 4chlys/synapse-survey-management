@@ -15,7 +15,6 @@
   <data name="ExtraBehavior_Append" xml:space="preserve"><value>Aanvullen (toevoegen aan bestaande)</value></data>
   <data name="ExtraBehavior_Replace" xml:space="preserve"><value>Vervangen (bestaande vervangen)</value></data>
   <data name="MaxExtraRequestsLabel" xml:space="preserve"><value>Maximaal aantal keer extra opvragen</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
   <data name="CategoriesHeading" xml:space="preserve"><value>Categorieën</value></data>
   <data name="TableName" xml:space="preserve"><value>Naam</value></data>
   <data name="TableDescription" xml:space="preserve"><value>Beschrijving</value></data>

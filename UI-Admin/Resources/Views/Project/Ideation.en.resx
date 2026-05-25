@@ -15,7 +15,6 @@
   <data name="ExtraBehavior_Append" xml:space="preserve"><value>Append (add to existing)</value></data>
   <data name="ExtraBehavior_Replace" xml:space="preserve"><value>Replace (replace existing)</value></data>
   <data name="MaxExtraRequestsLabel" xml:space="preserve"><value>Maximum number of extra requests</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="CategoriesHeading" xml:space="preserve"><value>Categories</value></data>
   <data name="TableName" xml:space="preserve"><value>Name</value></data>
   <data name="TableDescription" xml:space="preserve"><value>Description</value></data>

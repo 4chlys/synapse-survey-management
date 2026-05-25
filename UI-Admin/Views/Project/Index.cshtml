@@ -20,9 +20,20 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach (var project in Model)
         {
-            var href = project.ProjectState == "Draft"
-                ? Url.Action("Create", new { projectId = project.ProjectId })
-                : Url.Action("Dashboard", new { projectId = project.ProjectId });
+            string href;
+            if (project.ProjectState == "Draft")
+            {
+                href = project.LastWizardStep switch
+                {
+                    2 => Url.Action("Questions", new { projectId = project.ProjectId, isNew = true }),
+                    3 => Url.Action("Ideation", new { projectId = project.ProjectId, isNew = true }),
+                    _ => Url.Action("Create", new { projectId = project.ProjectId, isNew = true })
+                };
+            }
+            else
+            {
+                href = Url.Action("Dashboard", new { projectId = project.ProjectId });
+            }
 
             <div class="card relative bg-base-100 shadow-sm transition-all duration-200 ease-out group
                         hover:-translate-y-0.5 hover:scale-[1.015]

@@ -20,7 +20,7 @@ public interface IProjectManager
         IEnumerable<IntroductionTranslationInput> introductions,
         string defaultLanguageCode,
         IEnumerable<string> supportedLanguageCodes,
-        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        string imageUrl, FormType formType,
         int? minAge, int? maxAge, bool requestContactInfo, int platformId,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
@@ -34,7 +34,7 @@ public interface IProjectManager
         IEnumerable<IntroductionTranslationInput> introductions,
         string defaultLanguageCode,
         IEnumerable<string> supportedLanguageCodes,
-        string imageUrl, FormType formType, AiAssistanceType aiAssistance,
+        string imageUrl, FormType formType,
         int? minAge, int? maxAge, bool requestContactInfo,
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
@@ -51,7 +51,7 @@ public interface IProjectManager
     Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
     Task DeleteProjectAsync(int projectId);
-    Task UpdateAiAssistanceModeAsync(int projectId, AiAssistanceType mode);
+    Task UpdateLastWizardStepAsync(int projectId, int step);
 
     Task<Project> DuplicateProjectAsync(int sourceProjectId,
         IEnumerable<ProjectTranslationInput> translations,

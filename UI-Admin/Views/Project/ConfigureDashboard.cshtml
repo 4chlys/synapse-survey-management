@@ -1,6 +1,7 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
 @model ConfigureDashboardViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
@@ -53,7 +54,7 @@
                 }
                 <div class="card-actions justify-end gap-2 pt-2">
                     <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost btn-sm">@L["CancelButton"]</a>
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>

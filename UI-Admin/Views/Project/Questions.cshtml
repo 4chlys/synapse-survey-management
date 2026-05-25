@@ -5,6 +5,7 @@
 @using System.Text.Json
 @model List<QuestionViewModel>
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_Layout";
@@ -16,8 +17,8 @@
     bool isNew = ViewData["IsNew"] is true;
     if (isNew) ViewData["WizardStep"] = 2;
 }
-<div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start -mt-6 -mr-6">
-<div class="lg:col-span-2 flex flex-col gap-4 pt-6">
+<div class="w-full flex flex-col gap-4">
+<div class="flex flex-col gap-4">
     <div class="mb-2">
         <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
         <p class="text-base-content/50 text-sm mt-1">@L["Subtitle"]</p>
@@ -37,6 +38,7 @@
          data-delete-endpoint="@Url.Action("Delete", "Question")"
          data-ai-assistance="@aiAssistance"
          data-locked="@(isLocked ? "true" : "false")"
+         data-is-new="@(isNew ? "true" : "false")"
          data-i18n-add-question="@L["AddQuestionHeading"]"
          data-i18n-empty-no-questions="@L["EmptyNoQuestions"]"
          data-i18n-empty-section-add="@L["EmptySectionAdd"]"
@@ -67,26 +69,38 @@
 
     <div class="flex justify-between">
         <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["SettingsLink"]</a>
-        @if (!isLocked)
-        {
-            <button type="button" id="questions-next-btn"
-                    class="btn btn-primary btn-sm"
-                    data-question-count="@Model.Count"
-                    data-href="@Url.Action("Ideation", new { projectId, isNew })">@L["NextLink"] →</button>
-        }
-        else
-        {
-            <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">@L["NextLink"] →</a>
-        }
+        <div class="flex gap-2">
+            @if (!isLocked)
+            {
+                <form asp-action="SaveProgress" method="post" class="inline">
+                    <input type="hidden" name="projectId" value="@projectId" />
+                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                    <input type="hidden" name="step" value="2" />
+                    <input type="hidden" name="returnAction" value="Questions" />
+                    <button type="submit" class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
+                </form>
+                <button type="button" id="questions-next-btn"
+                        class="btn btn-primary btn-sm"
+                        data-question-count="@Model.Count"
+                        data-href="@Url.Action("Ideation", new { projectId, isNew })">@L["NextLink"] →</button>
+            }
+            else
+            {
+                <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">@L["NextLink"] →</a>
+            }
+        </div>
     </div>
     <p id="questions-next-error" class="hidden text-error text-xs mt-2 text-right">@L["AddOneQuestionError"]</p>
 </div>
 
-<div id="qs-chat-panel" class="flex flex-col gap-3 sticky top-14 h-[calc(100vh-3.5rem)] self-start">
-    <div class="card bg-base-100 shadow-sm overflow-hidden flex-1 flex flex-col rounded-none border-l border-base-300">
+</div>
+
+@* Floating AI chat bubble + popup — hidden entirely when mode is Never *@
+<div id="qs-chat-panel" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 @(aiAssistance == "Never" ? "hidden" : "")">
+    <div id="qs-chat-popup" class="hidden w-[440px] max-h-[min(600px,75vh)] rounded-2xl bg-base-100 shadow-2xl border border-base-300 flex flex-col overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-3 border-b border-base-300">
-            <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-                <svg class="w-5 h-5 text-primary-content" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-primary-content" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                 </svg>
             </div>
@@ -94,21 +108,19 @@
                 <p class="font-semibold text-sm text-base-content">@L["AiSupportHeading"]</p>
                 <p class="text-xs text-base-content/50">@L["AiSupportSubtitle"]</p>
             </div>
-            <select id="qs-mode-select"
-                    class="select select-bordered select-xs w-auto flex-shrink-0"
-                    data-prev="@aiAssistance">
-                <option value="ProActive"  selected="@(aiAssistance == "ProActive"  ? "selected" : null)">@L["AiMode_ProActive"]</option>
-                <option value="AskFirst"   selected="@(aiAssistance == "AskFirst"   ? "selected" : null)">@L["AiMode_AskFirst"]</option>
-                <option value="Never"      selected="@(aiAssistance == "Never"      ? "selected" : null)">@L["AiMode_Never"]</option>
-            </select>
+            <button id="qs-chat-close" type="button" class="btn btn-ghost btn-xs btn-circle">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
         </div>
 
-        <div class="card-body gap-4 pt-4 flex-1 min-h-0">
+        <div class="flex-1 min-h-0 flex flex-col gap-3 p-4">
             <div id="qs-messages"
                  class="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0">
             </div>
 
-            <div id="qs-input-area" class="flex flex-col gap-2 @(aiAssistance == "Never" ? "hidden" : "")">
+            <div id="qs-input-area" class="flex flex-col gap-2">
                 <textarea id="qs-input"
                           rows="2"
                           class="textarea textarea-bordered textarea-sm w-full resize-none"
@@ -120,7 +132,16 @@
             </div>
         </div>
     </div>
-</div>
+
+    <button id="qs-chat-toggle" type="button"
+            class="w-14 h-14 rounded-full bg-primary text-primary-content shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center">
+        <svg id="qs-chat-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        <svg id="qs-chat-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
 </div>
 
 @* Type picker modal (V3): user picks type tile, then drawer opens *@
@@ -188,7 +209,6 @@
               data-questions-endpoint="@($"/api/admin/projects/{projectId}/questions")"
               data-delete-endpoint="@Url.Action("Delete", "Question")"
               data-project-id="@projectId"
-              data-ai-assistance="@aiAssistance"
               data-i18n-modal-title-create="@L["ModalTitleCreate"]"
               data-i18n-modal-title-edit="@L["ModalTitleEdit"]"
               data-i18n-answer-placeholder="@L["AnswerPlaceholder"]"
@@ -198,11 +218,12 @@
               data-i18n-all-answers-filled="@L["AllAnswersRequired"]"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
-            <input type="hidden" name="aiAssistance" value="@aiAssistance" />
             <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
             <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
             <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
+            <input type="hidden" name="ParentQuestionId" id="ParentQuestionId" value="" />
+            <input type="hidden" name="ChoiceIndex" id="ChoiceIndex" value="" />
 
             <label class="form-control mb-3">
                 <div class="label"><span class="label-text text-xs">@L["QuestionTextLabel"]</span></div>

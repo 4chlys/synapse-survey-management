@@ -111,6 +111,19 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
         await db.SaveChangesAsync();
     }
 
+    public async Task SaveAiAssistanceModeAsync(int platformId, string mode)
+    {
+        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
+            ?? new PlatformSettings { ProjectPlatformId = platformId };
+
+        settings.AiAssistanceMode = mode;
+
+        if (settings.Id == 0)
+            db.PlatformSettings.Add(settings);
+
+        await db.SaveChangesAsync();
+    }
+
     public async Task SaveSelectedAiModelAsync(int platformId, string selectedModelId)
     {
         var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)

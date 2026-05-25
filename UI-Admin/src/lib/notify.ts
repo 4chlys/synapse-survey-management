@@ -5,7 +5,7 @@ function getContainer(): HTMLElement {
     if (!el) {
         el = document.createElement('div');
         el.id = CONTAINER_ID;
-        el.className = 'fixed bottom-4 right-4 flex flex-col gap-2 z-50';
+        el.className = 'fixed top-4 right-4 flex flex-col gap-2 z-50';
         document.body.appendChild(el);
     }
     return el;

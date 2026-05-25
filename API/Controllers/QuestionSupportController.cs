@@ -4,7 +4,6 @@ using SynapseEnqueteManagement.API.DTOs.QuestionSupport;
 using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSupport;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -66,12 +65,5 @@ public class QuestionSupportController(
         var reply = await questionSupportService.ChatAsync(request, platformConfig, projectId, ct);
 
         return Ok(new QuestionSupportChatResponseDto { AssistantMessage = reply.AssistantMessage });
-    }
-
-    [HttpPatch("mode")]
-    public async Task<IActionResult> UpdateMode(int projectId, [FromBody] AiAssistanceType mode)
-    {
-        await projectManager.UpdateAiAssistanceModeAsync(projectId, mode);
-        return NoContent();
     }
 }

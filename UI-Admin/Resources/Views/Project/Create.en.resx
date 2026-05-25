@@ -33,6 +33,9 @@
   <data name="BrowseButton" xml:space="preserve"><value>Browse</value></data>
   <data name="GenerateButton" xml:space="preserve"><value>Generate</value></data>
   <data name="GeneratingText" xml:space="preserve"><value>Generating…</value></data>
+  <data name="DropzonePrimary" xml:space="preserve"><value>Drop an image here</value></data>
+  <data name="DropzoneSecondary" xml:space="preserve"><value>or click to browse</value></data>
+  <data name="DropzoneDropHere" xml:space="preserve"><value>Release to upload</value></data>
   <data name="ContactOptInLabel" xml:space="preserve"><value>Ask participants for contact details</value></data>
   <data name="CrossLanguageLabel" xml:space="preserve"><value>Allow multilingual ideas</value></data>
   <data name="CrossLanguageHint" xml:space="preserve"><value>Allow participants to see and submit ideas in other project languages</value></data>
@@ -52,7 +55,6 @@
   <data name="FormatLabel" xml:space="preserve"><value>Format:</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
-  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="NextButton" xml:space="preserve"><value>Next</value></data>
   <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Style</value></data>
