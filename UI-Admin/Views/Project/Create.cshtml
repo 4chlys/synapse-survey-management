@@ -166,7 +166,8 @@
                             <div class="flex gap-2">
                                 <button type="button" id="browse-btn" class="btn btn-outline btn-sm flex-1">@L["BrowseButton"]</button>
                                 <button type="button" id="generate-btn" class="btn btn-outline btn-sm flex-1"
-                                        data-generating-text="@L["GeneratingText"]">@L["GenerateButton"]</button>
+                                        data-generating-text="@L["GeneratingText"]"
+                                        data-error-text="@L["GenerateErrorText"]">@L["GenerateButton"]</button>
                             </div>
                             <input type="file" id="image-file-input" accept="image/*" class="hidden" />
                         }
@@ -410,53 +411,6 @@
                 </div>
             </div>
 
-            <dialog id="rawdata-modal" class="modal"
-                    data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
-                <div class="modal-box">
-                    <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
-                    <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
-                    <div class="form-control gap-2 mb-4">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
-                            <span class="text-sm">@L["RawData_Questions"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
-                            <span class="text-sm">@L["RawData_Answers"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
-                            <span class="text-sm">@L["RawData_Categories"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
-                            <span class="text-sm">@L["RawData_Ideas"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
-                            <span class="text-sm">@L["RawData_Comments"]</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
-                            <span class="text-sm">@L["RawData_EmojiReactions"]</span>
-                        </label>
-                    </div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-sm font-medium">@L["FormatLabel"]</span>
-                        <select id="rawdata-format" class="select select-bordered select-sm w-40">
-                            <option value="xlsx">Excel (.xlsx)</option>
-                            <option value="csv">CSV (.zip)</option>
-                        </select>
-                    </div>
-                    <div class="modal-action">
-                        <form method="dialog">
-                            <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
-                        </form>
-                        <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
-                    </div>
-                </div>
-                <form method="dialog" class="modal-backdrop"><button>close</button></form>
-            </dialog>
         }
 
         <div class="flex justify-end gap-2 pb-4">
@@ -476,6 +430,59 @@
             }
         </div>
     </form>
+
+    @* Dialog lives outside the main <form> — nested <form method="dialog"> inside a
+       Razor form tag helper causes RZ1034. Position in the DOM doesn't affect showModal(). *@
+    @if (isLocked && Model.ProjectId.HasValue)
+    {
+        <dialog id="rawdata-modal" class="modal"
+                data-export-url="@Url.Action("ExportRawData", new { projectId = Model.ProjectId })">
+            <div class="modal-box">
+                <h3 class="font-bold text-lg mb-4">@L["RawDataModalTitle"]</h3>
+                <p class="text-sm text-base-content/60 mb-3">@L["RawDataIntro"]</p>
+                <div class="form-control gap-2 mb-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="vragen" checked />
+                        <span class="text-sm">@L["RawData_Questions"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="antwoorden" checked />
+                        <span class="text-sm">@L["RawData_Answers"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="categorieen" checked />
+                        <span class="text-sm">@L["RawData_Categories"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="ideeen" checked />
+                        <span class="text-sm">@L["RawData_Ideas"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="comments" checked />
+                        <span class="text-sm">@L["RawData_Comments"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="checkbox checkbox-sm" data-rawdata-table="emojireacties" checked />
+                        <span class="text-sm">@L["RawData_EmojiReactions"]</span>
+                    </label>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-sm font-medium">@L["FormatLabel"]</span>
+                    <select id="rawdata-format" class="select select-bordered select-sm w-40">
+                        <option value="xlsx">Excel (.xlsx)</option>
+                        <option value="csv">CSV (.zip)</option>
+                    </select>
+                </div>
+                <div class="modal-action">
+                    <form method="dialog">
+                        <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                    </form>
+                    <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        </dialog>
+    }
 </div>
 
 @section Scripts {

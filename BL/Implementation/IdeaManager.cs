@@ -165,9 +165,10 @@ public class IdeaManager(
         return oldUrl;
     }
 
-    public Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
-        => ideaRepository.CountByCategoriesAsync(categoryIds);
+    public Task<int> CountVisibleByCategoryAsync(int categoryId, string filterLanguageCode = null)
+        => ideaRepository.CountVisibleByCategoryAsync(categoryId, filterLanguageCode);
 
-    public Task<int> CountByCategoryAsync(int categoryId)
-        => ideaRepository.CountByCategoryAsync(categoryId);
+    public Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null)
+        => ideaRepository.CountVisibleByCategoriesAsync(categoryIds, filterLanguageCode);
+
 }
