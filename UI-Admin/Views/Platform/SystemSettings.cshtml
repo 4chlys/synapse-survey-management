@@ -1,6 +1,7 @@
 @using SynapseEnqueteManagement.BL.Domain.Ai
 @model SynapseEnqueteManagement.UI.Admin.Models.Platform.SystemAiSettingsViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "AiSettings";
@@ -49,7 +50,7 @@
                 }
 
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>

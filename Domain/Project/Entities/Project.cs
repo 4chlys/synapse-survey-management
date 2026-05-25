@@ -31,8 +31,6 @@ public class Project : IHasCreatedAt
     [MaxLength(500)]
     public string ImageUrl { get; set; }
 
-    public AiAssistanceType AiAssistance { get; set; } = AiAssistanceType.ProActive;
-
     public ProjectState ProjectState { get; set; } = ProjectState.Draft;
     public FormType FormType { get; set; } = FormType.VerticalScroll;
 

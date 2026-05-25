@@ -348,8 +348,6 @@
                                 <option value="Chat">@L["InteractionMode_Chat"]</option>
                             </select>
                         </div>
-
-                        <input type="hidden" asp-for="AiAssistance" value="ProActive" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -461,7 +459,7 @@
             @if (!isLocked)
             {
                 <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@L["SaveButton"]</button>
+                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@Shared["Common_Save"]</button>
                 <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
             }
             else

@@ -20,7 +20,7 @@ export function initQuestionSupportChat(pid: number): void {
     if (!ensureRefs()) return;
 
     const questionsListEl = document.getElementById('questions-list');
-    const mode = questionsListEl?.dataset['aiAssistance'] ?? 'Never';
+    const mode = questionsListEl?.dataset['aiAssistance'] ?? 'ProActive';
 
     if (mode === 'Never') return;
 

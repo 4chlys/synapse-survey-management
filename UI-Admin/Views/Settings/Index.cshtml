@@ -1,6 +1,8 @@
 @using SynapseEnqueteManagement.BL.Domain.Ai
+@using AiAssistanceType = SynapseEnqueteManagement.UI.Admin.Models.Enums.AiAssistanceType
 @model SynapseEnqueteManagement.UI.Admin.Models.Settings.PlatformAdminSettingsViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Settings";
@@ -28,7 +30,7 @@
                     <input name="BillingReference" value="@Model.BasicInfo.BillingReference" class="input input-bordered w-full" placeholder="@L["BillingReferencePlaceholder"]" />
                 </label>
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -66,7 +68,7 @@
                         </select>
                     </label>
                     <div class="card-actions justify-end">
-                        <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                        <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                     </div>
                 </form>
             }
@@ -83,22 +85,22 @@
                     @{
                         var currentMode = Model.AiSettings.AiAssistanceMode;
                     }
-                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == "ProActive" ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
-                        <input type="radio" name="aiAssistanceMode" value="ProActive" class="radio radio-primary radio-sm" checked="@(currentMode == "ProActive" ? "checked" : null)" />
+                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == AiAssistanceType.ProActive ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                        <input type="radio" name="aiAssistanceMode" value="@nameof(AiAssistanceType.ProActive)" class="radio radio-primary radio-sm" checked="@(currentMode == AiAssistanceType.ProActive ? "checked" : null)" />
                         <div>
                             <div class="text-sm font-semibold text-base-content">@L["AiMode_ProActive"]</div>
                             <div class="text-xs text-base-content/50">@L["AiMode_ProActive_Desc"]</div>
                         </div>
                     </label>
-                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == "AskFirst" ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
-                        <input type="radio" name="aiAssistanceMode" value="AskFirst" class="radio radio-primary radio-sm" checked="@(currentMode == "AskFirst" ? "checked" : null)" />
+                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == AiAssistanceType.AskFirst ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                        <input type="radio" name="aiAssistanceMode" value="@nameof(AiAssistanceType.AskFirst)" class="radio radio-primary radio-sm" checked="@(currentMode == AiAssistanceType.AskFirst ? "checked" : null)" />
                         <div>
                             <div class="text-sm font-semibold text-base-content">@L["AiMode_AskFirst"]</div>
                             <div class="text-xs text-base-content/50">@L["AiMode_AskFirst_Desc"]</div>
                         </div>
                     </label>
-                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == "Never" ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
-                        <input type="radio" name="aiAssistanceMode" value="Never" class="radio radio-primary radio-sm" checked="@(currentMode == "Never" ? "checked" : null)" />
+                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == AiAssistanceType.Never ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                        <input type="radio" name="aiAssistanceMode" value="@nameof(AiAssistanceType.Never)" class="radio radio-primary radio-sm" checked="@(currentMode == AiAssistanceType.Never ? "checked" : null)" />
                         <div>
                             <div class="text-sm font-semibold text-base-content">@L["AiMode_Never"]</div>
                             <div class="text-xs text-base-content/50">@L["AiMode_Never_Desc"]</div>
@@ -106,7 +108,7 @@
                     </label>
                 </div>
                 <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -149,7 +151,7 @@
                                         <button type="submit" class="btn btn-ghost btn-sm">@L["ResetButton"]</button>
                                     </form>
                                 }
-                                <button type="submit" class="btn btn-warning btn-sm">@L["SaveButton"]</button>
+                                <button type="submit" class="btn btn-warning btn-sm">@Shared["Common_Save"]</button>
                             </div>
                         </form>
                     </div>

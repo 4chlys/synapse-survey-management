@@ -78,7 +78,6 @@ public class ProjectController(
             Introduction = project.Introduction,
             ImageUrl = project.ProjectImage,
             InteractionMode = project.FormType,
-            AiAssistance = project.AiAssistance,
             MinAge = project.MinAge,
             MaxAge = project.MaxAge,
             ContactOptIn = project.RequestContactInfo,
@@ -150,7 +149,7 @@ public class ProjectController(
                 }
                 project = await projectService.UpdateProjectAsync(
                     model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                    model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                    model.ImageUrl, model.InteractionMode, model.MinAge, model.MaxAge,
                     model.ContactOptIn, model.ShortForm,
                     lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
                     model.AllowCrossLanguageIdeas,
@@ -166,7 +165,7 @@ public class ProjectController(
                 }
                 project = await projectService.CreateProjectAsync(
                     model.Name, model.Topic, model.Introduction,
-                    model.ImageUrl, model.InteractionMode, model.AiAssistance,
+                    model.ImageUrl, model.InteractionMode,
                     model.MinAge, model.MaxAge, model.ContactOptIn,
                     platformId: user.ProjectPlatformId.Value,
                     shortForm: model.ShortForm,
@@ -232,17 +231,19 @@ public class ProjectController(
         var platformSettings = user?.ProjectPlatformId is not null
             ? await platformService.GetPlatformSettingsAsync(user.ProjectPlatformId.Value)
             : null;
-        var aiAssistance = platformSettings?.AiAssistanceMode ?? "ProActive";
+        var aiAssistance = Enum.TryParse<AiAssistanceType>(platformSettings?.AiAssistanceMode, out var assistanceMode)
+            ? assistanceMode
+            : AiAssistanceType.ProActive;
 
         if (isNew && project?.ProjectState == "Draft")
-            _ = projectService.UpdateWizardStepAsync(projectId, 2);
+            await projectService.UpdateWizardStepAsync(projectId, 2);
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
         ViewData["PlatformName"]  = project?.OrganisationName ?? "";
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Questions";
-        ViewData["AiAssistance"]  = aiAssistance;
+        ViewData["AiAssistance"]  = aiAssistance.ToString();
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
         ViewData["IsNew"]         = isNew;
@@ -253,6 +254,9 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> SaveProgress(int projectId, bool isNew, int step, string returnAction)
     {
+        if (returnAction != nameof(Questions) && returnAction != nameof(Ideation))
+            return BadRequest();
+
         await projectService.UpdateWizardStepAsync(projectId, step);
         TempData["Success"] = localizer["Common_ProgressSaved"].Value;
         return RedirectToAction(returnAction, new { projectId, isNew });
@@ -301,7 +305,7 @@ public class ProjectController(
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
         if (isNew && project?.ProjectState == "Draft")
-            _ = projectService.UpdateWizardStepAsync(projectId, 3);
+            await projectService.UpdateWizardStepAsync(projectId, 3);
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project?.Name ?? "";
@@ -326,7 +330,7 @@ public class ProjectController(
 
         await projectService.UpdateProjectAsync(
             projectId, project.Name, project.Topic, project.Introduction,
-            project.ProjectImage, project.FormType, project.AiAssistance,
+            project.ProjectImage, project.FormType,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
             project.AllowCrossLanguageIdeas,
