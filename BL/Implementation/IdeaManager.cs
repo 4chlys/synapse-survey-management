@@ -171,9 +171,4 @@ public class IdeaManager(
     public Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null)
         => ideaRepository.CountVisibleByCategoriesAsync(categoryIds, filterLanguageCode);
 
-    public Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
-        => ideaRepository.CountByCategoriesAsync(categoryIds);
-
-    public Task<int> CountByCategoryAsync(int categoryId)
-        => ideaRepository.CountByCategoryAsync(categoryId);
 }

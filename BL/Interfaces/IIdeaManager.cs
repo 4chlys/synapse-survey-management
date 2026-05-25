@@ -17,6 +17,4 @@ public interface IIdeaManager
     Task<string> RemoveIdeaImageAsync(int ideaId, int projectId, CancellationToken ct = default);
     Task<int> CountVisibleByCategoryAsync(int categoryId, string filterLanguageCode = null);
     Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null);
-    Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds);
-    Task<int> CountByCategoryAsync(int categoryId);
 }

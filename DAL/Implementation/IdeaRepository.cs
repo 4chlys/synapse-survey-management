@@ -86,19 +86,6 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
             .ToDictionaryAsync(g => g.Key, g => g.Count());
     }
 
-    public Task<int> CountByCategoryAsync(int categoryId)
-        => Context.Set<Idea>()
-            .CountAsync(i => i.Category.CategoryId == categoryId);
-
-    public async Task<Dictionary<int, int>> CountByCategoriesAsync(IEnumerable<int> categoryIds)
-    {
-        var ids = categoryIds.ToHashSet();
-        return await Context.Set<Idea>()
-            .Where(i => ids.Contains(i.Category.CategoryId))
-            .GroupBy(i => i.Category.CategoryId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count());
-    }
-
     public async Task<IEnumerable<Idea>> ReadVisibleByCategoryWithCommentsReadOnlyAsync(
         int categoryId,
         Func<IQueryable<Idea>, IOrderedQueryable<Idea>> orderBy,

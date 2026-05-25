@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.API.DTOs.SocialMedia;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.AiSocialMedia;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -45,8 +46,7 @@ public class SocialMediaController(
                       ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
                       ?? project.Introduction?.Translations.FirstOrDefault();
 
-        var intro = System.Text.RegularExpressions.Regex
-            .Replace(introTr?.Text ?? "", "<[^>]+>", "");
+        var intro = HtmlHelpers.StripHtml(introTr?.Text ?? "");
 
         var stats = new SocialPostStats(
             project.ViewCount,
@@ -91,12 +91,10 @@ public class SocialMediaController(
         var introTr = project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
                       ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
                       ?? project.Introduction?.Translations.FirstOrDefault();
-        var introText = System.Text.RegularExpressions.Regex.Replace(introTr?.Text ?? "", "<[^>]+>", "");
-
         var result = await imageGenerator.GenerateProjectImageAsync(
             projectTr?.Name ?? "", projectId,
             projectTopic: projectTr?.Topic,
-            introText: introText,
+            introText: introTr?.Text ?? "",
             ct: ct);
         if (!result.IsSuccess)
             return StatusCode(502, new { error = result.ErrorMessage });

@@ -1,7 +1,6 @@
-using System.Net;
-using System.Text.RegularExpressions;
 using Google.Cloud.AIPlatform.V1;
 using Microsoft.Extensions.Logging;
+using SynapseEnqueteManagement.BL.Helpers;
 
 namespace SynapseEnqueteManagement.BL.AiImageGeneration;
 
@@ -11,12 +10,6 @@ public sealed class AiImageGenerationService(
     AiImageGenerationConfig config,
     ILogger<AiImageGenerationService> logger) : IAiImageGenerationService
 {
-    // Strip HTML tags, decode entities (&amp; → &, &lt; → <, etc.), and collapse whitespace
-    // for use in a text prompt. Quill emits entities for special characters, so decoding
-    // must happen after tag removal to avoid re-introducing markup.
-    private static string StripHtml(string html) =>
-        WebUtility.HtmlDecode(Regex.Replace(Regex.Replace(html, "<[^>]+>", " "), @"\s{2,}", " ").Trim());
-
     public async Task<ImageGenerationResult> GenerateProjectImageAsync(
         string projectName,
         int projectId,
@@ -33,7 +26,7 @@ public sealed class AiImageGenerationService(
                 contextParts.Add($" Het gaat specifiek over: \"{projectTopic.Trim()}\".");
             if (!string.IsNullOrWhiteSpace(introText))
             {
-                var stripped = StripHtml(introText);
+                var stripped = HtmlHelpers.StripHtml(introText);
                 if (stripped.Length > 300)
                     stripped = stripped[..300].TrimEnd() + "…";
                 if (!string.IsNullOrWhiteSpace(stripped))
