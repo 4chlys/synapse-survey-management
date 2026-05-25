@@ -277,13 +277,13 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                  data-parent-id="${q.parentQuestionId ?? ''}"
                  data-parent-choice-index="${q.choiceIndex ?? ''}"
                  data-position="${q.position}">
-                <div class="flex items-center gap-2 px-4 py-3 transition-colors">
+                <div class="flex items-center gap-2 px-4 py-3 transition-colors cursor-pointer">
                     ${grip}
                     ${formatIconHtml(q.questionFormat)}
                     <button type="button"
-                            class="question-toggle flex-1 text-left min-w-0"
+                            class="question-toggle flex-1 text-left min-w-0 cursor-pointer"
                             data-question-id="${q.questionId}">
-                        <div class="min-w-0">
+                        <div class="min-w-0 pointer-events-none">
                             <p class="text-sm font-medium text-base-content leading-snug">${escapeHtml(q.text)}</p>
                             <div class="flex gap-1 mt-1 flex-wrap items-center">
                                 <span class="badge badge-sm ${escapeHtml(cfg.badge)} font-normal">${escapeHtml(formatLabel)}</span>
@@ -293,8 +293,8 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                             </div>
                         </div>
                     </button>
-                    <span id="arrow-${q.questionId}" class="text-base-content/60 text-xs flex-shrink-0">${canBranch ? 'v' : ''}</span>
-                    <span class="text-base-content/60 text-xs tabular-nums flex-shrink-0">${numDisplay}</span>
+                    <span id="arrow-${q.questionId}" class="text-base-content/60 text-xs flex-shrink-0 pointer-events-none">${canBranch ? 'v' : ''}</span>
+                    <span class="text-base-content/60 text-xs tabular-nums flex-shrink-0 pointer-events-none">${numDisplay}</span>
                     ${statsBtn}
                     ${editBtn}
                     ${deleteBtn}

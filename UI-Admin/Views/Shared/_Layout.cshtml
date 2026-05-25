@@ -102,6 +102,7 @@
         Shared["Nav_Categories"].Value,
         Shared["Nav_Launch"].Value
     } : null;
+    var wizardStepActions = new[] { "Create", "Questions", "Ideation", "Activate" };
 
     var platformId = ViewData["PlatformId"] as int?;
 
@@ -431,13 +432,19 @@
                                     var _num    = _s + 1;
                                     var _done   = _num < wizardStep.Value;
                                     var _active = _num == wizardStep.Value;
+                                    var _clickable = _done || _active;
+                                    var _href = _clickable && projectId.HasValue
+                                        ? Url.Action(wizardStepActions[_s], "Project", _s < 3
+                                            ? new { projectId = projectId.Value, isNew = true }
+                                            : (object)new { projectId = projectId.Value })
+                                        : null;
 
                                     if (_s > 0)
                                     {
                                         <div class="flex-1 h-px mx-3 @(_done ? "bg-primary" : "bg-base-300")"></div>
                                     }
-
-                                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <a href="@(_href ?? "javascript:void(0)")"
+                                       class="flex items-center gap-1.5 flex-shrink-0 no-underline @(_clickable ? "cursor-pointer" : "cursor-default pointer-events-none")">
                                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0
                                             @(_done   ? "bg-primary text-primary-content"
                                             : _active ? "bg-primary text-primary-content ring-2 ring-primary ring-offset-2 ring-offset-base-100"
@@ -457,7 +464,7 @@
                                                       : "text-base-content/30")">
                                             @wizardStepLabels[_s]
                                         </span>
-                                    </div>
+                                    </a>
                                 }
                             </div>
                         </div>
