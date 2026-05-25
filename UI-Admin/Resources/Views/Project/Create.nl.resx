@@ -33,6 +33,7 @@
   <data name="BrowseButton" xml:space="preserve"><value>Bladeren</value></data>
   <data name="GenerateButton" xml:space="preserve"><value>Genereren</value></data>
   <data name="GeneratingText" xml:space="preserve"><value>Genereren…</value></data>
+  <data name="GenerateErrorText" xml:space="preserve"><value>Afbeelding genereren mislukt.</value></data>
   <data name="ContactOptInLabel" xml:space="preserve"><value>Contactgegevens opvragen bij deelnemers</value></data>
   <data name="CrossLanguageLabel" xml:space="preserve"><value>Meertalige ideeën toestaan</value></data>
   <data name="CrossLanguageHint" xml:space="preserve"><value>Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</value></data>

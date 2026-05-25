@@ -131,7 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     intro: intro || null,
                 }),
             });
-            if (!response.ok) return;
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({})) as { error?: string };
+                toast(body.error ?? generateBtn.dataset.errorText ?? '', 'error');
+                return;
+            }
 
             const data = await response.json() as { url: string };
             if (imageUrlInput) imageUrlInput.value = data.url;
@@ -141,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             imagePlaceholder?.classList.add('hidden');
         } catch {
-            // silently fail
+            toast(generateBtn.dataset.errorText ?? '', 'error');
         } finally {
             generateBtn.disabled = false;
             generateBtn.textContent = originalText;
