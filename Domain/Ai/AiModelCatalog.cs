@@ -7,8 +7,8 @@ public sealed record AiModelDefinition(string Id, string DisplayName, AiProvider
 public static class AiModelCatalog
 {
     public static readonly IReadOnlyList<AiModelDefinition> All = [
-        new("gemini-2.0-flash",      "Gemini 2.0 Flash",       AiProvider.VertexAi),
         new("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite",  AiProvider.VertexAi),
+        new("gemini-2.0-flash",      "Gemini 2.0 Flash",       AiProvider.VertexAi),
         new("gemini-2.5-flash",      "Gemini 2.5 Flash",       AiProvider.VertexAi),
         new("gemini-2.5-pro",        "Gemini 2.5 Pro",         AiProvider.VertexAi),
         new("gpt-4o-mini",           "GPT-4o mini",            AiProvider.OpenAi),
