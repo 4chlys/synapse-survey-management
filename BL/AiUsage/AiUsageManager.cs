@@ -83,4 +83,13 @@ public class AiUsageManager(
 
     public Task<IEnumerable<ServiceCostAggregate>> ReadServiceBreakdownByProjectAsync(int projectId, DateTime? from, CancellationToken ct = default)
         => repository.ReadServiceBreakdownByProjectReadOnlyAsync(projectId, from);
+
+    public Task<IEnumerable<ServiceCostAggregate>> ReadServiceBreakdownSystemAsync(int? platformId, DateTime? from, CancellationToken ct = default)
+        => repository.ReadServiceBreakdownSystemReadOnlyAsync(platformId, from);
+
+    public Task<IEnumerable<PlatformServiceCostAggregate>> ReadServiceBreakdownByPlatformAsync(int? platformId, DateTime? from, CancellationToken ct = default)
+        => repository.ReadServiceBreakdownByPlatformReadOnlyAsync(platformId, from);
+
+    public Task<IEnumerable<ProjectServiceCostAggregate>> ReadServiceBreakdownByProjectsAsync(int? platformId, DateTime? from, CancellationToken ct = default)
+        => repository.ReadServiceBreakdownByProjectsReadOnlyAsync(platformId, from);
 }

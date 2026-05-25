@@ -10,4 +10,9 @@
   <data name="EmailPlaceholder" xml:space="preserve"><value>naam@voorbeeld.be</value></data>
   <data name="PasswordLabel" xml:space="preserve"><value>Wachtwoord</value></data>
   <data name="SubmitButton" xml:space="preserve"><value>Inloggen</value></data>
+  <data name="ForgotPasswordLink" xml:space="preserve"><value>Wachtwoord vergeten?</value></data>
+  <data name="ResetSuccessMessage" xml:space="preserve"><value>Wachtwoord succesvol gereset. Je kunt nu inloggen.</value></data>
+  <data name="Heading" xml:space="preserve"><value>Welkom terug</value></data>
+  <data name="Subheading" xml:space="preserve"><value>Log in om je platform en projecten te beheren.</value></data>
+  <data name="TogglePassword" xml:space="preserve"><value>Wachtwoord tonen of verbergen</value></data>
 </root>

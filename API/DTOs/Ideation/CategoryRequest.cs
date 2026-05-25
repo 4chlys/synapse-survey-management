@@ -2,12 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class CreateCategoryDto
+public record CreateCategoryDto
 {
-    [Required] [MinLength(1)] public ICollection<CategoryTranslationDto> Translations { get; set; } = new List<CategoryTranslationDto>();
+    [Required] [MinLength(1)] public ICollection<CategoryTranslationDto> Translations { get; init; } = new List<CategoryTranslationDto>();
 }
 
-public class UpdateCategoryDto
+public record UpdateCategoryDto
 {
-    [Required] [MinLength(1)] public ICollection<CategoryTranslationDto> Translations { get; set; } = new List<CategoryTranslationDto>();
+    [Required] [MinLength(1)] public ICollection<CategoryTranslationDto> Translations { get; init; } = new List<CategoryTranslationDto>();
 }

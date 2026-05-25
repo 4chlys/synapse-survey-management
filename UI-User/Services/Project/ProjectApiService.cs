@@ -29,4 +29,7 @@ public class ProjectApiService : IProjectApiService
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ProjectShortFormLookupViewModel>();
     }
+
+    public Task TrackViewAsync(int projectId)
+        => _httpClient.PostAsync($"api/projects/{projectId}/view", null);
 }

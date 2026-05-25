@@ -264,7 +264,7 @@ function createStatusPanel(
 ) {
     const el = document.createElement('div');
     el.className =
-        'stt-panel z-40 rounded-2xl border border-base-300 bg-base-100 shadow-md ' +
+        'stt-panel z-40 rounded-box border border-base-300 bg-base-100 shadow-md ' +
         'px-3 py-2 flex items-center gap-3 text-xs text-base-content';
     el.setAttribute('role',      'status');
     el.setAttribute('aria-live', 'polite');

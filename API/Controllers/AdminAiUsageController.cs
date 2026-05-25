@@ -48,6 +48,7 @@ public class AdminAiUsageController(IAiUsageManager usageManager) : ControllerBa
             a.Model,
             a.InputTokens,
             a.OutputTokens,
+            a.RequestCount,
             a.CostEur)).ToList());
     }
 }

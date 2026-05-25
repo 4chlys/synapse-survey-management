@@ -93,11 +93,8 @@ public class ResponseManager(
     public Task<IEnumerable<Response>> GetResponsesForParticipantReadOnlyAsync(Participant participant)
         => responseRepository.ReadByParticipantWithQuestionReadOnlyAsync(participant.ParticipantId);
 
-    public async Task RemoveAllAsync(Participant participant, CancellationToken ct = default)
-    {
-        await responseRepository.DeleteAllByParticipantIdAsync(participant.ParticipantId);
-        await uow.SaveChangesAsync(ct);
-    }
+    public Task RemoveAllAsync(Participant participant, CancellationToken ct = default)
+        => uow.ExecuteInTransactionAsync(_ => responseRepository.DeleteAllByParticipantIdAsync(participant.ParticipantId), ct);
 
     public Task<IEnumerable<Response>> GetCommittedResponsesForProjectReadOnlyAsync(int projectId)
         => responseRepository.ReadCommittedByProjectWithQuestionReadOnlyAsync(projectId);

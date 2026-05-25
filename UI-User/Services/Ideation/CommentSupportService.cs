@@ -16,7 +16,8 @@ public sealed class CommentSupportService(HttpClient httpClient, ISessionService
         IEnumerable<CommentSupportMessage> history,
         string userMessage,
         string ideaText,
-        string categoryName)
+        string categoryName,
+        CancellationToken ct = default)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Post,
@@ -32,10 +33,10 @@ public sealed class CommentSupportService(HttpClient httpClient, ISessionService
 
         AddTokenHeader(request, projectId);
 
-        var response = await httpClient.SendAsync(request);
+        var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<CommentSupportChatResponse>()
+        return await response.Content.ReadFromJsonAsync<CommentSupportChatResponse>(ct)
                ?? new CommentSupportChatResponse { AssistantMessage = string.Empty };
     }
 

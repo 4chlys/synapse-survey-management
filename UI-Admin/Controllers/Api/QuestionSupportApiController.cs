@@ -1,17 +1,26 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questionsupport")]
-public class QuestionSupportApiController(QuestionSupportService questionSupportService) : ControllerBase
+public class QuestionSupportApiController(
+    QuestionSupportService questionSupportService,
+    IStringLocalizer<SharedResource> localizer,
+    ILogger<QuestionSupportApiController> logger) : ControllerBase
 {
     [HttpPost("chat")]
     public async Task<ActionResult<QuestionSupportChatResponse>> Chat(
         int projectId,
-        QuestionSupportChatRequest body)
+        QuestionSupportChatRequest body,
+        CancellationToken ct)
     {
         try
         {
@@ -19,14 +28,17 @@ public class QuestionSupportApiController(QuestionSupportService questionSupport
                 projectId,
                 body.History,
                 body.UserMessage,
-                body.IsFirstTurn);
+                body.IsFirstTurn,
+                ct);
             return Ok(result);
         }
-        catch
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "AI QuestionSupport call failed for project {ProjectId}", projectId);
             return Ok(new QuestionSupportChatResponse
             {
-                AssistantMessage = "Sorry, de AI-assistent is even niet beschikbaar.",
+                AssistantMessage = localizer["AiSupport_QuestionFallback"],
             });
         }
     }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models.SpeechToText;
-using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.SpeechToText;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
@@ -18,9 +18,9 @@ namespace SynapseEnqueteManagement.UI.User.Controllers.Api;
 /// </summary>
 [ApiController]
 [Route("{projectId:int}/api/[controller]")]
+[RequireParticipantSession]
 public class SpeechToTextApiController(
-    SpeechToTextService speechToTextService,
-    ISessionService sessionService) : ControllerBase
+    SpeechToTextService speechToTextService) : ControllerBase
 {
     [HttpPost("transcribe")]
     [EnableRateLimiting("ai-stt")]
@@ -28,10 +28,6 @@ public class SpeechToTextApiController(
         int projectId,
         SpeechToTextRequest body)
     {
-        var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return Unauthorized("Participant session required.");
-
         var lang = string.IsNullOrWhiteSpace(body.Language)
             ? System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
             : body.Language;

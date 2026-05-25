@@ -11,7 +11,7 @@
 
     <div class="w-full max-w-xs" data-thank-you-panel>
 
-        <div class="bg-base-100 rounded-2xl border border-base-300 shadow-2xl overflow-hidden relative">
+        <div class="bg-base-100 rounded-box border border-base-300 shadow-2xl overflow-hidden relative">
 
             <button type="button" data-action="close-thank-you"
                     aria-label="@L["CloseLabel"]"
@@ -26,7 +26,7 @@
 
             <div class="px-8 pt-10 pb-8 flex flex-col items-center text-center gap-6">
 
-                <div class="w-20 h-20 rounded-2xl bg-secondary/25 flex items-center justify-center">
+                <div class="w-20 h-20 rounded-box bg-secondary/25 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-11 w-11 text-secondary" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -65,43 +65,3 @@
         }
     </div>
 </div>
-
-<script>
-    (function () {
-        const popup = document.getElementById('thank-you-popup');
-        if (!popup || popup.dataset.bound === '1') return;
-        popup.dataset.bound = '1';
-
-        const open = () => {
-            popup.classList.remove('hidden');
-            popup.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        };
-        const close = () => {
-            popup.classList.add('hidden');
-            popup.classList.remove('flex');
-            document.body.style.overflow = '';
-        };
-
-        document.addEventListener('click', (e) => {
-            const target = e.target;
-            if (!(target instanceof Element)) return;
-            const opener = target.closest('[data-action="show-thank-you"]');
-            if (opener) {
-                e.preventDefault();
-                open();
-                return;
-            }
-            if (target.closest('[data-action="close-thank-you"]')) {
-                e.preventDefault();
-                close();
-                return;
-            }
-            if (target === popup) close();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !popup.classList.contains('hidden')) close();
-        });
-    })();
-</script>

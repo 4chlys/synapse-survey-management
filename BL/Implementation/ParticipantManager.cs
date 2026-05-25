@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -107,4 +108,7 @@ public class ParticipantManager(
         participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
     }
+
+    public Task<IReadOnlyList<ProjectParticipantStats>> GetStatsByProjectsAsync(IEnumerable<int> projectIds)
+        => participantRepository.ReadStatsByProjectsReadOnlyAsync(projectIds);
 }

@@ -56,8 +56,10 @@ public class QuestionSupportController(
             History = dto.History
                 .Select(h => new AiSupportMessage(h.Role, h.Content))
                 .ToList(),
-            UserMessage = dto.UserMessage ?? string.Empty,
-            IsFirstTurn = dto.IsFirstTurn,
+            UserMessage      = dto.UserMessage ?? string.Empty,
+            IsFirstTurn      = dto.IsFirstTurn,
+            ChatLanguage     = lang,
+            QuestionLanguage = defaultLang ?? lang,
         };
 
         var platformConfig = await platformAiConfig.ResolveAsync(project.ProjectPlatformId, ct);

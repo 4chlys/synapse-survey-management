@@ -1,7 +1,10 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.BL.Domain.Ai;
+using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
@@ -13,7 +16,10 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 public class PlatformController(
     PlatformAdminService platformService,
     ProjectAdminService projectService,
-    AiAdminService aiAdminService) : Controller
+    AiAdminService aiAdminService,
+    SystemStatsAdminService systemStatsAdminService,
+    UserManager<ApplicationUser> userManager,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -45,13 +51,14 @@ public class PlatformController(
 
     public async Task<IActionResult> SystemDashboard()
     {
+        var stats = await systemStatsAdminService.GetSystemStatsAsync(null);
         var platforms = await platformService.GetAllPlatformsAsync();
         var allAdmins = await platformService.GetAllAdminsAsync();
 
         var summaries = new List<PlatformSummaryViewModel>();
         foreach (var platform in platforms)
         {
-            var stats = await projectService.GetPlatformStatsAsync(platform.ProjectPlatformId);
+            var platformStats = stats.Platforms.FirstOrDefault(p => p.PlatformId == platform.ProjectPlatformId);
             var settings = await platformService.GetPlatformSettingsAsync(platform.ProjectPlatformId);
             var adminCount = allAdmins.Count(a => a.ProjectPlatformId == platform.ProjectPlatformId);
 
@@ -60,17 +67,51 @@ public class PlatformController(
                 platform.Name,
                 platform.LogoUrl,
                 adminCount,
-                stats.ActiveCount,
-                stats.DraftCount,
-                stats.ArchivedCount,
-                stats.ParticipantCount,
+                platformStats?.ActiveCount ?? 0,
+                platformStats?.DraftCount ?? 0,
+                platformStats?.ArchivedCount ?? 0,
+                platformStats?.ParticipantCount ?? 0,
                 settings?.AiModelName ?? string.Empty,
                 settings?.CostDashboardUrl ?? string.Empty
             ));
         }
 
         ViewData["ActiveSection"] = "Dashboard";
-        return View(new SystemDashboardViewModel(summaries));
+        return View(new SystemDashboardViewModel(summaries)
+        {
+            AvgCompletionSeconds = stats.AvgCompletionSeconds,
+            MedianCompletionSeconds = stats.MedianCompletionSeconds,
+            Projects = stats.Projects.Select(p => new ProjectRowViewModel
+            {
+                ProjectId = p.ProjectId,
+                ProjectName = p.ProjectName,
+                PlatformName = p.PlatformName,
+                State = p.State,
+                ParticipantCount = p.ParticipantCount,
+                AvgCompletionSeconds = p.AvgCompletionSeconds,
+                MedianCompletionSeconds = p.MedianCompletionSeconds
+            }).ToList(),
+            AiUsageBySystem = stats.AiUsageBySystem.Select(a => new ServiceUsageRowViewModel
+            {
+                Service = a.Service,
+                Model = a.Model,
+                InputTokens = a.InputTokens,
+                OutputTokens = a.OutputTokens,
+                RequestCount = a.RequestCount,
+                CostEur = a.CostEur
+            }).ToList(),
+            AiUsageByPlatform = stats.AiUsageByPlatform.Select(a => new PlatformServiceUsageRowViewModel
+            {
+                PlatformId = a.ProjectPlatformId,
+                PlatformName = a.ProjectPlatformName,
+                Service = a.Service,
+                Model = a.Model,
+                InputTokens = a.InputTokens,
+                OutputTokens = a.OutputTokens,
+                RequestCount = a.RequestCount,
+                CostEur = a.CostEur
+            }).ToList()
+        });
     }
 
     public async Task<IActionResult> SystemSettings()
@@ -81,7 +122,7 @@ public class PlatformController(
             : [];
         var availableIds = await aiAdminService.GetAvailableModelIdsAsync();
 
-        ViewData["ActiveSection"] = "AI Instellingen";
+        ViewData["ActiveSection"] = "SystemSettings";
         return View(new SystemAiSettingsViewModel(
             AllModels: AiModelCatalog.All,
             AllowedModelIds: allowedIds,
@@ -94,7 +135,7 @@ public class PlatformController(
     {
         if (AllowedModelIds is null || AllowedModelIds.Count == 0)
         {
-            TempData["Error"] = "Minstens één AI-model moet geselecteerd zijn.";
+            TempData["Error"] = localizer["Platform_AiModelRequired"].Value;
             return RedirectToAction(nameof(SystemSettings));
         }
 
@@ -103,23 +144,32 @@ public class PlatformController(
 
         if (AllowedModelIds.Count == 0)
         {
-            TempData["Error"] = "Minstens één geconfigureerd AI-model moet geselecteerd zijn.";
+            TempData["Error"] = localizer["Platform_AiModelConfiguredRequired"].Value;
             return RedirectToAction(nameof(SystemSettings));
         }
 
         await platformService.SaveSystemAiSettingsAsync(AllowedModelIds);
-        TempData["Success"] = "AI-instellingen opgeslagen.";
+        TempData["Success"] = localizer["Platform_AiSettingsSaved"].Value;
         return RedirectToAction(nameof(SystemSettings));
     }
 
+    [Authorize(Roles = "SystemAdmin,ProjectPlatformAdmin")]
     public async Task<IActionResult> Dashboard(int id)
     {
+        if (!User.IsInRole("SystemAdmin"))
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user?.ProjectPlatformId != id)
+                return Forbid();
+        }
+
         var platform = await platformService.GetPlatformByIdAsync(id);
         if (platform is null) return NotFound();
 
         var admins = await platformService.GetAdminsForPlatformAsync(id);
         var stats = await projectService.GetPlatformStatsAsync(id);
         var settings = await platformService.GetPlatformSettingsAsync(id);
+        var systemStats = await systemStatsAdminService.GetSystemStatsAsync(id);
 
         ViewData["PlatformId"] = id;
         ViewData["PlatformName"] = platform.Name;
@@ -138,52 +188,19 @@ public class PlatformController(
             stats.ParticipantCount,
             settings?.AiModelName ?? string.Empty,
             settings?.CostDashboardUrl ?? string.Empty
-        ));
-    }
-
-    public async Task<IActionResult> Admins(int id)
-    {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
-
-        ViewData["PlatformId"] = id;
-        ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Admins";
-
-        return View(await BuildAdminsViewModel(id, platform.Name));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> AddAdmin(int id, AddAdminViewModel model)
-    {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
-
-        ViewData["PlatformId"] = id;
-        ViewData["PlatformName"] = platform.Name;
-        ViewData["ActiveSection"] = "Admins";
-
-        if (!ModelState.IsValid)
-            return View("Admins", await BuildAdminsViewModel(id, platform.Name));
-
-        var result = await platformService.AddAdminAsync(id, model.Email, model.Password);
-        if (!result.Succeeded)
+        )
         {
-            foreach (var error in result.Errors)
-                ModelState.AddModelError(string.Empty, error.Description);
-            return View("Admins", await BuildAdminsViewModel(id, platform.Name));
-        }
-
-        TempData["Success"] = "Beheerder toegevoegd.";
-        return RedirectToAction(nameof(Admins), new { id });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> RemoveAdmin(int id, string userId)
-    {
-        await platformService.RemoveAdminAsync(id, userId);
-        TempData["Success"] = "Beheerder verwijderd.";
-        return RedirectToAction(nameof(Admins), new { id });
+            Projects = systemStats.Projects.Select(p => new ProjectRowViewModel
+            {
+                ProjectId = p.ProjectId,
+                ProjectName = p.ProjectName,
+                PlatformName = p.PlatformName,
+                State = p.State,
+                ParticipantCount = p.ParticipantCount,
+                AvgCompletionSeconds = p.AvgCompletionSeconds,
+                MedianCompletionSeconds = p.MedianCompletionSeconds
+            }).ToList()
+        });
     }
 
     public async Task<IActionResult> Settings(int id)
@@ -216,32 +233,17 @@ public class PlatformController(
             model.LogoUrl ?? string.Empty,
             model.WebsiteUrl ?? string.Empty);
 
-        TempData["Success"] = "Basisinformatie opgeslagen.";
+        TempData["Success"] = localizer["Platform_BasicInfoSaved"].Value;
         return RedirectToAction(nameof(Settings), new { id });
     }
 
     [HttpPost]
     public async Task<IActionResult> SaveConfiguration(int id, PlatformConfigurationViewModel model)
     {
-        model.ProjectPlatformId = id;
+        model = model with { ProjectPlatformId = id };
         await platformService.SavePlatformSettingsAsync(id, model);
-        TempData["Success"] = "Instellingen opgeslagen.";
+        TempData["Success"] = localizer["Platform_SettingsSaved"].Value;
         return RedirectToAction(nameof(Settings), new { id });
-    }
-
-    private async Task<PlatformAdminsViewModel> BuildAdminsViewModel(int id, string platformName)
-    {
-        var admins = await platformService.GetAdminsForPlatformAsync(id);
-        return new PlatformAdminsViewModel(
-            id,
-            platformName,
-            admins.Select(a => new AdminSummaryViewModel
-            {
-                UserId = a.Id,
-                UserName = a.UserName ?? a.Email ?? string.Empty,
-                Email = a.Email ?? string.Empty
-            }).ToList()
-        );
     }
 
     private async Task<PlatformSettingsViewModel> BuildSettingsViewModel(

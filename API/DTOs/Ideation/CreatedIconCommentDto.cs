@@ -1,7 +1,7 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideation;
 
-public class CreatedIconCommentDto
+public record CreatedIconCommentDto
 {
-    public int CommentId { get; set; }
-    public int EmojiId { get; set; }
+    public int CommentId { get; init; }
+    public int EmojiId { get; init; }
 }

@@ -53,8 +53,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         var result = await response.Content.ReadFromJsonAsync<CreateIdeaResultViewModel>();
         if (result is null) return new CreateIdeaResultViewModel { Success = false };
 
-        result.Success = true;
-        return result;
+        return result with { Success = true };
     }
 
     public async Task<List<IdeaViewModel>> GetMyIdeasAsync(int projectId, int categoryId)
@@ -87,18 +86,18 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         return paged?.Items ?? new List<CommentViewModel>();
     }
 
-    private class ApiPagedResult<T>
+    private record ApiPagedResult<T>
     {
-        public List<T> Items { get; set; } = new();
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalCount { get; set; }
-        public int TotalPages { get; set; }
+        public List<T> Items { get; init; } = new();
+        public int Page { get; init; }
+        public int PageSize { get; init; }
+        public int TotalCount { get; init; }
+        public int TotalPages { get; init; }
     }
 
-    private class ApiIndexResponse : ApiPagedResult<IdeaViewModel>
+    private record ApiIndexResponse : ApiPagedResult<IdeaViewModel>
     {
-        public string ResolvedSort { get; set; }
-        public bool HasOwnIdeas { get; set; }
+        public string ResolvedSort { get; init; }
+        public bool HasOwnIdeas { get; init; }
     }
 }

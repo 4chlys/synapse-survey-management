@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.API.DTOs.QuestionSupport;
 
-public sealed class QuestionSupportChatResponseDto
+public sealed record QuestionSupportChatResponseDto
 {
-    public string AssistantMessage { get; set; } = string.Empty;
+    public string AssistantMessage { get; init; } = string.Empty;
 }

@@ -2,18 +2,18 @@ using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
-public class PlatformDetailViewModel
+public record PlatformDetailViewModel
 {
-    public int ProjectPlatformId { get; set; }
-    public string Name { get; set; }
-    public string LogoUrl { get; set; }
-    public string WebsiteUrl { get; set; }
-    public List<AdminSummaryViewModel> Admins { get; set; }
+    public int ProjectPlatformId { get; init; }
+    public string Name { get; init; }
+    public string LogoUrl { get; init; }
+    public string WebsiteUrl { get; init; }
+    public ICollection<AdminSummaryViewModel> Admins { get; init; }
 }
 
-public class AdminSummaryViewModel
+public record AdminSummaryViewModel
 {
-    public string UserId { get; set; }
-    public string UserName { get; set; }
-    public string Email { get; set; }
+    public string UserId { get; init; }
+    public string UserName { get; init; }
+    public string Email { get; init; }
 }

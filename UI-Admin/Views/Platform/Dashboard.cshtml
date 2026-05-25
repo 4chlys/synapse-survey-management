@@ -5,18 +5,36 @@
     ViewData["Title"] = Model.Name;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
+
+    Func<double, string> FormatSeconds = (seconds) =>
+    {
+        if (seconds <= 0) return "—";
+        var ts = TimeSpan.FromSeconds(seconds);
+        return ts.TotalMinutes >= 1
+            ? $"{(int)ts.TotalMinutes}m {ts.Seconds}s"
+            : $"{ts.Seconds}s";
+    };
 }
 
 <div class="w-full">
     <div class="flex items-center justify-between mb-6">
         <h1 class="font-heading font-bold text-2xl text-base-content">@Model.Name</h1>
-        <a asp-action="Settings" asp-route-id="@Model.ProjectPlatformId"
-           class="btn btn-ghost btn-sm gap-1.5">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
-            </svg>
-            @L["SettingsLink"]
-        </a>
+        <div class="flex items-center gap-2">
+            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+                    onclick="document.getElementById('system-export-modal').showModal()">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                </svg>
+                @L["ExportButton"]
+            </button>
+            <a asp-action="Settings" asp-route-id="@Model.ProjectPlatformId"
+               class="btn btn-ghost btn-sm gap-1.5">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+                </svg>
+                @L["SettingsLink"]
+            </a>
+        </div>
     </div>
 
     @* Platform info card *@
@@ -75,11 +93,46 @@
             <div class="card-body items-center text-center gap-1">
                 <p class="text-3xl font-bold text-base-content">@Model.ParticipantCount</p>
                 <p class="text-sm text-base-content/60">@L["StatParticipants"]</p>
-                <a asp-action="Admins" asp-route-id="@Model.ProjectPlatformId"
+                <a asp-controller="AdminMembership" asp-action="Index" asp-route-id="@Model.ProjectPlatformId"
                    class="btn btn-ghost btn-xs mt-2">@L["AdminsLink"] →</a>
             </div>
         </div>
     </div>
+
+    @* Projects table *@
+    @if (Model.Projects.Count > 0)
+    {
+        <h2 class="font-semibold text-base-content mb-4">@L["ProjectsTableHeading"]</h2>
+        <div class="card bg-base-100 shadow-sm mb-6">
+            <div class="card-body">
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <th>@L["Col_Project"]</th>
+                                <th>@L["Col_State"]</th>
+                                <th class="text-right">@L["Col_Participants"]</th>
+                                <th class="text-right">@L["Col_AvgTime"]</th>
+                                <th class="text-right">@L["Col_MedianTime"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Projects)
+                            {
+                                <tr>
+                                    <td>@row.ProjectName</td>
+                                    <td>@row.State</td>
+                                    <td class="text-right">@row.ParticipantCount</td>
+                                    <td class="text-right">@FormatSeconds(row.AvgCompletionSeconds)</td>
+                                    <td class="text-right">@FormatSeconds(row.MedianCompletionSeconds)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
 
     @* AI model info *@
     @if (!string.IsNullOrEmpty(Model.AiModelName))
@@ -142,4 +195,65 @@
             </div>
         </div>
     }
+
+    @* System stats export modal *@
+    <dialog id="system-export-modal" class="modal"
+            data-export-url="/api/system-stats/export?platformId=@Model.ProjectPlatformId">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">@L["ExportModalTitle"]</h3>
+
+            <p class="text-sm font-medium mb-2">@L["ExportGroupHeading_Stats"]</p>
+            <div class="form-control gap-2 mb-3">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="platforms" checked />
+                    <span class="label-text">@L["Section_Platforms"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="projects" checked />
+                    <span class="label-text">@L["Section_Projects"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="summary" checked />
+                    <span class="label-text">@L["Section_Summary"]</span>
+                </label>
+            </div>
+
+            <p class="text-sm font-medium mb-2">@L["ExportGroupHeading_Ai"]</p>
+            <div class="form-control gap-2 mb-4">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="ai-system" checked />
+                    <span class="label-text">@L["Section_AiSystem"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="ai-platforms" checked />
+                    <span class="label-text">@L["Section_AiPlatforms"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="ai-projects" checked />
+                    <span class="label-text">@L["Section_AiProjects"]</span>
+                </label>
+            </div>
+
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm font-medium">@L["FormatLabel"]</span>
+                <select id="system-export-format" class="select select-bordered select-sm w-40">
+                    <option value="xlsx">Excel (.xlsx)</option>
+                    <option value="csv">CSV (.zip)</option>
+                </select>
+            </div>
+
+            <label class="label cursor-pointer justify-start gap-3 mb-4">
+                <input type="checkbox" class="checkbox checkbox-sm" id="system-export-graphics" data-system-graphics checked />
+                <span class="label-text">@L["IncludeGraphicsLabel"]</span>
+            </label>
+
+            <div class="modal-action">
+                <form method="dialog">
+                    <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                </form>
+                <button type="button" class="btn btn-primary btn-sm" id="system-export-download">@L["ExportButton"]</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
 </div>

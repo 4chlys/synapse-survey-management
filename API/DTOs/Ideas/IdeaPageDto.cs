@@ -1,12 +1,12 @@
 namespace SynapseEnqueteManagement.API.DTOs.Ideas;
 
-public class IdeaPageDto
+public record IdeaPageDto
 {
-    public int TotalCount { get; set; }
-    public int Page { get; set; }
-    public int PageSize { get; set; }
-    public int ApprovedCount { get; set; }
-    public int PendingCount { get; set; }
-    public int FlaggedCount { get; set; }
-    public List<AdminIdeaDto> Items { get; set; } = new();
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int ApprovedCount { get; init; }
+    public int PendingCount { get; init; }
+    public int FlaggedCount { get; init; }
+    public ICollection<AdminIdeaDto> Items { get; init; } = new List<AdminIdeaDto>();
 }

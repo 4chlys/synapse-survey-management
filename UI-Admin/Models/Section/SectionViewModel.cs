@@ -1,8 +1,8 @@
-﻿namespace SynapseEnqueteManagement.UI.Admin.Models.Section;
+namespace SynapseEnqueteManagement.UI.Admin.Models.Section;
 
-public class SectionViewModel
+public record SectionViewModel
 {
-    public int SectionId { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
+    public int SectionId { get; init; }
+    public string Name { get; init; }
+    public string Description { get; init; }
 }

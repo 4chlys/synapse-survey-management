@@ -1,11 +1,11 @@
 namespace SynapseEnqueteManagement.API.DTOs.Dashboard;
 
-public class ProjectDashboardDto
+public record ProjectDashboardDto
 {
-    public int ProjectId { get; set; }
-    public int ViewCount { get; set; }
-    public int CompletionCount { get; set; }
-    public double CompletionRate { get; set; }
-    public List<CategoryMetricDto> TopCategories { get; set; } = new();
-    public List<IdeaMetricDto> TopIdeas { get; set; } = new();
+    public int ProjectId { get; init; }
+    public int ViewCount { get; init; }
+    public int CompletionCount { get; init; }
+    public double CompletionRate { get; init; }
+    public ICollection<CategoryMetricDto> TopCategories { get; init; } = new List<CategoryMetricDto>();
+    public ICollection<IdeaMetricDto> TopIdeas { get; init; } = new List<IdeaMetricDto>();
 }

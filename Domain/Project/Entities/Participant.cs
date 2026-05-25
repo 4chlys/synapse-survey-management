@@ -7,7 +7,7 @@ public class Participant : IHasCreatedAt
 {
     public int ParticipantId { get; set; }
     public DateTime CreatedAt { get; set; }
-    [Required] public Guid SessionToken { get; set; } = Guid.NewGuid();
+    public Guid SessionToken { get; set; } = Guid.NewGuid();
     public bool HasSubmitted { get; set; }
     public DateTime? CompletedAt { get; set; }
     [EmailAddress] [MaxLength(200)] public string Email { get; set; }

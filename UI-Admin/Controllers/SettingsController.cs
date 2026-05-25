@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.UI.Admin.Data;
@@ -16,7 +17,8 @@ public class SettingsController(
     PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager,
     AiConfig aiConfig,
-    AiAdminService aiAdminService) : Controller
+    AiAdminService aiAdminService,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -27,7 +29,7 @@ public class SettingsController(
         var platform   = await platformService.GetPlatformByIdAsync(platformId);
         if (platform is null) return NotFound();
 
-        ViewData["ActiveSection"] = "Instellingen";
+        ViewData["ActiveSection"] = "Settings";
         return View(await BuildViewModel(platformId, platform.Name));
     }
 
@@ -54,7 +56,7 @@ public class SettingsController(
             CostDashboardUrl    = settings?.CostDashboardUrl,
         });
 
-        TempData["Success"] = "Basisinformatie opgeslagen.";
+        TempData["Success"] = localizer["Platform_BasicInfoSaved"].Value;
         return RedirectToAction(nameof(Index));
     }
 
@@ -67,12 +69,12 @@ public class SettingsController(
         var allowedIds = await GetAllowedModelIdsAsync();
         if (!allowedIds.Contains(selectedModelId))
         {
-            TempData["Error"] = "Ongeldig model geselecteerd.";
+            TempData["Error"] = localizer["Settings_InvalidModel"].Value;
             return RedirectToAction(nameof(Index));
         }
 
         await platformService.SaveSelectedAiModelAsync(user.ProjectPlatformId.Value, selectedModelId);
-        TempData["Success"] = "AI-model opgeslagen.";
+        TempData["Success"] = localizer["Settings_AiModelSaved"].Value;
         return RedirectToAction(nameof(Index));
     }
 
@@ -89,18 +91,18 @@ public class SettingsController(
 
         if (!validTypes.Contains(promptType))
         {
-            TempData["Error"] = "Ongeldig prompt-type.";
+            TempData["Error"] = localizer["Settings_InvalidPromptType"].Value;
             return RedirectToAction(nameof(Index));
         }
 
         if (!string.IsNullOrEmpty(value) && value.Length > MaxPromptLength)
         {
-            TempData["Error"] = $"Systeemprompt mag maximaal {MaxPromptLength} tekens bevatten.";
+            TempData["Error"] = string.Format(localizer["Settings_PromptTooLong"].Value, MaxPromptLength);
             return RedirectToAction(nameof(Index));
         }
 
         await platformService.SavePromptOverrideAsync(user.ProjectPlatformId.Value, promptType, value);
-        TempData["Success"] = "Systeemprompt opgeslagen.";
+        TempData["Success"] = localizer["Settings_PromptSaved"].Value;
         return RedirectToAction(nameof(Index));
     }
 
@@ -122,7 +124,7 @@ public class SettingsController(
         if (user?.ProjectPlatformId is null) return Forbid();
 
         await platformService.SavePromptOverrideAsync(user.ProjectPlatformId.Value, promptType, null);
-        TempData["Success"] = "Systeemprompt hersteld naar standaard.";
+        TempData["Success"] = localizer["Settings_PromptReset"].Value;
         return RedirectToAction(nameof(Index));
     }
 
@@ -160,14 +162,14 @@ public class SettingsController(
         );
 
         var prompts = new PlatformAdminPromptsViewModel([
-            new("Moderation",        "Moderatie",               settings?.PromptModeration        ?? Fallback(globalPrompts.Moderation,        aiConfig.Moderation.ModerationPrompt),        settings?.PromptModeration        is not null),
-            new("CommentModeration", "Commentaarmoderatie",     settings?.PromptCommentModeration ?? Fallback(globalPrompts.CommentModeration,  aiConfig.Moderation.CommentModerationPrompt),  settings?.PromptCommentModeration is not null),
-            new("Rewrite",           "Herschrijven",            settings?.PromptRewrite           ?? Fallback(globalPrompts.Rewrite,            aiConfig.Moderation.RewritePrompt),            settings?.PromptRewrite           is not null),
-            new("ImageModeration",   "Beeldmoderatie",          settings?.PromptImageModeration   ?? Fallback(globalPrompts.ImageModeration,    aiConfig.Moderation.ImageModerationPrompt),    settings?.PromptImageModeration   is not null),
-            new("IdeaSupport",       "Ideeondersteuning",       settings?.PromptIdeaSupport       ?? Fallback(globalPrompts.IdeaSupport,        aiConfig.IdeaSupport.SystemPrompt),            settings?.PromptIdeaSupport       is not null),
-            new("CommentSupport",    "Commentaarondersteuning", settings?.PromptCommentSupport    ?? Fallback(globalPrompts.CommentSupport,     aiConfig.CommentSupport.SystemPrompt),         settings?.PromptCommentSupport    is not null),
-            new("QuestionSupport",   "Vraagondersteuning",      settings?.PromptQuestionSupport   ?? Fallback(globalPrompts.QuestionSupport,    aiConfig.QuestionSupport.SystemPrompt),        settings?.PromptQuestionSupport   is not null),
-            new("IdeaSummary",       "Ideeënsamenvatting",      settings?.PromptIdeaSummary       ?? Fallback(globalPrompts.IdeaSummary,        aiConfig.IdeaSummary.SystemPrompt),            settings?.PromptIdeaSummary       is not null),
+            new("Moderation",        localizer["Prompt_Moderation"].Value,        settings?.PromptModeration        ?? Fallback(globalPrompts.Moderation,        aiConfig.Moderation.ModerationPrompt),        settings?.PromptModeration        is not null),
+            new("CommentModeration", localizer["Prompt_CommentModeration"].Value, settings?.PromptCommentModeration ?? Fallback(globalPrompts.CommentModeration,  aiConfig.Moderation.CommentModerationPrompt),  settings?.PromptCommentModeration is not null),
+            new("Rewrite",           localizer["Prompt_Rewrite"].Value,           settings?.PromptRewrite           ?? Fallback(globalPrompts.Rewrite,            aiConfig.Moderation.RewritePrompt),            settings?.PromptRewrite           is not null),
+            new("ImageModeration",   localizer["Prompt_ImageModeration"].Value,   settings?.PromptImageModeration   ?? Fallback(globalPrompts.ImageModeration,    aiConfig.Moderation.ImageModerationPrompt),    settings?.PromptImageModeration   is not null),
+            new("IdeaSupport",       localizer["Prompt_IdeaSupport"].Value,       settings?.PromptIdeaSupport       ?? Fallback(globalPrompts.IdeaSupport,        aiConfig.IdeaSupport.SystemPrompt),            settings?.PromptIdeaSupport       is not null),
+            new("CommentSupport",    localizer["Prompt_CommentSupport"].Value,    settings?.PromptCommentSupport    ?? Fallback(globalPrompts.CommentSupport,     aiConfig.CommentSupport.SystemPrompt),         settings?.PromptCommentSupport    is not null),
+            new("QuestionSupport",   localizer["Prompt_QuestionSupport"].Value,   settings?.PromptQuestionSupport   ?? Fallback(globalPrompts.QuestionSupport,    aiConfig.QuestionSupport.SystemPrompt),        settings?.PromptQuestionSupport   is not null),
+            new("IdeaSummary",       localizer["Prompt_IdeaSummary"].Value,       settings?.PromptIdeaSummary       ?? Fallback(globalPrompts.IdeaSummary,        aiConfig.IdeaSummary.SystemPrompt),            settings?.PromptIdeaSummary       is not null),
         ]);
 
         return new PlatformAdminSettingsViewModel(platformId, platformName, basicInfo, aiSettings, prompts, settings?.IdeaSummaryMaxIdeas ?? 200);

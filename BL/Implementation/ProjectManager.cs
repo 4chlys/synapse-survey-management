@@ -3,6 +3,8 @@ using System.Text.RegularExpressions;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Exceptions;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -49,7 +51,7 @@ public class ProjectManager(
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
         bool allowCrossLanguageIdeas = false,
-        ProjectTheme theme = ProjectTheme.Default,
+        ProjectTheme theme = ProjectTheme.Minimal,
         string primaryColor = null,
         string customCss = null)
     {
@@ -66,9 +68,9 @@ public class ProjectManager(
             : shortForm;
 
         if (!shortFormService.IsValid(candidate))
-            throw new ValidationException($"'{candidate}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
+            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
         if (shortFormService.IsReserved(candidate))
-            throw new ValidationException($"'{candidate}' is a reserved shortform and cannot be used.");
+            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
 
         var unique = await shortFormService.EnsureUniqueAsync(candidate);
 
@@ -117,16 +119,22 @@ public class ProjectManager(
         EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
         if (!string.IsNullOrEmpty(primaryColor) &&
             !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
-            throw new ValidationException(
-                "Invalid color code. Use a hex value (e.g. #FF5733).");
+            throw new LocalizedValidationException("Validation.PrimaryColor.Invalid");
+        if (!string.IsNullOrEmpty(primaryColor))
+        {
+            const string lightBase = "#FFFFFF";
+            const string darkBase = "#1A1430"; // approx of oklch(15% 0.04 278)
+            if (ColorHelpers.ContrastRatio(primaryColor, lightBase) < 3.0
+             || ColorHelpers.ContrastRatio(primaryColor, darkBase) < 3.0)
+                throw new LocalizedValidationException("Validation.PrimaryColor.LowContrast");
+        }
         if (!string.IsNullOrEmpty(customCss) &&
             Regex.IsMatch(customCss,
                 @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
                 RegexOptions.IgnoreCase))
-            throw new ValidationException(
-                "Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).");
+            throw new LocalizedValidationException("Validation.CustomCss.Disallowed");
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
-            throw new ValidationException("MinAge must not be greater than MaxAge.");
+            throw new LocalizedValidationException("Validation.MinAge.GreaterThanMaxAge");
 
         var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
         if (nonEmptyIntros.Count > 0)
@@ -159,7 +167,7 @@ public class ProjectManager(
         string shortForm = null, int ideaPageSize = 5,
         bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3,
         bool allowCrossLanguageIdeas = false,
-        ProjectTheme theme = ProjectTheme.Default,
+        ProjectTheme theme = ProjectTheme.Minimal,
         string primaryColor = null,
         string customCss = null)
     {
@@ -177,11 +185,11 @@ public class ProjectManager(
         if (shortForm != null && shortForm != project.ShortForm)
         {
             if (project.ProjectState != ProjectState.Draft)
-                throw new ValidationException("ShortForm cannot be changed after the project has been published.");
+                throw new LocalizedValidationException("Validation.ShortForm.CannotChangeAfterPublish");
             if (!shortFormService.IsValid(shortForm))
-                throw new ValidationException($"'{shortForm}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
+                throw new LocalizedValidationException("Validation.ShortForm.Invalid", shortForm);
             if (shortFormService.IsReserved(shortForm))
-                throw new ValidationException($"'{shortForm}' is a reserved shortform and cannot be used.");
+                throw new LocalizedValidationException("Validation.ShortForm.Reserved", shortForm);
 
             project.ShortForm = await shortFormService.EnsureUniqueAsync(shortForm, excludeProjectId: projectId);
         }
@@ -193,16 +201,22 @@ public class ProjectManager(
         EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
         if (!string.IsNullOrEmpty(primaryColor) &&
             !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
-            throw new ValidationException(
-                "Invalid color code. Use a hex value (e.g. #FF5733).");
+            throw new LocalizedValidationException("Validation.PrimaryColor.Invalid");
+        if (!string.IsNullOrEmpty(primaryColor))
+        {
+            const string lightBase = "#FFFFFF";
+            const string darkBase = "#1A1430"; // approx of oklch(15% 0.04 278)
+            if (ColorHelpers.ContrastRatio(primaryColor, lightBase) < 3.0
+             || ColorHelpers.ContrastRatio(primaryColor, darkBase) < 3.0)
+                throw new LocalizedValidationException("Validation.PrimaryColor.LowContrast");
+        }
         if (!string.IsNullOrEmpty(customCss) &&
             Regex.IsMatch(customCss,
                 @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
                 RegexOptions.IgnoreCase))
-            throw new ValidationException(
-                "Custom CSS contains disallowed content (scripts, expression(), javascript: urls, @import, or behavior).");
+            throw new LocalizedValidationException("Validation.CustomCss.Disallowed");
         if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
-            throw new ValidationException("MinAge must not be greater than MaxAge.");
+            throw new LocalizedValidationException("Validation.MinAge.GreaterThanMaxAge");
 
         project.ImageUrl = imageUrl;
         project.FormType = formType;
@@ -226,31 +240,33 @@ public class ProjectManager(
             if (!project.SupportedLanguages.Any(l => l.Code == code))
                 project.SupportedLanguages.Add(languages[code]);
 
-        var inputByCode = translationList.ToDictionary(t => t.LanguageCode);
-        foreach (var stale in project.Translations.Where(t => !inputByCode.ContainsKey(t.Language.Code)).ToList())
-            project.Translations.Remove(stale);
-
-        foreach (var input in translationList)
+        void ValidateProjectTranslation(ProjectTranslationInput input)
         {
             EntityValidator.ValidateProperty(new ProjectTranslation(), input.Name, nameof(ProjectTranslation.Name));
             EntityValidator.ValidateProperty(new ProjectTranslation(), input.Topic, nameof(ProjectTranslation.Topic));
+        }
 
-            var existing = project.Translations.FirstOrDefault(t => t.Language.Code == input.LanguageCode);
-            if (existing is null)
+        TranslationUpserter.Upsert(
+            project.Translations,
+            translationList,
+            inputLanguageCode: i => i.LanguageCode,
+            existingLanguageCode: t => t.Language.Code,
+            create: input =>
             {
-                project.Translations.Add(new ProjectTranslation
+                ValidateProjectTranslation(input);
+                return new ProjectTranslation
                 {
                     Language = languages[input.LanguageCode],
                     Name = input.Name,
                     Topic = input.Topic,
-                });
-            }
-            else
+                };
+            },
+            update: (existing, input) =>
             {
+                ValidateProjectTranslation(input);
                 existing.Name = input.Name;
                 existing.Topic = input.Topic;
-            }
-        }
+            });
 
         var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
         if (nonEmptyIntros.Count == 0)
@@ -261,28 +277,25 @@ public class ProjectManager(
         {
             project.Introduction ??= new Introduction();
 
-            var inputByCodes = nonEmptyIntros.ToDictionary(i => i.LanguageCode);
-            foreach (var stale in project.Introduction.Translations
-                         .Where(t => !inputByCodes.ContainsKey(t.Language.Code)).ToList())
-                project.Introduction.Translations.Remove(stale);
-
-            foreach (var introInput in nonEmptyIntros)
-            {
-                EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
-                var existing = project.Introduction.Translations.FirstOrDefault(t => t.Language.Code == introInput.LanguageCode);
-                if (existing is null)
+            TranslationUpserter.Upsert(
+                project.Introduction.Translations,
+                nonEmptyIntros,
+                inputLanguageCode: i => i.LanguageCode,
+                existingLanguageCode: t => t.Language.Code,
+                create: introInput =>
                 {
-                    project.Introduction.Translations.Add(new IntroductionTranslation
+                    EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
+                    return new IntroductionTranslation
                     {
                         Language = languages[introInput.LanguageCode],
                         Text = introInput.Text,
-                    });
-                }
-                else
+                    };
+                },
+                update: (existing, introInput) =>
                 {
+                    EntityValidator.ValidateProperty(new IntroductionTranslation(), introInput.Text, nameof(IntroductionTranslation.Text));
                     existing.Text = introInput.Text;
-                }
-            }
+                });
         }
 
         projectRepository.Update(project);
@@ -297,21 +310,21 @@ public class ProjectManager(
         ICollection<IntroductionTranslationInput> introductions)
     {
         if (string.IsNullOrWhiteSpace(defaultLanguageCode))
-            throw new ValidationException("DefaultLanguageCode is required.");
+            throw new LocalizedValidationException("Validation.Project.DefaultLanguageCodeRequired");
         if (supportedLanguageCodes.Count == 0)
-            throw new ValidationException("At least one supported language is required.");
+            throw new LocalizedValidationException("Validation.Project.AtLeastOneSupportedLanguage");
         if (!supportedLanguageCodes.Contains(defaultLanguageCode))
-            throw new ValidationException("DefaultLanguageCode must be one of the SupportedLanguageCodes.");
+            throw new LocalizedValidationException("Validation.Project.DefaultLanguageMustBeSupported");
 
         var translationCodes = translations.Select(t => t.LanguageCode).ToList();
         if (translationCodes.Distinct().Count() != translationCodes.Count)
-            throw new ValidationException("Translations must contain a single row per language.");
+            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
         if (!supportedLanguageCodes.All(translationCodes.Contains))
-            throw new ValidationException("Every supported language must have a translation row.");
+            throw new LocalizedValidationException("Validation.Project.AllSupportedLanguagesNeedTranslation");
 
         var introByCode = introductions.GroupBy(i => i.LanguageCode).ToList();
         if (introByCode.Any(g => g.Count() > 1))
-            throw new ValidationException("Introductions must contain a single row per language.");
+            throw new LocalizedValidationException("Validation.Project.IntroductionsOneRowPerLanguage");
 
         var allCodes = supportedLanguageCodes
             .Concat(translationCodes)
@@ -320,12 +333,12 @@ public class ProjectManager(
             .ToList();
         var resolved = (await languageRepository.ReadByCodesForUpdateAsync(allCodes)).ToList();
         if (resolved.Any(l => !l.IsActive))
-            throw new ValidationException("Inactive languages cannot be assigned to a project.");
+            throw new LocalizedValidationException("Validation.Project.InactiveLanguageNotAllowed");
 
         var byCode = resolved.ToDictionary(l => l.Code);
         var missing = allCodes.Where(c => !byCode.ContainsKey(c)).ToList();
         if (missing.Count > 0)
-            throw new ValidationException($"Unknown language code(s): {string.Join(", ", missing)}.");
+            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
 
         return byCode;
     }
@@ -359,9 +372,10 @@ public class ProjectManager(
 
     public async Task DeleteProjectAsync(int projectId)
     {
+        // Idempotent: a DELETE on an already-removed project is a no-op, not an error.
+        // Guards against double-submits where the second request would otherwise 500.
         var deleted = await projectRepository.DeleteWithRelationsAsync(projectId);
-        if (!deleted)
-            throw new KeyNotFoundException($"Project {projectId} not found.");
+        if (!deleted) return;
 
         await uow.SaveChangesAsync();
     }
@@ -399,9 +413,9 @@ public class ProjectManager(
             : newShortForm;
 
         if (!shortFormService.IsValid(candidate))
-            throw new ValidationException($"'{candidate}' is not a valid shortform. Use lowercase letters, digits, and single hyphens only.");
+            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
         if (shortFormService.IsReserved(candidate))
-            throw new ValidationException($"'{candidate}' is a reserved shortform and cannot be used.");
+            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
 
         var uniqueShortForm = await shortFormService.EnsureUniqueAsync(candidate);
 
@@ -444,7 +458,7 @@ public class ProjectManager(
         {
             var introCopy = new Introduction();
             foreach (var t in src.Introduction.Translations)
-                introCopy.Translations.Add(new IntroductionTranslation { Language = t.Language, Text = t.Text });
+                introCopy.Translations.Add(new IntroductionTranslation { Language = languages[t.Language.Code], Text = t.Text });
             copy.Introduction = introCopy;
         }
 
@@ -459,7 +473,7 @@ public class ProjectManager(
             {
                 var newSection = new Section();
                 foreach (var t in srcSection.Translations)
-                    newSection.Translations.Add(new SectionTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
+                    newSection.Translations.Add(new SectionTranslation { Language = languages[t.Language.Code], Name = t.Name, Description = t.Description });
                 sectionMap[srcSection.SectionId] = newSection;
                 copy.Questionnaire.Sections.Add(newSection);
             }
@@ -476,12 +490,12 @@ public class ProjectManager(
                     Section = srcQ.Section is not null ? sectionMap[srcQ.Section.SectionId] : null,
                 };
                 foreach (var t in srcQ.Translations)
-                    newQ.Translations.Add(new QuestionTranslation { Language = t.Language, Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
+                    newQ.Translations.Add(new QuestionTranslation { Language = languages[t.Language.Code], Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
                 foreach (var ea in srcQ.EndingAnswers)
                 {
                     var newEa = new EndingAnswer { Question = newQ };
                     foreach (var t in ea.Translations)
-                        newEa.Translations.Add(new EndingAnswerTranslation { Language = t.Language, Value = t.Value });
+                        newEa.Translations.Add(new EndingAnswerTranslation { Language = languages[t.Language.Code], Value = t.Value });
                     newQ.EndingAnswers.Add(newEa);
                 }
                 questionMap[srcQ.QuestionId] = newQ;
@@ -499,7 +513,7 @@ public class ProjectManager(
         {
             var catCopy = new Category();
             foreach (var t in srcCat.Translations)
-                catCopy.Translations.Add(new CategoryTranslation { Language = t.Language, Name = t.Name, Description = t.Description });
+                catCopy.Translations.Add(new CategoryTranslation { Language = languages[t.Language.Code], Name = t.Name, Description = t.Description });
             copy.Categories.Add(catCopy);
         }
 

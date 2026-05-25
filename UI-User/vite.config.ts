@@ -1,15 +1,15 @@
 import { UserConfig, defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
-import fs from 'fs';
-import path from 'path';
+import { readdirSync } from 'fs';
+import { parse, join } from 'path';
 
 export default defineConfig(async () => {
-    const files = fs.readdirSync('./src');
+    const files = readdirSync('./src');
     const inputEntries = files
-        .filter(file => file.endsWith('.ts'))
-        .reduce((acc, file) => {
-            const fileName = path.parse(file).name;
-            acc[fileName] = path.join('./src', file);
+        .filter((file: string) => file.endsWith('.ts'))
+        .reduce((acc: Record<string, string>, file: string) => {
+            const fileName = parse(file).name;
+            acc[fileName] = join('./src', file);
             return acc;
         }, {} as Record<string, string>);
 

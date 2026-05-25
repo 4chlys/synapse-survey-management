@@ -1,6 +1,8 @@
 # Secrets
 vertexai-key.json
 ai-config.json
+cosign.key
+
 
 # Documentatie
 Documentatie/
@@ -497,6 +499,7 @@ CLAUDE.md
 start-up.bat
 stop.bat
 CasperContext/
+seeded-credentials.txt
 
 # manually by Romeo
 start.sh
@@ -515,13 +518,11 @@ UI-*/.vite
 UI-*/wwwroot/dist
 cicd-key.json
 deploy/config.env
+deploy/config.*.env
 .claude/
 
 UI-Admin/.vite
-API/wwwroot/uploads/ideas/
-API/wwwroot/uploads/tmp/
-API/wwwroot/uploads/projects/
-API/wwwroot/uploads/logos
+API/wwwroot/uploads/*
 
 # Git worktrees
 .worktrees/

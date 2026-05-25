@@ -39,30 +39,30 @@ public class DashboardAdminService(HttpClient httpClient)
         };
     }
 
-    // Private DTO classes matching the API response shape
-    private class DashboardApiResponse
+    // Private DTO records matching the API response shape
+    private record DashboardApiResponse
     {
-        public int ProjectId { get; set; }
-        public int ViewCount { get; set; }
-        public int CompletionCount { get; set; }
-        public double CompletionRate { get; set; }
-        public List<CategoryApiDto> TopCategories { get; set; } = new();
-        public List<IdeaApiDto> TopIdeas { get; set; } = new();
+        public int ProjectId { get; init; }
+        public int ViewCount { get; init; }
+        public int CompletionCount { get; init; }
+        public double CompletionRate { get; init; }
+        public List<CategoryApiDto> TopCategories { get; init; } = new();
+        public List<IdeaApiDto> TopIdeas { get; init; } = new();
     }
 
-    private class CategoryApiDto
+    private record CategoryApiDto
     {
-        public int CategoryId { get; set; }
-        public string Name { get; set; }
-        public int IdeaCount { get; set; }
-        public int TotalReactions { get; set; }
+        public int CategoryId { get; init; }
+        public string Name { get; init; }
+        public int IdeaCount { get; init; }
+        public int TotalReactions { get; init; }
     }
 
-    private class IdeaApiDto
+    private record IdeaApiDto
     {
-        public int IdeaId { get; set; }
-        public string Description { get; set; }
-        public int ReactionCount { get; set; }
-        public int CommentCount { get; set; }
+        public int IdeaId { get; init; }
+        public string Description { get; init; }
+        public int ReactionCount { get; init; }
+        public int CommentCount { get; init; }
     }
 }

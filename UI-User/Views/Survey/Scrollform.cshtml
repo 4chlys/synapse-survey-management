@@ -28,23 +28,28 @@
         <div id="survey-progress-bar" class="h-full bg-primary w-0 transition-[width] duration-500 ease-out"></div>
     </div>
 
-    @* form for the survey *@
-    <form id="survey-form" method="post" asp-controller="Survey" asp-action="Submit"
-          asp-route-projectId="@Context.GetRouteValue("projectId")" style="height: var(--slide-h)">
+    @* form for the survey — submit is hijacked by JS in survey/init.ts, which calls the SurveyApi controller *@
+    <form id="survey-form" method="post" style="height: var(--slide-h)">
 
         @if (hasIntro)
         {
             <section class="survey-slide" data-format="Intro">
                 <div class="w-full h-full flex items-center justify-center px-4 py-6">
-                    <div class="survey-card w-full max-w-2xl bg-base-100 rounded-2xl shadow-xl border border-base-300
+                    <div class="survey-card w-full max-w-2xl bg-base-100 rounded-box shadow-xl border border-base-300
                         flex flex-col justify-between p-8 gap-4" style="max-height: calc(var(--slide-h) - 48px)">
 
                         <div class="flex-1 flex flex-col gap-5 overflow-y-auto min-h-0">
                             @if (!string.IsNullOrWhiteSpace(project!.ProjectImage))
                             {
-                                <div class="shrink-0">
+                                <div class="shrink-0 relative">
                                     <img src="@project.ProjectImage" alt=""
-                                         class="rounded-xl max-h-64 w-full object-contain bg-base-200" />
+                                         class="rounded-field max-h-64 w-full object-contain bg-base-200" />
+                                    @if (project.IsAiGeneratedImage)
+                                    {
+                                        <span class="absolute bottom-2 right-2 bg-base-100/80 backdrop-blur-sm text-base-content/60 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-base-300">
+                                            AI
+                                        </span>
+                                    }
                                 </div>
                             }
 
@@ -85,7 +90,7 @@
                 <div class="w-full h-full flex items-center justify-center px-4 py-6">
 
                     @* Floating card *@
-                    <div class="survey-card w-full max-w-2xl bg-base-100 rounded-2xl shadow-xl border border-base-300
+                    <div class="survey-card w-full max-w-2xl bg-base-100 rounded-box shadow-xl border border-base-300
                         flex flex-col justify-between p-8 gap-4" style="max-height: calc(var(--slide-h) - 48px)">
 
                         @* Counter *@
@@ -108,13 +113,13 @@
                                     @if (question.MediaType == QuestionMediaType.Image)
                                     {
                                         <img src="@question.MediaUrl" alt=""
-                                             class="rounded-xl max-h-64 w-full object-contain bg-base-200" />
+                                             class="rounded-field max-h-64 w-full object-contain bg-base-200" />
                                     }
                                     else if (question.MediaType == QuestionMediaType.Video && question.MediaIsEmbed)
                                     {
                                         @if (question.MediaUrl.Contains("youtube.com/embed") || question.MediaUrl.Contains("player.vimeo.com"))
                                         {
-                                            <div class="aspect-video rounded-xl overflow-hidden bg-black">
+                                            <div class="aspect-video rounded-field overflow-hidden bg-black">
                                                 <iframe src="@question.MediaUrl" class="w-full h-full"
                                                         title="Video"
                                                         sandbox="allow-scripts allow-same-origin allow-presentation"
@@ -124,13 +129,13 @@
                                         }
                                         else
                                         {
-                                            <video controls preload="metadata" class="rounded-xl max-h-64 w-full bg-black"
+                                            <video controls preload="metadata" class="rounded-field max-h-64 w-full bg-black"
                                                    src="@question.MediaUrl"></video>
                                         }
                                     }
                                     else if (question.MediaType == QuestionMediaType.Video)
                                     {
-                                        <video controls preload="metadata" class="rounded-xl max-h-64 w-full bg-black"
+                                        <video controls preload="metadata" class="rounded-field max-h-64 w-full bg-black"
                                                src="@question.MediaUrl"></video>
                                     }
                                     else if (question.MediaType == QuestionMediaType.Audio)
@@ -157,7 +162,7 @@
                                 {
                                     foreach (var choice in question.AnswerChoices)
                                     {
-                                        <label class="group flex items-center gap-4 px-6 py-5 rounded-xl border border-base-300 bg-base-100 cursor-pointer transition-all duration-150
+                                        <label class="group flex items-center gap-4 px-6 py-5 rounded-field border border-base-300 bg-base-100 cursor-pointer transition-all duration-150
                                             hover:border-primary/50 hover:bg-primary/5
                                             has-[input:checked]:border-primary has-[input:checked]:bg-primary/15">
                                             <div class="relative shrink-0 w-5 h-5 group">
@@ -185,7 +190,7 @@
                                 {
                                     foreach (var choice in question.AnswerChoices)
                                     {
-                                        <label class="group flex items-center gap-4 px-6 py-5 rounded-xl border border-base-300 bg-base-100 cursor-pointer transition-all duration-150
+                                        <label class="group flex items-center gap-4 px-6 py-5 rounded-field border border-base-300 bg-base-100 cursor-pointer transition-all duration-150
                                             hover:border-primary/50 hover:bg-primary/5
                                             has-[input:checked]:border-primary has-[input:checked]:bg-primary/15">
                                             <div class="relative shrink-0 w-5 h-5 group">
@@ -230,7 +235,7 @@
                                 {
                                     <div>
                                         <textarea id="q_@question.QuestionId" name="q_@question.QuestionId" rows="5" maxlength="500"
-                                                  placeholder="@L["AnswerPlaceholder"]" class="w-full border border-base-300 rounded-xl px-5 py-4 text-[15px] text-base-content bg-base-100
+                                                  placeholder="@L["AnswerPlaceholder"]" class="w-full border border-base-300 rounded-field px-5 py-4 text-[15px] text-base-content bg-base-100
                                         placeholder:text-base-content/35 focus:outline-none focus:border-primary
                                         resize-none transition-colors leading-relaxed"></textarea>
                                         <div class="flex items-center justify-between mt-1.5">
@@ -273,7 +278,7 @@
         @* Submit slide *@
         <section class="survey-slide" data-format="Submit">
             <div class="w-full h-full flex items-center justify-center px-4 py-6">
-                <div class="survey-card w-full max-w-2xl bg-base-100 rounded-2xl shadow-xl border border-base-300
+                <div class="survey-card w-full max-w-2xl bg-base-100 rounded-box shadow-xl border border-base-300
                     flex flex-col items-center justify-center gap-8 p-10">
 
                     <div class="flex flex-col items-center gap-4 text-center">
@@ -282,7 +287,7 @@
                             @L["StepIndicator"]
                             <span class="w-5 h-[2px] rounded bg-primary/40"></span>
                         </div>
-                        <div class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                        <div class="w-20 h-20 rounded-box bg-primary/10 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -298,7 +303,7 @@
                     </div>
 
                     <button type="submit"
-                            class="btn btn-primary w-full max-w-xs rounded-xl font-heading font-semibold py-4 h-auto text-base gap-2">
+                            class="btn btn-primary w-full max-w-xs rounded-field font-heading font-semibold py-4 h-auto text-base gap-2">
                         @L["SubmitAnswers"]
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"
                              stroke="currentColor" stroke-width="2.5">

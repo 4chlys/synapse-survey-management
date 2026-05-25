@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.BL.InputValidation;
 
-public sealed class InputValidationResult
+public sealed record InputValidationResult
 {
     public bool   IsValid { get; init; }
     public string Reason  { get; init; }

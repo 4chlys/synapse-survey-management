@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
+using SynapseEnqueteManagement.UI.Admin.Services;
 using SynapseEnqueteManagement.UI.Admin.Services.Category;
 using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
@@ -18,10 +20,12 @@ using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 [Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
@@ -136,41 +140,64 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
         ProjectAdminViewModel project;
-        if (model.ProjectId.HasValue)
+        try
         {
-            var lockCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
-            if (IsProjectLocked(lockCheck))
+            if (model.ProjectId.HasValue)
             {
-                TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-                return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
+                var lockCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
+                if (IsProjectLocked(lockCheck))
+                {
+                    TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
+                    return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
+                }
+                project = await projectService.UpdateProjectAsync(
+                    model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
+                    model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
+                    model.ContactOptIn, model.ShortForm,
+                    lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
+                    model.AllowCrossLanguageIdeas,
+                    model.Theme, model.PrimaryColor, model.CustomCss,
+                    model.DefaultLanguageCode);
             }
-            project = await projectService.UpdateProjectAsync(
-                model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance, model.MinAge, model.MaxAge,
-                model.ContactOptIn, model.ShortForm,
-                lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
-                model.AllowCrossLanguageIdeas,
-                model.Theme, model.PrimaryColor, model.CustomCss,
-                model.DefaultLanguageCode);
+            else
+            {
+                if (user.ProjectPlatformId is null)
+                {
+                    ModelState.AddModelError(string.Empty, localizer["Project_NoPlatform"]);
+                    return View(model);
+                }
+                project = await projectService.CreateProjectAsync(
+                    model.Name, model.Topic, model.Introduction,
+                    model.ImageUrl, model.InteractionMode, model.AiAssistance,
+                    model.MinAge, model.MaxAge, model.ContactOptIn,
+                    platformId: user.ProjectPlatformId.Value,
+                    shortForm: model.ShortForm,
+                    allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
+                    theme: model.Theme,
+                    primaryColor: model.PrimaryColor,
+                    customCss: model.CustomCss,
+                    languageCode: model.DefaultLanguageCode);
+            }
         }
-        else
+        catch (ApiValidationException ex)
         {
-            if (user.ProjectPlatformId is null)
+            // API rejected the payload (e.g. low-contrast primary color, disallowed
+            // CustomCss). Message is already localised by the API middleware —
+            // show it as an inline error on the likely culprit field AND as a toast.
+            ModelState.AddModelError(nameof(model.PrimaryColor), ex.Message);
+            TempData["Error"] = ex.Message;
+            if (model.ProjectId.HasValue)
             {
-                ModelState.AddModelError(string.Empty, localizer["Project_NoPlatform"]);
-                return View(model);
+                var existingProject = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
+                ViewData["ProjectId"]     = model.ProjectId.Value;
+                ViewData["ProjectName"]   = existingProject?.Name ?? model.Name ?? "";
+                ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
+                ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
-            project = await projectService.CreateProjectAsync(
-                model.Name, model.Topic, model.Introduction,
-                model.ImageUrl, model.InteractionMode, model.AiAssistance,
-                model.MinAge, model.MaxAge, model.ContactOptIn,
-                platformId: user.ProjectPlatformId.Value,
-                shortForm: model.ShortForm,
-                allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
-                theme: model.Theme,
-                primaryColor: model.PrimaryColor,
-                customCss: model.CustomCss,
-                languageCode: model.DefaultLanguageCode);
+            ViewData["ActiveSection"] = "Settings";
+            ViewData["IsNew"]         = wizardActive;
+            ViewData["HideSidebar"]   = wizardActive;
+            return View(model);
         }
 
         // Sync sections: keep existing by name, delete removed, add new
@@ -327,6 +354,25 @@ public class ProjectController(
 
     [HttpPost]
     [IgnoreAntiforgeryToken]
+    [EnableRateLimiting("ai-image-generation")]
+    public async Task<IActionResult> GenerateImage([FromQuery] string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { error = localizer["Project_NameRequired"].Value });
+
+        try
+        {
+            var url = await uploadService.GenerateImageAsync(name);
+            return Ok(new { url });
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(502, new { error = localizer["Project_ImageGenerationFailed"].Value });
+        }
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UploadImage(IFormFile file)
     {
         if (file is null || file.Length == 0)
@@ -339,7 +385,7 @@ public class ProjectController(
         }
         catch (HttpRequestException)
         {
-            return StatusCode(502, new { error = "Uploaden mislukt." });
+            return StatusCode(502, new { error = localizer["Project_UploadFailed"].Value });
         }
     }
 
@@ -361,7 +407,7 @@ public class ProjectController(
             return Forbid();
 
         var source = await projectService.GetProjectByIdAsync(projectId);
-        if (source is null || source.PlatformId != platformId)
+        if (source is null)
         {
             TempData["Error"] = localizer["Project_NotFoundOrNoAccess"].Value;
             return RedirectToAction(nameof(Index));
@@ -388,6 +434,12 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> DeleteProject(int projectId)
     {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState == "Active")
+        {
+            TempData["Error"] = localizer["Project_DeleteActiveBlocked"].Value;
+            return RedirectToAction(nameof(Index));
+        }
         await projectService.DeleteProjectAsync(projectId);
         return RedirectToAction(nameof(Index));
     }
@@ -457,13 +509,17 @@ public class ProjectController(
         if (project is null) return NotFound();
 
         var dashboard = await dashboardService.GetDashboardAsync(projectId, project.Name);
-        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        var slots = await widgetPreferenceService.GetSlotsAsync(user.Id, projectId);
 
-        dashboard.WidgetLayout = layout;
-        dashboard.ApiBaseUrl = $"{Request.Scheme}://{Request.Host}";
         var participantDomain = adminSettings.Value.ParticipantDomain;
         var scheme = participantDomain.StartsWith("localhost") ? "http" : "https";
-        dashboard.SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}";
+        dashboard = dashboard with
+        {
+            WidgetSlots = slots,
+            WidgetLayout = Array.ConvertAll(slots, s => s.WidgetType),
+            ApiBaseUrl = $"{Request.Scheme}://{Request.Host}",
+            SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
+        };
 
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;
@@ -480,9 +536,6 @@ public class ProjectController(
         string status = null,
         int page = 1)
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null) return RedirectToAction("Login", "Auth");
-
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
@@ -510,7 +563,7 @@ public class ProjectController(
             ApprovedCount = approved,
             PendingCount  = pending,
             FlaggedCount  = flagged,
-            PlatformId    = user.ProjectPlatformId ?? 0,
+            PlatformId    = project.PlatformId,
             Ideas         = items,
             Categories    = categories.Select(c => new CategoryOptionViewModel
             {
@@ -524,8 +577,6 @@ public class ProjectController(
 
     public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null) return RedirectToAction("Login", "Auth");
         if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
 
         var normalized = (format ?? "csv").Trim().ToLowerInvariant();
@@ -538,9 +589,6 @@ public class ProjectController(
 
     public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx", string tables = "")
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null) return RedirectToAction("Login", "Auth");
-
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
         if (project.ProjectState is not ("Active" or "Archived"))
@@ -590,7 +638,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        var layout = await widgetPreferenceService.GetLayoutAsync(user.Id, projectId);
+        var slots = await widgetPreferenceService.GetSlotsAsync(user.Id, projectId);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = project.Name;
         ViewData["PlatformName"]  = project.OrganisationName ?? "";
@@ -600,7 +648,8 @@ public class ProjectController(
         {
             ProjectId = projectId,
             ProjectName = project.Name,
-            Layout = layout,
+            Layout = Array.ConvertAll(slots, s => s.WidgetType),
+            Slots = Array.ConvertAll(slots, s => new WidgetSlotInput { WidgetType = s.WidgetType, QuestionId = s.QuestionId }),
             AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
         });
     }
@@ -611,14 +660,20 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var source = model.Layout ?? WidgetPreferenceService.DefaultLayout;
+        var source = model.Slots ?? [];
         var sanitized = Enumerable.Range(0, 9)
-            .Select(i => i < source.Length && WidgetPreferenceService.AllWidgetTypes.Contains(source[i])
-                ? source[i]
-                : WidgetPreferenceService.DefaultLayout[i])
+            .Select(i =>
+            {
+                var input = i < source.Length ? source[i] : null;
+                var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
+                    ? input.WidgetType
+                    : WidgetPreferenceService.DefaultLayout[i];
+                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
+                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
+            })
             .ToArray();
 
-        await widgetPreferenceService.SaveLayoutAsync(user.Id, projectId, sanitized);
+        await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
         var projectForConfigure = await projectService.GetProjectByIdAsync(projectId);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = projectForConfigure?.Name ?? "";
@@ -660,6 +715,16 @@ public class ProjectController(
         if (result is null) return NotFound();
         var (bytes, contentType, fileName) = result.Value;
         return File(bytes, contentType, fileName);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SetWidgetQuestion(int projectId, int position, int? questionId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        await widgetPreferenceService.UpdateSlotQuestionAsync(user.Id, projectId, position, questionId);
+        return Ok();
     }
 
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>

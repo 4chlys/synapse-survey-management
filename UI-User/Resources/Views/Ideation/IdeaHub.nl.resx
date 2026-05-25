@@ -87,4 +87,7 @@
   <data name="CloseNavLabel" xml:space="preserve">
     <value>Afsluiten</value>
   </data>
+  <data name="AiDisclaimer" xml:space="preserve">
+    <value>Ideeën op dit platform zijn mogelijk opgesteld met behulp van AI-ondersteuning.</value>
+  </data>
 </root>

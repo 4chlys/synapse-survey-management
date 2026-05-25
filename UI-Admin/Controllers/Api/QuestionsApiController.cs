@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
@@ -6,6 +8,8 @@ using SynapseEnqueteManagement.UI.Admin.Services.Question;
 namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 
 [ApiController]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questions")]
 public class QuestionsApiController(QuestionAdminService questionService, ProjectAdminService projectService) : ControllerBase
 {
@@ -52,15 +56,10 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
         return NoContent();
     }
 
-    public class MoveRequest
-    {
-        public int? ParentQuestionId { get; set; }
-        public int? ChoiceIndex { get; set; }
-        public int Position { get; set; }
-    }
+    public record MoveRequest(int? ParentQuestionId, int? ChoiceIndex, int Position);
 
-    public class EndingAnswersRequest
+    public record EndingAnswersRequest
     {
-        public ICollection<string> EndingAnswers { get; set; } = new List<string>();
+        public ICollection<string> EndingAnswers { get; init; } = new List<string>();
     }
 }

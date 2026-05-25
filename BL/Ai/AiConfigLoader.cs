@@ -6,6 +6,7 @@ using SynapseEnqueteManagement.BL.AiImageDescription;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSpeechToText;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 namespace SynapseEnqueteManagement.BL.Ai;
 
@@ -144,8 +145,8 @@ public static class AiConfigLoader
         var q = config.QuestionSupport;
         var substitutedQuestionSupport = new AiQuestionSupportConfig
         {
-            SystemPrompt    = Sub(q.SystemPrompt),         // {age_range} substituted per-request
-            ContextPrompt   = Sub(q.ContextPrompt),
+            SystemPrompt    = SubNoLang(q.SystemPrompt),   // {chat_language}/{question_language} substituted per-request
+            ContextPrompt   = SubNoLang(q.ContextPrompt),  // {chat_language}/{question_language} substituted per-request
             FallbackMessage = q.FallbackMessage,
             DefaultAgeRange = p.AgeRange,
         };
@@ -157,17 +158,33 @@ public static class AiConfigLoader
             SystemPrompt = SubNoLang(d.SystemPrompt),
         };
 
+        var sm = config.SocialMedia;
+        PlatformPostConfig SubPlatform(PlatformPostConfig pc) => new()
+        {
+            SystemPrompt       = Sub(pc.SystemPrompt),
+            UserPromptTemplate = Sub(pc.UserPromptTemplate),
+            MaxChars           = pc.MaxChars,
+        };
+        var substitutedSocialMedia = new SocialMediaConfig
+        {
+            LinkedIn        = SubPlatform(sm.LinkedIn),
+            Facebook        = SubPlatform(sm.Facebook),
+            Instagram       = SubPlatform(sm.Instagram),
+            FallbackMessage = sm.FallbackMessage,
+        };
+
         return new AiConfig
         {
-            Platform         = config.Platform,
-            Moderation       = substitutedModeration,
-            IdeaSupport      = substitutedIdeaSupport,
-            CommentSupport   = substitutedCommentSupport,
-            QuestionSupport  = substitutedQuestionSupport,
-            SpeechToText     = substitutedSpeechToText,
+            Platform        = config.Platform,
+            Moderation      = substitutedModeration,
+            IdeaSupport     = substitutedIdeaSupport,
+            CommentSupport  = substitutedCommentSupport,
+            QuestionSupport = substitutedQuestionSupport,
+            SpeechToText    = substitutedSpeechToText,
+            ImageGeneration = config.ImageGeneration,
+            Fuzzy           = config.Fuzzy,
+            SocialMedia     = substitutedSocialMedia,
             ImageDescription = substitutedImageDescription,
-            ImageGeneration  = config.ImageGeneration,
-            Fuzzy            = config.Fuzzy,
         };
     }
 }

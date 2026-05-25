@@ -52,8 +52,7 @@ public class SurveyController(
             else
             {
                 // empty dict = participant exists, just no answers yet — still a valid session
-                model.ExistingResponses = existingResponses;
-                model.HasSession = true;
+                model = model with { ExistingResponses = existingResponses, HasSession = true };
             }
         }
 
@@ -64,16 +63,4 @@ public class SurveyController(
         return View(strategy.GetViewName(), model);
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Submit(int projectId)
-    {
-        var token = sessionService.GetToken(projectId);
-        if (string.IsNullOrWhiteSpace(token))
-            return BadRequest("No session found.");
-
-        await questionnaireService.SubmitAsync(projectId, token);
-
-        return NoContent();
-    }
 }

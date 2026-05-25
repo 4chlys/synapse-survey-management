@@ -1,9 +1,13 @@
-﻿  using Microsoft.AspNetCore.Mvc;
+﻿  using Microsoft.AspNetCore.Authorization;
+  using Microsoft.AspNetCore.Mvc;
+  using SynapseEnqueteManagement.UI.Admin.Filters;
   using SynapseEnqueteManagement.UI.Admin.Models.Section;
   using SynapseEnqueteManagement.UI.Admin.Services.Section;
 
   namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
+  [Authorize(Roles = "ProjectPlatformAdmin")]
+  [RequireProjectPlatformOwnership]
   public class SectionController(SectionAdminService sectionService) : Controller
   {
       public async Task<IActionResult> Index(int projectId)

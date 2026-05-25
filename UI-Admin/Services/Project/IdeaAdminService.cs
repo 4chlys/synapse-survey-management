@@ -4,15 +4,15 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 public class IdeaAdminService(HttpClient httpClient)
 {
-    private class IdeaPageResponse
+    private record IdeaPageResponse
     {
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int ApprovedCount { get; set; }
-        public int PendingCount { get; set; }
-        public int FlaggedCount { get; set; }
-        public List<IdeaRowViewModel> Items { get; set; } = new();
+        public int TotalCount { get; init; }
+        public int Page { get; init; }
+        public int PageSize { get; init; }
+        public int ApprovedCount { get; init; }
+        public int PendingCount { get; init; }
+        public int FlaggedCount { get; init; }
+        public List<IdeaRowViewModel> Items { get; init; } = new();
     }
 
     public async Task<(List<IdeaRowViewModel> Items, int Total, int Approved, int Pending, int Flagged)>

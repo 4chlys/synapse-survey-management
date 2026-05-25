@@ -6,4 +6,5 @@ public interface IProjectApiService
 {
     Task<ProjectViewModel> GetProjectAsync(int projectId);
     Task<ProjectShortFormLookupViewModel> GetByShortFormAsync(string shortForm);
+    Task TrackViewAsync(int projectId);
 }

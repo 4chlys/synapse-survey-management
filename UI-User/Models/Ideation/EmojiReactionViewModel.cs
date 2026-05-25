@@ -1,9 +1,9 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Ideation;
 
-public class EmojiReactionViewModel
+public record EmojiReactionViewModel
 {
-    public int EmojiId { get; set; }
-    public string Symbol { get; set; }
-    public int Count { get; set; }
-    public bool PostedByCurrentUser { get; set; }
+    public int EmojiId { get; init; }
+    public string Symbol { get; init; }
+    public int Count { get; init; }
+    public bool PostedByCurrentUser { get; init; }
 }

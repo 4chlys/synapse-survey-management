@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Project;
 
-public class SaveContactInfoDto
+public record SaveContactInfoDto
 {
     [EmailAddress]
     [MaxLength(200)]
-    public string Email { get; set; }
+    public string Email { get; init; }
 }

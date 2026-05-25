@@ -39,16 +39,10 @@ public class ModerationService(HttpClient httpClient, ISessionService sessionSer
     }
 }
 
-public class ModerationResponse
-{
-    public bool IsAcceptable { get; set; } = true;
-    public string Reason { get; set; }
-    public string FlaggedBy { get; set; }
-    public string ModerationToken { get; set; }
-}
+public record ModerationResponse(
+    bool IsAcceptable = true,
+    string Reason = null,
+    string FlaggedBy = null,
+    string ModerationToken = null);
 
-public class SuggestResponse
-{
-    public string Suggestion { get; set; }
-    public string ModerationToken { get; set; }
-}
+public record SuggestResponse(string Suggestion = null, string ModerationToken = null);

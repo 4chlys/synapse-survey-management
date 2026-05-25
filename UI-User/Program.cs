@@ -220,3 +220,7 @@ app.MapControllerRoute(
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.Run();
+
+// Expose the implicit top-level Program class so WebApplicationFactory<Program>
+// in UI-User.Tests can reference it (top-level statements emit an internal Program).
+public partial class Program;

@@ -1,17 +1,17 @@
 namespace SynapseEnqueteManagement.UI.User.Models.Survey;
 
-public class QuestionViewModel
+public record QuestionViewModel
 {
-    public int QuestionId { get; set; }
-    public string Text { get; set; }
-    public QuestionFormat Format { get; set; }
-    public List<string> AnswerChoices { get; set; }
-    public int QuestionNumber { get; set; }
-    public int TotalQuestions { get; set; }
-    public bool IsMandatory { get; set; }
-    public int Position { get; set; }
-    public string MediaUrl { get; set; }
-    public QuestionMediaType? MediaType { get; set; }
-    public bool MediaIsEmbed { get; set; }
-    public string MediaText { get; set; }
+    public int QuestionId { get; init; }
+    public string Text { get; init; }
+    public QuestionFormat Format { get; init; }
+    public ICollection<string> AnswerChoices { get; init; }
+    public int QuestionNumber { get; init; }
+    public int TotalQuestions { get; init; }
+    public bool IsMandatory { get; init; }
+    public int Position { get; init; }
+    public string MediaUrl { get; init; }
+    public QuestionMediaType? MediaType { get; init; }
+    public bool MediaIsEmbed { get; init; }
+    public string MediaText { get; init; }
 }

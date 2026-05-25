@@ -1,40 +1,40 @@
 namespace SynapseEnqueteManagement.UI.Admin.Models.Project;
 
-public class IdeasViewModel
+public record IdeasViewModel
 {
-    public int ProjectId { get; set; }
-    public string ProjectName { get; set; } = string.Empty;
-    public string Search { get; set; }
-    public int? CategoryId { get; set; }
-    public string Status { get; set; }
-    public int Page { get; set; } = 1;
-    public int TotalCount { get; set; }
-    public int PageSize { get; set; } = 20;
-    public int ApprovedCount { get; set; }
-    public int PendingCount { get; set; }
-    public int FlaggedCount { get; set; }
-    public bool RequestContactInfo { get; set; }
-    public int PlatformId { get; set; }
-    public List<IdeaRowViewModel> Ideas { get; set; } = new();
-    public List<CategoryOptionViewModel> Categories { get; set; } = new();
+    public int ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public string Search { get; init; }
+    public int? CategoryId { get; init; }
+    public string Status { get; init; }
+    public int Page { get; init; } = 1;
+    public int TotalCount { get; init; }
+    public int PageSize { get; init; } = 20;
+    public int ApprovedCount { get; init; }
+    public int PendingCount { get; init; }
+    public int FlaggedCount { get; init; }
+    public bool RequestContactInfo { get; init; }
+    public int PlatformId { get; init; }
+    public ICollection<IdeaRowViewModel> Ideas { get; init; } = new List<IdeaRowViewModel>();
+    public ICollection<CategoryOptionViewModel> Categories { get; init; } = new List<CategoryOptionViewModel>();
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }
 
-public class IdeaRowViewModel
+public record IdeaRowViewModel
 {
-    public int IdeaId { get; set; }
-    public string Description { get; set; } = string.Empty;
-    public string CategoryName { get; set; } = string.Empty;
-    public int CategoryId { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public int ReactionCount { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string ParticipantEmail { get; set; }
-    public string ImageUrl { get; set; }
+    public int IdeaId { get; init; }
+    public string Description { get; init; } = string.Empty;
+    public string CategoryName { get; init; } = string.Empty;
+    public int CategoryId { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public int ReactionCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public string ParticipantEmail { get; init; }
+    public string ImageUrl { get; init; }
 }
 
-public class CategoryOptionViewModel
+public record CategoryOptionViewModel
 {
-    public int CategoryId { get; set; }
-    public string Name { get; set; } = string.Empty;
+    public int CategoryId { get; init; }
+    public string Name { get; init; } = string.Empty;
 }

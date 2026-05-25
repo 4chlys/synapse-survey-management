@@ -104,7 +104,7 @@ public class ProjectManagerTests
         _shortFormService.Setup(s => s.IsReserved("admin")).Returns(true);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "Admin")),
                 NoIntroductions(),
@@ -120,7 +120,7 @@ public class ProjectManagerTests
         _shortFormService.Setup(s => s.IsValid("INVALID FORM")).Returns(false);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "Test")),
                 NoIntroductions(),
@@ -133,7 +133,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_DefaultLanguageNotInSupported_Throws()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "X")),
                 NoIntroductions(),
@@ -147,7 +147,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_MissingTranslationForSupportedLanguage_Throws()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "X")),
                 NoIntroductions(),
@@ -160,13 +160,85 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_UnknownLanguageCode_Throws()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("zz", "X")),
                 NoIntroductions(),
                 "zz", new[] { "zz" },
                 string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
                 null, null, false, platformId: 1));
+    }
+
+    [Theory]
+    [InlineData("#FFEB3B")] // bright yellow — fails contrast against the #FFFFFF light base
+    [InlineData("#000000")] // black — fails contrast against the #1A1430 dark base
+    public async Task CreateProjectAsync_LowContrastPrimaryColor_ThrowsValidationException(string primaryColor)
+    {
+        // Arrange
+        _shortFormService.Setup(s => s.Normalize("Test")).Returns("test");
+        _shortFormService.Setup(s => s.IsValid("test")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("test")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("test", null)).ReturnsAsync("test");
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
+            _manager.CreateProjectAsync(
+                Translations(("nl", "Test")),
+                NoIntroductions(),
+                "nl", new[] { "nl" },
+                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                null, null, false, platformId: 1,
+                primaryColor: primaryColor));
+    }
+
+    [Fact]
+    public async Task CreateProjectAsync_WellContrastedPrimaryColor_Succeeds()
+    {
+        // Arrange — #5C6BC0 (indigo 400) clears 3:1 against both #FFFFFF and the dark base.
+        _shortFormService.Setup(s => s.Normalize("Test")).Returns("test");
+        _shortFormService.Setup(s => s.IsValid("test")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("test")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("test", null)).ReturnsAsync("test");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.CreateProjectAsync(
+            Translations(("nl", "Test")),
+            NoIntroductions(),
+            "nl", new[] { "nl" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, platformId: 1,
+            primaryColor: "#5C6BC0");
+
+        // Assert
+        Assert.Equal("#5C6BC0", result.PrimaryColor);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task CreateProjectAsync_BlankPrimaryColor_Succeeds(string primaryColor)
+    {
+        // Arrange — empty / null means "use the theme default", so the contrast guard is skipped.
+        _shortFormService.Setup(s => s.Normalize("Test")).Returns("test");
+        _shortFormService.Setup(s => s.IsValid("test")).Returns(true);
+        _shortFormService.Setup(s => s.IsReserved("test")).Returns(false);
+        _shortFormService.Setup(s => s.EnsureUniqueAsync("test", null)).ReturnsAsync("test");
+        _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.CreateProjectAsync(
+            Translations(("nl", "Test")),
+            NoIntroductions(),
+            "nl", new[] { "nl" },
+            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            null, null, false, platformId: 1,
+            primaryColor: primaryColor);
+
+        // Assert
+        Assert.Equal(primaryColor, result.PrimaryColor);
     }
 
     #endregion
@@ -226,7 +298,7 @@ public class ProjectManagerTests
             .ReturnsAsync(project);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() =>
+        await Assert.ThrowsAnyAsync<ValidationException>(() =>
             _manager.UpdateProjectAsync(
                 ProjectId,
                 Translations(("nl", "Naam")),

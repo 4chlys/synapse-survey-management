@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Pgvector.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -32,6 +33,8 @@ using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
+using Resend;
+using SynapseEnqueteManagement.BL.AiSocialMedia;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -116,6 +119,7 @@ builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
 builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
+builder.Services.AddScoped<IQuestionStatsRepository, QuestionStatsRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
@@ -162,6 +166,8 @@ else
 }
 
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<IChartImageService, ScottPlotChartImageService>();
+builder.Services.AddScoped<IChartRendererService, XlsxChartRendererService>();
 
 // Registering BL
 var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
@@ -180,6 +186,37 @@ builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
+builder.Services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
+
+// Rate limiting — cap email sends per source so a leaked API key can't be used to
+// blast mail through our Resend account / sender domain.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("admin-email-send", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
+                QueueLimit  = 0,
+            }));
+});
+
+// Email
+var resendApiKey = builder.Configuration["RESEND_API_KEY"];
+var emailFrom = builder.Configuration["EMAIL_FROM"] ?? "noreply@synapse-ip.xyz";
+if (!string.IsNullOrEmpty(resendApiKey))
+{
+    builder.Services.AddResend(options => options.ApiToken = resendApiKey);
+    builder.Services.AddScoped<IEmailService>(sp =>
+        new SynapseEnqueteManagement.BL.Services.ResendEmailService(sp.GetRequiredService<IResend>(), emailFrom));
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, SynapseEnqueteManagement.BL.Services.LogEmailService>();
+}
 
 // AI usage tracking
 builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));
@@ -207,6 +244,7 @@ builder.Services.AddSingleton(aiConfig.Fuzzy);
 builder.Services.AddSingleton(aiConfig.ImageGeneration);
 builder.Services.AddSingleton(aiConfig.ImageDescription);
 builder.Services.AddSingleton(aiConfig.SpeechToText);
+builder.Services.AddSingleton(aiConfig.SocialMedia);
 builder.Services.AddSingleton<BannedWordList>();
 builder.Services.AddSingleton<RegexModerationPatterns>();
 builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
@@ -297,6 +335,7 @@ if (useAi)
     builder.Services.AddScoped<IAiQuestionSupportService, AiQuestionSupportService>();
     builder.Services.AddScoped<IAiSpeechToTextService, AiSpeechToTextService>();
     builder.Services.AddScoped<IAiImageDescriptionService, AiImageDescriptionService>();
+    builder.Services.AddScoped<IAiSocialPostService, AiSocialPostService>();
 
     // Image generation — Imagen uses PredictAsync directly, not IChatClient.
     var imagenModel = aiConfig.ImageGeneration.Model;
@@ -332,6 +371,7 @@ else
     builder.Services.AddScoped<IAiSpeechToTextService, MockSpeechToTextService>();
     builder.Services.AddScoped<IAiImageDescriptionService, MockImageDescriptionService>();
     builder.Services.AddSingleton<IAiImageGenerationService, MockImageGenerationService>();
+    builder.Services.AddSingleton<IAiSocialPostService, MockSocialPostService>();
 }
 
 // CORS — not needed: UI-User calls API server-side via HttpClient, not from the browser.
@@ -356,12 +396,11 @@ var app = builder.Build();
 
         try
         {
-            bool isNewDatabase = context.CreateDatabase(deleteIfExists);
-            if (isNewDatabase)
-            {
-                var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
-                DummyDataSeeder.Seed(context, apiBaseUrl);
-            }
+            if (context.Database.IsNpgsql())
+                context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS vector;");
+            context.CreateDatabase(deleteIfExists);
+            var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+            DummyDataSeeder.Seed(context, apiBaseUrl);
 
             try
             {
@@ -409,6 +448,7 @@ app.UseRequestLocalization();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet("/health", async (SynapseEnqueteContext db) =>
 {

@@ -9,4 +9,56 @@
   <data name="Heading" xml:space="preserve"><value>Dashboard</value></data>
   <data name="ArchiveButton" xml:space="preserve"><value>Archive</value></data>
   <data name="ConfigureButton" xml:space="preserve"><value>Configure widgets</value></data>
+  <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
+  <data name="ExportModalTitle" xml:space="preserve"><value>Export dashboard</value></data>
+  <data name="ExportGroupHeading" xml:space="preserve"><value>Data sections</value></data>
+  <data name="Section_Summary" xml:space="preserve"><value>Stats summary</value></data>
+  <data name="Section_Timeline" xml:space="preserve"><value>Participation timeline</value></data>
+  <data name="Section_Categories" xml:space="preserve"><value>Top categories</value></data>
+  <data name="Section_Ideas" xml:space="preserve"><value>Top ideas</value></data>
+  <data name="FormatLabel" xml:space="preserve"><value>Format</value></data>
+  <data name="IncludeGraphicsLabel" xml:space="preserve"><value>Include charts</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+
+  <data name="Widget_LoadFailed" xml:space="preserve"><value>Loading failed</value></data>
+  <data name="Widget_NoAnswers" xml:space="preserve"><value>No answers yet</value></data>
+  <data name="Widget_NoQuestion" xml:space="preserve"><value>No question selected</value></data>
+  <data name="Widget_XAxisLabel" xml:space="preserve"><value>Responses</value></data>
+
+  <data name="Widget_Stat_ViewCount" xml:space="preserve"><value>Viewed</value></data>
+  <data name="Widget_Stat_CompletionCount" xml:space="preserve"><value>Completed</value></data>
+  <data name="Widget_Stat_CompletionRate" xml:space="preserve"><value>Completion rate</value></data>
+  <data name="Widget_NoIdeas" xml:space="preserve"><value>No ideas yet</value></data>
+  <data name="Widget_IdeaFeed_Title" xml:space="preserve"><value>Newest ideas</value></data>
+  <data name="Widget_TopIdeas_Title" xml:space="preserve"><value>Top ideas</value></data>
+  <data name="Widget_TopCategories_Title" xml:space="preserve"><value>Top categories</value></data>
+  <data name="Widget_Series_Ideas" xml:space="preserve"><value>Ideas</value></data>
+  <data name="Widget_Series_Reactions" xml:space="preserve"><value>Reactions</value></data>
+  <data name="Widget_Timeline_Title" xml:space="preserve"><value>Participation (30 days)</value></data>
+  <data name="Widget_Series_Started" xml:space="preserve"><value>Started</value></data>
+  <data name="Widget_Series_Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Widget_Moderation_Title" xml:space="preserve"><value>Moderation status</value></data>
+  <data name="Widget_Moderation_Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Widget_Moderation_New" xml:space="preserve"><value>New</value></data>
+  <data name="Widget_Moderation_Flagged" xml:space="preserve"><value>Flagged</value></data>
+  <data name="Widget_Moderation_Declined" xml:space="preserve"><value>Declined</value></data>
+
+  <data name="Widget_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Widget_Copied" xml:space="preserve"><value>Copied!</value></data>
+  <data name="Widget_SurveyLink_Title" xml:space="preserve"><value>Survey link</value></data>
+  <data name="Widget_DownloadQr" xml:space="preserve"><value>Download QR</value></data>
+  <data name="Widget_QrAlt" xml:space="preserve"><value>QR code</value></data>
+
+  <data name="Widget_Social_Title" xml:space="preserve"><value>Social media post</value></data>
+  <data name="Widget_Social_DescPlaceholder" xml:space="preserve"><value>Optional: extra context for the AI</value></data>
+  <data name="Widget_Social_AiImage" xml:space="preserve"><value>AI image</value></data>
+  <data name="Widget_Social_Generate" xml:space="preserve"><value>Generate post</value></data>
+  <data name="Widget_Social_Generating" xml:space="preserve"><value>Generating…</value></data>
+  <data name="Widget_Social_CopyText" xml:space="preserve"><value>Copy text</value></data>
+  <data name="Widget_Social_OpenPlatform" xml:space="preserve"><value>Open platform</value></data>
+  <data name="Widget_Social_OpenIn" xml:space="preserve"><value>Open in {0}</value></data>
+  <data name="Widget_Social_CharCount" xml:space="preserve"><value>{0} characters</value></data>
+  <data name="Widget_Social_Note_LinkedIn" xml:space="preserve"><value>The LinkedIn share button opens your project link. Paste the text into the composer manually.</value></data>
+  <data name="Widget_Social_Note_Facebook" xml:space="preserve"><value>The Facebook share button opens with your project link. Paste the text into the composer.</value></data>
+  <data name="Widget_Social_Note_Instagram" xml:space="preserve"><value>Instagram has no web share URL. Copy the text and post manually from your phone.</value></data>
 </root>

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class SubmitSurveyDto
+public record SubmitSurveyDto
 {
-    [Required] public IEnumerable<CreateResponseDto> Answers { get; set; }
+    [Required] public IEnumerable<CreateResponseDto> Answers { get; init; }
 }
