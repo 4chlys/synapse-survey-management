@@ -22,8 +22,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     ContactName = table.Column<string>(type: "TEXT", nullable: true),
                     ContactEmail = table.Column<string>(type: "TEXT", nullable: true),
                     BillingReference = table.Column<string>(type: "TEXT", nullable: true),
-                    AiAssistanceEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
-                    IdeationEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    AiAssistanceEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    IdeationEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     MaxProjects = table.Column<int>(type: "INTEGER", nullable: true),
                     MaxAdmins = table.Column<int>(type: "INTEGER", nullable: true)
                 },
