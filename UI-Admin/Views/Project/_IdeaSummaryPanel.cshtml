@@ -118,10 +118,11 @@
     const statusTxt = document.getElementById('summary-status-text');
     const dlLink    = document.getElementById('summary-download-link');
     const errDiv    = document.getElementById('summary-error');
-    const submitBtn = document.getElementById('summary-submit');
-    const retryBtn  = document.getElementById('summary-retry');
-    const projectId = @Model.ProjectId;
-    const token     = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const submitBtn          = document.getElementById('summary-submit');
+    const retryBtn           = document.getElementById('summary-retry');
+    const triggerBtn         = document.getElementById('summary-trigger-btn');
+    const projectId          = @Model.ProjectId;
+    const token              = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
     const msg = {
         queued:       '@Html.Raw(L["StatusQueued"].Value)',
         processing:   '@Html.Raw(L["StatusProcessing"].Value)',
@@ -130,10 +131,23 @@
         startError:   '@Html.Raw(L["StatusStartError"].Value)',
         unknownError: '@Html.Raw(L["StatusUnknownError"].Value)',
     };
+    const triggerOriginalHtml = triggerBtn?.innerHTML ?? '';
     let pollTimer = null;
+
+    function setTriggerLoading(active) {
+        if (!triggerBtn) return;
+        if (active) {
+            triggerBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span>';
+            triggerBtn.disabled = true;
+        } else {
+            triggerBtn.innerHTML = triggerOriginalHtml;
+            triggerBtn.disabled = false;
+        }
+    }
 
     function resetForm() {
         clearPoll();
+        setTriggerLoading(false);
         statusDiv.classList.add('hidden');
         dlLink.classList.add('hidden');
         errDiv.classList.add('hidden');
@@ -147,7 +161,11 @@
     }
 
     modal?.addEventListener('close', () => {
-        if (!pollTimer) resetForm();
+        if (pollTimer) {
+            setTriggerLoading(true);
+        } else {
+            resetForm();
+        }
     });
     retryBtn.addEventListener('click', resetForm);
 
