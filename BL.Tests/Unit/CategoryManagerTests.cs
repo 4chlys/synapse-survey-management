@@ -6,13 +6,13 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 public class CategoryManagerTests
 {
     private readonly Mock<ICategoryRepository> _categoryRepo = new(MockBehavior.Strict);
-    private readonly Mock<ILanguageRepository> _languageRepo = new(MockBehavior.Strict);
+    private readonly Mock<ILanguageResolver> _languageResolver = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly CategoryManager _manager;
 
     public CategoryManagerTests()
     {
-        _manager = new CategoryManager(_categoryRepo.Object, _languageRepo.Object, _uow.Object);
+        _manager = new CategoryManager(_categoryRepo.Object, _languageResolver.Object, _uow.Object);
     }
 
     [Fact]
@@ -32,8 +32,12 @@ public class CategoryManagerTests
             new CategoryTranslationInput("en", "Campus wellbeing", "Wellbeing at school"),
         };
 
-        _languageRepo.Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(new List<Language> { langNl, langEn })
+        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+            .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language>
+            {
+                ["nl"] = langNl,
+                ["en"] = langEn,
+            })
             .Verifiable(Times.Once());
 
         Category saved = null;
@@ -52,15 +56,16 @@ public class CategoryManagerTests
         Assert.Contains(saved.Translations, t => t.Language.Code == "nl" && t.Name == "Campus welzijn");
         Assert.Contains(saved.Translations, t => t.Language.Code == "en" && t.Name == "Campus wellbeing");
         _categoryRepo.VerifyAll();
-        _languageRepo.VerifyAll();
+        _languageResolver.VerifyAll();
         _uow.VerifyAll();
     }
 
     [Fact]
     public async Task CreateCategoryAsync_MissingLanguageCode_ThrowsValidationException()
     {
-        _languageRepo.Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(new List<Language>())
+        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+            .ThrowsAsync(new SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException(
+                "Validation.Language.UnknownCodes", "xx"))
             .Verifiable(Times.Once());
 
         var project = new Project { ProjectId = 1 };
@@ -69,7 +74,7 @@ public class CategoryManagerTests
         await Assert.ThrowsAnyAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
             _manager.CreateCategoryAsync(project, translations));
 
-        _languageRepo.VerifyAll();
+        _languageResolver.VerifyAll();
     }
 
     [Fact]

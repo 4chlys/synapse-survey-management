@@ -8,14 +8,12 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ParticipantManager(
     IParticipantRepository participantRepository,
-    ILanguageRepository languageRepository,
+    ILanguageResolver languageResolver,
     IUnitOfWork uow) : IParticipantManager
 {
     public async Task<Participant> AddParticipantAsync(Project project, string languageCode, CancellationToken ct = default)
     {
-        var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
-        if (language is null || !language.IsActive)
-            throw new KeyNotFoundException($"Language '{languageCode}' is not a supported active language.");
+        var language = await languageResolver.ResolveSingleAsync(languageCode);
 
         var participant = new Participant
         {
@@ -32,9 +30,7 @@ public class ParticipantManager(
 
     public async Task<Language> SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default)
     {
-        var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
-        if (language is null || !language.IsActive)
-            throw new KeyNotFoundException($"Language '{languageCode}' is not a supported active language.");
+        var language = await languageResolver.ResolveSingleAsync(languageCode);
 
         var participant = await participantRepository.ReadByIdForUpdateAsync(participantId);
         if (participant is null)

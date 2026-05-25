@@ -9,7 +9,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CategoryManager(
     ICategoryRepository categoryRepository,
-    ILanguageRepository languageRepository,
+    ILanguageResolver languageResolver,
     IUnitOfWork uow) : ICategoryManager
 {
     public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
@@ -94,7 +94,7 @@ public class CategoryManager(
     public Task<List<CategoryMetric>> GetTopCategoriesAsync(int projectId, int count, string languageCode, string defaultLanguageCode)
         => categoryRepository.ReadTopCategoriesAsync(projectId, count, languageCode, defaultLanguageCode);
 
-    private async Task<Dictionary<string, Domain.I18n.Entities.Language>> ValidateTranslationInputsAsync(
+    private async Task<IReadOnlyDictionary<string, Domain.I18n.Entities.Language>> ValidateTranslationInputsAsync(
         ICollection<CategoryTranslationInput> translations, Project project)
     {
         if (translations.Count == 0)
@@ -108,12 +108,6 @@ public class CategoryManager(
         if (supportedCodes.Count > 0 && !supportedCodes.All(codes.Contains))
             throw new LocalizedValidationException("Validation.Category.AllProjectLanguagesNeedTranslation");
 
-        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
-        var byCode = resolved.ToDictionary(l => l.Code);
-        var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
-        if (missing.Count > 0)
-            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
-
-        return byCode;
+        return await languageResolver.ResolveAsync(codes);
     }
 }

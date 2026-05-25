@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.Implementation;
 
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
@@ -7,8 +8,8 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 public class ProjectManagerTests
 {
     private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
-    private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
-    private readonly Mock<ILanguageRepository> _languageRepository = new(MockBehavior.Strict);
+    private readonly Mock<IEmojiManager> _emojiManager = new(MockBehavior.Strict);
+    private readonly Mock<IProjectTranslationValidator> _translationValidator = new(MockBehavior.Strict);
     private readonly Mock<IShortFormService> _shortFormService = new(MockBehavior.Strict);
     private readonly Mock<IProjectDuplicationService> _duplicationService = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
@@ -24,18 +25,39 @@ public class ProjectManagerTests
     {
         _manager = new ProjectManager(
             _projectRepository.Object,
-            _emojiRepository.Object,
-            _languageRepository.Object,
+            _emojiManager.Object,
+            _translationValidator.Object,
             _shortFormService.Object,
             _duplicationService.Object,
             _uow.Object);
 
-        _languageRepository
-            .Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync((IEnumerable<string> codes) =>
+        _translationValidator
+            .Setup(v => v.ValidateAsync(
+                It.IsAny<ICollection<ProjectTranslationInput>>(),
+                It.IsAny<ICollection<string>>(),
+                It.IsAny<string>(),
+                It.IsAny<ICollection<IntroductionTranslationInput>>()))
+            .ReturnsAsync((
+                ICollection<ProjectTranslationInput> translations,
+                ICollection<string> supported,
+                string defaultCode,
+                ICollection<IntroductionTranslationInput> _) =>
             {
-                var set = codes.ToHashSet();
-                return new[] { LanguageNl, LanguageEn }.Where(l => set.Contains(l.Code)).ToList();
+                if (string.IsNullOrWhiteSpace(defaultCode))
+                    throw new LocalizedValidationException("Validation.Project.DefaultLanguageCodeRequired");
+                if (supported.Count == 0)
+                    throw new LocalizedValidationException("Validation.Project.AtLeastOneSupportedLanguage");
+                if (!supported.Contains(defaultCode))
+                    throw new LocalizedValidationException("Validation.Project.DefaultLanguageMustBeSupported");
+                var codes = translations.Select(t => t.LanguageCode).ToList();
+                if (!supported.All(codes.Contains))
+                    throw new LocalizedValidationException("Validation.Project.AllSupportedLanguagesNeedTranslation");
+                var pool = new[] { LanguageNl, LanguageEn };
+                var byCode = pool.Where(l => codes.Contains(l.Code)).ToDictionary(l => l.Code);
+                var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
+                if (missing.Count > 0)
+                    throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
+                return (IReadOnlyDictionary<string, Language>)byCode;
             });
     }
 
@@ -345,7 +367,7 @@ public class ProjectManagerTests
         var emoji = new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
+        _emojiManager.Setup(r => r.GetByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -370,7 +392,7 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
+        _emojiManager.Setup(r => r.GetByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(new Emoji { EmojiId = EmojiId, Symbol = "👍", Name = "thumbsup" });
         _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(ct))
@@ -405,7 +427,7 @@ public class ProjectManagerTests
         // Arrange
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(new Project { ProjectId = ProjectId, Emojis = new List<Emoji>() });
-        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
+        _emojiManager.Setup(r => r.GetByIdForUpdateAsync(EmojiId))
             .ReturnsAsync((Emoji)null);
 
         // Act
@@ -424,7 +446,7 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(EmojiId))
+        _emojiManager.Setup(r => r.GetByIdForUpdateAsync(EmojiId))
             .ReturnsAsync(emoji);
 
         // Act

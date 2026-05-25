@@ -12,7 +12,7 @@ public class QuestionnaireManager(
     IQuestionnaireRepository questionnaireRepository,
     IQuestionRepository questionRepository,
     ISectionRepository sectionRepository,
-    ILanguageRepository languageRepository,
+    ILanguageResolver languageResolver,
     IUnitOfWork uow) : IQuestionnaireManager
 {
     public Task<Questionnaire> GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(int projectId)
@@ -419,7 +419,7 @@ public class QuestionnaireManager(
         }
     }
 
-    private async Task<Dictionary<string, Language>> ValidateQuestionTranslationInputsAsync(
+    private async Task<IReadOnlyDictionary<string, Language>> ValidateQuestionTranslationInputsAsync(
         ICollection<QuestionTranslationInput> translations, int answerChoiceCount)
     {
         if (translations.Count == 0)
@@ -437,16 +437,10 @@ public class QuestionnaireManager(
                     "Validation.Question.AnswerChoicesCountMismatch", t.LanguageCode, count, answerChoiceCount);
         }
 
-        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
-        var byCode = resolved.ToDictionary(l => l.Code);
-        var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
-        if (missing.Count > 0)
-            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
-
-        return byCode;
+        return await languageResolver.ResolveAsync(codes);
     }
 
-    private async Task<Dictionary<string, Language>> ValidateSectionTranslationInputsAsync(
+    private async Task<IReadOnlyDictionary<string, Language>> ValidateSectionTranslationInputsAsync(
         ICollection<SectionTranslationInput> translations)
     {
         if (translations.Count == 0)
@@ -456,12 +450,6 @@ public class QuestionnaireManager(
         if (codes.Distinct().Count() != codes.Count)
             throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
 
-        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(codes)).ToList();
-        var byCode = resolved.ToDictionary(l => l.Code);
-        var missing = codes.Where(c => !byCode.ContainsKey(c)).ToList();
-        if (missing.Count > 0)
-            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
-
-        return byCode;
+        return await languageResolver.ResolveAsync(codes);
     }
 }

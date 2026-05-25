@@ -7,7 +7,7 @@ public class QuestionnaireManagerTests
     private readonly Mock<IQuestionnaireRepository> _questionnaireRepo = new(MockBehavior.Strict);
     private readonly Mock<IQuestionRepository> _questionRepo = new(MockBehavior.Strict);
     private readonly Mock<ISectionRepository> _sectionRepo = new(MockBehavior.Strict);
-    private readonly Mock<ILanguageRepository> _languageRepo = new(MockBehavior.Strict);
+    private readonly Mock<ILanguageResolver> _languageResolver = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly QuestionnaireManager _manager;
 
@@ -26,7 +26,7 @@ public class QuestionnaireManagerTests
             _questionnaireRepo.Object,
             _questionRepo.Object,
             _sectionRepo.Object,
-            _languageRepo.Object,
+            _languageResolver.Object,
             _uow.Object);
     }
 
@@ -41,8 +41,8 @@ public class QuestionnaireManagerTests
             .ReturnsAsync(new List<Question>());
         _questionRepo.Setup(r => r.CreateAsync(It.IsAny<Question>()))
             .ReturnsAsync((Question q) => q);
-        _languageRepo.Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(new List<Language> { nlLanguage });
+        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+            .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language> { ["nl"] = nlLanguage });
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
@@ -80,8 +80,8 @@ public class QuestionnaireManagerTests
 
         _questionRepo.Setup(r => r.ReadByIdWithSectionForUpdateAsync(QuestionId))
             .ReturnsAsync(question);
-        _languageRepo.Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(new List<Language> { nlLanguage });
+        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+            .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language> { ["nl"] = nlLanguage });
         _questionRepo.Setup(r => r.Update(It.IsAny<Question>()));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -119,8 +119,8 @@ public class QuestionnaireManagerTests
 
         _questionRepo.Setup(r => r.ReadByIdWithSectionForUpdateAsync(QuestionId))
             .ReturnsAsync(question);
-        _languageRepo.Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(new List<Language> { nlLanguage });
+        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+            .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language> { ["nl"] = nlLanguage });
         _questionRepo.Setup(r => r.Update(It.IsAny<Question>()));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 

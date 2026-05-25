@@ -2,13 +2,12 @@ using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
 // Owns the single responsibility of deep-copying a project's object graph. Reads emojis through
-// the repository so the links attach as tracked entities in the caller's unit of work.
-public class ProjectDuplicationService(IEmojiRepository emojiRepository) : IProjectDuplicationService
+// IEmojiManager so the links attach as tracked entities in the caller's unit of work.
+public class ProjectDuplicationService(IEmojiManager emojiManager) : IProjectDuplicationService
 {
     public async Task<Project> BuildCloneAsync(
         Project src,
@@ -120,7 +119,7 @@ public class ProjectDuplicationService(IEmojiRepository emojiRepository) : IProj
 
         foreach (var srcEmoji in src.Emojis)
         {
-            var tracked = await emojiRepository.ReadByIdForUpdateAsync(srcEmoji.EmojiId);
+            var tracked = await emojiManager.GetByIdForUpdateAsync(srcEmoji.EmojiId);
             if (tracked is not null)
                 copy.Emojis.Add(tracked);
         }

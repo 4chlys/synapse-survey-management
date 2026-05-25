@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 public class ParticipantManagerTests
 {
     private readonly Mock<IParticipantRepository> _participantRepository = new(MockBehavior.Strict);
-    private readonly Mock<ILanguageRepository> _languageRepository = new(MockBehavior.Strict);
+    private readonly Mock<ILanguageResolver> _languageResolver = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
     private readonly ParticipantManager _manager;
 
@@ -13,7 +13,7 @@ public class ParticipantManagerTests
     {
         _manager = new ParticipantManager(
             _participantRepository.Object,
-            _languageRepository.Object,
+            _languageResolver.Object,
             _uow.Object);
     }
 
@@ -25,7 +25,7 @@ public class ParticipantManagerTests
         // Arrange
         var project = new Project { ProjectId = 10, Questionnaire = new Questionnaire() };
         var language = new Language { Code = "nl", IsActive = true };
-        _languageRepository.Setup(r => r.ReadByCodeForUpdateAsync("nl")).ReturnsAsync(language);
+        _languageResolver.Setup(r => r.ResolveSingleAsync("nl", true)).ReturnsAsync(language);
         _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
             .ReturnsAsync((Participant p) => p)
             .Verifiable(Times.Exactly(1));
@@ -50,7 +50,7 @@ public class ParticipantManagerTests
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
         var language = new Language { Code = "nl", IsActive = true };
-        _languageRepository.Setup(r => r.ReadByCodeForUpdateAsync("nl")).ReturnsAsync(language);
+        _languageResolver.Setup(r => r.ResolveSingleAsync("nl", true)).ReturnsAsync(language);
         _participantRepository.Setup(r => r.CreateAsync(It.IsAny<Participant>()))
             .ReturnsAsync((Participant p) => p);
         _uow.Setup(u => u.SaveChangesAsync(ct))
@@ -152,7 +152,7 @@ public class ParticipantManagerTests
         // Arrange
         var participant = new Participant { ParticipantId = 1 };
         var language = new Language { Code = "en", IsActive = true };
-        _languageRepository.Setup(r => r.ReadByCodeForUpdateAsync("en")).ReturnsAsync(language);
+        _languageResolver.Setup(r => r.ResolveSingleAsync("en", true)).ReturnsAsync(language);
         _participantRepository.Setup(r => r.ReadByIdForUpdateAsync(1)).ReturnsAsync(participant);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
@@ -172,8 +172,8 @@ public class ParticipantManagerTests
     public async Task SetLanguageAsync_UnknownLanguageCode_ThrowsWithoutSaving()
     {
         // Arrange
-        _languageRepository.Setup(r => r.ReadByCodeForUpdateAsync("xx"))
-            .ReturnsAsync((Language)null);
+        _languageResolver.Setup(r => r.ResolveSingleAsync("xx", true))
+            .ThrowsAsync(new KeyNotFoundException("Language 'xx' is not a supported active language."));
 
         // Act + Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _manager.SetLanguageAsync(1, "xx"));
@@ -186,8 +186,8 @@ public class ParticipantManagerTests
     public async Task SetLanguageAsync_InactiveLanguage_ThrowsWithoutSaving()
     {
         // Arrange
-        _languageRepository.Setup(r => r.ReadByCodeForUpdateAsync("fr"))
-            .ReturnsAsync(new Language { Code = "fr", IsActive = false });
+        _languageResolver.Setup(r => r.ResolveSingleAsync("fr", true))
+            .ThrowsAsync(new KeyNotFoundException("Language 'fr' is not a supported active language."));
 
         // Act + Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _manager.SetLanguageAsync(1, "fr"));

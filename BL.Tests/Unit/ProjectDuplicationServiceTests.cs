@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
 public class ProjectDuplicationServiceTests
 {
-    private readonly Mock<IEmojiRepository> _emojiRepository = new(MockBehavior.Strict);
+    private readonly Mock<IEmojiManager> _emojiManager = new(MockBehavior.Strict);
     private readonly ProjectDuplicationService _service;
 
     private static readonly Language LanguageNl = new() { Code = "nl", DisplayName = "Nederlands", IsActive = true };
@@ -15,7 +15,7 @@ public class ProjectDuplicationServiceTests
 
     public ProjectDuplicationServiceTests()
     {
-        _service = new ProjectDuplicationService(_emojiRepository.Object);
+        _service = new ProjectDuplicationService(_emojiManager.Object);
     }
 
     private static ProjectTranslationInput[] Translations(params (string code, string name)[] entries) =>
@@ -101,7 +101,7 @@ public class ProjectDuplicationServiceTests
         };
 
         var trackedEmoji = new Emoji { EmojiId = emojiId, Symbol = "❤️", Name = "heart" };
-        _emojiRepository.Setup(r => r.ReadByIdForUpdateAsync(emojiId)).ReturnsAsync(trackedEmoji);
+        _emojiManager.Setup(r => r.GetByIdForUpdateAsync(emojiId)).ReturnsAsync(trackedEmoji);
 
         // Act
         var result = await _service.BuildCloneAsync(

@@ -173,6 +173,9 @@ var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved")
 builder.Services.AddScoped<IShortFormService>(sp =>
     new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
 builder.Services.AddScoped<ILanguageManager, LanguageManager>();
+builder.Services.AddScoped<ILanguageResolver, LanguageResolver>();
+builder.Services.AddScoped<IEmojiManager, EmojiManager>();
+builder.Services.AddScoped<IProjectTranslationValidator, ProjectTranslationValidator>();
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();

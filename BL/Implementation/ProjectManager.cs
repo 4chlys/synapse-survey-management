@@ -11,8 +11,8 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ProjectManager(
     IProjectRepository projectRepository,
-    IEmojiRepository emojiRepository,
-    ILanguageRepository languageRepository,
+    IEmojiManager emojiManager,
+    IProjectTranslationValidator translationValidator,
     IShortFormService shortFormService,
     IProjectDuplicationService projectDuplicationService,
     IUnitOfWork uow) : IProjectManager
@@ -59,7 +59,7 @@ public class ProjectManager(
         var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
         var introductionList = introductions?.ToList() ?? new List<IntroductionTranslationInput>();
 
-        var languages = await ValidateTranslationInputsAsync(
+        var languages = await translationValidator.ValidateAsync(
             translationList, supportedList, defaultLanguageCode, introductionList);
 
         var defaultName = translationList.First(t => t.LanguageCode == defaultLanguageCode).Name;
@@ -163,7 +163,7 @@ public class ProjectManager(
         var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
         var introductionList = introductions?.ToList() ?? new List<IntroductionTranslationInput>();
 
-        var languages = await ValidateTranslationInputsAsync(
+        var languages = await translationValidator.ValidateAsync(
             translationList, supportedList, defaultLanguageCode, introductionList);
 
         if (shortForm != null && shortForm != project.ShortForm)
@@ -270,46 +270,6 @@ public class ProjectManager(
         return project;
     }
 
-    private async Task<Dictionary<string, Language>> ValidateTranslationInputsAsync(
-        ICollection<ProjectTranslationInput> translations,
-        ICollection<string> supportedLanguageCodes,
-        string defaultLanguageCode,
-        ICollection<IntroductionTranslationInput> introductions)
-    {
-        if (string.IsNullOrWhiteSpace(defaultLanguageCode))
-            throw new LocalizedValidationException("Validation.Project.DefaultLanguageCodeRequired");
-        if (supportedLanguageCodes.Count == 0)
-            throw new LocalizedValidationException("Validation.Project.AtLeastOneSupportedLanguage");
-        if (!supportedLanguageCodes.Contains(defaultLanguageCode))
-            throw new LocalizedValidationException("Validation.Project.DefaultLanguageMustBeSupported");
-
-        var translationCodes = translations.Select(t => t.LanguageCode).ToList();
-        if (translationCodes.Distinct().Count() != translationCodes.Count)
-            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
-        if (!supportedLanguageCodes.All(translationCodes.Contains))
-            throw new LocalizedValidationException("Validation.Project.AllSupportedLanguagesNeedTranslation");
-
-        var introByCode = introductions.GroupBy(i => i.LanguageCode).ToList();
-        if (introByCode.Any(g => g.Count() > 1))
-            throw new LocalizedValidationException("Validation.Project.IntroductionsOneRowPerLanguage");
-
-        var allCodes = supportedLanguageCodes
-            .Concat(translationCodes)
-            .Concat(introductions.Select(i => i.LanguageCode))
-            .Distinct()
-            .ToList();
-        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(allCodes)).ToList();
-        if (resolved.Any(l => !l.IsActive))
-            throw new LocalizedValidationException("Validation.Project.InactiveLanguageNotAllowed");
-
-        var byCode = resolved.ToDictionary(l => l.Code);
-        var missing = allCodes.Where(c => !byCode.ContainsKey(c)).ToList();
-        if (missing.Count > 0)
-            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
-
-        return byCode;
-    }
-
     public Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null)
         => projectRepository.ReadAllWithPlatformReadOnlyAsync(platformId);
 
@@ -320,9 +280,6 @@ public class ProjectManager(
         project.ViewCount++;
         await uow.SaveChangesAsync();
     }
-
-    public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
-        => emojiRepository.ReadAllReadOnlyAsync();
 
     public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
     {
@@ -369,7 +326,7 @@ public class ProjectManager(
         var defaultCode = src.DefaultLanguage?.Code
             ?? throw new InvalidOperationException("Source project has no default language.");
 
-        var languages = await ValidateTranslationInputsAsync(
+        var languages = await translationValidator.ValidateAsync(
             translationList, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
 
         var defaultName = translationList.First(t => t.LanguageCode == defaultCode).Name;
@@ -396,7 +353,7 @@ public class ProjectManager(
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
         if (project == null) return false;
 
-        var emoji = await emojiRepository.ReadByIdForUpdateAsync(emojiId);
+        var emoji = await emojiManager.GetByIdForUpdateAsync(emojiId);
         if (emoji == null) return false;
 
         if (project.Emojis.Any(e => e.EmojiId == emojiId)) return true;
