@@ -13,8 +13,12 @@
     var project = ViewData["Project"] as ProjectAdminViewModel;
     if (isNew) ViewData["WizardStep"] = 3;
 }
-<div class="max-w-2xl">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+<div class="w-full flex flex-col gap-4">
+<div class="flex flex-col gap-4">
+    <div class="mb-2">
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <p class="text-base-content/50 text-sm mt-1">@L["Subtitle"]</p>
+    </div>
 
     @if (isLocked)
     {
@@ -24,18 +28,93 @@
         </div>
     }
 
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body gap-4">
-            <h2 class="font-semibold text-base-content">@L["SettingsHeading"]</h2>
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["CategoriesHeading"]</h2>
+
+            @if (Model.Any())
+            {
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                    @foreach (var cat in Model)
+                    {
+                        <div class="group relative flex flex-col items-start gap-1.5 p-4 rounded-xl border-[1.5px] border-base-300 bg-base-200/40">
+                            <div class="w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
+                                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"/></svg>
+                            </div>
+                            <div class="text-sm font-bold text-base-content">@cat.Name</div>
+                            @if (!string.IsNullOrWhiteSpace(cat.Description))
+                            {
+                                <div class="text-xs text-base-content/50 leading-snug">@cat.Description</div>
+                            }
+                            @if (!isLocked)
+                            {
+                                <form asp-action="DeleteCategory" method="post" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <input type="hidden" name="projectId" value="@projectId" />
+                                    <input type="hidden" name="categoryId" value="@cat.CategoryId" />
+                                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                                    <button type="submit" class="btn btn-ghost btn-xs btn-circle text-error">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (isLocked)
+            {
+                <p class="text-base-content/40 italic text-sm text-center py-4">@L["NoCategories"]</p>
+            }
+
+            @if (!isLocked)
+            {
+                <div class="border-t border-base-200 pt-4">
+                    @if (!Model.Any())
+                    {
+                        <p class="text-sm text-base-content/50 mb-3">@L["EmptyHint"]</p>
+                    }
+                    <form asp-action="AddCategory" method="post" class="flex gap-3 items-end">
+                        <input type="hidden" name="projectId" value="@projectId" />
+                        <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                        <div class="form-control gap-1.5 w-56">
+                            <label class="text-sm font-semibold text-base-content">@L["NameRequired"]</label>
+                            <input type="text" name="Name" class="input input-bordered input-sm w-full" placeholder="@L["CategoryNamePlaceholder"]" required />
+                        </div>
+                        <div class="form-control gap-1.5 flex-1 max-w-sm">
+                            <label class="text-sm font-semibold text-base-content">@L["DescriptionLabel"]</label>
+                            <input type="text" name="Description" class="input input-bordered input-sm w-full" placeholder="@L["OptionalPlaceholder"]" />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm gap-1">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                            @L["AddButton"]
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <details class="card bg-base-100 shadow-sm" @(isLocked ? "" : "open")>
+        <summary class="card-body cursor-pointer flex-row items-center gap-2 py-4">
+            <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60">@L["SettingsHeading"]</h2>
+            <svg class="w-4 h-4 text-base-content/40 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="card-body pt-0 gap-4">
             <form asp-action="SaveIdeationSettings" method="post" class="flex flex-col gap-4">
                 <input type="hidden" name="projectId" value="@projectId" />
                 <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                <label class="form-control w-full max-w-xs">
-                    <div class="label"><span class="label-text text-xs">@L["MaxShownIdeasLabel"]</span></div>
-                    <input type="number" name="ideaPageSize" min="1" max="100" value="@(project?.IdeaPageSize ?? 5)" class="input input-bordered input-sm w-full" @(isLocked ? "disabled" : "") />
-                </label>
-                <label class="form-control w-full max-w-xs">
-                    <div class="label"><span class="label-text text-xs">@L["ExtraBehaviorLabel"]</span></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-control gap-1.5">
+                        <label class="text-sm font-semibold text-base-content">@L["MaxShownIdeasLabel"]</label>
+                        <input type="number" name="ideaPageSize" min="1" max="100" value="@(project?.IdeaPageSize ?? 5)" class="input input-bordered input-sm w-full" @(isLocked ? "disabled" : "") />
+                    </div>
+                    <div class="form-control gap-1.5">
+                        <label class="text-sm font-semibold text-base-content">@L["MaxExtraRequestsLabel"]</label>
+                        <input type="number" name="maxExtraIdeaRequests" min="0" max="50" value="@(project?.MaxExtraIdeaRequests ?? 3)" class="input input-bordered input-sm w-full" @(isLocked ? "disabled" : "") />
+                    </div>
+                </div>
+                <div class="form-control gap-1.5 max-w-xs">
+                    <label class="text-sm font-semibold text-base-content">@L["ExtraBehaviorLabel"]</label>
                     @{
                         var replaceExisting = project?.ExtraIdeasReplaceExisting ?? false;
                     }
@@ -51,76 +130,16 @@
                             <option value="true" selected>@L["ExtraBehavior_Replace"]</option>
                         }
                     </select>
-                </label>
-                <label class="form-control w-full max-w-xs">
-                    <div class="label"><span class="label-text text-xs">@L["MaxExtraRequestsLabel"]</span></div>
-                    <input type="number" name="maxExtraIdeaRequests" min="0" max="50" value="@(project?.MaxExtraIdeaRequests ?? 3)" class="input input-bordered input-sm w-full" @(isLocked ? "disabled" : "") />
-                </label>
+                </div>
                 @if (!isLocked)
                 {
                     <div><button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button></div>
                 }
             </form>
         </div>
-    </div>
+    </details>
 
-    <h2 class="font-heading font-bold text-xl text-base-content mb-4">@L["CategoriesHeading"]</h2>
-
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body p-0 overflow-x-auto">
-            <table class="table table-sm">
-                <thead><tr><th>@L["TableName"]</th><th>@L["TableDescription"]</th>@if (!isLocked){<th class="w-12"></th>}</tr></thead>
-                <tbody>
-                    @if (!Model.Any())
-                    {
-                        <tr><td colspan="@(isLocked ? 2 : 3)" class="text-center text-base-content/40 py-6 italic">@L["NoCategories"]</td></tr>
-                    }
-                    @foreach (var cat in Model)
-                    {
-                        <tr class="hover">
-                            <td class="font-medium">@cat.Name</td>
-                            <td class="text-base-content/60">@cat.Description</td>
-                            @if (!isLocked)
-                            {
-                                <td>
-                                    <form asp-action="DeleteCategory" method="post">
-                                        <input type="hidden" name="projectId" value="@projectId" />
-                                        <input type="hidden" name="categoryId" value="@cat.CategoryId" />
-                                        <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                                        <button type="submit" class="btn btn-ghost btn-xs text-error">×</button>
-                                    </form>
-                                </td>
-                            }
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    @if (!isLocked)
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body gap-4">
-                <h2 class="font-semibold text-base-content">@L["AddCategoryHeading"]</h2>
-                <form asp-action="AddCategory" method="post" class="flex gap-2 items-end">
-                    <input type="hidden" name="projectId" value="@projectId" />
-                    <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                    <label class="form-control flex-1">
-                        <div class="label"><span class="label-text text-xs">@L["NameRequired"]</span></div>
-                        <input type="text" name="Name" class="input input-bordered input-sm w-full" placeholder="@L["CategoryNamePlaceholder"]" required />
-                    </label>
-                    <label class="form-control flex-[2]">
-                        <div class="label"><span class="label-text text-xs">@L["TableDescription"]</span></div>
-                        <input type="text" name="Description" class="input input-bordered input-sm w-full" placeholder="@L["OptionalPlaceholder"]" />
-                    </label>
-                    <button type="submit" class="btn btn-primary btn-sm">@L["AddButton"]</button>
-                </form>
-            </div>
-        </div>
-    }
-
-    <div class="flex justify-between mt-6">
+    <div class="flex justify-between">
         <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["QuestionsLink"]</a>
         <div class="flex gap-2">
             @if (!isLocked)
@@ -136,4 +155,5 @@
             <a asp-action="@(isLocked ? "Dashboard" : "Activate")" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@(isLocked ? L["DashboardLink"].Value : L["NextLink"].Value) →</a>
         </div>
     </div>
+</div>
 </div>

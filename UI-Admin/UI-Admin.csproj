@@ -50,6 +50,8 @@
       <_ContentIncludedByDefault Remove="wwwroot\dist\widget-timeline--I1Qg07u.js" />
       <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-categories-Dpuo07rK.js" />
       <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-ideas-UoK_jxyw.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\site.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\site.css" />
     </ItemGroup>
 
     <ItemGroup>

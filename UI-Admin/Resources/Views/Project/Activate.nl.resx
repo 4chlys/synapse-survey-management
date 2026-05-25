@@ -10,4 +10,10 @@
   <data name="Body" xml:space="preserve"><value>{0} staat momenteel op &lt;em&gt;Concept&lt;/em&gt;. Activeren maakt het project zichtbaar voor deelnemers.</value></data>
   <data name="ActivateButton" xml:space="preserve"><value>Project activeren</value></data>
   <data name="NotYetButton" xml:space="preserve"><value>Nog niet</value></data>
+  <data name="StatQuestions" xml:space="preserve"><value>Vragen</value></data>
+  <data name="StatCategories" xml:space="preserve"><value>Categorieën</value></data>
+  <data name="StatFormType" xml:space="preserve"><value>Formuliertype</value></data>
+  <data name="FormTypeChat" xml:space="preserve"><value>Chat</value></data>
+  <data name="FormTypeScroll" xml:space="preserve"><value>Scroll</value></data>
+  <data name="InfoText" xml:space="preserve"><value>Eenmaal geactiveerd kunnen deelnemers het project bereiken via een gedeelde link. Je kunt het project op elk moment deactiveren of archiveren vanuit het dashboard.</value></data>
 </root>

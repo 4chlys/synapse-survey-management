@@ -6,24 +6,73 @@
     ViewData["HideSidebar"] = true;
     ViewData["WizardStep"] = 4;
     Layout = "_Layout";
+
+    var questionCount = (int)(ViewData["QuestionCount"] ?? 0);
+    var categoryCount = (int)(ViewData["CategoryCount"] ?? 0);
+    var formType = Model.FormType ?? "VerticalScroll";
 }
-<div class="max-w-sm">
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body items-center text-center gap-4">
-            <div class="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center">
-                <svg class="text-success" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <h1 class="font-heading font-bold text-xl text-base-content">@L["Heading"]</h1>
-            <p class="text-sm text-base-content/60">
-                @Html.Raw(string.Format(L["Body"].Value, $"<strong>{Model.Name}</strong>"))
+
+<div class="w-full flex flex-col items-center justify-center py-12">
+    <div class="max-w-lg w-full flex flex-col items-center gap-8">
+
+        <div class="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center animate-[bounce-subtle_2s_ease-in-out_infinite]">
+            <svg class="text-success" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m0 0a6 6 0 01-7.38-5.84h4.8" />
+                <circle cx="15" cy="9" r="1" fill="currentColor" />
+            </svg>
+        </div>
+
+        <div class="text-center space-y-2">
+            <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+            <p class="text-base-content/60 text-sm max-w-sm mx-auto">
+                @Html.Raw(string.Format(L["Body"].Value, $"<strong class=\"text-base-content\">{Model.Name}</strong>"))
             </p>
-            <div class="card-actions w-full flex-col gap-2 mt-2">
-                <form asp-action="ActivateProject" method="post" class="w-full">
-                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                    <button type="submit" class="btn btn-success w-full">@L["ActivateButton"]</button>
-                </form>
-                <a asp-action="Index" class="btn btn-ghost w-full">@L["NotYetButton"]</a>
+        </div>
+
+        <div class="w-full grid grid-cols-3 gap-3">
+            <div class="bg-base-100 rounded-xl border border-base-300 p-4 text-center flex flex-col items-center justify-center">
+                <div class="text-2xl font-bold text-base-content">@questionCount</div>
+                <div class="text-xs text-base-content/50 mt-1">@L["StatQuestions"]</div>
             </div>
+            <div class="bg-base-100 rounded-xl border border-base-300 p-4 text-center flex flex-col items-center justify-center">
+                <div class="text-2xl font-bold text-base-content">@categoryCount</div>
+                <div class="text-xs text-base-content/50 mt-1">@L["StatCategories"]</div>
+            </div>
+            <div class="bg-base-100 rounded-xl border border-base-300 p-4 text-center flex flex-col items-center justify-center">
+                <div class="flex items-center gap-1.5 text-base-content">
+                    @if (formType == "Chat")
+                    {
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
+                        <span class="text-lg font-bold">@L["FormTypeChat"]</span>
+                    }
+                    else
+                    {
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                        <span class="text-lg font-bold">@L["FormTypeScroll"]</span>
+                    }
+                </div>
+                <div class="text-xs text-base-content/50 mt-1">@L["StatFormType"]</div>
+            </div>
+        </div>
+
+        <div class="w-full bg-base-100 rounded-xl border border-base-300 p-5">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-info flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
+                <p class="text-sm text-base-content/60 leading-relaxed">
+                    @L["InfoText"]
+                </p>
+            </div>
+        </div>
+
+        <div class="w-full flex flex-col gap-3">
+            <form asp-action="ActivateProject" method="post" class="w-full">
+                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                <button type="submit" class="btn btn-success w-full btn-lg gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m0 0a6 6 0 01-7.38-5.84h4.8" /></svg>
+                    @L["ActivateButton"]
+                </button>
+            </form>
+            <a asp-action="Index" class="btn btn-ghost w-full">@L["NotYetButton"]</a>
         </div>
     </div>
 </div>
