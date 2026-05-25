@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Title" xml:space="preserve">
+    <value>Survey</value>
+  </data>
+  <data name="Mandatory" xml:space="preserve">
+    <value>Mandatory</value>
+  </data>
+  <data name="QuestionLabel" xml:space="preserve">
+    <value>Question</value>
+  </data>
+  <data name="LikertDisagree" xml:space="preserve">
+    <value>Strongly disagree</value>
+  </data>
+  <data name="LikertAgree" xml:space="preserve">
+    <value>Strongly agree</value>
+  </data>
+  <data name="AnswerPlaceholder" xml:space="preserve">
+    <value>Type your answer here...</value>
+  </data>
+  <data name="SwipeHint" xml:space="preserve">
+    <value>Swipe or press ↓ for next</value>
+  </data>
+  <data name="PrevQuestion" xml:space="preserve">
+    <value>Previous question</value>
+  </data>
+  <data name="NextQuestion" xml:space="preserve">
+    <value>Next question</value>
+  </data>
+  <data name="StepIndicator" xml:space="preserve">
+    <value>Step 1 of 2</value>
+  </data>
+  <data name="SubmitSlideHeading" xml:space="preserve">
+    <value>Survey complete</value>
+  </data>
+  <data name="SubmitSlideDescription" xml:space="preserve">
+    <value>Next, you can share your ideas and react to others.</value>
+  </data>
+  <data name="SubmitAnswers" xml:space="preserve">
+    <value>Continue to ideas</value>
+  </data>
+</root>

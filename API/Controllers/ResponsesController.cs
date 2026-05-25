@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.DTOs.Participants;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -11,114 +12,101 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}")]
 public class ResponsesController(
-    IQuestionnaireManager questionnaireManager,
     IParticipantManager participantManager,
-    IResponseManager responseManager)
-    : ParticipantControllerBase(participantManager)
+    IResponseManager responseManager,
+    ISubmissionManager submissionManager,
+    IProjectManager projectManager,
+    IParticipantLanguageCoordinator participantLanguageCoordinator)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
-    /// <summary>
-    /// Saves optional contact info (email / phone) for the current participant.
-    /// </summary>
-    [HttpPatch("participants/me/contact")]
-    public async Task<ActionResult> SaveContactInfo(int projectId, [FromBody] SaveContactInfoDto dto)
+    [HttpPatch("participants/me/language")]
+    public async Task<ActionResult> SetLanguage(int projectId, SetParticipantLanguageDto dto, CancellationToken ct)
     {
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
-
-        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, dto.PhoneNumber);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Creates an anonymous participant and returns a session token.
-    /// The client stores this token in localStorage and sends it as
-    /// the X-Participant-Token header on subsequent requests.
-    /// </summary>
-    [HttpPost("participants")]
-    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId)
-    {
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId, includeQuestions: false);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
-
-        var participant = await AddParticipantAsync(questionnaire, projectId);
-
-        return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
-    }
-
-    /// <summary>
-    /// Creates a participant and submits all answers in one request.
-    /// Returns the participant token for the session cookie.
-    /// </summary>
-    [HttpPost("submit")]
-    public async Task<ActionResult<ParticipantDto>> Submit(int projectId, [FromBody] SubmitSurveyDto submitDto)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdAsync(projectId);
-        if (questionnaire is null)
-            return NotFound("Questionnaire not found.");
 
         try
         {
-            questionnaireManager.ValidateMandatoryAnswers(
-                questionnaire,
-                submitDto.Answers.Select(a => (a.QuestionId, a.Value)));
+            await participantLanguageCoordinator.SwitchLanguageAsync(participant.ParticipantId, dto.LanguageCode, ct);
         }
-        catch (ValidationException ex)
+        catch (KeyNotFoundException)
         {
-            return BadRequest(ex.Message);
+            return BadRequest("Unknown or inactive language code.");
         }
-
-        var participant = await AddParticipantAsync(questionnaire, projectId);
-
-        var questionsById = questionnaire.Questions.ToDictionary(q => q.QuestionId);
-        foreach (var answer in submitDto.Answers)
-        {
-            if (string.IsNullOrWhiteSpace(answer.Value)) continue;
-            if (!questionsById.TryGetValue(answer.QuestionId, out var question)) continue;
-
-            await responseManager.AddResponseAsync(answer.Value, question, participant);
-        }
-
-        return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
+        return NoContent();
     }
 
-    /// <summary>
-    /// Submit a response. The participant is identified by the
-    /// X-Participant-Token header (obtained from POST /participants).
-    /// </summary>
-    [HttpPost("responses")]
-    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, [FromBody] CreateResponseDto createDto)
+    [HttpPatch("participants/me/contact")]
+    public async Task<ActionResult> SaveContactInfo(int projectId, SaveContactInfoDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var (participant, error) = await GetParticipantAsync();
         if (error is not null) return error;
 
-        var question = await questionnaireManager.GetQuestionByIdAsync(createDto.QuestionId);
-        if (question is null)
-            return NotFound($"Question with id {createDto.QuestionId} not found.");
+        await SaveContactInfoAsync(participant.ParticipantId, dto.Email, ct);
 
-        var response = await responseManager.AddResponseAsync(createDto.Value, question, participant);
+        return NoContent();
+    }
+
+    [HttpPost("participants")]
+    public async Task<ActionResult<ParticipantDto>> StartSession(int projectId, [FromQuery] string languageCode, CancellationToken ct)
+    {
+        var participant = await AddParticipantAsync(projectId, languageCode ?? "nl", ct);
+        return Created(string.Empty, new ParticipantDto { ParticipantToken = participant.SessionToken.ToString() });
+    }
+
+    [HttpPost("submit")]
+    public async Task<ActionResult> Submit(int projectId, CancellationToken ct)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        await submissionManager.SubmitAsync(projectId, participant, ct);
+
+        return Ok();
+    }
+
+    [HttpPost("responses")]
+    public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, CreateResponseDto createDto,
+        CancellationToken ct)
+    {
+        var (participant, error) = await GetParticipantAsync();
+        if (error is not null) return error;
+
+        var response =
+            await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
         var dto = MapToDto(response);
         return Created(string.Empty, dto);
     }
 
-    /// <summary>
-    /// Check if a participant (by token) has already submitted responses.
-    /// Returns { hasResponded: true/false }
-    /// </summary>
+    [HttpDelete("responses")]
+    public async Task<ActionResult> RemoveAllResponses(int projectId, CancellationToken ct)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        await responseManager.RemoveAllAsync(participant, ct);
+        return NoContent();
+    }
+
+    [HttpGet("responses")]
+    public async Task<ActionResult<IEnumerable<ResponseDto>>> GetResponses(int projectId)
+    {
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
+
+        var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant);
+        var dtos = responses.Select(MapToDto).ToList();
+        return Ok(dtos);
+    }
+
     [HttpGet("participants/me")]
     public async Task<ActionResult> GetParticipantStatus(int projectId)
     {
         if (!TryGetParticipantToken(out var token))
             return Ok(new ParticipantStatusDto { HasResponded = false });
 
-        var hasResponded = await HasParticipantRespondedAsync(token);
-        return Ok(new ParticipantStatusDto { HasResponded = hasResponded });
+        var hasSubmitted = await HasParticipantSubmittedAsync(token);
+        return Ok(new ParticipantStatusDto { HasResponded = hasSubmitted });
     }
 
     private static ResponseDto MapToDto(Response response)
@@ -128,7 +116,8 @@ public class ResponsesController(
             ResponseId = response.ResponseId,
             Value = response.Value,
             QuestionId = response.Question?.QuestionId ?? 0,
-            ParticipantId = response.Participant?.ParticipantId ?? 0
+            ParticipantId = response.Participant?.ParticipantId ?? 0,
+            LanguageCode = response.Language?.Code
         };
     }
 }

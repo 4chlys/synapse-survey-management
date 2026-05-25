@@ -1,4 +1,6 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Moderation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiModeration;
@@ -20,36 +22,44 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}/moderation")]
 public class ModerationController(
-    IAiModerationService moderation,
+    IRegexModerationService regexModeration,
+    IAiModerationService aiModeration,
     IModerationTokenService tokenService,
-    IParticipantManager participantManager)
-    : ParticipantControllerBase(participantManager)
+    IParticipantManager participantManager,
+    IProjectManager projectManager,
+    IPlatformAiConfigService platformAiConfig)
+    : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpPost("regex")]
-    public ActionResult<ModerationResponseDto> CheckRegex(int projectId, [FromBody] ModerationRequestDto dto)
+    public ActionResult<ModerationResponseDto> CheckRegex(int projectId, ModerationRequestDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = moderation.CheckWithRegex(dto.Text, dto.ContentType ?? "idea");
+        var result = regexModeration.Check(dto.Text, dto.ContentType ?? "idea");
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("ai")]
-    public async Task<ActionResult<ModerationResponseDto>> CheckAi(int projectId,
-        [FromBody] ModerationRequestDto dto, CancellationToken ct)
+    public async Task<ActionResult<ModerationResponseDto>> CheckAi(
+        int projectId,
+        ModerationRequestDto dto,
+        CancellationToken ct)
     {
         if (!TryGetParticipantToken(out _)) return Unauthorized("Participant token required.");
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new ModerationResponseDto { IsAcceptable = true });
 
-        var result = await moderation.CheckWithAiAsync(dto.Text, ct, dto.ContentType ?? "idea");
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+        var result = await aiModeration.CheckWithAiAsync(dto.Text, config, projectId, ct, dto.ContentType ?? "idea", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         return Ok(MapToDto(result, dto.Text, projectId));
     }
 
     [HttpPost("suggest")]
-    public async Task<ActionResult<SuggestResponseDto>> Suggest(int projectId,
-        [FromBody] ModerationRequestDto dto,
+    public async Task<ActionResult<SuggestResponseDto>> Suggest(
+        int projectId,
+        ModerationRequestDto dto,
         CancellationToken ct)
     {
         if (!TryGetParticipantToken(out _))
@@ -58,9 +68,10 @@ public class ModerationController(
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
-        var suggestion = await moderation.SuggestRewriteAsync(dto.Text, ct);
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, config, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
-        // Generate a token for the rewritten text (Unflagged since it was AI-cleaned)
         string suggestionToken = null;
         if (suggestion != null)
             suggestionToken = tokenService.GenerateToken(suggestion, ModerationStatus.Unflagged, projectId);
@@ -75,9 +86,9 @@ public class ModerationController(
 
         return new ModerationResponseDto
         {
-            IsAcceptable    = result.IsAcceptable,
-            Reason          = result.Reason,
-            FlaggedBy       = result.FlaggedBy,
+            IsAcceptable = result.IsAcceptable,
+            Reason = result.Reason,
+            FlaggedBy = result.FlaggedBy,
             ModerationToken = token,
         };
     }

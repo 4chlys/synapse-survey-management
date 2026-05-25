@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SynapseEnqueteManagement.API.DTOs.Moderation;
 
-public sealed class ModerationRequestDto
+public sealed record ModerationRequestDto
 {
-    public string Text { get; set; }
-    public string ContentType { get; set; } = "idea";
+    [Required] [MaxLength(1000)]
+    public string Text { get; init; }
+
+    [MaxLength(20)]
+    public string ContentType { get; init; } = "idea";
 }

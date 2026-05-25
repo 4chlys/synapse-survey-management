@@ -1,30 +1,283 @@
+using System.Globalization;
+using Ganss.Xss;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
+using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL;
+using SynapseEnqueteManagement.BL.Exceptions;
+using SynapseEnqueteManagement.BL.AiImageGeneration;
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/projects")]
-public class ProjectsController(IProjectManager projectManager) : ControllerBase
+public class ProjectsController(
+    IProjectManager projectManager,
+    IAiImageGenerationService imageGenerationService,
+    IStorageService storageService) : ControllerBase
 {
+    private static FormType ParseFormType(string interactionMode) =>
+        Enum.TryParse<FormType>(interactionMode, ignoreCase: true, out var formResult)
+            ? formResult
+            : FormType.VerticalScroll;
+
+    private static ProjectTheme ParseTheme(string theme) =>
+        Enum.TryParse<ProjectTheme>(theme, ignoreCase: true, out var themeResult)
+            ? themeResult
+            : ProjectTheme.Minimal;
+
+    private static string ActiveCulture() =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
+    private static ProjectTranslation ResolveTranslation(Project p)
+    {
+        var active = ActiveCulture();
+        return p.Translations.FirstOrDefault(t => t.Language?.Code == active)
+               ?? p.Translations.FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)
+               ?? p.Translations.FirstOrDefault();
+    }
+
+    private ProjectDto MapToParticipantDto(Project p)
+    {
+        var t = ResolveTranslation(p);
+        var active = ActiveCulture();
+        var introText = p.Introduction?.Translations
+                            .FirstOrDefault(it => it.Language?.Code == active)?.Text
+                        ?? p.Introduction?.Translations
+                            .FirstOrDefault(it => it.Language?.Code == p.DefaultLanguage?.Code)?.Text
+                        ?? p.Introduction?.Translations.FirstOrDefault()?.Text
+                        ?? string.Empty;
+        return new ProjectDto
+        {
+            ProjectId = p.ProjectId,
+            PlatformId = p.ProjectPlatformId,
+            Name = t?.Name ?? string.Empty,
+            ShortForm = p.ShortForm ?? string.Empty,
+            Topic = t?.Topic ?? string.Empty,
+            ProjectState = p.ProjectState.ToString(),
+            FormType = p.FormType.ToString(),
+            OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
+            ProjectImage = p.ImageUrl ?? string.Empty,
+            IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
+            OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
+            OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
+            Introduction = introText,
+            RequestContactInfo = p.RequestContactInfo,
+            AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
+            IdeaPageSize = p.IdeaPageSize,
+            ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
+            MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
+            MinAge = p.MinAge,
+            MaxAge = p.MaxAge,
+            LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
+            DefaultLanguageCode = p.DefaultLanguage?.Code,
+            SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            LastWizardStep = p.LastWizardStep,
+            Theme = p.Theme.ToString(),
+            PrimaryColor = p.PrimaryColor,
+            CustomCss = p.CustomCss,
+        };
+    }
+
+    private AdminProjectDto MapToAdminDto(Project p) => new()
+    {
+        ProjectId = p.ProjectId,
+        PlatformId = p.ProjectPlatformId,
+        ShortForm = p.ShortForm ?? string.Empty,
+        ProjectState = p.ProjectState.ToString(),
+        FormType = p.FormType.ToString(),
+        OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
+        ProjectImage = p.ImageUrl ?? string.Empty,
+        IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
+        OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
+        OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
+        RequestContactInfo = p.RequestContactInfo,
+        AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
+        IdeaPageSize = p.IdeaPageSize,
+        ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
+        MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
+        MinAge = p.MinAge,
+        MaxAge = p.MaxAge,
+        DefaultLanguageCode = p.DefaultLanguage?.Code,
+        SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+        Translations = p.Translations.Select(t => new ProjectTranslationDto
+        {
+            LanguageCode = t.Language?.Code,
+            Name = t.Name,
+            Topic = t.Topic,
+            Introduction = p.Introduction?.Translations
+                .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
+        }).ToList(),
+        LastWizardStep = p.LastWizardStep,
+        Theme = p.Theme.ToString(),
+        PrimaryColor = p.PrimaryColor,
+        CustomCss = p.CustomCss,
+    };
+
+    private static IEnumerable<ProjectTranslationInput> MapTranslations(ICollection<ProjectTranslationDto> dtos) =>
+        dtos.Select(t => new ProjectTranslationInput(t.LanguageCode, t.Name, t.Topic ?? string.Empty));
+
+    // Shared sanitizer instance — HtmlSanitizer is thread-safe and lightweight to reuse.
+    // Default allowlist retains the tags Quill emits (p, br, strong, em, a, ul, ol, li, u)
+    // and strips <script>, event-handler attributes, and javascript: hrefs.
+    private static readonly HtmlSanitizer _introSanitizer = new();
+
+    private static IEnumerable<IntroductionTranslationInput> MapIntroductions(ICollection<ProjectTranslationDto> dtos) =>
+        dtos.Where(t => !string.IsNullOrEmpty(t.Introduction))
+            .Select(t => new IntroductionTranslationInput(t.LanguageCode, _introSanitizer.Sanitize(t.Introduction)));
+
     [HttpGet("{projectId}")]
     public async Task<ActionResult<ProjectDto>> GetProject(int projectId)
     {
-        var project = await projectManager.GetProjectByIdAsync(projectId);
+        var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
         if (project is null)
             return NotFound();
 
-        return Ok(new ProjectDto
+        return Ok(MapToParticipantDto(project));
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects(
+        [FromQuery] int? platformId = null)
+    {
+        var projects = await projectManager.GetAllProjectsAsync(platformId);
+        return Ok(projects.Select(MapToParticipantDto));
+    }
+
+    [HttpGet("by-shortform/{shortForm}")]
+    public async Task<ActionResult<ProjectShortFormLookupDto>> GetByShortForm(string shortForm)
+    {
+        var project = await projectManager.GetProjectByShortFormAsync(shortForm.ToLowerInvariant());
+        if (project is null)
+            return NotFound();
+
+        return Ok(new ProjectShortFormLookupDto
         {
             ProjectId = project.ProjectId,
-            ProjectState = project.ProjectState.ToString(),
-            FormType = project.FormType.ToString(),
-            OrganisationName = project.OrganisationName ?? string.Empty,
-            OrganisationLogoUrl = project.OrganisationLogoUrl ?? string.Empty,
-            OrganisationWebsiteUrl = project.OrganisationWebsiteUrl ?? string.Empty,
-            Introduction = project.Introduction?.Text ?? string.Empty,
-            RequestContactInfo = project.RequestContactInfo
+            ShortForm = project.ShortForm,
+            ProjectState = project.ProjectState.ToString()
         });
     }
+
+    [HttpPost]
+    public async Task<ActionResult<AdminProjectDto>> CreateProject(CreateProjectDto dto, CancellationToken ct)
+    {
+        var imageUrl = dto.ImageUrl ?? string.Empty;
+
+        var project = await projectManager.CreateProjectAsync(
+            MapTranslations(dto.Translations),
+            MapIntroductions(dto.Translations),
+            dto.DefaultLanguageCode,
+            dto.SupportedLanguageCodes,
+            imageUrl,
+            ParseFormType(dto.InteractionMode),
+            dto.MinAge,
+            dto.MaxAge,
+            dto.RequestContactInfo,
+            dto.PlatformId,
+            dto.ShortForm,
+            dto.IdeaPageSize,
+            dto.ExtraIdeasReplaceExisting,
+            dto.MaxExtraIdeaRequests,
+            dto.AllowCrossLanguageIdeas,
+            ParseTheme(dto.Theme),
+            dto.PrimaryColor,
+            dto.CustomCss);
+
+        return Created(string.Empty, MapToAdminDto(project));
+    }
+
+    [HttpPut("{projectId}")]
+    public async Task<ActionResult<AdminProjectDto>> UpdateProject(int projectId, UpdateProjectDto dto)
+    {
+        var project = await projectManager.UpdateProjectAsync(
+            projectId,
+            MapTranslations(dto.Translations),
+            MapIntroductions(dto.Translations),
+            dto.DefaultLanguageCode,
+            dto.SupportedLanguageCodes,
+            dto.ImageUrl ?? string.Empty,
+            ParseFormType(dto.InteractionMode),
+            dto.MinAge,
+            dto.MaxAge,
+            dto.RequestContactInfo,
+            dto.ShortForm,
+            dto.IdeaPageSize,
+            dto.ExtraIdeasReplaceExisting,
+            dto.MaxExtraIdeaRequests,
+            dto.AllowCrossLanguageIdeas,
+            ParseTheme(dto.Theme),
+            dto.PrimaryColor,
+            dto.CustomCss);
+
+        return Ok(MapToAdminDto(project));
+    }
+
+    [HttpPost("{projectId:int}/copy")]
+    public async Task<ActionResult<AdminProjectDto>> CopyProject(int projectId, CopyProjectDto dto, CancellationToken ct)
+    {
+        var source = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (source is null) return NotFound();
+        if (source.ProjectPlatformId != dto.PlatformId) return Forbid();
+
+        var copy = await projectManager.DuplicateProjectAsync(
+            projectId, MapTranslations(dto.Translations), dto.PlatformId, dto.NewShortForm, ct);
+        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, MapToAdminDto(copy));
+    }
+
+    [HttpDelete("{projectId}")]
+    public async Task<IActionResult> DeleteProject(int projectId)
+    {
+        await projectManager.DeleteProjectAsync(projectId);
+        return NoContent();
+    }
+
+    [HttpPatch("{projectId}/state")]
+    public async Task<ActionResult<AdminProjectDto>> UpdateProjectState(int projectId, UpdateProjectStateDto dto)
+    {
+        if (!Enum.TryParse<ProjectState>(dto.State, ignoreCase: true, out var newState))
+            return BadRequest(new { error = "Invalid project state." });
+
+        var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
+        return Ok(MapToAdminDto(project));
+    }
+
+    [HttpPatch("{projectId}/wizard-step")]
+    public async Task<IActionResult> UpdateWizardStep(int projectId, UpdateWizardStepDto dto)
+    {
+        await projectManager.UpdateLastWizardStepAsync(projectId, dto.Step);
+        return NoContent();
+    }
+
+    [HttpPost("generate-image")]
+    public async Task<IActionResult> GenerateImage(
+        GenerateImageRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Name))
+            throw new LocalizedValidationException("Validation.Project.NameRequired");
+
+        var result = await imageGenerationService.GenerateProjectImageAsync(request.Name, 0, request.Topic, request.Intro, ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        var extension = result.MimeType == "image/jpeg" ? ".jpg" : ".png";
+        var url = await storageService.UploadBytesAsync(
+            result.ImageBytes, "projects", $"generated{extension}", result.MimeType);
+
+        return Ok(new { url });
+    }
+
+    private static bool IsAiGeneratedImageUrl(string imageUrl) =>
+        !string.IsNullOrWhiteSpace(imageUrl)
+        && Path.GetFileNameWithoutExtension(imageUrl).Contains("generated", StringComparison.OrdinalIgnoreCase);
 }
+
+// [FromBody] keeps large intro payloads out of the URL.
+// The intro field can hold up to 5000 chars of Quill HTML; URI-encoding it would
+// exceed the ~8 KB query-string limit enforced by many proxies and servers.
+public sealed record GenerateImageRequest(string Name, string Topic, string Intro);

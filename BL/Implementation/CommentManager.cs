@@ -2,82 +2,50 @@ using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Sorting;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CommentManager(
-    IRepository repository,
+    ICommentRepository commentRepository,
+    IIdeaRepository ideaRepository,
+    IUnitOfWork uow,
     ILogger<CommentManager> logger,
     ISortStrategyFactory<TextComment> sortStrategyFactory) : ICommentManager
 {
-    public async Task<PagedResult<TextComment>> GetOkCommentsByIdeaAsync(int ideaId, int page, int pageSize, string sortKey, int? excludeParticipantId = null)
-    {
-        var strategy = sortStrategyFactory.Get(sortKey);
-        var filterList = new List<System.Linq.Expressions.Expression<Func<TextComment, bool>>>
-        {
-            c => c.Idea.IdeaId == ideaId,
-            c => c.ModerationStatus != ModerationStatus.Flagged && c.ModerationStatus != ModerationStatus.Declined
-        };
-        if (excludeParticipantId.HasValue)
-            filterList.Add(c => c.Participant.ParticipantId != excludeParticipantId.Value);
-        var filters = filterList.ToArray();
-
-        var total = await repository.CountAsync<TextComment>(filters);
-        var items = await repository.ReadAsync<TextComment>(
-            filters: filters,
-            includes: [c => c.EmojiReactions, c => c.Participant],
-            includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
-            orderBy: strategy.DbOrderBy,
-            randomize: strategy.Randomize,
-            skip: (page - 1) * pageSize,
-            take: pageSize
-        );
-
-        return new PagedResult<TextComment> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
-    }
-
-    public async Task<IEnumerable<TextComment>> GetOwnCommentsByIdeaAsync(int ideaId, int participantId)
-    {
-        return await repository.ReadAsync<TextComment>(
-            filters:
-            [
-                c => c.Idea.IdeaId == ideaId,
-                c => c.Participant.ParticipantId == participantId,
-                c => c.ModerationStatus != ModerationStatus.Declined
-            ],
-            includes: [c => c.EmojiReactions, c => c.Participant],
-            includeStrings: ["EmojiReactions.Emoji", "EmojiReactions.Participant"],
-            orderBy: q => q.OrderByDescending(c => c.CreatedAt)
-        );
-    }
-
-    public async Task<PagedResult<TextComment>> GetCommentsWithOwnFirstAsync(int ideaId, int page, int pageSize, string sortKey, int? participantId)
+    public async Task<PagedResult<TextComment>> GetCommentsWithOwnFirstReadOnlyAsync(int projectId, int ideaId, int page, string sortKey, int pageSize, int? participantId)
     {
         var ownComments = participantId.HasValue
-            ? await GetOwnCommentsByIdeaAsync(ideaId, participantId.Value)
+            ? await commentRepository.ReadOwnTextCommentsByIdeaWithReactionsReadOnlyAsync(ideaId, participantId.Value)
             : Enumerable.Empty<TextComment>();
 
-        var paged = await GetOkCommentsByIdeaAsync(ideaId, page, pageSize, sortKey, excludeParticipantId: participantId);
+        var strategy = sortStrategyFactory.Get(sortKey);
+        var total = await commentRepository.CountOkTextCommentsByIdeaAsync(ideaId, participantId);
+        var pagedItems = await commentRepository.ReadOkTextCommentsByIdeaWithReactionsReadOnlyAsync(
+            ideaId, participantId, strategy.DbOrderBy, strategy.Randomize, (page - 1) * pageSize, pageSize);
 
         return new PagedResult<TextComment>
         {
-            Items = ownComments.Concat(paged.Items),
-            Page = paged.Page,
-            PageSize = paged.PageSize,
-            TotalCount = paged.TotalCount
+            Items = ownComments.Concat(pagedItems),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
         };
     }
 
-    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant)
+    public async Task<TextComment> AddTextCommentAsync(int ideaId, int projectId, string text, ModerationStatus status, Participant participant, string submissionLanguageCode = null, CancellationToken ct = default)
     {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        var idea = await ideaRepository.ReadByIdWithProjectForUpdateAsync(ideaId);
         if (idea == null || idea.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
             throw new KeyNotFoundException($"Idea {ideaId} not found");
         }
+
+        var submissionLanguage = submissionLanguageCode != null
+            ? idea.Category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
+            : null;
 
         var comment = new TextComment
         {
@@ -85,92 +53,92 @@ public class CommentManager(
             ModerationStatus = status,
             Text = text,
             Participant = participant,
+            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
-
-        return await repository.CreateAsync(comment);
+        EntityValidator.Validate(comment);
+        var created = (TextComment)await commentRepository.CreateAsync(comment);
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<IEnumerable<Emoji>> GetEmojisAsync()
+    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.ReadAsync<Emoji>(
-            filters: [e => e.IsActive]
-        );
-    }
-
-    public async Task<IconComment> AddIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
-    {
-        var idea = await repository.ReadByIdAsync<Idea>(ideaId, includeStrings: ["Category.Project"]);
+        var idea = await ideaRepository.ReadByIdWithProjectAndEmojisForUpdateAsync(ideaId);
         if (idea?.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("Idea {IdeaId} not found in project {ProjectId}", ideaId, projectId);
             throw new KeyNotFoundException($"Idea {ideaId} not found in project {projectId}");
         }
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
-        if (emoji == null)
+        if (idea.Category.Project.Emojis.All(e => e.EmojiId != emojiId))
         {
-            logger.LogWarning("Emoji {EmojiId} not found", emojiId);
-            throw new KeyNotFoundException($"Emoji {emojiId} not found");
+            logger.LogWarning("Emoji {EmojiId} not enabled for project {ProjectId}", emojiId, projectId);
+            throw new KeyNotFoundException($"Emoji {emojiId} not enabled for project {projectId}");
         }
 
         var iconComment = new IconComment
         {
             Idea = idea,
-            EmojiId = emojiId,
+            Emoji = idea.Category.Project.Emojis.First(e => e.EmojiId == emojiId),
             Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.Validate(iconComment);
 
-        return await repository.CreateAsync(iconComment,
-            duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
-                                  && ic.EmojiId == emojiId
-                                  && ic.Idea.IdeaId == ideaId
-                                  && ic.TextComment == null);
+        var created = await commentRepository.CreateIconCommentOnIdeaIfNotDuplicateAsync(iconComment);
+        if (created == null) return null;
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant)
+    public async Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
-                                                               && ic.EmojiId == emojiId
-                                                               && ic.Idea.IdeaId == ideaId
-                                                               && ic.TextComment == null);
+        var removed = await commentRepository.DeleteIconCommentOnIdeaAsync(ideaId, projectId, emojiId, participant.ParticipantId);
+        if (!removed) return false;
+        await uow.SaveChangesAsync(ct);
+        return true;
     }
 
-    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
+    public async Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        var comment = await repository.ReadByIdAsync<TextComment>(commentId, includeStrings: ["Idea.Category.Project"]);
+        var comment = await commentRepository.ReadTextCommentByIdWithProjectAndEmojisForUpdateAsync(commentId);
         if (comment?.Idea?.Category?.Project?.ProjectId != projectId)
         {
             logger.LogWarning("TextComment {CommentId} not found in project {ProjectId}", commentId, projectId);
             throw new KeyNotFoundException($"TextComment {commentId} not found in project {projectId}");
         }
+        var emoji = comment.Idea.Category.Project.Emojis.FirstOrDefault(e => e.EmojiId == emojiId);
 
-        var emoji = await repository.ReadByIdAsync<Emoji>(emojiId);
         if (emoji == null)
         {
-            logger.LogWarning("Emoji {EmojiId} not found", emojiId);
-            throw new KeyNotFoundException($"Emoji {emojiId} not found");
+            logger.LogWarning("Emoji {EmojiId} not enabled for project {ProjectId}", emojiId, projectId);
+            throw new KeyNotFoundException($"Emoji {emojiId} not enabled for project {projectId}");
         }
 
         var reaction = new IconComment
         {
-            EmojiId = emojiId,
+            Emoji = emoji,
+            Idea = comment.Idea,
             TextComment = comment,
             Participant = participant,
+            Language = participant.Language ?? participant.Project?.DefaultLanguage,
             CreatedAt = DateTime.UtcNow
         };
+        EntityValidator.Validate(reaction);
 
-        return await repository.CreateAsync(reaction,
-            duplicateCheck: ic => ic.Participant.ParticipantId == participant.ParticipantId
-                                  && ic.EmojiId == emojiId
-                                  && ic.TextComment.CommentId == commentId);
+        var created = await commentRepository.CreateIconCommentOnTextCommentIfNotDuplicateAsync(reaction);
+        if (created == null) return null;
+        await uow.SaveChangesAsync(ct);
+        return created;
     }
 
-    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant)
+    public async Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default)
     {
-        return await repository.DeleteAsync<IconComment>(ic => ic.Participant.ParticipantId == participant.ParticipantId
-                                                               && ic.EmojiId == emojiId
-                                                               && ic.TextComment.CommentId == commentId);
+        var removed = await commentRepository.DeleteIconCommentOnTextCommentAsync(commentId, projectId, emojiId, participant.ParticipantId);
+        if (!removed) return false;
+        await uow.SaveChangesAsync(ct);
+        return true;
     }
 }

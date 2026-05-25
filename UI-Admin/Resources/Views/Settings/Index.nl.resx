@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Instellingen</value></data>
+  <data name="Heading" xml:space="preserve"><value>Instellingen</value></data>
+
+  <data name="BasicInfoHeading" xml:space="preserve"><value>Basisinformatie</value></data>
+  <data name="ContactNameLabel" xml:space="preserve"><value>Contactpersoon</value></data>
+  <data name="ContactNamePlaceholder" xml:space="preserve"><value>Naam contactpersoon</value></data>
+  <data name="ContactEmailLabel" xml:space="preserve"><value>Contacte-mail</value></data>
+  <data name="ContactEmailPlaceholder" xml:space="preserve"><value>contact@voorbeeld.be</value></data>
+  <data name="BillingReferenceLabel" xml:space="preserve"><value>Factuurreferentie</value></data>
+  <data name="BillingReferencePlaceholder" xml:space="preserve"><value>bijv. PO-2026-001</value></data>
+  <data name="AiModelHeading" xml:space="preserve"><value>AI-model</value></data>
+  <data name="SingleModelText" xml:space="preserve"><value>Uw platform gebruikt {0}.</value></data>
+  <data name="NoModelsText" xml:space="preserve"><value>Geen AI-modellen beschikbaar. Neem contact op met de systeembeheerder.</value></data>
+  <data name="SelectModelLabel" xml:space="preserve"><value>Selecteer een model</value></data>
+  <data name="ModelNotAvailable" xml:space="preserve"><value>Niet beschikbaar in deze regio</value></data>
+
+  <data name="AiAssistanceHeading" xml:space="preserve"><value>AI-assistentie</value></data>
+  <data name="AiAssistanceDescription" xml:space="preserve"><value>Bepaal hoe de AI-assistent zich gedraagt bij het toevoegen van vragen.</value></data>
+  <data name="AiMode_ProActive" xml:space="preserve"><value>Proactief</value></data>
+  <data name="AiMode_ProActive_Desc" xml:space="preserve"><value>De AI-chat is altijd zichtbaar en opent automatisch met suggesties.</value></data>
+  <data name="AiMode_AskFirst" xml:space="preserve"><value>Op aanvraag</value></data>
+  <data name="AiMode_AskFirst_Desc" xml:space="preserve"><value>De AI-chat is beschikbaar via een knop, maar opent niet automatisch.</value></data>
+  <data name="AiMode_Never" xml:space="preserve"><value>Uit</value></data>
+  <data name="AiMode_Never_Desc" xml:space="preserve"><value>Geen AI-assistentie bij het toevoegen van vragen.</value></data>
+
+  <data name="PromptsHeading" xml:space="preserve"><value>Systeemprompts</value></data>
+  <data name="WarningLabel" xml:space="preserve"><value>Waarschuwing:</value></data>
+  <data name="WarningBody" xml:space="preserve"><value>de standaard systeemprompts zijn zorgvuldig ontworpen met veiligheidsmaatregelen voor jongeren. Wijzigingen kunnen de beveiliging verzwakken.</value></data>
+  <data name="CustomizedBadge" xml:space="preserve"><value>aangepast</value></data>
+  <data name="ResetButton" xml:space="preserve"><value>Herstel standaard</value></data>
+</root>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="AppName" xml:space="preserve"><value>Synapse</value></data>
+  <data name="LanguageMenu_Switch" xml:space="preserve"><value>Taal wijzigen</value></data>
+  <data name="ThemeToggleLabel" xml:space="preserve"><value>Schakel thema</value></data>
+  <data name="Login_Tagline" xml:space="preserve"><value>Het platform waar organisaties stemmen omzetten in beslissingen.</value></data>
+  <data name="Login_Subtagline" xml:space="preserve"><value>Ontwerp participatie-enquêtes, verzamel ideeën en ontdek wat je gemeenschap echt denkt, alles op één plek.</value></data>
+
+  <data name="Nav_MainNavigation" xml:space="preserve"><value>Hoofdnavigatie</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Nav_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Nav_Admins" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="Nav_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Nav_Ideas" xml:space="preserve"><value>Ideeën</value></data>
+  <data name="Nav_Categories" xml:space="preserve"><value>Categorieën</value></data>
+  <data name="Nav_Questions" xml:space="preserve"><value>Vragen</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Instellingen</value></data>
+  <data name="Nav_AiSettings" xml:space="preserve"><value>AI instellingen</value></data>
+  <data name="Nav_SystemDashboard" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
+  <data name="Nav_Launch" xml:space="preserve"><value>Publiceer</value></data>
+  <data name="Wizard_NewProject" xml:space="preserve"><value>Nieuw project</value></data>
+
+  <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platformen</value></data>
+  <data name="Sidebar_SystemAdmin" xml:space="preserve"><value>Systeembeheer</value></data>
+
+  <data name="State_Active" xml:space="preserve"><value>Actief</value></data>
+  <data name="State_Draft" xml:space="preserve"><value>Concept</value></data>
+  <data name="State_Archived" xml:space="preserve"><value>Gearchiveerd</value></data>
+
+  <data name="UserMenu_ChangePassword" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>
+  <data name="UserMenu_Logout" xml:space="preserve"><value>Uitloggen</value></data>
+
+  <data name="Common_Submit" xml:space="preserve"><value>Versturen</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>Opslaan</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Verwijderen</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Bewerken</value></data>
+  <data name="Common_Add" xml:space="preserve"><value>Toevoegen</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>Terug</value></data>
+  <data name="Common_Search" xml:space="preserve"><value>Zoeken</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Ja</value></data>
+  <data name="Common_No" xml:space="preserve"><value>Nee</value></data>
+  <data name="Common_Confirm" xml:space="preserve"><value>Bevestigen</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Laden…</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Sluiten</value></data>
+  <data name="Common_All" xml:space="preserve"><value>Alle</value></data>
+  <data name="Common_None" xml:space="preserve"><value>Geen</value></data>
+
+  <data name="TempData_Success" xml:space="preserve"><value>Succes</value></data>
+  <data name="TempData_Error" xml:space="preserve"><value>Fout</value></data>
+
+  <data name="Auth_AccountLocked" xml:space="preserve"><value>Account is vergrendeld. Probeer het later opnieuw.</value></data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve"><value>Ongeldig e-mailadres of wachtwoord.</value></data>
+  <data name="Auth_PasswordChanged" xml:space="preserve"><value>Wachtwoord succesvol gewijzigd.</value></data>
+
+  <data name="Project_TopicRequired" xml:space="preserve"><value>Onderwerp is verplicht.</value></data>
+  <data name="Project_IntroductionRequired" xml:space="preserve"><value>Introductie is verplicht.</value></data>
+  <data name="Project_AgeRange" xml:space="preserve"><value>MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</value></data>
+  <data name="Project_LockedNotEditable" xml:space="preserve"><value>Dit project is actief of gearchiveerd en kan niet meer worden bewerkt.</value></data>
+  <data name="Project_DeleteActiveBlocked" xml:space="preserve"><value>Dit project is actief en kan niet worden verwijderd. Archiveer het project eerst.</value></data>
+  <data name="Project_NoPlatform" xml:space="preserve"><value>Uw account is niet gekoppeld aan een platform.</value></data>
+  <data name="Project_NotFoundOrNoAccess" xml:space="preserve"><value>Project niet gevonden of geen toegang.</value></data>
+  <data name="Project_CopySuccess" xml:space="preserve"><value>Project gekopieerd als sjabloon!</value></data>
+  <data name="Project_CopyFailed" xml:space="preserve"><value>Kopiëren mislukt: {0}</value></data>
+  <data name="Project_InvalidFormat" xml:space="preserve"><value>Ongeldig formaat.</value></data>
+  <data name="Project_ExportOnlyActive" xml:space="preserve"><value>Export is enkel beschikbaar voor actieve of gearchiveerde projecten.</value></data>
+  <data name="Project_NoFileReceived" xml:space="preserve"><value>Geen bestand ontvangen.</value></data>
+  <data name="Project_NameRequired" xml:space="preserve"><value>Projectnaam is verplicht.</value></data>
+  <data name="Project_ImageGenerationFailed" xml:space="preserve"><value>Afbeelding genereren mislukt.</value></data>
+  <data name="Project_UploadFailed" xml:space="preserve"><value>Uploaden mislukt.</value></data>
+
+  <data name="Platform_AdminAdded" xml:space="preserve"><value>Beheerder toegevoegd.</value></data>
+  <data name="Platform_AdminRemoved" xml:space="preserve"><value>Beheerder verwijderd.</value></data>
+  <data name="Platform_LastAdminBlocked" xml:space="preserve"><value>Je kan de laatste beheerder van een platform niet verwijderen.</value></data>
+  <data name="Platform_BasicInfoSaved" xml:space="preserve"><value>Basisinformatie opgeslagen.</value></data>
+  <data name="Platform_SettingsSaved" xml:space="preserve"><value>Instellingen opgeslagen.</value></data>
+  <data name="Platform_AiSettingsSaved" xml:space="preserve"><value>AI-instellingen opgeslagen.</value></data>
+  <data name="Platform_AiModelRequired" xml:space="preserve"><value>Minstens één AI-model moet geselecteerd zijn.</value></data>
+  <data name="Platform_AiModelConfiguredRequired" xml:space="preserve"><value>Minstens één geconfigureerd AI-model moet geselecteerd zijn.</value></data>
+
+  <data name="Settings_InvalidModel" xml:space="preserve"><value>Ongeldig model geselecteerd.</value></data>
+  <data name="Settings_AiModelSaved" xml:space="preserve"><value>AI-model opgeslagen.</value></data>
+  <data name="Settings_InvalidPromptType" xml:space="preserve"><value>Ongeldig prompt-type.</value></data>
+  <data name="Settings_PromptTooLong" xml:space="preserve"><value>Systeemprompt mag maximaal {0} tekens bevatten.</value></data>
+  <data name="Settings_PromptSaved" xml:space="preserve"><value>Systeemprompt opgeslagen.</value></data>
+  <data name="Settings_PromptReset" xml:space="preserve"><value>Systeemprompt hersteld naar standaard.</value></data>
+  <data name="Settings_InvalidAiMode" xml:space="preserve"><value>Ongeldige AI-assistentie modus.</value></data>
+  <data name="Settings_AiModeSaved" xml:space="preserve"><value>AI-assistentie modus opgeslagen.</value></data>
+
+  <data name="Prompt_Moderation" xml:space="preserve"><value>Moderatie</value></data>
+  <data name="Prompt_CommentModeration" xml:space="preserve"><value>Commentaarmoderatie</value></data>
+  <data name="Prompt_Rewrite" xml:space="preserve"><value>Herschrijven</value></data>
+  <data name="Prompt_ImageModeration" xml:space="preserve"><value>Beeldmoderatie</value></data>
+  <data name="Prompt_IdeaSupport" xml:space="preserve"><value>Ideeondersteuning</value></data>
+  <data name="Prompt_CommentSupport" xml:space="preserve"><value>Commentaarondersteuning</value></data>
+  <data name="Prompt_QuestionSupport" xml:space="preserve"><value>Vraagondersteuning</value></data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value></data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value></data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, de AI-assistent is even niet beschikbaar.</value></data>
+
+  <data name="Email_ForgotPassword_Subject" xml:space="preserve"><value>Wachtwoord resetten — Synapse</value></data>
+  <data name="Email_ForgotPassword_Body" xml:space="preserve"><value>Hallo,
+
+Je hebt een wachtwoordreset aangevraagd voor je Synapse-account.
+
+Klik op de onderstaande link om je wachtwoord te resetten:
+{0}
+
+Deze link is 24 uur geldig.
+
+Als je dit niet hebt aangevraagd, kan je deze e-mail negeren.</value></data>
+
+  <data name="Email_Welcome_Subject" xml:space="preserve"><value>Welkom bij Synapse — {0}</value></data>
+  <data name="Email_Welcome_Body" xml:space="preserve"><value>Hallo,
+
+Je bent toegevoegd als beheerder van platform '{0}' in Synapse.
+
+Je aanmeldgegevens:
+E-mail: {1}
+
+Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
+{2}</value></data>
+
+  <data name="Common_ProgressSaved" xml:space="preserve"><value>Opgeslagen.</value></data>
+</root>

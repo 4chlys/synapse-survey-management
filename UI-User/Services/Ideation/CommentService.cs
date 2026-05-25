@@ -11,11 +11,12 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         int categoryId,
         int ideaId,
         string text,
-        string moderationToken = null)
+        string moderationToken = null,
+        string languageCode = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments");
-        request.Content = JsonContent.Create(new { Text = text, ModerationToken = moderationToken });
+        request.Content = JsonContent.Create(new { Text = text, ModerationToken = moderationToken, LanguageCode = languageCode });
 
         AddTokenHeader(request, projectId);
 
@@ -46,8 +47,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
     public async Task<bool> RemoveIconCommentAsync(int projectId, int categoryId, int ideaId, int emojiId)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete,
-            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments");
-        request.Content = JsonContent.Create(new { EmojiId = emojiId });
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/iconcomments/{emojiId}");
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;
@@ -57,8 +57,7 @@ public class CommentService(HttpClient httpClient, ISessionService sessionServic
         int emojiId)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete,
-            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji");
-        request.Content = JsonContent.Create(new { EmojiId = emojiId });
+            $"api/projects/{projectId}/categories/{categoryId}/ideas/{ideaId}/comments/{commentId}/emoji/{emojiId}");
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
         return response.IsSuccessStatusCode;

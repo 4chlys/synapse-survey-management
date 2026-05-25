@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Privacy statement</value></data>
+  <data name="Heading" xml:space="preserve"><value>Privacy statement — Administrators</value></data>
+
+  <data name="Intro" xml:space="preserve"><value>This privacy statement explains how SynapseIP handles data in the context of managing projects, sub-platforms and the input of participants (young people).</value></data>
+
+  <data name="AccountHeading" xml:space="preserve"><value>Your account data</value></data>
+  <data name="AccountBody" xml:space="preserve"><value>To access the administration platform, an account is created with your name, email address and a password. This data is used exclusively for authentication and communication within the platform. Your password is stored encrypted and is not readable by anyone.</value></data>
+
+  <data name="ParticipantsHeading" xml:space="preserve"><value>Participant data</value></data>
+  <data name="ParticipantsBody" xml:space="preserve"><value>Participants (young people) take part anonymously in surveys and ideation. They do not need to provide a name or personal data. As an administrator, you have access to the anonymous contributions (survey responses, ideas and reactions) within your projects. If you have activated the contact option (opt-in) for a project and a participant voluntarily leaves their email address, you as administrator have access to this email address. You may only use it to contact the participant about their submitted ideas. As an organisation, you are responsible for the correct processing of this contact data in accordance with applicable privacy legislation (GDPR).</value></data>
+
+  <data name="AiHeading" xml:space="preserve"><value>Use of AI</value></data>
+  <data name="AiBody" xml:space="preserve"><value>The platform uses artificial intelligence (AI) for various functionalities. In accordance with the European AI Act, we want to be transparent about this. AI is used for: asking targeted follow-up questions to participants to deepen ideas, automatic moderation of contributions for inappropriate language, speech-to-text for voice input, describing uploaded images, offering relevant ideas to participants, generating summaries of submitted ideas, generating social media posts, automatically generating a project image when none is provided, and assisting in creating surveys (suggestions for questions, formulations and answer options). Participant data is processed by an external AI language model for this purpose. The content of contributions is not used to train AI models. As an administrator, you can fine-tune the prompts used for AI follow-up questions.</value></data>
+
+  <data name="StorageHeading" xml:space="preserve"><value>Data storage and security</value></data>
+  <data name="StorageBody" xml:space="preserve"><value>All data is stored in a secured database. Communication with the platform takes place via an encrypted connection (HTTPS). Access to data is restricted based on your role: sub-platform administrators only see data within their own sub-platform, while the general platform administrator has an overview of all sub-platforms.</value></data>
+
+  <data name="ResponsibilitiesHeading" xml:space="preserve"><value>Your responsibilities</value></data>
+  <data name="ResponsibilitiesBody" xml:space="preserve"><value>As administrator of a sub-platform, you are the data controller for the data collected within your projects. You are responsible for correctly informing participants about the purpose of data collection, only using contact data for the agreed purpose, and complying with applicable privacy legislation (GDPR).</value></data>
+
+  <data name="ContactHeading" xml:space="preserve"><value>Contact</value></data>
+  <data name="ContactBody" xml:space="preserve"><value>For questions about this privacy statement or about data processing on the platform, please contact the platform administrator.</value></data>
+
+  <data name="BackButton" xml:space="preserve"><value>Back</value></data>
+</root>

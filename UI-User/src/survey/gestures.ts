@@ -4,40 +4,71 @@ import {navigateNext, navigatePrev} from './navigation';
 export function initGestures(container: HTMLElement, state: SurveyState): void {
     let touchStartX = 0;
     let touchStartY = 0;
-    let canScroll = true;
 
-    // Mouse wheel
+    // Mouse wheel / trackpad debounce.
+    //
+    // Uses a fixed cooldown measured from navigation time rather than an
+    // event-resetting timer. Event-resetting timers cause two failure modes:
+    //   - Lockout: continuous momentum events endlessly defer the timer.
+    //   - Double scroll: a timer that expires early lets stray momentum fire a second nav.
+    //
+    // Anything arriving within POST_NAV_BLOCK_MS of the last navigation is dropped
+    // silently. isAnimating covers the CSS transition; the timestamp check covers
+    // the trackpad momentum tail (macOS can send momentum for ~1 s after gesture ends).
+    const POST_NAV_BLOCK_MS = 900;
+    let lastNavTime = 0;
+
     container.addEventListener('wheel', (e: WheelEvent) => {
         e.preventDefault();
-        if (!canScroll) return;
-        canScroll = false;
 
-        if (e.deltaY > 0) navigateNext(state);
-        else if (e.deltaY < 0) navigatePrev(state);
+        if (state.isAnimating) return;
+        if (Date.now() - lastNavTime < POST_NAV_BLOCK_MS) return;
 
-        setTimeout(() => {
-            canScroll = true;
-        }, 800);
+        if (e.deltaY > 0) {
+            lastNavTime = Date.now();
+            void navigateNext(state);
+        } else if (e.deltaY < 0) {
+            lastNavTime = Date.now();
+            void navigatePrev(state);
+        }
     }, {passive: false});
 
-    // Touch swipe (mobile)
+    // Touch swipe (mobile) — reels-style: trigger nav mid-drag once threshold passes,
+    // so the card starts animating while the finger is still moving instead of waiting
+    // for touchend. Threshold is intentionally low (~10% of viewport height).
+    const SWIPE_TRIGGER_PX = Math.max(40, window.innerHeight * 0.1);
+    let triggered = false;
+
     container.addEventListener('touchstart', (e: TouchEvent) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
+        triggered = false;
     }, {passive: true});
 
-    container.addEventListener('touchend', (e: TouchEvent) => {
-        const deltaY = touchStartY - e.changedTouches[0].clientY;
-        const deltaX = touchStartX - e.changedTouches[0].clientX;
+    container.addEventListener('touchmove', (e: TouchEvent) => {
+        if (triggered || state.isAnimating) return;
+
+        const deltaY = touchStartY - e.touches[0].clientY;
+        const deltaX = touchStartX - e.touches[0].clientX;
+
+        // Horizontal swipe — ignore.
         if (Math.abs(deltaX) > Math.abs(deltaY)) return;
-        if (Math.abs(deltaY) < 50) return;
-        if (!canScroll) return;
-        canScroll = false;
-        if (deltaY > 0) navigateNext(state);
-        else navigatePrev(state);
-        setTimeout(() => {
-            canScroll = true;
-        }, 800);
+        if (Math.abs(deltaY) < SWIPE_TRIGGER_PX) return;
+
+        // Don't hijack swipes that start on a scrollable inner element (e.g. long answer
+        // list). Only trigger when the card itself isn't scrolled or has no overflow.
+        const target = e.target as HTMLElement | null;
+        const scrollable = target?.closest('.overflow-y-auto') as HTMLElement | null;
+        if (scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+            const atTop = scrollable.scrollTop <= 0;
+            const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+            if (deltaY > 0 && !atBottom) return;
+            if (deltaY < 0 && !atTop) return;
+        }
+
+        triggered = true;
+        if (deltaY > 0) void navigateNext(state);
+        else void navigatePrev(state);
     }, {passive: true});
 
     // Keyboard
@@ -47,10 +78,10 @@ export function initGestures(container: HTMLElement, state: SurveyState): void {
 
         if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
             e.preventDefault();
-            navigateNext(state);
+            void navigateNext(state);
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
             e.preventDefault();
-            navigatePrev(state);
+            void navigatePrev(state);
         }
     });
 }

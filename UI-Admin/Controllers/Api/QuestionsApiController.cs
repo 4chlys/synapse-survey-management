@@ -1,0 +1,65 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.UI.Admin.Filters;
+using SynapseEnqueteManagement.UI.Admin.Models.Question;
+using SynapseEnqueteManagement.UI.Admin.Services.Project;
+using SynapseEnqueteManagement.UI.Admin.Services.Question;
+
+namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
+
+[ApiController]
+[Authorize(Roles = "ProjectPlatformAdmin")]
+[RequireProjectPlatformOwnership]
+[Route("api/admin/projects/{projectId:int}/questions")]
+public class QuestionsApiController(QuestionAdminService questionService, ProjectAdminService projectService) : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<List<QuestionViewModel>>> GetQuestions(int projectId)
+    {
+        var questions = await questionService.GetQuestionsAsync(projectId);
+        return Ok(questions);
+    }
+
+    [HttpPut("{questionId:int}/location")]
+    public async Task<ActionResult> Move(int projectId, int questionId, MoveRequest request)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState is "Active" or "Archived")
+            return StatusCode(403, "Project is locked");
+        try
+        {
+            await questionService.MoveQuestionAsync(projectId, questionId,
+                request.ParentQuestionId, request.ChoiceIndex, request.Position);
+            return NoContent();
+        }
+        catch (HttpRequestException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut("{questionId:int}/ending-answers")]
+    public async Task<ActionResult> UpdateEndingAnswers(int projectId, int questionId, EndingAnswersRequest request)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project?.ProjectState is "Active" or "Archived")
+            return StatusCode(403, "Project is locked");
+        var questions = await questionService.GetQuestionsAsync(projectId);
+        var question = questions.FirstOrDefault(q => q.QuestionId == questionId);
+        if (question is null) return NotFound();
+
+        await questionService.UpdateQuestionAsync(projectId, questionId,
+            question.Text, question.QuestionFormat, question.IsMandatory,
+            question.AnswerChoices, question.SectionId, request.EndingAnswers,
+            mediaUrl: question.MediaUrl, mediaType: question.MediaType,
+            mediaIsEmbed: question.MediaIsEmbed, mediaText: question.MediaText);
+        return NoContent();
+    }
+
+    public record MoveRequest(int? ParentQuestionId, int? ChoiceIndex, int Position);
+
+    public record EndingAnswersRequest
+    {
+        public ICollection<string> EndingAnswers { get; init; } = new List<string>();
+    }
+}

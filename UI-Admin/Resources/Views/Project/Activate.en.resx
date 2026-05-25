@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Activate project</value></data>
+  <data name="Heading" xml:space="preserve"><value>Activate project</value></data>
+  <data name="Body" xml:space="preserve"><value>{0} is currently in &lt;em&gt;Draft&lt;/em&gt;. Activating makes the project visible to participants.</value></data>
+  <data name="ActivateButton" xml:space="preserve"><value>Activate project</value></data>
+  <data name="NotYetButton" xml:space="preserve"><value>Not yet</value></data>
+  <data name="StatQuestions" xml:space="preserve"><value>Questions</value></data>
+  <data name="StatCategories" xml:space="preserve"><value>Categories</value></data>
+  <data name="StatFormType" xml:space="preserve"><value>Form type</value></data>
+  <data name="FormTypeChat" xml:space="preserve"><value>Chat</value></data>
+  <data name="FormTypeScroll" xml:space="preserve"><value>Scroll</value></data>
+  <data name="InfoText" xml:space="preserve"><value>Once activated, participants can access the project using a shared link. You can deactivate or archive the project at any time from the dashboard.</value></data>
+</root>

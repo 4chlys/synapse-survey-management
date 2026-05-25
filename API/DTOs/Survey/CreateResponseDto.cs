@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SynapseEnqueteManagement.API.DTOs.Survey;
 
-public class CreateResponseDto
+public record CreateResponseDto
 {
-    [Required] [StringLength(500)] public string Value { get; set; }
+    [MaxLength(500)] public string Value { get; init; }
 
-    [Required] public int QuestionId { get; set; }
+    [Range(1, int.MaxValue)] public int QuestionId { get; init; }
 }

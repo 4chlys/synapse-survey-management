@@ -1,19 +1,61 @@
-/** Translates the track so slide at `index` is visible. */
-export function animateTrackTo(track: HTMLElement, index: number): void {
-    track.style.transform = `translateY(calc(${index} * -1 * var(--slide-h)))`;
+/**
+ * Transitions from slide at `prevIndex` to slide at `nextIndex`.
+ * Going forward: prev exits upward, next rises from below.
+ * Going backward: prev falls back down, next descends from above.
+ *
+ * `goingForward` must be derived from the visible-position order, not the raw
+ * array index, because sub-questions can have a lower array index than later
+ * top-level questions (Position is scoped per sibling group, not globally).
+ */
+function stopSlideMedia(slide: HTMLElement): void {
+    slide.querySelectorAll<HTMLVideoElement | HTMLAudioElement>('video, audio').forEach(el => el.pause());
+    slide.querySelectorAll<HTMLIFrameElement>('iframe').forEach(iframe => {
+        if (iframe.src.includes('youtube.com')) {
+            iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }), '*');
+        } else if (iframe.src.includes('vimeo.com')) {
+            iframe.contentWindow?.postMessage(JSON.stringify({ method: 'pause' }), '*');
+        }
+    });
 }
 
-/** Shakes the answer area to indicate a blocked action. */
+export function activateSlide(
+    slides: HTMLElement[],
+    prevIndex: number,
+    nextIndex: number,
+    goingForward: boolean
+): void {
+    const prev = slides[prevIndex];
+    const next = slides[nextIndex];
+
+    if (prev) {
+        stopSlideMedia(prev);
+        prev.classList.remove('is-active');
+        if (goingForward) {
+            // Exit upward
+            prev.classList.add('is-above');
+        }
+        // Going backward: removing is-active returns the slide to the default
+        // "below" state (translateY(56px)), so it animates downward naturally.
+    }
+
+    if (next) {
+        next.classList.remove('is-above'); // coming from above when going backward
+        next.classList.add('is-active');
+    }
+}
+
+/** Shakes the answer area to signal a blocked navigation. */
 export function shakeSlide(slide: HTMLElement): void {
     const target = slide.querySelector<HTMLElement>('.slide-answer-area') ?? slide;
     target.classList.remove('slide--shake');
     void target.offsetWidth; // force reflow to restart animation
     target.classList.add('slide--shake');
-    target.addEventListener('animationend', () => target.classList.remove('slide--shake'), {once: true});
+    target.addEventListener('animationend', () => target.classList.remove('slide--shake'), { once: true });
 }
 
-export function updateProgressBar(bar: HTMLElement | null, index: number, total: number): void {
-    if (!bar) return;
-    const pct = total <= 1 ? 100 : Math.round((index / (total - 1)) * 100);
-    bar.style.width = `${pct}%`;
+export function updateProgressBar(bar: HTMLElement | null, index: number, total: number, minPct: number): number {
+    const raw = total <= 1 ? 100 : Math.round((index / (total - 1)) * 100);
+    const pct = Math.max(raw, minPct);
+    if (bar) bar.style.width = `${pct}%`;
+    return pct;
 }

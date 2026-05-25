@@ -1,0 +1,61 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model PlatformFormViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Platform";
+    Layout = "_Layout";
+}
+
+<div class="max-w-lg">
+    <div class="mb-6">
+        <a asp-controller="Platform" asp-action="Index"
+           class="text-base-content/60 hover:text-base-content transition text-sm">
+            ← @L["BackLink"]
+        </a>
+    </div>
+
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="text-sm text-error border border-error bg-error/10 px-4 py-3 rounded"></div>
+
+            <form asp-controller="Platform" asp-action="Create" method="post" class="flex flex-col gap-4">
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["NameLabel"] *</span></div>
+                    <input asp-for="Name" class="input input-bordered w-full"
+                           placeholder="@L["NamePlaceholder"]" />
+                    <span asp-validation-for="Name" class="label-text-alt text-error mt-1"></span>
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["LogoLabel"]</span></div>
+                    <input asp-for="LogoUrl" class="input input-bordered w-full"
+                           placeholder="https://..." />
+                    <span asp-validation-for="LogoUrl" class="label-text-alt text-error mt-1"></span>
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["WebsiteLabel"]</span></div>
+                    <input asp-for="WebsiteUrl" class="input input-bordered w-full"
+                           placeholder="https://..." />
+                    <span asp-validation-for="WebsiteUrl" class="label-text-alt text-error mt-1"></span>
+                </label>
+
+                <div class="card-actions justify-end gap-2 pt-2">
+                    <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
+                    <button type="submit" class="btn btn-primary">@Shared["Common_Save"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

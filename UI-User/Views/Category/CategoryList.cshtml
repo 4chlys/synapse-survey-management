@@ -1,0 +1,81 @@
+@model CategoryIndexViewModel
+@inject IViewLocalizer L
+
+@{
+    ViewData["Title"] = L["Title"];
+    ViewData["BgVariant"] = "ideas";
+    ViewData["BgAnimationMobile"] = true;
+}
+
+@await Html.PartialAsync("_BackgroundAnimation")
+
+<div class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-[calc(100dvh-64px)] page-enter relative z-10">
+
+    @* Page header *@
+    <div class="w-full mb-8 flex items-start justify-between gap-4">
+        <div class="flex-1 min-w-0">
+            <h1 class="font-heading text-2xl font-bold text-base-content leading-snug">
+                @L["Heading"]
+            </h1>
+            <p class="text-sm text-base-content/85 mt-2 leading-relaxed">
+                @L["Subtitle"]
+            </p>
+        </div>
+        <button type="button" data-action="show-thank-you"
+           aria-label="@L["CloseNavLabel"]"
+           class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-base-content/65 hover:text-error hover:bg-error/10 transition-colors cursor-pointer bg-transparent border-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+        </button>
+    </div>
+
+    @* Category cards *@
+    <div class="w-full flex flex-col gap-3">
+        @foreach (var category in Model.Categories)
+        {
+            <a asp-controller="Ideation" asp-action="IdeaHub" asp-route-projectId="@Model.ProjectId"
+                   asp-route-categoryId="@category.CategoryId" class="group relative flex items-center gap-4 px-5 py-7 rounded-field
+                bg-base-100 border border-base-300
+                hover:border-primary/40 hover:shadow-sm
+                active:scale-[0.99] transition-all duration-150">
+
+                @* Left accent bar *@
+                <div
+                    class="w-0.5 h-9 rounded-full bg-primary/20 group-hover:bg-primary transition-colors duration-150 shrink-0">
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <span
+                    class="font-heading font-semibold text-base-content text-base block leading-snug">@category.Name</span>
+                    <p class="text-sm text-base-content/70 mt-0.5 leading-snug">@category.Description</p>
+                </div>
+
+                @* Badge *@
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                        bg-secondary/10 text-secondary text-xs font-semibold">
+                        @category.IdeaCount
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-4 w-4 text-base-300 group-hover:text-primary transition-colors duration-150" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+
+            </a>
+        }
+    </div>
+
+</div>
+
+@await Html.PartialAsync("_FinalThankYouPopup")
+

@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Ai;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -8,7 +9,7 @@ public class ModerationResolver(
     IModerationTokenService tokenService,
     IAiModerationService moderationService) : IModerationResolver
 {
-    public async Task<ModerationStatus> ResolveStatusAsync(string text, string token, int projectId, CancellationToken ct = default)
+    public async Task<ModerationStatus> ResolveStatusAsync(string text, string token, int projectId, ResolvedPlatformAiConfig platformConfig, CancellationToken ct = default, string respondInLanguage = null)
     {
         if (!string.IsNullOrEmpty(token))
         {
@@ -20,7 +21,7 @@ public class ModerationResolver(
             }
         }
 
-        var result = await moderationService.CheckWithAiAsync(text, ct);
+        var result = await moderationService.CheckWithAiAsync(text, platformConfig, projectId, ct, respondInLanguage: respondInLanguage);
         return result.IsAcceptable ? ModerationStatus.Unflagged : ModerationStatus.Flagged;
     }
 }

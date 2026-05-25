@@ -7,26 +7,42 @@ namespace SynapseEnqueteManagement.UI.User.Services.Ideation;
 public class IdeaService(HttpClient httpClient, ISessionService sessionService)
     : AuthenticatedApiService(httpClient, sessionService)
 {
-    public async Task<List<IdeaViewModel>> GetIdeasByCategoryAsync(int projectId, int categoryId, int page = 1, string sort = null)
+    public async Task<IdeaIndexResult> GetIdeasIndexAsync(int projectId, int categoryId, string sort = null, int page = 1, bool showAllLanguages = false)
     {
         var url = $"api/projects/{projectId}/categories/{categoryId}/ideas?page={page}";
-        if (sort is not null) url += $"&sort={sort}";
+        if (sort is not null) url += $"&sort={Uri.EscapeDataString(sort)}";
+        if (showAllLanguages) url += "&showAllLanguages=true";
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
-        var paged = await response.Content.ReadFromJsonAsync<ApiPagedResult<IdeaViewModel>>();
-        return paged?.Items ?? new List<IdeaViewModel>();
+        var body = await response.Content.ReadFromJsonAsync<ApiIndexResponse>();
+        return new IdeaIndexResult
+        {
+            Ideas = body?.Items ?? new List<IdeaViewModel>(),
+            ResolvedSort = body?.ResolvedSort ?? sort,
+            HasOwnIdeas = body?.HasOwnIdeas ?? false
+        };
     }
 
     public async Task<CreateIdeaResultViewModel> CreateIdeaAsync(
         int projectId,
         int categoryId,
         string description,
-        string moderationToken = null)
+        string moderationToken = null,
+        string imageUrl = null,
+        string imageModerationToken = null,
+        string languageCode = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/projects/{projectId}/categories/{categoryId}/ideas");
-        request.Content = JsonContent.Create(new { Description = description, ModerationToken = moderationToken });
+        request.Content = JsonContent.Create(new
+        {
+            Description = description,
+            ModerationToken = moderationToken,
+            ImageUrl = imageUrl,
+            ImageModerationToken = imageModerationToken,
+            LanguageCode = languageCode,
+        });
 
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
@@ -37,8 +53,7 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         var result = await response.Content.ReadFromJsonAsync<CreateIdeaResultViewModel>();
         if (result is null) return new CreateIdeaResultViewModel { Success = false };
 
-        result.Success = true;
-        return result;
+        return result with { Success = true };
     }
 
     public async Task<List<IdeaViewModel>> GetMyIdeasAsync(int projectId, int categoryId)
@@ -71,12 +86,18 @@ public class IdeaService(HttpClient httpClient, ISessionService sessionService)
         return paged?.Items ?? new List<CommentViewModel>();
     }
 
-    private class ApiPagedResult<T>
+    private record ApiPagedResult<T>
     {
-        public List<T> Items { get; set; } = new();
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalCount { get; set; }
-        public int TotalPages { get; set; }
+        public List<T> Items { get; init; } = new();
+        public int Page { get; init; }
+        public int PageSize { get; init; }
+        public int TotalCount { get; init; }
+        public int TotalPages { get; init; }
+    }
+
+    private record ApiIndexResponse : ApiPagedResult<IdeaViewModel>
+    {
+        public string ResolvedSort { get; init; }
+        public bool HasOwnIdeas { get; init; }
     }
 }

@@ -1,50 +1,506 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@using Microsoft.AspNetCore.Localization
+@using Microsoft.AspNetCore.Html
+@using Microsoft.Extensions.Options
+@using System.Globalization
+@inject IHtmlLocalizer<SharedResource> Shared
+@inject IOptions<RequestLocalizationOptions> LocalizationOptions
+<!DOCTYPE html>
+@{
+    // Read the persisted theme from a cookie so the server can set data-theme
+    // before first paint, avoiding a flash. The TS module keeps the cookie in sync.
+    // When no cookie is set we leave the attribute OFF so daisyUI's `:root:not([data-theme])`
+    // rule fires and `prefersdark: true` on synapse-dark catches OS-dark visitors too.
+    var themeCookie = Context.Request.Cookies["admin-theme"];
+    var themeAttr = themeCookie is "synapse-dark" or "synapse-light"
+        ? new HtmlString($" data-theme=\"{themeCookie}\"")
+        : null;
+}
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"@themeAttr>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - UI-Admin</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/UI-Admin.styles.css" asp-append-version="true" />
+    <title>@ViewData["Title"] — @Shared["AppName"]</title>
+
+    @* Server-rendered i18n data — read by lib/i18n.ts. type="application/json" is data, not executable script. *@
+    <script type="application/json" id="i18n-data">@Json.Serialize(new {
+        culture = CultureInfo.CurrentUICulture.Name,
+        strings = new {
+          submit       = Shared["Common_Submit"].Value,
+          cancel       = Shared["Common_Cancel"].Value,
+          save         = Shared["Common_Save"].Value,
+          delete       = Shared["Common_Delete"].Value,
+          edit         = Shared["Common_Edit"].Value,
+          add          = Shared["Common_Add"].Value,
+          back         = Shared["Common_Back"].Value,
+          search       = Shared["Common_Search"].Value,
+          yes          = Shared["Common_Yes"].Value,
+          no           = Shared["Common_No"].Value,
+          confirm      = Shared["Common_Confirm"].Value,
+          loading      = Shared["Common_Loading"].Value,
+          close        = Shared["Common_Close"].Value,
+          all          = Shared["Common_All"].Value,
+          none         = Shared["Common_None"].Value
+        }
+    })</script>
+
+    <script type="module" vite-src="~/main.ts"></script>
+    <environment include="Development">
+        <link rel="stylesheet" vite-href="~/main.css" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" vite-href="~/main.ts" />
+    </environment>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">UI-Admin</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+<body class="bg-base-200 min-h-screen">
+
+@{
+    var projectId    = ViewData["ProjectId"] as int?;
+    var projectName  = ViewData["ProjectName"] as string;
+    var platformName = ViewData["PlatformName"] as string;
+    var projectState = ViewData["ProjectState"] as string;
+    var activeSection = ViewData["ActiveSection"] as string ?? ViewData["Title"] as string ?? "";
+    var hideSidebar  = ViewData["HideSidebar"] is true;
+    var isWizard     = hideSidebar && projectId.HasValue;
+    var isSystemAdmin = User.IsInRole("SystemAdmin");
+
+    string StateClass(string s) => s switch {
+        "Active"   => "badge-success",
+        "Draft"    => "badge-warning",
+        "Archived" => "badge-ghost",
+        _          => "badge-ghost"
+    };
+    string StateKey(string s) => s switch {
+        "Active"   => "State_Active",
+        "Draft"    => "State_Draft",
+        "Archived" => "State_Archived",
+        _          => ""
+    };
+    string NavAction(string section) => section switch {
+        "Dashboard"  => "Dashboard",
+        "Ideas"      => "Ideas",
+        "Categories" => "Ideation",
+        "Questions"  => "Questions",
+        "Settings"   => "Create",
+        _            => "Dashboard"
+    };
+    string NavIcon(string section) => section switch {
+        "Dashboard"   => """<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>""",
+        "Ideas"       => """<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>""",
+        "Categories"  => """<path d="M4 6h16M4 12h16M4 18h8"/>""",
+        "Questions"   => """<circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/>""",
+        "Settings"    => """<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>""",
+        _             => ""
+    };
+    string NavLabel(string section) => section switch {
+        "Dashboard"   => Shared["Nav_Dashboard"].Value,
+        "Ideas"       => Shared["Nav_Ideas"].Value,
+        "Categories"  => Shared["Nav_Categories"].Value,
+        "Questions"   => Shared["Nav_Questions"].Value,
+        "Settings"    => Shared["Nav_Settings"].Value,
+        _             => section
+    };
+    var wizardStep = ViewData["WizardStep"] as int?;
+    var wizardStepLabels = wizardStep.HasValue ? new[] {
+        Shared["Nav_Settings"].Value,
+        Shared["Nav_Questions"].Value,
+        Shared["Nav_Categories"].Value,
+        Shared["Nav_Launch"].Value
+    } : null;
+    var wizardStepActions = new[] { "Create", "Questions", "Ideation", "Activate" };
+
+    var platformId = ViewData["PlatformId"] as int?;
+
+    string PlatformNavController(string section) => section switch {
+        "Admins" => "AdminMembership",
+        _        => "Platform"
+    };
+    string PlatformNavAction(string section) => section switch {
+        "Dashboard" => "Dashboard",
+        "Admins"    => "Index",
+        "Settings"  => "Settings",
+        _           => "Dashboard"
+    };
+    string PlatformNavIcon(string section) => section switch {
+        "Dashboard" => """<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>""",
+        "Admins"    => """<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>""",
+        "Settings"  => """<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>""",
+        _           => ""
+    };
+    string PlatformNavLabel(string section) => section switch {
+        "Dashboard" => Shared["Nav_Dashboard"].Value,
+        "Admins"    => Shared["Nav_Admins"].Value,
+        "Settings"  => Shared["Nav_Settings"].Value,
+        _           => section
+    };
+    bool IsNavActive(string section) => activeSection == section
+        || (section == "Projects" && projectId.HasValue && !isWizard)
+        || (section == "Platform" && platformId.HasValue);
+}
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <!-- ── Top bar ── -->
+    <header class="fixed top-0 left-0 right-0 h-14 z-40 bg-base-100 border-b border-base-300 flex items-center px-4 gap-3">
+
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-1.5 text-xs min-w-0">
+            @if (projectId.HasValue)
+            {
+                <a asp-controller="Project" asp-action="Index"
+                   class="text-base-content/40 hover:text-base-content transition truncate">@Shared["Breadcrumb_Projects"]</a>
+                <span class="text-base-content/20">/</span>
+                <span class="text-base-content/60 truncate max-w-32">@projectName</span>
+                <span class="text-base-content/20">/</span>
+                <span class="text-primary font-semibold truncate">@NavLabel(activeSection)</span>
+            }
+            else if (platformId.HasValue)
+            {
+                <a asp-controller="Platform" asp-action="Index"
+                   class="text-base-content/40 hover:text-base-content transition truncate">@Shared["Breadcrumb_Platforms"]</a>
+                <span class="text-base-content/20">/</span>
+                <span class="text-base-content/60 truncate max-w-32">@platformName</span>
+                <span class="text-base-content/20">/</span>
+                <span class="text-primary font-semibold truncate">@PlatformNavLabel(activeSection)</span>
+            }
+            else
+            {
+                @* Root pages: H1 already states the section, so show the brand wordmark instead of a redundant breadcrumb. *@
+                @if (isSystemAdmin)
+                {
+                    <a asp-controller="Platform" asp-action="SystemDashboard"
+                       class="font-heading font-bold text-base text-primary tracking-tight hover:opacity-80 transition">@Shared["AppName"]</a>
+                }
+                else
+                {
+                    <a asp-controller="Project" asp-action="Index"
+                       class="font-heading font-bold text-base text-primary tracking-tight hover:opacity-80 transition">@Shared["AppName"]</a>
+                }
+            }
+        </nav>
+
+        <div class="flex-1"></div>
+
+        @* Language switcher — segmented pill *@
+        @{ var _activeCulture = CultureInfo.CurrentUICulture.Name; }
+        <form asp-controller="Culture" asp-action="SetCulture" method="post"
+              class="flex items-center rounded-full border border-base-content/20 bg-base-200 overflow-hidden"
+              aria-label="@Shared["LanguageMenu_Switch"]">
+            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+            @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
+            {
+                var isActive = string.Equals(c.Name, _activeCulture, StringComparison.OrdinalIgnoreCase);
+                <button type="submit" name="culture" value="@c.Name"
+                        class="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer @(isActive ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-primary")"
+                        aria-current="@(isActive ? "true" : "false")">
+                    @c.TwoLetterISOLanguageName
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+            }
+        </form>
+
+        @* Theme toggle pill *@
+        <button id="theme-toggle" type="button" aria-label="@Shared["ThemeToggleLabel"]"
+                class="relative inline-flex items-center w-14 h-7 rounded-full border border-base-content/20 bg-base-200 transition-colors cursor-pointer focus:outline-none shrink-0">
+            <span class="sr-only">@Shared["ThemeToggleLabel"]</span>
+            <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg"
+                 class="absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-warning hidden pointer-events-none" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg"
+                 class="absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-base-content/50 pointer-events-none" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <span id="toggle-knob"
+                  class="absolute left-1 h-5 w-5 rounded-full bg-base-content/70 shadow-sm transition-transform duration-200 pointer-events-none translate-x-0">
+            </span>
+        </button>
+
+        <!-- User dropdown -->
+        <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button"
+                 class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center cursor-pointer select-none hover:bg-primary/20 transition-colors">
+                @(User.Identity!.Name?.FirstOrDefault().ToString().ToUpper() ?? "U")
+            </div>
+            <div tabindex="0" class="dropdown-content bg-base-100 border border-base-300 rounded-xl shadow-xl w-56 mt-2 z-50 overflow-hidden">
+                <!-- Email header -->
+                <div class="px-4 py-3 border-b border-base-300">
+                    <p class="text-[11px] font-medium text-base-content/40 uppercase tracking-wider mb-0.5">@Shared["AppName"]</p>
+                    <p class="text-sm font-medium text-base-content truncate">@User.Identity.Name</p>
+                </div>
+                <!-- Menu items -->
+                <div class="p-1.5 flex flex-col gap-0.5">
+                    <a asp-controller="Auth" asp-action="ChangePassword"
+                       class="flex items-center gap-2.5 px-3 py-2 text-sm text-base-content rounded-lg hover:bg-base-200 transition-colors">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="shrink-0 text-base-content/50">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                        </svg>
+                        @Shared["UserMenu_ChangePassword"]
+                    </a>
+                    <form asp-controller="Auth" asp-action="Logout" method="post">
+                        <button type="submit"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-error rounded-lg hover:bg-error/8 transition-colors cursor-pointer">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="shrink-0">
+                                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+                            </svg>
+                            @Shared["UserMenu_Logout"]
+                        </button>
+                    </form>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - UI-Admin - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    </header>
+
+    <!-- ── Below top bar ── -->
+    <div class="flex pt-14 min-h-[calc(100vh-3.5rem)]">
+
+        <!-- Icon sidebar -->
+        <nav aria-label="@Shared["Nav_MainNavigation"]" class="fixed left-0 top-14 bottom-0 w-[52px] z-30 bg-base-100 border-r border-base-300 flex flex-col items-center py-3 gap-1">
+            @if (!isSystemAdmin)
+            {
+                <!-- Projects -->
+                <a asp-controller="Project" asp-action="Index"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(IsNavActive("Projects") ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_Projects"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                </a>
+
+                <!-- Admins (ProjectPlatformAdmin — scoped to own platform) -->
+                <a asp-controller="AdminMembership" asp-action="Index"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(IsNavActive("Admins") ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_Admins"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                </a>
+
+                <!-- Platform settings (ProjectPlatformAdmin) -->
+                <a asp-controller="Settings" asp-action="Index"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(activeSection == "Settings" ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_Settings"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </a>
+            }
+
+            @if (isSystemAdmin)
+            {
+                <!-- System Dashboard -->
+                <a asp-controller="Platform" asp-action="SystemDashboard"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(activeSection == "SystemDashboard" ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_SystemDashboard"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                </a>
+
+                <!-- Platform -->
+                <a asp-controller="Platform" asp-action="Index"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(IsNavActive("Platform") ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_Platform"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                </a>
+
+                <!-- Admins -->
+                <a asp-controller="Admin" asp-action="Index"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(IsNavActive("Admins") ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_Admins"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                </a>
+
+                <!-- AI Settings -->
+                <a asp-controller="Platform" asp-action="SystemSettings"
+                   class="w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right transition @(activeSection == "AiSettings" ? "bg-primary text-primary-content" : "text-base-content/40 hover:bg-base-200")"
+                   data-tip="@Shared["Nav_AiSettings"]">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                </a>
+            }
+
+            <!-- Privacy link -->
+            <a asp-controller="Privacy" asp-action="Index"
+               class="mt-auto mb-3 w-9 h-9 rounded-xl flex items-center justify-center tooltip tooltip-right text-base-content/40 hover:bg-base-200 transition"
+               data-tip="@Shared["Nav_Privacy"]">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </a>
+        </nav>
+
+        <!-- Content pushed right of icon sidebar -->
+        <div class="flex flex-1 pl-[52px]">
+
+            @if (projectId.HasValue && !hideSidebar)
+            {
+                <!-- Inner project sidebar (unchanged) -->
+                <aside class="fixed left-[52px] top-14 bottom-0 w-52 z-20 bg-base-100 border-r border-base-300 overflow-y-auto">
+                    <div class="p-4">
+                        <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5 truncate">@(platformName ?? "Synapse")</p>
+                        <p class="font-heading font-bold text-base-content text-sm mb-4 leading-snug">@projectName</p>
+
+                        <ul class="menu menu-sm gap-0.5 -mx-2 w-[calc(100%+1rem)]">
+                            @foreach (var section in new[]{"Settings","Questions","Categories","Ideas","Dashboard"})
+                            {
+                                var navLabel = NavLabel(section);
+                                var active = activeSection == section || activeSection == navLabel;
+                                <li>
+                                    <a asp-controller="Project"
+                                       asp-action="@NavAction(section)"
+                                       asp-route-projectId="@projectId"
+                                       class="@(active ? "bg-primary/10 text-primary font-semibold" : "text-base-content/60") rounded-xl gap-2.5">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            @Html.Raw(NavIcon(section))
+                                        </svg>
+                                        @navLabel
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+
+                        @if (!string.IsNullOrEmpty(projectState))
+                        {
+                            <div class="mt-5">
+                                <span class="badge @StateClass(projectState) badge-sm gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-current inline-block"></span>
+                                    @{ var stateKey = StateKey(projectState); }
+                                    @(string.IsNullOrEmpty(stateKey) ? projectState : Shared[stateKey].Value)
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </aside>
+
+                @* ml-52 always applies here: hideSidebar=true exits via the branch condition above *@
+                <main class="flex-1 ml-52 p-6 min-h-[calc(100vh-3.5rem)]">
+                    @RenderBody()
+                </main>
+            }
+            else if (platformId.HasValue && isSystemAdmin)
+            {
+                <!-- Inner platform sidebar -->
+                <aside class="fixed left-[52px] top-14 bottom-0 w-52 z-20 bg-base-100 border-r border-base-300 overflow-y-auto">
+                    <div class="p-4">
+                        <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5 truncate">@Shared["Sidebar_SystemAdmin"]</p>
+                        <p class="font-heading font-bold text-base-content text-sm mb-4 leading-snug">@platformName</p>
+
+                        <ul class="menu menu-sm gap-0.5 -mx-2 w-[calc(100%+1rem)]">
+                            @foreach (var section in new[]{"Dashboard","Admins","Settings"})
+                            {
+                                var active = activeSection == section;
+                                <li>
+                                    <a asp-controller="@PlatformNavController(section)"
+                                       asp-action="@PlatformNavAction(section)"
+                                       asp-route-id="@platformId"
+                                       class="@(active ? "bg-primary/10 text-primary font-semibold" : "text-base-content/60") rounded-xl gap-2.5">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            @Html.Raw(PlatformNavIcon(section))
+                                        </svg>
+                                        @PlatformNavLabel(section)
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </aside>
+
+                <main class="flex-1 ml-52 p-6 min-h-[calc(100vh-3.5rem)]">
+                    @RenderBody()
+                </main>
+            }
+            else
+            {
+                <main class="flex-1 p-6 min-h-[calc(100vh-3.5rem)]">
+                    @if (wizardStep.HasValue && wizardStepLabels != null)
+                    {
+                        <div class="-mx-6 -mt-6 mb-5 px-8 py-4 bg-base-100 border-b border-base-300">
+                            <p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-3">@Shared["Wizard_NewProject"]</p>
+                            <div class="flex items-center max-w-2xl">
+                                @for (int _s = 0; _s < wizardStepLabels.Length; _s++)
+                                {
+                                    var _num    = _s + 1;
+                                    var _done   = _num < wizardStep.Value;
+                                    var _active = _num == wizardStep.Value;
+                                    var _clickable = _done || _active;
+                                    var _href = _clickable && projectId.HasValue
+                                        ? Url.Action(wizardStepActions[_s], "Project", _s < 3
+                                            ? new { projectId = projectId.Value, isNew = true }
+                                            : (object)new { projectId = projectId.Value })
+                                        : null;
+
+                                    if (_s > 0)
+                                    {
+                                        <div class="flex-1 h-px mx-3 @(_done ? "bg-primary" : "bg-base-300")"></div>
+                                    }
+                                    <a href="@(_href ?? "javascript:void(0)")"
+                                       class="flex items-center gap-1.5 flex-shrink-0 no-underline @(_clickable ? "cursor-pointer" : "cursor-default pointer-events-none")">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0
+                                            @(_done   ? "bg-primary text-primary-content"
+                                            : _active ? "bg-primary text-primary-content ring-2 ring-primary ring-offset-2 ring-offset-base-100"
+                                                      : "bg-base-200 text-base-content/30")">
+                                            @if (_done)
+                                            {
+                                                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                                            }
+                                            else
+                                            {
+                                                @_num
+                                            }
+                                        </div>
+                                        <span class="text-xs hidden sm:block
+                                            @(_active ? "text-primary font-semibold"
+                                            : _done   ? "text-base-content/60"
+                                                      : "text-base-content/30")">
+                                            @wizardStepLabels[_s]
+                                        </span>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @RenderBody()
+                </main>
+            }
+
+        </div>
+    </div>
+}
+else
+{
+    @RenderBody()
+}
+
+@if (TempData["Success"] is string successMsg)
+{
+    <div id="tempdata-success" data-auto-dismiss class="alert alert-success fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M5 13l4 4L19 7"/></svg>
+        <span>@successMsg</span>
+    </div>
+}
+
+@if (TempData["Error"] is string errorMsg)
+{
+    <div id="tempdata-error" data-auto-dismiss class="alert alert-error fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        <span>@errorMsg</span>
+    </div>
+}
+
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -37,10 +37,18 @@
     <_ContentIncludedByDefault Remove="wwwroot\css\site.css" />
     <_ContentIncludedByDefault Remove="wwwroot\dist\main-BsU-Yf4M.js" />
     <_ContentIncludedByDefault Remove="wwwroot\dist\main-Dr7MkUkP.css" />
+    <_ContentIncludedByDefault Remove="Views\ProjectLandingPage\Inactive.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\ProjectLandingPage\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\ProjectLandingPage\NotFound.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="Views\Shared\NotFound.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\" />
+    <Folder Include="wwwroot\uploads\logos\" />
   </ItemGroup>
 
   <!-- Ensure Node environment on Build -->

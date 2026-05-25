@@ -1,0 +1,216 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
+@model DashboardViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Dashboard";
+    Layout = "_Layout";
+}
+<div class="w-full">
+    @Html.AntiForgeryToken()
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <div class="flex items-center gap-2">
+            @if (ViewData["ProjectState"] as string == "Active")
+            {
+                <a asp-action="Archive" asp-route-projectId="@Model.ProjectId"
+                   class="btn btn-outline btn-warning btn-sm gap-1.5">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                    @L["ArchiveButton"]
+                </a>
+            }
+            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+                    data-open-modal="project-export-modal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                </svg>
+                @L["ExportButton"]
+            </button>
+            <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
+               class="btn btn-outline btn-sm gap-1.5">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+                @L["ConfigureButton"]
+            </a>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @for (var i = 0; i < Model.WidgetSlots.Length; i++)
+        {
+            var slot = Model.WidgetSlots[i];
+            var widgetType = slot.WidgetType;
+            @if (widgetType == "QuestionSinglePie")
+            {
+                <div data-widget="QuestionSinglePie"
+                     data-position="@i"
+                     data-project-id="@Model.ProjectId"
+                     data-question-id="@slot.QuestionId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
+                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
+                     data-i18n-no-question="@L["Widget_NoQuestion"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
+                    <div data-widget-body class="relative flex-1 min-h-0">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            }
+            else if (widgetType == "QuestionMultiBar")
+            {
+                <div data-widget="QuestionMultiBar"
+                     data-position="@i"
+                     data-project-id="@Model.ProjectId"
+                     data-question-id="@slot.QuestionId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-x-axis-label="@L["Widget_XAxisLabel"]"
+                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
+                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
+                     data-i18n-no-question="@L["Widget_NoQuestion"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
+                    <div data-widget-body class="relative flex-1 min-h-0">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            }
+            else if (widgetType == "QuestionLikertBar")
+            {
+                <div data-widget="QuestionLikertBar"
+                     data-position="@i"
+                     data-project-id="@Model.ProjectId"
+                     data-question-id="@slot.QuestionId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
+                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
+                     data-i18n-no-question="@L["Widget_NoQuestion"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
+                    <div data-widget-body class="relative flex-1 min-h-0">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            }
+            else if (widgetType == "SurveyDistribution")
+            {
+                <div data-widget="SurveyDistribution"
+                     data-project-id="@Model.ProjectId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-survey-url="@Model.SurveyUrl"
+                     data-i18n-survey-link-title="@L["Widget_SurveyLink_Title"]"
+                     data-i18n-copy="@L["Widget_Copy"]"
+                     data-i18n-copied="@L["Widget_Copied"]"
+                     data-i18n-download-qr="@L["Widget_DownloadQr"]"
+                     data-i18n-qr-alt="@L["Widget_QrAlt"]"
+                     class="card bg-base-100 shadow-sm p-4 min-h-28">
+                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                </div>
+            }
+            else if (widgetType == "SocialMediaPost")
+            {
+                <div data-widget="SocialMediaPost"
+                     data-project-id="@Model.ProjectId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-survey-url="@Model.SurveyUrl"
+                     data-i18n-title="@L["Widget_Social_Title"]"
+                     data-i18n-desc-placeholder="@L["Widget_Social_DescPlaceholder"]"
+                     data-i18n-ai-image="@L["Widget_Social_AiImage"]"
+                     data-i18n-generate="@L["Widget_Social_Generate"]"
+                     data-i18n-generating="@L["Widget_Social_Generating"]"
+                     data-i18n-copy-text="@L["Widget_Social_CopyText"]"
+                     data-i18n-copied="@L["Widget_Copied"]"
+                     data-i18n-open-platform="@L["Widget_Social_OpenPlatform"]"
+                     data-i18n-open-in="@L["Widget_Social_OpenIn"]"
+                     data-i18n-char-count="@L["Widget_Social_CharCount"]"
+                     data-i18n-note-linkedin="@L["Widget_Social_Note_LinkedIn"]"
+                     data-i18n-note-facebook="@L["Widget_Social_Note_Facebook"]"
+                     data-i18n-note-instagram="@L["Widget_Social_Note_Instagram"]"
+                     class="card bg-base-100 shadow-sm p-4 h-56">
+                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                </div>
+            }
+            else
+            {
+                var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
+                var isTall  = widgetType is "SocialMediaPost";
+                <div data-widget="@widgetType"
+                     data-project-id="@Model.ProjectId"
+                     data-api-base="@Model.ApiBaseUrl"
+                     data-survey-url="@Model.SurveyUrl"
+                     data-i18n-stat-view-count="@L["Widget_Stat_ViewCount"]"
+                     data-i18n-stat-completion-count="@L["Widget_Stat_CompletionCount"]"
+                     data-i18n-stat-completion-rate="@L["Widget_Stat_CompletionRate"]"
+                     data-i18n-no-ideas="@L["Widget_NoIdeas"]"
+                     data-i18n-idea-feed-title="@L["Widget_IdeaFeed_Title"]"
+                     data-i18n-top-ideas-title="@L["Widget_TopIdeas_Title"]"
+                     data-i18n-top-categories-title="@L["Widget_TopCategories_Title"]"
+                     data-i18n-series-ideas="@L["Widget_Series_Ideas"]"
+                     data-i18n-series-reactions="@L["Widget_Series_Reactions"]"
+                     data-i18n-timeline-title="@L["Widget_Timeline_Title"]"
+                     data-i18n-series-started="@L["Widget_Series_Started"]"
+                     data-i18n-series-completed="@L["Widget_Series_Completed"]"
+                     data-i18n-moderation-title="@L["Widget_Moderation_Title"]"
+                     data-i18n-moderation-approved="@L["Widget_Moderation_Approved"]"
+                     data-i18n-moderation-new="@L["Widget_Moderation_New"]"
+                     data-i18n-moderation-flagged="@L["Widget_Moderation_Flagged"]"
+                     data-i18n-moderation-declined="@L["Widget_Moderation_Declined"]"
+                     class="card bg-base-100 shadow-sm p-4 @(isChart || isTall ? "h-56" : "min-h-28")">
+                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@* Project dashboard export modal *@
+<dialog id="project-export-modal" class="modal"
+        data-export-url="/api/projects/@Model.ProjectId/stats/export">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">@L["ExportModalTitle"]</h3>
+
+        <p class="text-sm font-medium mb-2">@L["ExportGroupHeading"]</p>
+        <div class="form-control gap-2 mb-4">
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="summary" checked />
+                <span class="label-text">@L["Section_Summary"]</span>
+            </label>
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="timeline" checked />
+                <span class="label-text">@L["Section_Timeline"]</span>
+            </label>
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="categories" checked />
+                <span class="label-text">@L["Section_Categories"]</span>
+            </label>
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" class="checkbox checkbox-sm" data-project-section="ideas" checked />
+                <span class="label-text">@L["Section_Ideas"]</span>
+            </label>
+        </div>
+
+        <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm font-medium">@L["FormatLabel"]</span>
+            <select id="project-export-format" class="select select-bordered select-sm w-40">
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="csv">CSV (.zip)</option>
+            </select>
+        </div>
+
+        <label class="label cursor-pointer justify-start gap-3 mb-4">
+            <input type="checkbox" class="checkbox checkbox-sm" id="project-export-graphics" data-project-graphics checked />
+            <span class="label-text">@L["IncludeGraphicsLabel"]</span>
+        </label>
+
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+            </form>
+            <button type="button" class="btn btn-primary btn-sm" id="project-export-download">@L["ExportButton"]</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+@section Scripts {
+    <script type="module" vite-src="~/admin/dashboard.ts"></script>
+}

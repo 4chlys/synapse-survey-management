@@ -1,0 +1,62 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
+@model ConfigureDashboardViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Dashboard";
+    Layout = "_Layout";
+}
+<div class="max-w-lg">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-4">
+            <form asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId" method="post" class="flex flex-col gap-3">
+                @for (var i = 0; i < 9; i++)
+                {
+                    var slot = Model.Slots[i];
+                    <div class="flex items-center gap-3">
+                        <span class="text-base-content/40 text-xs w-20">@L["PositionLabel"] @(i + 1)</span>
+                        <select name="Slots[@i].WidgetType" class="select select-bordered select-sm flex-1">
+                            @foreach (var type in Model.AllWidgetTypes)
+                            {
+                                var isSelected = slot.WidgetType == type;
+                                var label = type switch {
+                                    "ViewCount" => L["Widget_ViewCount"].Value,
+                                    "CompletionCount" => L["Widget_CompletionCount"].Value,
+                                    "CompletionRate" => L["Widget_CompletionRate"].Value,
+                                    "ParticipationTimeline" => L["Widget_ParticipationTimeline"].Value,
+                                    "TopCategories" => L["Widget_TopCategories"].Value,
+                                    "TopIdeas" => L["Widget_TopIdeas"].Value,
+                                    "SurveyDistribution" => L["Widget_SurveyDistribution"].Value,
+                                    "IdeaFeed" => L["Widget_IdeaFeed"].Value,
+                                    "ModerationQueue" => L["Widget_ModerationQueue"].Value,
+                                    "QuestionSinglePie" => L["Widget_QuestionSinglePie"].Value,
+                                    "QuestionMultiBar" => L["Widget_QuestionMultiBar"].Value,
+                                    "QuestionLikertBar" => L["Widget_QuestionLikertBar"].Value,
+                                    "SocialMediaPost" => "Social media post",
+                                    _ => type
+                                };
+                                if (isSelected)
+                                {
+                                    <option value="@type" selected>@label</option>
+                                }
+                                else
+                                {
+                                    <option value="@type">@label</option>
+                                }
+                            }
+                        </select>
+                        @* QuestionId is chosen via the live dropdown on the dashboard;
+                           carried through here so a layout save does not clear it. *@
+                        <input type="hidden" name="Slots[@i].QuestionId" value="@(slot.QuestionId?.ToString() ?? string.Empty)" />
+                    </div>
+                }
+                <div class="card-actions justify-end gap-2 pt-2">
+                    <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost btn-sm">@L["CancelButton"]</a>
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

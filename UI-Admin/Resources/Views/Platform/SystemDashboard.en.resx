@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>System dashboard</value></data>
+  <data name="Heading" xml:space="preserve"><value>System dashboard</value></data>
+  <data name="StatPlatforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="StatActive" xml:space="preserve"><value>Active</value></data>
+  <data name="StatDraft" xml:space="preserve"><value>Draft</value></data>
+  <data name="StatArchived" xml:space="preserve"><value>Archived</value></data>
+  <data name="StatProjects" xml:space="preserve"><value>Projects</value></data>
+  <data name="StatAdmins" xml:space="preserve"><value>Admins</value></data>
+  <data name="StatParticipants" xml:space="preserve"><value>Participants</value></data>
+  <data name="PlatformsHeading" xml:space="preserve"><value>Platforms</value></data>
+  <data name="AiShort" xml:space="preserve"><value>AI</value></data>
+  <data name="OpenAction" xml:space="preserve"><value>Open</value></data>
+  <data name="AdminsAction" xml:space="preserve"><value>Admins</value></data>
+  <data name="CostMonitoringHeading" xml:space="preserve"><value>Cost &amp; monitoring</value></data>
+  <data name="CostIframeTitle" xml:space="preserve"><value>Cost overview {0}</value></data>
+  <data name="NoCostDashboard" xml:space="preserve"><value>No cost dashboard configured.</value></data>
+  <data name="AddCostDashboardHint" xml:space="preserve"><value>Add a Data Studio embed URL via Platform → Settings for each platform.</value></data>
+  <data name="LiveAiCostHeading" xml:space="preserve"><value>Live AI cost (last 24h)</value></data>
+  <data name="AiCost_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="AiCost_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="AiCost_InputTokens" xml:space="preserve"><value>Input tokens</value></data>
+  <data name="AiCost_OutputTokens" xml:space="preserve"><value>Output tokens</value></data>
+  <data name="AiCost_Cost" xml:space="preserve"><value>Cost (EUR)</value></data>
+  <data name="AiCost_Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="AiCost_Empty" xml:space="preserve"><value>No AI usage in the last 24h.</value></data>
+
+  <data name="StatAvgTime" xml:space="preserve"><value>Avg. completion time</value></data>
+  <data name="StatMedianTime" xml:space="preserve"><value>Median completion time</value></data>
+  <data name="ProjectsTableHeading" xml:space="preserve"><value>Projects</value></data>
+  <data name="Col_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Col_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Col_State" xml:space="preserve"><value>State</value></data>
+  <data name="Col_Participants" xml:space="preserve"><value>Participants</value></data>
+  <data name="Col_AvgTime" xml:space="preserve"><value>Avg. time</value></data>
+  <data name="Col_MedianTime" xml:space="preserve"><value>Median time</value></data>
+  <data name="AiBreakdownHeading" xml:space="preserve"><value>AI usage by service</value></data>
+  <data name="AiCol_Service" xml:space="preserve"><value>Service</value></data>
+  <data name="AiCol_Model" xml:space="preserve"><value>Model</value></data>
+  <data name="AiCol_InputTokens" xml:space="preserve"><value>Input tokens</value></data>
+  <data name="AiCol_OutputTokens" xml:space="preserve"><value>Output tokens</value></data>
+  <data name="AiCol_Requests" xml:space="preserve"><value>Requests</value></data>
+  <data name="AiCol_Cost" xml:space="preserve"><value>Cost (EUR)</value></data>
+  <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
+  <data name="ExportModalTitle" xml:space="preserve"><value>Export statistics</value></data>
+  <data name="ExportGroupHeading_Stats" xml:space="preserve"><value>Statistics</value></data>
+  <data name="ExportGroupHeading_Ai" xml:space="preserve"><value>AI usage</value></data>
+  <data name="Section_Platforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="Section_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Section_Summary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Section_AiSystem" xml:space="preserve"><value>AI by service (system)</value></data>
+  <data name="Section_AiPlatforms" xml:space="preserve"><value>AI by service (platform)</value></data>
+  <data name="Section_AiProjects" xml:space="preserve"><value>AI by service (project)</value></data>
+  <data name="IncludeGraphicsLabel" xml:space="preserve"><value>Include graphics (xlsx)</value></data>
+  <data name="FormatLabel" xml:space="preserve"><value>Format</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="FormatPngZip" xml:space="preserve"><value>Graphics (.zip of PNG)</value></data>
+  <data name="ChartsHeading" xml:space="preserve"><value>Charts</value></data>
+  <data name="Chart_ParticipantsTitle" xml:space="preserve"><value>Participants per project</value></data>
+  <data name="Chart_ProjectStatesTitle" xml:space="preserve"><value>Project states</value></data>
+  <data name="Chart_AiCostTitle" xml:space="preserve"><value>AI cost per service</value></data>
+  <data name="Chart_CompletionTimeTitle" xml:space="preserve"><value>Completion time per project</value></data>
+  <data name="Series_Participants" xml:space="preserve"><value>Participants</value></data>
+  <data name="Series_CompletionTime" xml:space="preserve"><value>Completion time (s)</value></data>
+  <data name="Series_AiCost" xml:space="preserve"><value>Cost (EUR)</value></data>
+</root>

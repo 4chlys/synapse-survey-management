@@ -1,9 +1,12 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.UI.User.Extensions;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Models.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Project;
+using SynapseEnqueteManagement.UI.User.Services.Session;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
@@ -14,33 +17,77 @@ public class IdeationController(
     CommentService commentService,
     EmojiService emojiService,
     IProjectApiService projectApiService,
-    ParticipantService participantService)
+    ParticipantService participantService,
+    IWebHostEnvironment env,
+    IConfiguration configuration,
+    ILogger<IdeationController> logger,
+    ISessionService sessionService)
     : Controller
 {
-    public async Task<IActionResult> Index(int projectId, int categoryId, bool contactInfo = false)
+    public async Task<IActionResult> IdeaHub(int projectId, int categoryId, bool contactInfo = false, string sort = "diverse", bool showAllLanguages = false)
     {
-        var projectTask = projectApiService.GetProjectAsync(projectId);
-        var emojisTask = emojiService.GetEmojisAsync();
+        var projectTask  = projectApiService.GetProjectAsync(projectId);
+        var emojisTask   = emojiService.GetEmojisAsync(projectId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var ideasTask = ideaService.GetIdeasByCategoryAsync(projectId, categoryId);
 
-        await Task.WhenAll(projectTask, emojisTask, categoryTask, ideasTask);
+        await Task.WhenAll(projectTask, emojisTask, categoryTask);
 
-        var project = await projectTask;
         var category = await categoryTask;
         if (category == null) return NotFound();
+
+        var project = await projectTask;
+        var replace = project?.ExtraIdeasReplaceExisting ?? false;
+        var allowCross = project?.AllowCrossLanguageIdeas ?? false;
+        var maxExtra = project?.MaxExtraIdeaRequests ?? 3;
+        var used = sessionService.GetIdeaRefreshCount(projectId, categoryId);
+        var remaining = Math.Max(0, maxExtra - used);
+        var currentPage = used + 1;
+        var effectiveShowAll = allowCross && showAllLanguages;
+
+        // Load the right ideas based on mode and refresh history
+        var allIdeas = new List<IdeaViewModel>();
+        string resolvedSort = sort;
+        bool hasOwnIdeas = false;
+
+        if (replace)
+        {
+            // Replace mode: only show the latest page
+            var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, currentPage, effectiveShowAll);
+            allIdeas.AddRange(index.Ideas);
+            resolvedSort = index.ResolvedSort;
+            hasOwnIdeas = index.HasOwnIdeas;
+        }
+        else
+        {
+            // Supplement mode: show all pages up to current
+            var pageTasks = Enumerable.Range(1, currentPage)
+                .Select(p => ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, p, effectiveShowAll))
+                .ToList();
+            var results = await Task.WhenAll(pageTasks);
+            foreach (var result in results)
+                allIdeas.AddRange(result.Ideas);
+            resolvedSort = results[0].ResolvedSort;
+            hasOwnIdeas = results.Any(r => r.HasOwnIdeas);
+        }
 
         this.SetLayoutData(project, projectId, showModerationPopup: true);
 
         return View(new IdeaIndexViewModel
         {
-            ProjectId = projectId,
-            CategoryId = categoryId,
-            Category = category,
-            Ideas = await ideasTask,
-            Emojis = await emojisTask,
-            ShowContactInfoPopup = contactInfo,
-            RequestContactInfo = contactInfo && (project?.RequestContactInfo ?? false)
+            ProjectId            = projectId,
+            CategoryId           = categoryId,
+            Category             = category,
+            Ideas                = allIdeas,
+            Emojis               = await emojisTask,
+            ShowContactInfoPopup = contactInfo && (project?.RequestContactInfo ?? false),
+            CurrentSort          = resolvedSort,
+            HasOwnIdeas          = hasOwnIdeas,
+            ExtraIdeasReplaceExisting = replace,
+            MaxExtraIdeaRequests      = maxExtra,
+            RemainingExtraRequests    = remaining,
+            AllowCrossLanguageIdeas   = allowCross,
+            SupportedLanguageCodes    = project?.SupportedLanguageCodes ?? new List<string>(),
+            ParticipantLanguageCode   = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
         });
     }
 
@@ -50,14 +97,15 @@ public class IdeationController(
         var ideaTask = ideaService.GetIdeaByIdAsync(projectId, categoryId, ideaId);
         var commentsTask = ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
         var categoryTask = categoryService.GetCategoryByIdAsync(categoryId, projectId);
-        var emojisTask = emojiService.GetEmojisAsync();
+        var emojisTask = emojiService.GetEmojisAsync(projectId);
 
         await Task.WhenAll(projectTask, ideaTask, commentsTask, categoryTask, emojisTask);
 
         var idea = await ideaTask;
         if (idea == null) return NotFound();
 
-        this.SetLayoutData(await projectTask, projectId, showModerationPopup: true);
+        var project = await projectTask;
+        this.SetLayoutData(project, projectId, showModerationPopup: true);
 
         return View(new IdeaDetailViewModel
         {
@@ -66,7 +114,10 @@ public class IdeationController(
             Category = (await categoryTask)!,
             Idea = idea,
             Comments = await commentsTask,
-            Emojis = await emojisTask
+            Emojis = await emojisTask,
+            AllowCrossLanguageIdeas = project?.AllowCrossLanguageIdeas ?? false,
+            SupportedLanguageCodes  = project?.SupportedLanguageCodes ?? new List<string>(),
+            ParticipantLanguageCode = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
         });
     }
 
@@ -92,27 +143,56 @@ public class IdeationController(
         });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> LoadIdeas(int projectId, int categoryId, int page = 1, string sort = "diverse", bool showAllLanguages = false)
+    {
+        var project = await projectApiService.GetProjectAsync(projectId);
+        var maxExtra = project?.MaxExtraIdeaRequests ?? 3;
+        var used = sessionService.GetIdeaRefreshCount(projectId, categoryId);
+
+        if (used >= maxExtra)
+            return Json(new { ideas = Array.Empty<object>(), remaining = 0 });
+
+        sessionService.IncrementIdeaRefreshCount(projectId, categoryId);
+        var remaining = maxExtra - used - 1;
+
+        var effectiveShowAll = (project?.AllowCrossLanguageIdeas ?? false) && showAllLanguages;
+        var index = await ideaService.GetIdeasIndexAsync(projectId, categoryId, sort, page, effectiveShowAll);
+        return Json(new { ideas = index.Ideas, remaining });
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateIdea(
         int projectId,
         int categoryId,
         string description,
-        string moderationToken = null)
+        string moderationToken = null,
+        string imageUrl = null,
+        string imageModerationToken = null,
+        string languageCode = null)
     {
-        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken);
+        if (!string.IsNullOrEmpty(imageUrl) && !IsAllowedImageUrl(imageUrl))
+        {
+            logger.LogWarning("Rejected imageUrl {Url} for project {ProjectId} — fails origin check", imageUrl, projectId);
+            imageUrl = null;
+            imageModerationToken = null;
+        }
+
+        var result = await ideaService.CreateIdeaAsync(projectId, categoryId, description, moderationToken,
+            imageUrl, imageModerationToken, languageCode);
         if (!result.Success) return PartialView("_ModerationPopup");
 
-        if (result.IsFirstIdea)
-            return RedirectToAction("Index", new { projectId, categoryId, contactInfo = true });
+        if (result.ShouldAskForContactInfo)
+            return RedirectToAction("IdeaHub", new { projectId, categoryId, contactInfo = true });
 
-        return RedirectToAction("Index", new { projectId, categoryId });
+        return RedirectToAction("IdeaHub", new { projectId, categoryId });
     }
 
     [HttpPost]
-    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email, string phoneNumber)
+    public async Task<IActionResult> SaveContactInfo(int projectId, int categoryId, string email)
     {
-        await participantService.SaveContactInfoAsync(projectId, email, phoneNumber);
-        return RedirectToAction("Index", new { projectId, categoryId });
+        await participantService.SaveContactInfoAsync(projectId, email);
+        return RedirectToAction("IdeaHub", new { projectId, categoryId });
     }
 
     [HttpPost]
@@ -121,9 +201,10 @@ public class IdeationController(
         int categoryId,
         int ideaId,
         string text,
-        string moderationToken = null)
+        string moderationToken = null,
+        string languageCode = null)
     {
-        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationToken);
+        var success = await commentService.AddCommentAsync(projectId, categoryId, ideaId, text, moderationToken, languageCode);
         if (!success) return PartialView("_ModerationPopup");
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
@@ -140,8 +221,8 @@ public class IdeationController(
             return Json(idea?.Emojis ?? []);
         }
 
-        if (returnPage == "Index")
-            return RedirectToAction("Index", new { projectId, categoryId });
+        if (returnPage == "IdeaHub")
+            return RedirectToAction("IdeaHub", new { projectId, categoryId });
 
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
@@ -151,6 +232,14 @@ public class IdeationController(
         int emojiId)
     {
         await commentService.AddCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+            var comment = comments.FirstOrDefault(c => c.CommentId == commentId);
+            return Json(comment?.Emojis ?? []);
+        }
+
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 
@@ -166,8 +255,8 @@ public class IdeationController(
             return Json(idea?.Emojis ?? []);
         }
 
-        if (returnPage == "Index")
-            return RedirectToAction("Index", new { projectId, categoryId });
+        if (returnPage == "IdeaHub")
+            return RedirectToAction("IdeaHub", new { projectId, categoryId });
 
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
@@ -177,6 +266,37 @@ public class IdeationController(
         int emojiId)
     {
         await commentService.RemoveCommentEmojiAsync(projectId, categoryId, ideaId, commentId, emojiId);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            var comments = await ideaService.GetCommentsByIdeaAsync(projectId, categoryId, ideaId);
+            var comment = comments.FirstOrDefault(c => c.CommentId == commentId);
+            return Json(comment?.Emojis ?? []);
+        }
+
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
+    }
+
+    private bool IsAllowedImageUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+
+        // Always allow uploads from the configured API origin (local dev + Cloud Run test with LocalStorage)
+        var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5159";
+        if (Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)
+            && (uri.Scheme == "https" || uri.Scheme == "http")
+            && string.Equals(uri.Authority, apiUri.Authority, StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith("/uploads/tmp/ideas/", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (env.IsDevelopment()) return false;
+
+        // In production, also allow GCS uploads
+        var bucket = configuration["GcsBucket"]
+                     ?? Environment.GetEnvironmentVariable("GCS_BUCKET")
+                     ?? "synapse-assets-prod";
+        return uri.Scheme == "https"
+            && string.Equals(uri.Host, "storage.googleapis.com", StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith($"/{bucket}/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
     }
 }

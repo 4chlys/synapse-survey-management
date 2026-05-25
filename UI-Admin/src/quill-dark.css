@@ -1,0 +1,48 @@
+/* Quill editor layout — applies in all themes */
+#intro-editor .ql-editor {
+    min-height: 140px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-size: 0.875rem;
+}
+
+/* Dark theme overrides */
+[data-theme="synapse-dark"] #intro-editor .ql-editor {
+    color: #fff;
+}
+
+[data-theme="synapse-dark"] #intro-editor .ql-editor.ql-blank::before {
+    color: #6b7280;
+    font-style: italic;
+}
+
+[data-theme="synapse-dark"] .ql-toolbar.ql-snow {
+    border-color: #6b7280 !important;
+    background: #1f2937;
+}
+
+[data-theme="synapse-dark"] .ql-toolbar .ql-stroke {
+    stroke: #9ca3af !important;
+}
+
+[data-theme="synapse-dark"] .ql-toolbar .ql-fill {
+    fill: #9ca3af !important;
+}
+
+[data-theme="synapse-dark"] .ql-toolbar .ql-picker-label {
+    color: #9ca3af !important;
+}
+
+[data-theme="synapse-dark"] .ql-toolbar button:hover .ql-stroke,
+[data-theme="synapse-dark"] .ql-toolbar button.ql-active .ql-stroke {
+    stroke: #fff !important;
+}
+
+[data-theme="synapse-dark"] .ql-toolbar button:hover .ql-fill,
+[data-theme="synapse-dark"] .ql-toolbar button.ql-active .ql-fill {
+    fill: #fff !important;
+}
+
+[data-theme="synapse-dark"] #intro-editor.ql-container.ql-snow {
+    border-color: #6b7280 !important;
+}

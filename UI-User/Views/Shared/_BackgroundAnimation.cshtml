@@ -1,0 +1,155 @@
+@{
+    var orgName = (ViewData["SurveyTitle"] ?? ViewData["OrganisationName"] ?? "").ToString();
+    var orgLogoUrl = ViewData["OrganisationLogoUrl"] as string;
+
+    var cards = new[]
+    {
+        new { Left = "4%",  Dur = "18s", Delay = "-9s",  Rot = "-3deg", Width = "w-52" },
+        new { Left = "18%", Dur = "22s", Delay = "-5s",  Rot = "2deg",  Width = "w-56" },
+        new { Left = "34%", Dur = "19s", Delay = "-15s", Rot = "-1deg", Width = "w-48" },
+        new { Left = "50%", Dur = "24s", Delay = "-12s", Rot = "3deg",  Width = "w-60" },
+        new { Left = "64%", Dur = "20s", Delay = "-6s",  Rot = "-2deg", Width = "w-52" },
+        new { Left = "78%", Dur = "23s", Delay = "-18s", Rot = "1deg",  Width = "w-56" },
+        new { Left = "88%", Dur = "17s", Delay = "-8s",  Rot = "-4deg", Width = "w-44" },
+    };
+
+    var questions = new[]
+    {
+        new { Q = "Hoe tevreden bent u over onze service?", Type = "likert" },
+        new { Q = "Wat is uw voorkeur voor contact?",       Type = "choice" },
+        new { Q = "Hoe vaak gebruikt u dit platform?",      Type = "choice" },
+        new { Q = "Geef uw mening over de gebruiksgemak.",  Type = "likert" },
+        new { Q = "Welke functie gebruikt u het meest?",    Type = "choice" },
+        new { Q = "Hoe waardeert u de ondersteuning?",      Type = "likert" },
+        new { Q = "Wat kunnen wij verbeteren?",             Type = "open"   },
+        new { Q = "What should we do to improve?",          Type = "Open"   },
+        new { Q = "How often do you use this platform?",    Type = "choice" },
+        new { Q = "How likely are you to recommend us?",    Type = "likert" },
+        new { Q = "What aspects of our service do you value most?", Type = "choice" },
+    };
+
+    var ideas = new[]
+    {
+        new { Text = "Meer planten in de gemeenschappelijke ruimtes voor betere lucht.", Emojis = new[] { "👍", "💡" }, Counts = new[] { 8, 3 }, Comments = 4 },
+        new { Text = "Een maandelijkse repair-café organiseren in de buurt.",            Emojis = new[] { "❤️", "🔧" }, Counts = new[] { 12, 5 }, Comments = 7 },
+        new { Text = "Veiligere fietspaden langs de hoofdstraat aanleggen.",             Emojis = new[] { "👍", "🚴" }, Counts = new[] { 21, 9 }, Comments = 11 },
+        new { Text = "Workshops rond zonne-energie voor bewoners.",                      Emojis = new[] { "☀️", "💡" }, Counts = new[] { 6, 4 }, Comments = 2 },
+        new { Text = "More benches and shade in the central park area.",                 Emojis = new[] { "👍", "🌳" }, Counts = new[] { 15, 8 }, Comments = 6 },
+        new { Text = "Community garden where neighbours can grow vegetables.",           Emojis = new[] { "❤️", "🥕" }, Counts = new[] { 18, 6 }, Comments = 9 },
+        new { Text = "Een buurt-app waar mensen spullen kunnen delen of ruilen.",        Emojis = new[] { "💡", "♻️" }, Counts = new[] { 10, 7 }, Comments = 5 },
+        new { Text = "Free coding workshops for local teens after school.",              Emojis = new[] { "👍", "💻" }, Counts = new[] { 9, 4 }, Comments = 3 },
+        new { Text = "Een gratis bibliotheek-kastje op het plein plaatsen.",             Emojis = new[] { "❤️", "📚" }, Counts = new[] { 14, 5 }, Comments = 6 },
+    };
+
+    var bgVariant = (ViewData["BgVariant"] as string) ?? "questions";
+    var shuffledQuestions = questions.OrderBy(_ => Guid.NewGuid()).ToArray();
+    var shuffledIdeas = ideas.OrderBy(_ => Guid.NewGuid()).ToArray();
+    var bgMobile = ViewData["BgAnimationMobile"] is true;
+    var bgHideClass = bgMobile ? "" : "hidden lg:block";
+    var bgLogoCentered = ViewData["BgLogoCentered"] is true;
+    var logoAlignClass = bgLogoCentered ? "items-center pb-0" : "items-end pb-[18vh]";
+}
+
+@if (!string.IsNullOrEmpty(orgLogoUrl))
+{
+    <div class="fixed inset-0 flex @logoAlignClass justify-center z-0 pointer-events-none" aria-hidden="true">
+        <img src="@orgLogoUrl" alt=""
+             class="w-[320px] max-w-[40vw] object-contain opacity-[0.15] select-none" />
+    </div>
+}
+
+<div class="fixed inset-0 bg-black/5 z-[2] pointer-events-none @bgHideClass" aria-hidden="true"></div>
+
+<div class="fixed inset-0 overflow-hidden z-[1] pointer-events-none @bgHideClass" aria-hidden="true">
+    @for (int i = 0; i < cards.Length; i++)
+    {
+        var c = cards[i];
+        if (bgVariant == "ideas")
+        {
+            var idea = shuffledIdeas[i % shuffledIdeas.Length];
+            <div class="landing-bg-card @c.Width"
+                 style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
+                <div class="relative rounded-field border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
+
+                    @* Comment count badge *@
+                    <div class="absolute -top-2.5 -right-2.5 bg-base-100/60 border border-base-300/50
+                                rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-base-content/40" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        <span class="text-[10px] font-bold text-base-content/50 tabular-nums">@idea.Comments</span>
+                    </div>
+
+                    @* Owner pill *@
+                    <span class="inline-flex items-center gap-1 text-[10px] text-primary/60 font-medium">
+                        <span class="w-1 h-1 rounded-full bg-primary/60 inline-block"></span>
+                        @(string.IsNullOrEmpty(orgName) ? "Idee" : orgName)
+                    </span>
+
+                    <p class="text-xs font-medium text-base-content/55 leading-snug landing-card-question">@idea.Text</p>
+
+                    @* Emoji reactions *@
+                    <div class="flex gap-1.5 mt-1 flex-wrap">
+                        @for (int e = 0; e < idea.Emojis.Length; e++)
+                        {
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-base-200/50 border border-base-300/50 text-[10px] font-semibold text-base-content/50">
+                                <span class="leading-none">@idea.Emojis[e]</span>
+                                <span class="leading-none tabular-nums">@idea.Counts[e]</span>
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            var q = shuffledQuestions[i % shuffledQuestions.Length];
+            <div class="landing-bg-card @c.Width"
+                 style="left: @c.Left; --card-dur: @c.Dur; --card-delay: @c.Delay; --card-rot: @c.Rot;">
+                <div class="rounded-box border border-base-300/40 bg-base-100/30 backdrop-blur-sm shadow-sm p-4 flex flex-col gap-3">
+
+                    @if (!string.IsNullOrEmpty(orgLogoUrl))
+                    {
+                        <img src="@orgLogoUrl" alt="" class="h-4 w-auto object-contain opacity-40 self-start" />
+                    }
+                    else
+                    {
+                        <span class="text-[10px] font-semibold tracking-widest text-base-content/30 uppercase">@orgName</span>
+                    }
+
+                    <p class="text-xs font-medium text-base-content/50 leading-snug landing-card-question">@q.Q</p>
+
+                    @if (q.Type == "likert")
+                    {
+                        <div class="flex gap-1.5 items-center">
+                            @for (int d = 1; d <= 5; d++)
+                            {
+                                <div class="h-5 w-5 rounded-full border border-base-300/60 @(d == 3 ? "bg-primary/30 border-primary/50" : "bg-base-200/50")"></div>
+                            }
+                        </div>
+                    }
+                    else if (q.Type == "choice")
+                    {
+                        foreach (var opt in new[] { "44px", "56px", "36px" })
+                        {
+                            <div class="flex items-center gap-2">
+                                <div class="h-3 w-3 rounded-full border border-base-300/60 bg-base-200/50"></div>
+                                <div class="h-2 rounded-full bg-base-content/20" style="width: @opt"></div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="rounded-lg border border-base-300/50 bg-base-200/30 h-10 w-full"></div>
+                    }
+
+                    <div class="h-1 w-full rounded-full bg-base-300/40 mt-1">
+                        <div class="h-1 rounded-full bg-primary/40" style="width: @(35 + i * 9)%"></div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

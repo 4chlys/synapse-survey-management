@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="TitleEdit" xml:space="preserve"><value>Project bewerken</value></data>
+  <data name="TitleCreate" xml:space="preserve"><value>Project aanmaken</value></data>
+  <data name="HeadingEdit" xml:space="preserve"><value>Project bewerken</value></data>
+  <data name="HeadingNew" xml:space="preserve"><value>Nieuw project</value></data>
+  <data name="LockedActive" xml:space="preserve"><value>Dit project is actief. Instellingen kunnen niet meer worden gewijzigd.</value></data>
+  <data name="LockedArchived" xml:space="preserve"><value>Dit project is gearchiveerd. Instellingen kunnen niet meer worden gewijzigd.</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Projectnaam</value></data>
+  <data name="NamePlaceholder" xml:space="preserve"><value>Bijv. Mentaal Welzijn</value></data>
+  <data name="ShortformLabel" xml:space="preserve"><value>Shortform</value></data>
+  <data name="ShortformPlaceholder" xml:space="preserve"><value>automatisch ingevuld vanuit de naam</value></data>
+  <data name="TopicLabel" xml:space="preserve"><value>Onderwerp</value></data>
+  <data name="TopicPlaceholder" xml:space="preserve"><value>Waar gaat dit project over?</value></data>
+  <data name="IntroductionLabel" xml:space="preserve"><value>Introductietekst</value></data>
+  <data name="InteractionModeLabel" xml:space="preserve"><value>Soort enquête</value></data>
+  <data name="InteractionMode_Scroll" xml:space="preserve"><value>Verticaal scrollen</value></data>
+  <data name="InteractionMode_Chat" xml:space="preserve"><value>Chat</value></data>
+  <data name="AiAssistanceLabel" xml:space="preserve"><value>AI-assistentie</value></data>
+  <data name="AiAssistance_ProActive" xml:space="preserve"><value>Pro-actief</value></data>
+  <data name="AiAssistance_AskFirst" xml:space="preserve"><value>Op aanvraag</value></data>
+  <data name="AiAssistance_Never" xml:space="preserve"><value>Nooit</value></data>
+  <data name="MinAgeLabel" xml:space="preserve"><value>Minimumleeftijd</value></data>
+  <data name="MaxAgeLabel" xml:space="preserve"><value>Maximumleeftijd</value></data>
+  <data name="AgeOptional" xml:space="preserve"><value>Optioneel</value></data>
+  <data name="AgeRangeError" xml:space="preserve"><value>MinLeeftijd mag niet groter zijn dan MaxLeeftijd.</value></data>
+  <data name="ImageLabel" xml:space="preserve"><value>Afbeelding</value></data>
+  <data name="BrowseButton" xml:space="preserve"><value>Bladeren</value></data>
+  <data name="GenerateButton" xml:space="preserve"><value>Genereren</value></data>
+  <data name="GeneratingText" xml:space="preserve"><value>Genereren…</value></data>
+  <data name="GenerateErrorText" xml:space="preserve"><value>Afbeelding genereren mislukt.</value></data>
+  <data name="DropzonePrimary" xml:space="preserve"><value>Sleep een afbeelding neer</value></data>
+  <data name="DropzoneSecondary" xml:space="preserve"><value>of klik om te bladeren</value></data>
+  <data name="DropzoneDropHere" xml:space="preserve"><value>Loslaten om te uploaden</value></data>
+  <data name="ContactOptInLabel" xml:space="preserve"><value>Contactgegevens opvragen bij deelnemers</value></data>
+  <data name="CrossLanguageLabel" xml:space="preserve"><value>Meertalige ideeën toestaan</value></data>
+  <data name="CrossLanguageHint" xml:space="preserve"><value>Sta toe dat deelnemers ideeën in andere projecttalen zien en indienen</value></data>
+  <data name="SectionsDivider" xml:space="preserve"><value>Secties</value></data>
+  <data name="SectionNamePlaceholder" xml:space="preserve"><value>Sectienaam</value></data>
+  <data name="AddSectionButton" xml:space="preserve"><value>Sectie toevoegen</value></data>
+  <data name="ExportDivider" xml:space="preserve"><value>Exporteren</value></data>
+  <data name="ExportRawDataButton" xml:space="preserve"><value>Exporteer ruwe data</value></data>
+  <data name="RawDataModalTitle" xml:space="preserve"><value>Ruwe data exporteren</value></data>
+  <data name="RawDataIntro" xml:space="preserve"><value>Selecteer de gegevens die je wilt exporteren:</value></data>
+  <data name="RawData_Questions" xml:space="preserve"><value>Vragen</value></data>
+  <data name="RawData_Answers" xml:space="preserve"><value>Antwoorden</value></data>
+  <data name="RawData_Categories" xml:space="preserve"><value>Categorieën</value></data>
+  <data name="RawData_Ideas" xml:space="preserve"><value>Ideeën</value></data>
+  <data name="RawData_Comments" xml:space="preserve"><value>Comments</value></data>
+  <data name="RawData_EmojiReactions" xml:space="preserve"><value>Emoji-reacties (detail)</value></data>
+  <data name="FormatLabel" xml:space="preserve"><value>Formaat:</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
+  <data name="NextButton" xml:space="preserve"><value>Volgende</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Taal</value></data>
+  <data name="StyleDivider" xml:space="preserve"><value>Stijl</value></data>
+  <data name="ThemeLabel" xml:space="preserve"><value>Thema</value></data>
+  <data name="PreviewLabel" xml:space="preserve"><value>Voorbeeld</value></data>
+  <data name="PreviewLight" xml:space="preserve"><value>Licht</value></data>
+  <data name="PreviewDark" xml:space="preserve"><value>Donker</value></data>
+  <data name="PreviewHint" xml:space="preserve"><value>Live voorbeeld van thema, primaire kleur en aangepaste CSS.</value></data>
+  <data name="PrimaryColorLabel" xml:space="preserve"><value>Primaire kleur (optioneel)</value></data>
+  <data name="UseThemeColorLabel" xml:space="preserve"><value>Themakleur gebruiken</value></data>
+  <data name="PrimaryColor_LowContrast_Light" xml:space="preserve"><value>Deze kleur is mogelijk moeilijk leesbaar op lichte achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="PrimaryColor_LowContrast_Dark" xml:space="preserve"><value>Deze kleur is mogelijk moeilijk leesbaar op donkere achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="PrimaryColor_LowContrast_Both" xml:space="preserve"><value>Deze kleur is moeilijk leesbaar op zowel lichte als donkere achtergronden. De server zal deze weigeren bij opslaan.</value></data>
+  <data name="ColorSwatches_Label" xml:space="preserve"><value>Snelkeuze per onderwerp</value></data>
+  <data name="ColorSwatch_Sports" xml:space="preserve"><value>Sport</value></data>
+  <data name="ColorSwatch_Nature" xml:space="preserve"><value>Natuur</value></data>
+  <data name="ColorSwatch_Culture" xml:space="preserve"><value>Cultuur</value></data>
+  <data name="ColorSwatch_Health" xml:space="preserve"><value>Gezondheid</value></data>
+  <data name="CustomCssLabel" xml:space="preserve"><value>Aangepaste CSS (optioneel)</value></data>
+  <data name="CustomCssHint" xml:space="preserve"><value>Voor ontwikkelaars. Laat leeg als thema en kleur volstaan.</value></data>
+  <data name="CustomCssHelperSummary" xml:space="preserve"><value>Beschikbare CSS-variabelen en selectors (klikken om in te voegen)</value></data>
+  <data name="CustomCssVariables" xml:space="preserve"><value>Variabelen</value></data>
+  <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
+  <data name="CustomCss_Unbalanced" xml:space="preserve"><value>Niet-gebalanceerde accolades ({0} {  vs  {1} }).</value></data>
+  <data name="CustomCss_Balanced" xml:space="preserve"><value>CSS ziet er gebalanceerd uit.</value></data>
+  <data name="Snippet_PrimaryColor" xml:space="preserve"><value>Override primaire kleur</value></data>
+  <data name="Snippet_RoundedButtons" xml:space="preserve"><value>Afgeronde knoppen</value></data>
+  <data name="Snippet_IdeaCardShadow" xml:space="preserve"><value>Schaduw op ideekaarten</value></data>
+  <data name="Snippet_HeadingFont" xml:space="preserve"><value>Koplettertype</value></data>
+  <data name="Snippet_RoundedButtonsEverywhere" xml:space="preserve"><value>Afgeronde knoppen overal</value></data>
+  <data name="Snippet_BrandGradientHeader" xml:space="preserve"><value>Kleurverloop in kopbal</value></data>
+  <data name="Snippet_StrongerFocusRing" xml:space="preserve"><value>Sterkere focusring</value></data>
+  <data name="CustomCss_SelectorsLabel" xml:space="preserve"><value>Targeteerbare componenten</value></data>
+  <data name="CustomCss_SelectorsHelp" xml:space="preserve"><value>Gebruik deze selectors in je CSS-regels om specifieke onderdelen van de deelnemerspagina te stijlen.</value></data>
+  <data name="CustomCss_AvoidLabel" xml:space="preserve"><value>Vermijd</value></data>
+  <data name="CustomCss_Avoid_Overflow" xml:space="preserve"><value>Pas de overflow van body / html niet aan.</value></data>
+  <data name="CustomCss_Avoid_FixedPosition" xml:space="preserve"><value>Gebruik geen position: fixed op het root-element.</value></data>
+  <data name="CustomCss_Avoid_Important" xml:space="preserve"><value>Vermijd !important-ketens.</value></data>
+  <data name="CustomCss_Avoid_ExternalImports" xml:space="preserve"><value>Importeer geen externe CSS / lettertypen (geblokkeerd door de validator).</value></data>
+  <data name="CustomCss_ResetButton" xml:space="preserve"><value>Wis aangepaste CSS</value></data>
+  <data name="CustomCss_ResetConfirm" xml:space="preserve"><value>Weet je zeker dat je de aangepaste CSS wilt wissen?</value></data>
+  <data name="SectionGeneral" xml:space="preserve"><value>Algemene informatie</value></data>
+  <data name="SectionAppearance" xml:space="preserve"><value>Vormgeving</value></data>
+  <data name="SectionBehavior" xml:space="preserve"><value>Gedrag &amp; instellingen</value></data>
+  <data name="ShortformHint" xml:space="preserve"><value>Dit wordt het eigen webadres van je project als subdomein (bijv. mentaal-welzijn.synapse-ip.xyz)</value></data>
+  <data name="IntroductionHint" xml:space="preserve"><value>Getoond op de welkomstkaart aan het begin van de enquête, vóór de eerste vraag</value></data>
+  <data name="ImageHint" xml:space="preserve"><value>Getoond naast de introductie op de welkomstkaart aan het begin van de enquête</value></data>
+  <data name="InteractionModeHint" xml:space="preserve"><value>Bepaalt hoe de enquête wordt weergegeven: vragen één voor één als scrollbare kaarten (verticaal scrollen) of als een chatgesprek (chat)</value></data>
+  <data name="AiAssistanceHint" xml:space="preserve"><value>Of AI verbeteringen voorstelt terwijl deelnemers hun ideeën typen</value></data>
+  <data name="SectionsHint" xml:space="preserve"><value>Optionele groepen om vragen te ordenen in de volgende stap van de wizard. Sectienamen zijn niet zichtbaar voor deelnemers.</value></data>
+</root>

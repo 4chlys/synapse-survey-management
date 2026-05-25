@@ -1,0 +1,143 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model PlatformSettingsViewModel
+@inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Settings";
+    Layout = "_Layout";
+}
+
+<div class="max-w-2xl">
+    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+
+    @* Basic info *@
+    <div class="card bg-base-100 shadow-sm mb-6">
+        <div class="card-body gap-5">
+            <h2 class="font-semibold text-base-content">@L["BasicInfoHeading"]</h2>
+
+            <form asp-action="SaveBasicInfo" asp-route-id="@Model.ProjectPlatformId"
+                  method="post" class="flex flex-col gap-4">
+                <input type="hidden" name="ProjectPlatformId" value="@Model.BasicInfo.ProjectPlatformId" />
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["NameLabel"] *</span></div>
+                    <input name="Name" value="@Model.BasicInfo.Name" class="input input-bordered w-full"
+                           placeholder="@L["NamePlaceholder"]" />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["LogoLabel"]</span></div>
+                    <input name="LogoUrl" value="@Model.BasicInfo.LogoUrl" class="input input-bordered w-full"
+                           placeholder="https://..." />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["WebsiteLabel"]</span></div>
+                    <input name="WebsiteUrl" value="@Model.BasicInfo.WebsiteUrl" class="input input-bordered w-full"
+                           placeholder="https://..." />
+                </label>
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Configuration: feature flags, quotas, billing *@
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <h2 class="font-semibold text-base-content">@L["ConfigHeading"]</h2>
+
+            <form asp-action="SaveConfiguration" asp-route-id="@Model.ProjectPlatformId"
+                  method="post" class="flex flex-col gap-5">
+                <input type="hidden" name="ProjectPlatformId" value="@Model.Configuration.ProjectPlatformId" />
+
+                <div class="divider my-0 text-xs text-base-content/40">@L["FeatureFlagsDivider"]</div>
+
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="hidden" name="AiAssistanceEnabled" value="false" />
+                    <input type="checkbox" name="AiAssistanceEnabled" value="true"
+                           class="toggle toggle-primary toggle-sm"
+                           @(Model.Configuration.AiAssistanceEnabled ? "checked" : "") />
+                    <span class="label-text">@L["AiAssistanceToggle"]</span>
+                </label>
+
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="hidden" name="IdeationEnabled" value="false" />
+                    <input type="checkbox" name="IdeationEnabled" value="true"
+                           class="toggle toggle-primary toggle-sm"
+                           @(Model.Configuration.IdeationEnabled ? "checked" : "") />
+                    <span class="label-text">@L["IdeationToggle"]</span>
+                </label>
+
+                <div class="divider my-0 text-xs text-base-content/40">@L["QuotasDivider"]</div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">@L["MaxProjectsLabel"]</span></div>
+                        <input name="MaxProjects" type="number" min="0"
+                               value="@Model.Configuration.MaxProjects"
+                               class="input input-bordered w-full no-spinner" placeholder="@L["UnlimitedPlaceholder"]" />
+                    </label>
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">@L["MaxAdminsLabel"]</span></div>
+                        <input name="MaxAdmins" type="number" min="0"
+                               value="@Model.Configuration.MaxAdmins"
+                               class="input input-bordered w-full no-spinner" placeholder="@L["UnlimitedPlaceholder"]" />
+                    </label>
+                </div>
+
+                <div class="divider my-0 text-xs text-base-content/40">@L["ContactBillingDivider"]</div>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["ContactNameLabel"]</span></div>
+                    <input name="ContactName" value="@Model.Configuration.ContactName"
+                           class="input input-bordered w-full"
+                           placeholder="@L["ContactNamePlaceholder"]" />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["ContactEmailLabel"]</span></div>
+                    <input name="ContactEmail" type="email" value="@Model.Configuration.ContactEmail"
+                           class="input input-bordered w-full"
+                           placeholder="@L["ContactEmailPlaceholder"]" />
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["BillingReferenceLabel"]</span></div>
+                    <input name="BillingReference" value="@Model.Configuration.BillingReference"
+                           class="input input-bordered w-full"
+                           placeholder="@L["BillingReferencePlaceholder"]" />
+                </label>
+
+                <div class="divider my-0 text-xs text-base-content/40">@L["AiMonitoringDivider"]</div>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["AiModelNameLabel"]</span></div>
+                    <input name="AiModelName" value="@Model.Configuration.AiModelName"
+                           class="input input-bordered w-full"
+                           placeholder="@L["AiModelNamePlaceholder"]" />
+                    <span class="label-text-alt text-base-content/40 mt-1">@L["AiModelNameHint"]</span>
+                </label>
+
+                <label class="form-control">
+                    <div class="label"><span class="label-text font-medium">@L["CostDashboardUrlLabel"]</span></div>
+                    <input name="CostDashboardUrl" type="url" value="@Model.Configuration.CostDashboardUrl"
+                           class="input input-bordered w-full"
+                           placeholder="https://lookerstudio.google.com/embed/..." />
+                    <span class="label-text-alt text-base-content/40 mt-1">@L["CostDashboardUrlHint"]</span>
+                </label>
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

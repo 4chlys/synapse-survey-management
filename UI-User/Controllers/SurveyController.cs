@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.UI.User.Extensions;
-using SynapseEnqueteManagement.UI.User.FormStrategies;
-using SynapseEnqueteManagement.UI.User.Models;
 using SynapseEnqueteManagement.UI.User.Models.Survey;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
+using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
@@ -30,55 +28,39 @@ public class SurveyController(
         if (!string.IsNullOrWhiteSpace(token)
             && await questionnaireService.HasParticipantRespondedAsync(projectId, token))
         {
-            return RedirectToAction("Index", "Category", new { projectId });
+            return RedirectToAction("CategoryList", "Category", new { projectId });
         }
 
-        var model = await questionnaireService.GetSurveyAsync(projectId);
+        var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "nl", "en" };
+        var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var languageCode = supportedCultures.Contains(culture) ? culture : project.DefaultLanguageCode ?? "nl";
+
+        var model = await questionnaireService.GetSurveyAsync(projectId, languageCode);
         if (model is null)
             return View("NotFound");
 
+        // Load existing responses for resume support
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            var existingResponses = await questionnaireService.GetResponsesAsync(projectId, token);
+
+            if (existingResponses is null)
+            {
+                // null = participant not found in DB, stale cookie
+                sessionService.ClearToken(projectId);
+            }
+            else
+            {
+                // empty dict = participant exists, just no answers yet — still a valid session
+                model = model with { ExistingResponses = existingResponses, HasSession = true };
+            }
+        }
+
         this.SetLayoutData(project, projectId);
+        ViewData["Project"] = project;
         var strategy = formStrategyFactory.Create(project.FormType);
         ViewData["FormLayout"] = strategy.GetLayoutData();
         return View(strategy.GetViewName(), model);
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [EnableRateLimiting("participant-creation")]
-    public async Task<IActionResult> Submit(int projectId, IFormCollection form)
-    {
-        var answers = new Dictionary<int, string>();
-
-        foreach (var key in form.Keys)
-        {
-            if (!key.StartsWith("q_")) continue;
-            if (!int.TryParse(key[2..], out var questionId)) continue;
-
-            var value = string.Join(", ", form[key].Where(v => !string.IsNullOrWhiteSpace(v)));
-            if (!string.IsNullOrWhiteSpace(value))
-                answers[questionId] = value;
-        }
-
-        var participantToken = await questionnaireService.SubmitSurveyAsync(projectId, answers);
-
-        sessionService.SetToken(projectId, participantToken);
-
-        return RedirectToAction("ThankYou", new { projectId });
-    }
-
-    public async Task<IActionResult> ThankYou(int projectId)
-    {
-        var project = await projectApiService.GetProjectAsync(projectId);
-
-        this.SetLayoutData(project, projectId);
-
-        return View(new ThankYouViewModel
-        {
-            ProjectId = projectId,
-            OrganisationName = project?.OrganisationName ?? string.Empty,
-            OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
-            OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
-        });
-    }
 }

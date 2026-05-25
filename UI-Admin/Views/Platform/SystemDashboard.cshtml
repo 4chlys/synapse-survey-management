@@ -1,0 +1,423 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model SystemDashboardViewModel
+@inject IViewLocalizer L
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "SystemDashboard";
+    Layout = "_Layout";
+
+    var totalPlatforms = Model.Platforms.Count;
+    var totalActive = Model.Platforms.Sum(p => p.ActiveProjectCount);
+    var totalDraft = Model.Platforms.Sum(p => p.DraftProjectCount);
+    var totalArchived = Model.Platforms.Sum(p => p.ArchivedProjectCount);
+    var totalAdmins = Model.Platforms.Sum(p => p.AdminCount);
+    var totalParticipants = Model.Platforms.Sum(p => p.ParticipantCount);
+    var platformsWithCost = Model.Platforms.Where(p => !string.IsNullOrEmpty(p.CostDashboardUrl)).ToList();
+
+    Func<double, string> FormatSeconds = (seconds) =>
+    {
+        if (seconds <= 0) return "—";
+        var ts = TimeSpan.FromSeconds(seconds);
+        return ts.TotalMinutes >= 1
+            ? $"{(int)ts.TotalMinutes}m {ts.Seconds}s"
+            : $"{ts.Seconds}s";
+    };
+}
+
+<div class="w-full">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <button type="button" class="btn btn-outline btn-sm gap-1.5"
+                data-open-modal="system-export-modal">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+            </svg>
+            @L["ExportButton"]
+        </button>
+    </div>
+
+    @* System totals *@
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalPlatforms</p>
+                <p class="text-sm text-base-content/60">@L["StatPlatforms"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalActive</p>
+                <p class="text-xs font-semibold text-success uppercase tracking-wide">@L["StatActive"]</p>
+                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalDraft</p>
+                <p class="text-xs font-semibold text-warning uppercase tracking-wide">@L["StatDraft"]</p>
+                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalArchived</p>
+                <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wide">@L["StatArchived"]</p>
+                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalAdmins</p>
+                <p class="text-sm text-base-content/60">@L["StatAdmins"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-3xl font-bold text-base-content">@totalParticipants</p>
+                <p class="text-sm text-base-content/60">@L["StatParticipants"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-2xl font-bold text-base-content">@FormatSeconds(Model.AvgCompletionSeconds)</p>
+                <p class="text-sm text-base-content/60">@L["StatAvgTime"]</p>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center gap-1 py-5">
+                <p class="text-2xl font-bold text-base-content">@FormatSeconds(Model.MedianCompletionSeconds)</p>
+                <p class="text-sm text-base-content/60">@L["StatMedianTime"]</p>
+            </div>
+        </div>
+    </div>
+
+    @* Per-platform cards *@
+    <h2 class="font-semibold text-base-content mb-4">@L["PlatformsHeading"]</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        @foreach (var platform in Model.Platforms)
+        {
+            var platformAiRows = Model.AiUsageByPlatform
+                .Where(a => a.PlatformId == platform.ProjectPlatformId)
+                .ToList();
+
+            <div class="card bg-base-100 shadow-sm">
+                <div class="card-body gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        @if (!string.IsNullOrEmpty(platform.LogoUrl))
+                        {
+                            <img src="@platform.LogoUrl" alt="@platform.Name"
+                                 class="h-8 w-auto object-contain flex-shrink-0" />
+                        }
+                        <p class="font-semibold text-base-content truncate">@platform.Name</p>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.ActiveProjectCount</p>
+                            <p class="text-xs text-success font-semibold uppercase">@L["StatActive"]</p>
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.DraftProjectCount</p>
+                            <p class="text-xs text-warning font-semibold uppercase">@L["StatDraft"]</p>
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.ArchivedProjectCount</p>
+                            <p class="text-xs text-base-content/40 font-semibold uppercase">@L["StatArchived"]</p>
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-base-content">@platform.ParticipantCount</p>
+                            <p class="text-xs text-base-content/50">@L["StatParticipants"]</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(platform.AiModelName))
+                    {
+                        <p class="text-xs text-base-content/40">
+                            <span class="font-medium">@L["AiShort"]:</span> @platform.AiModelName
+                        </p>
+                    }
+
+                    @if (platformAiRows.Count > 0)
+                    {
+                        <details class="text-xs">
+                            <summary class="cursor-pointer text-base-content/50 hover:text-base-content select-none">@L["AiBreakdownHeading"]</summary>
+                            <div class="overflow-x-auto mt-2">
+                                <table class="table table-xs">
+                                    <thead>
+                                        <tr>
+                                            <th>@L["AiCol_Service"]</th>
+                                            <th>@L["AiCol_Model"]</th>
+                                            <th class="text-right">@L["AiCol_Requests"]</th>
+                                            <th class="text-right">@L["AiCol_Cost"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var aiRow in platformAiRows)
+                                        {
+                                            <tr>
+                                                <td>@aiRow.Service</td>
+                                                <td>@aiRow.Model</td>
+                                                <td class="text-right">@aiRow.RequestCount</td>
+                                                <td class="text-right">@aiRow.CostEur.ToString("F4")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </details>
+                    }
+
+                    <div class="card-actions justify-end gap-1 pt-1">
+                        <a asp-controller="Platform" asp-action="Dashboard"
+                           asp-route-id="@platform.ProjectPlatformId"
+                           class="btn btn-ghost btn-xs">@L["OpenAction"]</a>
+                        <a asp-controller="AdminMembership" asp-action="Index"
+                           asp-route-id="@platform.ProjectPlatformId"
+                           class="btn btn-ghost btn-xs">@L["AdminsAction"]</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Charts grid *@
+    <h2 class="font-semibold text-base-content mb-4">@L["ChartsHeading"]</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_ParticipantsTitle"]</p>
+                <div data-widget="SystemParticipants"
+                     data-i18n-series-participants="@L["Series_Participants"]"
+                     class="relative" style="height:320px;"></div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_ProjectStatesTitle"]</p>
+                <div data-widget="SystemProjectStates"
+                     data-i18n-active="@L["StatActive"]"
+                     data-i18n-draft="@L["StatDraft"]"
+                     data-i18n-archived="@L["StatArchived"]"
+                     class="relative" style="height:320px;"></div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_AiCostTitle"]</p>
+                <div data-widget="SystemAiCost"
+                     data-i18n-series-cost="@L["Series_AiCost"]"
+                     class="relative" style="height:320px;"></div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body">
+                <p class="text-sm font-medium text-base-content/70 mb-2">@L["Chart_CompletionTimeTitle"]</p>
+                <div data-widget="SystemCompletionBoxplot"
+                     data-i18n-series-completion-time="@L["Series_CompletionTime"]"
+                     class="relative" style="height:320px;"></div>
+            </div>
+        </div>
+    </div>
+
+    @* Projects table *@
+    <h2 class="font-semibold text-base-content mb-4">@L["ProjectsTableHeading"]</h2>
+    <div class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>@L["Col_Platform"]</th>
+                            <th>@L["Col_Project"]</th>
+                            <th>@L["Col_State"]</th>
+                            <th class="text-right">@L["Col_Participants"]</th>
+                            <th class="text-right">@L["Col_AvgTime"]</th>
+                            <th class="text-right">@L["Col_MedianTime"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Projects)
+                        {
+                            <tr>
+                                <td>@row.PlatformName</td>
+                                <td>@row.ProjectName</td>
+                                <td>@row.State</td>
+                                <td class="text-right">@row.ParticipantCount</td>
+                                <td class="text-right">@FormatSeconds(row.AvgCompletionSeconds)</td>
+                                <td class="text-right">@FormatSeconds(row.MedianCompletionSeconds)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @* AI usage by service (system-wide) *@
+    <h2 class="font-semibold text-base-content mb-4">@L["AiBreakdownHeading"]</h2>
+    <div class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>@L["AiCol_Service"]</th>
+                            <th>@L["AiCol_Model"]</th>
+                            <th class="text-right">@L["AiCol_InputTokens"]</th>
+                            <th class="text-right">@L["AiCol_OutputTokens"]</th>
+                            <th class="text-right">@L["AiCol_Requests"]</th>
+                            <th class="text-right">@L["AiCol_Cost"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.AiUsageBySystem)
+                        {
+                            <tr>
+                                <td>@row.Service</td>
+                                <td>@row.Model</td>
+                                <td class="text-right">@row.InputTokens</td>
+                                <td class="text-right">@row.OutputTokens</td>
+                                <td class="text-right">@row.RequestCount</td>
+                                <td class="text-right">@row.CostEur.ToString("F4")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @* Live AI cost card *@
+    <h2 class="font-semibold text-base-content mb-4">@L["LiveAiCostHeading"]</h2>
+    <div class="card bg-base-100 shadow-sm mb-8" data-ai-cost-container data-empty-label="@L["AiCost_Empty"]">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>@L["AiCost_Platform"]</th>
+                            <th>@L["AiCost_Project"]</th>
+                            <th class="text-right">@L["AiCost_InputTokens"]</th>
+                            <th class="text-right">@L["AiCost_OutputTokens"]</th>
+                            <th class="text-right">@L["AiCost_Cost"]</th>
+                        </tr>
+                    </thead>
+                    <tbody data-ai-usage>
+                        <tr><td colspan="5" class="text-center text-base-content/40 text-sm py-4">@L["AiCost_Loading"]</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @* Cost dashboards *@
+    <h2 class="font-semibold text-base-content mb-4">@L["CostMonitoringHeading"]</h2>
+    @if (platformsWithCost.Any())
+    {
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body gap-4">
+                @if (platformsWithCost.Count > 1)
+                {
+                    <div role="tablist" class="tabs tabs-bordered" id="cost-tabs">
+                        @for (int i = 0; i < platformsWithCost.Count; i++)
+                        {
+                            var p = platformsWithCost[i];
+                            <button role="tab" type="button"
+                                    class="tab @(i == 0 ? "tab-active" : "")"
+                                    data-cost-tab="@p.ProjectPlatformId">
+                                @p.Name
+                            </button>
+                        }
+                    </div>
+                }
+                @for (int i = 0; i < platformsWithCost.Count; i++)
+                {
+                    var p = platformsWithCost[i];
+                    <div id="cost-@p.ProjectPlatformId" class="@(i > 0 ? "hidden" : "")">
+                        <iframe src="@p.CostDashboardUrl"
+                                class="w-full rounded-xl"
+                                style="height:600px;border:none;"
+                                title="@string.Format(L["CostIframeTitle"].Value, p.Name)"
+                                loading="lazy">
+                        </iframe>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body text-center gap-2">
+                <p class="text-sm text-base-content/60">@L["NoCostDashboard"]</p>
+                <p class="text-xs text-base-content/40">@L["AddCostDashboardHint"]</p>
+            </div>
+        </div>
+    }
+
+    @* System stats export modal *@
+    <dialog id="system-export-modal" class="modal"
+            data-export-url="/api/system-stats/export">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">@L["ExportModalTitle"]</h3>
+
+            <p class="text-sm font-medium mb-2">@L["ExportGroupHeading_Stats"]</p>
+            <div class="form-control gap-2 mb-3">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="platforms" checked />
+                    <span class="label-text">@L["Section_Platforms"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="projects" checked />
+                    <span class="label-text">@L["Section_Projects"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="summary" checked />
+                    <span class="label-text">@L["Section_Summary"]</span>
+                </label>
+            </div>
+
+            <p class="text-sm font-medium mb-2">@L["ExportGroupHeading_Ai"]</p>
+            <div class="form-control gap-2 mb-4">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="ai-system" checked />
+                    <span class="label-text">@L["Section_AiSystem"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="ai-platforms" checked />
+                    <span class="label-text">@L["Section_AiPlatforms"]</span>
+                </label>
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" class="checkbox checkbox-sm" data-system-section="ai-projects" checked />
+                    <span class="label-text">@L["Section_AiProjects"]</span>
+                </label>
+            </div>
+
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm font-medium">@L["FormatLabel"]</span>
+                <select id="system-export-format" class="select select-bordered select-sm w-40">
+                    <option value="xlsx">Excel (.xlsx)</option>
+                    <option value="csv">CSV (.zip)</option>
+                    <option value="png-zip">@L["FormatPngZip"]</option>
+                </select>
+            </div>
+
+            <label class="label cursor-pointer justify-start gap-3 mb-4">
+                <input type="checkbox" class="checkbox checkbox-sm" id="system-export-graphics" data-system-graphics checked />
+                <span class="label-text">@L["IncludeGraphicsLabel"]</span>
+            </label>
+
+            <div class="modal-action">
+                <form method="dialog">
+                    <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                </form>
+                <button type="button" class="btn btn-primary btn-sm" id="system-export-download">@L["ExportButton"]</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+</div>
+
+@section Scripts {
+    <script type="module" vite-src="~/admin/dashboard.ts"></script>
+}

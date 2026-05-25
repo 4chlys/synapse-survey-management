@@ -1,19 +1,48 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
-using SynapseEnqueteManagement.UI.User.FormStrategies;
+using SynapseEnqueteManagement.UI.User.Middleware;
+using SynapseEnqueteManagement.UI.User.Services.IdeaImage;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Moderation;
+using SynapseEnqueteManagement.UI.User.Services.SpeechToText;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 using SynapseEnqueteManagement.UI.User.Services.Session;
 using SynapseEnqueteManagement.UI.User.Services.Survey;
+using SynapseEnqueteManagement.UI.User.Filters.FormStrategies;
+using SynapseEnqueteManagement.UI.User.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTransient<CultureForwardingHandler>();
+builder.Services.ConfigureHttpClientDefaults(b => b.AddHttpMessageHandler<CultureForwardingHandler>());
+
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
+
+// TODO (step 7): load supported cultures dynamically from ILanguageManager at startup.
+var supportedCultures = new[] { "nl", "en" };
+builder.Services.Configure<RequestLocalizationOptions>(opts =>
+{
+    opts.SetDefaultCulture("nl")
+        .AddSupportedCultures(supportedCultures)
+        .AddSupportedUICultures(supportedCultures);
+
+    opts.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-});
+})
+.AddViewLocalization()
+.AddDataAnnotationsLocalization();
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
@@ -62,6 +91,16 @@ builder.Services.AddHttpClient<EmojiService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<ModerationService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IdeaSupportService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<CommentSupportService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<SpeechToTextService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IIdeaImageService, IdeaImageService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+
+builder.Services.AddMemoryCache();
 
 // Rate limiting — per real client IP, applied only to expensive AI moderation endpoints
 builder.Services.AddRateLimiter(options =>
@@ -73,6 +112,42 @@ builder.Services.AddRateLimiter(options =>
             {
                 Window      = TimeSpan.FromMinutes(1),
                 PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-comment-support", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 20,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-stt", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 10,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-image-moderation", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 5,
+                QueueLimit  = 0,
+            }));
+    options.AddPolicy("ai-image-describe", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window      = TimeSpan.FromMinutes(1),
+                PermitLimit = 3,
                 QueueLimit  = 0,
             }));
     options.AddPolicy("participant-creation", context =>
@@ -100,6 +175,19 @@ builder.Services.AddViteServices();
 
 var app = builder.Build();
 
+// Cloud Run (and other reverse proxies) terminate HTTPS and forward HTTP.
+// This middleware reads X-Forwarded-For/Proto headers so Request.IsHttps
+// and Request.Scheme reflect the original client request.
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
+
+app.UseMiddleware<ProjectShortFormResolverMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseViteDevelopmentServer();
@@ -109,22 +197,30 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseHttpLogging();
+app.UseStaticFiles();
+app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 app.UseRouting();
 app.UseRateLimiter();
-app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "project",
-    pattern: "{projectId:int}/{controller=ProjectLandingPage}/{action=Index}/{id?}")
+    pattern: "{projectId:int}/{controller=LandingPage}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapGet("/", () => Results.Redirect("/1"));
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.Run();
+
+// Expose the implicit top-level Program class so WebApplicationFactory<Program>
+// in UI-User.Tests can reference it (top-level statements emit an internal Program).
+public partial class Program;

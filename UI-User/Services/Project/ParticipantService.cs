@@ -6,11 +6,23 @@ namespace SynapseEnqueteManagement.UI.User.Services.Project;
 public class ParticipantService(HttpClient httpClient, ISessionService sessionService)
     : AuthenticatedApiService(httpClient, sessionService)
 {
-    public async Task SaveContactInfoAsync(int projectId, string email, string phoneNumber)
+    public async Task SaveContactInfoAsync(int projectId, string email)
     {
+        if (string.IsNullOrWhiteSpace(email)) return;
         var request = new HttpRequestMessage(HttpMethod.Patch,
             $"api/projects/{projectId}/participants/me/contact");
-        request.Content = JsonContent.Create(new { Email = email, PhoneNumber = phoneNumber });
+        request.Content = JsonContent.Create(new { Email = email });
+
+        AddTokenHeader(request, projectId);
+
+        await HttpClient.SendAsync(request);
+    }
+
+    public async Task SetLanguageAsync(int projectId, string languageCode)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch,
+            $"api/projects/{projectId}/participants/me/language");
+        request.Content = JsonContent.Create(new { LanguageCode = languageCode });
 
         AddTokenHeader(request, projectId);
 

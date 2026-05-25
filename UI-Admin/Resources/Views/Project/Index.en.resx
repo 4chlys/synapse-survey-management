@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Projects</value></data>
+  <data name="Heading" xml:space="preserve"><value>Projects</value></data>
+  <data name="NewButton" xml:space="preserve"><value>New project</value></data>
+  <data name="OpenButton" xml:space="preserve"><value>Open</value></data>
+  <data name="CopyAsTemplate" xml:space="preserve"><value>Copy as template</value></data>
+  <data name="DeleteButton" xml:space="preserve"><value>Delete</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>Delete project?</value></data>
+  <data name="CopyModalTitle" xml:space="preserve"><value>Copy project as template</value></data>
+  <data name="CopyModalBody" xml:space="preserve"><value>Creates a new draft project with the structure of {0}. Participant answers, ideas and comments are not copied.</value></data>
+  <data name="CopyModalNewNameLabel" xml:space="preserve"><value>Name of the new project</value></data>
+  <data name="CopySuffix" xml:space="preserve"><value>(copy)</value></data>
+  <data name="CopyButton" xml:space="preserve"><value>Copy</value></data>
+  <data name="DeleteModalTitle" xml:space="preserve"><value>Delete project</value></data>
+  <data name="DeleteModalBody" xml:space="preserve"><value>Are you sure you want to delete {0}? This cannot be undone.</value></data>
+  <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
+  <data name="ArchiveButton" xml:space="preserve"><value>Archive project</value></data>
+</root>

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Submit" xml:space="preserve">
+    <value>Verstuur</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Terug</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Volgende</value>
+  </data>
+  <data name="LanguageMenu_Heading" xml:space="preserve">
+    <value>Taal</value>
+  </data>
+  <data name="LanguageMenu_Switch" xml:space="preserve">
+    <value>Wisselen van taal</value>
+  </data>
+  <data name="Uploading" xml:space="preserve">
+    <value>Uploaden…</value>
+  </data>
+  <data name="Checking" xml:space="preserve">
+    <value>Controleren…</value>
+  </data>
+  <data name="ContentNotAllowed" xml:space="preserve">
+    <value>De inhoud is niet toegestaan op dit platform.</value>
+  </data>
+  <data name="MaxLengthExceeded" xml:space="preserve">
+    <value>Maximaal {max} tekens toegestaan.</value>
+  </data>
+  <data name="SubmitFallback" xml:space="preserve">
+    <value>Plaatsen</value>
+  </data>
+  <data name="IdeaCard_StatusFlagged" xml:space="preserve">
+    <value>In behandeling</value>
+  </data>
+  <data name="IdeaCard_StatusOwnIdea" xml:space="preserve">
+    <value>Jouw idee</value>
+  </data>
+  <data name="IdeaCard_UseAsStartingPoint" xml:space="preserve">
+    <value>Gebruiken als startpunt</value>
+  </data>
+  <data name="ImageUpload_InvalidType" xml:space="preserve">
+    <value>Alleen afbeeldingen (jpeg, png, webp, gif) zijn toegestaan.</value>
+  </data>
+  <data name="ImageUpload_TooLarge" xml:space="preserve">
+    <value>De afbeelding mag maximaal 10 MB zijn.</value>
+  </data>
+  <data name="ImageUpload_Failed" xml:space="preserve">
+    <value>Het uploaden van de afbeelding is mislukt.</value>
+  </data>
+  <data name="ImageUpload_NotAllowed" xml:space="preserve">
+    <value>De afbeelding is niet toegestaan.</value>
+  </data>
+  <data name="ImageDescribe_Loading" xml:space="preserve">
+    <value>Afbeelding wordt omschreven…</value>
+  </data>
+  <data name="ImageDescribe_Failed" xml:space="preserve">
+    <value>De afbeelding kon niet worden omschreven. Probeer opnieuw.</value>
+  </data>
+  <data name="SpeechToText_EmptyRecording" xml:space="preserve">
+    <value>Lege opname ontvangen.</value>
+  </data>
+  <data name="SpeechToText_TooManyRequests" xml:space="preserve">
+    <value>Te veel verzoeken. Wacht even en probeer opnieuw.</value>
+  </data>
+  <data name="SpeechToText_Unavailable" xml:space="preserve">
+    <value>Spraakherkenning is momenteel niet beschikbaar.</value>
+  </data>
+  <data name="Survey_YourAnswer" xml:space="preserve">
+    <value>Jouw antwoord: {text}</value>
+  </data>
+  <data name="Survey_ChoiceOptions" xml:space="preserve">
+    <value>Keuze opties</value>
+  </data>
+  <data name="Survey_Confirm" xml:space="preserve">
+    <value>Bevestig</value>
+  </data>
+  <data name="Survey_SaveError" xml:space="preserve">
+    <value>Er ging iets mis bij het opslaan. Probeer opnieuw.</value>
+  </data>
+  <data name="Survey_LoadError" xml:space="preserve">
+    <value>Kon volgende vraag niet laden.</value>
+  </data>
+  <data name="Survey_UnknownType" xml:space="preserve">
+    <value>Onbekend vraagtype.</value>
+  </data>
+  <data name="Survey_ReadyToSubmit" xml:space="preserve">
+    <value>Klaar om in te sturen?</value>
+  </data>
+  <data name="Survey_SubmitError" xml:space="preserve">
+    <value>Verzenden mislukt. Probeer opnieuw.</value>
+  </data>
+  <data name="Survey_Done" xml:space="preserve">
+    <value>Bedankt voor je deelname!</value>
+  </data>
+  <data name="Survey_RestartConfirm" xml:space="preserve">
+    <value>Wil je de enquête opnieuw beginnen? Je antwoorden gaan verloren.</value>
+  </data>
+  <data name="Survey_RestartError" xml:space="preserve">
+    <value>Herstart mislukt. Probeer opnieuw.</value>
+  </data>
+  <data name="Survey_Submitting" xml:space="preserve">
+    <value>Bezig met verzenden...</value>
+  </data>
+  <data name="Survey_SubmitAnswers" xml:space="preserve">
+    <value>Antwoorden versturen</value>
+  </data>
+  <data name="AiChat_AssistantUnavailable_Idea" xml:space="preserve">
+    <value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value>
+  </data>
+  <data name="AiChat_Error" xml:space="preserve">
+    <value>Er is iets misgegaan. Probeer het opnieuw.</value>
+  </data>
+  <data name="AiChat_DraftLabel" xml:space="preserve">
+    <value>Jouw idee — wil je dit indienen?</value>
+  </data>
+  <data name="AiChat_DraftYes" xml:space="preserve">
+    <value>Ja, indienen</value>
+  </data>
+  <data name="AiChat_DraftNo" xml:space="preserve">
+    <value>Nee, aanpassen</value>
+  </data>
+  <data name="AiChat_NoProblem" xml:space="preserve">
+    <value>Geen probleem! Vertel me wat je wil aanpassen.</value>
+  </data>
+  <data name="AiChat_Refining" xml:space="preserve">
+    <value>Bezig...</value>
+  </data>
+  <data name="AiChat_RefinedText" xml:space="preserve">
+    <value>Ik heb je idee wat aangescherpt. Kijk of dit beter is!</value>
+  </data>
+  <data name="AiChat_AlreadyGood" xml:space="preserve">
+    <value>Het idee is al goed verwoord. Wil je het zo indienen?</value>
+  </data>
+  <data name="AiChat_RefineError" xml:space="preserve">
+    <value>Kon het idee niet verfijnen. Probeer het opnieuw.</value>
+  </data>
+  <data name="AiChat_Refine" xml:space="preserve">
+    <value>Verfijnen</value>
+  </data>
+  <data name="AiChat_AssistantUnavailable_Comment" xml:space="preserve">
+    <value>Sorry, de assistent is even niet beschikbaar. Schrijf je reactie in het tekstvak hieronder.</value>
+  </data>
+  <data name="AiChat_ChooseVersion" xml:space="preserve">
+    <value>Kies welke versie je wil plaatsen:</value>
+  </data>
+  <data name="AiChat_YourVersion" xml:space="preserve">
+    <value>Jouw versie</value>
+  </data>
+  <data name="AiChat_AiSuggestion" xml:space="preserve">
+    <value>Voorstel van AI</value>
+  </data>
+  <data name="AiChat_YourComment" xml:space="preserve">
+    <value>Jouw reactie</value>
+  </data>
+  <data name="Survey_AnswerTooLong" xml:space="preserve">
+    <value>Je antwoord mag maximaal {max} tekens bevatten.</value>
+  </data>
+  <data name="Survey_AnswerRequired" xml:space="preserve">
+    <value>Geef eerst een antwoord voor je verdergaat.</value>
+  </data>
+  <data name="SpeechToText_ErrorPermissionDenied" xml:space="preserve">
+    <value>Geef toestemming voor de microfoon om te spreken.</value>
+  </data>
+  <data name="SpeechToText_ErrorNoMicrophone" xml:space="preserve">
+    <value>Geen microfoon gevonden.</value>
+  </data>
+  <data name="SpeechToText_ErrorUnsupportedBrowser" xml:space="preserve">
+    <value>Spraakherkenning werkt niet in deze browser.</value>
+  </data>
+  <data name="SpeechToText_ErrorNothingHeard" xml:space="preserve">
+    <value>Niets verstaan — probeer opnieuw.</value>
+  </data>
+  <data name="SpeechToText_ErrorTooLong" xml:space="preserve">
+    <value>Opname te lang. Probeer een korter fragment.</value>
+  </data>
+  <data name="SpeechToText_StatusMicAccess" xml:space="preserve">
+    <value>Microfoon toegang nodig…</value>
+  </data>
+  <data name="SpeechToText_StatusTranscribing" xml:space="preserve">
+    <value>Spraak omzetten…</value>
+  </data>
+  <data name="SpeechToText_StatusRecording" xml:space="preserve">
+    <value>Aan het opnemen</value>
+  </data>
+  <data name="SpeechToText_CancelAriaLabel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="SpeechToText_MicAriaLabel" xml:space="preserve">
+    <value>Spreken in plaats van typen</value>
+  </data>
+  <data name="SpeechToText_ErrorUnsupportedFormat" xml:space="preserve">
+    <value>Audioformaat wordt niet ondersteund.</value>
+  </data>
+  <data name="SpeechToText_ErrorInvalidAudioData" xml:space="preserve">
+    <value>Ongeldige audiodata.</value>
+  </data>
+  <data name="SpeechToText_ErrorUnexpectedResponse" xml:space="preserve">
+    <value>Onverwacht antwoord.</value>
+  </data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve">
+    <value>Sorry, de assistent is even niet beschikbaar. Je kunt je idee direct hieronder intypen en indienen.</value>
+  </data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve">
+    <value>Sorry, de assistent is even niet beschikbaar. Je kunt je reactie direct hieronder intypen.</value>
+  </data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve">
+    <value>Sorry, de AI-assistent is even niet beschikbaar.</value>
+  </data>
+</root>

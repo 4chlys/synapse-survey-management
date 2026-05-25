@@ -1,0 +1,325 @@
+# Synapse CI/CD Pipeline
+# development branch: automatic deploy to test environment
+# main branch: manual rolling deploy to production
+
+image: docker:27
+
+services:
+  - docker:27-dind
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_API:   "gcr.io/${PROJECT_ID}/mvp-app"
+  IMAGE_UI:    "gcr.io/${PROJECT_ID}/mvp-ui"
+  IMAGE_ADMIN: "gcr.io/${PROJECT_ID}/mvp-admin"
+  IMAGE_NGINX: "gcr.io/${PROJECT_ID}/mvp-nginx"
+  IMAGE_TAG: "${CI_COMMIT_SHA}"
+  ZONE:      "europe-west1-b"
+
+stages:
+  - test
+  - build
+  - scan
+  - push
+  - sign
+  - deploy
+
+test-dotnet:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  before_script:
+    - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    - apt-get install -y nodejs
+    - npm install -g pnpm
+    - cd UI-User && pnpm install && pnpm build && cd ..
+    - cd UI-Admin && pnpm install && pnpm build && cd ..
+  script:
+    - dotnet test SynapseEnqueteManagement.sln
+        --collect:"XPlat Code Coverage"
+        --logger:"junit;LogFilePath=TestResults/results.xml"
+        --results-directory TestResults
+        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+  coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?)/'
+  artifacts:
+    when: always
+    reports:
+      junit: "**/TestResults/results.xml"
+      coverage_report:
+        coverage_format: cobertura
+        path: "**/coverage.cobertura.xml"
+    expire_in: 1 week
+  allow_failure: true
+  only:
+    - development
+    - main
+    - merge_requests
+
+.gcr_login: &gcr_login
+  before_script:
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
+
+build-nginx:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false --network host -t "${IMAGE_NGINX}:${IMAGE_TAG}" -f Dockerfile.nginx .
+    - docker save "${IMAGE_NGINX}:${IMAGE_TAG}" | gzip > nginx-image.tar.gz
+  artifacts:
+    paths:
+      - nginx-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - development
+    - design/ui-2
+
+build-api:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false --network host -t "${IMAGE_API}:${IMAGE_TAG}" .
+    - docker save "${IMAGE_API}:${IMAGE_TAG}" | gzip > api-image.tar.gz
+  artifacts:
+    paths:
+      - api-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - development
+    - design/ui-2
+    - main
+
+build-ui:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false --network host -t "${IMAGE_UI}:${IMAGE_TAG}" -f Dockerfile.ui-user .
+    - docker save "${IMAGE_UI}:${IMAGE_TAG}" | gzip > ui-image.tar.gz
+  artifacts:
+    paths:
+      - ui-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - development
+    - design/ui-2
+    - main
+
+build-admin:
+  stage: build
+  <<: *gcr_login
+  script:
+    - docker build --provenance=false --network host -t "${IMAGE_ADMIN}:${IMAGE_TAG}" -f Dockerfile.ui-admin .
+    - docker save "${IMAGE_ADMIN}:${IMAGE_TAG}" | gzip > admin-image.tar.gz
+  artifacts:
+    paths:
+      - admin-image.tar.gz
+    expire_in: 1 hour
+  only:
+    - development
+    - design/ui-2
+    - main
+
+scan-api:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-api.json --input api-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input api-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-api.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
+  only:
+    - development
+    - design/ui-2
+    - main
+
+scan-ui:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-ui.json --input ui-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input ui-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-ui.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
+  only:
+    - development
+    - design/ui-2
+    - main
+
+scan-admin:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-admin.json --input admin-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input admin-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-admin.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
+  only:
+    - development
+    - design/ui-2
+    - main
+
+scan-nginx:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --format spdx-json --output sbom-nginx.json --input nginx-image.tar.gz
+    - trivy image --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --input nginx-image.tar.gz
+  artifacts:
+    paths:
+      - sbom-nginx.json
+    when: always
+    expire_in: 1 week
+  allow_failure: false
+  only:
+    - development
+    - design/ui-2
+
+push-test:
+  stage: push
+  <<: *gcr_login
+  script:
+    - docker load < api-image.tar.gz
+    - docker load < ui-image.tar.gz
+    - docker load < admin-image.tar.gz
+    - docker push "${IMAGE_API}:${IMAGE_TAG}"
+    - docker push "${IMAGE_UI}:${IMAGE_TAG}"
+    - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    # tag as test-latest so the test MIG startup scripts pull the correct image
+    - docker tag "${IMAGE_API}:${IMAGE_TAG}"   "${IMAGE_API}:test-latest"
+    - docker tag "${IMAGE_UI}:${IMAGE_TAG}"    "${IMAGE_UI}:test-latest"
+    - docker tag "${IMAGE_ADMIN}:${IMAGE_TAG}" "${IMAGE_ADMIN}:test-latest"
+    - docker push "${IMAGE_API}:test-latest"
+    - docker push "${IMAGE_UI}:test-latest"
+    - docker push "${IMAGE_ADMIN}:test-latest"
+  only:
+    - development
+    - design/ui-2
+
+push-prod:
+  stage: push
+  <<: *gcr_login
+  script:
+    - docker load < api-image.tar.gz
+    - docker load < ui-image.tar.gz
+    - docker load < admin-image.tar.gz
+    - docker push "${IMAGE_API}:${IMAGE_TAG}"
+    - docker push "${IMAGE_UI}:${IMAGE_TAG}"
+    - docker push "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    - docker tag "${IMAGE_API}:${IMAGE_TAG}"   "${IMAGE_API}:latest"
+    - docker tag "${IMAGE_UI}:${IMAGE_TAG}"    "${IMAGE_UI}:latest"
+    - docker tag "${IMAGE_ADMIN}:${IMAGE_TAG}" "${IMAGE_ADMIN}:latest"
+    - docker push "${IMAGE_API}:latest"
+    - docker push "${IMAGE_UI}:latest"
+    - docker push "${IMAGE_ADMIN}:latest"
+  only:
+    - main
+
+sign-prod:
+  stage: sign
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl docker-cli
+    - curl -sL https://github.com/sigstore/cosign/releases/download/v2.4.1/cosign-linux-amd64 -o /usr/local/bin/cosign
+    - chmod +x /usr/local/bin/cosign
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
+  script:
+    - echo "${COSIGN_KEY_B64}" | base64 -d > /tmp/cosign.key
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_API}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_UI}:${IMAGE_TAG}"
+    - COSIGN_PASSWORD="${COSIGN_PASSWORD}" cosign sign --key /tmp/cosign.key --yes "${IMAGE_ADMIN}:${IMAGE_TAG}"
+    - rm -f /tmp/cosign.key
+  only:
+    - main
+
+deploy-test:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
+  before_script:
+    - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+    - gcloud auth login --cred-file=gcp-wif-test.json
+    - gcloud config set project "${PROJECT_ID}"
+  script:
+    # Rolling replace on the test MIGs (--max-unavailable=0 --max-surge=1: bring up the new
+    # instance and wait for it to be healthy before removing the old one — zero downtime)
+    # Requires: bootstrap.sh test has been run at least once so the MIGs exist.
+    - |
+      gcloud compute instance-groups managed rolling-action replace synapse-test-api-mig \
+        --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-test-ui-mig \
+        --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-test-admin-mig \
+        --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+      gcloud compute instance-groups managed wait-until synapse-test-api-mig   --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-test-ui-mig    --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-test-admin-mig --stable --zone="${ZONE}"
+      UI_INSTANCE=$(gcloud compute instance-groups managed list-instances synapse-test-ui-mig \
+        --zone="${ZONE}" --format="value(NAME)" | head -1)
+      ADMIN_INSTANCE=$(gcloud compute instance-groups managed list-instances synapse-test-admin-mig \
+        --zone="${ZONE}" --format="value(NAME)" | head -1)
+      UI_IP=$(gcloud compute instances describe "${UI_INSTANCE}" --zone="${ZONE}" \
+        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+      ADMIN_IP=$(gcloud compute instances describe "${ADMIN_INSTANCE}" --zone="${ZONE}" \
+        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+      sleep 15
+      for attempt in 1 2 3; do
+        gcloud compute security-policies rules update 50 \
+          --security-policy="synapse-test-armor" \
+          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+          --action=allow --project="${PROJECT_ID}" && break || \
+        gcloud compute security-policies rules create 50 \
+          --security-policy="synapse-test-armor" \
+          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
+          --action=allow --project="${PROJECT_ID}" && break || \
+        sleep 15
+      done
+  only:
+    - development
+    - design/ui-2
+  environment:
+    name: test
+
+deploy-production:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
+  before_script:
+      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+      - gcloud auth login --cred-file=gcp-wif-prod.json
+      - gcloud config set project "${PROJECT_ID}"
+  script:
+    - |
+      gcloud compute instance-groups managed rolling-action replace synapse-prod-api-mig   --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-prod-ui-mig    --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+      gcloud compute instance-groups managed rolling-action replace synapse-prod-admin-mig --zone="${ZONE}" --max-unavailable=0 --max-surge=1
+      gcloud compute instance-groups managed wait-until synapse-prod-api-mig   --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-prod-ui-mig    --stable --zone="${ZONE}"
+      gcloud compute instance-groups managed wait-until synapse-prod-admin-mig --stable --zone="${ZONE}"
+  only:
+    - main
+  when: manual
+  environment:
+    name: production
+    

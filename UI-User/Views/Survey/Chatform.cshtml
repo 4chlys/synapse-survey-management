@@ -1,0 +1,157 @@
+@using System.Text.Json
+@using SynapseEnqueteManagement.UI.User.Models
+@using SynapseEnqueteManagement.UI.User.Models.SpeechToText
+@using SynapseEnqueteManagement.UI.User.Models.Survey
+@model SurveyViewModel
+@inject IViewLocalizer L
+
+@{
+    ViewData["Title"] = "Enquête — Chat";
+    var projectName = (ViewData["ProjectName"] as string) ?? Model.Title;
+    var orgName = ViewData["OrganisationName"] as string;
+    ViewData["SurveyTitle"] = projectName;
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var chatProject = ViewData["Project"] as ProjectViewModel;
+    var introText = chatProject?.Introduction ?? string.Empty;
+    var introImage = chatProject?.ProjectImage ?? string.Empty;
+    var thankYouModel = new ThankYouViewModel
+    {
+        ProjectId = chatProject?.ProjectId ?? 0,
+        OrganisationName = chatProject?.OrganisationName ?? string.Empty,
+        OrganisationLogoUrl = chatProject?.OrganisationLogoUrl ?? string.Empty,
+        OrganisationWebsiteUrl = chatProject?.OrganisationWebsiteUrl ?? string.Empty,
+    };
+}
+
+<div class="scroll-lock-marker hidden"></div>
+
+@Html.AntiForgeryToken()
+
+@* Animated landing-style background — logo shows on all sizes, cards lg+ only *@
+@await Html.PartialAsync("_BackgroundAnimation")
+
+@* Ambient blobs — mobile/tablet fallback *@
+<div class="fixed inset-0 pointer-events-none overflow-hidden z-0 lg:hidden" aria-hidden="true">
+    <div class="absolute -top-40 -left-32 w-96 h-96 rounded-full bg-primary/5 blur-3xl"></div>
+    <div class="absolute -bottom-20 -right-24 w-[28rem] h-[28rem] rounded-full bg-secondary/5 blur-3xl"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-accent/3 blur-3xl"></div>
+</div>
+
+<div class="relative z-10 lg:h-[calc(100dvh-var(--header-h,64px))] lg:flex lg:items-center lg:justify-center lg:px-4">
+<div id="chat-root" class="flex flex-col max-w-2xl mx-auto bg-transparent lg:bg-base-100
+     h-[calc(100dvh-var(--header-h,64px))]
+     lg:h-[calc(100dvh-var(--header-h,64px)-4rem)]
+     lg:w-full lg:rounded-box lg:shadow-xl lg:border lg:border-base-300 lg:overflow-hidden"
+     data-project-id="@Context.GetRouteValue("projectId")"
+     data-has-session="@Model.HasSession.ToString().ToLower()"
+     data-questions="@Html.Raw(System.Net.WebUtility.HtmlEncode(JsonSerializer.Serialize(Model.Questions, jsonOpts)))"
+     data-existing-responses="@Html.Raw(System.Net.WebUtility.HtmlEncode(JsonSerializer.Serialize(Model.ExistingResponses, jsonOpts)))"
+     data-intro-text="@introText"
+     data-intro-image="@introImage"
+     data-project-name="@(chatProject?.Name ?? projectName)"
+     aria-label="@L["ChatFormAriaLabel"]">
+
+    @* Progress bar — sits at very top of card (just under shared layout header) *@
+    <div class="shrink-0 h-0.5 bg-base-200">
+        <div id="chat-progress-fill"
+             class="h-full bg-primary transition-[width] duration-500 ease-out"
+             style="width: 0%"></div>
+    </div>
+
+    @* Chat card header — desktop only, shows organisation name *@
+    <div class="hidden sm:flex shrink-0 items-center gap-3 px-4 py-2.5 bg-transparent">
+
+        <button id="chat-back" type="button" aria-label="@L["PreviousQuestionAriaLabel"]"
+                class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+                       text-base-content/60 hover:text-primary hover:bg-base-200
+                       active:scale-90 transition-all cursor-pointer
+                       disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-base-content/60"
+                disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        <div class="flex-1 min-w-0 text-center">
+            <span class="text-xs font-medium text-base-content/50 tracking-wide truncate">
+                @(orgName ?? projectName)
+            </span>
+        </div>
+
+        <button id="chat-restart" type="button" aria-label="@L["RestartSurveyAriaLabel"]"
+                class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+                       text-base-content/60 hover:text-primary hover:bg-base-200
+                       active:scale-90 transition-all cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-4M20 14a8 8 0 01-14 4" />
+            </svg>
+        </button>
+    </div>
+
+    @* Messages area *@
+    <div id="chat-messages"
+         class="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-3 bg-transparent lg:bg-base-200"
+         aria-live="polite" aria-label="@L["ConversationHistoryAriaLabel"]"></div>
+
+    @* Mobile-only nav row — back + restart sit above input/answer options *@
+    <div class="flex sm:hidden shrink-0 items-center justify-between px-4 py-2 bg-base-100 border-t border-base-300">
+        <button id="chat-back-mobile" type="button" aria-label="@L["PreviousQuestionAriaLabel"]"
+                class="w-8 h-8 rounded-full flex items-center justify-center
+                       text-base-content/60 hover:text-primary hover:bg-base-200
+                       active:scale-90 transition-all cursor-pointer
+                       disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-base-content/60"
+                disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        <button id="chat-restart-mobile" type="button" aria-label="@L["RestartSurveyAriaLabel"]"
+                class="w-8 h-8 rounded-full flex items-center justify-center
+                       text-base-content/60 hover:text-primary hover:bg-base-200
+                       active:scale-90 transition-all cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0114-4M20 14a8 8 0 01-14 4" />
+            </svg>
+        </button>
+    </div>
+
+    @* Answer options row — chips/slider injected here by chat.ts *@
+    <div id="chat-options-row" class="shrink-0 empty:hidden bg-base-100 px-4 py-3"></div>
+
+    @* Input area — glassmorphism bottom bar *@
+    <div id="chat-input-row" class="shrink-0 border-t border-base-300 bg-base-100 px-4 py-3">
+        <div class="flex items-end gap-3">
+            <textarea id="chat-input" rows="1" maxlength="1000"
+                       placeholder="@L["TypeHerePlaceholder"]"
+                      aria-label="@L["TypeYourAnswerAriaLabel"]"
+                      class="flex-1 resize-none rounded-box border border-base-300 bg-base-200
+                             px-4 py-3 text-sm focus:outline-none focus:border-primary/60
+                             focus:ring-2 focus:ring-primary/10
+                             transition-all max-h-32 overflow-y-auto
+                             placeholder:text-base-content/30"></textarea>
+            <partial name="_MicButton"
+                     model="@(new MicButtonModel(TargetSelector: "#chat-input", SizeClass: "w-10 h-10"))" />
+            <button id="chat-send" type="button" aria-label="@L["SendAriaLabel"]"
+                    class="shrink-0 w-10 h-10 rounded-full bg-primary
+                           flex items-center justify-center
+                           hover:shadow-lg hover:shadow-primary/30 hover:scale-110
+                           active:scale-95 transition-all cursor-pointer
+                           disabled:opacity-40 disabled:cursor-not-allowed
+                           disabled:shadow-none disabled:scale-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary-content" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+<partial name="_ThankYouPopup" model="thankYouModel" />

@@ -1,0 +1,131 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mvp-test
+  annotations:
+    run.googleapis.com/launch-stage: BETA   # required for multi-container
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/container-dependencies: '{"mvp-api":["postgres"],"mvp-admin":["postgres","mvp-api"],"nginx":["mvp-api","mvp-admin"]}'
+    spec:
+      containers:
+
+        # -- Ingress container: nginx (host-based routing) ----------------------
+        - name: nginx
+          image: IMAGE_NGINX_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: "0.25"
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 2
+            failureThreshold: 15
+
+        # -- Sidecar: .NET API (port 8081) -------------------------------------
+        - name: mvp-api
+          image: IMAGE_API_PLACEHOLDER
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: ASPNETCORE_URLS
+              value: http://+:8081
+            - name: DB_HOST
+              value: "127.0.0.1"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: synapse-test
+            - name: DB_USER
+              value: synapse-user
+            - name: DB_PASSWORD
+              value: synapse-test-pw
+            - name: ApiKey
+              value: dev-api-key-synapse-2026
+            - name: ApiBaseUrl
+              value: COMBINED_URL_PLACEHOLDER
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
+
+        # -- Sidecar: UI-Admin (port 8082) -------------------------------------
+        - name: mvp-admin
+          image: IMAGE_ADMIN_PLACEHOLDER
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8082
+            - name: DB_HOST
+              value: "127.0.0.1"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: synapse-test
+            - name: DB_USER
+              value: synapse-user
+            - name: DB_PASSWORD
+              value: synapse-test-pw
+            - name: ApiBaseUrl
+              value: http://127.0.0.1:8081
+            - name: ApiKey
+              value: dev-api-key-synapse-2026
+            - name: AllowedHosts
+              value: "*"
+            - name: SystemAdmin__Email
+              value: admin@synapse.local
+            - name: SystemAdmin__Password
+              value: Admin1234!
+            - name: AdminSettings__ParticipantDomain
+              value: PARTICIPANT_DOMAIN_PLACEHOLDER
+            - name: Vite__Base
+              value: /dist/
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.5"
+          startupProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
+
+        # -- Sidecar: PostgreSQL with pgvector ----------------------------------
+        - name: postgres
+          image: pgvector/pgvector:pg15
+          env:
+            - name: POSTGRES_DB
+              value: synapse-test
+            - name: POSTGRES_USER
+              value: synapse-user
+            - name: POSTGRES_PASSWORD
+              value: synapse-test-pw
+            - name: PGDATA
+              value: /tmp/pgdata
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.5"
+          startupProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            failureThreshold: 10

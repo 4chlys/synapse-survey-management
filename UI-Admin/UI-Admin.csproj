@@ -6,6 +6,69 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SynapseEnqueteManagement.UI.Admin</AssemblyName>
     <RootNamespace>SynapseEnqueteManagement.UI.Admin</RootNamespace>
+    <UserSecretsId>synapse-admin-secrets</UserSecretsId>
   </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.13" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="Vite.AspNetCore" Version="2.4.1" />
+        <ProjectReference Include="..\Domain\Domain.csproj" />
+        <ProjectReference Include="..\BL\BL.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Remove="package-lock.json" />
+        <Content Remove="package.json" />
+        <Content Remove="tsconfig.json" />
+
+        <None Include="package-lock.json" />
+        <None Include="package.json" />
+        <None Include="tsconfig.json" />
+
+        <Content Include="wwwroot\dist\.vite\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\dist\dashboard-DzeeJh_7.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\main-D4-fcwMZ.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\main-DwHU14a7.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\project-ideation-B2-CvKx1.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\project-questions-BXb0jtsT.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\project-setup-DXnHK_zV.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\questionnaire-dnd-Dm6p3-yW.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\questionnaire-tree-CaOLIR3S.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-idea-feed-CIeCnDT4.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-moderation-queue-nWCLUmnb.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-stat-jjgOrdO4.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-survey-distribution-Dc-L75LY.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-timeline--I1Qg07u.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-categories-Dpuo07rK.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\dist\widget-top-ideas-UoK_jxyw.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\site.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\site.css" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\dist\.vite\" />
+    </ItemGroup>
+
+    <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
+        <Exec Command="node --version" ContinueOnError="true">
+            <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+        </Exec>
+        <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project." />
+        <Message Importance="high" Text="Restoring dependencies using 'pnpm'. This may take several minutes..." />
+        <Exec Command="pnpm install" />
+    </Target>
+
+    <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
+        <Exec Command="pnpm exec vite build" />
+    </Target>
 
 </Project>

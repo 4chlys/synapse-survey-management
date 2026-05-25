@@ -1,6 +1,27 @@
 import './main.css';
-import {initSurvey} from './survey/init';
-import {initIdeation} from "./ideation/ideahub";
+import './lib/i18n';
+import { initTheme } from './lib/theme';
+import { initSurvey } from './survey/init';
+import { initChat } from './survey/chat';
+import { initIdeation } from "./ideation/ideahub";
+import { initThankYouPopup } from './lib/thank-you-popup';
+import { initSpeechToTextButtons } from './lib/speechtotext-attach';
 
-initSurvey();
-initIdeation();
+function init() {
+    initTheme();
+    initSurvey();
+    initChat();
+    initIdeation();
+    initThankYouPopup();
+    initSpeechToTextButtons();
+
+    requestAnimationFrame(() => {
+        document.querySelectorAll<HTMLElement>('.page-enter').forEach(el => {
+            el.classList.add('page-visible');
+            setTimeout(() => el.classList.remove('page-enter', 'page-visible'), 450);
+        });
+    });
+}
+
+init();
+

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="Heading" xml:space="preserve"><value>Systeemdashboard</value></data>
+  <data name="StatPlatforms" xml:space="preserve"><value>Platformen</value></data>
+  <data name="StatActive" xml:space="preserve"><value>Actief</value></data>
+  <data name="StatDraft" xml:space="preserve"><value>Concept</value></data>
+  <data name="StatArchived" xml:space="preserve"><value>Archief</value></data>
+  <data name="StatProjects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="StatAdmins" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="StatParticipants" xml:space="preserve"><value>Deelnemers</value></data>
+  <data name="PlatformsHeading" xml:space="preserve"><value>Platformen</value></data>
+  <data name="AiShort" xml:space="preserve"><value>AI</value></data>
+  <data name="OpenAction" xml:space="preserve"><value>Openen</value></data>
+  <data name="AdminsAction" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="CostMonitoringHeading" xml:space="preserve"><value>Kosten &amp; monitoring</value></data>
+  <data name="CostIframeTitle" xml:space="preserve"><value>Kostenoverzicht {0}</value></data>
+  <data name="NoCostDashboard" xml:space="preserve"><value>Geen kostendashboard geconfigureerd.</value></data>
+  <data name="AddCostDashboardHint" xml:space="preserve"><value>Voeg een Data Studio embed-URL toe via Platform → Instellingen voor elk platform.</value></data>
+  <data name="LiveAiCostHeading" xml:space="preserve"><value>Live AI-kosten (laatste 24u)</value></data>
+  <data name="AiCost_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="AiCost_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="AiCost_InputTokens" xml:space="preserve"><value>Input-tokens</value></data>
+  <data name="AiCost_OutputTokens" xml:space="preserve"><value>Output-tokens</value></data>
+  <data name="AiCost_Cost" xml:space="preserve"><value>Kosten (EUR)</value></data>
+  <data name="AiCost_Loading" xml:space="preserve"><value>Laden...</value></data>
+  <data name="AiCost_Empty" xml:space="preserve"><value>Geen AI-gebruik in de laatste 24u.</value></data>
+
+  <data name="StatAvgTime" xml:space="preserve"><value>Gem. doorlooptijd</value></data>
+  <data name="StatMedianTime" xml:space="preserve"><value>Mediaan doorlooptijd</value></data>
+  <data name="ProjectsTableHeading" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Col_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Col_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Col_State" xml:space="preserve"><value>Status</value></data>
+  <data name="Col_Participants" xml:space="preserve"><value>Deelnemers</value></data>
+  <data name="Col_AvgTime" xml:space="preserve"><value>Gem. tijd</value></data>
+  <data name="Col_MedianTime" xml:space="preserve"><value>Mediaan tijd</value></data>
+  <data name="AiBreakdownHeading" xml:space="preserve"><value>AI-gebruik per service</value></data>
+  <data name="AiCol_Service" xml:space="preserve"><value>Service</value></data>
+  <data name="AiCol_Model" xml:space="preserve"><value>Model</value></data>
+  <data name="AiCol_InputTokens" xml:space="preserve"><value>Input-tokens</value></data>
+  <data name="AiCol_OutputTokens" xml:space="preserve"><value>Output-tokens</value></data>
+  <data name="AiCol_Requests" xml:space="preserve"><value>Verzoeken</value></data>
+  <data name="AiCol_Cost" xml:space="preserve"><value>Kosten (EUR)</value></data>
+  <data name="ExportButton" xml:space="preserve"><value>Exporteren</value></data>
+  <data name="ExportModalTitle" xml:space="preserve"><value>Statistieken exporteren</value></data>
+  <data name="ExportGroupHeading_Stats" xml:space="preserve"><value>Statistieken</value></data>
+  <data name="ExportGroupHeading_Ai" xml:space="preserve"><value>AI-gebruik</value></data>
+  <data name="Section_Platforms" xml:space="preserve"><value>Platformen</value></data>
+  <data name="Section_Projects" xml:space="preserve"><value>Projecten</value></data>
+  <data name="Section_Summary" xml:space="preserve"><value>Samenvatting</value></data>
+  <data name="Section_AiSystem" xml:space="preserve"><value>AI per service (systeem)</value></data>
+  <data name="Section_AiPlatforms" xml:space="preserve"><value>AI per service (platform)</value></data>
+  <data name="Section_AiProjects" xml:space="preserve"><value>AI per service (project)</value></data>
+  <data name="IncludeGraphicsLabel" xml:space="preserve"><value>Grafieken opnemen (xlsx)</value></data>
+  <data name="FormatLabel" xml:space="preserve"><value>Formaat</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="FormatPngZip" xml:space="preserve"><value>Grafieken (.zip met PNG)</value></data>
+  <data name="ChartsHeading" xml:space="preserve"><value>Grafieken</value></data>
+  <data name="Chart_ParticipantsTitle" xml:space="preserve"><value>Deelnemers per project</value></data>
+  <data name="Chart_ProjectStatesTitle" xml:space="preserve"><value>Projectstatussen</value></data>
+  <data name="Chart_AiCostTitle" xml:space="preserve"><value>AI-kosten per service</value></data>
+  <data name="Chart_CompletionTimeTitle" xml:space="preserve"><value>Voltooitijd per project</value></data>
+  <data name="Series_Participants" xml:space="preserve"><value>Deelnemers</value></data>
+  <data name="Series_CompletionTime" xml:space="preserve"><value>Voltooitijd (s)</value></data>
+  <data name="Series_AiCost" xml:space="preserve"><value>Kosten (EUR)</value></data>
+</root>

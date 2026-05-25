@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>AI Instellingen</value></data>
+  <data name="Heading" xml:space="preserve"><value>AI Instellingen</value></data>
+  <data name="ModelsHeading" xml:space="preserve"><value>AI-modellen</value></data>
+  <data name="ModelsDescription" xml:space="preserve"><value>Vink de modellen aan die projectplatforms mogen gebruiken. Als je slechts één model selecteert, worden alle platforms verplicht dat model te gebruiken.</value></data>
+  <data name="NoApiKeyTooltip" xml:space="preserve"><value>Geen API-sleutel geconfigureerd voor dit model</value></data>
+  <data name="NoApiKeyBadge" xml:space="preserve"><value>geen API-sleutel</value></data>
+  <data name="RegionUnavailableBadge" xml:space="preserve"><value>niet beschikbaar in deze regio</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
+</root>

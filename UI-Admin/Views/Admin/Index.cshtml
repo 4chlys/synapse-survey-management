@@ -1,0 +1,81 @@
+@using SynapseEnqueteManagement.UI.Admin.Models.Admin
+@using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@model AdminListViewModel
+@inject IViewLocalizer L
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    ViewData["ActiveSection"] = "Admins";
+    Layout = "_Layout";
+}
+
+<h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+
+@* Platform filter *@
+<form method="get" asp-action="Index" class="flex flex-wrap gap-2 mb-6 items-center">
+    <select name="platformId" class="select select-bordered select-sm min-w-48"
+            data-submit-on-change>
+        <option value="">@L["FilterAllPlatforms"]</option>
+        @foreach (var platform in Model.Platforms)
+        {
+            if (Model.FilterPlatformId == platform.ProjectPlatformId)
+            {
+                <option value="@platform.ProjectPlatformId" selected>@platform.Name</option>
+            }
+            else
+            {
+                <option value="@platform.ProjectPlatformId">@platform.Name</option>
+            }
+        }
+    </select>
+    @if (Model.FilterPlatformId.HasValue)
+    {
+        <a asp-action="Index" class="btn btn-ghost btn-sm">@L["ClearFilter"]</a>
+    }
+</form>
+
+@if (!Model.Admins.Any())
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body text-center text-base-content/60 text-sm">
+            @L["NoAdmins"]
+        </div>
+    </div>
+}
+else
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body p-0 overflow-x-auto">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>@L["TableUsername"]</th>
+                        <th>@L["TableEmail"]</th>
+                        <th>@L["TablePlatform"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var admin in Model.Admins)
+                    {
+                        <tr class="hover">
+                            <td class="text-base-content">@admin.UserName</td>
+                            <td class="text-base-content/60">@admin.Email</td>
+                            <td>
+                                <a asp-controller="Platform" asp-action="Dashboard"
+                                   asp-route-id="@admin.PlatformId"
+                                   class="text-base-content/60 hover:text-base-content transition text-sm underline underline-offset-2">
+                                    @admin.PlatformName
+                                </a>
+                            </td>
+                            <td>
+                                <a asp-controller="AdminMembership" asp-action="Index"
+                                   asp-route-id="@admin.PlatformId"
+                                   class="btn btn-ghost btn-xs">@L["ViewAction"]</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

@@ -6,13 +6,13 @@ using SynapseEnqueteManagement.UI.User.Services.Survey;
 
 namespace SynapseEnqueteManagement.UI.User.Controllers;
 
-public class ProjectLandingPageController : Controller
+public class LandingPageController : Controller
 {
     private readonly IProjectApiService _projectApiService;
     private readonly ISessionService _sessionService;
     private readonly IQuestionnaireApiService _questionnaireApiService;
 
-    public ProjectLandingPageController(
+    public LandingPageController(
         IProjectApiService projectApiService, 
         ISessionService sessionService,
         IQuestionnaireApiService questionnaireApiService)
@@ -33,9 +33,10 @@ public class ProjectLandingPageController : Controller
         if (!string.IsNullOrWhiteSpace(token)
             && await _questionnaireApiService.HasParticipantRespondedAsync(projectId, token))
         {
-            return RedirectToAction("Index", "Category", new { projectId });
+            return RedirectToAction("CategoryList", "Category", new { projectId });
         }
         
+        await _projectApiService.TrackViewAsync(projectId);
         this.SetLayoutData(project, projectId);
         return View(project);
     }

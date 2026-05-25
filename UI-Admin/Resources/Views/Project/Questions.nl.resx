@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Vragen</value></data>
+  <data name="Heading" xml:space="preserve"><value>Vragen</value></data>
+  <data name="Subtitle" xml:space="preserve"><value>Sleep om te ordenen · Klik om te bewerken · Sectie-headers zijn klikbaar</value></data>
+  <data name="LockedActive" xml:space="preserve"><value>Dit project is actief. Vragen kunnen niet meer worden gewijzigd.</value></data>
+  <data name="LockedArchived" xml:space="preserve"><value>Dit project is gearchiveerd. Vragen kunnen niet meer worden gewijzigd.</value></data>
+  <data name="LoadingQuestions" xml:space="preserve"><value>Vragen laden…</value></data>
+  <data name="AddQuestionHeading" xml:space="preserve"><value>Vraag toevoegen</value></data>
+  <data name="QuestionTextLabel" xml:space="preserve"><value>Vraagtekst *</value></data>
+  <data name="QuestionTextPlaceholder" xml:space="preserve"><value>Stel hier je vraag…</value></data>
+  <data name="TypeLabel" xml:space="preserve"><value>Type</value></data>
+  <data name="Type_Open" xml:space="preserve"><value>Open vraag</value></data>
+  <data name="Type_MultipleChoice" xml:space="preserve"><value>Meerkeuze</value></data>
+  <data name="Type_SingleChoice" xml:space="preserve"><value>Enkelvoudige keuze</value></data>
+  <data name="Type_Likert" xml:space="preserve"><value>Likert</value></data>
+  <data name="SectionLabel" xml:space="preserve"><value>Sectie</value></data>
+  <data name="NoSectionOption" xml:space="preserve"><value>— geen sectie —</value></data>
+  <data name="AnswersLabel" xml:space="preserve"><value>Antwoorden *</value></data>
+  <data name="MinTwoAnswersError" xml:space="preserve"><value>Voeg minimaal 2 antwoorden toe.</value></data>
+  <data name="AddAnswerButton" xml:space="preserve"><value>Antwoord toevoegen</value></data>
+  <data name="MandatoryLabel" xml:space="preserve"><value>Verplicht</value></data>
+  <data name="MediaSummary" xml:space="preserve"><value>Ondersteunende media (optioneel)</value></data>
+  <data name="MediaTypeLabel" xml:space="preserve"><value>Mediatype</value></data>
+  <data name="NoMediaOption" xml:space="preserve"><value>— geen media —</value></data>
+  <data name="Media_Image" xml:space="preserve"><value>Afbeelding</value></data>
+  <data name="Media_Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Media_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="MediaEmbedToggle" xml:space="preserve"><value>URL / link invoeren</value></data>
+  <data name="MediaTextLabel" xml:space="preserve"><value>Begeleidende tekst</value></data>
+  <data name="MediaTextMarkdownLabel" xml:space="preserve"><value>Begeleidende tekst (markdown — **vet**, *cursief*, - lijst)</value></data>
+  <data name="MediaTextPlaceholder" xml:space="preserve"><value>Korte uitleg of context bij de media...</value></data>
+  <data name="AddButton" xml:space="preserve"><value>Toevoegen</value></data>
+  <data name="SettingsLink" xml:space="preserve"><value>Instellingen</value></data>
+  <data name="NextLink" xml:space="preserve"><value>Volgende</value></data>
+  <data name="AddOneQuestionError" xml:space="preserve"><value>Voeg minstens één vraag toe.</value></data>
+  <data name="AiSupportHeading" xml:space="preserve"><value>AI Ondersteuning</value></data>
+  <data name="AiMode_ProActive" xml:space="preserve"><value>Pro-actief</value></data>
+  <data name="AiMode_AskFirst" xml:space="preserve"><value>Vraag eerst</value></data>
+  <data name="AiMode_Never" xml:space="preserve"><value>Nooit</value></data>
+  <data name="AiInputPlaceholder" xml:space="preserve"><value>Stel een vraag over jouw enquête…</value></data>
+  <data name="SendButton" xml:space="preserve"><value>Versturen</value></data>
+  <data name="ModalTitleCreate" xml:space="preserve"><value>Vraag aanmaken</value></data>
+  <data name="ModalQuestionPlaceholder" xml:space="preserve"><value>Vul je vraag in...</value></data>
+  <data name="FieldRequiredError" xml:space="preserve"><value>Dit veld moet ingevuld zijn.</value></data>
+  <data name="QuestionTypeLabel" xml:space="preserve"><value>Vraagtype</value></data>
+  <data name="SelectedSuffix" xml:space="preserve"><value>(geselecteerd)</value></data>
+  <data name="SectionOptionalLabel" xml:space="preserve"><value>Sectie (optioneel)</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleer</value></data>
+  <data name="OkButton" xml:space="preserve"><value>OK</value></data>
+  <data name="DetailNoAnswers" xml:space="preserve"><value>Nog geen antwoorden</value></data>
+  <data name="DetailLoadMore" xml:space="preserve"><value>Meer laden</value></data>
+  <data name="DetailLoadFailed" xml:space="preserve"><value>Laden mislukt</value></data>
+  <data name="DetailResponsesUnit" xml:space="preserve"><value>antwoord(en)</value></data>
+  <data name="DetailXAxisLabel" xml:space="preserve"><value>Antwoorden</value></data>
+  <data name="PickerHeading" xml:space="preserve"><value>Welk type vraag?</value></data>
+  <data name="PickerSubtitle" xml:space="preserve"><value>Kies het soort antwoord dat je wilt verzamelen</value></data>
+  <data name="Picker_MCQDesc" xml:space="preserve"><value>Meerdere opties, meerdere antwoorden mogelijk.</value></data>
+  <data name="Picker_SCQDesc" xml:space="preserve"><value>Meerdere opties, slechts één antwoord.</value></data>
+  <data name="Picker_OpenDesc" xml:space="preserve"><value>Vrij tekstantwoord van de respondent.</value></data>
+  <data name="Picker_LikertDesc" xml:space="preserve"><value>Schaal van mee-oneens tot mee-eens.</value></data>
+  <data name="MandatoryHelper" xml:space="preserve"><value>Antwoord is vereist</value></data>
+  <data name="AiTipLabel" xml:space="preserve"><value>AI-tip</value></data>
+  <data name="AiTipText" xml:space="preserve"><value>Houd de vraag kort en concreet. Eén onderwerp per vraag geeft de beste antwoorden.</value></data>
+  <data name="AiSupportSubtitle" xml:space="preserve"><value>helpt vragen formuleren</value></data>
+  <data name="ModalTitleEdit" xml:space="preserve"><value>Vraag bewerken</value></data>
+  <data name="EmptyNoQuestions" xml:space="preserve"><value>Nog geen vragen toegevoegd.</value></data>
+  <data name="EmptySectionAdd" xml:space="preserve"><value>Nog geen vragen — voeg er één toe</value></data>
+  <data name="AddInSection" xml:space="preserve"><value>Vraag in sectie</value></data>
+  <data name="FollowupsSingular" xml:space="preserve"><value>vervolgvraag</value></data>
+  <data name="FollowupsPlural" xml:space="preserve"><value>vervolgvragen</value></data>
+  <data name="SubDropZone" xml:space="preserve"><value>Sleep hier voor subvraag</value></data>
+  <data name="PromoteDropZone" xml:space="preserve"><value>Sleep een subvraag hierheen om er een hoofdvraag van te maken</value></data>
+  <data name="EndsSurveyLabel" xml:space="preserve"><value>Beëindigt enquête</value></data>
+  <data name="EndsSurveyToggle" xml:space="preserve"><value>Beëindig enquête</value></data>
+  <data name="DragTitle" xml:space="preserve"><value>Versleep om te verplaatsen</value></data>
+  <data name="QuestionSingular" xml:space="preserve"><value>vraag</value></data>
+  <data name="QuestionPlural" xml:space="preserve"><value>vragen</value></data>
+  <data name="AnswerPlaceholder" xml:space="preserve"><value>Antwoord…</value></data>
+  <data name="SavedToast" xml:space="preserve"><value>Opgeslagen</value></data>
+  <data name="SaveFailedToast" xml:space="preserve"><value>Opslaan mislukt</value></data>
+  <data name="AllAnswersRequired" xml:space="preserve"><value>Alle antwoorden moeten ingevuld zijn.</value></data>
+  <data name="MaxQuestionTextError" xml:space="preserve"><value>Vraagtekst mag maximaal 500 tekens bevatten.</value></data>
+  <data name="MediaShort_Image" xml:space="preserve"><value>Afb</value></data>
+  <data name="MediaShort_Video" xml:space="preserve"><value>Vid</value></data>
+  <data name="MediaShort_Audio" xml:space="preserve"><value>Aud</value></data>
+  <data name="MediaShort_Generic" xml:space="preserve"><value>Media</value></data>
+  <data name="StatsTitle" xml:space="preserve"><value>Statistieken</value></data>
+</root>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CloseAriaLabel" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="ModerationHeading" xml:space="preserve">
+    <value>Je bericht bevat mogelijk ongepaste inhoud</value>
+  </data>
+  <data name="SuggestionLabel" xml:space="preserve">
+    <value>Voorgestelde herschrijving</value>
+  </data>
+  <data name="BlockMessage" xml:space="preserve">
+    <value>Je bericht kan niet worden ingediend. Pas de inhoud aan en probeer opnieuw.</value>
+  </data>
+  <data name="AcceptButton" xml:space="preserve">
+    <value>Herschrijving gebruiken</value>
+  </data>
+  <data name="RewriteButton" xml:space="preserve">
+    <value>Zelf aanpassen</value>
+  </data>
+  <data name="CloseAndEditButton" xml:space="preserve">
+    <value>Sluiten en aanpassen</value>
+  </data>
+  <data name="SubmitAnywayButton" xml:space="preserve">
+    <value>Toch insturen</value>
+  </data>
+  <data name="ImageRejectedHeading" xml:space="preserve">
+    <value>Je afbeelding is afgekeurd</value>
+  </data>
+  <data name="ChooseOtherImageButton" xml:space="preserve">
+    <value>Andere afbeelding kiezen</value>
+  </data>
+</root>

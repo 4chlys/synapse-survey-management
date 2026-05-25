@@ -1,6 +1,9 @@
 import {callModerationAi, callSuggest, showRewritePopup} from './moderation';
+import {clearIdeaImageField, showImageRejectionPopup, uploadSelectedImage} from './ideaimage';
+import {t} from '../lib/i18n';
 
 const MIN_LENGTH = 2;
+const MAX_LENGTH: Record<'idea' | 'comment', number> = { idea: 1000, comment: 500 };
 
 export function wireIdeationForm(
     form: HTMLFormElement,
@@ -21,19 +24,43 @@ export function wireIdeationForm(
 
         const text = textarea.value.trim();
 
+        if (text.length > MAX_LENGTH[contentType]) {
+            textarea.setCustomValidity(t('maxLengthExceeded').replace('{max}', String(MAX_LENGTH[contentType])));
+            textarea.reportValidity();
+            return;
+        }
+        textarea.setCustomValidity('');
+
         if (text.length < MIN_LENGTH) {
             tokenInput.value = '';
             await submitFormViaFetch(form);
             return;
         }
 
-        const originalLabel = submitBtn?.textContent ?? 'Plaatsen';
+        const originalLabel = submitBtn?.textContent ?? t('submitFallback');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Controleren...';
+            submitBtn.textContent = t('uploading');
         }
 
         try {
+            // Upload image first (ideas only; comments have no image)
+            if (contentType === 'idea') {
+                const imageResult = await uploadSelectedImage(form, projectId);
+                if (imageResult.status === 'rejected') {
+                    const choice = await showImageRejectionPopup(imageResult.reason);
+                    if (choice === 'cancel') {
+                        clearIdeaImageField(form);
+                        return;
+                    }
+                    // submitFlagged: hidden inputs already carry the Flagged token — continue to submit
+                } else if (imageResult.status === 'error') {
+                    return; // inline error already rendered
+                }
+            }
+
+            if (submitBtn) submitBtn.textContent = t('checking');
+
             const result = await callModerationAi(text, projectId, contentType);
 
             if (result.isAcceptable) {
@@ -47,7 +74,7 @@ export function wireIdeationForm(
             const outcome = await showRewritePopup(
                 text,
                 suggestResult.suggestion,
-                result.reason ?? 'De inhoud is niet toegestaan op dit platform.',
+                result.reason ?? t('contentNotAllowed'),
             );
 
             if (outcome.action === 'accepted') {

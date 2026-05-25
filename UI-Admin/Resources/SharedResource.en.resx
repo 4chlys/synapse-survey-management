@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="AppName" xml:space="preserve"><value>Synapse</value></data>
+  <data name="LanguageMenu_Switch" xml:space="preserve"><value>Switch language</value></data>
+  <data name="ThemeToggleLabel" xml:space="preserve"><value>Toggle theme</value></data>
+  <data name="Login_Tagline" xml:space="preserve"><value>The platform where organisations turn voices into decisions.</value></data>
+  <data name="Login_Subtagline" xml:space="preserve"><value>Design participation surveys, gather ideas, and surface what your community really thinks, all in one place.</value></data>
+
+  <data name="Nav_MainNavigation" xml:space="preserve"><value>Main navigation</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Nav_Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Nav_Admins" xml:space="preserve"><value>Admins</value></data>
+  <data name="Nav_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Nav_Ideas" xml:space="preserve"><value>Ideas</value></data>
+  <data name="Nav_Categories" xml:space="preserve"><value>Categories</value></data>
+  <data name="Nav_Questions" xml:space="preserve"><value>Questions</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_AiSettings" xml:space="preserve"><value>AI settings</value></data>
+  <data name="Nav_SystemDashboard" xml:space="preserve"><value>System dashboard</value></data>
+  <data name="Nav_Privacy" xml:space="preserve"><value>Privacy</value></data>
+  <data name="Nav_Launch" xml:space="preserve"><value>Launch</value></data>
+  <data name="Wizard_NewProject" xml:space="preserve"><value>New project</value></data>
+
+  <data name="Breadcrumb_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Breadcrumb_Platforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="Sidebar_SystemAdmin" xml:space="preserve"><value>System administration</value></data>
+
+  <data name="State_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="State_Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="State_Archived" xml:space="preserve"><value>Archived</value></data>
+
+  <data name="UserMenu_ChangePassword" xml:space="preserve"><value>Change password</value></data>
+  <data name="UserMenu_Logout" xml:space="preserve"><value>Log out</value></data>
+
+  <data name="Common_Submit" xml:space="preserve"><value>Submit</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Common_Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Common_No" xml:space="preserve"><value>No</value></data>
+  <data name="Common_Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Common_Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common_All" xml:space="preserve"><value>All</value></data>
+  <data name="Common_None" xml:space="preserve"><value>None</value></data>
+
+  <data name="TempData_Success" xml:space="preserve"><value>Success</value></data>
+  <data name="TempData_Error" xml:space="preserve"><value>Error</value></data>
+
+  <data name="Auth_AccountLocked" xml:space="preserve"><value>Account is locked. Please try again later.</value></data>
+  <data name="Auth_InvalidCredentials" xml:space="preserve"><value>Invalid email or password.</value></data>
+  <data name="Auth_PasswordChanged" xml:space="preserve"><value>Password changed successfully.</value></data>
+
+  <data name="Project_TopicRequired" xml:space="preserve"><value>Topic is required.</value></data>
+  <data name="Project_IntroductionRequired" xml:space="preserve"><value>Introduction is required.</value></data>
+  <data name="Project_AgeRange" xml:space="preserve"><value>Min age cannot be greater than max age.</value></data>
+  <data name="Project_LockedNotEditable" xml:space="preserve"><value>This project is active or archived and can no longer be edited.</value></data>
+  <data name="Project_DeleteActiveBlocked" xml:space="preserve"><value>This project is active and cannot be deleted. Archive it first.</value></data>
+  <data name="Project_NoPlatform" xml:space="preserve"><value>Your account is not linked to a platform.</value></data>
+  <data name="Project_NotFoundOrNoAccess" xml:space="preserve"><value>Project not found or no access.</value></data>
+  <data name="Project_CopySuccess" xml:space="preserve"><value>Project copied as template!</value></data>
+  <data name="Project_CopyFailed" xml:space="preserve"><value>Copy failed: {0}</value></data>
+  <data name="Project_InvalidFormat" xml:space="preserve"><value>Invalid format.</value></data>
+  <data name="Project_ExportOnlyActive" xml:space="preserve"><value>Export is only available for active or archived projects.</value></data>
+  <data name="Project_NoFileReceived" xml:space="preserve"><value>No file received.</value></data>
+  <data name="Project_NameRequired" xml:space="preserve"><value>Project name is required.</value></data>
+  <data name="Project_ImageGenerationFailed" xml:space="preserve"><value>Image generation failed.</value></data>
+  <data name="Project_UploadFailed" xml:space="preserve"><value>Upload failed.</value></data>
+
+  <data name="Platform_AdminAdded" xml:space="preserve"><value>Admin added.</value></data>
+  <data name="Platform_AdminRemoved" xml:space="preserve"><value>Admin removed.</value></data>
+  <data name="Platform_LastAdminBlocked" xml:space="preserve"><value>You can't remove the last admin from a platform.</value></data>
+  <data name="Platform_BasicInfoSaved" xml:space="preserve"><value>Basic information saved.</value></data>
+  <data name="Platform_SettingsSaved" xml:space="preserve"><value>Settings saved.</value></data>
+  <data name="Platform_AiSettingsSaved" xml:space="preserve"><value>AI settings saved.</value></data>
+  <data name="Platform_AiModelRequired" xml:space="preserve"><value>At least one AI model must be selected.</value></data>
+  <data name="Platform_AiModelConfiguredRequired" xml:space="preserve"><value>At least one configured AI model must be selected.</value></data>
+
+  <data name="Settings_InvalidModel" xml:space="preserve"><value>Invalid model selected.</value></data>
+  <data name="Settings_AiModelSaved" xml:space="preserve"><value>AI model saved.</value></data>
+  <data name="Settings_InvalidPromptType" xml:space="preserve"><value>Invalid prompt type.</value></data>
+  <data name="Settings_PromptTooLong" xml:space="preserve"><value>System prompt may contain at most {0} characters.</value></data>
+  <data name="Settings_PromptSaved" xml:space="preserve"><value>System prompt saved.</value></data>
+  <data name="Settings_PromptReset" xml:space="preserve"><value>System prompt reset to default.</value></data>
+  <data name="Settings_InvalidAiMode" xml:space="preserve"><value>Invalid AI assistance mode.</value></data>
+  <data name="Settings_AiModeSaved" xml:space="preserve"><value>AI assistance mode saved.</value></data>
+
+  <data name="Prompt_Moderation" xml:space="preserve"><value>Moderation</value></data>
+  <data name="Prompt_CommentModeration" xml:space="preserve"><value>Comment moderation</value></data>
+  <data name="Prompt_Rewrite" xml:space="preserve"><value>Rewrite</value></data>
+  <data name="Prompt_ImageModeration" xml:space="preserve"><value>Image moderation</value></data>
+  <data name="Prompt_IdeaSupport" xml:space="preserve"><value>Idea support</value></data>
+  <data name="Prompt_CommentSupport" xml:space="preserve"><value>Comment support</value></data>
+  <data name="Prompt_QuestionSupport" xml:space="preserve"><value>Question support</value></data>
+  <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, the assistant is temporarily unavailable. You can type your idea directly below and submit it.</value></data>
+  <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, the assistant is temporarily unavailable. You can type your reply directly below.</value></data>
+  <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, the AI assistant is temporarily unavailable.</value></data>
+
+  <data name="Email_ForgotPassword_Subject" xml:space="preserve"><value>Reset your password — Synapse</value></data>
+  <data name="Email_ForgotPassword_Body" xml:space="preserve"><value>Hello,
+
+You requested a password reset for your Synapse account.
+
+Click the link below to reset your password:
+{0}
+
+This link is valid for 24 hours.
+
+If you did not request this, you can ignore this email.</value></data>
+
+  <data name="Email_Welcome_Subject" xml:space="preserve"><value>Welcome to Synapse — {0}</value></data>
+  <data name="Email_Welcome_Body" xml:space="preserve"><value>Hello,
+
+You have been added as an administrator of platform '{0}' in Synapse.
+
+Your login details:
+Email: {1}
+
+Set your password via the link below (valid for 24 hours):
+{2}</value></data>
+
+  <data name="Common_ProgressSaved" xml:space="preserve"><value>Saved.</value></data>
+</root>
