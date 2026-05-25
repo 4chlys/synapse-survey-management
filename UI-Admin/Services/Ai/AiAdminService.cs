@@ -11,27 +11,19 @@ public sealed record GlobalPromptsDto(
     string CommentSupport    = "",
     string QuestionSupport   = "");
 
-public sealed record ModelAvailabilityItem(string Id, bool IsAvailable);
-
 public class AiAdminService(HttpClient httpClient)
 {
-    public async Task<Dictionary<string, bool>> GetModelAvailabilityAsync()
+    public async Task<HashSet<string>> GetAvailableModelIdsAsync()
     {
         try
         {
-            var items = await httpClient.GetFromJsonAsync<List<ModelAvailabilityItem>>("api/admin/ai/available-models");
-            return (items ?? []).ToDictionary(x => x.Id, x => x.IsAvailable, StringComparer.OrdinalIgnoreCase);
+            var ids = await httpClient.GetFromJsonAsync<List<string>>("api/admin/ai/available-models");
+            return (ids ?? []).ToHashSet();
         }
         catch
         {
             return [];
         }
-    }
-
-    public async Task<HashSet<string>> GetAvailableModelIdsAsync()
-    {
-        var availability = await GetModelAvailabilityAsync();
-        return availability.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     public async Task<GlobalPromptsDto> GetGlobalPromptsAsync()

@@ -6,19 +6,16 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/ai")]
-public class AdminAiController(ChatClientRegistry registry, IPlatformAiConfigService configService, ModelAvailabilityService availability) : ControllerBase
+public class AdminAiController(ChatClientRegistry registry, IPlatformAiConfigService configService) : ControllerBase
 {
     [HttpGet("available-models")]
-    public async Task<IActionResult> GetAvailableModels(CancellationToken ct)
+    public IActionResult GetAvailableModels()
     {
-        var configured   = registry.AvailableModelIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var availability_ = await availability.GetAvailabilityAsync(ct);
-
+        var ids = registry.AvailableModelIds.ToHashSet();
         var models = AiModelCatalog.All
-            .Where(m => configured.Contains(m.Id))
-            .Select(m => new { id = m.Id, isAvailable = availability_.GetValueOrDefault(m.Id, false) })
+            .Where(m => ids.Contains(m.Id))
+            .Select(m => m.Id)
             .ToList();
-
         return Ok(models);
     }
 

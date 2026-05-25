@@ -19,7 +19,6 @@
   <data name="SingleModelText" xml:space="preserve"><value>Your platform uses {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>No AI models available. Please contact the system administrator.</value></data>
   <data name="SelectModelLabel" xml:space="preserve"><value>Select a model</value></data>
-  <data name="ModelNotAvailable" xml:space="preserve"><value>Not available in this region</value></data>
 
   <data name="AiAssistanceHeading" xml:space="preserve"><value>AI assistance</value></data>
   <data name="AiAssistanceDescription" xml:space="preserve"><value>Choose how the AI assistant behaves when adding questions.</value></data>
