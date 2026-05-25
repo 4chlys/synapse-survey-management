@@ -380,14 +380,14 @@ public class ProjectController(
     [HttpPost]
     [IgnoreAntiforgeryToken]
     [EnableRateLimiting("ai-image-generation")]
-    public async Task<IActionResult> GenerateImage([FromQuery] string name)
+    public async Task<IActionResult> GenerateImage([FromBody] GenerateImageRequest request)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(request?.Name))
             return BadRequest(new { error = localizer["Project_NameRequired"].Value });
 
         try
         {
-            var url = await uploadService.GenerateImageAsync(name);
+            var url = await uploadService.GenerateImageAsync(request.Name, request.Topic, request.Intro);
             return Ok(new { url });
         }
         catch (HttpRequestException)
@@ -725,3 +725,9 @@ public class ProjectController(
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>
         project?.ProjectState is "Active" or "Archived";
 }
+
+// Request body for ProjectController.GenerateImage.
+// [FromBody] avoids query-string length limits: the intro field can hold
+// up to 5000 chars of Quill HTML which, after URI-encoding, exceeds the ~8 KB
+// limit enforced by many proxies and servers.
+public sealed record GenerateImageRequest(string Name, string Topic, string Intro);

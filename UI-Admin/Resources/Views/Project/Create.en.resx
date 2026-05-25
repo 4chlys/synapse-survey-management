@@ -33,6 +33,7 @@
   <data name="BrowseButton" xml:space="preserve"><value>Browse</value></data>
   <data name="GenerateButton" xml:space="preserve"><value>Generate</value></data>
   <data name="GeneratingText" xml:space="preserve"><value>Generating…</value></data>
+  <data name="GenerateErrorText" xml:space="preserve"><value>Failed to generate image.</value></data>
   <data name="DropzonePrimary" xml:space="preserve"><value>Drop an image here</value></data>
   <data name="DropzoneSecondary" xml:space="preserve"><value>or click to browse</value></data>
   <data name="DropzoneDropHere" xml:space="preserve"><value>Release to upload</value></data>

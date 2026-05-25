@@ -22,7 +22,10 @@ public class ProjectsControllerTests
     public ProjectsControllerTests()
     {
         _imageGenerationService
-            .Setup(s => s.GenerateProjectImageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.GenerateProjectImageAsync(
+                It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(ImageGenerationResult.Failed("disabled"));
 
         _controller = new ProjectsController(

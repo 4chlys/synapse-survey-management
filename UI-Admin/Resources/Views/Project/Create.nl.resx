@@ -33,6 +33,7 @@
   <data name="BrowseButton" xml:space="preserve"><value>Bladeren</value></data>
   <data name="GenerateButton" xml:space="preserve"><value>Genereren</value></data>
   <data name="GeneratingText" xml:space="preserve"><value>Genereren…</value></data>
+  <data name="GenerateErrorText" xml:space="preserve"><value>Afbeelding genereren mislukt.</value></data>
   <data name="DropzonePrimary" xml:space="preserve"><value>Sleep een afbeelding neer</value></data>
   <data name="DropzoneSecondary" xml:space="preserve"><value>of klik om te bladeren</value></data>
   <data name="DropzoneDropHere" xml:space="preserve"><value>Loslaten om te uploaden</value></data>
