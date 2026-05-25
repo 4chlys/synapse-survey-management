@@ -1,25 +1,30 @@
 @using Microsoft.AspNetCore.Localization
+@using Microsoft.AspNetCore.Html
 @using Microsoft.Extensions.Options
 @using System.Globalization
 @inject IHtmlLocalizer<SharedResource> Shared
 @inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="synapse-light">
+@{
+    // Read the persisted theme from a cookie so the server can set data-theme
+    // before first paint, avoiding a flash. The TS module keeps the cookie in sync.
+    // When no cookie is set we leave the attribute OFF so daisyUI's `:root:not([data-theme])`
+    // rule fires and `prefersdark: true` on synapse-dark catches OS-dark visitors too.
+    var themeCookie = Context.Request.Cookies["admin-theme"];
+    var themeAttr = themeCookie is "synapse-dark" or "synapse-light"
+        ? new HtmlString($" data-theme=\"{themeCookie}\"")
+        : null;
+}
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"@themeAttr>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — @Shared["AppName"]</title>
-    <script>
-        (function(){let t=localStorage.getItem('admin-theme');if(t!=='synapse-light'&&t!=='synapse-dark')t=
-            matchMedia('(prefers-color-scheme: dark)').matches?'synapse-dark':'synapse-light';
-            document.documentElement.setAttribute('data-theme',t);})();
-    </script>
 
-    @* Server-rendered i18n blob — must come before the JS module so window.__i18n is set when i18n.ts is imported *@
-    <script>
-      window.__i18n = {
-        culture: @Json.Serialize(CultureInfo.CurrentUICulture.Name),
-        strings: @Json.Serialize(new {
+    @* Server-rendered i18n data — read by lib/i18n.ts. type="application/json" is data, not executable script. *@
+    <script type="application/json" id="i18n-data">@Json.Serialize(new {
+        culture = CultureInfo.CurrentUICulture.Name,
+        strings = new {
           submit       = Shared["Common_Submit"].Value,
           cancel       = Shared["Common_Cancel"].Value,
           save         = Shared["Common_Save"].Value,
@@ -35,9 +40,8 @@
           close        = Shared["Common_Close"].Value,
           all          = Shared["Common_All"].Value,
           none         = Shared["Common_None"].Value
-        })
-      };
-    </script>
+        }
+    })</script>
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">
@@ -506,20 +510,18 @@ else
 
 @if (TempData["Success"] is string successMsg)
 {
-    <div id="tempdata-success" class="alert alert-success fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
+    <div id="tempdata-success" data-auto-dismiss class="alert alert-success fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><path d="M5 13l4 4L19 7"/></svg>
         <span>@successMsg</span>
     </div>
-    <script>setTimeout(() => document.getElementById('tempdata-success')?.remove(), 5000);</script>
 }
 
 @if (TempData["Error"] is string errorMsg)
 {
-    <div id="tempdata-error" class="alert alert-error fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
+    <div id="tempdata-error" data-auto-dismiss class="alert alert-error fixed top-4 right-4 z-50 max-w-sm shadow-lg flex gap-2">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
         <span>@errorMsg</span>
     </div>
-    <script>setTimeout(() => document.getElementById('tempdata-error')?.remove(), 5000);</script>
 }
 
 @await RenderSectionAsync("Scripts", required: false)
