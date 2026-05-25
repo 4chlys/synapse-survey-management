@@ -113,18 +113,19 @@
 
 <script>
 (function () {
-    const modal     = document.getElementById('summary-modal');
-    const form      = document.getElementById('summary-form');
-    const statusDiv = document.getElementById('summary-status');
-    const statusTxt = document.getElementById('summary-status-text');
-    const hintDiv   = document.getElementById('summary-background-hint');
-    const dlLink    = document.getElementById('summary-download-link');
-    const errDiv    = document.getElementById('summary-error');
-    const submitBtn          = document.getElementById('summary-submit');
-    const retryBtn           = document.getElementById('summary-retry');
-    const triggerBtn         = document.getElementById('summary-trigger-btn');
-    const projectId          = @Model.ProjectId;
-    const token              = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const modal      = document.getElementById('summary-modal');
+    const form       = document.getElementById('summary-form');
+    const statusDiv  = document.getElementById('summary-status');
+    const statusTxt  = document.getElementById('summary-status-text');
+    const hintDiv    = document.getElementById('summary-background-hint');
+    const dlLink     = document.getElementById('summary-download-link');
+    const errDiv     = document.getElementById('summary-error');
+    const submitBtn  = document.getElementById('summary-submit');
+    const retryBtn   = document.getElementById('summary-retry');
+    const triggerBtn = document.getElementById('summary-trigger-btn');
+    const projectId  = @Model.ProjectId;
+    const token      = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const storageKey = `summary-pending-job-${projectId}`;
     const msg = {
         queued:       '@Html.Raw(L["StatusQueued"].Value)',
         processing:   '@Html.Raw(L["StatusProcessing"].Value)',
@@ -149,6 +150,7 @@
 
     function resetForm() {
         clearPoll();
+        localStorage.removeItem(storageKey);
         setTriggerLoading(false);
         statusDiv.classList.add('hidden');
         hintDiv.classList.add('hidden');
@@ -161,6 +163,11 @@
 
     function clearPoll() {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    function startPolling(jobId) {
+        localStorage.setItem(storageKey, jobId);
+        pollTimer = setInterval(() => pollStatus(jobId), 3000);
     }
 
     modal?.addEventListener('close', () => {
@@ -210,7 +217,7 @@
 
         const { jobId } = await resp.json();
         hintDiv.classList.remove('hidden');
-        pollTimer = setInterval(() => pollStatus(jobId), 3000);
+        startPolling(jobId);
     });
 
     async function pollStatus(jobId) {
@@ -220,6 +227,7 @@
 
         if (data.status === 'Completed') {
             clearPoll();
+            localStorage.removeItem(storageKey);
             const downloadUrl = `/Project/DownloadSummary?projectId=${projectId}&jobId=${jobId}`;
             if (modal.open) {
                 statusTxt.textContent = msg.ready;
@@ -239,6 +247,7 @@
             }
         } else if (data.status === 'Failed') {
             clearPoll();
+            localStorage.removeItem(storageKey);
             if (modal.open) {
                 statusTxt.textContent = msg.failed;
                 errDiv.textContent = data.errorMessage ?? msg.unknownError;
@@ -250,6 +259,12 @@
         } else {
             statusTxt.textContent = msg.processing;
         }
+    }
+
+    const pendingJobId = localStorage.getItem(storageKey);
+    if (pendingJobId) {
+        setTriggerLoading(true);
+        startPolling(pendingJobId);
     }
 })();
 </script>
