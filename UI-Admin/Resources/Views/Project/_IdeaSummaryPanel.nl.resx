@@ -34,4 +34,5 @@
   <data name="DownloadButton" xml:space="preserve"><value>Download samenvatting</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
   <data name="RetryButton" xml:space="preserve"><value>Opnieuw proberen</value></data>
+  <data name="StatusBackgroundHint" xml:space="preserve"><value>Je kunt dit venster sluiten — de samenvatting wordt automatisch gedownload als hij klaar is.</value></data>
 </root>

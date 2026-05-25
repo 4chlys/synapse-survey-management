@@ -36,4 +36,5 @@
   <data name="CustomizedBadge" xml:space="preserve"><value>customised</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Reset to default</value></data>
   <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideas per summary</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
 </root>

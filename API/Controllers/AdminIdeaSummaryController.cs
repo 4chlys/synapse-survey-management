@@ -36,6 +36,10 @@ public class AdminIdeaSummaryController(
             SelectAll        = req.SelectAll,
         });
 
+        var recent = await jobRepo.FindRecentCompletedAsync(projectId, format, filterJson, TimeSpan.FromMinutes(5), ct);
+        if (recent is not null)
+            return Ok(new { jobId = recent.IdeaSummaryJobId });
+
         var job = new IdeaSummaryJob
         {
             ProjectPlatformId = platformId,

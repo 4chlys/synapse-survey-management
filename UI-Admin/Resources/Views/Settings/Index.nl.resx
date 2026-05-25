@@ -36,4 +36,5 @@
   <data name="CustomizedBadge" xml:space="preserve"><value>aangepast</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Herstel standaard</value></data>
   <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideeën per samenvatting</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
 </root>
