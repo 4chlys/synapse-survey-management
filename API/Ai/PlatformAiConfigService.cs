@@ -91,7 +91,9 @@ public class PlatformAiConfigService(
         }
 
         var resolved = Build(settings, platform);
-        var prompt = platform?.PromptIdeaSummary ?? globalConfig.IdeaSummary.SystemPrompt;
+        var prompt = !string.IsNullOrWhiteSpace(platform?.PromptIdeaSummary)
+            ? platform.PromptIdeaSummary
+            : globalConfig.IdeaSummary.SystemPrompt;
         var maxIdeas = platform?.IdeaSummaryMaxIdeas is > 0 ? platform.IdeaSummaryMaxIdeas : 200;
         var result = new IdeaSummaryAiConfig(resolved.ChatClient, resolved.SelectedModelId, prompt, maxIdeas);
         cache.Set(cacheKey, result, CacheTtl);
