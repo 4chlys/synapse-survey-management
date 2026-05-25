@@ -21,64 +21,70 @@
             </form>
         </div>
 
-        <form id="summary-form" class="flex flex-col gap-3">
-            <label class="form-control">
-                <div class="label"><span class="label-text text-xs">@L["CategoryLabel"]</span></div>
-                <select name="CategoryId" class="select select-bordered select-sm">
+        <form id="summary-form" class="flex flex-col gap-4">
+
+            <div class="form-control gap-1.5">
+                <label class="text-sm font-semibold text-base-content">@L["CategoryLabel"]</label>
+                <select name="CategoryId" class="select select-bordered select-sm w-full">
                     <option value="">@L["AllCategories"]</option>
                     @foreach (var cat in Model.Categories)
                     {
                         <option value="@cat.CategoryId">@cat.Name</option>
                     }
                 </select>
-            </label>
+            </div>
 
-            <label class="form-control">
-                <div class="label"><span class="label-text text-xs">@L["StatusLabel"]</span></div>
-                <select name="Status" class="select select-bordered select-sm">
+            <div class="form-control gap-1.5">
+                <label class="text-sm font-semibold text-base-content">@L["StatusLabel"]</label>
+                <select name="Status" class="select select-bordered select-sm w-full">
                     <option value="">@L["AllStatuses"]</option>
                     <option value="Approved">@L["Status_Approved"]</option>
                     <option value="Unflagged">@L["Status_New"]</option>
                     <option value="Flagged">@L["Status_Flagged"]</option>
                 </select>
-            </label>
+            </div>
 
-            <label class="form-control">
-                <div class="label"><span class="label-text text-xs">@L["SamplingStrategyLabel"]</span></div>
-                <select name="SamplingStrategy" class="select select-bordered select-sm">
+            <div class="form-control gap-1.5">
+                <label class="text-sm font-semibold text-base-content">@L["SamplingStrategyLabel"]</label>
+                <select name="SamplingStrategy" class="select select-bordered select-sm w-full">
                     <option value="Newest">@L["Strategy_Newest"]</option>
                     <option value="MostCommented">@L["Strategy_MostCommented"]</option>
                     <option value="Diverse">@L["Strategy_Diverse"]</option>
                 </select>
-            </label>
+            </div>
 
-            <fieldset class="flex flex-col gap-1.5">
-                <legend class="label-text text-xs mb-1">@L["IdeaSelectionLabel"]</legend>
-                <label class="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="SelectAll" value="false" class="radio radio-sm" checked />
-                    <span class="text-sm">@string.Format(L["SelectFirst"].Value, Model.IdeaSummaryMaxIdeas)</span>
-                </label>
-                <label class="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="SelectAll" value="true" class="radio radio-sm" />
-                    <span class="text-sm">@L["SelectAll"]</span>
-                </label>
-            </fieldset>
+            <div class="form-control gap-1.5">
+                <span class="text-sm font-semibold text-base-content">@L["IdeaSelectionLabel"]</span>
+                <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl border-[1.5px] cursor-pointer transition-colors border-base-300 hover:border-primary/50">
+                        <input type="radio" name="SelectAll" value="false" class="radio radio-primary radio-sm" checked />
+                        <span class="text-sm font-medium text-base-content">@string.Format(L["SelectFirst"].Value, Model.IdeaSummaryMaxIdeas)</span>
+                    </label>
+                    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl border-[1.5px] cursor-pointer transition-colors border-base-300 hover:border-primary/50">
+                        <input type="radio" name="SelectAll" value="true" class="radio radio-primary radio-sm" />
+                        <span class="text-sm font-medium text-base-content">@L["SelectAll"]</span>
+                    </label>
+                </div>
+            </div>
 
-            <fieldset class="flex flex-col gap-1.5">
-                <legend class="label-text text-xs mb-1">@L["ExportFormatLabel"]</legend>
-                <label class="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="Format" value="Pdf" class="radio radio-sm" checked />
-                    <span class="text-sm">@L["Format_Pdf"]</span>
-                </label>
-                <label class="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="Format" value="Txt" class="radio radio-sm" />
-                    <span class="text-sm">@L["Format_Txt"]</span>
-                </label>
-                <label class="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="Format" value="Png" class="radio radio-sm" />
-                    <span class="text-sm">@L["Format_Png"]</span>
-                </label>
-            </fieldset>
+            <div class="form-control gap-1.5">
+                <span class="text-sm font-semibold text-base-content">@L["ExportFormatLabel"]</span>
+                <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl border-[1.5px] cursor-pointer transition-colors border-base-300 hover:border-primary/50">
+                        <input type="radio" name="Format" value="Pdf" class="radio radio-primary radio-sm" checked />
+                        <span class="text-sm font-medium text-base-content">@L["Format_Pdf"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl border-[1.5px] cursor-pointer transition-colors border-base-300 hover:border-primary/50">
+                        <input type="radio" name="Format" value="Txt" class="radio radio-primary radio-sm" />
+                        <span class="text-sm font-medium text-base-content">@L["Format_Txt"]</span>
+                    </label>
+                    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl border-[1.5px] cursor-pointer transition-colors border-base-300 hover:border-primary/50">
+                        <input type="radio" name="Format" value="Png" class="radio radio-primary radio-sm" />
+                        <span class="text-sm font-medium text-base-content">@L["Format_Png"]</span>
+                    </label>
+                </div>
+            </div>
+
         </form>
 
         <div id="summary-status" class="hidden flex flex-col gap-2 px-4 py-3 bg-base-200/60 rounded-xl text-sm">
@@ -158,6 +164,7 @@
         };
 
         submitBtn.disabled = true;
+        submitBtn.classList.add('hidden');
         statusDiv.classList.remove('hidden');
         statusTxt.textContent = msg.queued;
         dlLink.classList.add('hidden');
@@ -174,13 +181,13 @@
         });
 
         if (!resp.ok) {
+            submitBtn.classList.remove('hidden');
             statusTxt.textContent = msg.startError;
             submitBtn.disabled = false;
             return;
         }
 
         const { jobId } = await resp.json();
-        submitBtn.classList.add('hidden');
         pollTimer = setInterval(() => pollStatus(jobId), 3000);
     });
 
@@ -196,7 +203,8 @@
                 statusTxt.textContent = msg.ready;
                 dlLink.href = downloadUrl;
                 dlLink.classList.remove('hidden');
-                retryBtn.classList.remove('hidden');
+                submitBtn.classList.remove('hidden');
+                submitBtn.disabled = false;
             } else {
                 const a = document.createElement('a');
                 a.href = downloadUrl;
