@@ -559,10 +559,40 @@ public class ProjectController(
         return View(dashboard);
     }
 
+    public async Task<IActionResult> IdeasCategories(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName;
+        ViewData["ProjectState"]  = project.ProjectState;
+        ViewData["ActiveSection"] = "Ideas";
+
+        var categories = await categoryService.GetCategoriesAsync(projectId);
+
+        var (_, total, approved, pending, flagged) =
+            await ideaService.GetIdeasAsync(projectId, null, null, null, 1, 1);
+
+        var vm = new IdeasCategoriesViewModel
+        {
+            ProjectId      = projectId,
+            ProjectName    = project.Name,
+            TotalIdeaCount = total,
+            TotalApproved  = approved,
+            TotalPending   = pending,
+            TotalFlagged   = flagged,
+            Categories     = categories
+        };
+
+        return View(vm);
+    }
+
     public async Task<IActionResult> Ideas(
         int projectId,
+        int categoryId,
         string search = null,
-        int? categoryId = null,
         string status = null,
         int page = 1)
     {
@@ -574,12 +604,12 @@ public class ProjectController(
         ViewData["PlatformName"]  = project.OrganisationName;
         ViewData["ProjectState"]  = project.ProjectState;
         ViewData["ActiveSection"] = "Ideas";
-        // ViewData["Title"] is set by the view via the localized PageTitle resource.
 
         var (items, total, approved, pending, flagged) =
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var currentCategory = categories.FirstOrDefault(c => c.CategoryId == categoryId);
 
         var vm = new IdeasViewModel
         {
@@ -587,6 +617,7 @@ public class ProjectController(
             ProjectName   = project.Name,
             Search        = search,
             CategoryId    = categoryId,
+            CategoryName  = currentCategory?.Name ?? string.Empty,
             Status        = status,
             Page          = page,
             TotalCount    = total,
@@ -635,28 +666,28 @@ public class ProjectController(
     public async Task<IActionResult> ApproveIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Approved");
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     [HttpPost]
     public async Task<IActionResult> DeclineIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Declined");
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     [HttpPost]
     public async Task<IActionResult> FlagIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Flagged");
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     [HttpPost]
     public async Task<IActionResult> RemoveIdeaImage(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.RemoveIdeaImageAsync(projectId, ideaId);
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     public async Task<IActionResult> ConfigureDashboard(int projectId)

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Ideeën</value></data>
+  <data name="Heading" xml:space="preserve"><value>Ideeën</value></data>
+  <data name="TotalCountText" xml:space="preserve"><value>{0} ideeën in dit project</value></data>
+  <data name="BadgeApproved" xml:space="preserve"><value>{0} goedgekeurd</value></data>
+  <data name="BadgeNew" xml:space="preserve"><value>{0} nieuw</value></data>
+  <data name="BadgeFlagged" xml:space="preserve"><value>{0} gemarkeerd</value></data>
+  <data name="ExportEmailsButton" xml:space="preserve"><value>E-mails exporteren</value></data>
+  <data name="ExportFormat_Text" xml:space="preserve"><value>Tekst (.txt)</value></data>
+  <data name="ExportFormat_TextDescription" xml:space="preserve"><value>Tekstbestand</value></data>
+  <data name="ExportFailedAlert" xml:space="preserve"><value>Export mislukt.</value></data>
+  <data name="NoCategories" xml:space="preserve"><value>Er zijn nog geen categorieën ingesteld.</value></data>
+  <data name="AddCategoriesLink" xml:space="preserve"><value>Categorieën instellen</value></data>
+  <data name="IdeasLabel" xml:space="preserve"><value>ideeën</value></data>
+</root>

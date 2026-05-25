@@ -5,7 +5,8 @@ public record IdeasViewModel
     public int ProjectId { get; init; }
     public string ProjectName { get; init; } = string.Empty;
     public string Search { get; init; }
-    public int? CategoryId { get; init; }
+    public int CategoryId { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
     public string Status { get; init; }
     public int Page { get; init; } = 1;
     public int TotalCount { get; init; }

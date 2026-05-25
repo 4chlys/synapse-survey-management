@@ -14,134 +14,152 @@
         "Unflagged" => L["Status_New"].Value,
         _           => s
     };
-    string RowBg(string s) => s switch {
-        "Unflagged" => "bg-warning/5",
-        "Flagged"   => "bg-error/5",
-        _           => ""
+    string CardBorder(string s) => s switch {
+        "Flagged"   => "border-error/30",
+        "Declined"  => "border-base-300",
+        _           => "border-base-200"
     };
     var ideasUrl = Url.Action("Ideas", new {
-        Model.ProjectId, Model.Search, Model.CategoryId, Model.Status, Model.Page
+        Model.ProjectId, Model.CategoryId, Model.Search, Model.Status, Model.Page
     });
-    var hasFilters = !string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status);
+    var hasFilters = !string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status);
 }
 
-<div class="card bg-base-100 shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="table table-sm">
-            <thead>
-                <tr class="bg-base-200">
-                    <th class="w-auto">@L["TableIdea"]</th>
-                    <th class="w-28">@L["TableCategory"]</th>
-                    <th class="w-32">@L["TableStatus"]</th>
-                    <th class="w-48">@L["TableAuthor"]</th>
-                    <th class="w-12 text-center">👍</th>
-                    <th class="w-28">@L["TableActions"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Ideas.Any())
-                {
-                    <tr>
-                        <td colspan="6" class="text-center text-base-content/40 py-10 italic">
-                            @(hasFilters ? L["NoIdeasFiltered"] : L["NoIdeas"])
-                        </td>
-                    </tr>
-                }
-                @foreach (var idea in Model.Ideas)
-                {
-                    <tr class="hover @RowBg(idea.Status)">
-                        <td class="max-w-xs">
-                            @if (!string.IsNullOrEmpty(idea.ImageUrl))
-                            {
-                                <a href="@idea.ImageUrl" target="_blank" class="inline-block mr-2 align-middle">
-                                    <img src="@idea.ImageUrl" alt="" class="w-12 h-12 object-cover rounded-md inline-block" />
-                                </a>
-                            }
-                            <p class="font-medium text-sm leading-snug line-clamp-2 inline">@idea.Description</p>
-                            <p class="text-xs text-base-content/40 mt-0.5">@idea.CreatedAt.ToString("dd MMM yyyy")</p>
-                        </td>
-                        <td>
-                            <span class="badge badge-ghost badge-sm">@idea.CategoryName</span>
-                        </td>
-                        <td>
-                            <span class="badge @StatusBadge(idea.Status) badge-sm">@StatusLabel(idea.Status)</span>
-                        </td>
-                        <td class="text-xs">
+@if (!Model.Ideas.Any())
+{
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body items-center text-center py-16">
+            <svg class="w-10 h-10 text-base-content/20 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <p class="text-base-content/40 italic text-sm">
+                @(hasFilters ? L["NoIdeasFiltered"] : L["NoIdeas"])
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        @foreach (var idea in Model.Ideas)
+        {
+            <div class="card bg-base-100 shadow-sm border @CardBorder(idea.Status) flex flex-col">
+                <div class="card-body gap-3 flex flex-col">
+
+                    <!-- Status badge + date -->
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="badge @StatusBadge(idea.Status) badge-sm">@StatusLabel(idea.Status)</span>
+                        <span class="text-xs text-base-content/35">@idea.CreatedAt.ToString("dd MMM yyyy")</span>
+                    </div>
+
+                    <!-- Image (if present) -->
+                    @if (!string.IsNullOrEmpty(idea.ImageUrl))
+                    {
+                        <a href="@idea.ImageUrl" target="_blank" class="block rounded-lg overflow-hidden bg-base-200 aspect-video">
+                            <img src="@idea.ImageUrl" alt="" class="w-full h-full object-cover" />
+                        </a>
+                    }
+
+                    <!-- Description -->
+                    <p class="text-sm text-base-content leading-relaxed line-clamp-4 flex-1">@idea.Description</p>
+
+                    <!-- Footer: author + reactions -->
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-base-200">
+                        <div class="min-w-0">
                             @if (!string.IsNullOrEmpty(idea.ParticipantEmail))
                             {
                                 <a href="mailto:@idea.ParticipantEmail"
-                                   class="link link-primary block truncate max-w-[12rem]"
+                                   class="link link-primary text-xs block truncate max-w-[14rem]"
                                    title="@idea.ParticipantEmail">@idea.ParticipantEmail</a>
                             }
                             else
                             {
-                                <span class="text-base-content/30">—</span>
+                                <span class="text-xs text-base-content/30">@L["AnonymousLabel"]</span>
                             }
-                        </td>
-                        <td class="text-center font-semibold text-sm">@idea.ReactionCount</td>
-                        <td>
-                            <div class="flex gap-1">
-                                @if (idea.Status != "Approved")
-                                {
-                                    <form asp-action="ApproveIdea" method="post" class="inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                        <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                        <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-success btn-xs" title="@L["ActionApprove"]">✓</button>
-                                    </form>
-                                }
-                                @if (idea.Status != "Declined")
-                                {
-                                    <form asp-action="DeclineIdea" method="post" class="inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                        <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                        <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-error btn-xs" title="@L["ActionDecline"]">✕</button>
-                                    </form>
-                                }
-                                @if (idea.Status != "Flagged")
-                                {
-                                    <form asp-action="FlagIdea" method="post" class="inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                        <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                        <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-warning btn-xs btn-outline" title="@L["ActionFlag"]">⚑</button>
-                                    </form>
-                                }
-                                @if (!string.IsNullOrEmpty(idea.ImageUrl))
-                                {
-                                    <form asp-action="RemoveIdeaImage" method="post" class="inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                        <input type="hidden" name="ideaId" value="@idea.IdeaId" />
-                                        <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                        <button type="submit" class="btn btn-ghost btn-xs" title="@L["ActionRemoveImage"]"
-                                                data-confirm="@L["ConfirmRemoveImage"].Value">🖼✕</button>
-                                    </form>
-                                }
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs text-base-content/50 shrink-0">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/>
+                                <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/>
+                            </svg>
+                            @idea.ReactionCount
+                        </span>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        @if (idea.Status != "Approved")
+                        {
+                            <form asp-action="ApproveIdea" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                                <input type="hidden" name="returnUrl" value="@ideasUrl" />
+                                <button type="submit" class="btn btn-success btn-xs gap-1" title="@L["ActionApprove"]">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                                    @L["ActionApprove"]
+                                </button>
+                            </form>
+                        }
+                        @if (idea.Status != "Declined")
+                        {
+                            <form asp-action="DeclineIdea" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                                <input type="hidden" name="returnUrl" value="@ideasUrl" />
+                                <button type="submit" class="btn btn-error btn-xs gap-1" title="@L["ActionDecline"]">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    @L["ActionDecline"]
+                                </button>
+                            </form>
+                        }
+                        @if (idea.Status != "Flagged")
+                        {
+                            <form asp-action="FlagIdea" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                                <input type="hidden" name="returnUrl" value="@ideasUrl" />
+                                <button type="submit" class="btn btn-warning btn-xs btn-outline gap-1" title="@L["ActionFlag"]">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                    @L["ActionFlag"]
+                                </button>
+                            </form>
+                        }
+                        @if (!string.IsNullOrEmpty(idea.ImageUrl))
+                        {
+                            <form asp-action="RemoveIdeaImage" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="ideaId" value="@idea.IdeaId" />
+                                <input type="hidden" name="returnUrl" value="@ideasUrl" />
+                                <button type="submit" class="btn btn-ghost btn-xs" title="@L["ActionRemoveImage"]"
+                                        data-confirm="@L["ConfirmRemoveImage"].Value">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                    @L["ActionRemoveImage"]
+                                </button>
+                            </form>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        }
     </div>
-</div>
+}
 
 @if (Model.TotalPages > 1)
 {
-    <div class="flex justify-between items-center mt-4">
+    <div class="flex justify-between items-center mt-6">
         <span class="text-sm text-base-content/50">@string.Format(L["PageOf"].Value, Model.Page, Model.TotalPages)</span>
         <div class="join">
             @if (Model.Page > 1)
             {
                 <a asp-action="Ideas"
                    asp-route-projectId="@Model.ProjectId"
-                   asp-route-search="@Model.Search"
                    asp-route-categoryId="@Model.CategoryId"
+                   asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-page="@(Model.Page - 1)"
                    class="join-item btn btn-sm">←</a>
@@ -150,8 +168,8 @@
             {
                 <a asp-action="Ideas"
                    asp-route-projectId="@Model.ProjectId"
-                   asp-route-search="@Model.Search"
                    asp-route-categoryId="@Model.CategoryId"
+                   asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-page="@p"
                    class="join-item btn btn-sm @(p == Model.Page ? "btn-primary" : "")">@p</a>
@@ -160,8 +178,8 @@
             {
                 <a asp-action="Ideas"
                    asp-route-projectId="@Model.ProjectId"
-                   asp-route-search="@Model.Search"
                    asp-route-categoryId="@Model.CategoryId"
+                   asp-route-search="@Model.Search"
                    asp-route-status="@Model.Status"
                    asp-route-page="@(Model.Page + 1)"
                    class="join-item btn btn-sm">→</a>
