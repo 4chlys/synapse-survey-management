@@ -28,20 +28,25 @@
                         <div class="flex flex-col gap-2 mt-3">
                             @foreach (var aiModel in group)
                             {
-                                var available = Model.AvailableModelIds.Contains(aiModel.Id);
-                                <label class="label justify-start gap-3 @(available ? "cursor-pointer" : "cursor-not-allowed opacity-40")"
-                                       title="@(available ? "" : L["NoApiKeyTooltip"].Value)">
+                                var hasApiKey       = Model.AvailableModelIds.Contains(aiModel.Id);
+                                var regionAvailable = hasApiKey && Model.ModelAvailability.GetValueOrDefault(aiModel.Id, false);
+                                <label class="label justify-start gap-3 @(hasApiKey ? "cursor-pointer" : "cursor-not-allowed opacity-40")"
+                                       title="@(hasApiKey ? "" : L["NoApiKeyTooltip"].Value)">
                                     <input type="checkbox"
                                            name="AllowedModelIds"
                                            value="@aiModel.Id"
                                            class="checkbox checkbox-primary checkbox-sm"
                                            @(Model.AllowedModelIds.Contains(aiModel.Id) ? "checked" : "")
-                                           @(available ? "" : "disabled") />
+                                           @(hasApiKey ? "" : "disabled") />
                                     <span class="label-text">@aiModel.DisplayName</span>
                                     <span class="text-xs text-base-content/40 ml-1">(@aiModel.Id)</span>
-                                    @if (!available)
+                                    @if (!hasApiKey)
                                     {
                                         <span class="badge badge-ghost badge-xs">@L["NoApiKeyBadge"]</span>
+                                    }
+                                    else if (!regionAvailable)
+                                    {
+                                        <span class="badge badge-error badge-xs">@L["RegionUnavailableBadge"]</span>
                                     }
                                 </label>
                             }
