@@ -80,7 +80,7 @@ public class SocialMediaController(
     public async Task<ActionResult<GenerateSocialImageResponseDto>> GenerateImage(
         int projectId, CancellationToken ct)
     {
-        var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
         if (project is null) return NotFound();
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
@@ -88,10 +88,15 @@ public class SocialMediaController(
         var projectTr = project.Translations.FirstOrDefault(t => t.Language?.Code == lang)
                         ?? project.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
                         ?? project.Translations.FirstOrDefault();
+        var introTr = project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
+                      ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
+                      ?? project.Introduction?.Translations.FirstOrDefault();
+        var introText = System.Text.RegularExpressions.Regex.Replace(introTr?.Text ?? "", "<[^>]+>", "");
 
         var result = await imageGenerator.GenerateProjectImageAsync(
             projectTr?.Name ?? "", projectId,
             projectTopic: projectTr?.Topic,
+            introText: introText,
             ct: ct);
         if (!result.IsSuccess)
             return StatusCode(502, new { error = result.ErrorMessage });

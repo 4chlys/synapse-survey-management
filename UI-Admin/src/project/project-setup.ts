@@ -116,15 +116,21 @@ document.addEventListener('DOMContentLoaded', () => {
         generateBtn.textContent = generateBtn.dataset.generatingText ?? 'Generating…';
 
         try {
-            // Build query string: name (required), topic and intro are optional context.
+            // Send as JSON body to avoid query-string length limits.
+            // The intro field can hold up to 5000 chars of Quill HTML; URI-encoding
+            // that would exceed the ~8 KB limit many proxies enforce.
             const topic = topicInput?.value?.trim();
             const intro = (document.getElementById('Introduction') as HTMLInputElement | null)?.value?.trim();
 
-            let url = `/Project/GenerateImage?name=${encodeURIComponent(name)}`;
-            if (topic) url += `&topic=${encodeURIComponent(topic)}`;
-            if (intro) url += `&intro=${encodeURIComponent(intro)}`;
-
-            const response = await fetch(url, { method: 'POST' });
+            const response = await fetch('/Project/GenerateImage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    topic: topic || null,
+                    intro: intro || null,
+                }),
+            });
             if (!response.ok) return;
 
             const data = await response.json() as { url: string };

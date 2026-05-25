@@ -59,6 +59,11 @@
 
                             @if (!string.IsNullOrWhiteSpace(project.Introduction))
                             {
+                                @* Trust boundary: Introduction contains admin-authored Quill HTML.
+                                   Html.Raw is intentional — Quill emits markup that must render as-is.
+                                   The value is sanitized with HtmlSanitizer on ingest in
+                                   ProjectsController.MapIntroductions, so script injection and
+                                   dangerous attributes are stripped before the content reaches the DB. *@
                                 <div class="prose prose-sm max-w-none text-base-content/80">
                                     @Html.Raw(project.Introduction)
                                 </div>

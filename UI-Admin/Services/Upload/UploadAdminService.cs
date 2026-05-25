@@ -19,13 +19,10 @@ public class UploadAdminService(HttpClient httpClient)
 
     public async Task<string> GenerateImageAsync(string projectName, string topic = null, string intro = null)
     {
-        var url = $"api/projects/generate-image?name={Uri.EscapeDataString(projectName)}";
-        if (!string.IsNullOrWhiteSpace(topic))
-            url += $"&topic={Uri.EscapeDataString(topic)}";
-        if (!string.IsNullOrWhiteSpace(intro))
-            url += $"&intro={Uri.EscapeDataString(intro)}";
-
-        var response = await httpClient.PostAsync(url, null);
+        // POST a JSON body to avoid query-string length limits: intro can contain
+        // up to 5000 chars of Quill HTML which exceeds the ~8 KB proxy limit when URI-encoded.
+        var payload = new { name = projectName, topic, intro };
+        var response = await httpClient.PostAsJsonAsync("api/projects/generate-image", payload);
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<UploadResult>();
