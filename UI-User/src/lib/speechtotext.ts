@@ -1,4 +1,4 @@
-import { t, currentCulture } from './i18n';
+import { t, currentCulture, type Strings } from './i18n';
 
 /**
  * speechtotext.ts
@@ -19,7 +19,7 @@ export interface TranscribeResult {
     isSuccess: boolean;
 }
 
-const SERVER_ERROR_CODE_KEYS: Record<string, keyof typeof window.__i18n.strings> = {
+const SERVER_ERROR_CODE_KEYS: Record<string, keyof Strings> = {
     unsupported_format:  'speechToTextErrorUnsupportedFormat',
     empty_audio:         'speechToTextEmptyRecording',
     too_long:            'speechToTextErrorTooLong',

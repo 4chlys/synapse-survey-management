@@ -1,24 +1,26 @@
 @using Microsoft.AspNetCore.Localization
+@using Microsoft.AspNetCore.Html
 @using Microsoft.Extensions.Options
 @using System.Globalization
 @inject IHtmlLocalizer<SharedResource> Shared
 @inject IOptions<RequestLocalizationOptions> LocalizationOptions
 <!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="synapse-light">
+@{
+    // See _Layout.cshtml for the cookie-driven pre-paint theme approach.
+    var loginThemeCookie = Context.Request.Cookies["admin-theme"];
+    var loginThemeAttr = loginThemeCookie is "synapse-dark" or "synapse-light"
+        ? new HtmlString($" data-theme=\"{loginThemeCookie}\"")
+        : null;
+}
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"@loginThemeAttr>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — @Shared["AppName"]</title>
-    <script>
-        (function(){let t=localStorage.getItem('admin-theme');if(t!=='synapse-light'&&t!=='synapse-dark')t=
-            matchMedia('(prefers-color-scheme: dark)').matches?'synapse-dark':'synapse-light';
-            document.documentElement.setAttribute('data-theme',t);})();
-    </script>
 
-    <script>
-      window.__i18n = {
-        culture: @Json.Serialize(CultureInfo.CurrentUICulture.Name),
-        strings: @Json.Serialize(new {
+    <script type="application/json" id="i18n-data">@Json.Serialize(new {
+        culture = CultureInfo.CurrentUICulture.Name,
+        strings = new {
           submit  = Shared["Common_Submit"].Value,
           cancel  = Shared["Common_Cancel"].Value,
           save    = Shared["Common_Save"].Value,
@@ -34,9 +36,8 @@
           close   = Shared["Common_Close"].Value,
           all     = Shared["Common_All"].Value,
           none    = Shared["Common_None"].Value
-        })
-      };
-    </script>
+        }
+    })</script>
 
     <script type="module" vite-src="~/main.ts"></script>
     <environment include="Development">

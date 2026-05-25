@@ -43,7 +43,7 @@
                                             : string.Format(L["RemoveConfirm"].Value, admin.Email);
                                         <form asp-action="RemoveAdmin" asp-route-id="@Model.ProjectPlatformId"
                                               method="post" class="inline"
-                                              onsubmit="return confirm('@confirmMsg')">
+                                              data-confirm-submit="@confirmMsg">
                                             <input type="hidden" name="userId" value="@admin.UserId" />
                                             <button type="submit" class="btn btn-ghost btn-xs text-error">@L["RemoveButton"]</button>
                                         </form>
@@ -71,7 +71,7 @@
             <div class="flex items-center gap-2 w-full">
                 <input id="invite-link" type="text" readonly value="@inviteLink"
                        class="input input-bordered input-sm w-full font-mono text-xs bg-base-100 text-base-content" />
-                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('invite-link').value)"
+                <button type="button" data-copy-from="#invite-link"
                         class="btn btn-sm btn-ghost">@L["CopyButton"]</button>
             </div>
         </div>
