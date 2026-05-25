@@ -74,7 +74,7 @@
   <data name="ColorSwatch_Culture" xml:space="preserve"><value>Cultuur</value></data>
   <data name="ColorSwatch_Health" xml:space="preserve"><value>Gezondheid</value></data>
   <data name="CustomCssLabel" xml:space="preserve"><value>Aangepaste CSS (optioneel)</value></data>
-  <data name="CustomCssHint" xml:space="preserve"><value>Voor ontwikkelaars — laat leeg indien thema + kleur volstaan.</value></data>
+  <data name="CustomCssHint" xml:space="preserve"><value>Voor ontwikkelaars. Laat leeg als thema en kleur volstaan.</value></data>
   <data name="CustomCssHelperSummary" xml:space="preserve"><value>Beschikbare CSS-variabelen en selectors (klikken om in te voegen)</value></data>
   <data name="CustomCssVariables" xml:space="preserve"><value>Variabelen</value></data>
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
@@ -99,10 +99,10 @@
   <data name="SectionGeneral" xml:space="preserve"><value>Algemene informatie</value></data>
   <data name="SectionAppearance" xml:space="preserve"><value>Vormgeving</value></data>
   <data name="SectionBehavior" xml:space="preserve"><value>Gedrag &amp; instellingen</value></data>
-  <data name="ShortformHint" xml:space="preserve"><value>Dit wordt de URL van je project (bijv. /p/mentaal-welzijn)</value></data>
-  <data name="IntroductionHint" xml:space="preserve"><value>Getoond aan deelnemers op het welkomstscherm vóór de enquête begint</value></data>
-  <data name="ImageHint" xml:space="preserve"><value>Omslagafbeelding op de projectpagina</value></data>
-  <data name="InteractionModeHint" xml:space="preserve"><value>Bepaalt hoe deelnemers door de enquête navigeren — één vraag tegelijk (scrollen) of als een gesprek (chat)</value></data>
+  <data name="ShortformHint" xml:space="preserve"><value>Dit wordt het eigen webadres van je project als subdomein (bijv. mentaal-welzijn.synapse-ip.xyz)</value></data>
+  <data name="IntroductionHint" xml:space="preserve"><value>Getoond op de welkomstkaart aan het begin van de enquête, vóór de eerste vraag</value></data>
+  <data name="ImageHint" xml:space="preserve"><value>Getoond naast de introductie op de welkomstkaart aan het begin van de enquête</value></data>
+  <data name="InteractionModeHint" xml:space="preserve"><value>Bepaalt hoe de enquête wordt weergegeven: vragen één voor één als scrollbare kaarten (verticaal scrollen) of als een chatgesprek (chat)</value></data>
   <data name="AiAssistanceHint" xml:space="preserve"><value>Of AI verbeteringen voorstelt terwijl deelnemers hun ideeën typen</value></data>
-  <data name="SectionsHint" xml:space="preserve"><value>Secties groeperen vragen in de enquête. Deelnemers zien sectienamen als tussenkopjes tussen vraagblokken.</value></data>
+  <data name="SectionsHint" xml:space="preserve"><value>Optionele groepen om vragen te ordenen in de volgende stap van de wizard. Sectienamen zijn niet zichtbaar voor deelnemers.</value></data>
 </root>

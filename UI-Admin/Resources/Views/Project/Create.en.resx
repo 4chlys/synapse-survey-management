@@ -74,7 +74,7 @@
   <data name="ColorSwatch_Culture" xml:space="preserve"><value>Culture</value></data>
   <data name="ColorSwatch_Health" xml:space="preserve"><value>Health</value></data>
   <data name="CustomCssLabel" xml:space="preserve"><value>Custom CSS (optional)</value></data>
-  <data name="CustomCssHint" xml:space="preserve"><value>For developers — leave blank if theme + color is enough.</value></data>
+  <data name="CustomCssHint" xml:space="preserve"><value>For developers. Leave blank if theme and color are enough.</value></data>
   <data name="CustomCssHelperSummary" xml:space="preserve"><value>Available CSS variables and selectors (click to insert)</value></data>
   <data name="CustomCssVariables" xml:space="preserve"><value>Variables</value></data>
   <data name="CustomCssSnippets" xml:space="preserve"><value>Snippets</value></data>
@@ -99,10 +99,10 @@
   <data name="SectionGeneral" xml:space="preserve"><value>General information</value></data>
   <data name="SectionAppearance" xml:space="preserve"><value>Appearance</value></data>
   <data name="SectionBehavior" xml:space="preserve"><value>Behavior &amp; settings</value></data>
-  <data name="ShortformHint" xml:space="preserve"><value>This becomes the URL for your project (e.g. /p/mental-wellbeing)</value></data>
-  <data name="IntroductionHint" xml:space="preserve"><value>Shown to participants on the welcome screen before the survey starts</value></data>
-  <data name="ImageHint" xml:space="preserve"><value>Cover image shown on the project landing page</value></data>
-  <data name="InteractionModeHint" xml:space="preserve"><value>Controls how participants navigate through the questionnaire — one question at a time (scroll) or as a conversation (chat)</value></data>
+  <data name="ShortformHint" xml:space="preserve"><value>This becomes your project's own web address as a subdomain (e.g. mental-wellbeing.synapse-ip.xyz)</value></data>
+  <data name="IntroductionHint" xml:space="preserve"><value>Shown on the welcome slide at the start of the survey, before the first question</value></data>
+  <data name="ImageHint" xml:space="preserve"><value>Shown next to the introduction on the welcome slide at the start of the survey</value></data>
+  <data name="InteractionModeHint" xml:space="preserve"><value>Sets how the questionnaire is presented: questions shown one by one as scrollable cards (vertical scroll), or as a chat conversation (chat)</value></data>
   <data name="AiAssistanceHint" xml:space="preserve"><value>Whether AI suggests improvements when participants type their ideas</value></data>
-  <data name="SectionsHint" xml:space="preserve"><value>Sections group questions in the questionnaire. Participants see section names as dividers between question blocks.</value></data>
+  <data name="SectionsHint" xml:space="preserve"><value>Optional groups for organising questions in the next step of the wizard. Section names are not shown to participants.</value></data>
 </root>
