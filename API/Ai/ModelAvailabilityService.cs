@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.AI;
+using SynapseEnqueteManagement.BL.Domain.Ai;
 
 namespace SynapseEnqueteManagement.API.Ai;
 
@@ -41,11 +42,24 @@ public sealed class ModelAvailabilityService(
 
         var results = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
+        var vertexIds = AiModelCatalog.All
+            .Where(m => m.Provider == AiProvider.VertexAi)
+            .Select(m => m.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         await Task.WhenAll(registry.AvailableModelIds.Select(async modelId =>
         {
             if (!registry.TryGet(modelId, out var client))
             {
                 results[modelId] = false;
+                return;
+            }
+
+            // Only Vertex AI models have regional availability constraints; for other providers a
+            // registered client (API key present) is sufficient — avoid a billable probe per provider.
+            if (!vertexIds.Contains(modelId))
+            {
+                results[modelId] = true;
                 return;
             }
 
