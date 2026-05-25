@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Ai;
+using AiAssistanceType = SynapseEnqueteManagement.UI.Admin.Models.Enums.AiAssistanceType;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Settings;
 
@@ -19,7 +20,7 @@ public sealed record PlatformAdminBasicInfoViewModel(
 public sealed record PlatformAdminAiViewModel(
     IReadOnlyList<AiModelDefinition> AllowedModels,
     string SelectedModelId,
-    string AiAssistanceMode
+    AiAssistanceType AiAssistanceMode
 );
 
 public sealed record PlatformAdminPromptsViewModel(

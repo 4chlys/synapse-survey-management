@@ -62,7 +62,7 @@ public class ProjectManagerTests
             NoIntroductions(),
             defaultLanguageCode: "en",
             supportedLanguageCodes: new[] { "nl", "en" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1, shortForm: null,
             allowCrossLanguageIdeas: true);
 
@@ -89,7 +89,7 @@ public class ProjectManagerTests
             Translations(("nl", "Naam")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1);
 
         // Assert
@@ -109,7 +109,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Admin")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1, shortForm: "admin"));
     }
 
@@ -125,7 +125,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Test")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1, shortForm: "INVALID FORM"));
     }
 
@@ -139,7 +139,7 @@ public class ProjectManagerTests
                 NoIntroductions(),
                 defaultLanguageCode: "en",
                 supportedLanguageCodes: new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
 
@@ -152,7 +152,7 @@ public class ProjectManagerTests
                 Translations(("nl", "X")),
                 NoIntroductions(),
                 "nl", new[] { "nl", "en" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
 
@@ -165,7 +165,7 @@ public class ProjectManagerTests
                 Translations(("zz", "X")),
                 NoIntroductions(),
                 "zz", new[] { "zz" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
 
@@ -186,7 +186,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Test")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1,
                 primaryColor: primaryColor));
     }
@@ -207,7 +207,7 @@ public class ProjectManagerTests
             Translations(("nl", "Test")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1,
             primaryColor: "#5C6BC0");
 
@@ -233,7 +233,7 @@ public class ProjectManagerTests
             Translations(("nl", "Test")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, platformId: 1,
             primaryColor: primaryColor);
 
@@ -280,7 +280,7 @@ public class ProjectManagerTests
             Translations(("nl", "Naam")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, shortForm: "new-form",
             allowCrossLanguageIdeas: true);
 
@@ -304,7 +304,7 @@ public class ProjectManagerTests
                 Translations(("nl", "Naam")),
                 NoIntroductions(),
                 "nl", new[] { "nl" },
-                string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+                string.Empty, FormType.VerticalScroll,
                 null, null, false, shortForm: "changed-form"));
     }
 
@@ -324,7 +324,7 @@ public class ProjectManagerTests
             Translations(("nl", "Naam")),
             NoIntroductions(),
             "nl", new[] { "nl" },
-            string.Empty, FormType.VerticalScroll, AiAssistanceType.ProActive,
+            string.Empty, FormType.VerticalScroll,
             null, null, false, shortForm: "same-form");
 
         // Assert
@@ -501,7 +501,6 @@ public class ProjectManagerTests
             ShortForm = "source",
             ImageUrl = "img.png",
             FormType = FormType.VerticalScroll,
-            AiAssistance = AiAssistanceType.ProActive,
             IdeaPageSize = 5,
             MaxExtraIdeaRequests = 3,
             CommentPageSize = 20,

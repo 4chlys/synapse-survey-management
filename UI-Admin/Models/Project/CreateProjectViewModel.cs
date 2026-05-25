@@ -22,8 +22,6 @@ public record CreateProjectViewModel
 
     public string InteractionMode { get; init; } = "VerticalScroll";
 
-    public string AiAssistance { get; init; } = "ProActive";
-
     [Range(0, 120)]
     public int? MinAge { get; init; }
 
