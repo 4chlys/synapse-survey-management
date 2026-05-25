@@ -51,25 +51,22 @@
             else
             {
                 <form asp-action="SaveAiModel" method="post" class="flex flex-col gap-4">
-                    <div class="label"><span class="label-text font-medium">@L["SelectModelLabel"]</span></div>
-                    <div class="flex flex-col gap-2">
-                        @foreach (var provider in Enum.GetValues<AiProvider>())
-                        {
-                            var group = Model.AiSettings.AllowedModels.Where(m => m.Provider == provider).ToList();
-                            if (!group.Any()) continue;
-                            <p class="text-xs text-base-content/50 uppercase tracking-wide mt-1">@provider.ToString()</p>
-                            @foreach (var aiModel in group)
+                    <label class="form-control">
+                        <div class="label"><span class="label-text font-medium">@L["SelectModelLabel"]</span></div>
+                        <select name="selectedModelId" class="select select-bordered w-full">
+                            @foreach (var provider in Enum.GetValues<AiProvider>())
                             {
-                                var isSelected = aiModel.Id == Model.AiSettings.SelectedModelId;
-                                <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer border-base-300 hover:border-primary">
-                                    <input type="radio" name="selectedModelId" value="@aiModel.Id"
-                                           class="radio radio-primary mt-0.5"
-                                           checked="@isSelected" />
-                                    <span class="text-sm font-medium text-base-content">@aiModel.DisplayName</span>
-                                </label>
+                                var group = Model.AiSettings.AllowedModels.Where(m => m.Provider == provider).ToList();
+                                if (!group.Any()) continue;
+                                <optgroup label="@provider.ToString()">
+                                    @foreach (var aiModel in group)
+                                    {
+                                        <option value="@aiModel.Id" selected="@(aiModel.Id == Model.AiSettings.SelectedModelId)">@aiModel.DisplayName</option>
+                                    }
+                                </optgroup>
                             }
-                        }
-                    </div>
+                        </select>
+                    </label>
                     <div class="card-actions justify-end">
                         <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                     </div>

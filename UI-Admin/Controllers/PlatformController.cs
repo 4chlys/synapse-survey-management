@@ -120,15 +120,13 @@ public class PlatformController(
         var allowedIds   = settings is not null
             ? JsonSerializer.Deserialize<List<string>>(settings.AllowedModelIds) ?? []
             : [];
-        var modelAvailability = await aiAdminService.GetModelAvailabilityAsync();
-        var availableIds      = modelAvailability.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var availableIds = await aiAdminService.GetAvailableModelIdsAsync();
 
         ViewData["ActiveSection"] = "SystemSettings";
         return View(new SystemAiSettingsViewModel(
             AllModels: AiModelCatalog.All,
             AllowedModelIds: allowedIds,
-            AvailableModelIds: availableIds,
-            ModelAvailability: modelAvailability
+            AvailableModelIds: availableIds
         ));
     }
 
