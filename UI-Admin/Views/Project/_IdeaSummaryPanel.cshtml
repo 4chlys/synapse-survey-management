@@ -127,12 +127,10 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
-    modal?.addEventListener('close', resetForm);
-    retryBtn.addEventListener('click', resetForm);
-
-    cancelBtn.addEventListener('click', () => {
-        clearPoll();
+    modal?.addEventListener('close', () => {
+        if (!pollTimer) resetForm();
     });
+    retryBtn.addEventListener('click', resetForm);
 
     submitBtn.addEventListener('click', async () => {
         const raw = Object.fromEntries(new FormData(form));
@@ -142,6 +140,7 @@
             CategoryId:       raw.CategoryId ? parseInt(raw.CategoryId) : null,
             Status:           raw.Status || null,
             LanguageCode:     null,
+            OutputLanguage:   '@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName',
             SelectAll:        raw.SelectAll === 'true',
         };
 
@@ -179,16 +178,31 @@
 
         if (data.status === 'Completed') {
             clearPoll();
-            statusTxt.textContent = msg.ready;
-            dlLink.href = `/Project/DownloadSummary?projectId=${projectId}&jobId=${jobId}`;
-            dlLink.classList.remove('hidden');
-            retryBtn.classList.remove('hidden');
+            const downloadUrl = `/Project/DownloadSummary?projectId=${projectId}&jobId=${jobId}`;
+            if (modal.open) {
+                statusTxt.textContent = msg.ready;
+                dlLink.href = downloadUrl;
+                dlLink.classList.remove('hidden');
+                retryBtn.classList.remove('hidden');
+            } else {
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = '';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                resetForm();
+            }
         } else if (data.status === 'Failed') {
             clearPoll();
-            statusTxt.textContent = msg.failed;
-            errDiv.textContent = data.errorMessage ?? msg.unknownError;
-            errDiv.classList.remove('hidden');
-            retryBtn.classList.remove('hidden');
+            if (modal.open) {
+                statusTxt.textContent = msg.failed;
+                errDiv.textContent = data.errorMessage ?? msg.unknownError;
+                errDiv.classList.remove('hidden');
+                retryBtn.classList.remove('hidden');
+            } else {
+                resetForm();
+            }
         } else {
             statusTxt.textContent = msg.processing;
         }

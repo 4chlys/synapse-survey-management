@@ -8,6 +8,7 @@ public sealed record EnqueueSummaryRequest(
     int? CategoryId,
     string Status,
     string LanguageCode,
+    string OutputLanguage,
     bool SelectAll);
 
 public sealed record SummaryJobStatus(string Status, string ErrorMessage, bool HasOutput);

@@ -726,7 +726,7 @@ public class ProjectController(
         if (user?.ProjectPlatformId is null) return Forbid();
 
         var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value,
-            new EnqueueSummaryRequest(req.Format, req.SamplingStrategy, req.CategoryId, req.Status, req.LanguageCode, req.SelectAll));
+            new EnqueueSummaryRequest(req.Format, req.SamplingStrategy, req.CategoryId, req.Status, req.LanguageCode, req.OutputLanguage, req.SelectAll));
 
         if (jobId is null)
             return BadRequest(new { error = "Samenvatting kon niet worden gestart." });
@@ -771,6 +771,7 @@ public sealed record GenerateSummaryRequest(
     int? CategoryId,
     string Status,
     string LanguageCode,
+    string OutputLanguage,
     bool SelectAll);
 
 // Request body for ProjectController.GenerateImage.

@@ -64,11 +64,11 @@ public sealed class IdeaSummaryWorker(
             if (filter.SelectAll && allIdeas.Count > aiConfig.MaxIdeas)
                 summaryText = await summarySvc.GenerateBatchSummaryAsync(
                     sampled, aiConfig.ChatClient, aiConfig.ModelId, aiConfig.Prompt,
-                    batchSize: 50, job.ProjectId, ct);
+                    batchSize: 50, job.ProjectId, filter.OutputLanguage, ct);
             else
                 summaryText = await summarySvc.GenerateSummaryAsync(
                     sampled, aiConfig.ChatClient, aiConfig.ModelId, aiConfig.Prompt,
-                    job.ProjectId, ct);
+                    job.ProjectId, filter.OutputLanguage, ct);
 
             var (bytes, _, fileName) = exporter.Export(summaryText, job.ExportFormat, job.ProjectId);
 

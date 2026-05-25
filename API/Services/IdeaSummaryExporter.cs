@@ -41,26 +41,85 @@ public sealed class IdeaSummaryExporter
             {
                 page.Size(PageSizes.A4);
                 page.Margin(2, Unit.Centimetre);
-                page.DefaultTextStyle(t => t.FontSize(11));
+                page.DefaultTextStyle(t => t.FontSize(11).LineHeight(1.4f));
 
-                page.Content().Column(col =>
-                {
-                    col.Item().Text(t =>
-                    {
-                        t.DefaultTextStyle(s => s.FontSize(18).Bold());
-                        t.Span("Ideeënsamenvatting");
-                    });
-
-                    col.Item().PaddingTop(12).Text(t =>
-                    {
-                        t.DefaultTextStyle(s => s.LineHeight(1.5f));
-                        t.Span(text);
-                    });
-                });
+                page.Content().Column(col => RenderMarkdown(col, text));
             });
         }).GeneratePdf();
 
         return (bytes, "application/pdf", $"summary-{projectId}.pdf");
+    }
+
+    private static void RenderMarkdown(ColumnDescriptor col, string text)
+    {
+        foreach (var rawLine in text.Split('\n'))
+        {
+            var line = rawLine.TrimEnd();
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                col.Item().Height(4);
+                continue;
+            }
+
+            if (line.StartsWith("# "))
+            {
+                col.Item().PaddingBottom(6).Text(t =>
+                {
+                    t.DefaultTextStyle(s => s.FontSize(18).Bold());
+                    RenderInline(t, line[2..]);
+                });
+            }
+            else if (line.StartsWith("## "))
+            {
+                col.Item().PaddingTop(10).PaddingBottom(4).Text(t =>
+                {
+                    t.DefaultTextStyle(s => s.FontSize(14).Bold());
+                    RenderInline(t, line[3..]);
+                });
+            }
+            else if (line.StartsWith("### "))
+            {
+                col.Item().PaddingTop(6).PaddingBottom(2).Text(t =>
+                {
+                    t.DefaultTextStyle(s => s.FontSize(12).Bold());
+                    RenderInline(t, line[4..]);
+                });
+            }
+            else if (line.StartsWith("- ") || line.StartsWith("* "))
+            {
+                col.Item().Row(row =>
+                {
+                    row.ConstantItem(14).PaddingTop(1).Text("•");
+                    row.RelativeItem().Text(t =>
+                    {
+                        t.DefaultTextStyle(s => s.LineHeight(1.4f));
+                        RenderInline(t, line[2..]);
+                    });
+                });
+            }
+            else
+            {
+                col.Item().Text(t =>
+                {
+                    t.DefaultTextStyle(s => s.LineHeight(1.5f));
+                    RenderInline(t, line);
+                });
+            }
+        }
+    }
+
+    private static void RenderInline(TextDescriptor t, string text)
+    {
+        var segments = text.Split("**");
+        for (var i = 0; i < segments.Length; i++)
+        {
+            if (segments[i].Length == 0) continue;
+            if (i % 2 == 1)
+                t.Span(segments[i]).Bold();
+            else
+                t.Span(segments[i]);
+        }
     }
 
     private static (byte[], string, string) ExportPng(string text, int projectId)
@@ -70,7 +129,8 @@ public sealed class IdeaSummaryExporter
         const float titleFontSize = 24f;
         const float padding = 40f;
         const float lineHeight = fontSize * 1.6f;
-        const float titleAreaHeight = titleFontSize * 2.5f; // vertical space reserved for title row
+
+        var stripped = StripMarkdown(text, out var title);
 
         using var paint = new SKPaint
         {
@@ -80,22 +140,29 @@ public sealed class IdeaSummaryExporter
             Typeface = SKTypeface.Default,
         };
 
-        var lines = WrapText(text, paint, width - padding * 2);
+        var lines = WrapText(stripped, paint, width - padding * 2);
+        var titleAreaHeight = string.IsNullOrEmpty(title) ? 0f : titleFontSize * 2.5f;
         int height = (int)(padding * 2 + lines.Count * lineHeight + titleAreaHeight);
 
         using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.White);
 
-        float y = padding + titleAreaHeight;
-        using var titlePaint = new SKPaint
+        float y = padding;
+
+        if (!string.IsNullOrEmpty(title))
         {
-            Color = SKColors.Black,
-            TextSize = titleFontSize,
-            IsAntialias = true,
-            FakeBoldText = true,
-        };
-        canvas.DrawText("Ideeënsamenvatting", padding, y - lineHeight, titlePaint);
+            using var titlePaint = new SKPaint
+            {
+                Color = SKColors.Black,
+                TextSize = titleFontSize,
+                IsAntialias = true,
+                FakeBoldText = true,
+            };
+            y += titleFontSize;
+            canvas.DrawText(title, padding, y, titlePaint);
+            y += titleAreaHeight - titleFontSize;
+        }
 
         foreach (var line in lines)
         {
@@ -106,6 +173,35 @@ public sealed class IdeaSummaryExporter
         using var ms = new System.IO.MemoryStream();
         bitmap.Encode(ms, SKEncodedImageFormat.Png, 95);
         return (ms.ToArray(), "image/png", $"summary-{projectId}.png");
+    }
+
+    private static string StripMarkdown(string text, out string title)
+    {
+        title = string.Empty;
+        var sb = new System.Text.StringBuilder();
+        var titleFound = false;
+
+        foreach (var rawLine in text.Split('\n'))
+        {
+            var line = rawLine.TrimEnd();
+
+            if (!titleFound && line.StartsWith("# "))
+            {
+                title = line[2..];
+                titleFound = true;
+                continue;
+            }
+
+            if (line.StartsWith("### ")) line = line[4..];
+            else if (line.StartsWith("## ")) line = line[3..];
+            else if (line.StartsWith("# ")) line = line[2..];
+            else if (line.StartsWith("- ") || line.StartsWith("* ")) line = "• " + line[2..];
+
+            line = System.Text.RegularExpressions.Regex.Replace(line, @"\*\*(.+?)\*\*", "$1");
+            sb.AppendLine(line);
+        }
+
+        return sb.ToString();
     }
 
     private static List<string> WrapText(string text, SKPaint paint, float maxWidth)

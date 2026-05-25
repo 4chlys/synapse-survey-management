@@ -31,6 +31,7 @@ public class AdminIdeaSummaryController(
             CategoryId       = req.CategoryId,
             Status           = req.Status,
             LanguageCode     = req.LanguageCode,
+            OutputLanguage   = req.OutputLanguage,
             SamplingStrategy = strategy,
             SelectAll        = req.SelectAll,
         });
@@ -95,4 +96,5 @@ public sealed record EnqueueSummaryRequest(
     int? CategoryId,
     string Status,
     string LanguageCode,
+    string OutputLanguage,
     bool SelectAll);
