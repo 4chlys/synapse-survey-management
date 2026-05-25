@@ -394,7 +394,10 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
         builder.Entity<IdeaSummaryJob>(e =>
         {
             e.HasKey(j => j.IdeaSummaryJobId);
-            e.Property(j => j.IdeaSummaryJobId).HasDefaultValueSql("gen_random_uuid()");
+            if (Database.IsNpgsql())
+                e.Property(j => j.IdeaSummaryJobId).HasDefaultValueSql("gen_random_uuid()");
+            else
+                e.Property(j => j.IdeaSummaryJobId).ValueGeneratedOnAdd();
             e.Property(j => j.Status).HasConversion<string>();
             e.Property(j => j.ExportFormat).HasConversion<string>();
             e.HasIndex(j => new { j.ProjectId, j.Status });
