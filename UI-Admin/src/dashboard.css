@@ -138,6 +138,58 @@
     background: color-mix(in oklch, var(--platform-color) 8%, transparent);
 }
 
+/* ── AI image generation loading placeholder ── */
+.social-image-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 7rem;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--color-base-200) 0%, var(--color-base-300) 100%);
+}
+
+.social-image-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in oklch, var(--color-primary) 12%, transparent) 50%,
+        transparent 100%
+    );
+    animation: social-shimmer 1.8s ease-in-out infinite;
+}
+
+.social-image-loading svg {
+    opacity: 0.4;
+    animation: social-icon-pulse 2s ease-in-out infinite;
+}
+
+.social-image-loading span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.4;
+    z-index: 1;
+}
+
+@keyframes social-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes social-icon-pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50%      { opacity: 0.6; transform: scale(1.1); }
+}
+
 /* ── Chart canvas wrapper (used by timeline + category charts) ── */
 .db-chart-canvas-wrap {
     flex: 1;

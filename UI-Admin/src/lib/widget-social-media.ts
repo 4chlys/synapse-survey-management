@@ -218,7 +218,20 @@ export function initSocialMediaWidget(el: HTMLElement): void {
     aiImageBtn.addEventListener('click', async () => {
         aiImageBtn.disabled = true;
         const origHtml = aiImageBtn.innerHTML;
-        aiImageBtn.textContent = '…';
+        aiImageBtn.textContent = i18n.generating;
+
+        imagePrev.classList.add('hidden');
+        const loader = document.createElement('div');
+        loader.className = 'social-image-loading';
+        loader.innerHTML = `
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>${i18n.generating}</span>`;
+        imagePrev.insertAdjacentElement('beforebegin', loader);
+
         try {
             const res = await fetch(`/api/projects/${projectId}/social/image`, {
                 method: 'POST',
@@ -230,6 +243,7 @@ export function initSocialMediaWidget(el: HTMLElement): void {
             imagePrev.src = imageUrl;
             imagePrev.classList.remove('hidden');
         } finally {
+            loader.remove();
             aiImageBtn.disabled = false;
             aiImageBtn.innerHTML = origHtml;
         }

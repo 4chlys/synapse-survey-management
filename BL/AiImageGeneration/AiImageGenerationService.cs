@@ -21,11 +21,6 @@ public sealed class AiImageGenerationService(
         try
         {
             var contextParts = new List<string>();
-            if (!string.IsNullOrWhiteSpace(postCopy))
-            {
-                var trimmed = postCopy.Length > 500 ? postCopy[..500].TrimEnd() + "…" : postCopy;
-                contextParts.Add($" De bijbehorende social media post: \"{trimmed}\".");
-            }
             if (!string.IsNullOrWhiteSpace(projectTopic))
                 contextParts.Add($" Het gaat specifiek over: \"{projectTopic.Trim()}\".");
             if (!string.IsNullOrWhiteSpace(introText))
@@ -38,9 +33,21 @@ public sealed class AiImageGenerationService(
             }
             var context = string.Concat(contextParts);
 
-            var prompt = config.Prompt
-                .Replace("{project_name}", projectName)
-                .Replace("{context}", context);
+            string prompt;
+            if (!string.IsNullOrWhiteSpace(postCopy))
+            {
+                var trimmed = postCopy.Length > 500 ? postCopy[..500].TrimEnd() + "…" : postCopy;
+                prompt = config.SocialPrompt
+                    .Replace("{post_copy}", trimmed)
+                    .Replace("{project_name}", projectName)
+                    .Replace("{context}", context);
+            }
+            else
+            {
+                prompt = config.Prompt
+                    .Replace("{project_name}", projectName)
+                    .Replace("{context}", context);
+            }
 
             var request = new GenerateContentRequest
             {
