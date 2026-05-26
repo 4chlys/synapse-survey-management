@@ -190,6 +190,7 @@ builder.Services.AddScoped<ICommentManager, CommentManager>();
 builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
 builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
 builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
+builder.Services.AddScoped<IIdeaSubmissionManager, IdeaSubmissionManager>();
 builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
 builder.Services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
 

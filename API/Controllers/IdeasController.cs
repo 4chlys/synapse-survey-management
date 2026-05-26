@@ -5,11 +5,9 @@ using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
-using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using Microsoft.Extensions.Logging;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -19,12 +17,10 @@ public class IdeasController(
     IIdeaManager ideaManager,
     ICommentManager commentManager,
     IParticipantManager participantManager,
-    IModerationResolver moderationResolver,
+    IIdeaSubmissionManager ideaSubmissionManager,
     IProjectManager projectManager,
     IStorageService storageService,
-    IModerationTokenService moderationTokenService,
-    IPlatformAiConfigService platformAiConfig,
-    ILogger<IdeasController> logger)
+    IPlatformAiConfigService platformAiConfig)
     : ParticipantControllerBase(participantManager, projectManager)
 {
     [HttpGet]
@@ -59,46 +55,18 @@ public class IdeasController(
         var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
-        var resolveProject = await GetProjectByIdReadOnlyAsync(projectId);
-        var platformConfig = await platformAiConfig.ResolveAsync(resolveProject?.ProjectPlatformId ?? 0, ct);
-        var status = await moderationResolver.ResolveStatusAsync(dto.Description, dto.ModerationToken, projectId, platformConfig, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var project = await GetProjectByIdReadOnlyAsync(projectId);
+        var platformConfig = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
 
         string permanentImageUrl = null;
         if (!string.IsNullOrEmpty(dto.ImageUrl))
-        {
-            var imageStatus = string.IsNullOrEmpty(dto.ImageModerationToken)
-                ? null
-                : moderationTokenService.ValidateImageToken(dto.ImageModerationToken, projectId);
-
-            if (imageStatus is null)
-            {
-                logger.LogWarning("Invalid or missing image moderation token for project {ProjectId}", projectId);
-                throw new LocalizedValidationException("Validation.Image.InvalidToken");
-            }
-
             permanentImageUrl = await storageService.PromoteAsync(dto.ImageUrl);
 
-            // A Flagged image means the AI rejected it but the user chose to submit anyway.
-            // Override text status so an admin must review the idea before it becomes visible.
-            if (imageStatus == ModerationStatus.Flagged)
-                status = ModerationStatus.Flagged;
-        }
-
-        string submissionLanguageCode = null;
-        if (!string.IsNullOrEmpty(dto.LanguageCode))
-        {
-            var project = await GetProjectByIdReadOnlyAsync(projectId);
-            if (project?.AllowCrossLanguageIdeas == true)
-            {
-                if (project.SupportedLanguages.Any(l => string.Equals(l.Code, dto.LanguageCode, StringComparison.OrdinalIgnoreCase)))
-                    submissionLanguageCode = dto.LanguageCode;
-                else
-                    return BadRequest(new { error = "Invalid submission language code." });
-            }
-        }
-
-        var result = await ideaManager.AddIdeaAsync(categoryId, projectId, dto.Description, status, participant,
-            permanentImageUrl, submissionLanguageCode, ct);
+        var result = await ideaSubmissionManager.AddModeratedIdeaAsync(
+            project, categoryId, dto.Description, dto.ModerationToken,
+            permanentImageUrl, dto.ImageModerationToken, dto.LanguageCode,
+            participant, platformConfig,
+            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, ct);
 
         return Created(string.Empty, new CreateIdeaResultDto
         {

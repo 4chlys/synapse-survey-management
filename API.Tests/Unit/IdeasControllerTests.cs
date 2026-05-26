@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.Exceptions;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -11,10 +11,9 @@ public class IdeasControllerTests
     private readonly Mock<IIdeaManager> _ideaManager = new();
     private readonly Mock<ICommentManager> _commentManager = new();
     private readonly Mock<IParticipantManager> _participantManager = new();
-    private readonly Mock<IModerationResolver> _moderationResolver = new();
+    private readonly Mock<IIdeaSubmissionManager> _ideaSubmissionManager = new();
     private readonly Mock<IProjectManager> _projectManager = new();
     private readonly Mock<IStorageService> _storageService = new();
-    private readonly Mock<IModerationTokenService> _moderationTokenService = new();
     private readonly Mock<IPlatformAiConfigService> _platformAiConfig = new();
     private readonly IdeasController _controller;
 
@@ -41,12 +40,10 @@ public class IdeasControllerTests
             _ideaManager.Object,
             _commentManager.Object,
             _participantManager.Object,
-            _moderationResolver.Object,
+            _ideaSubmissionManager.Object,
             _projectManager.Object,
             _storageService.Object,
-            _moderationTokenService.Object,
-            _platformAiConfig.Object,
-            NullLogger<IdeasController>.Instance);
+            _platformAiConfig.Object);
         _controller.AttachHttpContext(_sessionToken);
     }
 
@@ -76,14 +73,15 @@ public class IdeasControllerTests
     }
 
     [Fact]
-    public async Task CreateIdea_ForwardsCancellationTokenToIdeaManager()
+    public async Task CreateIdea_DelegatesToIdeaSubmissionManager_AndForwardsCancellationToken()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
         var ct = cts.Token;
-        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId, It.IsAny<ResolvedPlatformAiConfig>(), ct, It.IsAny<string>()))
-            .ReturnsAsync(ModerationStatus.Approved);
-        _ideaManager.Setup(i => i.AddIdeaAsync(CategoryId, ProjectId, "desc", ModerationStatus.Approved, _participant, null, null, ct))
+        _ideaSubmissionManager.Setup(s => s.AddModeratedIdeaAsync(
+                It.IsAny<Project>(), CategoryId, "desc", null,
+                null, null, null,
+                _participant, It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<string>(), ct))
             .ReturnsAsync(new AddIdeaResult(42, false))
             .Verifiable(Times.Exactly(1));
 
@@ -91,35 +89,52 @@ public class IdeasControllerTests
         await _controller.CreateIdea(ProjectId, CategoryId, new CreateIdeaDto { Description = "desc" }, ct);
 
         // Assert
-        _ideaManager.VerifyAll();
+        _ideaSubmissionManager.VerifyAll();
     }
 
     [Fact]
-    public async Task CreateIdea_InvalidImageToken_ThrowsLocalizedValidationException()
+    public async Task CreateIdea_WhenImageUrlPresent_PromotesImageAndPassesPermanentUrlToManager()
     {
-        // Arrange — dto has an image URL but the moderation token is rejected by the token service
-        _moderationResolver.Setup(m => m.ResolveStatusAsync(It.IsAny<string>(), It.IsAny<string>(), ProjectId,
-                It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<CancellationToken>(), It.IsAny<string>()))
-            .ReturnsAsync(ModerationStatus.Approved);
-        _moderationTokenService.Setup(s => s.ValidateImageToken("bad-token", ProjectId))
-            .Returns((ModerationStatus?)null);
+        // Arrange
+        _storageService.Setup(s => s.PromoteAsync("tmp.png"))
+            .ReturnsAsync("permanent.png")
+            .Verifiable(Times.Exactly(1));
+        _ideaSubmissionManager.Setup(s => s.AddModeratedIdeaAsync(
+                It.IsAny<Project>(), CategoryId, "desc", null,
+                "permanent.png", "img-tok", null,
+                _participant, It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AddIdeaResult(43, false))
+            .Verifiable(Times.Exactly(1));
 
         var dto = new CreateIdeaDto
         {
             Description = "desc",
             ImageUrl = "tmp.png",
-            ImageModerationToken = "bad-token"
+            ImageModerationToken = "img-tok"
         };
 
-        // Act + Assert — the controller throws the localized exception so the middleware can translate it
-        var ex = await Assert.ThrowsAsync<SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException>(() =>
-            _controller.CreateIdea(ProjectId, CategoryId, dto, CancellationToken.None));
-        Assert.Equal("Validation.Image.InvalidToken", ex.Code);
+        // Act
+        await _controller.CreateIdea(ProjectId, CategoryId, dto, CancellationToken.None);
 
-        // Storage promotion and idea creation must not happen on the reject path
-        _storageService.Verify(s => s.PromoteAsync(It.IsAny<string>()), Times.Never);
-        _ideaManager.Verify(i => i.AddIdeaAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
-            It.IsAny<ModerationStatus>(), It.IsAny<Participant>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<CancellationToken>()), Times.Never);
+        // Assert
+        _storageService.VerifyAll();
+        _ideaSubmissionManager.VerifyAll();
+    }
+
+    [Fact]
+    public async Task CreateIdea_PropagatesSubmissionManagerException()
+    {
+        // Arrange — middleware translates LocalizedValidationException to a 400 with the localized message;
+        // the controller's job is just to let it bubble up.
+        _ideaSubmissionManager.Setup(s => s.AddModeratedIdeaAsync(
+                It.IsAny<Project>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<Participant>(), It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new LocalizedValidationException("Validation.Image.InvalidToken"));
+
+        // Act + Assert
+        var ex = await Assert.ThrowsAsync<LocalizedValidationException>(() =>
+            _controller.CreateIdea(ProjectId, CategoryId, new CreateIdeaDto { Description = "desc" }, CancellationToken.None));
+        Assert.Equal("Validation.Image.InvalidToken", ex.Code);
     }
 }
