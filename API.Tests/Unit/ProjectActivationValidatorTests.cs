@@ -152,4 +152,90 @@ public class ProjectActivationValidatorTests
         Assert.Contains(problems, p => p.EntityType == "NoCategory");
         await Task.CompletedTask;
     }
+
+    [Fact]
+    public async Task Validate_MissingIntroductionTranslation_ReturnsProblem()
+    {
+        var project = BilingualProject();
+        project.Introduction = new Introduction
+        {
+            Translations = new List<IntroductionTranslation>
+            {
+                new() { Language = LangNl, Text = "Intro NL" },
+                // English introduction translation missing
+            },
+        };
+
+        var problems = _validator.Validate(project);
+
+        Assert.Single(problems);
+        Assert.Equal("IntroductionTranslation", problems[0].EntityType);
+        Assert.Null(problems[0].EntityId);
+        Assert.Equal("en", problems[0].LanguageCode);
+        await Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task Validate_MissingEndingAnswerTranslation_ReturnsProblem()
+    {
+        var project = BilingualProject();
+        project.Questionnaire.Questions = new List<Question>
+        {
+            new()
+            {
+                QuestionId = 12,
+                Translations = new List<QuestionTranslation>
+                {
+                    new() { Language = LangNl, Text = "Vraag?" },
+                    new() { Language = LangEn, Text = "Question?" },
+                },
+                EndingAnswers = new List<EndingAnswer>
+                {
+                    new()
+                    {
+                        EndingAnswerId = 7,
+                        Translations = new List<EndingAnswerTranslation>
+                        {
+                            new() { Language = LangNl, Value = "Einde NL" },
+                            // English ending-answer translation missing
+                        },
+                    },
+                },
+            },
+        };
+
+        var problems = _validator.Validate(project);
+
+        Assert.Single(problems);
+        Assert.Equal("EndingAnswerTranslation", problems[0].EntityType);
+        Assert.Equal(7, problems[0].EntityId);
+        Assert.Equal("en", problems[0].LanguageCode);
+        await Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task Validate_MissingCategoryTranslationForOneLanguage_ReturnsProblem()
+    {
+        var project = BilingualProject();
+        project.Categories = new List<Category>
+        {
+            new()
+            {
+                CategoryId = 3,
+                Translations = new List<CategoryTranslation>
+                {
+                    new() { Language = LangNl, Name = "Cat NL" },
+                    // English category translation missing
+                },
+            },
+        };
+
+        var problems = _validator.Validate(project);
+
+        Assert.Single(problems);
+        Assert.Equal("CategoryTranslation", problems[0].EntityType);
+        Assert.Equal(3, problems[0].EntityId);
+        Assert.Equal("en", problems[0].LanguageCode);
+        await Task.CompletedTask;
+    }
 }

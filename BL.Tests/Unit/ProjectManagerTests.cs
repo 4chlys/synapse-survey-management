@@ -10,6 +10,7 @@ public class ProjectManagerTests
     private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IEmojiManager> _emojiManager = new(MockBehavior.Strict);
     private readonly Mock<IProjectTranslationValidator> _translationValidator = new(MockBehavior.Strict);
+    private readonly Mock<IProjectActivationValidator> _activationValidator = new(MockBehavior.Strict);
     private readonly Mock<IShortFormService> _shortFormService = new(MockBehavior.Strict);
     private readonly Mock<IProjectDuplicationService> _duplicationService = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
@@ -27,6 +28,7 @@ public class ProjectManagerTests
             _projectRepository.Object,
             _emojiManager.Object,
             _translationValidator.Object,
+            _activationValidator.Object,
             _shortFormService.Object,
             _duplicationService.Object,
             _uow.Object);
@@ -603,6 +605,89 @@ public class ProjectManagerTests
         Assert.False(result);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _projectRepository.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
+    }
+
+    #endregion
+
+    #region UpdateProjectStateAsync
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_ActivateWithProblems_ThrowsAndDoesNotSave()
+    {
+        // Arrange — activation graph loads, validator reports an incomplete translation
+        var graph = new Project { ProjectId = ProjectId };
+        var problems = new List<ActivationProblem> { new("ProjectTranslation", null, "en") };
+        _projectRepository.Setup(r => r.ReadByIdForActivationReadOnlyAsync(ProjectId))
+            .ReturnsAsync(graph);
+        _activationValidator.Setup(v => v.Validate(graph)).Returns(problems);
+
+        // Act
+        var ex = await Assert.ThrowsAsync<ProjectActivationException>(
+            () => _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Active));
+
+        // Assert — the blocking problems travel on the exception; nothing is persisted
+        Assert.Equal(problems, ex.Problems);
+        _projectRepository.Verify(r => r.ReadByIdForUpdateAsync(It.IsAny<int>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_ActivateWhenComplete_SetsActiveAndSaves()
+    {
+        // Arrange — validator returns no problems, so the transition proceeds
+        var graph = new Project { ProjectId = ProjectId };
+        var tracked = new Project { ProjectId = ProjectId, ProjectState = ProjectState.Draft };
+        _projectRepository.Setup(r => r.ReadByIdForActivationReadOnlyAsync(ProjectId))
+            .ReturnsAsync(graph);
+        _activationValidator.Setup(v => v.Validate(graph))
+            .Returns(new List<ActivationProblem>());
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId))
+            .ReturnsAsync(tracked);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Verifiable(Times.Exactly(1));
+
+        // Act
+        var result = await _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Active);
+
+        // Assert
+        Assert.Same(tracked, result);
+        Assert.Equal(ProjectState.Active, tracked.ProjectState);
+        _uow.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_NonActiveTransition_SkipsValidationAndSaves()
+    {
+        // Arrange — archiving must not run the activation gate at all
+        var tracked = new Project { ProjectId = ProjectId, ProjectState = ProjectState.Active };
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId))
+            .ReturnsAsync(tracked);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Archived);
+
+        // Assert — validator and activation-graph read are never touched (strict mocks)
+        Assert.Equal(ProjectState.Archived, result.ProjectState);
+        _activationValidator.Verify(v => v.Validate(It.IsAny<Project>()), Times.Never);
+        _projectRepository.Verify(r => r.ReadByIdForActivationReadOnlyAsync(It.IsAny<int>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_ActivateProjectNotFound_ThrowsWithoutValidating()
+    {
+        // Arrange — activation graph missing
+        _projectRepository.Setup(r => r.ReadByIdForActivationReadOnlyAsync(ProjectId))
+            .ReturnsAsync((Project)null);
+
+        // Act + Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Active));
+        _activationValidator.Verify(v => v.Validate(It.IsAny<Project>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion

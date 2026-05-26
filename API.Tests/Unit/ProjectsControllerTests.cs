@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
+using SynapseEnqueteManagement.BL.Exceptions;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
@@ -404,6 +406,61 @@ public class ProjectsControllerTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<ProjectDto>(ok.Value);
         Assert.Equal(3, dto.LastWizardStep);
+    }
+
+    #endregion
+
+    #region UpdateProjectState
+
+    [Fact]
+    public async Task UpdateProjectState_InvalidStateString_ReturnsBadRequestWithoutCallingManager()
+    {
+        // Act
+        var result = await _controller.UpdateProjectState(1, new UpdateProjectStateDto { State = "Bogus" });
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        _projectManager.Verify(m => m.UpdateProjectStateAsync(It.IsAny<int>(), It.IsAny<ProjectState>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProjectState_Valid_ReturnsOkWithAdminDto()
+    {
+        // Arrange
+        var project = BilingualProject();
+        _projectManager.Setup(m => m.UpdateProjectStateAsync(1, ProjectState.Active))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _controller.UpdateProjectState(1, new UpdateProjectStateDto { State = "Active" });
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<AdminProjectDto>(ok.Value);
+        Assert.Equal(project.ProjectId, dto.ProjectId);
+    }
+
+    [Fact]
+    public async Task UpdateProjectState_ActivationBlocked_ReturnsBadRequestWithProblems()
+    {
+        // Arrange — manager refuses activation, carrying the blocking problems
+        var problems = new List<ActivationProblem>
+        {
+            new("QuestionTranslation", 12, "en"),
+            new("NoCategory", null, null),
+        };
+        _projectManager.Setup(m => m.UpdateProjectStateAsync(1, ProjectState.Active))
+            .ThrowsAsync(new ProjectActivationException(problems));
+
+        // Act
+        var result = await _controller.UpdateProjectState(1, new UpdateProjectStateDto { State = "Active" });
+
+        // Assert — surfaced as 400 with the problem list intact
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var json = JsonSerializer.Serialize(badRequest.Value);
+        Assert.Contains("QuestionTranslation", json);
+        Assert.Contains("NoCategory", json);
+        Assert.Contains("\"en\"", json);
     }
 
     #endregion
