@@ -151,6 +151,17 @@ public class ProjectManager(
             project.Introduction = intro;
         }
 
+        // Enable all available emojis by default for newly created projects.
+        // Uses the same tracked-entity pattern as DuplicateProjectAsync to correctly
+        // populate the many-to-many ProjectEmoji join table via EF Core.
+        var allEmojis = await emojiRepository.ReadAllReadOnlyAsync();
+        foreach (var emoji in allEmojis)
+        {
+            var tracked = await emojiRepository.ReadByIdForUpdateAsync(emoji.EmojiId);
+            if (tracked is not null)
+                project.Emojis.Add(tracked);
+        }
+
         var created = await projectRepository.CreateAsync(project);
         await uow.SaveChangesAsync();
         return created;
