@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.UI.Admin.Models.Section;
 namespace SynapseEnqueteManagement.UI.Admin.Models.Project;
 
 public record CreateProjectViewModel
@@ -25,7 +26,7 @@ public record CreateProjectViewModel
     [MaxLength(500)]
     public string ImageUrl { get; init; }
 
-    public IList<string> Sections { get; init; } = new List<string>();
+    public IList<SectionInputViewModel> Sections { get; init; } = new List<SectionInputViewModel>();
 
     public bool ContactOptIn { get; init; } = true;
     public bool AllowCrossLanguageIdeas { get; init; } = false;
