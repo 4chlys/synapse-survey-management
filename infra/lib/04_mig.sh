@@ -63,6 +63,20 @@ create_migs() {
   _create_mig "synapse-${ENV}-admin-mig" "synapse-${ENV}-admin-template" 1 1
 }
 
+configure_autohealing() {
+  echo ">>> Autohealing configureren op MIGs (omgeving: ${ENV})..."
+  for type in api ui admin; do
+    local mig="synapse-${ENV}-${type}-mig"
+    local hc="synapse-${ENV}-${type}-health"
+    echo "  - ${mig} → ${hc} (initial-delay=300s)"
+    gcloud compute instance-groups managed update "${mig}" \
+      --health-check="${hc}" \
+      --initial-delay=300 \
+      --zone="${ZONE}" \
+      --project="${PROJECT_ID}" 2>/dev/null || echo "    (autohealing al geconfigureerd)"
+  done
+}
+
 destroy_migs() {
   echo ">>> MIGs verwijderen (omgeving: ${ENV})..."
   for mig in synapse-${ENV}-api-mig synapse-${ENV}-ui-mig synapse-${ENV}-admin-mig; do
