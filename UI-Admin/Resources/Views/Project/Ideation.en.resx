@@ -33,4 +33,10 @@
   <data name="EmojisHeading" xml:space="preserve"><value>Emoji reactions</value></data>
   <data name="EmojisSubtitle" xml:space="preserve"><value>Choose which emojis participants can use to react to ideas</value></data>
   <data name="EmojisEmpty" xml:space="preserve"><value>No emojis available in the system.</value></data>
+  <data name="PresetAll" xml:space="preserve"><value>All</value></data>
+  <data name="PresetStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="PresetInnovation" xml:space="preserve"><value>Innovation</value></data>
+  <data name="PresetEnthusiasm" xml:space="preserve"><value>Enthusiasm</value></data>
+  <data name="SelectAllButton" xml:space="preserve"><value>Select all</value></data>
+  <data name="CategoriesError" xml:space="preserve"><value>Add at least one category.</value></data>
 </root>

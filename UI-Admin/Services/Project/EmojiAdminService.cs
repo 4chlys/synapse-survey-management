@@ -51,4 +51,19 @@ public class EmojiAdminService(HttpClient httpClient)
         if (response.StatusCode == HttpStatusCode.NotFound) return;
         response.EnsureSuccessStatusCode();
     }
+
+    // Enables exactly the given emoji IDs for the project, disabling all others.
+    // Runs all enable/disable calls in parallel to avoid sequential round-trips.
+    public async Task EnableEmojiPresetAsync(int projectId, List<int> emojiIds)
+    {
+        var current   = await GetEmojisForProjectAsync(projectId);
+        var targetSet = emojiIds.ToHashSet();
+
+        var tasks = current.Select(e =>
+            targetSet.Contains(e.EmojiId) && !e.IsEnabled ? EnableEmojiAsync(projectId, e.EmojiId) :
+            !targetSet.Contains(e.EmojiId) && e.IsEnabled ? DisableEmojiAsync(projectId, e.EmojiId) :
+            Task.CompletedTask);
+
+        await Task.WhenAll(tasks);
+    }
 }

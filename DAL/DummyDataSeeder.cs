@@ -180,6 +180,9 @@ public class DummyDataSeeder
         GetOrCreateEmoji(context, "🙌", "raisinghands");
         GetOrCreateEmoji(context, "⭐", "star");
         GetOrCreateEmoji(context, "🤔", "thinking");
+        GetOrCreateEmoji(context, "💪", "muscle");
+        GetOrCreateEmoji(context, "🎯", "target");
+        GetOrCreateEmoji(context, "🏆", "trophy");
         context.SaveChanges();
 
         if (context.Projects.Any()) return;
