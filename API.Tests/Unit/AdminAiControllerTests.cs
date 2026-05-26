@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Controllers;
+using SynapseEnqueteManagement.BL.Ai;
 
 namespace SynapseEnqueteManagement.API.Tests.Unit;
 
@@ -28,7 +29,7 @@ public class AdminAiControllerTests
             ["gpt-4o"]                = new Mock<IChatClient>().Object,
         });
         var availability = new ModelAvailabilityService(registry, new Mock<ILogger<ModelAvailabilityService>>().Object);
-        var controller   = new AdminAiController(registry, new Mock<IPlatformAiConfigService>().Object, availability);
+        var controller   = new AdminAiController(registry, new Mock<IPlatformAiConfigService>().Object, new AiConfig(), availability);
 
         var result = await controller.GetAvailableModels(CancellationToken.None);
 
@@ -45,7 +46,7 @@ public class AdminAiControllerTests
     {
         var registry     = new ChatClientRegistry(new Dictionary<string, IChatClient> { ["gpt-4o"] = new Mock<IChatClient>().Object });
         var availability  = new ModelAvailabilityService(registry, new Mock<ILogger<ModelAvailabilityService>>().Object);
-        var controller    = new AdminAiController(registry, new Mock<IPlatformAiConfigService>().Object, availability);
+        var controller    = new AdminAiController(registry, new Mock<IPlatformAiConfigService>().Object, new AiConfig(), availability);
 
         var result = await controller.GetAvailableModels(CancellationToken.None);
 

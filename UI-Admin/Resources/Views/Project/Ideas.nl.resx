@@ -24,4 +24,5 @@
   <data name="SearchButton" xml:space="preserve"><value>Zoeken</value></data>
   <data name="ClearButton" xml:space="preserve"><value>Wissen</value></data>
   <data name="ExportFailedAlert" xml:space="preserve"><value>Export mislukt.</value></data>
+  <data name="AiSummaryButton" xml:space="preserve"><value>AI-samenvatting</value></data>
 </root>

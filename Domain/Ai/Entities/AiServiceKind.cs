@@ -10,5 +10,6 @@ public enum AiServiceKind
     ImageDescription,
     ImageGeneration,
     Embedding,
-    SocialPost
+    SocialPost,
+    IdeaSummary
 }
