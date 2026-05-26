@@ -5,7 +5,7 @@ namespace SynapseEnqueteManagement.BL.Tests.Unit;
 public class QuestionStatsManagerTests
 {
     private readonly Mock<IQuestionStatsRepository> _statsRepo = new(MockBehavior.Strict);
-    private readonly Mock<IQuestionRepository> _questionRepo = new(MockBehavior.Strict);
+    private readonly Mock<IQuestionnaireManager> _questionnaireManager = new(MockBehavior.Strict);
     private readonly QuestionStatsManager _manager;
 
     private const int ProjectId = 1;
@@ -13,12 +13,12 @@ public class QuestionStatsManagerTests
 
     public QuestionStatsManagerTests()
     {
-        _manager = new QuestionStatsManager(_statsRepo.Object, _questionRepo.Object);
+        _manager = new QuestionStatsManager(_statsRepo.Object, _questionnaireManager.Object);
     }
 
     private void SetupOwnership(bool exists)
     {
-        _questionRepo.Setup(r => r.ExistsForProjectAsync(QuestionId, ProjectId))
+        _questionnaireManager.Setup(m => m.QuestionBelongsToProjectAsync(QuestionId, ProjectId))
             .ReturnsAsync(exists);
     }
 
@@ -86,7 +86,7 @@ public class QuestionStatsManagerTests
             .ReturnsAsync(counts);
         _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(10);
-        _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
+        _questionnaireManager.Setup(m => m.GetQuestionByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(("en", new[] { "Yes", "No" })));
 
         var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId);
@@ -108,7 +108,7 @@ public class QuestionStatsManagerTests
             .ReturnsAsync(counts);
         _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(16);
-        _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
+        _questionnaireManager.Setup(m => m.GetQuestionByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(
                 ("en", new[] { "Yes", "No" }),
                 ("nl", new[] { "Ja", "Nee" })));
@@ -130,7 +130,7 @@ public class QuestionStatsManagerTests
             .ReturnsAsync(counts);
         _statsRepo.Setup(r => r.CountResponsesByQuestionAsync(QuestionId))
             .ReturnsAsync(11);
-        _questionRepo.Setup(r => r.ReadByIdWithTranslationsReadOnlyAsync(QuestionId))
+        _questionnaireManager.Setup(m => m.GetQuestionByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(("en", new[] { "A", "B", "C" })));
 
         var result = await _manager.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId);
@@ -215,7 +215,7 @@ public class QuestionStatsManagerTests
             new() { QuestionId = 3, QuestionFormat = QuestionFormat.SingleChoice },
             new() { QuestionId = 4, QuestionFormat = QuestionFormat.Likert },
         };
-        _questionRepo.Setup(r => r.ReadByProjectIdWithTranslationsReadOnlyAsync(ProjectId))
+        _questionnaireManager.Setup(m => m.GetQuestionsForProjectAsync(ProjectId))
             .ReturnsAsync(questions);
 
         var result = await _manager.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.SingleChoice);
@@ -227,7 +227,7 @@ public class QuestionStatsManagerTests
     [Fact]
     public async Task ReadQuestionsByFormatAsync_NoMatchingFormat_ReturnsEmptyList()
     {
-        _questionRepo.Setup(r => r.ReadByProjectIdWithTranslationsReadOnlyAsync(ProjectId))
+        _questionnaireManager.Setup(m => m.GetQuestionsForProjectAsync(ProjectId))
             .ReturnsAsync(Array.Empty<Question>());
 
         var result = await _manager.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.MultipleChoice);

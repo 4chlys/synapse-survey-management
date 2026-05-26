@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -57,4 +58,15 @@ public class ShortFormService(IProjectRepository projectRepository, IEnumerable<
         => !string.IsNullOrEmpty(candidate)
            && candidate.Length <= 30
            && ValidPattern.IsMatch(candidate);
+
+    public Task<string> ResolveAsync(string desired, string defaultName, int? excludeProjectId = null)
+    {
+        var candidate = string.IsNullOrWhiteSpace(desired) ? Normalize(defaultName) : desired;
+        if (!IsValid(candidate))
+            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
+        if (IsReserved(candidate))
+            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
+
+        return EnsureUniqueAsync(candidate, excludeProjectId);
+    }
 }

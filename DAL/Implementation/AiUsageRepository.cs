@@ -6,11 +6,10 @@ namespace SynapseEnqueteManagement.DAL.Implementation;
 
 public class AiUsageRepository(DbContext context) : Repository<AiUsageEvent>(context), IAiUsageRepository
 {
-    public async Task LogAsync(AiUsageEvent ev, int projectId)
+    public async Task LogAsync(AiUsageEvent ev, int projectId, CancellationToken ct = default)
     {
-        await Context.Set<AiUsageEvent>().AddAsync(ev);
+        await Context.Set<AiUsageEvent>().AddAsync(ev, ct);
         Context.Entry(ev).Property("ProjectId").CurrentValue = projectId;
-        await Context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<ProjectCostAggregate>> ReadProjectAggregatesReadOnlyAsync(DateTime? from)

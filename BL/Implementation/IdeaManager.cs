@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 using SynapseEnqueteManagement.BL.Embeddings;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.BL.Sorting.Embeddings;
@@ -128,10 +130,6 @@ public class IdeaManager(
             logger.LogWarning(ex, "Failed to generate embedding for idea; storing without vector");
         }
 
-        var submissionLanguage = submissionLanguageCode != null
-            ? category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
-            : null;
-
         var idea = new Idea
         {
             Status = status,
@@ -140,7 +138,7 @@ public class IdeaManager(
             Category = category,
             Participant = participant,
             Embedding = embedding,
-            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, category.Project, submissionLanguageCode),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(idea);
@@ -170,5 +168,26 @@ public class IdeaManager(
 
     public Task<Dictionary<int, int>> CountVisibleByCategoriesAsync(IEnumerable<int> categoryIds, string filterLanguageCode = null)
         => ideaRepository.CountVisibleByCategoriesAsync(categoryIds, filterLanguageCode);
+
+    public Task<List<IdeaMetric>> GetTopIdeasAsync(int projectId, int count)
+        => ideaRepository.ReadTopByProjectReadOnlyAsync(projectId, count);
+
+    public Task<List<Idea>> GetLatestApprovedWithCommentsAsync(int projectId, int count)
+        => ideaRepository.ReadLatestByProjectWithCommentsReadOnlyAsync(projectId, count);
+
+    public Task<Dictionary<ModerationStatus, int>> CountByStatusAsync(int projectId)
+        => ideaRepository.CountByStatusForProjectAsync(projectId);
+
+    public Task<(List<Idea> Items, int Total)> GetIdeasPageAsync(
+        int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize)
+        => ideaRepository.ReadPagedByProjectWithCommentsReadOnlyAsync(projectId, search, categoryId, status, page, pageSize);
+
+    public async Task SetModerationStatusAsync(int ideaId, ModerationStatus status, int? projectId = null)
+    {
+        var idea = await ideaRepository.ReadByIdInProjectForUpdateAsync(ideaId, projectId)
+            ?? throw new KeyNotFoundException($"Idea {ideaId} not found.");
+        idea.Status = status;
+        await uow.SaveChangesAsync();
+    }
 
 }

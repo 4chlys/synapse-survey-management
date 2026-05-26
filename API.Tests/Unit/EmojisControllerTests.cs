@@ -3,11 +3,12 @@ namespace SynapseEnqueteManagement.API.Tests;
 public class EmojisControllerTests
 {
     private readonly Mock<IProjectManager> _projectManager = new();
+    private readonly Mock<IEmojiManager> _emojiManager = new();
     private readonly EmojisController _controller;
 
     public EmojisControllerTests()
     {
-        _controller = new EmojisController(_projectManager.Object);
+        _controller = new EmojisController(_projectManager.Object, _emojiManager.Object);
     }
 
     [Fact]

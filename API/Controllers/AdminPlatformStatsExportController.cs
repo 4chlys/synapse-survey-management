@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.BL.Stats;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -14,6 +15,7 @@ public class AdminPlatformStatsExportController(
     IProjectManager projectManager,
     IParticipantManager participantManager,
     IAiUsageManager usageManager,
+    ISystemStatsAggregator statsAggregator,
     IExportService exportService,
     IChartRendererService chartRenderer,
     IChartImageService chartImages) : ControllerBase
@@ -50,69 +52,42 @@ public class AdminPlatformStatsExportController(
         var aiPlatform = (await usageManager.ReadServiceBreakdownByPlatformAsync(platformId, null)).ToList();
         var aiProject  = (await usageManager.ReadServiceBreakdownByProjectsAsync(platformId, null)).ToList();
 
-        var statsById = participantStats.ToDictionary(s => s.ProjectId);
+        // Roll-up math lives in the BL aggregator; map its result rows to the API DTOs here.
+        var rollup = statsAggregator.Aggregate(projects, participantStats);
 
-        // Pre-compute rollups (reused for both sheets and the chart-renderer DTO)
-        var projectRows = projects.Select(p =>
+        var projectRows = rollup.ProjectRows.Select(r => new ProjectStatsRowDto
         {
-            statsById.TryGetValue(p.ProjectId, out var ps);
-            var name = p.Translations
-                .FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)?.Name
-                ?? p.Translations.FirstOrDefault()?.Name
-                ?? string.Empty;
-            return new ProjectStatsRowDto
-            {
-                ProjectId               = p.ProjectId,
-                ProjectName             = name,
-                ShortForm               = p.ShortForm,
-                PlatformId              = p.ProjectPlatformId,
-                PlatformName            = p.ProjectPlatform?.Name ?? string.Empty,
-                State                   = p.ProjectState.ToString(),
-                ParticipantCount        = ps?.CompletedCount ?? 0,
-                StartedCount            = ps?.StartedCount ?? 0,
-                AvgCompletionSeconds    = ps?.AvgCompletionSeconds ?? 0,
-                MedianCompletionSeconds = ps?.MedianCompletionSeconds ?? 0,
-                MinCompletionSeconds    = ps?.MinCompletionSeconds ?? 0,
-                Q1CompletionSeconds     = ps?.Q1CompletionSeconds ?? 0,
-                Q3CompletionSeconds     = ps?.Q3CompletionSeconds ?? 0,
-                MaxCompletionSeconds    = ps?.MaxCompletionSeconds ?? 0,
-            };
+            ProjectId               = r.ProjectId,
+            ProjectName             = r.ProjectName,
+            ShortForm               = r.ShortForm,
+            PlatformId              = r.PlatformId,
+            PlatformName            = r.PlatformName,
+            State                   = r.State,
+            ParticipantCount        = r.ParticipantCount,
+            StartedCount            = r.StartedCount,
+            AvgCompletionSeconds    = r.AvgCompletionSeconds,
+            MedianCompletionSeconds = r.MedianCompletionSeconds,
+            MinCompletionSeconds    = r.MinCompletionSeconds,
+            Q1CompletionSeconds     = r.Q1CompletionSeconds,
+            Q3CompletionSeconds     = r.Q3CompletionSeconds,
+            MaxCompletionSeconds    = r.MaxCompletionSeconds,
         }).ToList();
 
-        var platformRows = projects
-            .GroupBy(p => p.ProjectPlatformId)
-            .Select(g =>
-            {
-                var gProjects = g.ToList();
-                var gStats = gProjects
-                    .Select(p => statsById.GetValueOrDefault(p.ProjectId))
-                    .Where(s => s is not null)
-                    .ToList();
-                int gCompleted = gStats.Sum(s => s.CompletedCount);
-                double gAvg = gCompleted > 0
-                    ? gStats.Sum(s => s.AvgCompletionSeconds * s.CompletedCount) / gCompleted
-                    : 0;
-                double gMedian = gStats.Count > 0 ? gStats.Average(s => s.MedianCompletionSeconds) : 0;
-                return new PlatformStatsRowDto
-                {
-                    PlatformId              = g.Key,
-                    Name                    = gProjects.First().ProjectPlatform?.Name ?? string.Empty,
-                    ActiveCount             = gProjects.Count(p => p.ProjectState == ProjectState.Active),
-                    DraftCount              = gProjects.Count(p => p.ProjectState == ProjectState.Draft),
-                    ArchivedCount           = gProjects.Count(p => p.ProjectState == ProjectState.Archived),
-                    ParticipantCount        = gCompleted,
-                    AvgCompletionSeconds    = gAvg,
-                    MedianCompletionSeconds = gMedian,
-                };
-            }).ToList();
+        var platformRows = rollup.PlatformRows.Select(r => new PlatformStatsRowDto
+        {
+            PlatformId              = r.PlatformId,
+            Name                    = r.Name,
+            ActiveCount             = r.ActiveCount,
+            DraftCount              = r.DraftCount,
+            ArchivedCount           = r.ArchivedCount,
+            ParticipantCount        = r.ParticipantCount,
+            AvgCompletionSeconds    = r.AvgCompletionSeconds,
+            MedianCompletionSeconds = r.MedianCompletionSeconds,
+        }).ToList();
 
-        int totalCompleted = participantStats.Sum(s => s.CompletedCount);
-        double sysAvg = totalCompleted > 0
-            ? participantStats.Sum(s => s.AvgCompletionSeconds * s.CompletedCount) / totalCompleted
-            : 0;
-        double sysMedian = participantStats.Count > 0
-            ? participantStats.Average(s => s.MedianCompletionSeconds)
-            : 0;
+        int totalCompleted = rollup.TotalCompleted;
+        double sysAvg = rollup.SysAvg;
+        double sysMedian = rollup.SysMedian;
 
         // Assemble export sheets for each requested section
         var sheets = new List<(string Key, string SheetName, string[] Headers, IEnumerable<string[]> Rows)>();
