@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -43,17 +44,13 @@ public class CommentManager(
             throw new KeyNotFoundException($"Idea {ideaId} not found");
         }
 
-        var submissionLanguage = submissionLanguageCode != null
-            ? idea.Category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
-            : null;
-
         var comment = new TextComment
         {
             Idea = idea,
             ModerationStatus = status,
             Text = text,
             Participant = participant,
-            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, idea.Category.Project, submissionLanguageCode),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(comment);
@@ -82,7 +79,7 @@ public class CommentManager(
             Idea = idea,
             Emoji = idea.Category.Project.Emojis.First(e => e.EmojiId == emojiId),
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, idea.Category.Project, null),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(iconComment);
@@ -123,7 +120,7 @@ public class CommentManager(
             Idea = comment.Idea,
             TextComment = comment,
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, comment.Idea.Category.Project, null),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(reaction);
@@ -140,5 +137,13 @@ public class CommentManager(
         if (!removed) return false;
         await uow.SaveChangesAsync(ct);
         return true;
+    }
+
+    public async Task SetCommentModerationStatusAsync(int commentId, ModerationStatus status, int projectId, CancellationToken ct = default)
+    {
+        var comment = await commentRepository.ReadTextCommentByIdForUpdateAsync(commentId, projectId)
+            ?? throw new KeyNotFoundException($"Comment {commentId} not found in project {projectId}.");
+        comment.ModerationStatus = status;
+        await uow.SaveChangesAsync(ct);
     }
 }

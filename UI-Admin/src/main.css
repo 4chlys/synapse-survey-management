@@ -111,6 +111,27 @@ input[type=number].no-spinner {
 
 @import "./quill-dark.css";
 @import "./activate.css";
+
+/* Ideas status filter badges */
+.ideas-filter-badge {
+    transition: opacity 0.15s, outline-offset 0.15s;
+    outline: 2px solid transparent;
+    outline-offset: 1px;
+}
+
+.ideas-filter-badge[data-active="true"] {
+    outline-color: currentColor;
+    outline-offset: 2px;
+    opacity: 1;
+}
+
+.ideas-filter-badge[data-active="false"] {
+    opacity: 0.45;
+}
+
+[data-status-badges]:not(:has([data-active="true"])) .ideas-filter-badge {
+    opacity: 1;
+}
 input[type=number].no-spinner::-webkit-inner-spin-button,
 input[type=number].no-spinner::-webkit-outer-spin-button {
   -webkit-appearance: none;

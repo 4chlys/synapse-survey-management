@@ -304,6 +304,37 @@ public class IdeaManagerTests
         // Assert
         Assert.Equal("nl", captured.Language?.Code);
     }
+
+    [Fact]
+    public async Task SetModerationStatusAsync_IdeaExists_UpdatesStatusAndSaves()
+    {
+        var idea = new Idea { IdeaId = 1, Status = ModerationStatus.Unflagged };
+        _ideaRepository.Setup(r => r.ReadByIdInProjectForUpdateAsync(1, It.IsAny<int?>()))
+            .ReturnsAsync(idea)
+            .Verifiable(Times.Once());
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Verifiable(Times.Once());
+
+        await _manager.SetModerationStatusAsync(1, ModerationStatus.Approved);
+
+        Assert.Equal(ModerationStatus.Approved, idea.Status);
+        _ideaRepository.VerifyAll();
+        _uow.VerifyAll();
+    }
+
+    [Fact]
+    public async Task SetModerationStatusAsync_IdeaNotFound_Throws()
+    {
+        _ideaRepository.Setup(r => r.ReadByIdInProjectForUpdateAsync(99, It.IsAny<int?>()))
+            .ReturnsAsync((Idea)null)
+            .Verifiable(Times.Once());
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _manager.SetModerationStatusAsync(99, ModerationStatus.Approved));
+
+        _ideaRepository.VerifyAll();
+    }
 }
 
 public class AiModerationServiceTests

@@ -1,0 +1,96 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasCategoriesViewModel
+@inject IViewLocalizer L
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    Layout = "_Layout";
+}
+
+<div class="w-full">
+
+    <!-- Header -->
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+        <div>
+            <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+            <p class="text-sm text-base-content/50 mt-0.5">@string.Format(L["TotalCountText"].Value, Model.TotalIdeaCount)</p>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+            <div class="dropdown dropdown-end" data-export-emails
+                 data-project-id="@Model.ProjectId"
+                 data-export-url="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId })"
+                 data-failed-message="@L["ExportFailedAlert"].Value"
+                 data-text-format-description="@L["ExportFormat_TextDescription"].Value">
+                <button type="button" class="btn btn-primary btn-sm gap-1.5" data-export-trigger>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+                    </svg>
+                    @L["ExportEmailsButton"]
+                </button>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-44 p-2 shadow hidden" data-export-fallback>
+                    <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "csv" })">CSV (.csv)</a></li>
+                    <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "txt" })">@L["ExportFormat_Text"]</a></li>
+                    <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
+                </ul>
+            </div>
+            <span class="badge badge-success gap-1">✓ @string.Format(L["BadgeApproved"].Value, Model.TotalApproved)</span>
+            <span class="badge badge-info gap-1">● @string.Format(L["BadgeNew"].Value, Model.TotalPending)</span>
+            <span class="badge badge-warning gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.TotalFlagged)</span>
+            <span class="badge badge-error gap-1">✕ @string.Format(L["BadgeDeclined"].Value, Model.TotalDeclined)</span>
+        </div>
+    </div>
+
+    <!-- Category cards -->
+    @if (!Model.Categories.Any())
+    {
+        <div class="card bg-base-100 shadow-sm">
+            <div class="card-body items-center text-center py-16">
+                <svg class="w-12 h-12 text-base-content/20 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <p class="text-base-content/40 italic">@L["NoCategories"]</p>
+                <a asp-action="Ideation" asp-route-projectId="@Model.ProjectId" class="btn btn-sm btn-ghost mt-2">@L["AddCategoriesLink"] →</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach (var cat in Model.Categories)
+            {
+                <a asp-action="Ideas" asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@cat.CategoryId"
+                   class="group card bg-base-100 shadow-sm border border-base-200 hover:border-primary/40 hover:shadow-md transition-all duration-150">
+                    <div class="card-body gap-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                </svg>
+                            </div>
+                            <svg class="w-4 h-4 text-base-300 group-hover:text-primary transition-colors shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+
+                        <div class="min-w-0">
+                            <p class="font-heading font-semibold text-base-content leading-snug">@cat.Name</p>
+                            @if (!string.IsNullOrWhiteSpace(cat.Description))
+                            {
+                                <p class="text-sm text-base-content/55 mt-0.5 leading-snug line-clamp-2">@cat.Description</p>
+                            }
+                        </div>
+
+                        <div class="flex items-center gap-1.5 mt-auto pt-1">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold">
+                                @cat.IdeaCount
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                </svg>
+                            </span>
+                            <span class="text-xs text-base-content/35">@L["IdeasLabel"]</span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+
+</div>

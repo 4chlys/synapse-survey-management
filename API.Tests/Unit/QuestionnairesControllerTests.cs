@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using SynapseEnqueteManagement.API.Controllers;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.API.Services;
@@ -13,7 +12,7 @@ public class QuestionnairesControllerTests
     private readonly Mock<ISurveyFlowManager> _surveyFlowManager = new();
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IProjectManager> _projectManager = new();
-    private readonly Mock<IStorageService> _storageService = new();
+    private readonly Mock<IQuestionMediaCleanupService> _mediaCleanup = new();
     private readonly Mock<IWebHostEnvironment> _env = new();
     private readonly QuestionnairesController _controller;
 
@@ -27,15 +26,8 @@ public class QuestionnairesControllerTests
             _surveyFlowManager.Object,
             _participantManager.Object,
             _projectManager.Object,
-            _storageService.Object,
+            _mediaCleanup.Object,
             _env.Object);
-
-        // Provide a real ServiceProvider so the catch-path logger lookup doesn't NRE
-        var sp = new ServiceCollection().AddLogging().BuildServiceProvider();
-        _controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
-        {
-            HttpContext = new DefaultHttpContext { RequestServices = sp }
-        };
     }
 
     [Fact]
@@ -170,7 +162,8 @@ public class QuestionnairesControllerTests
             It.IsAny<string>(), It.IsAny<BL.Domain.Project.Enums.QuestionMediaType?>(),
             It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _storageService.Setup(s => s.DeleteAsync(oldUrl)).Returns(Task.CompletedTask);
+        _mediaCleanup.Setup(s => s.DeleteIfOrphanedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns(Task.CompletedTask);
 
         var dto = new UpdateQuestionDto
         {
@@ -187,6 +180,6 @@ public class QuestionnairesControllerTests
 
         await _controller.UpdateQuestion(projectId, questionId, dto, CancellationToken.None);
 
-        _storageService.Verify(s => s.DeleteAsync(oldUrl), Times.Once);
+        _mediaCleanup.Verify(s => s.DeleteIfOrphanedAsync(oldUrl, It.IsAny<string>(), false), Times.Once);
     }
 }

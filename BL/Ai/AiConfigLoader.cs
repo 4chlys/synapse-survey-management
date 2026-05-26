@@ -175,16 +175,17 @@ public static class AiConfigLoader
 
         return new AiConfig
         {
-            Platform        = config.Platform,
-            Moderation      = substitutedModeration,
-            IdeaSupport     = substitutedIdeaSupport,
-            CommentSupport  = substitutedCommentSupport,
-            QuestionSupport = substitutedQuestionSupport,
-            SpeechToText    = substitutedSpeechToText,
-            ImageGeneration = config.ImageGeneration,
-            Fuzzy           = config.Fuzzy,
-            SocialMedia     = substitutedSocialMedia,
+            Platform         = config.Platform,
+            Moderation       = substitutedModeration,
+            IdeaSupport      = substitutedIdeaSupport,
+            CommentSupport   = substitutedCommentSupport,
+            QuestionSupport  = substitutedQuestionSupport,
+            SpeechToText     = substitutedSpeechToText,
+            ImageGeneration  = config.ImageGeneration,
+            Fuzzy            = config.Fuzzy,
+            SocialMedia      = substitutedSocialMedia,
             ImageDescription = substitutedImageDescription,
+            IdeaSummary      = config.IdeaSummary,
         };
     }
 }
