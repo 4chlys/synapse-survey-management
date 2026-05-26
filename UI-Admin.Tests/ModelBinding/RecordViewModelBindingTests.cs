@@ -5,7 +5,6 @@ using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using DomainMediaType = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionMediaType;
 using BlQuestionFormat = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat;
-using AdminQuestionFormat = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionFormat;
 
 namespace SynapseEnqueteManagement.UI.Admin.Tests.ModelBinding;
 
@@ -146,63 +145,82 @@ public class RecordViewModelBindingTests
     [Fact]
     public async Task CreateQuestionViewModel_BoundFromForm_PopulatesAllInitProperties()
     {
+        // Per-language Text + MediaText + AnswerChoicesRaw bind through the
+        // indexed `Translations[i].*` keys; structural fields stay flat.
         var form = new Dictionary<string, StringValues>
         {
-            ["Text"] = "What is your favourite colour?",
             ["QuestionFormat"] = nameof(BlQuestionFormat.SingleChoice),
             ["IsMandatory"] = "true",
-            ["AnswerChoicesRaw"] = "Red\nGreen\nBlue",
             ["SectionId"] = "2",
             ["MediaUrl"] = "https://media.example/poll.png",
             ["MediaType"] = nameof(DomainMediaType.Image),
             ["MediaIsEmbed"] = "false",
-            ["MediaText"] = "Pick one colour from the list"
+            ["Translations[0].LanguageCode"]     = "nl",
+            ["Translations[0].Text"]             = "Wat is je favoriete kleur?",
+            ["Translations[0].AnswerChoicesRaw"] = "Rood\nGroen\nBlauw",
+            ["Translations[0].MediaText"]        = "Kies één kleur uit de lijst",
+            ["Translations[1].LanguageCode"]     = "en",
+            ["Translations[1].Text"]             = "What is your favourite colour?",
+            ["Translations[1].AnswerChoicesRaw"] = "Red\nGreen\nBlue",
+            ["Translations[1].MediaText"]        = "Pick one colour from the list",
         };
 
         var (model, modelState) = await FormBinderTestHarness.BindAsync<CreateQuestionViewModel>(form);
 
         Assert.True(modelState.IsValid);
-        Assert.Equal("What is your favourite colour?", model.Text);
         Assert.Equal(BlQuestionFormat.SingleChoice, model.QuestionFormat);
         Assert.True(model.IsMandatory);
-        Assert.Equal("Red\nGreen\nBlue", model.AnswerChoicesRaw);
         Assert.Equal(2, model.SectionId);
         Assert.Equal("https://media.example/poll.png", model.MediaUrl);
         Assert.Equal(DomainMediaType.Image, model.MediaType);
         Assert.False(model.MediaIsEmbed);
-        Assert.Equal("Pick one colour from the list", model.MediaText);
+        Assert.Equal(2, model.Translations.Count);
+        var nl = model.Translations.Single(t => t.LanguageCode == "nl");
+        Assert.Equal("Wat is je favoriete kleur?", nl.Text);
+        Assert.Equal("Rood\nGroen\nBlauw", nl.AnswerChoicesRaw);
+        Assert.Equal("Kies één kleur uit de lijst", nl.MediaText);
+        var en = model.Translations.Single(t => t.LanguageCode == "en");
+        Assert.Equal("What is your favourite colour?", en.Text);
+        Assert.Equal("Red\nGreen\nBlue", en.AnswerChoicesRaw);
+        Assert.Equal("Pick one colour from the list", en.MediaText);
     }
 
     [Fact]
     public async Task EditQuestionViewModel_BoundFromForm_PopulatesAllInitProperties()
     {
+        // EditQuestionViewModel inherits from CreateQuestionViewModel and adds
+        // QuestionId; binder must populate both the base translations and the id.
         var form = new Dictionary<string, StringValues>
         {
             ["QuestionId"] = "11",
-            ["Text"] = "Refined question text",
-            ["QuestionFormat"] = nameof(AdminQuestionFormat.MultipleChoice),
+            ["QuestionFormat"] = nameof(BlQuestionFormat.MultipleChoice),
             ["IsMandatory"] = "false",
-            ["AnswerChoicesRaw"] = "A\nB\nC\nD",
             ["SectionId"] = "9",
             ["MediaUrl"] = "https://media.example/edit.mp4",
             ["MediaType"] = nameof(DomainMediaType.Video),
             ["MediaIsEmbed"] = "true",
-            ["MediaText"] = "Updated description"
+            ["Translations[0].LanguageCode"]     = "nl",
+            ["Translations[0].Text"]             = "Aangepaste vraag",
+            ["Translations[0].AnswerChoicesRaw"] = "A\nB\nC\nD",
+            ["Translations[0].MediaText"]        = "Bijgewerkte beschrijving",
         };
 
         var (model, modelState) = await FormBinderTestHarness.BindAsync<EditQuestionViewModel>(form);
 
         Assert.True(modelState.IsValid);
         Assert.Equal(11, model.QuestionId);
-        Assert.Equal("Refined question text", model.Text);
-        Assert.Equal(AdminQuestionFormat.MultipleChoice, model.QuestionFormat);
+        Assert.Equal(BlQuestionFormat.MultipleChoice, model.QuestionFormat);
         Assert.False(model.IsMandatory);
-        Assert.Equal("A\nB\nC\nD", model.AnswerChoicesRaw);
         Assert.Equal(9, model.SectionId);
         Assert.Equal("https://media.example/edit.mp4", model.MediaUrl);
         Assert.Equal(DomainMediaType.Video, model.MediaType);
         Assert.True(model.MediaIsEmbed);
-        Assert.Equal("Updated description", model.MediaText);
+        Assert.Single(model.Translations);
+        var nl = model.Translations[0];
+        Assert.Equal("nl", nl.LanguageCode);
+        Assert.Equal("Aangepaste vraag", nl.Text);
+        Assert.Equal("A\nB\nC\nD", nl.AnswerChoicesRaw);
+        Assert.Equal("Bijgewerkte beschrijving", nl.MediaText);
     }
 
     // CreateProjectViewModel is the most complex of the bunch: it carries an

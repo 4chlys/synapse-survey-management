@@ -17,10 +17,75 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCancel = document.getElementById('modal-cancel') as HTMLButtonElement | null;
     const addAnswerBtn = document.getElementById('add-answer-btn') as HTMLButtonElement | null;
     const askFirstJa = document.getElementById('ask-first-ja') as HTMLButtonElement | null;
-    const textError = document.getElementById('text-error') as HTMLElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
 
     const i18n = { ...readQuestionsI18n(questionsList), ...readFormI18n(questionForm) };
+
+    // Multi-language setup: derived from #questions-list dataset (populated by
+    // ProjectController.Questions). Supported languages drive the tab strip,
+    // status dots, slot-row inputs, and per-language submit validation.
+    const supportedLanguages = (questionsList?.dataset['supportedLanguages'] ?? 'nl')
+        .split(',').map(s => s.trim()).filter(Boolean);
+    const defaultLanguage = questionsList?.dataset['defaultLanguageCode'] ?? supportedLanguages[0] ?? 'nl';
+
+    interface QuestionTranslationData {
+        languageCode: string;
+        text: string;
+        answerChoices: string[];
+        mediaText: string | null;
+    }
+    interface EndingAnswerTranslationData { languageCode: string; value: string; }
+    interface EndingAnswerSlotData {
+        endingAnswerId: number;
+        translations: EndingAnswerTranslationData[];
+    }
+
+    function panes(): HTMLElement[] {
+        return Array.from(document.querySelectorAll<HTMLElement>('[data-translation-pane]'));
+    }
+    function tabs(): HTMLButtonElement[] {
+        return Array.from(document.querySelectorAll<HTMLButtonElement>('.question-translation-tab'));
+    }
+    function activateTab(code: string): void {
+        // The active language is read back from [aria-selected="true"] by
+        // questionsupportchat.resolveQuestionLanguage at send time, so no
+        // module-level variable is needed here.
+        panes().forEach(p => { p.hidden = p.dataset.translationPane !== code; });
+        tabs().forEach(t => {
+            const active = t.dataset.translationTab === code;
+            t.classList.toggle('bg-base-100', active);
+            t.classList.toggle('text-primary', active);
+            t.classList.toggle('shadow-sm', active);
+            t.classList.toggle('ring-1', active);
+            t.classList.toggle('ring-base-300', active);
+            t.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+    }
+
+    // Status dot per tab: green when this language's Text is filled AND every
+    // answer-slot row has a non-empty value for this language (parallel-array
+    // invariant — if a slot has text in one language, it must have text in all).
+    function updateStatusDot(code: string): void {
+        const pane = document.querySelector<HTMLElement>(`[data-translation-pane="${code}"]`);
+        const tab = document.querySelector<HTMLElement>(`.question-translation-tab[data-translation-tab="${code}"]`);
+        if (!pane || !tab) return;
+        const text = pane.querySelector<HTMLTextAreaElement>('.question-text-input')?.value.trim() ?? '';
+        const isChoice = isChoiceType();
+        const slots = Array.from(document.querySelectorAll<HTMLInputElement>(`.answer-input[data-language="${code}"]`));
+        const allSlotsFilled = !isChoice || (slots.length > 0 && slots.every(s => s.value.trim().length > 0));
+        const complete = text.length > 0 && allSlotsFilled;
+        const dot = tab.querySelector<HTMLElement>('[data-translation-status]');
+        if (dot) {
+            dot.classList.toggle('bg-success', complete);
+            dot.classList.toggle('bg-warning', !complete);
+        }
+    }
+    function updateAllStatusDots(): void { supportedLanguages.forEach(updateStatusDot); }
+
+    function isChoiceType(): boolean {
+        const v = (document.getElementById('QuestionFormat') as HTMLInputElement | null)?.value;
+        return v === 'MultipleChoice' || v === 'SingleChoice';
+    }
 
     // pending context when picker → drawer; cleared after drawer opens
     let pendingSectionId = '';
@@ -59,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wire media panel for the modal form (prefix = '' so IDs match: MediaType, media-upload-block, etc.)
     if (projectId) {
         wireQuestionMediaPanel('', projectId);
-        wireQuestionMediaPanel('card-', projectId);
     }
 
     function openModal(sectionId = '', type = 'MultipleChoice'): void {
@@ -85,9 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const createUrl = questionForm?.action ?? '';
 
     function resetModal(): void {
-        const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
-        if (textArea) textArea.value = '';
-        textError?.classList.add('hidden');
+        // Clear every per-language pane (Text + MediaText + the hidden
+        // AnswerChoicesRaw bridge field that gets populated at submit).
+        panes().forEach(p => {
+            p.querySelectorAll<HTMLTextAreaElement>('.question-text-input').forEach(t => t.value = '');
+            p.querySelectorAll<HTMLTextAreaElement>('.question-media-text-input').forEach(t => t.value = '');
+            p.querySelectorAll<HTMLInputElement>('[data-translation-field="answer-choices-raw"]').forEach(h => h.value = '');
+            const counter = p.querySelector<HTMLElement>('[data-media-text-counter]');
+            if (counter) counter.textContent = '0 / 2000';
+        });
+        // Clear per-language text errors
+        document.querySelectorAll<HTMLElement>('.question-text-error').forEach(e => e.classList.add('hidden'));
         answersError?.classList.add('hidden');
         const answerList = document.getElementById('answer-list');
         if (answerList) answerList.innerHTML = '';
@@ -106,26 +178,59 @@ document.addEventListener('DOMContentLoaded', () => {
         if (questionForm) questionForm.action = createUrl;
         const title = document.getElementById('modal-title');
         if (title) title.textContent = i18n.modalTitleCreate;
+        activateTab(defaultLanguage);
+        updateAllStatusDots();
     }
 
-    function openEditModal(questionId: number, text: string, format: string, answers: string[], sectionId: string, isMandatory: boolean, mediaUrl = '', mediaType = 0, mediaIsEmbed = false, mediaText = ''): void {
+    function openEditModal(
+        questionId: number,
+        format: string,
+        sectionId: string,
+        isMandatory: boolean,
+        mediaUrl: string,
+        mediaType: number,
+        mediaIsEmbed: boolean,
+        translations: QuestionTranslationData[],
+        _endingSlots: EndingAnswerSlotData[],
+    ): void {
         resetModal();
 
         const qIdInput = document.getElementById('QuestionId') as HTMLInputElement | null;
         if (qIdInput) qIdInput.value = String(questionId);
 
-        const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
-        if (textArea) textArea.value = text;
-
         const formatBtn = document.querySelector<HTMLElement>(`.type-btn[data-type="${format}"]`);
         if (formatBtn) selectType(format, formatBtn);
 
-        answers.forEach(a => {
-            addAnswer();
-            const inputs = document.querySelectorAll<HTMLInputElement>('.answer-input');
-            const last = inputs[inputs.length - 1];
-            if (last) last.value = a;
+        // Pad missing-language translations so every supported language has a
+        // pane value; empty strings are fine — the user re-authors them.
+        const byLang = new Map(translations.map(t => [t.languageCode, t]));
+        supportedLanguages.forEach(code => {
+            const t = byLang.get(code);
+            const pane = document.querySelector<HTMLElement>(`[data-translation-pane="${code}"]`);
+            if (!pane) return;
+            const txt = pane.querySelector<HTMLTextAreaElement>('.question-text-input');
+            if (txt) txt.value = t?.text ?? '';
+            const mt = pane.querySelector<HTMLTextAreaElement>('.question-media-text-input');
+            if (mt) {
+                mt.value = t?.mediaText ?? '';
+                const c = pane.querySelector<HTMLElement>('[data-media-text-counter]');
+                if (c) c.textContent = `${mt.value.length} / 2000`;
+            }
         });
+
+        // Slot rows: derive slot count from the longest translation. Each row
+        // gets one input per supported language, prefilled from translations.
+        const slotCount = translations.reduce((m, t) => Math.max(m, t.answerChoices.length), 0);
+        for (let i = 0; i < slotCount; i++) {
+            addAnswerSlot();
+            supportedLanguages.forEach(code => {
+                const t = byLang.get(code);
+                const input = document.querySelector<HTMLInputElement>(
+                    `#answer-list .answer-row:last-child .answer-input[data-language="${code}"]`,
+                );
+                if (input) input.value = t?.answerChoices[i] ?? '';
+            });
+        }
 
         const sectionSelect = document.getElementById('SectionId') as HTMLSelectElement | null;
         if (sectionSelect) sectionSelect.value = sectionId;
@@ -140,8 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateDrawerTypeHeader(format);
 
-        hydrateMediaPanel('', mediaUrl, mediaType, mediaIsEmbed, mediaText);
+        // Media URL/type/embed are language-agnostic; MediaText is set per-pane above.
+        hydrateMediaPanel('', mediaUrl, mediaType, mediaIsEmbed, '');
 
+        updateAllStatusDots();
         modal?.classList.add('modal-open');
     }
 
@@ -163,28 +270,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const answersSection = document.getElementById('answers-section');
         if (answersSection) answersSection.style.display = showAnswers ? 'block' : 'none';
 
-        // Clear answers error when switching type
+        // Clear answers error when switching type. Status dots depend on
+        // whether slots are required, so refresh them.
         answersError?.classList.add('hidden');
+        updateAllStatusDots();
     }
 
-    function addAnswer(): void {
+    // A slot row holds one input per supported language plus a remove button.
+    // Removing the row drops the slot from every language at once, preserving
+    // the parallel-array invariant; the slot count grows/shrinks atomically.
+    function addAnswerSlot(): void {
         const list = document.getElementById('answer-list');
         if (!list) return;
         answersError?.classList.add('hidden');
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'answer-input input input-bordered input-xs flex-1';
-        input.placeholder = i18n.answerPlaceholder;
-        input.maxLength = 500;
-        input.addEventListener('input', () => answersError?.classList.add('hidden'));
+        row.className = 'answer-row flex items-center gap-2';
+        supportedLanguages.forEach(code => {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'answer-input input input-bordered input-xs flex-1';
+            input.placeholder = supportedLanguages.length > 1
+                ? `${i18n.answerPlaceholder} (${code.toUpperCase()})`
+                : i18n.answerPlaceholder;
+            input.maxLength = 500;
+            input.dataset['language'] = code;
+            input.addEventListener('input', () => {
+                answersError?.classList.add('hidden');
+                updateStatusDot(code);
+            });
+            row.appendChild(input);
+        });
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'btn btn-ghost btn-xs text-base-content/50';
         removeBtn.textContent = '×';
-        removeBtn.addEventListener('click', () => row.remove());
-        row.appendChild(input);
+        removeBtn.addEventListener('click', () => {
+            row.remove();
+            updateAllStatusDots();
+        });
         row.appendChild(removeBtn);
         list.appendChild(row);
     }
@@ -245,67 +368,103 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => selectType(btn.dataset.type ?? '', btn));
     });
 
-    addAnswerBtn?.addEventListener('click', addAnswer);
-
-    document.getElementById('QuestionText')?.addEventListener('input', () => {
-        textError?.classList.add('hidden');
+    addAnswerBtn?.addEventListener('click', () => {
+        addAnswerSlot();
+        updateAllStatusDots();
     });
+
+    // Tab switching + per-language text-input wiring (status dots + clear error).
+    tabs().forEach(t => t.addEventListener('click', () => activateTab(t.dataset.translationTab ?? defaultLanguage)));
+    document.querySelectorAll<HTMLTextAreaElement>('.question-text-input').forEach(ta => {
+        ta.addEventListener('input', () => {
+            const code = ta.dataset['language'] ?? defaultLanguage;
+            const pane = ta.closest<HTMLElement>('[data-translation-pane]');
+            pane?.querySelector<HTMLElement>(`.question-text-error[data-language="${code}"]`)?.classList.add('hidden');
+            updateStatusDot(code);
+        });
+    });
+    document.querySelectorAll<HTMLTextAreaElement>('.question-media-text-input').forEach(ta => {
+        const code = ta.dataset['language'] ?? defaultLanguage;
+        const counter = document.querySelector<HTMLElement>(`[data-media-text-counter="${code}"]`);
+        ta.addEventListener('input', () => {
+            if (counter) counter.textContent = `${ta.value.length} / 2000`;
+        });
+    });
+    activateTab(defaultLanguage);
+    updateAllStatusDots();
 
     questionForm?.addEventListener('submit', async (e: SubmitEvent) => {
         e.preventDefault();
         let valid = true;
+        let firstBadLang: string | null = null;
 
-        // Validate question text
-        const textArea = document.getElementById('QuestionText') as HTMLTextAreaElement | null;
-        if (!textArea?.value.trim()) {
-            if (textError) textError.textContent = i18n.fieldRequired;
-            textError?.classList.remove('hidden');
-            valid = false;
-        } else if ((textArea?.value.trim().length ?? 0) > 500) {
-            if (textError) textError.textContent = i18n.maxQuestionText;
-            textError?.classList.remove('hidden');
-            valid = false;
-        } else {
-            textError?.classList.add('hidden');
-        }
+        // Per-language Text required (≤ 500 chars). Switch to the first bad
+        // tab so the inline error is visible.
+        supportedLanguages.forEach(code => {
+            const pane = document.querySelector<HTMLElement>(`[data-translation-pane="${code}"]`);
+            if (!pane) return;
+            const ta = pane.querySelector<HTMLTextAreaElement>('.question-text-input');
+            const err = pane.querySelector<HTMLElement>(`.question-text-error[data-language="${code}"]`);
+            const val = ta?.value.trim() ?? '';
+            if (val.length === 0) {
+                if (err) { err.textContent = i18n.fieldRequired; err.classList.remove('hidden'); }
+                valid = false; firstBadLang ??= code;
+            } else if (val.length > 500) {
+                if (err) { err.textContent = i18n.maxQuestionText; err.classList.remove('hidden'); }
+                valid = false; firstBadLang ??= code;
+            } else {
+                err?.classList.add('hidden');
+            }
+        });
 
-        // Validate answers for MCQ and SCQ
+        // Slot rows: for MCQ/SCQ, at least 2 slots; every slot must be filled
+        // for every supported language (parallel-array invariant — partial
+        // translations are rejected, not silently dropped, so authors notice).
         const currentType = (document.getElementById('QuestionFormat') as HTMLInputElement | null)?.value;
-        if (currentType === 'MultipleChoice' || currentType === 'SingleChoice') {
-            const answerInputs = Array.from(document.querySelectorAll<HTMLInputElement>('.answer-input'));
-
-            if (answerInputs.length < 2) {
+        const isChoice = currentType === 'MultipleChoice' || currentType === 'SingleChoice';
+        const rows = Array.from(document.querySelectorAll<HTMLElement>('#answer-list .answer-row'));
+        if (isChoice) {
+            if (rows.length < 2) {
                 if (answersError) {
                     answersError.textContent = i18n.minTwoAnswers;
                     answersError.classList.remove('hidden');
                 }
                 valid = false;
-            } else if (answerInputs.some(a => !a.value.trim())) {
-                if (answersError) {
-                    answersError.textContent = i18n.allAnswersFilled;
-                    answersError.classList.remove('hidden');
+            } else {
+                const anyBlank = rows.some(row =>
+                    Array.from(row.querySelectorAll<HTMLInputElement>('.answer-input'))
+                        .some(i => i.value.trim().length === 0));
+                if (anyBlank) {
+                    if (answersError) {
+                        answersError.textContent = i18n.allAnswersFilled;
+                        answersError.classList.remove('hidden');
+                    }
+                    valid = false;
+                } else {
+                    answersError?.classList.add('hidden');
                 }
-                valid = false;
-            } else {
-                answersError?.classList.add('hidden');
             }
         }
 
-        if (!valid) return;
-
-        // Collect answers into hidden field (only for choice types)
-        const raw = document.getElementById('AnswerChoicesRaw') as HTMLInputElement | null;
-        if (raw) {
-            const isChoiceType = currentType === 'MultipleChoice' || currentType === 'SingleChoice';
-            if (isChoiceType) {
-                const answers = Array.from(document.querySelectorAll<HTMLInputElement>('.answer-input'))
-                    .map(i => i.value.trim())
-                    .filter(v => v);
-                raw.value = answers.join('\n');
-            } else {
-                raw.value = '';
-            }
+        if (!valid) {
+            if (firstBadLang) activateTab(firstBadLang);
+            return;
         }
+
+        // Serialize answer choices: per language, walk slot rows in order and
+        // collect that language's input value (trimmed), join with '\n' into
+        // the matching Translations[i].AnswerChoicesRaw hidden bridge field.
+        // Open/Likert clear AnswerChoicesRaw for every language so the slot
+        // count goes to zero on the server side.
+        supportedLanguages.forEach(code => {
+            const hidden = document.querySelector<HTMLInputElement>(
+                `[data-translation-field="answer-choices-raw"][data-language="${code}"]`);
+            if (!hidden) return;
+            if (!isChoice) { hidden.value = ''; return; }
+            const values = rows.map(row =>
+                row.querySelector<HTMLInputElement>(`.answer-input[data-language="${code}"]`)?.value.trim() ?? '');
+            hidden.value = values.join('\n');
+        });
 
         try {
             const response = await fetch(questionForm.action, {
@@ -337,21 +496,26 @@ document.addEventListener('DOMContentLoaded', () => {
         arrow.textContent = isHidden ? '>' : 'v';
     });
 
-    // Edit question via event delegation
+    // Edit question via event delegation. The card's data-translations /
+    // data-ending-answer-slots are JSON blobs serialized by questionnaire-tree,
+    // carrying every supported language so the modal can rehydrate any tab.
     questionsList?.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLElement>('.question-edit-btn');
         if (!btn) return;
         const id = parseInt(btn.dataset.questionId ?? '0', 10);
-        const text = btn.dataset.text ?? '';
         const format = btn.dataset.format ?? 'MultipleChoice';
-        const answers = JSON.parse(btn.dataset.answers ?? '[]') as string[];
         const sectionId = btn.dataset.sectionId ?? '';
         const isMandatory = btn.dataset.isMandatory === 'true';
         const mediaUrl = btn.dataset.mediaUrl ?? '';
         const mediaType = parseInt(btn.dataset.mediaType ?? '0', 10);
         const mediaIsEmbed = btn.dataset.mediaIsEmbed === 'true';
-        const mediaText = btn.dataset.mediaText ?? '';
-        openEditModal(id, text, format, answers, sectionId, isMandatory, mediaUrl, mediaType, mediaIsEmbed, mediaText);
+        let translations: QuestionTranslationData[] = [];
+        let endingSlots: EndingAnswerSlotData[] = [];
+        try { translations = JSON.parse(btn.dataset.translations ?? '[]') as QuestionTranslationData[]; }
+        catch { translations = []; }
+        try { endingSlots = JSON.parse(btn.dataset.endingAnswerSlots ?? '[]') as EndingAnswerSlotData[]; }
+        catch { endingSlots = []; }
+        openEditModal(id, format, sectionId, isMandatory, mediaUrl, mediaType, mediaIsEmbed, translations, endingSlots);
     });
 
     // Validate at least 1 question before proceeding to next step
@@ -376,87 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
         panel?.classList.add('flex');
     });
 
-    // Card form: show/hide answers section + AJAX submit
-    const cardForm = document.getElementById('card-question-form') as HTMLFormElement | null;
-    const cardFormat = document.getElementById('card-format') as HTMLSelectElement | null;
-    const cardAnswersSection = document.getElementById('card-answers-section') as HTMLElement | null;
-    const cardAnswerList = document.getElementById('card-answer-list') as HTMLElement | null;
-    const cardAddAnswer = document.getElementById('card-add-answer') as HTMLButtonElement | null;
-    const cardAnswersRaw = document.getElementById('card-answers-raw') as HTMLInputElement | null;
-    const cardAnswersError = document.getElementById('card-answers-error') as HTMLElement | null;
-
-    function isCardChoice(): boolean {
-        return cardFormat?.value === 'MultipleChoice' || cardFormat?.value === 'SingleChoice';
-    }
-
-    function updateCardVisibility(): void {
-        if (!cardAnswersSection) return;
-        const show = isCardChoice();
-        cardAnswersSection.classList.toggle('hidden', !show);
-        if (show) cardAnswersSection.style.display = 'flex';
-        else cardAnswersSection.style.display = '';
-    }
-
-    function addCardAnswer(value = ''): void {
-        if (!cardAnswerList) return;
-        const row = document.createElement('div');
-        row.className = 'flex gap-2 items-center';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'input input-bordered input-xs flex-1';
-        input.placeholder = i18n.answerPlaceholder;
-        input.maxLength = 500;
-        input.value = value;
-        input.addEventListener('input', () => cardAnswersError?.classList.add('hidden'));
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'btn btn-ghost btn-xs text-error';
-        del.textContent = '×';
-        del.addEventListener('click', () => row.remove());
-        row.appendChild(input);
-        row.appendChild(del);
-        cardAnswerList.appendChild(row);
-    }
-
-    cardFormat?.addEventListener('change', updateCardVisibility);
-    cardAddAnswer?.addEventListener('click', () => addCardAnswer());
-
-    cardForm?.addEventListener('submit', async (e: SubmitEvent) => {
-        e.preventDefault();
-
-        if (isCardChoice()) {
-            const inputs = Array.from(cardAnswerList?.querySelectorAll<HTMLInputElement>('input[type=text]') ?? []);
-            const values = inputs.map(i => i.value.trim()).filter(v => v);
-            if (values.length < 2) {
-                if (cardAnswersError) {
-                    cardAnswersError.textContent = i18n.minTwoAnswers;
-                    cardAnswersError.classList.remove('hidden');
-                }
-                return;
-            }
-            cardAnswersError?.classList.add('hidden');
-            if (cardAnswersRaw) cardAnswersRaw.value = values.join('\n');
-        } else {
-            if (cardAnswersRaw) cardAnswersRaw.value = '';
-        }
-
-        try {
-            const response = await fetch(cardForm.action, {
-                method: 'POST',
-                body: new FormData(cardForm),
-            });
-            if (response.ok) {
-                cardForm.reset();
-                if (cardAnswerList) cardAnswerList.innerHTML = '';
-                cardAnswersError?.classList.add('hidden');
-                updateCardVisibility();
-                document.dispatchEvent(new CustomEvent('questions-reload'));
-                toast(i18n.savedToast, 'success');
-            } else {
-                toast(i18n.saveFailedToast, 'error');
-            }
-        } catch {
-            toast(i18n.saveFailedToast, 'error');
-        }
-    });
+    // (Dead "card form" block removed: #card-question-form had no Razor view
+    // binding it; only the drawer-style modal authors questions now.)
 });

@@ -83,7 +83,7 @@ async function autoOpenAndGreet(): Promise<void> {
     setSendingState(true);
 
     try {
-        const reply = await activeSession.send('', true);
+        const reply = await activeSession.send('', true, resolveQuestionLanguage());
         hideLoading();
         setSendingState(false);
         appendAssistantBubble(reply.assistantMessage);
@@ -94,6 +94,17 @@ async function autoOpenAndGreet(): Promise<void> {
             'Sorry, de assistent is even niet beschikbaar. Je kunt de vragen ook zonder hulp aanmaken.',
         );
     }
+}
+
+// Active modal tab's language — drives the API's target language for any
+// suggested/rewritten question text. When the modal isn't open or no tab is
+// active, fall back to the questions-list's default language; null is a
+// reasonable terminal fallback (server uses project default).
+function resolveQuestionLanguage(): string | null {
+    const activeTab = document.querySelector<HTMLElement>(
+        '.question-translation-tab[aria-selected="true"]');
+    if (activeTab?.dataset['translationTab']) return activeTab.dataset['translationTab'];
+    return document.getElementById('questions-list')?.dataset['defaultLanguageCode'] ?? null;
 }
 
 // Send handler
@@ -109,7 +120,7 @@ async function handleSend(): Promise<void> {
     setSendingState(true);
 
     try {
-        const reply = await activeSession.send(text);
+        const reply = await activeSession.send(text, false, resolveQuestionLanguage());
         hideLoading();
         setSendingState(false);
         appendAssistantBubble(reply.assistantMessage);

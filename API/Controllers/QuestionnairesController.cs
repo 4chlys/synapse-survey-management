@@ -52,6 +52,21 @@ public class QuestionnairesController(
         return Ok(dtos);
     }
 
+    [HttpGet("questions/admin")]
+    public async Task<ActionResult<IEnumerable<AdminQuestionDto>>> GetAdminQuestions(int projectId)
+    {
+        // Admin authoring view: returns the full multilingual shape (Translations[],
+        // per-language EndingAnswers, AnswerChoiceCount) needed by the edit modal.
+        // Distinct from the participant-facing GET above, which flattens to one language.
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdReadOnlyAsync(projectId);
+        if (questionnaire is null)
+            return NotFound();
+
+        var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
+        var dtos = questions.Select(MapToAdminDto).ToList();
+        return Ok(dtos);
+    }
+
     [HttpPost("questions")]
     public async Task<ActionResult<AdminQuestionDto>> AddQuestion(int projectId,
         CreateQuestionDto dto, CancellationToken ct)

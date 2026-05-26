@@ -58,7 +58,11 @@ public class QuestionSupportController(
             UserMessage      = dto.UserMessage ?? string.Empty,
             IsFirstTurn      = dto.IsFirstTurn,
             ChatLanguage     = lang,
-            QuestionLanguage = defaultLang ?? lang,
+            // Modal passes the active tab's language; fall back to project default
+            // so chat outside the multi-language modal still gets a sensible target.
+            QuestionLanguage = !string.IsNullOrWhiteSpace(dto.QuestionLanguage)
+                ? dto.QuestionLanguage
+                : defaultLang ?? lang,
         };
 
         var platformConfig = await platformAiConfig.ResolveAsync(project.ProjectPlatformId, ct);

@@ -10,6 +10,7 @@ public sealed class QuestionSupportService(HttpClient httpClient)
         IEnumerable<QuestionSupportMessage> history,
         string userMessage,
         bool isFirstTurn,
+        string questionLanguage = null,
         CancellationToken ct = default)
     {
         var request = new HttpRequestMessage(
@@ -21,6 +22,7 @@ public sealed class QuestionSupportService(HttpClient httpClient)
             History     = history,
             UserMessage = userMessage,
             IsFirstTurn = isFirstTurn,
+            QuestionLanguage = questionLanguage,
         });
 
         var response = await httpClient.SendAsync(request, ct);

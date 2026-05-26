@@ -316,6 +316,12 @@ public class ProjectController(
         ViewData["Sections"]      = sections;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
+        // Multilingual modal: needs the project's enabled languages to render
+        // the tab strip and validate per supported language at submit time.
+        ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
+        ViewData["SupportedLanguageCodes"] = project?.SupportedLanguageCodes
+                                             ?? new List<string> { "nl" };
+        ViewData["DefaultLanguageCode"]    = project?.DefaultLanguageCode ?? "nl";
         return View(questions);
     }
 
@@ -341,11 +347,13 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
-                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+            await questionService.CreateQuestionAsync(projectId, model.QuestionFormat.ToString(),
+                model.IsMandatory, ResolveSlotCount(model), model.Translations,
+                model.SectionId,
                 parentQuestionId: model.ParentQuestionId, choiceIndex: model.ChoiceIndex,
+                endingAnswerSlots: model.EndingAnswerSlots,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
-                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
+                mediaIsEmbed: model.MediaIsEmbed);
         return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
 
@@ -360,12 +368,24 @@ public class ProjectController(
             return RedirectToAction(nameof(Questions), new { projectId, isNew });
         }
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
-                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId,
+                model.QuestionFormat.ToString(), model.IsMandatory, ResolveSlotCount(model),
+                model.Translations, model.SectionId,
+                endingAnswerSlots: model.EndingAnswerSlots,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
-                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
+                mediaIsEmbed: model.MediaIsEmbed);
         return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
+
+    // Slot/parallel-array invariant: every supported language has the same
+    // number of AnswerChoices entries. The client enforces parity; on the
+    // server we derive the structural slot count from the longest translation
+    // so a malformed posting still maps consistently (manager will validate).
+    private static int ResolveSlotCount(CreateQuestionViewModel model) =>
+        model.Translations
+            .Select(t => t.GetAnswerChoices().Count)
+            .DefaultIfEmpty(0)
+            .Max();
 
     public async Task<IActionResult> Ideation(int projectId, bool isNew = false)
     {

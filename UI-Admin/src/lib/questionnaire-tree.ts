@@ -5,6 +5,28 @@
 // #questions-list container (see questionnaire-dnd.ts), so re-rendering
 // the innerHTML here does not break any listeners.
 
+// Multilingual admin shape. The flat `text` / `answerChoices` / `endingAnswers`
+// / `mediaText` fields are derived (at fetch time in questionnaire-dnd) from
+// the default-language translation so the tree can keep rendering one language;
+// `translations` and `endingAnswerSlots` carry the full slot×language data the
+// edit modal needs to rehydrate every supported language.
+export interface QuestionTranslation {
+    languageCode: string;
+    text: string;
+    answerChoices: string[]; // length = answerChoiceCount
+    mediaText: string | null;
+}
+
+export interface EndingAnswerTranslation {
+    languageCode: string;
+    value: string;
+}
+
+export interface EndingAnswerSlot {
+    endingAnswerId: number;
+    translations: EndingAnswerTranslation[];
+}
+
 export interface Question {
     questionId: number;
     text: string;
@@ -22,6 +44,8 @@ export interface Question {
     mediaType: number | null;
     mediaIsEmbed: boolean;
     mediaText: string | null;
+    translations: QuestionTranslation[];
+    endingAnswerSlots: EndingAnswerSlot[];
 }
 
 export interface QuestionsI18n {
@@ -229,7 +253,9 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
                 data-media-url="${escapeHtml(q.mediaUrl ?? '')}"
                 data-media-type="${q.mediaType ?? 0}"
                 data-media-is-embed="${q.mediaIsEmbed}"
-                data-media-text="${escapeHtml(q.mediaText ?? '')}">
+                data-media-text="${escapeHtml(q.mediaText ?? '')}"
+                data-translations='${escapeHtml(JSON.stringify(q.translations))}'
+                data-ending-answer-slots='${escapeHtml(JSON.stringify(q.endingAnswerSlots))}'>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
