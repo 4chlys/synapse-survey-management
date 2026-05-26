@@ -112,6 +112,7 @@ input[type=number].no-spinner {
 @import "./quill-dark.css";
 @import "./activate.css";
 @import "./dashboard.css";
+@import "./settings.css";
 
 /* Ideas status filter badges */
 .ideas-filter-badge {
