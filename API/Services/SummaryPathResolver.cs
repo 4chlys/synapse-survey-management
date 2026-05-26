@@ -29,11 +29,15 @@ public sealed class SummaryPathResolver
         return Path.GetFullPath(Path.Combine(BaseDirectory, $"{job.IdeaSummaryJobId}.{ext}"));
     }
 
-    public (string ContentType, string FileName) GetDownloadMeta(IdeaSummaryJob job) =>
-        job.ExportFormat switch
+    public (string ContentType, string FileName) GetDownloadMeta(IdeaSummaryJob job)
+    {
+        var ts = (job.CompletedAt ?? job.CreatedAt).ToString("yyyy-MM-dd_HH-mm");
+        var stem = $"summary-{job.ProjectId}-{ts}";
+        return job.ExportFormat switch
         {
-            IdeaSummaryExportFormat.Pdf => ("application/pdf",          $"summary-{job.ProjectId}.pdf"),
-            IdeaSummaryExportFormat.Png => ("image/png",                $"summary-{job.ProjectId}.png"),
-            _                          => ("text/plain; charset=utf-8", $"summary-{job.ProjectId}.txt"),
+            IdeaSummaryExportFormat.Pdf => ("application/pdf",          $"{stem}.pdf"),
+            IdeaSummaryExportFormat.Png => ("image/png",                $"{stem}.png"),
+            _                          => ("text/plain; charset=utf-8", $"{stem}.txt"),
         };
+    }
 }
