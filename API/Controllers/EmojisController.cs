@@ -4,7 +4,7 @@ using SynapseEnqueteManagement.BL.Interfaces;
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
-public class EmojisController(IProjectManager projectManager) : ControllerBase
+public class EmojisController(IProjectManager projectManager, IEmojiManager emojiManager) : ControllerBase
 {
     [HttpGet("api/projects/{projectId}/emojis")]
     public async Task<ActionResult> GetProjectEmojis(int projectId)
@@ -22,7 +22,7 @@ public class EmojisController(IProjectManager projectManager) : ControllerBase
     [HttpGet("api/emojis")]
     public async Task<ActionResult> GetAllEmojis()
     {
-        var emojis = await projectManager.GetAllEmojisAsync();
+        var emojis = await emojiManager.GetAllReadOnlyAsync();
         var result = emojis.Select(e => new
         {
             e.EmojiId,
