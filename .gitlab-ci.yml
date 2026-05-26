@@ -306,11 +306,19 @@ deploy-production:
     GCP_ID_TOKEN:
       aud: https://iam.googleapis.com/projects/667656673282/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   before_script:
-      - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
-      - gcloud auth login --cred-file=gcp-wif-prod.json
-      - gcloud config set project "${PROJECT_ID}"
+    - echo "${GCP_ID_TOKEN}" > /tmp/gcp_token
+    - gcloud auth login --cred-file=gcp-wif-prod.json
+    - gcloud config set project "${PROJECT_ID}"
+    - curl -sL https://github.com/sigstore/cosign/releases/download/v2.4.1/cosign-linux-amd64 -o /usr/local/bin/cosign
+    - chmod +x /usr/local/bin/cosign
+    - echo "${GCR_SERVICE_ACCOUNT_KEY}" | base64 -d > /tmp/gcr-key.json
+    - gcloud auth activate-service-account --key-file=/tmp/gcr-key.json
+    - gcloud auth configure-docker gcr.io --quiet
   script:
     - |
+      cosign verify --key cosign.pub "${IMAGE_API}:${IMAGE_TAG}"
+      cosign verify --key cosign.pub "${IMAGE_UI}:${IMAGE_TAG}"
+      cosign verify --key cosign.pub "${IMAGE_ADMIN}:${IMAGE_TAG}"
       gcloud compute instance-groups managed rolling-action replace synapse-prod-api-mig   --zone="${ZONE}" --max-unavailable=0 --max-surge=1
       gcloud compute instance-groups managed rolling-action replace synapse-prod-ui-mig    --zone="${ZONE}" --max-unavailable=0 --max-surge=1
       gcloud compute instance-groups managed rolling-action replace synapse-prod-admin-mig --zone="${ZONE}" --max-unavailable=0 --max-surge=1
