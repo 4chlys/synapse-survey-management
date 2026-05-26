@@ -17,7 +17,7 @@ public class SocialMediaController(
     IPlatformAiConfigService platformAiConfig,
     IProjectManager projectManager,
     IParticipantManager participantManager,
-    ICategoryManager categoryManager,
+    IDashboardManager dashboardManager,
     IAiImageGenerationService imageGenerator,
     IStorageService storage) : ControllerBase
 {
@@ -35,7 +35,7 @@ public class SocialMediaController(
         var defaultLang = project.DefaultLanguage?.Code ?? lang;
 
         var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
-        var metrics         = await categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
+        var metrics         = await dashboardManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
         var completionRate  = project.ViewCount > 0
             ? Math.Round((double)completionCount / project.ViewCount * 100, 1) : 0d;
 

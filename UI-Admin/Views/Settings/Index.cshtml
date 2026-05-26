@@ -51,22 +51,31 @@
             else
             {
                 <form asp-action="SaveAiModel" method="post" class="flex flex-col gap-4">
-                    <label class="form-control">
-                        <div class="label"><span class="label-text font-medium">@L["SelectModelLabel"]</span></div>
-                        <select name="selectedModelId" class="select select-bordered w-full">
-                            @foreach (var provider in Enum.GetValues<AiProvider>())
+                    <div class="label"><span class="label-text font-medium">@L["SelectModelLabel"]</span></div>
+                    <div class="flex flex-col gap-2">
+                        @foreach (var provider in Enum.GetValues<AiProvider>())
+                        {
+                            var group = Model.AiSettings.AllowedModels.Where(m => m.Provider == provider).ToList();
+                            if (!group.Any()) continue;
+                            <p class="text-xs text-base-content/50 uppercase tracking-wide mt-1">@provider.ToString()</p>
+                            @foreach (var aiModel in group)
                             {
-                                var group = Model.AiSettings.AllowedModels.Where(m => m.Provider == provider).ToList();
-                                if (!group.Any()) continue;
-                                <optgroup label="@provider.ToString()">
-                                    @foreach (var aiModel in group)
+                                var isSelected    = aiModel.Id == Model.AiSettings.SelectedModelId;
+                                var isUnavailable = Model.AiSettings.UnavailableModelIds.Contains(aiModel.Id);
+                                <label class="flex items-start gap-3 p-3 rounded-lg border border-base-300 @(isUnavailable ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:border-primary")">
+                                    <input type="radio" name="selectedModelId" value="@aiModel.Id"
+                                           class="radio radio-primary mt-0.5"
+                                           checked="@isSelected"
+                                           disabled="@isUnavailable" />
+                                    <span class="text-sm font-medium text-base-content">@aiModel.DisplayName</span>
+                                    @if (isUnavailable)
                                     {
-                                        <option value="@aiModel.Id" selected="@(aiModel.Id == Model.AiSettings.SelectedModelId)">@aiModel.DisplayName</option>
+                                        <span class="badge badge-error badge-xs">@L["ModelNotAvailable"]</span>
                                     }
-                                </optgroup>
+                                </label>
                             }
-                        </select>
-                    </label>
+                        }
+                    </div>
                     <div class="card-actions justify-end">
                         <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                     </div>
@@ -157,6 +166,15 @@
                     </div>
                 </div>
             }
+
+            @* Max ideas per summary *@
+            <div class="divider"></div>
+            <form asp-action="SaveIdeaSummaryMaxIdeas" method="post" class="flex items-center gap-3">
+                <label class="label-text font-medium flex-1">@L["MaxIdeasLabel"]</label>
+                <input type="number" name="maxIdeas" value="@Model.IdeaSummaryMaxIdeas"
+                       min="10" max="2000" class="input input-bordered input-sm w-28" />
+                <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+            </form>
         </div>
     </div>
 </div>

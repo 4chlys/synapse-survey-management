@@ -19,6 +19,7 @@
   <data name="SingleModelText" xml:space="preserve"><value>Your platform uses {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>No AI models available. Please contact the system administrator.</value></data>
   <data name="SelectModelLabel" xml:space="preserve"><value>Select a model</value></data>
+  <data name="ModelNotAvailable" xml:space="preserve"><value>Not available in this region</value></data>
 
   <data name="AiAssistanceHeading" xml:space="preserve"><value>AI assistance</value></data>
   <data name="AiAssistanceDescription" xml:space="preserve"><value>Choose how the AI assistant behaves when adding questions.</value></data>
@@ -34,4 +35,6 @@
   <data name="WarningBody" xml:space="preserve"><value>the default system prompts have been carefully designed with safety measures for young users. Changes may weaken those protections.</value></data>
   <data name="CustomizedBadge" xml:space="preserve"><value>customised</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideas per summary</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
 </root>

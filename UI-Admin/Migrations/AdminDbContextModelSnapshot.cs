@@ -271,6 +271,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                     b.Property<string>("CostDashboardUrl")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("IdeaSummaryMaxIdeas")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IdeationEnabled")
                         .HasColumnType("INTEGER");
 
@@ -287,6 +290,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PromptCommentSupport")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptIdeaSummary")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PromptIdeaSupport")

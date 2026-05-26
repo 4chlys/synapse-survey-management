@@ -8,6 +8,7 @@ namespace SynapseEnqueteManagement.BL.AiUsage;
 public class AiUsageManager(
     IAiUsageRepository repository,
     AiPricing pricing,
+    IUnitOfWork uow,
     ILogger<AiUsageManager> logger) : IAiUsageManager
 {
     public async Task LogChatAsync(int projectId, AiServiceKind service, string model, UsageDetails usage, CancellationToken ct = default)
@@ -40,7 +41,8 @@ public class AiUsageManager(
             RequestCount = 1,
             CostEur = cost,
             CreatedAt = DateTime.UtcNow
-        }, projectId);
+        }, projectId, ct);
+        await uow.SaveChangesAsync(ct);
     }
 
     public async Task LogImageAsync(int projectId, string model, int count, int width, int height, CancellationToken ct = default)
@@ -56,7 +58,8 @@ public class AiUsageManager(
             RequestCount = count,
             CostEur = pricing.ComputeImage(model, count, width, height),
             CreatedAt = DateTime.UtcNow
-        }, projectId);
+        }, projectId, ct);
+        await uow.SaveChangesAsync(ct);
     }
 
     public async Task LogEmbeddingAsync(int projectId, string model, int inputTokens, CancellationToken ct = default)
@@ -72,7 +75,8 @@ public class AiUsageManager(
             RequestCount = 1,
             CostEur = pricing.ComputeEmbedding(model, inputTokens),
             CreatedAt = DateTime.UtcNow
-        }, projectId);
+        }, projectId, ct);
+        await uow.SaveChangesAsync(ct);
     }
 
     public Task<IEnumerable<ProjectCostAggregate>> ReadProjectAggregatesAsync(DateTime? from, CancellationToken ct = default)

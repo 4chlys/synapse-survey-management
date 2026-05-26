@@ -19,6 +19,7 @@
   <data name="SingleModelText" xml:space="preserve"><value>Uw platform gebruikt {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>Geen AI-modellen beschikbaar. Neem contact op met de systeembeheerder.</value></data>
   <data name="SelectModelLabel" xml:space="preserve"><value>Selecteer een model</value></data>
+  <data name="ModelNotAvailable" xml:space="preserve"><value>Niet beschikbaar in deze regio</value></data>
 
   <data name="AiAssistanceHeading" xml:space="preserve"><value>AI-assistentie</value></data>
   <data name="AiAssistanceDescription" xml:space="preserve"><value>Bepaal hoe de AI-assistent zich gedraagt bij het toevoegen van vragen.</value></data>
@@ -34,4 +35,6 @@
   <data name="WarningBody" xml:space="preserve"><value>de standaard systeemprompts zijn zorgvuldig ontworpen met veiligheidsmaatregelen voor jongeren. Wijzigingen kunnen de beveiliging verzwakken.</value></data>
   <data name="CustomizedBadge" xml:space="preserve"><value>aangepast</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Herstel standaard</value></data>
+  <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideeën per samenvatting</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
 </root>

@@ -7,6 +7,7 @@ using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Pgvector;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL;
 
@@ -35,6 +36,7 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
     public DbSet<Comment> Comments { get; set; }
     public DbSet<EndingAnswer> EndingAnswers { get; set; }
     public DbSet<AiUsageEvent> AiUsageEvents { get; set; }
+    public DbSet<IdeaSummaryJob> IdeaSummaryJobs { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -386,6 +388,25 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
 
             // Supports filtering recent events by project (dashboard polling).
             e.HasIndex("ProjectId", nameof(AiUsageEvent.CreatedAt));
+        });
+
+        // IdeaSummaryJob
+        builder.Entity<IdeaSummaryJob>(e =>
+        {
+            e.HasKey(j => j.IdeaSummaryJobId);
+            if (Database.IsNpgsql())
+            {
+                e.Property(j => j.IdeaSummaryJobId).HasDefaultValueSql("gen_random_uuid()");
+                e.Property<uint>("xmin").HasColumnType("xid").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
+            }
+            else
+            {
+                e.Property(j => j.IdeaSummaryJobId).ValueGeneratedOnAdd();
+                e.Property(j => j.RowVersion).IsRowVersion();
+            }
+            e.Property(j => j.Status).HasConversion<string>();
+            e.Property(j => j.ExportFormat).HasConversion<string>();
+            e.HasIndex(j => new { j.ProjectId, j.Status });
         });
 
         // Project-Emoji many-to-many (implicit join table)

@@ -4,6 +4,7 @@ using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using SynapseEnqueteManagement.BL.Stats;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -14,6 +15,7 @@ public class AdminPlatformStatsControllerTests
     private readonly Mock<IProjectManager> _projectManager = new();
     private readonly Mock<IParticipantManager> _participantManager = new();
     private readonly Mock<IAiUsageManager> _usageManager = new();
+    private readonly Mock<ISystemStatsAggregator> _statsAggregator = new();
     private readonly Mock<IExportService> _exportService = new();
     private readonly Mock<IChartRendererService> _chartRenderer = new();
     private readonly Mock<IChartImageService> _chartImages = new();
@@ -32,9 +34,14 @@ public class AdminPlatformStatsControllerTests
             _projectManager.Object,
             _participantManager.Object,
             _usageManager.Object,
+            _statsAggregator.Object,
             _exportService.Object,
             _chartRenderer.Object,
             _chartImages.Object);
+
+        _statsAggregator
+            .Setup(a => a.Aggregate(It.IsAny<IReadOnlyList<Project>>(), It.IsAny<IReadOnlyList<ProjectParticipantStats>>()))
+            .Returns(new SystemStatsRollup([], [], 0, 0, 0));
 
         _projectManager
             .Setup(m => m.GetAllProjectsAsync(It.IsAny<int?>()))

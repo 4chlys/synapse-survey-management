@@ -8,7 +8,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/projects/{projectId}/sections")]
 public class SectionsController(
-    IQuestionnaireManager questionnaireManager,
+    ISectionManager sectionManager,
     IProjectManager projectManager) : ControllerBase
 {
     [HttpGet]
@@ -21,7 +21,7 @@ public class SectionsController(
             languageCode = project?.DefaultLanguage?.Code ?? "nl";
         }
 
-        var sections = await questionnaireManager.GetSectionsReadOnlyAsync(projectId);
+        var sections = await sectionManager.GetSectionsReadOnlyAsync(projectId);
         var dtos = sections.Select(s => MapToDto(s, languageCode));
         return Ok(dtos);
     }
@@ -33,7 +33,7 @@ public class SectionsController(
         var translationInputs = dto.Translations.Select(t =>
             new SectionTranslationInput(t.LanguageCode, t.Name, t.Description));
 
-        var section = await questionnaireManager.CreateSectionAsync(projectId, translationInputs, ct);
+        var section = await sectionManager.CreateSectionAsync(projectId, translationInputs, ct);
         if (section is null)
             return NotFound();
 
@@ -46,7 +46,7 @@ public class SectionsController(
         var translationInputs = dto.Translations.Select(t =>
             new SectionTranslationInput(t.LanguageCode, t.Name, t.Description));
 
-        var success = await questionnaireManager.UpdateSectionAsync(sectionId, translationInputs, ct);
+        var success = await sectionManager.UpdateSectionAsync(sectionId, translationInputs, ct);
         if (!success)
             return NotFound();
 
@@ -56,7 +56,7 @@ public class SectionsController(
     [HttpDelete("{sectionId}")]
     public async Task<IActionResult> DeleteSection(int sectionId, CancellationToken ct)
     {
-        var success = await questionnaireManager.DeleteSectionAsync(sectionId, ct);
+        var success = await sectionManager.DeleteSectionAsync(sectionId, ct);
         if (!success)
             return NotFound();
 

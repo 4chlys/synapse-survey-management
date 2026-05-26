@@ -8,7 +8,8 @@ public sealed record PlatformAdminSettingsViewModel(
     string PlatformName,
     PlatformAdminBasicInfoViewModel BasicInfo,
     PlatformAdminAiViewModel AiSettings,
-    PlatformAdminPromptsViewModel Prompts
+    PlatformAdminPromptsViewModel Prompts,
+    int IdeaSummaryMaxIdeas
 );
 
 public sealed record PlatformAdminBasicInfoViewModel(
@@ -20,7 +21,8 @@ public sealed record PlatformAdminBasicInfoViewModel(
 public sealed record PlatformAdminAiViewModel(
     IReadOnlyList<AiModelDefinition> AllowedModels,
     string SelectedModelId,
-    AiAssistanceType AiAssistanceMode
+    AiAssistanceType AiAssistanceMode,
+    IReadOnlySet<string> UnavailableModelIds
 );
 
 public sealed record PlatformAdminPromptsViewModel(

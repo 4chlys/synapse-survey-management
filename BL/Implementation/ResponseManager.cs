@@ -1,6 +1,7 @@
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -25,7 +26,7 @@ public class ResponseManager(
             Value = value,
             Question = question,
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, null, null),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(response);
@@ -49,7 +50,6 @@ public class ResponseManager(
             EntityValidator.ValidateProperty(existing, value, nameof(Response.Value));
             existing.Value = value;
             existing.IsCommitted = false;
-            responseRepository.Update(existing);
             await uow.SaveChangesAsync(ct);
             return existing;
         }
@@ -59,7 +59,7 @@ public class ResponseManager(
             Value = value,
             Question = question,
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, null, null),
             CreatedAt = DateTime.UtcNow,
             IsCommitted = false
         };
@@ -80,7 +80,6 @@ public class ResponseManager(
             if (response.IsCommitted != shouldCommit)
             {
                 response.IsCommitted = shouldCommit;
-                responseRepository.Update(response);
                 changed = true;
             }
         }
@@ -122,7 +121,6 @@ public class ResponseManager(
                 response.Language = targetLanguage;
                 changed = true;
             }
-            if (changed) responseRepository.Update(response);
         }
         if (changed) await uow.SaveChangesAsync(ct);
     }
@@ -146,20 +144,17 @@ public class ResponseManager(
         }
 
         // MultipleChoice — values are stored as ", "-joined choice texts (see SurveyFlowManager.SplitSelected)
-        var parts = value.Split(", ", StringSplitOptions.None);
-        var translated = new List<string>(parts.Length);
+        var parts = MultipleChoiceValueSerializer.Split(value);
+        var translated = new List<string>(parts.Count);
         foreach (var part in parts)
         {
             var idx = sourceChoices.IndexOf(part);
             translated.Add(idx >= 0 && idx < targetChoices.Count ? targetChoices[idx] : part);
         }
-        return string.Join(", ", translated);
+        return MultipleChoiceValueSerializer.Join(translated);
     }
 
     private static List<string> ChoicesFor(Question question, string languageCode)
-    {
-        var translation = question.Translations.FirstOrDefault(t => t.Language?.Code == languageCode)
-                          ?? question.Translations.FirstOrDefault();
-        return translation?.AnswerChoices?.ToList() ?? new List<string>();
-    }
+        => TranslationPicker.Pick(question.Translations, languageCode)?.AnswerChoices?.ToList()
+           ?? new List<string>();
 }

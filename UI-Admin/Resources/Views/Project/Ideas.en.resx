@@ -24,4 +24,5 @@
   <data name="SearchButton" xml:space="preserve"><value>Search</value></data>
   <data name="ClearButton" xml:space="preserve"><value>Clear</value></data>
   <data name="ExportFailedAlert" xml:space="preserve"><value>Export failed.</value></data>
+  <data name="AiSummaryButton" xml:space="preserve"><value>AI summary</value></data>
 </root>

@@ -7,20 +7,29 @@ create_health_checks() {
   gcloud compute health-checks create http "synapse-${ENV}-api-health" \
     --port=8080 --request-path=/health \
     --check-interval=10 --timeout=5 \
-    --healthy-threshold=2 --unhealthy-threshold=3 \
-    --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-api-health al aanwezig)"
+    --healthy-threshold=4 --unhealthy-threshold=3 \
+    --global --project="${PROJECT_ID}" 2>/dev/null || \
+  gcloud compute health-checks update http "synapse-${ENV}-api-health" \
+    --healthy-threshold=4 \
+    --global --project="${PROJECT_ID}"
 
   gcloud compute health-checks create http "synapse-${ENV}-ui-health" \
     --port=80 --request-path=/health \
     --check-interval=10 --timeout=5 \
-    --healthy-threshold=2 --unhealthy-threshold=3 \
-    --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-ui-health al aanwezig)"
+    --healthy-threshold=4 --unhealthy-threshold=3 \
+    --global --project="${PROJECT_ID}" 2>/dev/null || \
+  gcloud compute health-checks update http "synapse-${ENV}-ui-health" \
+    --healthy-threshold=4 \
+    --global --project="${PROJECT_ID}"
 
   gcloud compute health-checks create http "synapse-${ENV}-admin-health" \
     --port=80 --request-path=/health \
     --check-interval=10 --timeout=5 \
-    --healthy-threshold=2 --unhealthy-threshold=3 \
-    --global --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-admin-health al aanwezig)"
+    --healthy-threshold=4 --unhealthy-threshold=3 \
+    --global --project="${PROJECT_ID}" 2>/dev/null || \
+  gcloud compute health-checks update http "synapse-${ENV}-admin-health" \
+    --healthy-threshold=4 \
+    --global --project="${PROJECT_ID}"
 }
 
 create_backend_services() {

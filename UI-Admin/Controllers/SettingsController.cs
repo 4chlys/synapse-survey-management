@@ -105,7 +105,7 @@ public class SettingsController(
         if (user?.ProjectPlatformId is null) return Forbid();
 
         var validTypes = new HashSet<string>
-            { "Moderation", "CommentModeration", "Rewrite", "ImageModeration", "IdeaSupport", "CommentSupport", "QuestionSupport" };
+            { "Moderation", "CommentModeration", "Rewrite", "ImageModeration", "IdeaSupport", "CommentSupport", "QuestionSupport", "IdeaSummary" };
 
         if (!validTypes.Contains(promptType))
         {
@@ -121,6 +121,17 @@ public class SettingsController(
 
         await platformService.SavePromptOverrideAsync(user.ProjectPlatformId.Value, promptType, value);
         TempData["Success"] = localizer["Settings_PromptSaved"].Value;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveIdeaSummaryMaxIdeas(int maxIdeas)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is null) return Forbid();
+
+        await platformService.SaveIdeaSummaryMaxIdeasAsync(user.ProjectPlatformId.Value, maxIdeas);
+        TempData["Success"] = "Maximaal aantal ideeën opgeslagen.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -146,12 +157,13 @@ public class SettingsController(
     private async Task<PlatformAdminSettingsViewModel> BuildViewModel(int platformId, string platformName)
     {
         var settings       = await platformService.GetPlatformSettingsAsync(platformId);
-        var allowedIds     = await GetAllowedModelIdsAsync();
-        var availableIds   = await aiAdminService.GetAvailableModelIdsAsync();
-        var globalPrompts  = await aiAdminService.GetGlobalPromptsAsync();
-        var allowedModels  = AiModelCatalog.All
-            .Where(m => allowedIds.Contains(m.Id) && availableIds.Contains(m.Id))
+        var allowedIds       = await GetAllowedModelIdsAsync();
+        var modelAvailability = await aiAdminService.GetModelAvailabilityAsync();
+        var globalPrompts    = await aiAdminService.GetGlobalPromptsAsync();
+        var allowedModels    = AiModelCatalog.All
+            .Where(m => allowedIds.Contains(m.Id) && modelAvailability.ContainsKey(m.Id))
             .ToList();
+        var unavailableModelIds = modelAvailability.Where(kv => !kv.Value).Select(kv => kv.Key).ToHashSet();
 
         // API-fetched prompts are preferred; fall back to locally loaded AiConfig if the API is unreachable.
         string Fallback(string apiPrompt, string localPrompt) =>
@@ -165,8 +177,12 @@ public class SettingsController(
 
         var aiSettings = new PlatformAdminAiViewModel(
             allowedModels,
-            settings?.SelectedAiModel ?? allowedModels.FirstOrDefault()?.Id ?? string.Empty,
-            Enum.TryParse<AiAssistanceType>(settings?.AiAssistanceMode, out var aiMode) ? aiMode : AiAssistanceType.ProActive
+            settings?.SelectedAiModel
+                ?? allowedModels.FirstOrDefault(m => !unavailableModelIds.Contains(m.Id))?.Id
+                ?? allowedModels.FirstOrDefault()?.Id
+                ?? string.Empty,
+            Enum.TryParse<AiAssistanceType>(settings?.AiAssistanceMode, out var aiMode) ? aiMode : AiAssistanceType.ProActive,
+            unavailableModelIds
         );
 
         var prompts = new PlatformAdminPromptsViewModel([
@@ -177,8 +193,9 @@ public class SettingsController(
             new("IdeaSupport",       localizer["Prompt_IdeaSupport"].Value,       settings?.PromptIdeaSupport       ?? Fallback(globalPrompts.IdeaSupport,        aiConfig.IdeaSupport.SystemPrompt),            settings?.PromptIdeaSupport       is not null),
             new("CommentSupport",    localizer["Prompt_CommentSupport"].Value,    settings?.PromptCommentSupport    ?? Fallback(globalPrompts.CommentSupport,     aiConfig.CommentSupport.SystemPrompt),         settings?.PromptCommentSupport    is not null),
             new("QuestionSupport",   localizer["Prompt_QuestionSupport"].Value,   settings?.PromptQuestionSupport   ?? Fallback(globalPrompts.QuestionSupport,    aiConfig.QuestionSupport.SystemPrompt),        settings?.PromptQuestionSupport   is not null),
+            new("IdeaSummary",       localizer["Prompt_IdeaSummary"].Value,       settings?.PromptIdeaSummary       ?? Fallback(globalPrompts.IdeaSummary,        aiConfig.IdeaSummary.SystemPrompt),            settings?.PromptIdeaSummary       is not null),
         ]);
 
-        return new PlatformAdminSettingsViewModel(platformId, platformName, basicInfo, aiSettings, prompts);
+        return new PlatformAdminSettingsViewModel(platformId, platformName, basicInfo, aiSettings, prompts, settings?.IdeaSummaryMaxIdeas ?? 200);
     }
 }

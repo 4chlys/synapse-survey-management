@@ -10,7 +10,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class DashboardController(
     IProjectManager projectManager,
     IParticipantManager participantManager,
-    ICategoryManager categoryManager) : ControllerBase
+    IDashboardManager dashboardManager) : ControllerBase
 {
     private static string ActiveCulture() =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
@@ -25,7 +25,7 @@ public class DashboardController(
         var defaultLang = project.DefaultLanguage?.Code ?? lang;
 
         var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
-        var metrics = await categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
+        var metrics = await dashboardManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
 
         return Ok(new ProjectDashboardDto
         {
