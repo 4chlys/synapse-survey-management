@@ -223,7 +223,6 @@ infra/
   startup-ui.sh         # VM startup script for UI instances
   startup-admin.sh      # VM startup script for Admin instances
   destroy.sh            # Tears down all resources for an environment
-  setup.sh              # (partial setup helper)
   backup.sh             # Manual backup trigger
   restore.sh            # Restore from backup
 
