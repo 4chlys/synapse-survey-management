@@ -138,4 +138,12 @@ public class CommentManager(
         await uow.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task SetCommentModerationStatusAsync(int commentId, ModerationStatus status, int projectId, CancellationToken ct = default)
+    {
+        var comment = await commentRepository.ReadTextCommentByIdForUpdateAsync(commentId, projectId)
+            ?? throw new KeyNotFoundException($"Comment {commentId} not found in project {projectId}.");
+        comment.ModerationStatus = status;
+        await uow.SaveChangesAsync(ct);
+    }
 }

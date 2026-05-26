@@ -7,17 +7,24 @@
 
 <div class="w-full">
 
+    <!-- Breadcrumb back link -->
+    <div class="mb-4">
+        <a asp-action="IdeasCategories" asp-route-projectId="@Model.ProjectId"
+           class="inline-flex items-center gap-1.5 text-sm text-base-content/50 hover:text-base-content transition-colors">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+            @L["BackToCategories"]
+        </a>
+    </div>
+
     <!-- Header + summary badges -->
     <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div>
-            <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+            <h1 class="font-heading font-bold text-2xl text-base-content">@Model.CategoryName</h1>
             <p class="text-sm text-base-content/50 mt-0.5">@string.Format(L["TotalCountText"].Value, Model.TotalCount)</p>
         </div>
-        <div class="flex flex-wrap gap-2 items-center">
-            <span class="badge badge-success gap-1">✓ @string.Format(L["BadgeApproved"].Value, Model.ApprovedCount)</span>
-            <span class="badge badge-warning gap-1">⏳ @string.Format(L["BadgeNew"].Value, Model.PendingCount)</span>
-            <span class="badge badge-error gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.FlaggedCount)</span>
-
+        <div class="flex flex-wrap gap-2 items-center" data-status-badges>
             <div class="dropdown dropdown-end" data-export-emails
                  data-project-id="@Model.ProjectId"
                  data-export-url="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId })"
@@ -29,50 +36,61 @@
                     </svg>
                     @L["ExportEmailsButton"]
                 </button>
+                <button id="summary-trigger-btn" data-open-modal="summary-modal" type="button" class="btn btn-secondary btn-sm gap-1.5">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                    </svg>
+                    @L["AiSummaryButton"]
+                </button>
                 <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-44 p-2 shadow hidden" data-export-fallback>
                     <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "csv" })">CSV (.csv)</a></li>
                     <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "txt" })">@L["ExportFormat_Text"]</a></li>
                     <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
                 </ul>
             </div>
-
-            <button id="summary-trigger-btn" data-open-modal="summary-modal" type="button" class="btn btn-secondary btn-sm gap-1.5">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
-                </svg>
-                @L["AiSummaryButton"]
+            <button type="button"
+                    class="badge badge-success gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Approved"
+                    data-active="@(Model.Status == "Approved" ? "true" : "false")">
+                ✓ @string.Format(L["BadgeApproved"].Value, Model.ApprovedCount)
+            </button>
+            <button type="button"
+                    class="badge badge-info gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Unflagged"
+                    data-active="@(Model.Status == "Unflagged" ? "true" : "false")">
+                ● @string.Format(L["BadgeNew"].Value, Model.PendingCount)
+            </button>
+            <button type="button"
+                    class="badge badge-warning gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Flagged"
+                    data-active="@(Model.Status == "Flagged" ? "true" : "false")">
+                ⚑ @string.Format(L["BadgeFlagged"].Value, Model.FlaggedCount)
+            </button>
+            <button type="button"
+                    class="badge badge-error gap-1 ideas-filter-badge cursor-pointer"
+                    data-status-filter="Declined"
+                    data-active="@(Model.Status == "Declined" ? "true" : "false")">
+                ✕ @string.Format(L["BadgeDeclined"].Value, Model.DeclinedCount)
             </button>
         </div>
     </div>
 
     <!-- Filter bar -->
-    <form method="get" asp-action="Ideas" asp-route-projectId="@Model.ProjectId"
-          class="flex flex-wrap gap-2 mb-5 items-center"
+    <form method="get" asp-action="Ideas"
+          class="flex flex-wrap gap-2 mb-6 items-center"
           data-ideas-filter>
+        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+        <input type="hidden" name="categoryId" value="@Model.CategoryId" />
+
         <label class="input input-bordered input-sm flex items-center gap-2 flex-1 min-w-48">
-            <svg class="text-base-content/40" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg class="text-base-content/40" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
             <input type="search" name="search" value="@Model.Search"
                    placeholder="@L["SearchPlaceholder"]" class="grow" />
         </label>
 
-        <select name="categoryId" class="select select-bordered select-sm min-w-40"
-                data-submit-on-change>
-            <option value="">@L["AllCategories"]</option>
-            @foreach (var cat in Model.Categories)
-            {
-                if (Model.CategoryId == cat.CategoryId)
-                {
-                    <option value="@cat.CategoryId" selected>@cat.Name</option>
-                }
-                else
-                {
-                    <option value="@cat.CategoryId">@cat.Name</option>
-                }
-            }
-        </select>
-
-        <select name="status" class="select select-bordered select-sm min-w-36"
-                data-submit-on-change>
+        <select name="status" class="select select-bordered select-sm min-w-36">
             <option value="">@L["AllStatuses"]</option>
             @if (Model.Status == "Unflagged") { <option value="Unflagged" selected>@L["Status_New"]</option> }
             else { <option value="Unflagged">@L["Status_New"]</option> }
@@ -85,14 +103,14 @@
         </select>
 
         <button type="submit" class="btn btn-primary btn-sm">@L["SearchButton"]</button>
-        @if (!string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status))
+        @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status))
         {
-            <a asp-action="Ideas" asp-route-projectId="@Model.ProjectId"
+            <a asp-action="Ideas" asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
                class="btn btn-ghost btn-sm" data-clear-filter>@L["ClearButton"]</a>
         }
     </form>
 
-    <!-- Ideas table + pagination -->
+    <!-- Ideas cards + pagination -->
     <div id="ideas-results">
         @await Html.PartialAsync("_IdeasTable", Model)
     </div>

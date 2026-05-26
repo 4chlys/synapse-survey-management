@@ -235,4 +235,35 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
         => await Context.Set<Idea>()
             .FirstOrDefaultAsync(i => i.IdeaId == ideaId
                 && (projectId == null || i.Category.Project.ProjectId == projectId));
+
+    
+    public async Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
+        int projectId, string search, int? categoryId, ModerationStatus? status,
+        int page, int pageSize)
+    {
+        var query = WithComments(
+                Context.Set<Idea>()
+                    .AsNoTracking()
+                    .Include(i => i.Category).ThenInclude(c => c.Translations).ThenInclude(t => t.Language)
+                    .Include(i => i.Participant)
+                    .Include(i => i.Language))
+            .Where(i => i.Category.Project.ProjectId == projectId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(i => i.Description.Contains(search));
+        if (categoryId.HasValue)
+            query = query.Where(i => i.Category.CategoryId == categoryId.Value);
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(i => i.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        ExcludeReactions(items);
+        return (items, total);
+    }
 }
