@@ -2,14 +2,13 @@ using System.Text.Json;
 using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiIdeaSummary;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.BackgroundServices;
 
 public sealed class IdeaSummaryWorker(
     IServiceScopeFactory scopeFactory,
-    IWebHostEnvironment env,
+    SummaryPathResolver resolver,
     ILogger<IdeaSummaryWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
@@ -62,15 +61,12 @@ public sealed class IdeaSummaryWorker(
                     sampled, aiConfig.ChatClient, aiConfig.ModelId, aiConfig.Prompt,
                     job.ProjectId, filter.OutputLanguage, ct);
 
-            var (bytes, _, fileName) = exporter.Export(summaryText, job.ExportFormat, job.ProjectId);
+            var (bytes, _, _) = exporter.Export(summaryText, job.ExportFormat, job.ProjectId);
 
-            var relDir = Path.Combine("uploads", "summaries");
-            var absDir = Path.Combine(env.WebRootPath ?? string.Empty, relDir);
-            Directory.CreateDirectory(absDir);
-            var uniqueFileName = $"{job.IdeaSummaryJobId}_{fileName}";
-            await File.WriteAllBytesAsync(Path.Combine(absDir, uniqueFileName), bytes, ct);
+            resolver.EnsureDirectoryExists();
+            await File.WriteAllBytesAsync(resolver.ResolvePath(job), bytes, ct);
 
-            await jobManager.MarkCompletedAsync(job, Path.Combine(relDir, uniqueFileName), ct);
+            await jobManager.MarkCompletedAsync(job, ct);
         }
         catch (Exception ex)
         {

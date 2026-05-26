@@ -10,6 +10,6 @@ public interface IIdeaSummaryJobManager
     Task<IdeaSummaryJob> GetForProjectAsync(int projectId, Guid jobId, CancellationToken ct = default);
     Task<IdeaSummaryJob> ClaimNextPendingAsync(CancellationToken ct = default);
     Task<List<Idea>> GetIdeasForSummaryAsync(int projectId, SummaryFilterParams filter, CancellationToken ct = default);
-    Task MarkCompletedAsync(IdeaSummaryJob job, string outputPath, CancellationToken ct = default);
+    Task MarkCompletedAsync(IdeaSummaryJob job, CancellationToken ct = default);
     Task MarkFailedAsync(IdeaSummaryJob job, string errorMessage, CancellationToken ct = default);
 }

@@ -14,6 +14,7 @@ using SynapseEnqueteManagement.API.Ai;
 using SynapseEnqueteManagement.API.Data;
 using SynapseEnqueteManagement.BL.Domain.Ai;
 using SynapseEnqueteManagement.API.Middleware;
+using SynapseEnqueteManagement.API.Options;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Ai;
@@ -225,6 +226,8 @@ builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
 builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
 
 // Idea summary
+builder.Services.Configure<SummaryStorageOptions>(builder.Configuration.GetSection("SummaryStorage"));
+builder.Services.AddSingleton<SummaryPathResolver>();
 builder.Services.AddScoped<IIdeaSummaryJobRepository, IdeaSummaryJobRepository>();
 builder.Services.AddScoped<IIdeaSummaryJobManager, IdeaSummaryJobManager>();
 builder.Services.AddScoped<IAiIdeaSummaryService, AiIdeaSummaryService>();

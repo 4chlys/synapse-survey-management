@@ -47,9 +47,8 @@ public sealed class IdeaSummaryJobManager(
         return ideaRepo.ReadForSummaryAsync(projectId, filter.CategoryId, status, filter.LanguageCode, ct);
     }
 
-    public async Task MarkCompletedAsync(IdeaSummaryJob job, string outputPath, CancellationToken ct = default)
+    public async Task MarkCompletedAsync(IdeaSummaryJob job, CancellationToken ct = default)
     {
-        job.OutputPath  = outputPath;
         job.Status      = IdeaSummaryJobStatus.Completed;
         job.CompletedAt = DateTime.UtcNow;
         await jobRepo.UpdateAsync(job, ct);

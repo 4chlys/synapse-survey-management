@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiIdeaSummary;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
@@ -10,7 +11,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/admin/projects/{projectId:int}/ideas/summary")]
 public class AdminIdeaSummaryController(
     IIdeaSummaryJobManager jobs,
-    IWebHostEnvironment env) : ControllerBase
+    SummaryPathResolver resolver) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Enqueue(
@@ -52,7 +53,7 @@ public class AdminIdeaSummaryController(
         {
             status       = job.Status.ToString(),
             errorMessage = job.ErrorMessage,
-            hasOutput    = job.OutputPath is not null,
+            hasOutput    = job.Status == IdeaSummaryJobStatus.Completed,
         });
     }
 
@@ -62,23 +63,19 @@ public class AdminIdeaSummaryController(
         var job = await jobs.GetForProjectAsync(projectId, jobId, ct);
         if (job is null) return NotFound();
 
-        if (job.Status != IdeaSummaryJobStatus.Completed || job.OutputPath is null)
+        if (job.Status != IdeaSummaryJobStatus.Completed)
             return BadRequest(new { error = "Summary is not ready yet." });
 
-        var webRoot  = env.WebRootPath ?? string.Empty;
-        var fullPath = Path.GetFullPath(Path.Combine(webRoot, job.OutputPath));
-        if (!fullPath.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase))
+        var fullPath = resolver.ResolvePath(job);
+        var rel = Path.GetRelativePath(resolver.BaseDirectory, fullPath);
+        if (rel.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(rel))
             return BadRequest(new { error = "Invalid file path." });
+
         if (!System.IO.File.Exists(fullPath)) return NotFound();
 
-        var contentType = Path.GetExtension(job.OutputPath).ToLowerInvariant() switch
-        {
-            ".pdf" => "application/pdf",
-            ".png" => "image/png",
-            _      => "text/plain; charset=utf-8",
-        };
+        var (contentType, fileName) = resolver.GetDownloadMeta(job);
         var bytes = await System.IO.File.ReadAllBytesAsync(fullPath, ct);
-        return File(bytes, contentType, Path.GetFileName(job.OutputPath));
+        return File(bytes, contentType, fileName);
     }
 }
 
