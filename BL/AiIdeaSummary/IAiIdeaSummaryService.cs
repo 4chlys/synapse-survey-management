@@ -12,6 +12,7 @@ public interface IAiIdeaSummaryService
         string prompt,
         int projectId,
         string outputLanguage = null,
+        int maxOutputChars = 0,
         CancellationToken ct = default);
 
     Task<string> GenerateBatchSummaryAsync(
@@ -22,5 +23,6 @@ public interface IAiIdeaSummaryService
         int batchSize,
         int projectId,
         string outputLanguage = null,
+        int maxOutputChars = 0,
         CancellationToken ct = default);
 }

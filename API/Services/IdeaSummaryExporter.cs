@@ -142,37 +142,56 @@ public sealed class IdeaSummaryExporter
 
         var lines = WrapText(stripped, paint, width - padding * 2);
         var titleAreaHeight = string.IsNullOrEmpty(title) ? 0f : titleFontSize * 2.5f;
+
+        const int MaxHeightPx = 8_000;
+        var maxLines = (int)((MaxHeightPx - padding * 2 - titleAreaHeight) / lineHeight);
+        if (lines.Count > maxLines)
+        {
+            int dropped = lines.Count - (maxLines - 1);
+            lines = lines.Take(maxLines - 1)
+                .Append($"… ({dropped} more lines — download as PDF or TXT for the full text)")
+                .ToList();
+        }
+
         int height = (int)(padding * 2 + lines.Count * lineHeight + titleAreaHeight);
 
-        using var bitmap = new SKBitmap(width, height);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.White);
-
-        float y = padding;
-
-        if (!string.IsNullOrEmpty(title))
+        try
         {
-            using var titlePaint = new SKPaint
+            using var bitmap = new SKBitmap(width, height);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.White);
+
+            float y = padding;
+
+            if (!string.IsNullOrEmpty(title))
             {
-                Color = SKColors.Black,
-                TextSize = titleFontSize,
-                IsAntialias = true,
-                FakeBoldText = true,
-            };
-            y += titleFontSize;
-            canvas.DrawText(title, padding, y, titlePaint);
-            y += titleAreaHeight - titleFontSize;
-        }
+                using var titlePaint = new SKPaint
+                {
+                    Color = SKColors.Black,
+                    TextSize = titleFontSize,
+                    IsAntialias = true,
+                    FakeBoldText = true,
+                };
+                y += titleFontSize;
+                canvas.DrawText(title, padding, y, titlePaint);
+                y += titleAreaHeight - titleFontSize;
+            }
 
-        foreach (var line in lines)
+            foreach (var line in lines)
+            {
+                canvas.DrawText(line, padding, y, paint);
+                y += lineHeight;
+            }
+
+            using var ms = new System.IO.MemoryStream();
+            bitmap.Encode(ms, SKEncodedImageFormat.Png, 95);
+            return (ms.ToArray(), "image/png", $"summary-{projectId}.png");
+        }
+        catch (Exception ex) when (ex is not SummaryRenderException)
         {
-            canvas.DrawText(line, padding, y, paint);
-            y += lineHeight;
+            throw new SummaryRenderException(
+                "Summary too large to render as PNG. Try PDF or TXT instead.", ex);
         }
-
-        using var ms = new System.IO.MemoryStream();
-        bitmap.Encode(ms, SKEncodedImageFormat.Png, 95);
-        return (ms.ToArray(), "image/png", $"summary-{projectId}.png");
     }
 
     private static string StripMarkdown(string text, out string title)

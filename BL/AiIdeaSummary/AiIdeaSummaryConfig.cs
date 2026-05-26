@@ -9,4 +9,7 @@ public sealed class AiIdeaSummaryConfig
 
     [JsonPropertyName("batch_size")]
     public int BatchSize { get; init; } = 50;
+
+    [JsonPropertyName("max_summary_chars")]
+    public int MaxSummaryChars { get; init; } = 50_000;
 }

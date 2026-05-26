@@ -17,6 +17,7 @@ public sealed class AiIdeaSummaryService(
         string prompt,
         int projectId,
         string outputLanguage = null,
+        int maxOutputChars = 0,
         CancellationToken ct = default)
     {
         var body = FormatIdeas(ideas, isSample: false);
@@ -26,7 +27,8 @@ public sealed class AiIdeaSummaryService(
             new(ChatRole.System, prompt),
             new(ChatRole.User, userContent),
         };
-        return await SendAsync(messages, client, modelId, projectId, ct);
+        var result = await SendAsync(messages, client, modelId, projectId, ct);
+        return Truncate(result, maxOutputChars);
     }
 
     public async Task<string> GenerateBatchSummaryAsync(
@@ -37,6 +39,7 @@ public sealed class AiIdeaSummaryService(
         int batchSize,
         int projectId,
         string outputLanguage = null,
+        int maxOutputChars = 0,
         CancellationToken ct = default)
     {
         var partials = new List<string>();
@@ -63,7 +66,15 @@ public sealed class AiIdeaSummaryService(
             new(ChatRole.System, "Je ontvangt meerdere deelsamenvattingen van ideeën. Combineer ze tot één coherente eindsamenvatting in dezelfde structuur (thema's, meest besproken, controversieel, samenvatting). Vermeld bovenaan dat dit een volledige analyse is van alle ingediende ideeën."),
             new(ChatRole.User, langInstruction),
         };
-        return await SendAsync(mergeMessages, client, modelId, projectId, ct);
+        var result = await SendAsync(mergeMessages, client, modelId, projectId, ct);
+        return Truncate(result, maxOutputChars);
+    }
+
+    private static string Truncate(string text, int maxChars)
+    {
+        if (maxChars <= 0 || text.Length <= maxChars) return text;
+        return text[..maxChars] +
+               $"\n\n[Summary truncated at {maxChars:N0} characters. Download as TXT for the full text.]";
     }
 
     private async Task<string> SendAsync(

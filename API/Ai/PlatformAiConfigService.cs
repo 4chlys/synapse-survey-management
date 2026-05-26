@@ -95,7 +95,8 @@ public class PlatformAiConfigService(
             ? platform.PromptIdeaSummary
             : globalConfig.IdeaSummary.SystemPrompt;
         var maxIdeas = platform?.IdeaSummaryMaxIdeas is > 0 ? platform.IdeaSummaryMaxIdeas : 200;
-        var result = new IdeaSummaryAiConfig(resolved.ChatClient, resolved.SelectedModelId, prompt, maxIdeas, globalConfig.IdeaSummary.BatchSize);
+        var maxChars = globalConfig.IdeaSummary.MaxSummaryChars;
+        var result = new IdeaSummaryAiConfig(resolved.ChatClient, resolved.SelectedModelId, prompt, maxIdeas, maxChars);
         cache.Set(cacheKey, result, CacheTtl);
         return result;
     }

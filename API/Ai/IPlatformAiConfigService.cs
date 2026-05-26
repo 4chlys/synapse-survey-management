@@ -14,4 +14,5 @@ public sealed record IdeaSummaryAiConfig(
     IChatClient ChatClient,
     string ModelId,
     string Prompt,
-    int MaxIdeas);
+    int MaxIdeas,
+    int MaxSummaryChars);
