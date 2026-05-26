@@ -156,17 +156,10 @@
                             <input type="hidden" name="projectId" value="@projectId" />
                             <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
                             <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                            <button type="submit" @(isLocked ? "disabled" : "")
-                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60
-                                        @(emoji.IsEnabled
-                                            ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
-                                            : "bg-base-200 border-base-300 text-base-content/50 hover:bg-base-300")">
+                            <button type="submit" class="emoji-pill" data-enabled="@emoji.IsEnabled.ToString().ToLower()" @(isLocked ? "disabled" : "")>
                                 <span class="text-lg leading-none">@emoji.Symbol</span>
                                 <span class="leading-none">@emoji.Name</span>
-                                @if (emoji.IsEnabled)
-                                {
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                }
+                                <svg class="emoji-check" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                             </button>
                         </form>
                     }

@@ -89,7 +89,31 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab!))
     );
 
-    // Resolves the emoji IDs for the currently active tab.
+    // Sets a single emoji pill to enabled/disabled by flipping data-enabled on the
+    // button (CSS handles all styling) and swapping the form action for the next click.
+    function setEmojiState(form: HTMLFormElement, enabled: boolean): void {
+        form.querySelector<HTMLButtonElement>('button')!.dataset.enabled = String(enabled);
+        form.action = enabled
+            ? form.action.replace('EnableEmoji',  'DisableEmoji')
+            : form.action.replace('DisableEmoji', 'EnableEmoji');
+    }
+
+    // AJAX toggle for individual emoji pills — no full-page reload.
+    emojiGrid.querySelectorAll<HTMLFormElement>('[data-emoji-name]').forEach(form => {
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = form.querySelector<HTMLButtonElement>('button')!;
+            btn.disabled = true;
+            try {
+                const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+                if (res.ok) setEmojiState(form, form.action.includes('EnableEmoji'));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    });
+
+    // Returns the emoji IDs visible in the currently active tab.
     function activeIds(): number[] {
         const names = PRESETS[activeTab] ?? null;
         return names
@@ -97,22 +121,35 @@ document.addEventListener('DOMContentLoaded', () => {
             : Object.values(nameToId);
     }
 
-    // Injects emojiIds hidden inputs into a form and submits it.
-    function submitWithIds(form: HTMLFormElement, ids: number[]): void {
-        form.querySelectorAll('input[name="emojiIds"]').forEach(i => i.remove());
-        ids.forEach(id => {
-            form.appendChild(Object.assign(document.createElement('input'), {
-                type: 'hidden', name: 'emojiIds', value: String(id),
-            }));
+    // POSTs emoji IDs to a preset form via AJAX, then updates the pills in the grid.
+    async function fetchPreset(form: HTMLFormElement, targetEnabled: boolean): Promise<void> {
+        const ids  = activeIds();
+        const data = new FormData(form);
+        ids.forEach(id => data.append('emojiIds', String(id)));
+
+        const res = await fetch(form.action, { method: 'POST', body: data });
+        if (!res.ok) return;
+
+        const idSet = new Set(ids);
+        emojiGrid!.querySelectorAll<HTMLFormElement>('[data-emoji-name]').forEach(emojiForm => {
+            if (idSet.has(parseInt(emojiForm.dataset.emojiId!, 10)))
+                setEmojiState(emojiForm, targetEnabled);
         });
-        form.submit();
     }
 
     if (selectAllBtn && presetForm) {
-        selectAllBtn.addEventListener('click', () => submitWithIds(presetForm, activeIds()));
+        selectAllBtn.addEventListener('click', async () => {
+            selectAllBtn.disabled = true;
+            try { await fetchPreset(presetForm, true); }
+            finally { selectAllBtn.disabled = false; }
+        });
     }
 
     if (clearAllBtn && clearForm) {
-        clearAllBtn.addEventListener('click', () => submitWithIds(clearForm, activeIds()));
+        clearAllBtn.addEventListener('click', async () => {
+            clearAllBtn.disabled = true;
+            try { await fetchPreset(clearForm, false); }
+            finally { clearAllBtn.disabled = false; }
+        });
     }
 });
