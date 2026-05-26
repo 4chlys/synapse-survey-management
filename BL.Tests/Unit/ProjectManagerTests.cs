@@ -154,41 +154,24 @@ public class ProjectManagerTests
     }
 
     [Fact]
-    public async Task CreateProjectAsync_DefaultLanguageNotInSupported_Throws()
+    public async Task CreateProjectAsync_TranslationValidatorThrows_PropagatesException()
     {
-        // Act & Assert
-        await Assert.ThrowsAnyAsync<ValidationException>(() =>
+        // Validation rules live in ProjectTranslationValidator; this test asserts the manager
+        // delegates and surfaces failures without swallowing them. The rule coverage itself is
+        // in ProjectTranslationValidatorTests.
+        _translationValidator.Reset();
+        _translationValidator.Setup(v => v.ValidateAsync(
+                It.IsAny<ICollection<ProjectTranslationInput>>(),
+                It.IsAny<ICollection<string>>(),
+                It.IsAny<string>(),
+                It.IsAny<ICollection<IntroductionTranslationInput>>()))
+            .ThrowsAsync(new LocalizedValidationException("Validation.Project.DefaultLanguageMustBeSupported"));
+
+        await Assert.ThrowsAsync<LocalizedValidationException>(() =>
             _manager.CreateProjectAsync(
                 Translations(("nl", "X")),
                 NoIntroductions(),
-                defaultLanguageCode: "en",
-                supportedLanguageCodes: new[] { "nl" },
-                string.Empty, FormType.VerticalScroll,
-                null, null, false, platformId: 1));
-    }
-
-    [Fact]
-    public async Task CreateProjectAsync_MissingTranslationForSupportedLanguage_Throws()
-    {
-        // Act & Assert
-        await Assert.ThrowsAnyAsync<ValidationException>(() =>
-            _manager.CreateProjectAsync(
-                Translations(("nl", "X")),
-                NoIntroductions(),
-                "nl", new[] { "nl", "en" },
-                string.Empty, FormType.VerticalScroll,
-                null, null, false, platformId: 1));
-    }
-
-    [Fact]
-    public async Task CreateProjectAsync_UnknownLanguageCode_Throws()
-    {
-        // Act & Assert
-        await Assert.ThrowsAnyAsync<ValidationException>(() =>
-            _manager.CreateProjectAsync(
-                Translations(("zz", "X")),
-                NoIntroductions(),
-                "zz", new[] { "zz" },
+                "en", new[] { "nl" },
                 string.Empty, FormType.VerticalScroll,
                 null, null, false, platformId: 1));
     }
