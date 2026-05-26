@@ -11,13 +11,14 @@
 
 @* Mode-selection sheet *@
 <div id="mode-select-overlay"
-     class="fixed inset-0 z-40 hidden items-center justify-center
+     class="fixed inset-0 z-50 hidden items-center justify-center
             bg-black/40 backdrop-blur-sm p-6">
     <div id="mode-select-panel"
+         role="dialog" aria-modal="true" aria-labelledby="mode-select-heading"
          class="bg-base-100 w-full max-w-sm rounded-[1.25rem]
                 px-5 pt-5 pb-5 shadow-2xl">
 
-        <p class="text-sm font-semibold text-base-content/50 uppercase tracking-wide mb-4">
+        <p id="mode-select-heading" class="text-sm font-semibold text-base-content/50 uppercase tracking-wide mb-4">
             @L["ModeSelectHeading"]
         </p>
 
@@ -251,10 +252,12 @@
         </div>
     }
 
-    @* AI disclaimer *@
-    <p class="text-xs text-base-content/40 italic mb-3">
-        @L["AiDisclaimer"]
-    </p>
+    @if (Model.Ideas.Any())
+    {
+        <p class="text-xs text-base-content/40 italic mb-3">
+            @L["AiDisclaimer"]
+        </p>
+    }
 
     @* Ideas list *@
     <div id="ideas-list" class="w-full flex flex-col gap-3 mb-4"
@@ -282,10 +285,8 @@
         {
             @foreach (var idea in Model.Ideas)
             {
-                <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
-                   asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
-                   class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99]
-                    @(idea.IsFlagged ? "bg-warning/5 border-warning/30 hover:border-warning/50" : idea.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20 hover:border-primary/40" : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
+                <div class="group relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] cursor-pointer
+                     @(idea.IsFlagged ? "bg-warning/5 border-warning/30 hover:border-warning/50" : idea.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20 hover:border-primary/40" : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
 
                     @* Comment count badge *@
                     <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300
@@ -323,7 +324,7 @@
                     }
 
                     @* Copy idea button *@
-                    <div class="mt-3">
+                    <div class="mt-3 relative z-[2]">
                         <button type="button" data-action="copy-idea"
                                 data-idea-description="@idea.Description"
                                 class="inline-flex items-center gap-1.5 text-xs text-base-content/50 hover:text-primary transition-colors cursor-pointer">
@@ -335,7 +336,7 @@
                     </div>
 
                     @* Emoji reactions *@
-                    <div class="flex gap-2 mt-4 items-center flex-wrap" data-emoji-container
+                    <div class="flex gap-2 mt-4 items-center flex-wrap relative z-[2]" data-emoji-container
                          data-project-id="@Model.ProjectId"
                          data-category-id="@Model.Category.CategoryId" data-idea-id="@idea.IdeaId"
                          data-return-page="IdeaHub"
@@ -365,7 +366,9 @@
 
                         @if (Model.Emojis.Any())
                         {
-                            <button type="button" data-action="toggle-emoji-picker" data-target="picker-@idea.IdeaId" class="w-7 h-7 rounded-full border border-dashed border-base-300
+                            <button type="button" data-action="toggle-emoji-picker" data-target="picker-@idea.IdeaId"
+                                    aria-label="@L["AddEmojiAriaLabel"]"
+                                    class="w-7 h-7 rounded-full border border-dashed border-base-300
                             flex items-center justify-center text-base-content/40
                             hover:border-primary hover:text-primary transition-colors cursor-pointer">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
@@ -379,7 +382,7 @@
                     @if (Model.Emojis.Any())
                     {
                         @* Emoji picker *@
-                        <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-base-200 rounded-field border border-base-300">
+                        <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-base-200 rounded-field border border-base-300 relative z-[2]">
                             <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@idea.IdeaId">
                                 <input type="hidden" name="projectId" value="@Model.ProjectId"/>
                                 <input type="hidden" name="categoryId" value="@Model.Category.CategoryId"/>
@@ -398,7 +401,11 @@
                         </div>
                     }
 
-                </a>
+                    <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
+                       asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
+                       class="absolute inset-0 rounded-field z-[1] focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                       aria-label="@idea.Description"></a>
+                </div>
             }
         }
     </div>
@@ -409,7 +416,10 @@
         <button id="refresh-ideas-btn" type="button" data-action="refresh-ideas"
                 class="w-full btn btn-outline btn-sm rounded-field font-heading font-semibold text-sm py-3 h-auto gap-2 mb-4 cursor-pointer @(Model.RemainingExtraRequests <= 0 ? "btn-disabled" : "")"
                 @(Model.RemainingExtraRequests <= 0 ? "disabled" : "")>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+            <svg id="refresh-ideas-spinner" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <svg id="refresh-ideas-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
