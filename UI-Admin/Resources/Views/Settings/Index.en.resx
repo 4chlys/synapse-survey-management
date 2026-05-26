@@ -35,4 +35,6 @@
   <data name="WarningBody" xml:space="preserve"><value>the default system prompts have been carefully designed with safety measures for young users. Changes may weaken those protections.</value></data>
   <data name="CustomizedBadge" xml:space="preserve"><value>customised</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideas per summary</value></data>
+  <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
 </root>

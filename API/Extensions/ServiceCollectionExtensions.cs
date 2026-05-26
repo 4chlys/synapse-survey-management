@@ -1,5 +1,8 @@
+using SynapseEnqueteManagement.API.BackgroundServices;
+using SynapseEnqueteManagement.API.Options;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Ai;
+using SynapseEnqueteManagement.BL.AiIdeaSummary;
 using SynapseEnqueteManagement.BL.AiModeration;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
@@ -109,6 +112,16 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAiUsageRepository, AiUsageRepository>();
         services.AddScoped<IAiUsageManager, AiUsageManager>();
         services.AddSingleton<ISystemStatsAggregator, SystemStatsAggregator>();
+
+        // Idea summary
+        services.Configure<SummaryStorageOptions>(configuration.GetSection("SummaryStorage"));
+        services.AddSingleton<SummaryPathResolver>();
+        services.AddScoped<IIdeaSummaryJobRepository, IdeaSummaryJobRepository>();
+        services.AddScoped<IIdeaSummaryJobManager, IdeaSummaryJobManager>();
+        services.AddScoped<IAiIdeaSummaryService, AiIdeaSummaryService>();
+        services.AddSingleton<IIdeaSummarySamplingService, IdeaSummarySamplingService>();
+        services.AddSingleton<IdeaSummaryExporter>();
+        services.AddHostedService<IdeaSummaryWorker>();
 
         // AI configuration
         //

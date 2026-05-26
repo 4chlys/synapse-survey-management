@@ -8,7 +8,8 @@ public sealed record PlatformAdminSettingsViewModel(
     string PlatformName,
     PlatformAdminBasicInfoViewModel BasicInfo,
     PlatformAdminAiViewModel AiSettings,
-    PlatformAdminPromptsViewModel Prompts
+    PlatformAdminPromptsViewModel Prompts,
+    int IdeaSummaryMaxIdeas
 );
 
 public sealed record PlatformAdminBasicInfoViewModel(
