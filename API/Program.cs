@@ -164,6 +164,7 @@ else
     builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 }
 
+builder.Services.AddScoped<IQuestionMediaCleanupService, QuestionMediaCleanupService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
 builder.Services.AddSingleton<IChartImageService, ScottPlotChartImageService>();
 builder.Services.AddScoped<IChartRendererService, XlsxChartRendererService>();
