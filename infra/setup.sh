@@ -65,6 +65,7 @@ create_forwarding_rules
 # 5. Overige configuraties
 setup_logging_iam
 create_uptime_checks
+create_alert_policy
 
 # 6. Wacht tot ook Cloud SQL en de rest helemaal klaar is
 wait $PID_SQL $PID_IAM $PID_SECRETS $PID_BUCKET
