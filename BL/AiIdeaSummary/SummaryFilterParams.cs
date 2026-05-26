@@ -1,6 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
-namespace SynapseEnqueteManagement.API.Models;
+namespace SynapseEnqueteManagement.BL.AiIdeaSummary;
 
 public sealed record SummaryFilterParams
 {

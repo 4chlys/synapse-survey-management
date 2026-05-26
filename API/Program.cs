@@ -226,6 +226,7 @@ builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
 
 // Idea summary
 builder.Services.AddScoped<IIdeaSummaryJobRepository, IdeaSummaryJobRepository>();
+builder.Services.AddScoped<IIdeaSummaryJobManager, IdeaSummaryJobManager>();
 builder.Services.AddScoped<IAiIdeaSummaryService, AiIdeaSummaryService>();
 builder.Services.AddSingleton<IIdeaSummarySamplingService, IdeaSummarySamplingService>();
 builder.Services.AddSingleton<IdeaSummaryExporter>();

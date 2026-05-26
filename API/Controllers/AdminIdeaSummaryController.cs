@@ -1,16 +1,15 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using SynapseEnqueteManagement.API.Models;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.AiIdeaSummary;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.DAL.Interfaces;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/projects/{projectId:int}/ideas/summary")]
 public class AdminIdeaSummaryController(
-    IIdeaSummaryJobRepository jobRepo,
+    IIdeaSummaryJobManager jobs,
     IWebHostEnvironment env) : ControllerBase
 {
     [HttpPost]
@@ -36,29 +35,18 @@ public class AdminIdeaSummaryController(
             SelectAll        = req.SelectAll,
         });
 
-        var recent = await jobRepo.FindRecentCompletedAsync(projectId, format, filterJson, TimeSpan.FromMinutes(5), ct);
-        if (recent is not null)
-            return Ok(new { jobId = recent.IdeaSummaryJobId });
+        var job = await jobs.EnqueueAsync(
+            projectId, platformId, format, filterJson,
+            User.Identity?.Name, TimeSpan.FromMinutes(5), ct);
 
-        var job = new IdeaSummaryJob
-        {
-            ProjectPlatformId = platformId,
-            ProjectId         = projectId,
-            FilterJson        = filterJson,
-            ExportFormat      = format,
-            CreatedAt         = DateTime.UtcNow,
-            RequestedBy       = User.Identity?.Name,
-        };
-
-        var created = await jobRepo.CreateAsync(job, ct);
-        return Ok(new { jobId = created.IdeaSummaryJobId });
+        return Ok(new { jobId = job.IdeaSummaryJobId });
     }
 
     [HttpGet("{jobId:guid}/status")]
     public async Task<IActionResult> GetStatus(int projectId, Guid jobId, CancellationToken ct)
     {
-        var job = await jobRepo.GetByIdAsync(jobId, ct);
-        if (job is null || job.ProjectId != projectId) return NotFound();
+        var job = await jobs.GetForProjectAsync(projectId, jobId, ct);
+        if (job is null) return NotFound();
 
         return Ok(new
         {
@@ -71,12 +59,13 @@ public class AdminIdeaSummaryController(
     [HttpGet("{jobId:guid}/download")]
     public async Task<IActionResult> Download(int projectId, Guid jobId, CancellationToken ct)
     {
-        var job = await jobRepo.GetByIdAsync(jobId, ct);
-        if (job is null || job.ProjectId != projectId) return NotFound();
+        var job = await jobs.GetForProjectAsync(projectId, jobId, ct);
+        if (job is null) return NotFound();
+
         if (job.Status != IdeaSummaryJobStatus.Completed || job.OutputPath is null)
             return BadRequest(new { error = "Samenvatting is nog niet klaar." });
 
-        var webRoot = env.WebRootPath ?? string.Empty;
+        var webRoot  = env.WebRootPath ?? string.Empty;
         var fullPath = Path.GetFullPath(Path.Combine(webRoot, job.OutputPath));
         if (!fullPath.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase))
             return BadRequest(new { error = "Ongeldig bestandspad." });
@@ -88,9 +77,8 @@ public class AdminIdeaSummaryController(
             ".png" => "image/png",
             _      => "text/plain; charset=utf-8",
         };
-        var fileName = Path.GetFileName(job.OutputPath);
         var bytes = await System.IO.File.ReadAllBytesAsync(fullPath, ct);
-        return File(bytes, contentType, fileName);
+        return File(bytes, contentType, Path.GetFileName(job.OutputPath));
     }
 }
 

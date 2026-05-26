@@ -1,10 +1,9 @@
 using System.Text.Json;
 using SynapseEnqueteManagement.API.Ai;
-using SynapseEnqueteManagement.API.Models;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiIdeaSummary;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.DAL.Interfaces;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.BackgroundServices;
 
@@ -29,14 +28,13 @@ public sealed class IdeaSummaryWorker(
     private async Task ProcessNextJobAsync(CancellationToken ct)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
-        var jobRepo    = scope.ServiceProvider.GetRequiredService<IIdeaSummaryJobRepository>();
-        var ideaRepo   = scope.ServiceProvider.GetRequiredService<IIdeaRepository>();
+        var jobManager = scope.ServiceProvider.GetRequiredService<IIdeaSummaryJobManager>();
         var configSvc  = scope.ServiceProvider.GetRequiredService<IPlatformAiConfigService>();
         var summarySvc = scope.ServiceProvider.GetRequiredService<IAiIdeaSummaryService>();
         var sampling   = scope.ServiceProvider.GetRequiredService<IIdeaSummarySamplingService>();
         var exporter   = scope.ServiceProvider.GetRequiredService<IdeaSummaryExporter>();
 
-        var job = await jobRepo.ClaimNextPendingAsync(ct);
+        var job = await jobManager.ClaimNextPendingAsync(ct);
         if (job is null) return;
 
         logger.LogInformation("[IdeaSummaryWorker] Processing job {JobId} for project {ProjectId}.",
@@ -49,13 +47,7 @@ public sealed class IdeaSummaryWorker(
 
             var aiConfig = await configSvc.ResolveIdeaSummaryAsync(job.ProjectPlatformId, ct);
 
-            ModerationStatus? statusEnum = null;
-            if (!string.IsNullOrWhiteSpace(filter.Status) &&
-                Enum.TryParse<ModerationStatus>(filter.Status, ignoreCase: true, out var s))
-                statusEnum = s;
-
-            var allIdeas = await ideaRepo.ReadForSummaryAsync(
-                job.ProjectId, filter.CategoryId, statusEnum, filter.LanguageCode, ct);
+            var allIdeas = await jobManager.GetIdeasForSummaryAsync(job.ProjectId, filter, ct);
 
             int? cap = filter.SelectAll ? null : aiConfig.MaxIdeas;
             var sampled = sampling.Sample(allIdeas, filter.SamplingStrategy, cap);
@@ -78,18 +70,12 @@ public sealed class IdeaSummaryWorker(
             var uniqueFileName = $"{job.IdeaSummaryJobId}_{fileName}";
             await File.WriteAllBytesAsync(Path.Combine(absDir, uniqueFileName), bytes, ct);
 
-            job.OutputPath  = Path.Combine(relDir, uniqueFileName);
-            job.Status      = IdeaSummaryJobStatus.Completed;
-            job.CompletedAt = DateTime.UtcNow;
+            await jobManager.MarkCompletedAsync(job, Path.Combine(relDir, uniqueFileName), ct);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "[IdeaSummaryWorker] Job {JobId} failed.", job.IdeaSummaryJobId);
-            job.Status       = IdeaSummaryJobStatus.Failed;
-            job.ErrorMessage = ex.Message;
-            job.CompletedAt  = DateTime.UtcNow;
+            await jobManager.MarkFailedAsync(job, ex.Message, ct);
         }
-
-        await jobRepo.UpdateAsync(job, ct);
     }
 }
