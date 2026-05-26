@@ -168,3 +168,66 @@
 .settings-prompt-item:has(input:checked) {
     border-color: color-mix(in oklch, var(--color-warning) 30%, transparent);
 }
+
+/* ─── Admin roster ─────────────────────────────────────────── */
+
+.admin-roster-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.625rem;
+    border: 1px solid color-mix(in oklch, var(--color-base-content) 5%, transparent);
+    background: color-mix(in oklch, var(--color-base-content) 2%, transparent);
+    transition: border-color 0.15s, background 0.15s;
+    animation: settings-enter 0.35s ease-out both;
+}
+
+.admin-roster-row:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+    background: color-mix(in oklch, var(--color-primary) 3%, transparent);
+}
+
+.admin-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: oklch(92% 0.04 var(--avatar-hue));
+    color: oklch(45% 0.15 var(--avatar-hue));
+}
+
+[data-theme="synapse-dark"] .admin-avatar {
+    background: oklch(25% 0.06 var(--avatar-hue));
+    color: oklch(75% 0.12 var(--avatar-hue));
+}
+
+.admin-remove-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-base-content);
+    opacity: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.admin-roster-row:hover .admin-remove-btn {
+    opacity: 0.4;
+}
+
+.admin-remove-btn:hover {
+    opacity: 1 !important;
+    color: var(--color-error);
+    background: color-mix(in oklch, var(--color-error) 8%, transparent);
+}
