@@ -13,6 +13,7 @@ public class AdminIdeasController(
     ICategoryManager categoryManager,
     IIdeaManager ideaManager,
     IProjectManager projectManager,
+    ICommentManager commentManager,
     IStorageService storageService) : ControllerBase
 {
     [HttpGet]
@@ -145,6 +146,27 @@ public class AdminIdeasController(
             return BadRequest(new { error = $"Ongeldige status '{dto.Status}'." });
 
         await categoryManager.SetIdeaModerationStatusAsync(ideaId, status, projectId);
+        return NoContent();
+    }
+
+    [HttpPatch("{ideaId:int}/comments/{commentId:int}/status")]
+    public async Task<IActionResult> SetCommentStatus(int projectId, int ideaId, int commentId, SetIdeaStatusDto dto, CancellationToken ct)
+    {
+        if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
+            return NotFound();
+
+        if (!Enum.TryParse<ModerationStatus>(dto.Status, ignoreCase: true, out var status))
+            return BadRequest(new { error = $"Ongeldige status '{dto.Status}'." });
+
+        try
+        {
+            await commentManager.SetCommentModerationStatusAsync(commentId, status, projectId, ct);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 }

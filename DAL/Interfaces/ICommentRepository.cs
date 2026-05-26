@@ -18,6 +18,8 @@ public interface ICommentRepository : IRepository<Comment>
 
     Task<TextComment> ReadTextCommentByIdWithProjectAndEmojisForUpdateAsync(int commentId);
 
+    Task<TextComment> ReadTextCommentByIdForUpdateAsync(int commentId, int projectId);
+
     Task<IconComment> CreateIconCommentOnIdeaIfNotDuplicateAsync(IconComment iconComment);
 
     Task<IconComment> CreateIconCommentOnTextCommentIfNotDuplicateAsync(IconComment iconComment);

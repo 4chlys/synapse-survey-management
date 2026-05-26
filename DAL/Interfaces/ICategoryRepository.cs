@@ -20,11 +20,7 @@ public interface ICategoryRepository : IRepository<Category>
     Task<List<CategoryMetric>> ReadTopCategoriesAsync(int projectId, int count, string languageCode, string defaultLanguageCode);
     Task<List<IdeaMetric>> ReadTopIdeasAsync(int projectId, int count);
     Task<List<Idea>> ReadLatestIdeasAsync(int projectId, int count);
-    Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId);
-
-    Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
-        int projectId, string search, int? categoryId, ModerationStatus? status,
-        int page, int pageSize);
+    Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId, int? categoryId = null);
 
     Task<Idea> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null);
 }

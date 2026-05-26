@@ -16,8 +16,9 @@
         _           => s
     };
     string CardBorder(string s) => s switch {
+        "Unflagged" => "border-info/40",
         "Flagged"   => "border-error/30",
-        "Declined"  => "border-base-300",
+        "Declined"  => "border-error/50",
         _           => "border-base-200"
     };
     var ideasUrl = Url.Action("Ideas", new {
@@ -56,19 +57,13 @@ else
                     <!-- Image (if present) -->
                     @if (!string.IsNullOrEmpty(idea.ImageUrl))
                     {
-                        <a href="@idea.ImageUrl" target="_blank" class="block rounded-lg overflow-hidden bg-base-200 aspect-video">
+                        <div class="rounded-lg overflow-hidden bg-base-200 aspect-video">
                             <img src="@idea.ImageUrl" alt="" class="w-full h-full object-cover" />
-                        </a>
+                        </div>
                     }
 
                     <!-- Description -->
-                    <a asp-action="IdeaDetail"
-                       asp-route-projectId="@Model.ProjectId"
-                       asp-route-ideaId="@idea.IdeaId"
-                       asp-route-categoryId="@idea.CategoryId"
-                       asp-route-categoryName="@idea.CategoryName"
-                       asp-route-returnUrl="@ideasUrl"
-                       class="text-sm text-base-content leading-relaxed line-clamp-4 flex-1 hover:text-primary transition-colors block">@idea.Description</a>
+                    <p class="text-sm text-base-content leading-relaxed line-clamp-4 flex-1">@idea.Description</p>
 
                     <!-- Footer: author + reactions -->
                     <div class="flex items-center justify-between gap-2 pt-1 border-t border-base-200">
@@ -102,7 +97,7 @@ else
                                 <input type="hidden" name="projectId" value="@Model.ProjectId" />
                                 <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                 <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                <button type="submit" class="btn btn-success btn-xs gap-1" title="@L["ActionApprove"]">
+                                <button type="submit" class="btn btn-success btn-outline btn-xs gap-1" title="@L["ActionApprove"]">
                                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
                                     @L["ActionApprove"]
                                 </button>
@@ -115,7 +110,7 @@ else
                                 <input type="hidden" name="projectId" value="@Model.ProjectId" />
                                 <input type="hidden" name="ideaId" value="@idea.IdeaId" />
                                 <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                                <button type="submit" class="btn btn-error btn-xs gap-1" title="@L["ActionDecline"]">
+                                <button type="submit" class="btn btn-error btn-outline btn-xs gap-1" title="@L["ActionDecline"]">
                                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
                                     @L["ActionDecline"]
                                 </button>
@@ -148,6 +143,18 @@ else
                                 </button>
                             </form>
                         }
+                        <a asp-action="IdeaDetail"
+                           asp-route-projectId="@Model.ProjectId"
+                           asp-route-ideaId="@idea.IdeaId"
+                           asp-route-categoryId="@idea.CategoryId"
+                           asp-route-categoryName="@idea.CategoryName"
+                           asp-route-returnUrl="@ideasUrl"
+                           class="btn btn-ghost btn-xs gap-1">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.068.157 2.148.279 3.238.365.364.028.682.253.861.564l1.945 3.371L8.25 19.5h-3.5A2.75 2.75 0 012 16.75V9.5A2.75 2.75 0 014.75 6.75h14.5A2.75 2.75 0 0122 9.5v7.25a2.75 2.75 0 01-2.75 2.75H15.5"/>
+                            </svg>
+                            @L["ReviewComments"]
+                        </a>
                     </div>
 
                 </div>

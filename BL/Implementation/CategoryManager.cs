@@ -10,6 +10,7 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class CategoryManager(
     ICategoryRepository categoryRepository,
+    IIdeaRepository ideaRepository,
     ILanguageRepository languageRepository,
     IUnitOfWork uow) : ICategoryManager
 {
@@ -133,10 +134,10 @@ public class CategoryManager(
     public async Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
         GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, string languageCode, int pageSize = 20)
     {
-        var (ideas, total) = await categoryRepository.ReadIdeasPagedAsync(
+        var (ideas, total) = await ideaRepository.ReadIdeasPagedAsync(
             projectId, search, categoryId, status, page, pageSize);
 
-        var queue    = await categoryRepository.ReadModerationQueueAsync(projectId);
+        var queue    = await categoryRepository.ReadModerationQueueAsync(projectId, categoryId);
         var approved = queue.GetValueOrDefault(ModerationStatus.Approved, 0);
         var pending  = queue.GetValueOrDefault(ModerationStatus.Unflagged, 0);
         var flagged  = queue.GetValueOrDefault(ModerationStatus.Flagged, 0);

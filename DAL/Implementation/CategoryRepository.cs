@@ -131,40 +131,18 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Take(count)
             .ToListAsync();
 
-    public async Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId)
-        => await Context.Set<Idea>()
-            .AsNoTracking()
-            .Where(i => i.Category.Project.ProjectId == projectId)
-            .GroupBy(i => i.Status)
-            .ToDictionaryAsync(g => g.Key, g => g.Count());
-
-    public async Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
-        int projectId, string search, int? categoryId, ModerationStatus? status,
-        int page, int pageSize)
+    public async Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId, int? categoryId = null)
     {
         var query = Context.Set<Idea>()
             .AsNoTracking()
-            .Include(i => i.Category).ThenInclude(c => c.Translations).ThenInclude(t => t.Language)
-            .Include(i => i.Comments)
-            .Include(i => i.Participant)
-            .Include(i => i.Language)
             .Where(i => i.Category.Project.ProjectId == projectId);
 
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(i => i.Description.Contains(search));
         if (categoryId.HasValue)
             query = query.Where(i => i.Category.CategoryId == categoryId.Value);
-        if (status.HasValue)
-            query = query.Where(i => i.Status == status.Value);
 
-        var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(i => i.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return (items, total);
+        return await query
+            .GroupBy(i => i.Status)
+            .ToDictionaryAsync(g => g.Key, g => g.Count());
     }
 
     public async Task<Idea> ReadIdeaByIdForUpdateAsync(int ideaId, int? projectId = null)

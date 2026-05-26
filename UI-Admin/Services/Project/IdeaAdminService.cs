@@ -41,6 +41,14 @@ public class IdeaAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task SetCommentStatusAsync(int projectId, int ideaId, int commentId, string status)
+    {
+        var response = await httpClient.PatchAsJsonAsync(
+            $"api/admin/projects/{projectId}/ideas/{ideaId}/comments/{commentId}/status",
+            new { Status = status });
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task RemoveIdeaImageAsync(int projectId, int ideaId)
     {
         var response = await httpClient.DeleteAsync(
@@ -48,7 +56,7 @@ public class IdeaAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<IdeaDetailViewModel?> GetIdeaDetailAsync(int projectId, int ideaId)
+    public async Task<IdeaDetailViewModel> GetIdeaDetailAsync(int projectId, int ideaId)
     {
         var response = await httpClient.GetAsync($"api/admin/projects/{projectId}/ideas/{ideaId}");
         if (!response.IsSuccessStatusCode) return null;

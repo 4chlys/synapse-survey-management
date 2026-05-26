@@ -720,6 +720,27 @@ public class ProjectController(
         return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> ApproveComment(int projectId, int ideaId, int commentId, string returnUrl)
+    {
+        await ideaService.SetCommentStatusAsync(projectId, ideaId, commentId, "Approved");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeaDetail), new { projectId, ideaId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeclineComment(int projectId, int ideaId, int commentId, string returnUrl)
+    {
+        await ideaService.SetCommentStatusAsync(projectId, ideaId, commentId, "Declined");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeaDetail), new { projectId, ideaId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> FlagComment(int projectId, int ideaId, int commentId, string returnUrl)
+    {
+        await ideaService.SetCommentStatusAsync(projectId, ideaId, commentId, "Flagged");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeaDetail), new { projectId, ideaId })!);
+    }
+
     public async Task<IActionResult> ConfigureDashboard(int projectId)
     {
         var user = await userManager.GetUserAsync(User);

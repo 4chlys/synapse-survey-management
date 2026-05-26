@@ -11,4 +11,6 @@ public interface ICommentManager
     Task<bool> RemoveIconCommentAsync(int ideaId, int projectId, int emojiId, Participant participant, CancellationToken ct = default);
     Task<IconComment> AddCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default);
     Task<bool> RemoveCommentReactionAsync(int commentId, int projectId, int emojiId, Participant participant, CancellationToken ct = default);
+
+    Task SetCommentModerationStatusAsync(int commentId, ModerationStatus status, int projectId, CancellationToken ct = default);
 }
