@@ -9,6 +9,7 @@ namespace SynapseEnqueteManagement.API.BackgroundServices;
 public sealed class IdeaSummaryWorker(
     IServiceScopeFactory scopeFactory,
     SummaryPathResolver resolver,
+    IdeaSummaryExporter exporter,
     ILogger<IdeaSummaryWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
@@ -31,7 +32,6 @@ public sealed class IdeaSummaryWorker(
         var configSvc  = scope.ServiceProvider.GetRequiredService<IPlatformAiConfigService>();
         var summarySvc = scope.ServiceProvider.GetRequiredService<IAiIdeaSummaryService>();
         var sampling   = scope.ServiceProvider.GetRequiredService<IIdeaSummarySamplingService>();
-        var exporter   = scope.ServiceProvider.GetRequiredService<IdeaSummaryExporter>();
 
         var job = await jobManager.ClaimNextPendingAsync(ct);
         if (job is null) return;
@@ -68,7 +68,7 @@ public sealed class IdeaSummaryWorker(
 
             await jobManager.MarkCompletedAsync(job, ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogError(ex, "[IdeaSummaryWorker] Job {JobId} failed.", job.IdeaSummaryJobId);
             await jobManager.MarkFailedAsync(job, ex.Message, ct);

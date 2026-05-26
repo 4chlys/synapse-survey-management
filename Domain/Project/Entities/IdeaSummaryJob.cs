@@ -12,7 +12,6 @@ public class IdeaSummaryJob : IHasCreatedAt
     public IdeaSummaryJobStatus Status { get; set; } = IdeaSummaryJobStatus.Pending;
     [Required] public string FilterJson { get; set; }
     public IdeaSummaryExportFormat ExportFormat { get; set; }
-    public string OutputPath { get; set; }
     public string ErrorMessage { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? StartedAt { get; set; }

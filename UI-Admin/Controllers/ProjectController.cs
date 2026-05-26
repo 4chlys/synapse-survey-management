@@ -720,16 +720,15 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> GenerateSummary(
         int projectId,
-        [FromBody] GenerateSummaryRequest req)
+        [FromBody] EnqueueSummaryRequest req)
     {
         var user = await userManager.GetUserAsync(User);
         if (user?.ProjectPlatformId is null) return Forbid();
 
-        var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value,
-            new EnqueueSummaryRequest(req.Format, req.SamplingStrategy, req.CategoryId, req.Status, req.LanguageCode, req.OutputLanguage, req.SelectAll));
+        var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value, req);
 
         if (jobId is null)
-            return BadRequest(new { error = "Samenvatting kon niet worden gestart." });
+            return BadRequest(new { error = "Failed to start summary generation." });
 
         return Ok(new { jobId });
     }
@@ -764,15 +763,6 @@ public class ProjectController(
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>
         project?.ProjectState is "Active" or "Archived";
 }
-
-public sealed record GenerateSummaryRequest(
-    string Format,
-    string SamplingStrategy,
-    int? CategoryId,
-    string Status,
-    string LanguageCode,
-    string OutputLanguage,
-    bool SelectAll);
 
 // Request body for ProjectController.GenerateImage.
 // [FromBody] avoids query-string length limits: the intro field can hold
