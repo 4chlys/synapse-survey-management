@@ -31,7 +31,10 @@ public sealed class IdeaSummaryAdminService(HttpClient httpClient)
             return await httpClient.GetFromJsonAsync<SummaryJobStatus>(
                 $"api/admin/projects/{projectId}/ideas/summary/{jobId}/status");
         }
-        catch { return null; }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return null;
+        }
     }
 
     public async Task<(byte[] Bytes, string ContentType, string FileName)?> DownloadAsync(int projectId, Guid jobId)
