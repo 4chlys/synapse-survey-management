@@ -179,6 +179,7 @@ builder.Services.AddScoped<ILanguageResolver, LanguageResolver>();
 builder.Services.AddScoped<IEmojiManager, EmojiManager>();
 builder.Services.AddScoped<IProjectTranslationValidator, ProjectTranslationValidator>();
 builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
+builder.Services.AddScoped<ISectionManager, SectionManager>();
 builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
 builder.Services.AddScoped<IResponseManager, ResponseManager>();
 builder.Services.AddScoped<ICategoryManager, CategoryManager>();

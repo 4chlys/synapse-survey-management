@@ -45,9 +45,4 @@ public interface IQuestionnaireManager
     Task<Question> GetFirstQuestionAsync(int projectId);
     Task<int> GetQuestionCountAsync(int projectId);
     Task ValidateMandatoryAnswersAsync(int projectId, IEnumerable<(int QuestionId, string Value)> answers, HashSet<int> visibleQuestionIds = null);
-
-    Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId);
-    Task<Section> CreateSectionAsync(int projectId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default);
-    Task<bool> UpdateSectionAsync(int sectionId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default);
-    Task<bool> DeleteSectionAsync(int sectionId, CancellationToken ct = default);
 }
