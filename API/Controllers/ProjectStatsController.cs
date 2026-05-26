@@ -9,7 +9,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects/{projectId}/stats")]
 public class ProjectStatsController(
     IParticipantManager participantManager,
-    ICategoryManager categoryManager,
+    IDashboardManager dashboardManager,
     IProjectManager projectManager) : ControllerBase
 {
     [HttpGet("timeline")]
@@ -34,7 +34,7 @@ public class ProjectStatsController(
             return NotFound();
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        var items = await categoryManager.GetIdeaFeedAsync(projectId, lang, Math.Clamp(count, 1, 20));
+        var items = await dashboardManager.GetIdeaFeedAsync(projectId, lang, Math.Clamp(count, 1, 20));
         return Ok(items.Select(i => new IdeaFeedItemDto
         {
             IdeaId = i.IdeaId,
@@ -51,7 +51,7 @@ public class ProjectStatsController(
         if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
             return NotFound();
 
-        var result = await categoryManager.GetModerationQueueAsync(projectId);
+        var result = await dashboardManager.GetModerationQueueAsync(projectId);
         return Ok(new ModerationQueueDto
         {
             Approved = result.Approved,

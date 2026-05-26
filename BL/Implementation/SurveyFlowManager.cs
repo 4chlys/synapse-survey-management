@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
@@ -101,17 +102,15 @@ public class SurveyFlowManager(
             // in the response's source language, falling back to first translation)
             if (child.EndingAnswers.Any(ea =>
                 {
-                    var endVal = ea.Translations.FirstOrDefault(t => t.Language.Code == sourceLanguageCode)?.Value
-                                 ?? ea.Translations.FirstOrDefault()?.Value;
+                    var endVal = TranslationPicker.Pick(ea.Translations, sourceLanguageCode)?.Value;
                     return endVal is not null && selected.Contains(endVal);
                 }))
                 return true;
 
             // Resolve selected answer strings to choice indices for branching, using the
             // response's source language so saved values map to the correct choice index.
-            var translation = child.Translations.FirstOrDefault(t => t.Language.Code == sourceLanguageCode)
-                              ?? child.Translations.FirstOrDefault();
-            var choices = translation?.AnswerChoices?.ToList() ?? new List<string>();
+            var choices = TranslationPicker.Pick(child.Translations, sourceLanguageCode)?.AnswerChoices?.ToList()
+                          ?? new List<string>();
 
             foreach (var value in selected)
             {
@@ -140,7 +139,7 @@ public class SurveyFlowManager(
     {
         if (string.IsNullOrWhiteSpace(rawAnswer)) return Array.Empty<string>();
         return format == QuestionFormat.MultipleChoice
-            ? rawAnswer.Split(", ", StringSplitOptions.RemoveEmptyEntries)
+            ? MultipleChoiceValueSerializer.Split(rawAnswer)
             : new[] { rawAnswer };
     }
 }

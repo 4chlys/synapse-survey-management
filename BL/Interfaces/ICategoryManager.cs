@@ -1,5 +1,4 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 
 namespace SynapseEnqueteManagement.BL.Interfaces;
@@ -17,12 +16,5 @@ public interface ICategoryManager
     Task<bool> UpdateCategoryAsync(int categoryId, IEnumerable<CategoryTranslationInput> translations, CancellationToken ct = default);
     Task<bool> DeleteCategoryAsync(int categoryId, CancellationToken ct = default);
 
-    Task<DashboardMetrics> GetDashboardMetricsAsync(int projectId, string languageCode, string defaultLanguageCode, int topCount = 5);
-    Task<List<IdeaFeedItem>> GetIdeaFeedAsync(int projectId, string languageCode, int count = 10);
-    Task<ModerationQueueResult> GetModerationQueueAsync(int projectId);
-
-    Task<(List<IdeaFeedItem> Items, int Total, int ApprovedCount, int PendingCount, int FlaggedCount)>
-        GetIdeasPagedAsync(int projectId, string search, int? categoryId, ModerationStatus? status, int page, string languageCode, int pageSize = 20);
-
-    Task SetIdeaModerationStatusAsync(int ideaId, ModerationStatus status, int? projectId = null);
+    Task<List<CategoryMetric>> GetTopCategoriesAsync(int projectId, int count, string languageCode, string defaultLanguageCode);
 }

@@ -12,7 +12,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class ProjectStatsExportController(
     IProjectManager projectManager,
     IParticipantManager participantManager,
-    ICategoryManager categoryManager,
+    IDashboardManager dashboardManager,
     IExportService exportService,
     IChartRendererService chartRenderer) : ControllerBase
 {
@@ -51,7 +51,7 @@ public class ProjectStatsExportController(
             ?? string.Empty;
 
         var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
-        var metrics = await categoryManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
+        var metrics = await dashboardManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
         var timeline = await participantManager.GetTimelineAsync(projectId, 30);
         var completionRate = project.ViewCount > 0
             ? Math.Round((double)completionCount / project.ViewCount, 4)

@@ -66,6 +66,9 @@
   <data name="Validation.CustomCss.Disallowed" xml:space="preserve">
     <value>Aangepaste CSS bevat niet-toegestane inhoud (scripts, expression(), javascript: urls, @import of behavior).</value>
   </data>
+  <data name="Validation.Image.InvalidToken" xml:space="preserve">
+    <value>Ongeldige of ontbrekende afbeeldingstoken.</value>
+  </data>
   <data name="Validation.MinAge.GreaterThanMaxAge" xml:space="preserve">
     <value>MinAge mag niet groter zijn dan MaxAge.</value>
   </data>

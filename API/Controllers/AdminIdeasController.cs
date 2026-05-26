@@ -10,7 +10,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [ApiController]
 [Route("api/admin/projects/{projectId:int}/ideas")]
 public class AdminIdeasController(
-    ICategoryManager categoryManager,
+    IModerationManager moderationManager,
     IIdeaManager ideaManager,
     IProjectManager projectManager,
     ICommentManager commentManager,
@@ -38,7 +38,7 @@ public class AdminIdeasController(
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var (items, total, approved, pending, flagged) =
-            await categoryManager.GetIdeasPagedAsync(projectId, search, categoryId, statusEnum, page, lang, pageSize);
+            await moderationManager.GetIdeasPagedAsync(projectId, search, categoryId, statusEnum, page, lang, pageSize);
 
         return Ok(new IdeaPageDto
         {
@@ -145,7 +145,7 @@ public class AdminIdeasController(
         if (!Enum.TryParse<ModerationStatus>(dto.Status, ignoreCase: true, out var status))
             return BadRequest(new { error = $"Ongeldige status '{dto.Status}'." });
 
-        await categoryManager.SetIdeaModerationStatusAsync(ideaId, status, projectId);
+        await moderationManager.SetIdeaModerationStatusAsync(ideaId, status, projectId);
         return NoContent();
     }
 

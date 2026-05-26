@@ -4,7 +4,7 @@ namespace SynapseEnqueteManagement.DAL.Interfaces;
 
 public interface IAiUsageRepository : IRepository<AiUsageEvent>
 {
-    Task LogAsync(AiUsageEvent ev, int projectId);
+    Task LogAsync(AiUsageEvent ev, int projectId, CancellationToken ct = default);
 
     Task<IEnumerable<ProjectCostAggregate>> ReadProjectAggregatesReadOnlyAsync(DateTime? from);
 

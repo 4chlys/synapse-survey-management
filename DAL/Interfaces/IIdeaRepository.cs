@@ -1,5 +1,7 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -35,6 +37,15 @@ public interface IIdeaRepository : IRepository<Idea>
     // the anchor for similar/different/diverse embedding sorts. Null = no idea yet.
     Task<string> ReadMostRecentDescriptionByCategoryAndParticipantAsync(int categoryId, int participantId);
 
+    Task<List<IdeaMetric>> ReadTopByProjectReadOnlyAsync(int projectId, int count);
+    Task<List<Idea>> ReadLatestByProjectWithCommentsReadOnlyAsync(int projectId, int count);
+    Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(int projectId);
+
+    Task<(List<Idea> Items, int Total)> ReadPagedByProjectWithCommentsReadOnlyAsync(
+        int projectId, string search, int? categoryId, ModerationStatus? status,
+        int page, int pageSize);
+
+    Task<Idea> ReadByIdInProjectForUpdateAsync(int ideaId, int? projectId = null);
     Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
         int projectId, string search, int? categoryId, ModerationStatus? status,
         int page, int pageSize);

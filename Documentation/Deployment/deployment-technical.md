@@ -572,7 +572,7 @@ build → scan → push → sign → deploy
 | `push-prod` | main | Push images tagged `{SHA}` + `latest` |
 | `sign-prod` | main | Cosign image signing for supply chain security |
 | `deploy-test` | development (auto) | Rolling replace of test MIGs + Cloud Armor IP update |
-| `deploy-production` | main (manual) | Rolling replace of prod MIGs |
+| `deploy-production` | main (manual) | Cosign signature verification + rolling replace of prod MIGs |
 
 ### Image tagging strategy
 
@@ -596,6 +596,30 @@ gcloud compute instance-groups managed rolling-action replace synapse-{ENV}-{svc
 - `--max-unavailable=0`: never has fewer healthy instances than the target size
 
 The load balancer only routes to the new instance once its health check passes. Connection draining (30s) ensures in-flight requests complete before the old instance is terminated.
+
+### Supply chain security (Cosign)
+
+Production images are signed and verified using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/).
+
+**Signing (`sign-prod` job — runs after `push-prod`):**
+
+```bash
+cosign sign --key cosign.key "${IMAGE_API}:${IMAGE_TAG}"
+cosign sign --key cosign.key "${IMAGE_UI}:${IMAGE_TAG}"
+cosign sign --key cosign.key "${IMAGE_ADMIN}:${IMAGE_TAG}"
+```
+
+The private key (`cosign.key`) is stored as a base64-encoded GitLab CI variable (`COSIGN_KEY_B64`). The password is stored in `COSIGN_PASSWORD`.
+
+**Verification (`deploy-production` job — runs before rolling replace):**
+
+```bash
+cosign verify --key cosign.pub "${IMAGE_API}:${IMAGE_TAG}"
+cosign verify --key cosign.pub "${IMAGE_UI}:${IMAGE_TAG}"
+cosign verify --key cosign.pub "${IMAGE_ADMIN}:${IMAGE_TAG}"
+```
+
+`cosign.pub` is committed to the repository. If any verification fails, the pipeline aborts — unsigned or tampered images cannot be deployed to production. Only images built and signed by the `main` pipeline can pass verification.
 
 ---
 

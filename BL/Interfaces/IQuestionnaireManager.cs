@@ -15,6 +15,7 @@ public interface IQuestionnaireManager
     Task<Questionnaire> GetQuestionnaireByProjectIdWithTranslationsReadOnlyAsync(int projectId);
     Task<Questionnaire> GetQuestionnaireByQuestionIdWithTranslationsReadOnlyAsync(int questionId);
     Task<Question> GetQuestionByIdReadOnlyAsync(int questionId);
+    Task<Question> GetQuestionByIdWithTranslationsReadOnlyAsync(int questionId);
     Task<bool> QuestionBelongsToProjectAsync(int questionId, int projectId);
 
     Task<Question> AddQuestionAsync(
@@ -43,10 +44,5 @@ public interface IQuestionnaireManager
 
     Task<Question> GetFirstQuestionAsync(int projectId);
     Task<int> GetQuestionCountAsync(int projectId);
-    void ValidateMandatoryAnswers(Questionnaire questionnaire, IEnumerable<(int QuestionId, string Value)> answers, HashSet<int> visibleQuestionIds = null);
-
-    Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId);
-    Task<Section> CreateSectionAsync(int projectId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default);
-    Task<bool> UpdateSectionAsync(int sectionId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default);
-    Task<bool> DeleteSectionAsync(int sectionId, CancellationToken ct = default);
+    Task ValidateMandatoryAnswersAsync(int projectId, IEnumerable<(int QuestionId, string Value)> answers, HashSet<int> visibleQuestionIds = null);
 }
