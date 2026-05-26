@@ -381,62 +381,6 @@ public class ProjectController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> EnableEmoji(int projectId, int emojiId, bool isNew)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project == null) return NotFound();
-        if (IsProjectLocked(project))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
-        await emojiService.EnableEmojiAsync(projectId, emojiId);
-        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> DisableEmoji(int projectId, int emojiId, bool isNew)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project == null) return NotFound();
-        if (IsProjectLocked(project))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
-        await emojiService.DisableEmojiAsync(projectId, emojiId);
-        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> DisableEmojiPreset(int projectId, bool isNew, List<int> emojiIds)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project == null) return NotFound();
-        if (IsProjectLocked(project))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
-        await emojiService.DisableEmojiPresetAsync(projectId, emojiIds ?? new List<int>());
-        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> EnableEmojiPreset(int projectId, bool isNew, List<int> emojiIds)
-    {
-        var project = await projectService.GetProjectByIdAsync(projectId);
-        if (project == null) return NotFound();
-        if (IsProjectLocked(project))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
-        await emojiService.EnableEmojiPresetAsync(projectId, emojiIds ?? new List<int>());
-        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-    }
-
-    [HttpPost]
     [IgnoreAntiforgeryToken]
     [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> GenerateImage([FromBody] GenerateImageRequest request)

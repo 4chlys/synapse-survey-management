@@ -14,4 +14,7 @@ public class EmojiManager(IEmojiRepository emojiRepository) : IEmojiManager
 
     public Task<Emoji> GetByIdForUpdateAsync(int emojiId)
         => emojiRepository.ReadByIdForUpdateAsync(emojiId);
+
+    public Task<IEnumerable<Emoji>> GetByIdsForUpdateAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        => emojiRepository.ReadByIdsForUpdateAsync(ids, ct);
 }

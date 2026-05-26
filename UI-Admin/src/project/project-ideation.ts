@@ -94,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setEmojiState(form: HTMLFormElement, enabled: boolean): void {
         form.querySelector<HTMLButtonElement>('button')!.dataset.enabled = String(enabled);
         form.action = enabled
-            ? form.action.replace('EnableEmoji',  'DisableEmoji')
-            : form.action.replace('DisableEmoji', 'EnableEmoji');
+            ? form.dataset.disableUrl!
+            : form.dataset.enableUrl!;
     }
 
     // AJAX toggle for individual emoji pills — no full-page reload.
@@ -105,8 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = form.querySelector<HTMLButtonElement>('button')!;
             btn.disabled = true;
             try {
-                const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
-                if (res.ok) setEmojiState(form, form.action.includes('EnableEmoji'));
+                const res = await fetch(form.action, { method: 'POST' });
+                if (res.ok) setEmojiState(form, form.action === form.dataset.enableUrl);
             } finally {
                 btn.disabled = false;
             }

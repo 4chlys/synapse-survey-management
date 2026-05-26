@@ -343,8 +343,8 @@ public class ProjectManager(
         return true;
     }
 
-    // Enables multiple emojis in a single DB round-trip: one project read,
-    // one emoji read for all missing IDs, one SaveChanges.
+    // Enables multiple emojis: one project read, one targeted emoji read for
+    // missing IDs only (WHERE EmojiId IN …), one SaveChanges.
     public async Task<bool> EnableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
     {
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
@@ -354,8 +354,8 @@ public class ProjectManager(
         var missing    = emojiIds.Where(id => !currentIds.Contains(id)).ToHashSet();
         if (missing.Count == 0) return true;
 
-        var allEmojis = await emojiManager.GetAllForUpdateAsync();
-        foreach (var emoji in allEmojis.Where(e => missing.Contains(e.EmojiId)))
+        var emojisToAdd = await emojiManager.GetByIdsForUpdateAsync(missing, ct);
+        foreach (var emoji in emojisToAdd)
             project.Emojis.Add(emoji);
 
         projectRepository.Update(project);

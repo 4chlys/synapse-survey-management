@@ -138,24 +138,17 @@
 
                 @if (!isLocked)
                 {
-                    <form id="emoji-preset-form" asp-action="EnableEmojiPreset" method="post" class="hidden">
-                        <input type="hidden" name="projectId" value="@projectId" />
-                        <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                    </form>
-                    <form id="emoji-clear-form" asp-action="DisableEmojiPreset" method="post" class="hidden">
-                        <input type="hidden" name="projectId" value="@projectId" />
-                        <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                    </form>
+                    <form id="emoji-preset-form" action="/api/admin/projects/@projectId/emojis/enable-preset" method="post" class="hidden"></form>
+                    <form id="emoji-clear-form" action="/api/admin/projects/@projectId/emojis/disable-preset" method="post" class="hidden"></form>
                 }
 
                 <div id="emoji-grid" class="flex flex-wrap gap-2">
                     @foreach (var emoji in emojis)
                     {
-                        <form asp-action="@(emoji.IsEnabled ? "DisableEmoji" : "EnableEmoji")" method="post"
-                              data-emoji-name="@emoji.Name" data-emoji-id="@emoji.EmojiId">
-                            <input type="hidden" name="projectId" value="@projectId" />
-                            <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
-                            <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                        <form action="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/@(emoji.IsEnabled ? "disable" : "enable")" method="post"
+                              data-emoji-name="@emoji.Name" data-emoji-id="@emoji.EmojiId"
+                              data-enable-url="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/enable"
+                              data-disable-url="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/disable">
                             <button type="submit" class="emoji-pill" data-enabled="@emoji.IsEnabled.ToString().ToLower()" @(isLocked ? "disabled" : "")>
                                 <span class="text-lg leading-none">@emoji.Symbol</span>
                                 <span class="leading-none">@emoji.Name</span>
