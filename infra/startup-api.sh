@@ -35,4 +35,5 @@ docker run -d --name mvp-api --restart always -p 8080:8080 \
   -e RESEND_API_KEY="$(get_secret resend-api-key)" \
   -e EMAIL_FROM="noreply@synapse-ip.xyz" \
   -e GCS_BUCKET="$(get_secret gcs-bucket)" \
+  -e ApiBaseUrl="$(get_secret api-base-url)" \
   "gcr.io/${PROJECT_ID}/mvp-app:${IMAGE_TAG}"

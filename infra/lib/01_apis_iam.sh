@@ -24,7 +24,7 @@ create_service_account() {
 assign_iam_roles() {
   echo ">>> IAM rollen toekennen aan ${CICD_SA}..."
   local roles=(
-    "roles/compute.instanceAdmin.v1"
+    "roles/compute.admin"
     "roles/storage.admin"
     "roles/secretmanager.secretAccessor"
     "roles/artifactregistry.writer"
@@ -54,7 +54,7 @@ create_prod_service_account() {
 assign_prod_iam_roles() {
   echo ">>> IAM rollen toekennen aan ${CICD_SA_PROD}..."
   local roles=(
-    "roles/compute.instanceAdmin.v1"
+    "roles/compute.admin"
     "roles/storage.admin"
     "roles/secretmanager.secretAccessor"
     "roles/artifactregistry.writer"
