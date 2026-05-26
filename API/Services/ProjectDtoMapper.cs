@@ -41,6 +41,14 @@ public static class ProjectDtoMapper
             LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
             DefaultLanguageCode = p.DefaultLanguage?.Code,
             SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            Translations = p.Translations.Select(pt => new ProjectTranslationDto
+            {
+                LanguageCode = pt.Language?.Code,
+                Name = pt.Name,
+                Topic = pt.Topic,
+                Introduction = p.Introduction?.Translations
+                    .FirstOrDefault(it => it.Language?.Code == pt.Language?.Code)?.Text,
+            }).ToList(),
             LastWizardStep = p.LastWizardStep,
             Theme = p.Theme.ToString(),
             PrimaryColor = p.PrimaryColor,

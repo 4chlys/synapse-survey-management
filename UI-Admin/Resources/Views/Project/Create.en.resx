@@ -58,6 +58,11 @@
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="NextButton" xml:space="preserve"><value>Next</value></data>
   <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
+  <data name="LanguagesLabel" xml:space="preserve"><value>Languages</value></data>
+  <data name="LanguagesHint" xml:space="preserve"><value>Pick which languages this project supports and which is the default. For each picked language you'll need to fill in the project details.</value></data>
+  <data name="DefaultLabel" xml:space="preserve"><value>default</value></data>
+  <data name="PerLanguageContentLabel" xml:space="preserve"><value>Project content per language</value></data>
+  <data name="PerLanguageContentHint" xml:space="preserve"><value>Switch tabs to fill in each language</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Style</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Theme</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Preview</value></data>

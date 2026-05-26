@@ -40,6 +40,10 @@ public class ProjectController(
     IOptions<AdminSettings> adminSettings,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
+    // Languages the admin form lets you toggle. Seeded in DummyDataSeeder.
+    // Keep in sync with Create.cshtml's checkbox list.
+    private static readonly string[] AvailableLanguageCodes = ["nl", "en"];
+
     public async Task<IActionResult> Index()
     {
         var user = await userManager.GetUserAsync(User);
@@ -61,21 +65,26 @@ public class ProjectController(
             }
             ViewData["IsNew"]       = true;
             ViewData["HideSidebar"] = true;
-            return View(new CreateProjectViewModel());
+            ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
+            var initialLang = ResolveAdminLanguage();
+            return View(new CreateProjectViewModel
+            {
+                DefaultLanguageCode = initialLang,
+                SupportedLanguageCodes = new List<string> { initialLang },
+                Translations = BuildTranslations(null)
+            });
         }
 
         var project = await projectService.GetProjectByIdAsync(projectId.Value);
         if (project is null)
-            return View(new CreateProjectViewModel());
+            return View(new CreateProjectViewModel { Translations = BuildTranslations(null) });
 
         var sections = await sectionService.GetSectionsAsync(projectId.Value);
         var model = new CreateProjectViewModel
         {
             ProjectId = projectId,
-            Name = project.Name,
             ShortForm = project.ShortForm,
-            Topic = project.Topic,
-            Introduction = project.Introduction,
+            Translations = BuildTranslations(project.Translations),
             ImageUrl = project.ProjectImage,
             InteractionMode = project.FormType,
             MinAge = project.MinAge,
@@ -97,20 +106,66 @@ public class ProjectController(
         ViewData["ActiveSection"] = "Settings";
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
+        ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
         return View(model);
+    }
+
+    // Picks the admin's current UI language for a new project's default, falling
+    // back to the first available language if the current culture isn't one we
+    // support yet.
+    private static string ResolveAdminLanguage()
+    {
+        var current = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return AvailableLanguageCodes.Contains(current) ? current : AvailableLanguageCodes[0];
+    }
+
+    // Pads the project's existing translations with empty rows for any language
+    // the admin form supports but the project doesn't have yet, so the view can
+    // render one tab per available language and preserve typed data across
+    // checkbox toggles.
+    private static IList<ProjectTranslationViewModel> BuildTranslations(
+        ICollection<ProjectTranslationViewModel> existing)
+    {
+        var byCode = (existing ?? new List<ProjectTranslationViewModel>())
+            .Where(t => !string.IsNullOrEmpty(t.LanguageCode))
+            .ToDictionary(t => t.LanguageCode, t => t);
+        return AvailableLanguageCodes
+            .Select(code => byCode.TryGetValue(code, out var t)
+                ? t
+                : new ProjectTranslationViewModel { LanguageCode = code })
+            .ToList();
     }
 
     [HttpPost]
     [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
-        // For "next", Topic and Introduction are also required
-        if (submitAction == "next")
+        // Keep only translations for currently-supported languages; the form
+        // submits hidden inputs for unchecked languages too so typed data
+        // survives toggles, but those rows must not reach the API.
+        var supportedCodes = (model.SupportedLanguageCodes ?? new List<string>())
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct()
+            .ToList();
+        var activeTranslations = (model.Translations ?? new List<ProjectTranslationViewModel>())
+            .Where(t => supportedCodes.Contains(t.LanguageCode))
+            .ToList();
+
+        // Per-supported-language validation. Name is always required; Topic
+        // and Introduction become required on "next" (mirrors the prior
+        // single-language rule, applied per language).
+        var requireTopicAndIntro = submitAction == "next";
+        foreach (var t in activeTranslations)
         {
-            if (string.IsNullOrWhiteSpace(model.Topic))
-                ModelState.AddModelError(nameof(model.Topic), localizer["Project_TopicRequired"]);
-            if (string.IsNullOrWhiteSpace(model.Introduction))
-                ModelState.AddModelError(nameof(model.Introduction), localizer["Project_IntroductionRequired"]);
+            if (string.IsNullOrWhiteSpace(t.Name))
+                ModelState.AddModelError($"Translations[{model.Translations.IndexOf(t)}].Name",
+                    localizer["Project_NameRequired"]);
+            if (requireTopicAndIntro && string.IsNullOrWhiteSpace(t.Topic))
+                ModelState.AddModelError($"Translations[{model.Translations.IndexOf(t)}].Topic",
+                    localizer["Project_TopicRequired"]);
+            if (requireTopicAndIntro && string.IsNullOrWhiteSpace(t.Introduction))
+                ModelState.AddModelError($"Translations[{model.Translations.IndexOf(t)}].Introduction",
+                    localizer["Project_IntroductionRequired"]);
         }
 
         if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
@@ -124,13 +179,14 @@ public class ProjectController(
             {
                 var existingProject = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
                 ViewData["ProjectId"]     = model.ProjectId.Value;
-                ViewData["ProjectName"]   = existingProject?.Name ?? model.Name ?? "";
+                ViewData["ProjectName"]   = existingProject?.Name ?? "";
                 ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
             ViewData["ActiveSection"] = "Settings";
             ViewData["IsNew"]         = wizardActive;
             ViewData["HideSidebar"]   = wizardActive;
+            ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
             return View(model);
         }
 
@@ -148,13 +204,12 @@ public class ProjectController(
                     return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
                 }
                 project = await projectService.UpdateProjectAsync(
-                    model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
+                    model.ProjectId.Value, activeTranslations, supportedCodes, model.DefaultLanguageCode,
                     model.ImageUrl, model.InteractionMode, model.MinAge, model.MaxAge,
                     model.ContactOptIn, model.ShortForm,
                     lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
                     model.AllowCrossLanguageIdeas,
-                    model.Theme, model.PrimaryColor, model.CustomCss,
-                    model.DefaultLanguageCode);
+                    model.Theme, model.PrimaryColor, model.CustomCss);
             }
             else
             {
@@ -164,7 +219,7 @@ public class ProjectController(
                     return View(model);
                 }
                 project = await projectService.CreateProjectAsync(
-                    model.Name, model.Topic, model.Introduction,
+                    activeTranslations, supportedCodes, model.DefaultLanguageCode,
                     model.ImageUrl, model.InteractionMode,
                     model.MinAge, model.MaxAge, model.ContactOptIn,
                     platformId: user.ProjectPlatformId.Value,
@@ -172,8 +227,7 @@ public class ProjectController(
                     allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
                     theme: model.Theme,
                     primaryColor: model.PrimaryColor,
-                    customCss: model.CustomCss,
-                    languageCode: model.DefaultLanguageCode);
+                    customCss: model.CustomCss);
             }
         }
         catch (ApiValidationException ex)
@@ -187,13 +241,14 @@ public class ProjectController(
             {
                 var existingProject = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
                 ViewData["ProjectId"]     = model.ProjectId.Value;
-                ViewData["ProjectName"]   = existingProject?.Name ?? model.Name ?? "";
+                ViewData["ProjectName"]   = existingProject?.Name ?? "";
                 ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
             ViewData["ActiveSection"] = "Settings";
             ViewData["IsNew"]         = wizardActive;
             ViewData["HideSidebar"]   = wizardActive;
+            ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
             return View(model);
         }
 
@@ -329,13 +384,12 @@ public class ProjectController(
         }
 
         await projectService.UpdateProjectAsync(
-            projectId, project.Name, project.Topic, project.Introduction,
+            projectId, project.Translations, project.SupportedLanguageCodes, project.DefaultLanguageCode ?? "nl",
             project.ProjectImage, project.FormType,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
             project.AllowCrossLanguageIdeas,
-            project.Theme, project.PrimaryColor, project.CustomCss,
-            project.DefaultLanguageCode ?? "nl");
+            project.Theme, project.PrimaryColor, project.CustomCss);
 
         return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }

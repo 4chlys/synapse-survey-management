@@ -5,20 +5,14 @@ public record CreateProjectViewModel
 {
     public int? ProjectId { get; init; }
 
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; init; }
-
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
         ErrorMessage = "ShortForm_Invalid")]
     public string ShortForm { get; init; }
 
-    [MaxLength(100)]
-    public string Topic { get; init; }
-
-    [MaxLength(5000, ErrorMessage = "Introduction_TooLong")]
-    public string Introduction { get; init; }
+    // One entry per language the form renders (always all platform languages),
+    // even if SupportedLanguageCodes excludes some. Server filters on submit.
+    public IList<ProjectTranslationViewModel> Translations { get; init; } = new List<ProjectTranslationViewModel>();
 
     public string InteractionMode { get; init; } = "VerticalScroll";
 
