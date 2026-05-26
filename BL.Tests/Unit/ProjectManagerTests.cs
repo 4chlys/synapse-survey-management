@@ -39,7 +39,7 @@ public class ProjectManagerTests
         // CreateProjectAsync enables all emojis by default; return an empty list so that
         // existing tests stay focused on their own assertions without needing emoji data.
         _emojiRepository
-            .Setup(r => r.ReadAllReadOnlyAsync())
+            .Setup(r => r.ReadAllForUpdateAsync())
             .ReturnsAsync(new List<Emoji>());
     }
 

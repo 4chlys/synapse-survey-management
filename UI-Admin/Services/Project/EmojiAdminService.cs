@@ -15,8 +15,9 @@ public class EmojiAdminService(HttpClient httpClient)
     public async Task<List<EmojiAdminViewModel>> GetEmojisForProjectAsync(int projectId)
     {
         var allResponse = await httpClient.GetAsync("api/emojis");
-        if (!allResponse.IsSuccessStatusCode)
-            return new List<EmojiAdminViewModel>();
+        // Propagate failures: a broken catalogue call should surface as an error,
+        // not silently produce an empty emoji list that misleads the admin.
+        allResponse.EnsureSuccessStatusCode();
         var all = await allResponse.Content.ReadFromJsonAsync<List<EmojiResponse>>()
                   ?? new List<EmojiResponse>();
 

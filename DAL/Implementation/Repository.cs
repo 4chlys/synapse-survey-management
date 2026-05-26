@@ -19,6 +19,9 @@ public class Repository<T>(DbContext context) : IRepository<T> where T : class
     public async Task<IEnumerable<T>> ReadAllReadOnlyAsync()
         => await Context.Set<T>().AsNoTracking().ToListAsync();
 
+    public async Task<IEnumerable<T>> ReadAllForUpdateAsync()
+        => await Context.Set<T>().ToListAsync();
+
     public void Update(T entity) => Context.Set<T>().Update(entity);
 
     // Issues a single DELETE outside the change tracker; callers must wrap in IUnitOfWork.ExecuteInTransactionAsync to preserve rollback.

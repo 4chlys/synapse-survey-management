@@ -384,6 +384,7 @@ public class ProjectController(
     public async Task<IActionResult> EnableEmoji(int projectId, int emojiId, bool isNew)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
         if (IsProjectLocked(project))
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
@@ -397,6 +398,7 @@ public class ProjectController(
     public async Task<IActionResult> DisableEmoji(int projectId, int emojiId, bool isNew)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
         if (IsProjectLocked(project))
         {
             TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
