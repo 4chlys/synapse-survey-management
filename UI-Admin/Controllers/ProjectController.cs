@@ -409,6 +409,20 @@ public class ProjectController(
     }
 
     [HttpPost]
+    public async Task<IActionResult> DisableEmojiPreset(int projectId, bool isNew, List<int> emojiIds)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project == null) return NotFound();
+        if (IsProjectLocked(project))
+        {
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
+        await emojiService.DisableEmojiPresetAsync(projectId, emojiIds ?? new List<int>());
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+    }
+
+    [HttpPost]
     public async Task<IActionResult> EnableEmojiPreset(int projectId, bool isNew, List<int> emojiIds)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);

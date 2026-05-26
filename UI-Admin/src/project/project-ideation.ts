@@ -40,8 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Emoji preset tabs + select-all 
     const emojiGrid    = document.getElementById('emoji-grid');
     const tabs         = document.querySelectorAll<HTMLButtonElement>('.emoji-tab');
-    const selectAllBtn = document.getElementById('emoji-select-all-btn') as HTMLButtonElement | null;
-    const presetForm   = document.getElementById('emoji-preset-form') as HTMLFormElement | null;
+    const selectAllBtn  = document.getElementById('emoji-select-all-btn') as HTMLButtonElement | null;
+    const clearAllBtn   = document.getElementById('emoji-clear-all-btn')  as HTMLButtonElement | null;
+    const presetForm    = document.getElementById('emoji-preset-form')    as HTMLFormElement | null;
+    const clearForm     = document.getElementById('emoji-clear-form')     as HTMLFormElement | null;
 
     if (!emojiGrid || !tabs.length) return;
 
@@ -51,10 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
         nameToId[form.dataset.emojiName!] = parseInt(form.dataset.emojiId!, 10);
     });
 
+    // Persist the active tab across page reloads (e.g. after enabling/disabling an emoji).
+    // Key includes the project ID so tabs don't bleed across different projects.
+    const projectId  = new URLSearchParams(location.search).get('projectId') ?? '0';
+    const storageKey = `emojiTab_${projectId}`;
+
     let activeTab = 'all';
 
     function switchTab(tab: string): void {
         activeTab = tab;
+        sessionStorage.setItem(storageKey, tab);
         const allowed = PRESETS[tab] ?? null;
 
         // Show/hide emoji pills based on the active preset.
@@ -73,31 +81,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Activate the first tab on load.
-    switchTab('all');
+    // Restore the last active tab, falling back to 'all' if the stored value is unknown.
+    const savedTab = sessionStorage.getItem(storageKey) ?? 'all';
+    switchTab(savedTab in PRESETS ? savedTab : 'all');
 
     tabs.forEach(btn =>
         btn.addEventListener('click', () => switchTab(btn.dataset.tab!))
     );
 
-    // "Select all" — injects hidden inputs for the active preset's emoji IDs
-    // into the shared form and submits it to EnableEmojiPreset on the server.
-    if (selectAllBtn && presetForm) {
-        selectAllBtn.addEventListener('click', () => {
-            const names = PRESETS[activeTab] ?? null;
-            const ids   = names
-                ? names.map(n => nameToId[n]).filter((id): id is number => id !== undefined)
-                : Object.values(nameToId);
+    // Resolves the emoji IDs for the currently active tab.
+    function activeIds(): number[] {
+        const names = PRESETS[activeTab] ?? null;
+        return names
+            ? names.map(n => nameToId[n]).filter((id): id is number => id !== undefined)
+            : Object.values(nameToId);
+    }
 
-            // Clear previous inputs before adding new ones (idempotent click).
-            presetForm.querySelectorAll('input[name="emojiIds"]').forEach(i => i.remove());
-            ids.forEach(id => {
-                const input = Object.assign(document.createElement('input'), {
-                    type: 'hidden', name: 'emojiIds', value: String(id),
-                });
-                presetForm!.appendChild(input);
-            });
-            presetForm.submit();
+    // Injects emojiIds hidden inputs into a form and submits it.
+    function submitWithIds(form: HTMLFormElement, ids: number[]): void {
+        form.querySelectorAll('input[name="emojiIds"]').forEach(i => i.remove());
+        ids.forEach(id => {
+            form.appendChild(Object.assign(document.createElement('input'), {
+                type: 'hidden', name: 'emojiIds', value: String(id),
+            }));
         });
+        form.submit();
+    }
+
+    if (selectAllBtn && presetForm) {
+        selectAllBtn.addEventListener('click', () => submitWithIds(presetForm, activeIds()));
+    }
+
+    if (clearAllBtn && clearForm) {
+        clearAllBtn.addEventListener('click', () => submitWithIds(clearForm, activeIds()));
     }
 });

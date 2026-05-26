@@ -38,5 +38,6 @@
   <data name="PresetInnovation" xml:space="preserve"><value>Innovatie</value></data>
   <data name="PresetEnthusiasm" xml:space="preserve"><value>Enthousiasme</value></data>
   <data name="SelectAllButton" xml:space="preserve"><value>Selecteer alle</value></data>
+  <data name="ClearAllButton" xml:space="preserve"><value>Deselecteer alle</value></data>
   <data name="CategoriesError" xml:space="preserve"><value>Voeg minimaal één categorie toe.</value></data>
 </root>

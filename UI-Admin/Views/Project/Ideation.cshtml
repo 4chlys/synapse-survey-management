@@ -123,16 +123,26 @@
                     }
                     @if (!isLocked)
                     {
-                        <button type="button" id="emoji-select-all-btn"
-                                class="btn btn-ghost btn-xs ml-auto text-primary">
-                            @L["SelectAllButton"]
-                        </button>
+                        <div class="ml-auto flex gap-1">
+                            <button type="button" id="emoji-select-all-btn"
+                                    class="btn btn-ghost btn-xs text-primary">
+                                @L["SelectAllButton"]
+                            </button>
+                            <button type="button" id="emoji-clear-all-btn"
+                                    class="btn btn-ghost btn-xs text-error">
+                                @L["ClearAllButton"]
+                            </button>
+                        </div>
                     }
                 </div>
 
                 @if (!isLocked)
                 {
                     <form id="emoji-preset-form" asp-action="EnableEmojiPreset" method="post" class="hidden">
+                        <input type="hidden" name="projectId" value="@projectId" />
+                        <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                    </form>
+                    <form id="emoji-clear-form" asp-action="DisableEmojiPreset" method="post" class="hidden">
                         <input type="hidden" name="projectId" value="@projectId" />
                         <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                     </form>

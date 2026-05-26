@@ -52,17 +52,30 @@ public class EmojiAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    // Enables exactly the given emoji IDs for the project, disabling all others.
-    // Runs all enable/disable calls in parallel to avoid sequential round-trips.
+    // Disables all emojis in the given preset without touching emojis outside it.
+    public async Task DisableEmojiPresetAsync(int projectId, List<int> emojiIds)
+    {
+        var current   = await GetEmojisForProjectAsync(projectId);
+        var targetSet = emojiIds.ToHashSet();
+
+        var tasks = current
+            .Where(e => targetSet.Contains(e.EmojiId) && e.IsEnabled)
+            .Select(e => DisableEmojiAsync(projectId, e.EmojiId));
+
+        await Task.WhenAll(tasks);
+    }
+
+    // Enables all emojis in the given preset without touching emojis outside it.
+    // "Select all" on a tab adds those emojis to the current selection — it does
+    // not replace or deselect anything the admin already enabled elsewhere.
     public async Task EnableEmojiPresetAsync(int projectId, List<int> emojiIds)
     {
         var current   = await GetEmojisForProjectAsync(projectId);
         var targetSet = emojiIds.ToHashSet();
 
-        var tasks = current.Select(e =>
-            targetSet.Contains(e.EmojiId) && !e.IsEnabled ? EnableEmojiAsync(projectId, e.EmojiId) :
-            !targetSet.Contains(e.EmojiId) && e.IsEnabled ? DisableEmojiAsync(projectId, e.EmojiId) :
-            Task.CompletedTask);
+        var tasks = current
+            .Where(e => targetSet.Contains(e.EmojiId) && !e.IsEnabled)
+            .Select(e => EnableEmojiAsync(projectId, e.EmojiId));
 
         await Task.WhenAll(tasks);
     }
