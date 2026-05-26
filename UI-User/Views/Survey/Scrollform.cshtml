@@ -330,13 +330,4 @@
     <script type="application/json" id="existing-responses">@Html.Raw(JsonSerializer.Serialize(Model.ExistingResponses))</script>
 }
 
-@{
-    var thankYouModel = new ThankYouViewModel
-    {
-        ProjectId = project?.ProjectId ?? 0,
-        OrganisationName = project?.OrganisationName ?? string.Empty,
-        OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
-        OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
-    };
-}
-<partial name="_ThankYouPopup" model="thankYouModel" />
+@await Html.PartialAsync("_FinalThankYouPopup")

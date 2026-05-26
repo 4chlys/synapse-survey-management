@@ -14,13 +14,6 @@
     var chatProject = ViewData["Project"] as ProjectViewModel;
     var introText = chatProject?.Introduction ?? string.Empty;
     var introImage = chatProject?.ProjectImage ?? string.Empty;
-    var thankYouModel = new ThankYouViewModel
-    {
-        ProjectId = chatProject?.ProjectId ?? 0,
-        OrganisationName = chatProject?.OrganisationName ?? string.Empty,
-        OrganisationLogoUrl = chatProject?.OrganisationLogoUrl ?? string.Empty,
-        OrganisationWebsiteUrl = chatProject?.OrganisationWebsiteUrl ?? string.Empty,
-    };
 }
 
 <div class="scroll-lock-marker hidden"></div>
@@ -154,4 +147,4 @@
 </div>
 </div>
 
-<partial name="_ThankYouPopup" model="thankYouModel" />
+@await Html.PartialAsync("_FinalThankYouPopup")
