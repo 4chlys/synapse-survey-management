@@ -54,7 +54,7 @@ create_prod_service_account() {
 assign_prod_iam_roles() {
   echo ">>> IAM rollen toekennen aan ${CICD_SA_PROD}..."
   local roles=(
-    "roles/compute.instanceAdmin.v1"
+    "roles/compute.admin"
     "roles/storage.admin"
     "roles/secretmanager.secretAccessor"
     "roles/artifactregistry.writer"
