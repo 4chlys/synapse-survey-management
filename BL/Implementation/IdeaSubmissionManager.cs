@@ -19,18 +19,20 @@ public class IdeaSubmissionManager(
         int categoryId,
         string description,
         string moderationToken,
-        string permanentImageUrl,
+        string tempImageUrl,
         string imageModerationToken,
         string languageCode,
         Participant participant,
         ResolvedPlatformAiConfig platformConfig,
+        Func<string, Task<string>> promoteImageAsync,
         string respondInLanguage = null,
         CancellationToken ct = default)
     {
         var projectId = project?.ProjectId ?? 0;
         var status = await moderationResolver.ResolveStatusAsync(description, moderationToken, projectId, platformConfig, ct, respondInLanguage);
 
-        if (!string.IsNullOrEmpty(permanentImageUrl))
+        string permanentImageUrl = null;
+        if (!string.IsNullOrEmpty(tempImageUrl))
         {
             var imageStatus = string.IsNullOrEmpty(imageModerationToken)
                 ? null
@@ -41,6 +43,9 @@ public class IdeaSubmissionManager(
                 logger.LogWarning("Invalid or missing image moderation token for project {ProjectId}", projectId);
                 throw new LocalizedValidationException("Validation.Image.InvalidToken");
             }
+
+            // Promote only after the token validates, so an invalid token leaves no orphaned permanent file.
+            permanentImageUrl = await promoteImageAsync(tempImageUrl);
 
             // A Flagged image means the AI rejected it but the user chose to submit anyway.
             // Override text status so an admin must review the idea before it becomes visible.

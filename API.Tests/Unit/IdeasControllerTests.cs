@@ -81,7 +81,8 @@ public class IdeasControllerTests
         _ideaSubmissionManager.Setup(s => s.AddModeratedIdeaAsync(
                 It.IsAny<Project>(), CategoryId, "desc", null,
                 null, null, null,
-                _participant, It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<string>(), ct))
+                _participant, It.IsAny<ResolvedPlatformAiConfig>(),
+                It.IsAny<Func<string, Task<string>>>(), It.IsAny<string>(), ct))
             .ReturnsAsync(new AddIdeaResult(42, false))
             .Verifiable(Times.Exactly(1));
 
@@ -93,16 +94,21 @@ public class IdeasControllerTests
     }
 
     [Fact]
-    public async Task CreateIdea_WhenImageUrlPresent_PromotesImageAndPassesPermanentUrlToManager()
+    public async Task CreateIdea_WhenImageUrlPresent_ForwardsTempUrlAndPromoterThatRoutesToStorage()
     {
-        // Arrange
-        _storageService.Setup(s => s.PromoteAsync("tmp.png"))
-            .ReturnsAsync("permanent.png")
-            .Verifiable(Times.Exactly(1));
+        // Arrange — the controller no longer promotes up front; it hands the manager the temp URL
+        // plus a promoter delegate. The manager decides when to promote (after token validation).
+        _storageService.Setup(s => s.PromoteAsync("tmp.png")).ReturnsAsync("permanent.png");
+
+        Func<string, Task<string>> capturedPromoter = null;
         _ideaSubmissionManager.Setup(s => s.AddModeratedIdeaAsync(
                 It.IsAny<Project>(), CategoryId, "desc", null,
-                "permanent.png", "img-tok", null,
-                _participant, It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                "tmp.png", "img-tok", null,
+                _participant, It.IsAny<ResolvedPlatformAiConfig>(),
+                It.IsAny<Func<string, Task<string>>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback((Project _, int _, string _, string _, string _, string _, string _,
+                    Participant _, ResolvedPlatformAiConfig _, Func<string, Task<string>> promoter,
+                    string _, CancellationToken _) => capturedPromoter = promoter)
             .ReturnsAsync(new AddIdeaResult(43, false))
             .Verifiable(Times.Exactly(1));
 
@@ -117,8 +123,10 @@ public class IdeasControllerTests
         await _controller.CreateIdea(ProjectId, CategoryId, dto, CancellationToken.None);
 
         // Assert
-        _storageService.VerifyAll();
         _ideaSubmissionManager.VerifyAll();
+        Assert.NotNull(capturedPromoter);
+        // The delegate the controller passed routes promotion to the storage service.
+        Assert.Equal("permanent.png", await capturedPromoter("tmp.png"));
     }
 
     [Fact]
@@ -129,7 +137,8 @@ public class IdeasControllerTests
         _ideaSubmissionManager.Setup(s => s.AddModeratedIdeaAsync(
                 It.IsAny<Project>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<Participant>(), It.IsAny<ResolvedPlatformAiConfig>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<Participant>(), It.IsAny<ResolvedPlatformAiConfig>(),
+                It.IsAny<Func<string, Task<string>>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new LocalizedValidationException("Validation.Image.InvalidToken"));
 
         // Act + Assert

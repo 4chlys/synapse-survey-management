@@ -307,7 +307,7 @@ var app = builder.Build();
 
     for (int attempt = 1; attempt <= maxRetries; attempt++)
     {
-        using var scope = app.Services.CreateScope();
+        await using var scope = app.Services.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
         var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 

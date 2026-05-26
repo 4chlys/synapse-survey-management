@@ -58,14 +58,11 @@ public class IdeasController(
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var platformConfig = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
 
-        string permanentImageUrl = null;
-        if (!string.IsNullOrEmpty(dto.ImageUrl))
-            permanentImageUrl = await storageService.PromoteAsync(dto.ImageUrl);
-
         var result = await ideaSubmissionManager.AddModeratedIdeaAsync(
             project, categoryId, dto.Description, dto.ModerationToken,
-            permanentImageUrl, dto.ImageModerationToken, dto.LanguageCode,
+            dto.ImageUrl, dto.ImageModerationToken, dto.LanguageCode,
             participant, platformConfig,
+            storageService.PromoteAsync,
             CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, ct);
 
         return Created(string.Empty, new CreateIdeaResultDto

@@ -10,11 +10,12 @@ public interface IIdeaSubmissionManager
         int categoryId,
         string description,
         string moderationToken,
-        string permanentImageUrl,
+        string tempImageUrl,
         string imageModerationToken,
         string languageCode,
         Participant participant,
         ResolvedPlatformAiConfig platformConfig,
+        Func<string, Task<string>> promoteImageAsync,
         string respondInLanguage = null,
         CancellationToken ct = default);
 }

@@ -24,6 +24,13 @@ public class IdeaSubmissionManagerTests
     private readonly Project _project;
     private readonly ResolvedPlatformAiConfig _platformConfig;
 
+    // Encodes the invariant that promotion must not happen unless it is reached.
+    private static readonly Func<string, Task<string>> PromoteNotCalled =
+        _ => throw new InvalidOperationException("promoteImageAsync must not be called");
+
+    private static Func<string, Task<string>> PromoteTo(string permanentUrl) =>
+        _ => Task.FromResult(permanentUrl);
+
     public IdeaSubmissionManagerTests()
     {
         _project = new Project { ProjectId = ProjectId };
@@ -54,8 +61,8 @@ public class IdeaSubmissionManagerTests
 
         // Act
         var result = await _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", "tok",
-            permanentImageUrl: null, imageModerationToken: null, languageCode: null,
-            _participant, _platformConfig, respondInLanguage: "en");
+            tempImageUrl: null, imageModerationToken: null, languageCode: null,
+            _participant, _platformConfig, PromoteNotCalled, respondInLanguage: "en");
 
         // Assert
         Assert.Equal(42, result.IdeaId);
@@ -75,8 +82,8 @@ public class IdeaSubmissionManagerTests
         // Act + Assert
         var ex = await Assert.ThrowsAsync<LocalizedValidationException>(() =>
             _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-                permanentImageUrl: "permanent.png", imageModerationToken: "bad-token", languageCode: null,
-                _participant, _platformConfig));
+                tempImageUrl: "tmp.png", imageModerationToken: "bad-token", languageCode: null,
+                _participant, _platformConfig, PromoteNotCalled));
 
         Assert.Equal("Validation.Image.InvalidToken", ex.Code);
         _ideaManager.Verify(i => i.AddIdeaAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
@@ -94,8 +101,8 @@ public class IdeaSubmissionManagerTests
         // Act + Assert
         var ex = await Assert.ThrowsAsync<LocalizedValidationException>(() =>
             _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-                permanentImageUrl: "permanent.png", imageModerationToken: null, languageCode: null,
-                _participant, _platformConfig));
+                tempImageUrl: "tmp.png", imageModerationToken: null, languageCode: null,
+                _participant, _platformConfig, PromoteNotCalled));
 
         Assert.Equal("Validation.Image.InvalidToken", ex.Code);
     }
@@ -114,8 +121,8 @@ public class IdeaSubmissionManagerTests
 
         // Act
         await _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-            permanentImageUrl: "permanent.png", imageModerationToken: "img-tok", languageCode: null,
-            _participant, _platformConfig);
+            tempImageUrl: "tmp.png", imageModerationToken: "img-tok", languageCode: null,
+            _participant, _platformConfig, PromoteTo("permanent.png"));
 
         // Assert
         _ideaManager.VerifyAll();
@@ -135,8 +142,8 @@ public class IdeaSubmissionManagerTests
 
         // Act
         await _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-            permanentImageUrl: "permanent.png", imageModerationToken: "img-tok", languageCode: null,
-            _participant, _platformConfig);
+            tempImageUrl: "tmp.png", imageModerationToken: "img-tok", languageCode: null,
+            _participant, _platformConfig, PromoteTo("permanent.png"));
 
         // Assert
         _ideaManager.VerifyAll();
@@ -160,8 +167,8 @@ public class IdeaSubmissionManagerTests
 
         // Act
         await _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-            permanentImageUrl: null, imageModerationToken: null, languageCode: "fr",
-            _participant, _platformConfig);
+            tempImageUrl: null, imageModerationToken: null, languageCode: "fr",
+            _participant, _platformConfig, PromoteNotCalled);
 
         // Assert
         _ideaManager.VerifyAll();
@@ -179,8 +186,8 @@ public class IdeaSubmissionManagerTests
         // Act + Assert
         await Assert.ThrowsAsync<ValidationException>(() =>
             _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-                permanentImageUrl: null, imageModerationToken: null, languageCode: "fr",
-                _participant, _platformConfig));
+                tempImageUrl: null, imageModerationToken: null, languageCode: "fr",
+                _participant, _platformConfig, PromoteNotCalled));
 
         _ideaManager.Verify(i => i.AddIdeaAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
             It.IsAny<ModerationStatus>(), It.IsAny<Participant>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -200,8 +207,8 @@ public class IdeaSubmissionManagerTests
 
         // Act
         await _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-            permanentImageUrl: null, imageModerationToken: null, languageCode: "fr",
-            _participant, _platformConfig);
+            tempImageUrl: null, imageModerationToken: null, languageCode: "fr",
+            _participant, _platformConfig, PromoteNotCalled);
 
         // Assert
         _ideaManager.VerifyAll();
@@ -222,8 +229,8 @@ public class IdeaSubmissionManagerTests
 
         // Act
         await _manager.AddModeratedIdeaAsync(_project, CategoryId, "desc", null,
-            permanentImageUrl: null, imageModerationToken: null, languageCode: null,
-            _participant, _platformConfig, ct: ct);
+            tempImageUrl: null, imageModerationToken: null, languageCode: null,
+            _participant, _platformConfig, PromoteNotCalled, ct: ct);
 
         // Assert
         _moderationResolver.VerifyAll();
