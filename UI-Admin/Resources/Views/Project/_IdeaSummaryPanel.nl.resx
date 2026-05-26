@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PanelTitle" xml:space="preserve"><value>Samenvatting genereren</value></data>
+  <data name="CategoryLabel" xml:space="preserve"><value>Categorie</value></data>
+  <data name="AllCategories" xml:space="preserve"><value>Alle categorieën</value></data>
+  <data name="StatusLabel" xml:space="preserve"><value>Status</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>Alle statussen</value></data>
+  <data name="Status_Approved" xml:space="preserve"><value>Goedgekeurd</value></data>
+  <data name="Status_New" xml:space="preserve"><value>Nieuw</value></data>
+  <data name="Status_Flagged" xml:space="preserve"><value>Gemarkeerd</value></data>
+  <data name="SamplingStrategyLabel" xml:space="preserve"><value>Selectiestrategie</value></data>
+  <data name="Strategy_Newest" xml:space="preserve"><value>Nieuwste eerst</value></data>
+  <data name="Strategy_MostCommented" xml:space="preserve"><value>Meest becommentarieerd</value></data>
+  <data name="Strategy_Diverse" xml:space="preserve"><value>Semantisch divers</value></data>
+  <data name="IdeaSelectionLabel" xml:space="preserve"><value>Ideeënselectie</value></data>
+  <data name="SelectFirst" xml:space="preserve"><value>Eerste {0} ideeën (platforminstelling)</value></data>
+  <data name="SelectAll" xml:space="preserve"><value>Alle ideeën (batchmodus)</value></data>
+  <data name="ExportFormatLabel" xml:space="preserve"><value>Exportformaat</value></data>
+  <data name="Format_Pdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="Format_Txt" xml:space="preserve"><value>Tekst (.txt)</value></data>
+  <data name="Format_Png" xml:space="preserve"><value>Afbeelding (.png)</value></data>
+  <data name="GenerateButton" xml:space="preserve"><value>Samenvatting genereren</value></data>
+  <data name="StatusQueued" xml:space="preserve"><value>In wachtrij…</value></data>
+  <data name="StatusProcessing" xml:space="preserve"><value>Verwerken…</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>Samenvatting klaar!</value></data>
+  <data name="StatusFailed" xml:space="preserve"><value>Mislukt.</value></data>
+  <data name="StatusStartError" xml:space="preserve"><value>Fout bij starten.</value></data>
+  <data name="StatusUnknownError" xml:space="preserve"><value>Onbekende fout.</value></data>
+  <data name="DownloadButton" xml:space="preserve"><value>Download samenvatting</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="RetryButton" xml:space="preserve"><value>Opnieuw proberen</value></data>
+  <data name="StatusBackgroundHint" xml:space="preserve"><value>Je kunt dit venster sluiten — de samenvatting wordt automatisch gedownload als hij klaar is.</value></data>
+</root>

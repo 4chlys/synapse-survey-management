@@ -199,6 +199,13 @@
                     </div>
                 }
             </div>
+            <div class="divider"></div>
+            <form asp-action="SaveIdeaSummaryMaxIdeas" method="post" class="flex items-center gap-3">
+                <label class="label-text font-medium flex-1">@L["MaxIdeasLabel"]</label>
+                <input type="number" name="maxIdeas" value="@Model.IdeaSummaryMaxIdeas"
+                       min="10" max="2000" class="input input-bordered input-sm w-28" />
+                <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
+            </form>
         </div>
 
     </div>

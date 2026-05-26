@@ -9,7 +9,8 @@ public sealed record GlobalPromptsDto(
     string ImageModeration   = "",
     string IdeaSupport       = "",
     string CommentSupport    = "",
-    string QuestionSupport   = "");
+    string QuestionSupport   = "",
+    string IdeaSummary       = "");
 
 public sealed record ModelAvailabilityItem(string Id, bool IsAvailable);
 

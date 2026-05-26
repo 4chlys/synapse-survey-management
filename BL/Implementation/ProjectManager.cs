@@ -120,6 +120,13 @@ public class ProjectManager(
             project.Introduction = intro;
         }
 
+        // Enable all available emojis by default for newly created projects.
+        // ReadAllForUpdateAsync loads tracked entities in one query, so EF Core can
+        // populate the many-to-many ProjectEmoji join table without N+1 round-trips.
+        var allEmojis = await emojiManager.GetAllForUpdateAsync();
+        foreach (var emoji in allEmojis)
+            project.Emojis.Add(emoji);
+
         var created = await projectRepository.CreateAsync(project);
         await uow.SaveChangesAsync();
         return created;
@@ -331,6 +338,46 @@ public class ProjectManager(
         if (emoji == null) return false;
 
         project.Emojis.Remove(emoji);
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Enables multiple emojis: one project read, one targeted emoji read for
+    // missing IDs only (WHERE EmojiId IN …), one SaveChanges.
+    public async Task<bool> EnableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var currentIds = project.Emojis.Select(e => e.EmojiId).ToHashSet();
+        var missing    = emojiIds.Where(id => !currentIds.Contains(id)).ToHashSet();
+        if (missing.Count == 0) return true;
+
+        var emojisToAdd = await emojiManager.GetByIdsForUpdateAsync(missing, ct);
+        foreach (var emoji in emojisToAdd)
+            project.Emojis.Add(emoji);
+
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Disables multiple emojis in a single DB round-trip: one project read,
+    // collection mutations in memory, one SaveChanges.
+    public async Task<bool> DisableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var idSet    = emojiIds.ToHashSet();
+        var toRemove = project.Emojis.Where(e => idSet.Contains(e.EmojiId)).ToList();
+        if (toRemove.Count == 0) return true;
+
+        foreach (var emoji in toRemove)
+            project.Emojis.Remove(emoji);
+
+        projectRepository.Update(project);
         await uow.SaveChangesAsync(ct);
         return true;
     }

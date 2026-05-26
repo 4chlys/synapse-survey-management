@@ -59,6 +59,12 @@ public class ProjectManagerTests
                     throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
                 return (IReadOnlyDictionary<string, Language>)byCode;
             });
+
+        // CreateProjectAsync enables all emojis by default; return an empty list so that
+        // existing tests stay focused on their own assertions without needing emoji data.
+        _emojiManager
+            .Setup(m => m.GetAllForUpdateAsync())
+            .ReturnsAsync(new List<Emoji>());
     }
 
     private static IEnumerable<ProjectTranslationInput> Translations(params (string code, string name)[] entries) =>
@@ -560,6 +566,7 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
+        _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));

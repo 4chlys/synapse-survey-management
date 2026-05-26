@@ -104,6 +104,7 @@
   <data name="Prompt_IdeaSupport" xml:space="preserve"><value>Idea support</value></data>
   <data name="Prompt_CommentSupport" xml:space="preserve"><value>Comment support</value></data>
   <data name="Prompt_QuestionSupport" xml:space="preserve"><value>Question support</value></data>
+  <data name="Prompt_IdeaSummary" xml:space="preserve"><value>Idea summary</value></data>
   <data name="AiSupport_IdeaFallback" xml:space="preserve"><value>Sorry, the assistant is temporarily unavailable. You can type your idea directly below and submit it.</value></data>
   <data name="AiSupport_CommentFallback" xml:space="preserve"><value>Sorry, the assistant is temporarily unavailable. You can type your reply directly below.</value></data>
   <data name="AiSupport_QuestionFallback" xml:space="preserve"><value>Sorry, the AI assistant is temporarily unavailable.</value></data>

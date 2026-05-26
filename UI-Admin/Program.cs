@@ -19,6 +19,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.QuestionSupport;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
+using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
 using SynapseEnqueteManagement.UI.Admin.Services.Email;
 using Vite.AspNetCore;
 
@@ -125,6 +126,8 @@ builder.Services.AddHttpClient<QuestionAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<CategoryAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<EmojiAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SectionAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<DashboardAdminService>(ConfigureApiClient)
@@ -145,10 +148,13 @@ builder.Services.AddHttpClient<IQuestionMediaService, QuestionMediaService>(Conf
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<AiAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<IdeaSummaryAdminService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<EmailApiService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("question-media-upload", context =>
