@@ -222,7 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const editorEl = pane.querySelector<HTMLElement>(`[data-intro-editor="${code}"]`);
             const quill = editorEl ? new Quill(editorEl, {
                 theme: 'snow',
-                placeholder: 'Schrijf een korte introductie van je project voor de deelnemers',
+                // Placeholder is localized per pane (data-intro-placeholder) so the
+                // editor prompts in the content language being authored.
+                placeholder: editorEl.dataset.introPlaceholder ?? '',
                 modules: {
                     toolbar: [
                         ['bold', 'italic', 'underline'],
@@ -420,6 +422,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let idx = parseInt(sectionsContainer.dataset.sectionCount ?? '0', 10);
         const availableLangs = (sectionsContainer.dataset.availableLanguages ?? 'nl').split(',');
         const multiLang = availableLangs.length > 1;
+        // langCode -> localized "Section name" placeholder, so a newly added row
+        // prompts in the content language of each per-language input.
+        const sectionNamePlaceholders: Record<string, string> =
+            JSON.parse(sectionsContainer.dataset.sectionNamePlaceholders ?? '{}');
 
         addSectionBtn.addEventListener('click', () => {
             const hasEmptyRow = [...sectionsContainer.querySelectorAll<HTMLElement>('.section-row')]
@@ -446,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 inner += `<div class="flex flex-col gap-1 flex-1">`;
                 if (multiLang) inner += `<span class="text-xs text-base-content/50">${sectionLangDisplayName(langCode)}</span>`;
                 inner += `<input type="hidden" name="Sections[${idx}].Translations[${j}].LanguageCode" value="${langCode}" />`;
-                inner += `<input type="text" name="Sections[${idx}].Translations[${j}].Name" maxlength="20" class="input input-bordered input-sm w-full section-name-input" placeholder="Sectienaam" data-lang="${langCode}" />`;
+                inner += `<input type="text" name="Sections[${idx}].Translations[${j}].Name" maxlength="20" class="input input-bordered input-sm w-full section-name-input" placeholder="${sectionNamePlaceholders[langCode] ?? ''}" data-lang="${langCode}" />`;
                 inner += `</div>`;
             });
             inner += `<button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;

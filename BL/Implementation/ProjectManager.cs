@@ -13,6 +13,7 @@ public class ProjectManager(
     IProjectRepository projectRepository,
     IEmojiManager emojiManager,
     IProjectTranslationValidator translationValidator,
+    IProjectActivationValidator activationValidator,
     IShortFormService shortFormService,
     IProjectDuplicationService projectDuplicationService,
     IUnitOfWork uow) : IProjectManager
@@ -251,6 +252,17 @@ public class ProjectManager(
 
     public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
     {
+        if (newState == ProjectState.Active)
+        {
+            var fullGraph = await projectRepository.ReadByIdForActivationReadOnlyAsync(projectId);
+            if (fullGraph is null)
+                throw new ArgumentException($"Project {projectId} not found.");
+
+            var problems = activationValidator.Validate(fullGraph);
+            if (problems.Count > 0)
+                throw new ProjectActivationException(problems);
+        }
+
         var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
         if (project is null)
             throw new ArgumentException($"Project {projectId} not found.");

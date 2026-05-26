@@ -130,4 +130,12 @@ Set your password via the link below (valid for 24 hours):
 {2}</value></data>
 
   <data name="Common_ProgressSaved" xml:space="preserve"><value>Saved.</value></data>
+
+  <data name="Activation_NoCategory" xml:space="preserve"><value>At least one category is required</value></data>
+  <data name="Activation_ProjectTranslation" xml:space="preserve"><value>Project name missing for language: {0}</value></data>
+  <data name="Activation_IntroductionTranslation" xml:space="preserve"><value>Introduction missing for language: {0}</value></data>
+  <data name="Activation_SectionTranslation" xml:space="preserve"><value>Section #{0}: missing translation for language: {1}</value></data>
+  <data name="Activation_QuestionTranslation" xml:space="preserve"><value>Question #{0}: missing translation for language: {1}</value></data>
+  <data name="Activation_CategoryTranslation" xml:space="preserve"><value>Category #{0}: missing translation for language: {1}</value></data>
+  <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Ending answer #{0}: missing translation for language: {1}</value></data>
 </root>

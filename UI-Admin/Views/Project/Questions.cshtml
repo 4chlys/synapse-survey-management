@@ -20,6 +20,22 @@
                                  ?? new List<string> { "nl" };
     var defaultLanguageCode = ViewData["DefaultLanguageCode"]?.ToString() ?? "nl";
     var supportedLangsJoined = string.Join(",", supportedLanguageCodes);
+
+    // Per-language placeholders prompt in the language being authored, not the
+    // admin's UI culture, so each tab's hint matches the content language.
+    string PlaceholderIn(string code, string key)
+    {
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(code);
+            return L[key].Value;
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
+    }
 }
 <div class="w-full flex flex-col gap-4">
 <div class="flex flex-col gap-4">
@@ -265,7 +281,7 @@
                                 <textarea name="Translations[@li].Text" rows="3" maxlength="500"
                                           class="textarea textarea-bordered textarea-sm w-full resize-none question-text-input"
                                           data-language="@code"
-                                          placeholder="@L["ModalQuestionPlaceholder"]"></textarea>
+                                          placeholder="@PlaceholderIn(code, "ModalQuestionPlaceholder")"></textarea>
                                 <span class="hidden text-error text-xs mt-1 question-text-error" data-language="@code"></span>
                             </label>
 
@@ -277,7 +293,7 @@
                                 <textarea name="Translations[@li].MediaText" rows="3" maxlength="2000"
                                           class="textarea textarea-bordered textarea-sm w-full resize-none question-media-text-input"
                                           data-language="@code"
-                                          placeholder="@L["MediaTextPlaceholder"]"></textarea>
+                                          placeholder="@PlaceholderIn(code, "MediaTextPlaceholder")"></textarea>
                             </label>
 
                             @* Hidden field populated at submit by project-questions.ts:

@@ -107,6 +107,7 @@
   <data name="SectionBehavior" xml:space="preserve"><value>Gedrag &amp; instellingen</value></data>
   <data name="ShortformHint" xml:space="preserve"><value>Dit wordt het eigen webadres van je project als subdomein (bijv. mentaal-welzijn.synapse-ip.xyz)</value></data>
   <data name="IntroductionHint" xml:space="preserve"><value>Getoond op de welkomstkaart aan het begin van de enquête, vóór de eerste vraag</value></data>
+  <data name="IntroductionPlaceholder" xml:space="preserve"><value>Schrijf een korte introductie van je project voor de deelnemers</value></data>
   <data name="ImageHint" xml:space="preserve"><value>Getoond naast de introductie op de welkomstkaart aan het begin van de enquête</value></data>
   <data name="InteractionModeHint" xml:space="preserve"><value>Bepaalt hoe de enquête wordt weergegeven: vragen één voor één als scrollbare kaarten (verticaal scrollen) of als een chatgesprek (chat)</value></data>
   <data name="AiAssistanceHint" xml:space="preserve"><value>Of AI verbeteringen voorstelt terwijl deelnemers hun ideeën typen</value></data>

@@ -151,8 +151,18 @@ public class ProjectsController(
         if (!Enum.TryParse<ProjectState>(dto.State, ignoreCase: true, out var newState))
             return BadRequest(new { error = "Invalid project state." });
 
-        var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
-        return Ok(ProjectDtoMapper.ToAdminDto(project));
+        try
+        {
+            var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
+            return Ok(ProjectDtoMapper.ToAdminDto(project));
+        }
+        catch (ProjectActivationException ex)
+        {
+            return BadRequest(new
+            {
+                problems = ex.Problems.Select(p => new { p.EntityType, p.EntityId, p.LanguageCode })
+            });
+        }
     }
 
     [HttpPatch("{projectId}/wizard-step")]

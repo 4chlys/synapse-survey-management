@@ -579,14 +579,29 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> ActivateProject(int projectId)
     {
-        await projectService.UpdateProjectStateAsync(projectId, "Active");
-        var projectForActivate = await projectService.GetProjectByIdAsync(projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForActivate?.Name ?? "";
-        ViewData["PlatformName"]  = projectForActivate?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForActivate?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Settings";
-        return RedirectToAction(nameof(Dashboard), new { projectId });
+        try
+        {
+            await projectService.UpdateProjectStateAsync(projectId, "Active");
+            return RedirectToAction(nameof(Dashboard), new { projectId });
+        }
+        catch (SynapseEnqueteManagement.UI.Admin.Services.ProjectActivationValidationException ex)
+        {
+            var project = await projectService.GetProjectByIdAsync(projectId);
+            if (project is null) return NotFound();
+
+            var questions  = await questionService.GetQuestionsAsync(projectId);
+            var categories = await categoryService.GetCategoriesAsync(projectId);
+
+            ViewData["ProjectId"]          = projectId;
+            ViewData["ProjectName"]        = project.Name;
+            ViewData["PlatformName"]       = project.OrganisationName ?? "";
+            ViewData["ProjectState"]       = project.ProjectState ?? "";
+            ViewData["ActiveSection"]      = "Settings";
+            ViewData["QuestionCount"]      = questions.Count;
+            ViewData["CategoryCount"]      = categories.Count;
+            ViewData["ActivationProblems"] = ex.Problems;
+            return View(nameof(Activate), project);
+        }
     }
 
     public async Task<IActionResult> Archive(int projectId)

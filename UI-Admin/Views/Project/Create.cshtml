@@ -20,6 +20,22 @@
         "en" => "English",
         _ => code.ToUpperInvariant()
     };
+
+    // Per-language placeholders prompt in the language being authored, not the
+    // admin's UI culture, so each tab's hint matches the content language.
+    string PlaceholderIn(string code, string key)
+    {
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(code);
+            return L[key].Value;
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
+    }
 }
 
 @* Inline helper: label + optional tooltip icon *@
@@ -135,7 +151,7 @@
                                                     <label class="text-sm font-semibold text-base-content">@L["NameLabel"] <span class="text-error">*</span></label>
                                                 </div>
                                                 <input type="text" name="Translations[@i].Name" value="@t.Name"
-                                                       class="input input-bordered w-full" placeholder="@L["NamePlaceholder"]"
+                                                       class="input input-bordered w-full" placeholder="@PlaceholderIn(t.LanguageCode, "NamePlaceholder")"
                                                        maxlength="100" data-translation-field="name" data-language="@t.LanguageCode" />
                                                 <span asp-validation-for="Translations[i].Name" class="text-xs text-error"></span>
                                             </div>
@@ -145,7 +161,7 @@
                                                     <label class="text-sm font-semibold text-base-content">@L["TopicLabel"] <span class="text-error">*</span></label>
                                                 </div>
                                                 <input type="text" name="Translations[@i].Topic" value="@t.Topic"
-                                                       class="input input-bordered w-full" placeholder="@L["TopicPlaceholder"]"
+                                                       class="input input-bordered w-full" placeholder="@PlaceholderIn(t.LanguageCode, "TopicPlaceholder")"
                                                        maxlength="100" data-translation-field="topic" data-language="@t.LanguageCode" />
                                                 <span asp-validation-for="Translations[i].Topic" class="text-xs text-error"></span>
                                             </div>
@@ -165,7 +181,8 @@
                                             else
                                             {
                                                 <div class="bg-base-100"
-                                                     data-intro-editor="@t.LanguageCode">@Html.Raw(t.Introduction)</div>
+                                                     data-intro-editor="@t.LanguageCode"
+                                                     data-intro-placeholder="@PlaceholderIn(t.LanguageCode, "IntroductionPlaceholder")">@Html.Raw(t.Introduction)</div>
                                             }
                                             <input type="hidden" name="Translations[@i].Introduction" value="@t.Introduction"
                                                    data-translation-field="introduction" data-language="@t.LanguageCode" />
@@ -456,7 +473,8 @@
                         </div>
                         <div id="sections-container" class="flex flex-col gap-2"
                              data-section-count="@(Model.Sections?.Count ?? 0)"
-                             data-available-languages="@string.Join(",", availableLanguages)">
+                             data-available-languages="@string.Join(",", availableLanguages)"
+                             data-section-name-placeholders="@System.Text.Json.JsonSerializer.Serialize(availableLanguages.ToDictionary(c => c, c => PlaceholderIn(c, "SectionNamePlaceholder")))">
                             @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                             {
                                 <div class="flex gap-2 items-end section-row">
@@ -473,7 +491,7 @@
                                             <input type="text" name="Sections[@i].Translations[@j].Name"
                                                    value="@(translation?.Name ?? "")" maxlength="20"
                                                    class="input input-bordered input-sm w-full section-name-input"
-                                                   placeholder="@L["SectionNamePlaceholder"]"
+                                                   placeholder="@PlaceholderIn(langCode, "SectionNamePlaceholder")"
                                                    data-lang="@langCode" />
                                         </div>
                                     }

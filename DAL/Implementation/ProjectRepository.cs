@@ -88,6 +88,19 @@ public class ProjectRepository(DbContext context) : Repository<Project>(context)
         => WithLanguageGraph(Context.Set<Project>().AsNoTracking())
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
 
+    public Task<Project> ReadByIdForActivationReadOnlyAsync(int projectId)
+        => Context.Set<Project>()
+            .AsNoTracking()
+            .Include(p => p.DefaultLanguage)
+            .Include(p => p.SupportedLanguages)
+            .Include(p => p.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Introduction).ThenInclude(i => i.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Categories).ThenInclude(c => c.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Sections).ThenInclude(s => s.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.Translations).ThenInclude(t => t.Language)
+            .Include(p => p.Questionnaire).ThenInclude(q => q.Questions).ThenInclude(q => q.EndingAnswers).ThenInclude(ea => ea.Translations).ThenInclude(t => t.Language)
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId);
+
     public Task<Project> ReadByIdWithTranslationsAndLanguagesForUpdateAsync(int projectId)
         => Context.Set<Project>()
             .Include(p => p.DefaultLanguage)
