@@ -99,4 +99,18 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Select(c => new CategoryMetric(c.CategoryId, c.Name ?? string.Empty, c.IdeaCount, c.TotalReactions))
             .ToList();
     }
+
+    public async Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId, int? categoryId = null)
+    {
+        var query = Context.Set<Idea>()
+            .AsNoTracking()
+            .Where(i => i.Category.Project.ProjectId == projectId);
+
+        if (categoryId.HasValue)
+            query = query.Where(i => i.Category.CategoryId == categoryId.Value);
+
+        return await query
+            .GroupBy(i => i.Status)
+            .ToDictionaryAsync(g => g.Key, g => g.Count());
+    }
 }
