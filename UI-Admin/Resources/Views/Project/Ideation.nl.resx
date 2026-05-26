@@ -30,4 +30,7 @@
   <data name="QuestionsLink" xml:space="preserve"><value>Vragen</value></data>
   <data name="DashboardLink" xml:space="preserve"><value>Dashboard</value></data>
   <data name="NextLink" xml:space="preserve"><value>Volgende</value></data>
+  <data name="EmojisHeading" xml:space="preserve"><value>Emoji reacties</value></data>
+  <data name="EmojisSubtitle" xml:space="preserve"><value>Kies welke emojis deelnemers kunnen gebruiken om op ideeën te reageren</value></data>
+  <data name="EmojisEmpty" xml:space="preserve"><value>Geen emojis beschikbaar in het systeem.</value></data>
 </root>

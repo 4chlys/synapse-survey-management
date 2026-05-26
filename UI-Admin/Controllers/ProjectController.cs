@@ -29,6 +29,7 @@ public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
+    EmojiAdminService emojiService,
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
     UploadAdminService uploadService,
@@ -303,6 +304,7 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var emojis = await emojiService.GetEmojisForProjectAsync(projectId);
 
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 3);
@@ -313,6 +315,7 @@ public class ProjectController(
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categories";
         ViewData["Project"]       = project;
+        ViewData["Emojis"]        = emojis;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         return View(categories);
@@ -374,6 +377,32 @@ public class ProjectController(
         ViewData["PlatformName"]  = projectForDelete?.OrganisationName ?? "";
         ViewData["ProjectState"]  = projectForDelete?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categories";
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EnableEmoji(int projectId, int emojiId, bool isNew)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(project))
+        {
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
+        await emojiService.EnableEmojiAsync(projectId, emojiId);
+        return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DisableEmoji(int projectId, int emojiId, bool isNew)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (IsProjectLocked(project))
+        {
+            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
+            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
+        }
+        await emojiService.DisableEmojiAsync(projectId, emojiId);
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 

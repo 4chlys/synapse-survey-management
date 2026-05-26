@@ -94,6 +94,49 @@
         </div>
     </div>
 
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <div>
+                <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["EmojisHeading"]</h2>
+                <p class="text-base-content/50 text-sm mt-2">@L["EmojisSubtitle"]</p>
+            </div>
+
+            @{
+                var emojis = ViewData["Emojis"] as List<EmojiAdminViewModel> ?? new List<EmojiAdminViewModel>();
+            }
+
+            @if (emojis.Any())
+            {
+                <div class="flex flex-wrap gap-2">
+                    @foreach (var emoji in emojis)
+                    {
+                        <form asp-action="@(emoji.IsEnabled ? "DisableEmoji" : "EnableEmoji")" method="post">
+                            <input type="hidden" name="projectId" value="@projectId" />
+                            <input type="hidden" name="emojiId" value="@emoji.EmojiId" />
+                            <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
+                            <button type="submit" @(isLocked ? "disabled" : "")
+                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60
+                                        @(emoji.IsEnabled
+                                            ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+                                            : "bg-base-200 border-base-300 text-base-content/50 hover:bg-base-300")">
+                                <span class="text-lg leading-none">@emoji.Symbol</span>
+                                <span class="leading-none">@emoji.Name</span>
+                                @if (emoji.IsEnabled)
+                                {
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                }
+                            </button>
+                        </form>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-base-content/40 italic text-sm">@L["EmojisEmpty"]</p>
+            }
+        </div>
+    </div>
+
     <details class="card bg-base-100 shadow-sm" @(isLocked ? "" : "open")>
         <summary class="card-body cursor-pointer flex-row items-center gap-2 py-4">
             <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60">@L["SettingsHeading"]</h2>
