@@ -15,4 +15,5 @@ public sealed record IdeaSummaryAiConfig(
     string ModelId,
     string Prompt,
     int MaxIdeas,
-    int MaxSummaryChars);
+    int MaxSummaryChars,
+    int BatchSize);
