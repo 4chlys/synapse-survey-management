@@ -35,6 +35,12 @@ public class ProjectManagerTests
                 var set = codes.ToHashSet();
                 return new[] { LanguageNl, LanguageEn }.Where(l => set.Contains(l.Code)).ToList();
             });
+
+        // CreateProjectAsync enables all emojis by default; return an empty list so that
+        // existing tests stay focused on their own assertions without needing emoji data.
+        _emojiRepository
+            .Setup(r => r.ReadAllReadOnlyAsync())
+            .ReturnsAsync(new List<Emoji>());
     }
 
     private static IEnumerable<ProjectTranslationInput> Translations(params (string code, string name)[] entries) =>
