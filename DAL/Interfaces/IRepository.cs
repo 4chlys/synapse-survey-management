@@ -8,6 +8,8 @@ public interface IRepository<T> where T : class
 
     Task<IEnumerable<T>> ReadAllReadOnlyAsync();
 
+    Task<IEnumerable<T>> ReadAllForUpdateAsync();
+
     void Update(T entity);
 
     Task<bool> DeleteByIdAsync(int id);

@@ -30,6 +30,7 @@ public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
+    EmojiAdminService emojiService,
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
     UploadAdminService uploadService,
@@ -305,6 +306,7 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var emojis = await emojiService.GetEmojisForProjectAsync(projectId);
 
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 3);
@@ -315,6 +317,7 @@ public class ProjectController(
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categories";
         ViewData["Project"]       = project;
+        ViewData["Emojis"]        = emojis;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         return View(categories);

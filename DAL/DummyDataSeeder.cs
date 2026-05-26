@@ -157,6 +157,34 @@ public class DummyDataSeeder
             languageEn = context.Languages.First(l => l.Code == "en");
         }
 
+        // Emoji seeding is idempotent: adding a new entry here creates it on any
+        // run where it is missing, even on a database that already has projects.
+        // No database reset needed when new emojis are introduced.
+        static Emoji GetOrCreateEmoji(SynapseEnqueteContext ctx, string symbol, string name)
+        {
+            var existing = ctx.Emojis.Local.FirstOrDefault(e => e.Name == name)
+                        ?? ctx.Emojis.FirstOrDefault(e => e.Name == name);
+            if (existing is not null) return existing;
+            var emoji = new Emoji { Symbol = symbol, Name = name };
+            ctx.Emojis.Add(emoji);
+            return emoji;
+        }
+
+        GetOrCreateEmoji(context, "❤️", "heart");
+        GetOrCreateEmoji(context, "👍", "thumbsup");
+        GetOrCreateEmoji(context, "🔥", "fire");
+        GetOrCreateEmoji(context, "✅", "check");
+        GetOrCreateEmoji(context, "💡", "lightbulb");
+        GetOrCreateEmoji(context, "🚀", "rocket");
+        GetOrCreateEmoji(context, "🎉", "party");
+        GetOrCreateEmoji(context, "🙌", "raisinghands");
+        GetOrCreateEmoji(context, "⭐", "star");
+        GetOrCreateEmoji(context, "🤔", "thinking");
+        GetOrCreateEmoji(context, "💪", "muscle");
+        GetOrCreateEmoji(context, "🎯", "target");
+        GetOrCreateEmoji(context, "🏆", "trophy");
+        context.SaveChanges();
+
         if (context.Projects.Any()) return;
 
         // The content language for ideas/comments whose text is in the project's
@@ -171,12 +199,11 @@ public class DummyDataSeeder
         string SeedUrl(string relativePath) =>
             apiBaseUrl is not null ? $"{apiBaseUrl}/seed/{relativePath}" : null;
 
-        _heart = new Emoji { Symbol = "❤️", Name = "heart" };
-        _thumbsup = new Emoji { Symbol = "👍", Name = "thumbsup" };
-        _fire = new Emoji { Symbol = "🔥", Name = "fire" };
-        _check = new Emoji { Symbol = "✅", Name = "check" };
-        context.Emojis.AddRange(_heart, _thumbsup, _fire, _check);
-        context.SaveChanges();
+        // All emojis were just saved above — load the 4 that are used in seed reactions below.
+        _heart    = context.Emojis.First(e => e.Name == "heart");
+        _thumbsup = context.Emojis.First(e => e.Name == "thumbsup");
+        _fire     = context.Emojis.First(e => e.Name == "fire");
+        _check    = context.Emojis.First(e => e.Name == "check");
 
         var platformSynapse = new ProjectPlatform
         {
