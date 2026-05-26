@@ -25,7 +25,7 @@ public class ProjectsControllerTests
             .Setup(s => s.GenerateProjectImageAsync(
                 It.IsAny<string>(), It.IsAny<int>(),
                 It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ImageGenerationResult.Failed("disabled"));
 
         _controller = new ProjectsController(

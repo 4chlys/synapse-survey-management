@@ -183,7 +183,4 @@ public class ProjectsController(
 
 }
 
-// [FromBody] keeps large intro payloads out of the URL.
-// The intro field can hold up to 5000 chars of Quill HTML; URI-encoding it would
-// exceed the ~8 KB query-string limit enforced by many proxies and servers.
 public sealed record GenerateImageRequest(string Name, string Topic, string Intro);
