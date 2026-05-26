@@ -15,13 +15,17 @@ public sealed class AiImageGenerationService(
         int projectId,
         string projectTopic = null,
         string introText = null,
+        string postCopy = null,
         CancellationToken ct = default)
     {
         try
         {
-            // Build optional context block: topic (highest priority), then intro snippet.
-            // Phrased as scene guidance so the model generates concrete real-world imagery.
             var contextParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(postCopy))
+            {
+                var trimmed = postCopy.Length > 500 ? postCopy[..500].TrimEnd() + "…" : postCopy;
+                contextParts.Add($" De bijbehorende social media post: \"{trimmed}\".");
+            }
             if (!string.IsNullOrWhiteSpace(projectTopic))
                 contextParts.Add($" Het gaat specifiek over: \"{projectTopic.Trim()}\".");
             if (!string.IsNullOrWhiteSpace(introText))

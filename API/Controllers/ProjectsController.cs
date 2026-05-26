@@ -170,7 +170,7 @@ public class ProjectsController(
         if (string.IsNullOrWhiteSpace(request?.Name))
             throw new LocalizedValidationException("Validation.Project.NameRequired");
 
-        var result = await imageGenerationService.GenerateProjectImageAsync(request.Name, 0, request.Topic, request.Intro, ct);
+        var result = await imageGenerationService.GenerateProjectImageAsync(request.Name, 0, request.Topic, request.Intro, ct: ct);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
 
