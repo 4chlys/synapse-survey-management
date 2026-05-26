@@ -122,7 +122,10 @@ export function initSurvey(): void {
         try {
             await submitSurvey(projectId);
             const popup = document.getElementById('thank-you-popup');
-            if (popup) popup.classList.remove('hidden');
+            if (popup) {
+                popup.classList.remove('hidden');
+                popup.classList.add('flex');
+            }
         } catch {
             if (submitBtn) {
                 submitBtn.disabled = false;
