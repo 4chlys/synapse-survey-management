@@ -20,10 +20,10 @@ public class AdminIdeaSummaryController(
         CancellationToken ct)
     {
         if (!Enum.TryParse<IdeaSummaryExportFormat>(req.Format, ignoreCase: true, out var format))
-            return BadRequest(new { error = $"Ongeldig formaat '{req.Format}'." });
+            return BadRequest(new { error = $"Invalid export format '{req.Format}'." });
 
         if (!Enum.TryParse<IdeaSummarySamplingStrategy>(req.SamplingStrategy, ignoreCase: true, out var strategy))
-            return BadRequest(new { error = $"Ongeldige strategie '{req.SamplingStrategy}'." });
+            return BadRequest(new { error = $"Invalid sampling strategy '{req.SamplingStrategy}'." });
 
         var filterJson = JsonSerializer.Serialize(new SummaryFilterParams
         {
@@ -63,12 +63,12 @@ public class AdminIdeaSummaryController(
         if (job is null) return NotFound();
 
         if (job.Status != IdeaSummaryJobStatus.Completed || job.OutputPath is null)
-            return BadRequest(new { error = "Samenvatting is nog niet klaar." });
+            return BadRequest(new { error = "Summary is not ready yet." });
 
         var webRoot  = env.WebRootPath ?? string.Empty;
         var fullPath = Path.GetFullPath(Path.Combine(webRoot, job.OutputPath));
         if (!fullPath.StartsWith(webRoot, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Ongeldig bestandspad." });
+            return BadRequest(new { error = "Invalid file path." });
         if (!System.IO.File.Exists(fullPath)) return NotFound();
 
         var contentType = Path.GetExtension(job.OutputPath).ToLowerInvariant() switch
