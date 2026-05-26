@@ -37,6 +37,8 @@ public sealed class PlatformSettingsReadModel
     public string PromptIdeaSupport { get; set; }
     public string PromptCommentSupport { get; set; }
     public string PromptQuestionSupport { get; set; }
+    public string PromptIdeaSummary { get; set; }
+    public int IdeaSummaryMaxIdeas { get; set; } = 200;
 }
 
 [Table("SystemAiSettings")]

@@ -19,6 +19,7 @@ using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
+using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
@@ -38,7 +39,8 @@ public class ProjectController(
     IdeaAdminService ideaService,
     ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings,
-    IStringLocalizer<SharedResource> localizer) : Controller
+    IStringLocalizer<SharedResource> localizer,
+    IdeaSummaryAdminService ideaSummaryService) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -611,6 +613,7 @@ public class ProjectController(
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
         var currentCategory = categories.FirstOrDefault(c => c.CategoryId == categoryId);
+        var platformSettings = await platformService.GetPlatformSettingsAsync(project.PlatformId);
 
         var vm = new IdeasViewModel
         {
@@ -627,7 +630,10 @@ public class ProjectController(
             FlaggedCount  = flagged,
             DeclinedCount = Math.Max(0, total - approved - pending - flagged),
             Ideas         = items,
+            PlatformId            = project.PlatformId,
+            IdeaSummaryMaxIdeas   = platformSettings?.IdeaSummaryMaxIdeas ?? 200,
             Categories    = categories.Select(c => new CategoryOptionViewModel
+                
             {
                 CategoryId = c.CategoryId,
                 Name       = c.Name
@@ -792,6 +798,39 @@ public class ProjectController(
         ViewData["ProjectState"]  = projectForConfigure?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GenerateSummary(
+        int projectId,
+        [FromBody] EnqueueSummaryRequest req)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user?.ProjectPlatformId is null) return Forbid();
+
+        var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value, req);
+
+        if (jobId is null)
+            return BadRequest(new { error = "Failed to start summary generation." });
+
+        return Ok(new { jobId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SummaryStatus(int projectId, Guid jobId)
+    {
+        var status = await ideaSummaryService.GetStatusAsync(projectId, jobId);
+        if (status is null) return NotFound();
+        return Ok(status);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DownloadSummary(int projectId, Guid jobId)
+    {
+        var result = await ideaSummaryService.DownloadAsync(projectId, jobId);
+        if (result is null) return NotFound();
+        var (bytes, contentType, fileName) = result.Value;
+        return File(bytes, contentType, fileName);
     }
 
     [HttpPost]

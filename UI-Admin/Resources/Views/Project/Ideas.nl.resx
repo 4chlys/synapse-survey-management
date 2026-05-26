@@ -35,4 +35,5 @@
   <data name="ActionRemoveImage" xml:space="preserve"><value>Afbeelding verwijderen</value></data>
   <data name="ConfirmRemoveImage" xml:space="preserve"><value>Weet je zeker dat je deze afbeelding wilt verwijderen?</value></data>
   <data name="PageOf" xml:space="preserve"><value>Pagina {0} van {1}</value></data>
+  <data name="AiSummaryButton" xml:space="preserve"><value>AI-samenvatting</value></data>
 </root>

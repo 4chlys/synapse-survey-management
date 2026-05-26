@@ -36,6 +36,13 @@ public interface IIdeaRepository : IRepository<Idea>
     // the anchor for similar/different/diverse embedding sorts. Null = no idea yet.
     Task<string> ReadMostRecentDescriptionByCategoryAndParticipantAsync(int categoryId, int participantId);
 
+    Task<List<Idea>> ReadForSummaryAsync(
+        int projectId,
+        int? categoryId,
+        ModerationStatus? status,
+        string languageCode,
+        CancellationToken ct = default);
+
     Task<List<IdeaMetric>> ReadTopByProjectReadOnlyAsync(int projectId, int count);
     Task<List<Idea>> ReadLatestByProjectWithCommentsReadOnlyAsync(int projectId, int count);
     Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(int projectId);
