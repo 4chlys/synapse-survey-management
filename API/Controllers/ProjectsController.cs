@@ -1,13 +1,10 @@
-using System.Globalization;
 using Ganss.Xss;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Exceptions;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -30,94 +27,6 @@ public class ProjectsController(
             ? themeResult
             : ProjectTheme.Minimal;
 
-    private static string ActiveCulture() =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-
-    private static ProjectTranslation ResolveTranslation(Project p)
-    {
-        var active = ActiveCulture();
-        return p.Translations.FirstOrDefault(t => t.Language?.Code == active)
-               ?? p.Translations.FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)
-               ?? p.Translations.FirstOrDefault();
-    }
-
-    private ProjectDto MapToParticipantDto(Project p)
-    {
-        var t = ResolveTranslation(p);
-        var active = ActiveCulture();
-        var introText = p.Introduction?.Translations
-                            .FirstOrDefault(it => it.Language?.Code == active)?.Text
-                        ?? p.Introduction?.Translations
-                            .FirstOrDefault(it => it.Language?.Code == p.DefaultLanguage?.Code)?.Text
-                        ?? p.Introduction?.Translations.FirstOrDefault()?.Text
-                        ?? string.Empty;
-        return new ProjectDto
-        {
-            ProjectId = p.ProjectId,
-            PlatformId = p.ProjectPlatformId,
-            Name = t?.Name ?? string.Empty,
-            ShortForm = p.ShortForm ?? string.Empty,
-            Topic = t?.Topic ?? string.Empty,
-            ProjectState = p.ProjectState.ToString(),
-            FormType = p.FormType.ToString(),
-            OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
-            ProjectImage = p.ImageUrl ?? string.Empty,
-            IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
-            OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
-            OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
-            Introduction = introText,
-            RequestContactInfo = p.RequestContactInfo,
-            AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
-            IdeaPageSize = p.IdeaPageSize,
-            ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
-            MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
-            MinAge = p.MinAge,
-            MaxAge = p.MaxAge,
-            LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
-            DefaultLanguageCode = p.DefaultLanguage?.Code,
-            SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
-            LastWizardStep = p.LastWizardStep,
-            Theme = p.Theme.ToString(),
-            PrimaryColor = p.PrimaryColor,
-            CustomCss = p.CustomCss,
-        };
-    }
-
-    private AdminProjectDto MapToAdminDto(Project p) => new()
-    {
-        ProjectId = p.ProjectId,
-        PlatformId = p.ProjectPlatformId,
-        ShortForm = p.ShortForm ?? string.Empty,
-        ProjectState = p.ProjectState.ToString(),
-        FormType = p.FormType.ToString(),
-        OrganisationName = p.ProjectPlatform?.Name ?? string.Empty,
-        ProjectImage = p.ImageUrl ?? string.Empty,
-        IsAiGeneratedImage = IsAiGeneratedImageUrl(p.ImageUrl),
-        OrganisationLogoUrl = p.ProjectPlatform?.LogoUrl ?? string.Empty,
-        OrganisationWebsiteUrl = p.ProjectPlatform?.WebsiteUrl ?? string.Empty,
-        RequestContactInfo = p.RequestContactInfo,
-        AllowCrossLanguageIdeas = p.AllowCrossLanguageIdeas,
-        IdeaPageSize = p.IdeaPageSize,
-        ExtraIdeasReplaceExisting = p.ExtraIdeasReplaceExisting,
-        MaxExtraIdeaRequests = p.MaxExtraIdeaRequests,
-        MinAge = p.MinAge,
-        MaxAge = p.MaxAge,
-        DefaultLanguageCode = p.DefaultLanguage?.Code,
-        SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
-        Translations = p.Translations.Select(t => new ProjectTranslationDto
-        {
-            LanguageCode = t.Language?.Code,
-            Name = t.Name,
-            Topic = t.Topic,
-            Introduction = p.Introduction?.Translations
-                .FirstOrDefault(it => it.Language?.Code == t.Language?.Code)?.Text,
-        }).ToList(),
-        LastWizardStep = p.LastWizardStep,
-        Theme = p.Theme.ToString(),
-        PrimaryColor = p.PrimaryColor,
-        CustomCss = p.CustomCss,
-    };
-
     private static IEnumerable<ProjectTranslationInput> MapTranslations(ICollection<ProjectTranslationDto> dtos) =>
         dtos.Select(t => new ProjectTranslationInput(t.LanguageCode, t.Name, t.Topic ?? string.Empty));
 
@@ -137,7 +46,7 @@ public class ProjectsController(
         if (project is null)
             return NotFound();
 
-        return Ok(MapToParticipantDto(project));
+        return Ok(ProjectDtoMapper.ToParticipantDto(project));
     }
 
     [HttpGet]
@@ -145,7 +54,7 @@ public class ProjectsController(
         [FromQuery] int? platformId = null)
     {
         var projects = await projectManager.GetAllProjectsAsync(platformId);
-        return Ok(projects.Select(MapToParticipantDto));
+        return Ok(projects.Select(ProjectDtoMapper.ToParticipantDto));
     }
 
     [HttpGet("by-shortform/{shortForm}")]
@@ -188,7 +97,7 @@ public class ProjectsController(
             dto.PrimaryColor,
             dto.CustomCss);
 
-        return Created(string.Empty, MapToAdminDto(project));
+        return Created(string.Empty, ProjectDtoMapper.ToAdminDto(project));
     }
 
     [HttpPut("{projectId}")]
@@ -214,7 +123,7 @@ public class ProjectsController(
             dto.PrimaryColor,
             dto.CustomCss);
 
-        return Ok(MapToAdminDto(project));
+        return Ok(ProjectDtoMapper.ToAdminDto(project));
     }
 
     [HttpPost("{projectId:int}/copy")]
@@ -226,7 +135,7 @@ public class ProjectsController(
 
         var copy = await projectManager.DuplicateProjectAsync(
             projectId, MapTranslations(dto.Translations), dto.PlatformId, dto.NewShortForm, ct);
-        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, MapToAdminDto(copy));
+        return CreatedAtAction(nameof(GetProject), new { projectId = copy.ProjectId }, ProjectDtoMapper.ToAdminDto(copy));
     }
 
     [HttpDelete("{projectId}")]
@@ -243,7 +152,7 @@ public class ProjectsController(
             return BadRequest(new { error = "Invalid project state." });
 
         var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
-        return Ok(MapToAdminDto(project));
+        return Ok(ProjectDtoMapper.ToAdminDto(project));
     }
 
     [HttpPatch("{projectId}/wizard-step")]
@@ -272,9 +181,6 @@ public class ProjectsController(
         return Ok(new { url });
     }
 
-    private static bool IsAiGeneratedImageUrl(string imageUrl) =>
-        !string.IsNullOrWhiteSpace(imageUrl)
-        && Path.GetFileNameWithoutExtension(imageUrl).Contains("generated", StringComparison.OrdinalIgnoreCase);
 }
 
 // [FromBody] keeps large intro payloads out of the URL.

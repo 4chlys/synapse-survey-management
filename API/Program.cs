@@ -31,11 +31,13 @@ using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.API.BackgroundServices;
 using SynapseEnqueteManagement.BL.AiIdeaSummary;
 using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Stats;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
 using Resend;
 using SynapseEnqueteManagement.BL.AiSocialMedia;
+using SynapseEnqueteManagement.API.Extensions;
 
 bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
@@ -115,45 +117,11 @@ else
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IPlatformAiConfigService, PlatformAiConfigService>();
-builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
-builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-builder.Services.AddScoped<IEmojiRepository, EmojiRepository>();
-builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
-builder.Services.AddScoped<IQuestionStatsRepository, QuestionStatsRepository>();
-builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
-builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
-builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
-builder.Services.AddScoped<ISectionRepository, SectionRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-// Sort strategies (singleton — stateless)
-builder.Services.AddSingleton<ISortStrategy<Idea>, RandomSortStrategy<Idea>>();
-builder.Services.AddSingleton<ISortStrategyFactory<Idea>>(sp =>
-    new SortStrategyFactory<Idea>(sp.GetServices<ISortStrategy<Idea>>(), defaultKey: "random"));
-
-builder.Services.AddSingleton<ISortStrategy<TextComment>, OldestFirstSortStrategy<TextComment>>();
-builder.Services.AddSingleton<ISortStrategyFactory<TextComment>>(sp =>
-    new SortStrategyFactory<TextComment>(sp.GetServices<ISortStrategy<TextComment>>(), defaultKey: "oldest"));
-
-// Embedding-based sort strategies (in-memory; not expressible as SQL ORDER BY)
-builder.Services.AddSingleton<IEmbeddingSortStrategy, SimilarSortStrategy>();
-builder.Services.AddSingleton<IEmbeddingSortStrategy, DifferentSortStrategy>();
-builder.Services.AddSingleton<IEmbeddingSortStrategy, DiverseSortStrategy>();
-builder.Services.AddSingleton<IEmbeddingSortStrategyFactory, EmbeddingSortStrategyFactory>();
-
-// IEmbeddingService is registered below inside/after the Vertex-AI block: the
-// real backing IEmbeddingGenerator<string, Embedding<float>> only exists when
-// useAi=true, so Mock is the fallback when AI is disabled.
-
-// Response validators (OCP: add new formats by registering a new IResponseValidator)
-builder.Services.AddSingleton<IResponseValidator, OpenResponseValidator>();
-builder.Services.AddSingleton<IResponseValidator, SingleChoiceResponseValidator>();
-builder.Services.AddSingleton<IResponseValidator, MultipleChoiceResponseValidator>();
-builder.Services.AddSingleton<IResponseValidator, LikertResponseValidator>();
-builder.Services.AddSingleton<IResponseValidatorFactory, ResponseValidatorFactory>();
+builder.Services.AddRepositories()
+    .AddSortStrategies()
+    .AddManagers(builder.Configuration)
+    .AddExportPipeline()
+    .AddAiServices(builder.Configuration, aiConfig);
 
 // Storage
 if (builder.Environment.IsDevelopment())
@@ -165,29 +133,6 @@ else
 {
     builder.Services.AddSingleton<IStorageService, GoogleCloudStorageService>();
 }
-
-builder.Services.AddSingleton<IExportService, ExportService>();
-builder.Services.AddSingleton<IChartImageService, ScottPlotChartImageService>();
-builder.Services.AddScoped<IChartRendererService, XlsxChartRendererService>();
-
-// Registering BL
-var defaultReserved = new[] { "admin", "api", "www", "app", "mail", "static", "assets", "cdn", "auth", "health" };
-var reservedSubdomains = builder.Configuration.GetSection("Subdomains:Reserved").Get<string[]>() ?? defaultReserved;
-builder.Services.AddScoped<IShortFormService>(sp =>
-    new ShortFormService(sp.GetRequiredService<IProjectRepository>(), reservedSubdomains));
-builder.Services.AddScoped<ILanguageManager, LanguageManager>();
-builder.Services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
-builder.Services.AddScoped<IParticipantManager, ParticipantManager>();
-builder.Services.AddScoped<IResponseManager, ResponseManager>();
-builder.Services.AddScoped<ICategoryManager, CategoryManager>();
-builder.Services.AddScoped<IProjectManager, ProjectManager>();
-builder.Services.AddScoped<IIdeaManager, IdeaManager>();
-builder.Services.AddScoped<ICommentManager, CommentManager>();
-builder.Services.AddScoped<IModerationResolver, ModerationResolver>();
-builder.Services.AddScoped<ISurveyFlowManager, SurveyFlowManager>();
-builder.Services.AddScoped<ISubmissionManager, SubmissionManager>();
-builder.Services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
-builder.Services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
 
 // Rate limiting — cap email sends per source so a leaked API key can't be used to
 // blast mail through our Resend account / sender domain.
@@ -219,41 +164,6 @@ else
     builder.Services.AddScoped<IEmailService, SynapseEnqueteManagement.BL.Services.LogEmailService>();
 }
 
-// AI usage tracking
-builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("AiPricing"));
-builder.Services.AddSingleton<AiPricing>();
-builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
-builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
-
-// Idea summary
-builder.Services.Configure<SummaryStorageOptions>(builder.Configuration.GetSection("SummaryStorage"));
-builder.Services.AddSingleton<SummaryPathResolver>();
-builder.Services.AddScoped<IIdeaSummaryJobRepository, IdeaSummaryJobRepository>();
-builder.Services.AddScoped<IIdeaSummaryJobManager, IdeaSummaryJobManager>();
-builder.Services.AddScoped<IAiIdeaSummaryService, AiIdeaSummaryService>();
-builder.Services.AddSingleton<IIdeaSummarySamplingService, IdeaSummarySamplingService>();
-builder.Services.AddSingleton<IdeaSummaryExporter>();
-builder.Services.AddHostedService<IdeaSummaryWorker>();
-
-// AI configuration
-//
-// Register the already-loaded AiConfig instance directly so we don't parse
-// the file a second time. BannedWordList and RegexModerationPatterns are
-// derived from AiConfig and are stateless after construction.
-//
-// To apply changes to ai-config.json, restart the API.
-builder.Services.AddSingleton(aiConfig);
-builder.Services.AddSingleton(aiConfig.Moderation);
-builder.Services.AddSingleton(aiConfig.Fuzzy);
-builder.Services.AddSingleton(aiConfig.ImageGeneration);
-builder.Services.AddSingleton(aiConfig.ImageDescription);
-builder.Services.AddSingleton(aiConfig.SpeechToText);
-builder.Services.AddSingleton(aiConfig.SocialMedia);
-builder.Services.AddSingleton<BannedWordList>();
-builder.Services.AddSingleton<RegexModerationPatterns>();
-builder.Services.AddSingleton<IRegexModerationService, RegexModerationService>();
-builder.Services.AddSingleton<IInputValidationService, InputValidationService>();
-
 // Moderation token service (signed nonce — stateless across instances)
 var tokenSecret = builder.Configuration["ApiKey"]
                   ?? throw new InvalidOperationException(
@@ -261,6 +171,10 @@ var tokenSecret = builder.Configuration["ApiKey"]
 
 builder.Services.AddSingleton<IModerationTokenService>(sp =>
     new ModerationTokenService(tokenSecret, sp.GetRequiredService<ILogger<ModerationTokenService>>()));
+
+// IEmbeddingService is registered below inside/after the Vertex-AI block: the
+// real backing IEmbeddingGenerator<string, Embedding<float>> only exists when
+// useAi=true, so Mock is the fallback when AI is disabled.
 
 // AI chat clients — multi-provider registry (optional — controlled by use_ai in ai-config.json)
 if (useAi)
@@ -396,7 +310,7 @@ var app = builder.Build();
 
     for (int attempt = 1; attempt <= maxRetries; attempt++)
     {
-        using var scope = app.Services.CreateScope();
+        await using var scope = app.Services.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<SynapseEnqueteContext>();
         var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 

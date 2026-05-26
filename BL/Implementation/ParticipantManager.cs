@@ -8,14 +8,12 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ParticipantManager(
     IParticipantRepository participantRepository,
-    ILanguageRepository languageRepository,
+    ILanguageResolver languageResolver,
     IUnitOfWork uow) : IParticipantManager
 {
     public async Task<Participant> AddParticipantAsync(Project project, string languageCode, CancellationToken ct = default)
     {
-        var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
-        if (language is null || !language.IsActive)
-            throw new KeyNotFoundException($"Language '{languageCode}' is not a supported active language.");
+        var language = await languageResolver.ResolveSingleAsync(languageCode);
 
         var participant = new Participant
         {
@@ -32,16 +30,13 @@ public class ParticipantManager(
 
     public async Task<Language> SetLanguageAsync(int participantId, string languageCode, CancellationToken ct = default)
     {
-        var language = await languageRepository.ReadByCodeForUpdateAsync(languageCode);
-        if (language is null || !language.IsActive)
-            throw new KeyNotFoundException($"Language '{languageCode}' is not a supported active language.");
+        var language = await languageResolver.ResolveSingleAsync(languageCode);
 
         var participant = await participantRepository.ReadByIdForUpdateAsync(participantId);
         if (participant is null)
             throw new KeyNotFoundException($"Participant {participantId} not found.");
 
         participant.Language = language;
-        participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
         return language;
     }
@@ -65,7 +60,6 @@ public class ParticipantManager(
             throw new KeyNotFoundException("Participant not found.");
         participant.HasSubmitted = true;
         participant.CompletedAt = DateTime.UtcNow;
-        participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
     }
 
@@ -105,7 +99,6 @@ public class ParticipantManager(
             throw new KeyNotFoundException($"Participant with id {participantId} not found.");
         EntityValidator.ValidateProperty(participant, email, nameof(Participant.Email));
         participant.Email = email;
-        participantRepository.Update(participant);
         await uow.SaveChangesAsync(ct);
     }
 

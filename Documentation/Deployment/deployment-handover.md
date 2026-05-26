@@ -394,6 +394,8 @@ base64 -w 0 cosign.key    # → COSIGN_KEY_B64
 # Store the password you used → COSIGN_PASSWORD
 ```
 
+**Important:** Commit `cosign.pub` to the repository — the `deploy-production` job reads it to verify image signatures. Never commit `cosign.key`.
+
 ---
 
 ## 11. First Production Deploy
@@ -410,13 +412,13 @@ The `main` pipeline runs:
 1. `build-api`, `build-ui`, `build-admin`
 2. `scan-api`, `scan-ui`, `scan-admin` (Trivy vulnerability scans)
 3. `push-prod` — pushes images tagged `latest`
-4. `sign-prod` — signs images with Cosign
+4. `sign-prod` — signs all three images with the Cosign private key
 
 ### Step 3: Trigger the production deploy
 
 In GitLab → CI/CD → Pipelines, find the `main` pipeline and click the **play button** on the `deploy-production` job.
 
-This does a rolling replace of all three production MIGs with `--max-unavailable=0 --max-surge=1` (zero downtime).
+This first verifies the Cosign signatures of all three images against `cosign.pub`. If verification passes, it does a rolling replace of all three production MIGs with `--max-unavailable=0 --max-surge=1` (zero downtime). If any signature check fails, the pipeline aborts.
 
 ---
 

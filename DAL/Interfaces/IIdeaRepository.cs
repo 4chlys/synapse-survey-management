@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 
 namespace SynapseEnqueteManagement.DAL.Interfaces;
 
@@ -41,4 +42,14 @@ public interface IIdeaRepository : IRepository<Idea>
         ModerationStatus? status,
         string languageCode,
         CancellationToken ct = default);
+
+    Task<List<IdeaMetric>> ReadTopByProjectReadOnlyAsync(int projectId, int count);
+    Task<List<Idea>> ReadLatestByProjectWithCommentsReadOnlyAsync(int projectId, int count);
+    Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(int projectId);
+
+    Task<(List<Idea> Items, int Total)> ReadPagedByProjectWithCommentsReadOnlyAsync(
+        int projectId, string search, int? categoryId, ModerationStatus? status,
+        int page, int pageSize);
+
+    Task<Idea> ReadByIdInProjectForUpdateAsync(int ideaId, int? projectId = null);
 }

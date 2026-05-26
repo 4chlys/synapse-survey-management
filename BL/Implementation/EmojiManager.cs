@@ -1,0 +1,14 @@
+using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.DAL.Interfaces;
+
+namespace SynapseEnqueteManagement.BL.Implementation;
+
+public class EmojiManager(IEmojiRepository emojiRepository) : IEmojiManager
+{
+    public Task<IEnumerable<Emoji>> GetAllReadOnlyAsync()
+        => emojiRepository.ReadAllReadOnlyAsync();
+
+    public Task<Emoji> GetByIdForUpdateAsync(int emojiId)
+        => emojiRepository.ReadByIdForUpdateAsync(emojiId);
+}
