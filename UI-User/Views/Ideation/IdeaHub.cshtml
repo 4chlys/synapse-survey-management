@@ -151,7 +151,7 @@
                     <select name="languageCode" class="w-full px-4 py-2.5 border border-base-300 rounded-field bg-base-100 text-base-content text-sm focus:border-primary focus:outline-none transition-colors">
                         @foreach (var languageCode in Model.SupportedLanguageCodes)
                         {
-                            var displayName = languageCode switch { "nl" => "Nederlands", "en" => "English", _ => languageCode }; 
+                            var displayName = LanguageHelpers.DisplayName(languageCode);
                             <option value="@languageCode" selected="@(languageCode == Model.ParticipantLanguageCode)">@displayName</option>
                         }
                     </select>
