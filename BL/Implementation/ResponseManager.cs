@@ -144,14 +144,14 @@ public class ResponseManager(
         }
 
         // MultipleChoice — values are stored as ", "-joined choice texts (see SurveyFlowManager.SplitSelected)
-        var parts = value.Split(", ", StringSplitOptions.None);
-        var translated = new List<string>(parts.Length);
+        var parts = MultipleChoiceValueSerializer.Split(value);
+        var translated = new List<string>(parts.Count);
         foreach (var part in parts)
         {
             var idx = sourceChoices.IndexOf(part);
             translated.Add(idx >= 0 && idx < targetChoices.Count ? targetChoices[idx] : part);
         }
-        return string.Join(", ", translated);
+        return MultipleChoiceValueSerializer.Join(translated);
     }
 
     private static List<string> ChoicesFor(Question question, string languageCode)

@@ -139,7 +139,7 @@ public class SurveyFlowManager(
     {
         if (string.IsNullOrWhiteSpace(rawAnswer)) return Array.Empty<string>();
         return format == QuestionFormat.MultipleChoice
-            ? rawAnswer.Split(", ", StringSplitOptions.RemoveEmptyEntries)
+            ? MultipleChoiceValueSerializer.Split(rawAnswer)
             : new[] { rawAnswer };
     }
 }

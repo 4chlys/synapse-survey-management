@@ -102,14 +102,7 @@ public class ProjectManager(
             });
         }
 
-        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
-        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
-        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
-        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
-        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
-        ProjectThemeValidator.ValidatePrimaryColor(primaryColor);
-        ProjectThemeValidator.ValidateCustomCss(customCss);
-        ProjectThemeValidator.ValidateAgeRange(minAge, maxAge);
+        ValidateProjectProperties(project, imageUrl, minAge, maxAge, primaryColor, customCss);
 
         var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
         if (nonEmptyIntros.Count > 0)
@@ -165,14 +158,7 @@ public class ProjectManager(
             project.ShortForm = await shortFormService.ResolveAsync(shortForm, defaultName: null, excludeProjectId: projectId);
         }
 
-        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
-        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
-        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
-        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
-        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
-        ProjectThemeValidator.ValidatePrimaryColor(primaryColor);
-        ProjectThemeValidator.ValidateCustomCss(customCss);
-        ProjectThemeValidator.ValidateAgeRange(minAge, maxAge);
+        ValidateProjectProperties(project, imageUrl, minAge, maxAge, primaryColor, customCss);
 
         project.ImageUrl = imageUrl;
         project.FormType = formType;
@@ -188,12 +174,7 @@ public class ProjectManager(
         project.PrimaryColor = primaryColor;
         project.CustomCss = customCss;
 
-        var supportedSet = supportedList.ToHashSet();
-        foreach (var existing in project.SupportedLanguages.Where(l => !supportedSet.Contains(l.Code)).ToList())
-            project.SupportedLanguages.Remove(existing);
-        foreach (var code in supportedList)
-            if (!project.SupportedLanguages.Any(l => l.Code == code))
-                project.SupportedLanguages.Add(languages[code]);
+        ReconcileSupportedLanguages(project, supportedList, languages);
 
         void ValidateProjectTranslation(ProjectTranslationInput input)
         {
@@ -352,5 +333,38 @@ public class ProjectManager(
         project.Emojis.Remove(emoji);
         await uow.SaveChangesAsync(ct);
         return true;
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private static void ValidateProjectProperties(
+        Project project,
+        string imageUrl,
+        int? minAge,
+        int? maxAge,
+        string primaryColor,
+        string customCss)
+    {
+        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
+        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
+        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
+        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
+        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
+        ProjectThemeValidator.ValidatePrimaryColor(primaryColor);
+        ProjectThemeValidator.ValidateCustomCss(customCss);
+        ProjectThemeValidator.ValidateAgeRange(minAge, maxAge);
+    }
+
+    private static void ReconcileSupportedLanguages(
+        Project project,
+        IReadOnlyCollection<string> desiredCodes,
+        IReadOnlyDictionary<string, Language> languages)
+    {
+        var desiredSet = desiredCodes.ToHashSet();
+        foreach (var existing in project.SupportedLanguages.Where(l => !desiredSet.Contains(l.Code)).ToList())
+            project.SupportedLanguages.Remove(existing);
+        foreach (var code in desiredCodes)
+            if (!project.SupportedLanguages.Any(l => l.Code == code))
+                project.SupportedLanguages.Add(languages[code]);
     }
 }

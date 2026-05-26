@@ -28,6 +28,7 @@ using SynapseEnqueteManagement.BL.Implementation;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.AiUsage;
+using SynapseEnqueteManagement.BL.Stats;
 using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.DAL.Implementation;
@@ -227,6 +228,7 @@ builder.Services.Configure<AiPricingConfig>(builder.Configuration.GetSection("Ai
 builder.Services.AddSingleton<AiPricing>();
 builder.Services.AddScoped<IAiUsageRepository, AiUsageRepository>();
 builder.Services.AddScoped<IAiUsageManager, AiUsageManager>();
+builder.Services.AddSingleton<ISystemStatsAggregator, SystemStatsAggregator>();
 
 // AI configuration
 //
