@@ -244,6 +244,17 @@ public sealed class IdeaSummaryExporter
                     if (current.Length > 0) current.Append(' ');
                     current.Append(word);
                 }
+
+                while (paint.MeasureText(current.ToString()) > maxWidth)
+                {
+                    var chunk = current.ToString();
+                    int split = chunk.Length - 1;
+                    while (split > 0 && paint.MeasureText(chunk[..split]) > maxWidth)
+                        split--;
+                    result.Add(chunk[..split]);
+                    current.Clear();
+                    current.Append(chunk[split..]);
+                }
             }
             result.Add(current.ToString());
         }
