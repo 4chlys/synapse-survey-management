@@ -17,6 +17,7 @@ using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
+using SynapseEnqueteManagement.UI.Admin.Models.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
@@ -98,7 +99,7 @@ public class ProjectController(
             Theme = project.Theme,
             PrimaryColor = project.PrimaryColor,
             CustomCss = project.CustomCss,
-            Sections = sections.Select(s => s.Name).ToList()
+            Sections = BuildSections(sections)
         };
         ViewData["Project"] = project;
         ViewData["ProjectId"]     = projectId.Value;
@@ -125,6 +126,18 @@ public class ProjectController(
     // the admin form supports but the project doesn't have yet, so the view can
     // render one tab per available language and preserve typed data across
     // checkbox toggles.
+    private static IList<SectionInputViewModel> BuildSections(IEnumerable<SectionViewModel> existingSections)
+        => existingSections.Select(s => new SectionInputViewModel
+        {
+            Translations = AvailableLanguageCodes
+                .Select(code =>
+                {
+                    var t = s.Translations?.FirstOrDefault(t => t.LanguageCode == code);
+                    return new SectionTranslationViewModel { LanguageCode = code, Name = t?.Name ?? "" };
+                })
+                .ToList()
+        }).ToList();
+
     private static IList<ProjectTranslationViewModel> BuildTranslations(
         ICollection<ProjectTranslationViewModel> existing)
     {
@@ -254,22 +267,20 @@ public class ProjectController(
             return View(model);
         }
 
-        // Sync sections: keep existing by name, delete removed, add new
+        // Replace all sections: delete existing, recreate from form data filtered to supported languages.
         var existingSections = await sectionService.GetSectionsAsync(project.ProjectId);
-        var newNames = (model.Sections ?? new List<string>())
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Select(s => s.Trim())
-            .ToList();
-
         foreach (var s in existingSections)
-            if (!newNames.Contains(s.Name))
-                await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
+            await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
 
-        var existingNames = existingSections.Select(s => s.Name).ToList();
-        foreach (var name in newNames)
-            if (!existingNames.Contains(name))
-                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty,
-                    model.DefaultLanguageCode ?? "nl");
+        foreach (var sectionInput in model.Sections ?? new List<SectionInputViewModel>())
+        {
+            var translations = (sectionInput.Translations ?? new List<SectionTranslationViewModel>())
+                .Where(t => supportedCodes.Contains(t.LanguageCode) && !string.IsNullOrWhiteSpace(t.Name))
+                .Select(t => new SectionTranslationViewModel { LanguageCode = t.LanguageCode, Name = t.Name.Trim() })
+                .ToList();
+            if (translations.Count == 0) continue;
+            await sectionService.CreateSectionAsync(project.ProjectId, translations);
+        }
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
@@ -372,6 +383,7 @@ public class ProjectController(
         ViewData["Project"]       = project;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
+        ViewData["AvailableLanguageCodes"] = project?.SupportedLanguageCodes?.ToArray() ?? AvailableLanguageCodes;
         return View(categories);
     }
 
@@ -406,7 +418,7 @@ public class ProjectController(
             return RedirectToAction(nameof(Ideation), new { projectId, isNew });
         }
         if (ModelState.IsValid)
-            await categoryService.CreateCategoryAsync(projectId, model.Name, model.Description ?? string.Empty);
+            await categoryService.CreateCategoryAsync(projectId, model.Translations);
         ViewData["ProjectId"]     = projectId;
         ViewData["ProjectName"]   = projectForAdd?.Name ?? "";
         ViewData["PlatformName"]  = projectForAdd?.OrganisationName ?? "";
