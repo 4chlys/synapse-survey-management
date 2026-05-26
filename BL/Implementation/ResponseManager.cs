@@ -1,6 +1,7 @@
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -25,7 +26,7 @@ public class ResponseManager(
             Value = value,
             Question = question,
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, null, null),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(response);
@@ -58,7 +59,7 @@ public class ResponseManager(
             Value = value,
             Question = question,
             Participant = participant,
-            Language = participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, null, null),
             CreatedAt = DateTime.UtcNow,
             IsCommitted = false
         };
@@ -154,9 +155,6 @@ public class ResponseManager(
     }
 
     private static List<string> ChoicesFor(Question question, string languageCode)
-    {
-        var translation = question.Translations.FirstOrDefault(t => t.Language?.Code == languageCode)
-                          ?? question.Translations.FirstOrDefault();
-        return translation?.AnswerChoices?.ToList() ?? new List<string>();
-    }
+        => TranslationPicker.Pick(question.Translations, languageCode)?.AnswerChoices?.ToList()
+           ?? new List<string>();
 }

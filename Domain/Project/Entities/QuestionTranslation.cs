@@ -3,7 +3,7 @@ using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 
 namespace SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
-public class QuestionTranslation
+public class QuestionTranslation : IHasLanguage
 {
     [Required] public Question Question { get; set; }
     [Required] public Language Language { get; set; }

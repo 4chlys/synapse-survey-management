@@ -33,6 +33,9 @@ public class QuestionnaireManager(
     public Task<Question> GetQuestionByIdReadOnlyAsync(int questionId)
         => questionRepository.ReadByIdReadOnlyAsync(questionId);
 
+    public Task<Question> GetQuestionByIdWithTranslationsReadOnlyAsync(int questionId)
+        => questionRepository.ReadByIdWithTranslationsReadOnlyAsync(questionId);
+
     public Task<bool> QuestionBelongsToProjectAsync(int questionId, int projectId)
         => questionRepository.ExistsForProjectAsync(questionId, projectId);
 
@@ -264,10 +267,13 @@ public class QuestionnaireManager(
         return questionnaire?.Questions.Count ?? 0;
     }
 
-    public void ValidateMandatoryAnswers(Questionnaire questionnaire,
+    public async Task ValidateMandatoryAnswersAsync(int projectId,
         IEnumerable<(int QuestionId, string Value)> answers,
         HashSet<int> visibleQuestionIds = null)
     {
+        var questionnaire = await questionnaireRepository.ReadByProjectIdWithQuestionsReadOnlyAsync(projectId)
+                            ?? throw new KeyNotFoundException($"Questionnaire for project {projectId} not found.");
+
         var answeredIds = answers
             .Where(a => !string.IsNullOrWhiteSpace(a.Value))
             .Select(a => a.QuestionId)
@@ -419,16 +425,9 @@ public class QuestionnaireManager(
         }
     }
 
-    private async Task<IReadOnlyDictionary<string, Language>> ValidateQuestionTranslationInputsAsync(
+    private Task<IReadOnlyDictionary<string, Language>> ValidateQuestionTranslationInputsAsync(
         ICollection<QuestionTranslationInput> translations, int answerChoiceCount)
     {
-        if (translations.Count == 0)
-            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
-
-        var codes = translations.Select(t => t.LanguageCode).ToList();
-        if (codes.Distinct().Count() != codes.Count)
-            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
-
         foreach (var t in translations)
         {
             var count = t.AnswerChoices?.Count ?? 0;
@@ -437,19 +436,12 @@ public class QuestionnaireManager(
                     "Validation.Question.AnswerChoicesCountMismatch", t.LanguageCode, count, answerChoiceCount);
         }
 
-        return await languageResolver.ResolveAsync(codes);
+        return languageResolver.ResolveForTranslationsAsync(
+            translations.Select(t => t.LanguageCode).ToList());
     }
 
-    private async Task<IReadOnlyDictionary<string, Language>> ValidateSectionTranslationInputsAsync(
+    private Task<IReadOnlyDictionary<string, Language>> ValidateSectionTranslationInputsAsync(
         ICollection<SectionTranslationInput> translations)
-    {
-        if (translations.Count == 0)
-            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
-
-        var codes = translations.Select(t => t.LanguageCode).ToList();
-        if (codes.Distinct().Count() != codes.Count)
-            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
-
-        return await languageResolver.ResolveAsync(codes);
-    }
+        => languageResolver.ResolveForTranslationsAsync(
+            translations.Select(t => t.LanguageCode).ToList());
 }

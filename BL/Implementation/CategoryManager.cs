@@ -94,20 +94,15 @@ public class CategoryManager(
     public Task<List<CategoryMetric>> GetTopCategoriesAsync(int projectId, int count, string languageCode, string defaultLanguageCode)
         => categoryRepository.ReadTopCategoriesAsync(projectId, count, languageCode, defaultLanguageCode);
 
-    private async Task<IReadOnlyDictionary<string, Domain.I18n.Entities.Language>> ValidateTranslationInputsAsync(
+    private Task<IReadOnlyDictionary<string, Domain.I18n.Entities.Language>> ValidateTranslationInputsAsync(
         ICollection<CategoryTranslationInput> translations, Project project)
     {
-        if (translations.Count == 0)
-            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
-
         var codes = translations.Select(t => t.LanguageCode).ToList();
-        if (codes.Distinct().Count() != codes.Count)
-            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
 
         var supportedCodes = project?.SupportedLanguages?.Select(l => l.Code).ToHashSet() ?? new HashSet<string>();
         if (supportedCodes.Count > 0 && !supportedCodes.All(codes.Contains))
             throw new LocalizedValidationException("Validation.Category.AllProjectLanguagesNeedTranslation");
 
-        return await languageResolver.ResolveAsync(codes);
+        return languageResolver.ResolveForTranslationsAsync(codes);
     }
 }

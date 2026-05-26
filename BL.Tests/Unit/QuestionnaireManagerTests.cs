@@ -41,7 +41,7 @@ public class QuestionnaireManagerTests
             .ReturnsAsync(new List<Question>());
         _questionRepo.Setup(r => r.CreateAsync(It.IsAny<Question>()))
             .ReturnsAsync((Question q) => q);
-        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+        _languageResolver.Setup(r => r.ResolveForTranslationsAsync(It.IsAny<ICollection<string>>(), true))
             .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language> { ["nl"] = nlLanguage });
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -80,7 +80,7 @@ public class QuestionnaireManagerTests
 
         _questionRepo.Setup(r => r.ReadByIdWithSectionForUpdateAsync(QuestionId))
             .ReturnsAsync(question);
-        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+        _languageResolver.Setup(r => r.ResolveForTranslationsAsync(It.IsAny<ICollection<string>>(), true))
             .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language> { ["nl"] = nlLanguage });
         _questionRepo.Setup(r => r.Update(It.IsAny<Question>()));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -119,7 +119,7 @@ public class QuestionnaireManagerTests
 
         _questionRepo.Setup(r => r.ReadByIdWithSectionForUpdateAsync(QuestionId))
             .ReturnsAsync(question);
-        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+        _languageResolver.Setup(r => r.ResolveForTranslationsAsync(It.IsAny<ICollection<string>>(), true))
             .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language> { ["nl"] = nlLanguage });
         _questionRepo.Setup(r => r.Update(It.IsAny<Question>()));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -135,4 +135,74 @@ public class QuestionnaireManagerTests
         Assert.Null(question.MediaType);
         Assert.False(question.MediaIsEmbed);
     }
+
+    #region ValidateMandatoryAnswersAsync
+
+    private static Questionnaire QuestionnaireWith(params Question[] questions)
+        => new() { QuestionnaireId = 99, Questions = questions.ToList() };
+
+    private static Question Mandatory(int id) => new() { QuestionId = id, IsMandatory = true };
+    private static Question Optional(int id) => new() { QuestionId = id, IsMandatory = false };
+
+    [Fact]
+    public async Task ValidateMandatoryAnswersAsync_QuestionnaireNotFound_ThrowsKeyNotFound()
+    {
+        _questionnaireRepo.Setup(r => r.ReadByProjectIdWithQuestionsReadOnlyAsync(ProjectId))
+            .ReturnsAsync((Questionnaire)null);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _manager.ValidateMandatoryAnswersAsync(ProjectId, Array.Empty<(int, string)>()));
+    }
+
+    [Fact]
+    public async Task ValidateMandatoryAnswersAsync_AllMandatoryAnswered_DoesNotThrow()
+    {
+        _questionnaireRepo.Setup(r => r.ReadByProjectIdWithQuestionsReadOnlyAsync(ProjectId))
+            .ReturnsAsync(QuestionnaireWith(Mandatory(1), Optional(2)));
+
+        var answers = new[] { (1, "yes"), (2, "") };
+
+        await _manager.ValidateMandatoryAnswersAsync(ProjectId, answers);
+    }
+
+    [Fact]
+    public async Task ValidateMandatoryAnswersAsync_MissingMandatory_Throws()
+    {
+        _questionnaireRepo.Setup(r => r.ReadByProjectIdWithQuestionsReadOnlyAsync(ProjectId))
+            .ReturnsAsync(QuestionnaireWith(Mandatory(1), Mandatory(2)));
+
+        var answers = new[] { (1, "yes") };
+
+        var ex = await Assert.ThrowsAsync<SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException>(() =>
+            _manager.ValidateMandatoryAnswersAsync(ProjectId, answers));
+
+        Assert.Equal("Validation.Question.MissingMandatoryAnswers", ex.Code);
+    }
+
+    [Fact]
+    public async Task ValidateMandatoryAnswersAsync_BlankAnswerCountsAsUnanswered_Throws()
+    {
+        _questionnaireRepo.Setup(r => r.ReadByProjectIdWithQuestionsReadOnlyAsync(ProjectId))
+            .ReturnsAsync(QuestionnaireWith(Mandatory(1)));
+
+        var answers = new[] { (1, "   ") };
+
+        await Assert.ThrowsAsync<SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException>(() =>
+            _manager.ValidateMandatoryAnswersAsync(ProjectId, answers));
+    }
+
+    [Fact]
+    public async Task ValidateMandatoryAnswersAsync_InvisibleMandatorySkipped_DoesNotThrow()
+    {
+        _questionnaireRepo.Setup(r => r.ReadByProjectIdWithQuestionsReadOnlyAsync(ProjectId))
+            .ReturnsAsync(QuestionnaireWith(Mandatory(1), Mandatory(2)));
+
+        // Q2 is mandatory but not on the visible path, so its absence must not fail validation.
+        var answers = new[] { (1, "yes") };
+        var visible = new HashSet<int> { 1 };
+
+        await _manager.ValidateMandatoryAnswersAsync(ProjectId, answers, visible);
+    }
+
+    #endregion
 }

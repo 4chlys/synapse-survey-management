@@ -32,7 +32,7 @@ public class CategoryManagerTests
             new CategoryTranslationInput("en", "Campus wellbeing", "Wellbeing at school"),
         };
 
-        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+        _languageResolver.Setup(r => r.ResolveForTranslationsAsync(It.IsAny<ICollection<string>>(), true))
             .ReturnsAsync((IReadOnlyDictionary<string, Language>)new Dictionary<string, Language>
             {
                 ["nl"] = langNl,
@@ -63,7 +63,7 @@ public class CategoryManagerTests
     [Fact]
     public async Task CreateCategoryAsync_MissingLanguageCode_ThrowsValidationException()
     {
-        _languageResolver.Setup(r => r.ResolveAsync(It.IsAny<IEnumerable<string>>(), true))
+        _languageResolver.Setup(r => r.ResolveForTranslationsAsync(It.IsAny<ICollection<string>>(), true))
             .ThrowsAsync(new SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException(
                 "Validation.Language.UnknownCodes", "xx"))
             .Verifiable(Times.Once());
@@ -78,8 +78,14 @@ public class CategoryManagerTests
     }
 
     [Fact]
-    public async Task CreateCategoryAsync_DuplicateLanguageCodes_ThrowsValidationException()
+    public async Task CreateCategoryAsync_ResolverRejectsDuplicates_PropagatesValidationException()
     {
+        // Duplicate-detection moved into ILanguageResolver.ResolveForTranslationsAsync; manager
+        // is a delegation test here. Rule coverage lives in LanguageResolverTests.
+        _languageResolver.Setup(r => r.ResolveForTranslationsAsync(It.IsAny<ICollection<string>>(), true))
+            .ThrowsAsync(new SynapseEnqueteManagement.BL.Exceptions.LocalizedValidationException(
+                "Validation.Translation.OneRowPerLanguage"));
+
         var project = new Project { ProjectId = 1 };
         var translations = new[]
         {

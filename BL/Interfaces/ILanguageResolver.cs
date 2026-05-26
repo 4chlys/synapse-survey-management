@@ -19,4 +19,10 @@ public interface ILanguageResolver
     // Resolves a single code. Throws KeyNotFoundException with the participant-flow message
     // when the code is missing or (when requireActive) inactive.
     Task<Language> ResolveSingleAsync(string code, bool requireActive = true);
+
+    // Fold of the "translation-input" pre-checks every per-aggregate validator repeats:
+    // non-empty, no duplicate language codes, then delegate to ResolveAsync. Used by the
+    // category/question/section validators which only differ in how they extract codes.
+    Task<IReadOnlyDictionary<string, Language>> ResolveForTranslationsAsync(
+        ICollection<string> codes, bool requireActive = true);
 }

@@ -63,16 +63,7 @@ public class ProjectManager(
             translationList, supportedList, defaultLanguageCode, introductionList);
 
         var defaultName = translationList.First(t => t.LanguageCode == defaultLanguageCode).Name;
-        var candidate = string.IsNullOrWhiteSpace(shortForm)
-            ? shortFormService.Normalize(defaultName)
-            : shortForm;
-
-        if (!shortFormService.IsValid(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
-        if (shortFormService.IsReserved(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
-
-        var unique = await shortFormService.EnsureUniqueAsync(candidate);
+        var unique = await shortFormService.ResolveAsync(shortForm, defaultName);
 
         var project = new Project
         {
@@ -170,12 +161,8 @@ public class ProjectManager(
         {
             if (project.ProjectState != ProjectState.Draft)
                 throw new LocalizedValidationException("Validation.ShortForm.CannotChangeAfterPublish");
-            if (!shortFormService.IsValid(shortForm))
-                throw new LocalizedValidationException("Validation.ShortForm.Invalid", shortForm);
-            if (shortFormService.IsReserved(shortForm))
-                throw new LocalizedValidationException("Validation.ShortForm.Reserved", shortForm);
 
-            project.ShortForm = await shortFormService.EnsureUniqueAsync(shortForm, excludeProjectId: projectId);
+            project.ShortForm = await shortFormService.ResolveAsync(shortForm, defaultName: null, excludeProjectId: projectId);
         }
 
         EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
@@ -330,16 +317,7 @@ public class ProjectManager(
             translationList, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
 
         var defaultName = translationList.First(t => t.LanguageCode == defaultCode).Name;
-        var candidate = string.IsNullOrWhiteSpace(newShortForm)
-            ? shortFormService.Normalize(defaultName)
-            : newShortForm;
-
-        if (!shortFormService.IsValid(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
-        if (shortFormService.IsReserved(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
-
-        var uniqueShortForm = await shortFormService.EnsureUniqueAsync(candidate);
+        var uniqueShortForm = await shortFormService.ResolveAsync(newShortForm, defaultName);
 
         var copy = await projectDuplicationService.BuildCloneAsync(src, translationList, languages, uniqueShortForm, platformId);
 

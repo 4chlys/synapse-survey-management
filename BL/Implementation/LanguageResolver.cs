@@ -34,4 +34,15 @@ public class LanguageResolver(ILanguageRepository languageRepository) : ILanguag
             throw new KeyNotFoundException($"Language '{code}' is not a supported active language.");
         return language;
     }
+
+    public Task<IReadOnlyDictionary<string, Language>> ResolveForTranslationsAsync(
+        ICollection<string> codes, bool requireActive = true)
+    {
+        if (codes.Count == 0)
+            throw new LocalizedValidationException("Validation.Translation.AtLeastOne");
+        if (codes.Distinct().Count() != codes.Count)
+            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
+
+        return ResolveAsync(codes, requireActive);
+    }
 }

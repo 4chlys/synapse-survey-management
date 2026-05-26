@@ -3,6 +3,7 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 using SynapseEnqueteManagement.BL.Embeddings;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 using SynapseEnqueteManagement.BL.Sorting;
 using SynapseEnqueteManagement.BL.Sorting.Embeddings;
@@ -129,10 +130,6 @@ public class IdeaManager(
             logger.LogWarning(ex, "Failed to generate embedding for idea; storing without vector");
         }
 
-        var submissionLanguage = submissionLanguageCode != null
-            ? category.Project.SupportedLanguages?.FirstOrDefault(l => string.Equals(l.Code, submissionLanguageCode, StringComparison.OrdinalIgnoreCase))
-            : null;
-
         var idea = new Idea
         {
             Status = status,
@@ -141,7 +138,7 @@ public class IdeaManager(
             Category = category,
             Participant = participant,
             Embedding = embedding,
-            Language = submissionLanguage ?? participant.Language ?? participant.Project?.DefaultLanguage,
+            Language = ContentLanguageResolver.Resolve(participant, category.Project, submissionLanguageCode),
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(idea);

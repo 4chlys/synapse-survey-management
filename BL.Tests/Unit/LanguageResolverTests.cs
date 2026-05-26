@@ -124,4 +124,33 @@ public class LanguageResolverTests
 
         Assert.Same(InactiveFr, result);
     }
+
+    [Fact]
+    public async Task ResolveForTranslationsAsync_Empty_ThrowsLocalizedValidation()
+    {
+        var ex = await Assert.ThrowsAsync<LocalizedValidationException>(() =>
+            _resolver.ResolveForTranslationsAsync(Array.Empty<string>()));
+
+        Assert.Equal("Validation.Translation.AtLeastOne", ex.Code);
+    }
+
+    [Fact]
+    public async Task ResolveForTranslationsAsync_DuplicateCodes_ThrowsLocalizedValidation()
+    {
+        var ex = await Assert.ThrowsAsync<LocalizedValidationException>(() =>
+            _resolver.ResolveForTranslationsAsync(new[] { "nl", "nl" }));
+
+        Assert.Equal("Validation.Translation.OneRowPerLanguage", ex.Code);
+    }
+
+    [Fact]
+    public async Task ResolveForTranslationsAsync_DistinctCodes_DelegatesToResolveAsync()
+    {
+        _languageRepo.Setup(r => r.ReadByCodesForUpdateAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(new[] { Nl, En });
+
+        var result = await _resolver.ResolveForTranslationsAsync(new[] { "nl", "en" });
+
+        Assert.Equal(2, result.Count);
+    }
 }

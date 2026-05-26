@@ -73,10 +73,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_BlankShortForm_AutofillsFromDefaultLanguageName()
     {
         // Arrange
-        _shortFormService.Setup(s => s.Normalize("My Project")).Returns("my-project");
-        _shortFormService.Setup(s => s.IsValid("my-project")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("my-project")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("my-project", null)).ReturnsAsync("my-project");
+        _shortFormService.Setup(s => s.ResolveAsync(null, "My Project", null)).ReturnsAsync("my-project");
         _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -101,10 +98,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_AllowCrossLanguageIdeasFalse_DefaultsToFalse()
     {
         // Arrange
-        _shortFormService.Setup(s => s.Normalize("Naam")).Returns("naam");
-        _shortFormService.Setup(s => s.IsValid("naam")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("naam")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("naam", null)).ReturnsAsync("naam");
+        _shortFormService.Setup(s => s.ResolveAsync(null, "Naam", null)).ReturnsAsync("naam");
         _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -124,8 +118,8 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_ReservedShortForm_ThrowsValidationException()
     {
         // Arrange
-        _shortFormService.Setup(s => s.IsValid("admin")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("admin")).Returns(true);
+        _shortFormService.Setup(s => s.ResolveAsync("admin", "Admin", null))
+            .ThrowsAsync(new LocalizedValidationException("Validation.ShortForm.Reserved", "admin"));
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<ValidationException>(() =>
@@ -141,7 +135,8 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_InvalidShortForm_ThrowsValidationException()
     {
         // Arrange
-        _shortFormService.Setup(s => s.IsValid("INVALID FORM")).Returns(false);
+        _shortFormService.Setup(s => s.ResolveAsync("INVALID FORM", "Test", null))
+            .ThrowsAsync(new LocalizedValidationException("Validation.ShortForm.Invalid", "INVALID FORM"));
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<ValidationException>(() =>
@@ -182,10 +177,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_LowContrastPrimaryColor_ThrowsValidationException(string primaryColor)
     {
         // Arrange
-        _shortFormService.Setup(s => s.Normalize("Test")).Returns("test");
-        _shortFormService.Setup(s => s.IsValid("test")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("test")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("test", null)).ReturnsAsync("test");
+        _shortFormService.Setup(s => s.ResolveAsync(null, "Test", null)).ReturnsAsync("test");
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<ValidationException>(() =>
@@ -202,10 +194,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_WellContrastedPrimaryColor_Succeeds()
     {
         // Arrange — #5C6BC0 (indigo 400) clears 3:1 against both #FFFFFF and the dark base.
-        _shortFormService.Setup(s => s.Normalize("Test")).Returns("test");
-        _shortFormService.Setup(s => s.IsValid("test")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("test")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("test", null)).ReturnsAsync("test");
+        _shortFormService.Setup(s => s.ResolveAsync(null, "Test", null)).ReturnsAsync("test");
         _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -228,10 +217,7 @@ public class ProjectManagerTests
     public async Task CreateProjectAsync_BlankPrimaryColor_Succeeds(string primaryColor)
     {
         // Arrange — empty / null means "use the theme default", so the contrast guard is skipped.
-        _shortFormService.Setup(s => s.Normalize("Test")).Returns("test");
-        _shortFormService.Setup(s => s.IsValid("test")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("test")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("test", null)).ReturnsAsync("test");
+        _shortFormService.Setup(s => s.ResolveAsync(null, "Test", null)).ReturnsAsync("test");
         _projectRepository.Setup(r => r.CreateAsync(It.IsAny<Project>())).ReturnsAsync((Project p) => p);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -275,9 +261,7 @@ public class ProjectManagerTests
         var project = SeedExistingProject(ProjectState.Draft);
         _projectRepository.Setup(r => r.ReadByIdWithTranslationsAndLanguagesForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
-        _shortFormService.Setup(s => s.IsValid("new-form")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("new-form")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("new-form", ProjectId)).ReturnsAsync("new-form");
+        _shortFormService.Setup(s => s.ResolveAsync("new-form", null, ProjectId)).ReturnsAsync("new-form");
         _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -465,10 +449,7 @@ public class ProjectManagerTests
         var built = new Project { ShortForm = "new-project" };
 
         _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
-        _shortFormService.Setup(s => s.Normalize("New Project")).Returns("new-project");
-        _shortFormService.Setup(s => s.IsValid("new-project")).Returns(true);
-        _shortFormService.Setup(s => s.IsReserved("new-project")).Returns(false);
-        _shortFormService.Setup(s => s.EnsureUniqueAsync("new-project", null)).ReturnsAsync("new-project");
+        _shortFormService.Setup(s => s.ResolveAsync(null, "New Project", null)).ReturnsAsync("new-project");
         _duplicationService
             .Setup(s => s.BuildCloneAsync(
                 source,
