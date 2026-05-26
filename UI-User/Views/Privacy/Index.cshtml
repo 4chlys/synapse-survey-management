@@ -26,7 +26,11 @@
         <p>@L["ContactBody"]</p>
     </div>
 
-    <a asp-controller="LandingPage" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]"
+    @{
+        var returnUrl = ViewData["PrivacyReturnUrl"] as string
+            ?? Url.Action("Index", "LandingPage", new { projectId = ViewData["ProjectId"] });
+    }
+    <a href="@returnUrl"
        class="fixed bottom-6 left-6 btn btn-sm btn-ghost gap-1 text-base-content/60 hover:text-base-content z-50">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
