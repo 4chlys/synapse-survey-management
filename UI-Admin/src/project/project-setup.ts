@@ -407,25 +407,52 @@ document.addEventListener('DOMContentLoaded', () => {
     minInput?.addEventListener('blur', validateAgeBlur);
     maxInput?.addEventListener('blur', validateAgeBlur);
 
+    function sectionLangDisplayName(code: string): string {
+        if (code === 'nl') return 'Nederlands';
+        if (code === 'en') return 'English';
+        return code.toUpperCase();
+    }
+
     // Sections: add / remove
     const sectionsContainer = document.getElementById('sections-container');
     const addSectionBtn = document.getElementById('add-section');
     if (sectionsContainer && addSectionBtn) {
         let idx = parseInt(sectionsContainer.dataset.sectionCount ?? '0', 10);
+        const availableLangs = (sectionsContainer.dataset.availableLanguages ?? 'nl').split(',');
+        const multiLang = availableLangs.length > 1;
+
         addSectionBtn.addEventListener('click', () => {
-            const emptyInput = sectionsContainer.querySelector<HTMLInputElement>('input[type="text"][value=""]') ??
-                [...sectionsContainer.querySelectorAll<HTMLInputElement>('input[type="text"]')].find(i => !i.value.trim());
-            if (emptyInput) {
-                emptyInput.focus();
-                emptyInput.classList.add('input-error');
-                emptyInput.addEventListener('input', () => emptyInput.classList.remove('input-error'), { once: true });
+            const hasEmptyRow = [...sectionsContainer.querySelectorAll<HTMLElement>('.section-row')]
+                .some(row => {
+                    const inputs = [...row.querySelectorAll<HTMLInputElement>('input.section-name-input')];
+                    return inputs.length > 0 && inputs.every(i => !i.value.trim());
+                });
+            if (hasEmptyRow) {
+                const firstEmptyInput = sectionsContainer.querySelector<HTMLInputElement>(
+                    '.section-row input.section-name-input:not([value])'
+                ) ?? [...sectionsContainer.querySelectorAll<HTMLInputElement>('.section-row input.section-name-input')]
+                    .find(i => !i.value.trim());
+                if (firstEmptyInput) {
+                    firstEmptyInput.focus();
+                    firstEmptyInput.classList.add('input-error');
+                    firstEmptyInput.addEventListener('input', () => firstEmptyInput.classList.remove('input-error'), { once: true });
+                }
                 return;
             }
             const row = document.createElement('div');
-            row.className = 'flex gap-1 items-center section-row';
-            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;
+            row.className = 'flex gap-2 items-end section-row';
+            let inner = '';
+            availableLangs.forEach((langCode, j) => {
+                inner += `<div class="flex flex-col gap-1 flex-1">`;
+                if (multiLang) inner += `<span class="text-xs text-base-content/50">${sectionLangDisplayName(langCode)}</span>`;
+                inner += `<input type="hidden" name="Sections[${idx}].Translations[${j}].LanguageCode" value="${langCode}" />`;
+                inner += `<input type="text" name="Sections[${idx}].Translations[${j}].Name" maxlength="20" class="input input-bordered input-sm w-full section-name-input" placeholder="Sectienaam" data-lang="${langCode}" />`;
+                inner += `</div>`;
+            });
+            inner += `<button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;
+            row.innerHTML = inner;
             sectionsContainer.appendChild(row);
-            row.querySelector('input')?.focus();
+            row.querySelector<HTMLInputElement>('input.section-name-input')?.focus();
             idx++;
         });
         sectionsContainer.addEventListener('click', (e) => {
@@ -434,11 +461,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Strip empty section rows before submit to prevent server exceptions
+    // Strip fully-empty section rows before submit
     mainForm?.addEventListener('submit', () => {
         sectionsContainer?.querySelectorAll<HTMLElement>('.section-row').forEach(row => {
-            const input = row.querySelector<HTMLInputElement>('input[type="text"]');
-            if (input && !input.value.trim()) row.remove();
+            const inputs = [...row.querySelectorAll<HTMLInputElement>('input.section-name-input')];
+            if (inputs.length > 0 && inputs.every(i => !i.value.trim())) row.remove();
         });
     });
 });

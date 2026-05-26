@@ -58,16 +58,19 @@ public class RecordViewModelBindingTests
         var form = new Dictionary<string, StringValues>
         {
             ["CategoryId"] = "42",
-            ["Name"] = "Climate",
-            ["Description"] = "Ideas about the climate"
+            ["Translations[0].LanguageCode"] = "nl",
+            ["Translations[0].Name"] = "Climate",
+            ["Translations[0].Description"] = "Ideas about the climate"
         };
 
         var (model, modelState) = await FormBinderTestHarness.BindAsync<CategoryFormViewModel>(form);
 
         Assert.True(modelState.IsValid);
         Assert.Equal(42, model.CategoryId);
-        Assert.Equal("Climate", model.Name);
-        Assert.Equal("Ideas about the climate", model.Description);
+        Assert.Single(model.Translations);
+        Assert.Equal("nl", model.Translations.First().LanguageCode);
+        Assert.Equal("Climate", model.Translations.First().Name);
+        Assert.Equal("Ideas about the climate", model.Translations.First().Description);
     }
 
     [Fact]
@@ -203,7 +206,7 @@ public class RecordViewModelBindingTests
     }
 
     // CreateProjectViewModel is the most complex of the bunch: it carries an
-    // IList<string> (Sections — kept as IList so views can index it) and an
+    // IList<SectionInputViewModel> (Sections — each with per-language translations) and an
     // ICollection<string> (SupportedLanguageCodes). If either abstraction
     // stopped binding, this test would catch it.
     [Fact]
@@ -212,17 +215,15 @@ public class RecordViewModelBindingTests
         var form = new Dictionary<string, StringValues>
         {
             ["ProjectId"] = "100",
-            ["Name"] = "Project Sample",
             ["ShortForm"] = "sample",
-            ["Topic"] = "Civic ideas",
-            ["Introduction"] = "Welcome to the project",
             ["InteractionMode"] = "HorizontalScroll",
             ["MinAge"] = "13",
             ["MaxAge"] = "25",
             ["ImageUrl"] = "https://images.example/cover.png",
-            ["Sections[0]"] = "Intro",
-            ["Sections[1]"] = "Body",
-            ["Sections[2]"] = "Wrap-up",
+            ["Sections[0].Translations[0].LanguageCode"] = "nl",
+            ["Sections[0].Translations[0].Name"] = "Intro",
+            ["Sections[1].Translations[0].LanguageCode"] = "nl",
+            ["Sections[1].Translations[0].Name"] = "Body",
             ["ContactOptIn"] = "true",
             ["AllowCrossLanguageIdeas"] = "true",
             ["DefaultLanguageCode"] = "nl",
@@ -237,15 +238,16 @@ public class RecordViewModelBindingTests
 
         Assert.True(modelState.IsValid);
         Assert.Equal(100, model.ProjectId);
-        Assert.Equal("Project Sample", model.Name);
         Assert.Equal("sample", model.ShortForm);
-        Assert.Equal("Civic ideas", model.Topic);
-        Assert.Equal("Welcome to the project", model.Introduction);
         Assert.Equal("HorizontalScroll", model.InteractionMode);
         Assert.Equal(13, model.MinAge);
         Assert.Equal(25, model.MaxAge);
         Assert.Equal("https://images.example/cover.png", model.ImageUrl);
-        Assert.Equal(new[] { "Intro", "Body", "Wrap-up" }, model.Sections);
+        Assert.Equal(2, model.Sections.Count);
+        Assert.Equal("nl", model.Sections[0].Translations[0].LanguageCode);
+        Assert.Equal("Intro", model.Sections[0].Translations[0].Name);
+        Assert.Equal("nl", model.Sections[1].Translations[0].LanguageCode);
+        Assert.Equal("Body", model.Sections[1].Translations[0].Name);
         Assert.True(model.ContactOptIn);
         Assert.True(model.AllowCrossLanguageIdeas);
         Assert.Equal("nl", model.DefaultLanguageCode);

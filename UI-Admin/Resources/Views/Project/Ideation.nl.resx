@@ -30,4 +30,5 @@
   <data name="QuestionsLink" xml:space="preserve"><value>Vragen</value></data>
   <data name="DashboardLink" xml:space="preserve"><value>Dashboard</value></data>
   <data name="NextLink" xml:space="preserve"><value>Volgende</value></data>
+  <data name="NoCategoriesRequired" xml:space="preserve"><value>Minimaal één categorie is vereist.</value></data>
 </root>

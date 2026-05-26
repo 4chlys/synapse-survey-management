@@ -12,7 +12,7 @@ public class SectionManager(
     IUnitOfWork uow) : ISectionManager
 {
     public Task<IEnumerable<Section>> GetSectionsReadOnlyAsync(int projectId)
-        => sectionRepository.ReadByProjectIdReadOnlyAsync(projectId);
+        => sectionRepository.ReadByProjectIdWithTranslationsReadOnlyAsync(projectId);
 
     public async Task<Section> CreateSectionAsync(int projectId, IEnumerable<SectionTranslationInput> translations, CancellationToken ct = default)
     {

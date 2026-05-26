@@ -73,7 +73,13 @@ public class SectionsController(
         {
             SectionId = section.SectionId,
             Name = translation?.Name,
-            Description = translation?.Description
+            Description = translation?.Description,
+            Translations = section.Translations?.Select(t => new SectionTranslationDto
+            {
+                LanguageCode = t.Language?.Code,
+                Name = t.Name,
+                Description = t.Description
+            }).ToList() ?? new List<SectionTranslationDto>()
         };
     }
 

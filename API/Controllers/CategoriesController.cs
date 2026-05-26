@@ -81,6 +81,12 @@ public class CategoriesController(
             Description = t?.Description ?? string.Empty,
             IdeaCount = ideaCount,
             LanguageCode = t?.Language?.Code ?? languageCode,
+            Translations = category.Translations.Select(tr => new CategoryTranslationDto
+            {
+                LanguageCode = tr.Language?.Code,
+                Name = tr.Name,
+                Description = tr.Description,
+            }).ToList(),
         };
     }
 

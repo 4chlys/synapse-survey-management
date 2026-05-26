@@ -26,50 +26,32 @@
       }
 
       [HttpPost]
-      public async Task<IActionResult> Create(int projectId, CategoryFormViewModel
-  model)
+      public async Task<IActionResult> Create(int projectId, CategoryFormViewModel model)
       {
-          if (!ModelState.IsValid)
-          {
-              ViewBag.ProjectId = projectId;
-              return View(model);
-          }
-
-          await categoryService.CreateCategoryAsync(projectId, model.Name,
-  model.Description);
+          await categoryService.CreateCategoryAsync(projectId, model.Translations);
           return RedirectToAction(nameof(Index), new { projectId });
       }
 
       public async Task<IActionResult> Edit(int projectId, int categoryId)
       {
           var categories = await categoryService.GetCategoriesAsync(projectId);
-          var category = categories.FirstOrDefault(c => c.CategoryId ==
-  categoryId);
+          var category = categories.FirstOrDefault(c => c.CategoryId == categoryId);
           if (category is null)
               return NotFound();
 
           var model = new CategoryFormViewModel
           {
               CategoryId = categoryId,
-              Name = category.Name,
-              Description = category.Description
+              Translations = category.Translations
           };
           ViewBag.ProjectId = projectId;
           return View(model);
       }
 
       [HttpPost]
-      public async Task<IActionResult> Edit(int projectId, int categoryId,
-  CategoryFormViewModel model)
+      public async Task<IActionResult> Edit(int projectId, int categoryId, CategoryFormViewModel model)
       {
-          if (!ModelState.IsValid)
-          {
-              ViewBag.ProjectId = projectId;
-              return View(model);
-          }
-
-          await categoryService.UpdateCategoryAsync(projectId, categoryId,
-  model.Name, model.Description);
+          await categoryService.UpdateCategoryAsync(projectId, categoryId, model.Translations);
           return RedirectToAction(nameof(Index), new { projectId });
       }
 
