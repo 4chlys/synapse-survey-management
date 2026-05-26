@@ -562,4 +562,43 @@ public class ProjectManager(
         await uow.SaveChangesAsync(ct);
         return true;
     }
+
+    // Enables multiple emojis in a single DB round-trip: one project read,
+    // one emoji read for all missing IDs, one SaveChanges.
+    public async Task<bool> EnableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var currentIds = project.Emojis.Select(e => e.EmojiId).ToHashSet();
+        var missing    = emojiIds.Where(id => !currentIds.Contains(id)).ToHashSet();
+        if (missing.Count == 0) return true;
+
+        var allEmojis = await emojiRepository.ReadAllForUpdateAsync();
+        foreach (var emoji in allEmojis.Where(e => missing.Contains(e.EmojiId)))
+            project.Emojis.Add(emoji);
+
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Disables multiple emojis in a single DB round-trip: one project read,
+    // collection mutations in memory, one SaveChanges.
+    public async Task<bool> DisableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var idSet    = emojiIds.ToHashSet();
+        var toRemove = project.Emojis.Where(e => idSet.Contains(e.EmojiId)).ToList();
+        if (toRemove.Count == 0) return true;
+
+        foreach (var emoji in toRemove)
+            project.Emojis.Remove(emoji);
+
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
 }

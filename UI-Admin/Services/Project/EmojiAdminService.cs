@@ -52,31 +52,21 @@ public class EmojiAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    // Disables all emojis in the given preset without touching emojis outside it.
-    public async Task DisableEmojiPresetAsync(int projectId, List<int> emojiIds)
-    {
-        var current   = await GetEmojisForProjectAsync(projectId);
-        var targetSet = emojiIds.ToHashSet();
-
-        var tasks = current
-            .Where(e => targetSet.Contains(e.EmojiId) && e.IsEnabled)
-            .Select(e => DisableEmojiAsync(projectId, e.EmojiId));
-
-        await Task.WhenAll(tasks);
-    }
-
-    // Enables all emojis in the given preset without touching emojis outside it.
-    // "Select all" on a tab adds those emojis to the current selection — it does
-    // not replace or deselect anything the admin already enabled elsewhere.
+    // Enables all emojis in the preset with a single API call (batch endpoint).
     public async Task EnableEmojiPresetAsync(int projectId, List<int> emojiIds)
     {
-        var current   = await GetEmojisForProjectAsync(projectId);
-        var targetSet = emojiIds.ToHashSet();
+        var response = await httpClient.PostAsJsonAsync($"api/projects/{projectId}/emojis/batch", emojiIds);
+        response.EnsureSuccessStatusCode();
+    }
 
-        var tasks = current
-            .Where(e => targetSet.Contains(e.EmojiId) && !e.IsEnabled)
-            .Select(e => EnableEmojiAsync(projectId, e.EmojiId));
-
-        await Task.WhenAll(tasks);
+    // Disables all emojis in the preset with a single API call (batch endpoint).
+    public async Task DisableEmojiPresetAsync(int projectId, List<int> emojiIds)
+    {
+        var request  = new HttpRequestMessage(HttpMethod.Delete, $"api/projects/{projectId}/emojis/batch")
+        {
+            Content = JsonContent.Create(emojiIds),
+        };
+        var response = await httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
     }
 }
