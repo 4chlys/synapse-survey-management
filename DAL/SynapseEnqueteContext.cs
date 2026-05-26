@@ -395,9 +395,15 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
         {
             e.HasKey(j => j.IdeaSummaryJobId);
             if (Database.IsNpgsql())
+            {
                 e.Property(j => j.IdeaSummaryJobId).HasDefaultValueSql("gen_random_uuid()");
+                e.Property<uint>("xmin").HasColumnType("xid").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
+            }
             else
+            {
                 e.Property(j => j.IdeaSummaryJobId).ValueGeneratedOnAdd();
+                e.Property(j => j.RowVersion).IsRowVersion();
+            }
             e.Property(j => j.Status).HasConversion<string>();
             e.Property(j => j.ExportFormat).HasConversion<string>();
             e.HasIndex(j => new { j.ProjectId, j.Status });

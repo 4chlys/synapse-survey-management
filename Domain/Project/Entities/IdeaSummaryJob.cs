@@ -18,4 +18,5 @@ public class IdeaSummaryJob : IHasCreatedAt
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string RequestedBy { get; set; }
+    public byte[] RowVersion { get; set; }
 }

@@ -33,7 +33,6 @@ public class IdeaSummaryJobRepository(SynapseEnqueteContext context) : IIdeaSumm
 
     public async Task<IdeaSummaryJob> ClaimNextPendingAsync(CancellationToken ct = default)
     {
-        // Use a tracked query so we can update status atomically
         var job = await context.IdeaSummaryJobs
             .Where(j => j.Status == IdeaSummaryJobStatus.Pending)
             .OrderBy(j => j.CreatedAt)
@@ -43,8 +42,17 @@ public class IdeaSummaryJobRepository(SynapseEnqueteContext context) : IIdeaSumm
 
         job.Status = IdeaSummaryJobStatus.Processing;
         job.StartedAt = DateTime.UtcNow;
-        await context.SaveChangesAsync(ct);
-        return job;
+
+        try
+        {
+            await context.SaveChangesAsync(ct);
+            return job;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            context.Entry(job).State = EntityState.Detached;
+            return null;
+        }
     }
 
     public async Task UpdateAsync(IdeaSummaryJob job, CancellationToken ct = default)
