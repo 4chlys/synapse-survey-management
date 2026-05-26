@@ -223,7 +223,6 @@ infra/
   startup-ui.sh         # VM startup script for UI instances
   startup-admin.sh      # VM startup script for Admin instances
   destroy.sh            # Tears down all resources for an environment
-  setup.sh              # (partial setup helper)
   backup.sh             # Manual backup trigger
   restore.sh            # Restore from backup
 
@@ -260,15 +259,16 @@ infra/
 3. Wait for all parallel jobs
 4. update_secret db-host                    # Set real Cloud SQL private IP
 5. create_migs
-6. create_backend_services
-7. create_url_map
-8. create_ssl_and_proxy                     # Creates Certificate Manager cert + prints CNAME
-9. reserve_static_ip
-10. create_forwarding_rules
-11. create_cloud_armor
-12. add_mig_ips_to_armor
-13. setup_logging_iam
-14. create_uptime_checks
+6. configure_autohealing                    # Links health checks to MIGs for rolling replace
+7. create_backend_services
+8. create_url_map
+9. create_ssl_and_proxy                     # Creates Certificate Manager cert + prints CNAME
+10. reserve_static_ip
+11. create_forwarding_rules
+12. create_cloud_armor
+13. add_mig_ips_to_armor
+14. setup_logging_iam
+15. create_uptime_checks
 ```
 
 ### Config file
@@ -529,7 +529,7 @@ Two buckets per environment:
 `synapse-cicd@{PROJECT_ID}.iam.gserviceaccount.com`
 
 Roles:
-- `roles/compute.instanceAdmin.v1` — manage VMs/MIGs
+- `roles/compute.admin` — manage VMs/MIGs and health check references during rolling replace
 - `roles/storage.admin` — push Docker images, manage GCS
 - `roles/secretmanager.secretAccessor` — read secrets during deploy
 - `roles/artifactregistry.writer` — push images
@@ -572,7 +572,7 @@ build → scan → push → sign → deploy
 | `push-prod` | main | Push images tagged `{SHA}` + `latest` |
 | `sign-prod` | main | Cosign image signing for supply chain security |
 | `deploy-test` | development (auto) | Rolling replace of test MIGs + Cloud Armor IP update |
-| `deploy-production` | main (manual) | Rolling replace of prod MIGs |
+| `deploy-production` | main (manual) | Cosign signature verification + rolling replace of prod MIGs |
 
 ### Image tagging strategy
 
@@ -596,6 +596,30 @@ gcloud compute instance-groups managed rolling-action replace synapse-{ENV}-{svc
 - `--max-unavailable=0`: never has fewer healthy instances than the target size
 
 The load balancer only routes to the new instance once its health check passes. Connection draining (30s) ensures in-flight requests complete before the old instance is terminated.
+
+### Supply chain security (Cosign)
+
+Production images are signed and verified using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/).
+
+**Signing (`sign-prod` job — runs after `push-prod`):**
+
+```bash
+cosign sign --key cosign.key "${IMAGE_API}:${IMAGE_TAG}"
+cosign sign --key cosign.key "${IMAGE_UI}:${IMAGE_TAG}"
+cosign sign --key cosign.key "${IMAGE_ADMIN}:${IMAGE_TAG}"
+```
+
+The private key (`cosign.key`) is stored as a base64-encoded GitLab CI variable (`COSIGN_KEY_B64`). The password is stored in `COSIGN_PASSWORD`.
+
+**Verification (`deploy-production` job — runs before rolling replace):**
+
+```bash
+cosign verify --key cosign.pub "${IMAGE_API}:${IMAGE_TAG}"
+cosign verify --key cosign.pub "${IMAGE_UI}:${IMAGE_TAG}"
+cosign verify --key cosign.pub "${IMAGE_ADMIN}:${IMAGE_TAG}"
+```
+
+`cosign.pub` is committed to the repository. If any verification fails, the pipeline aborts — unsigned or tampered images cannot be deployed to production. Only images built and signed by the `main` pipeline can pass verification.
 
 ---
 
@@ -656,31 +680,29 @@ SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
 
 ## 16. Zero Downtime Deployments
 
-### Problem
-
-With `--max-unavailable=1 --max-surge=0` (old config), the MIG removes the old VM first, then creates a new one. During this window there are zero healthy instances — the load balancer returns 502 errors.
-
-### Solution
-
-With `--max-unavailable=0 --max-surge=1` (current config):
+Every CI/CD deploy uses a rolling replace with `--max-unavailable=0 --max-surge=1`:
 
 ```
-Time 0:   Old VM running, serving traffic
-Time 30s: New VM starts (surge), pulls Docker image, starts container
-Time 60s: Health check passes on new VM (2 × 10s intervals)
-Time 60s: Load balancer adds new VM to rotation
-Time 60s: Old VM enters connection draining (30s window)
-Time 90s: Old VM removed, all traffic on new VM
+Time 0:    Old VM running, serving traffic
+Time ~30s: New VM starts (surge), pulls Docker image, starts container
+Time ~70s: Health check passes on new VM (4 × 10s intervals)
+Time ~70s: Load balancer adds new VM to rotation
+Time ~70s: Old VM enters connection draining (30s window)
+Time ~100s: Old VM removed, all traffic on new VM
 ```
 
 No traffic interruption at any point.
+
+### Autohealing
+
+Each MIG has autohealing configured (`configure_autohealing` in `04_mig.sh`). This links the health check to the MIG so the rolling replace waits for the `/health` endpoint to pass before removing the old VM — rather than just waiting for the VM to be in a running state. The `--initial-delay=300s` gives new VMs enough time to pull the Docker image and start the container before health checking begins.
 
 ### Health check configuration
 
 ```
 interval:            10s
 timeout:             5s
-healthy threshold:   2 consecutive successes (20s to become healthy)
+healthy threshold:   4 consecutive successes (40s to become healthy)
 unhealthy threshold: 3 consecutive failures
 ```
 
@@ -688,6 +710,10 @@ Health check endpoints:
 - API: `GET /health` on port 8080
 - UI: `GET /health` on port 80
 - Admin: `GET /health` on port 80
+
+### Connection draining
+
+All backend services have `--connection-draining-timeout=30`. When a VM is removed from rotation, in-flight requests have 30 seconds to complete before the connection is terminated.
 
 ---
 

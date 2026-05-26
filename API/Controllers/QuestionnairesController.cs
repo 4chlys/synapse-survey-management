@@ -15,7 +15,7 @@ public class QuestionnairesController(
     ISurveyFlowManager surveyFlowManager,
     IParticipantManager participantManager,
     IProjectManager projectManager,
-    IStorageService storageService,
+    IQuestionMediaCleanupService mediaCleanup,
     IWebHostEnvironment env)
     : ParticipantControllerBase(participantManager, projectManager)
 {
@@ -121,17 +121,7 @@ public class QuestionnairesController(
             return NotFound();
 
         // Orphan cleanup: delete old uploaded file if the URL changed
-        if (!string.IsNullOrEmpty(oldMediaUrl) && oldMediaUrl != canonicalUrl
-            && existing?.MediaIsEmbed == false)
-        {
-            try { await storageService.DeleteAsync(oldMediaUrl); }
-            catch (Exception ex)
-            {
-                HttpContext.RequestServices
-                    .GetRequiredService<ILogger<QuestionnairesController>>()
-                    .LogWarning(ex, "[Media] Failed to delete orphaned question media {Url}", oldMediaUrl);
-            }
-        }
+        await mediaCleanup.DeleteIfOrphanedAsync(oldMediaUrl, canonicalUrl, existing?.MediaIsEmbed ?? false);
 
         return NoContent();
     }
@@ -151,16 +141,7 @@ public class QuestionnairesController(
             return NotFound();
 
         // Orphan cleanup: delete the storage file after the DB row is gone
-        if (!string.IsNullOrEmpty(mediaUrl) && !isEmbed)
-        {
-            try { await storageService.DeleteAsync(mediaUrl); }
-            catch (Exception ex)
-            {
-                HttpContext.RequestServices
-                    .GetRequiredService<ILogger<QuestionnairesController>>()
-                    .LogWarning(ex, "[Media] Failed to delete question media on question delete {Url}", mediaUrl);
-            }
-        }
+        await mediaCleanup.DeleteOnRemovalAsync(mediaUrl, isEmbed);
 
         return NoContent();
     }

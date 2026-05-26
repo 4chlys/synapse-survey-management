@@ -62,6 +62,7 @@ echo ""
 
 # 1. Cloud Armor en Load Balancer eerst
 destroy_cloud_armor
+destroy_alert_policy
 destroy_uptime_checks
 destroy_loadbalancer
 

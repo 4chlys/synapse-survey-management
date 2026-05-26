@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -12,9 +11,10 @@ namespace SynapseEnqueteManagement.BL.Implementation;
 
 public class ProjectManager(
     IProjectRepository projectRepository,
-    IEmojiRepository emojiRepository,
-    ILanguageRepository languageRepository,
+    IEmojiManager emojiManager,
+    IProjectTranslationValidator translationValidator,
     IShortFormService shortFormService,
+    IProjectDuplicationService projectDuplicationService,
     IUnitOfWork uow) : IProjectManager
 {
     public Task<Project> GetProjectByIdWithIntroductionReadOnlyAsync(int projectId)
@@ -59,20 +59,11 @@ public class ProjectManager(
         var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
         var introductionList = introductions?.ToList() ?? new List<IntroductionTranslationInput>();
 
-        var languages = await ValidateTranslationInputsAsync(
+        var languages = await translationValidator.ValidateAsync(
             translationList, supportedList, defaultLanguageCode, introductionList);
 
         var defaultName = translationList.First(t => t.LanguageCode == defaultLanguageCode).Name;
-        var candidate = string.IsNullOrWhiteSpace(shortForm)
-            ? shortFormService.Normalize(defaultName)
-            : shortForm;
-
-        if (!shortFormService.IsValid(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
-        if (shortFormService.IsReserved(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
-
-        var unique = await shortFormService.EnsureUniqueAsync(candidate);
+        var unique = await shortFormService.ResolveAsync(shortForm, defaultName);
 
         var project = new Project
         {
@@ -111,29 +102,7 @@ public class ProjectManager(
             });
         }
 
-        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
-        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
-        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
-        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
-        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
-        if (!string.IsNullOrEmpty(primaryColor) &&
-            !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
-            throw new LocalizedValidationException("Validation.PrimaryColor.Invalid");
-        if (!string.IsNullOrEmpty(primaryColor))
-        {
-            const string lightBase = "#FFFFFF";
-            const string darkBase = "#1A1430"; // approx of oklch(15% 0.04 278)
-            if (ColorHelpers.ContrastRatio(primaryColor, lightBase) < 3.0
-             || ColorHelpers.ContrastRatio(primaryColor, darkBase) < 3.0)
-                throw new LocalizedValidationException("Validation.PrimaryColor.LowContrast");
-        }
-        if (!string.IsNullOrEmpty(customCss) &&
-            Regex.IsMatch(customCss,
-                @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
-                RegexOptions.IgnoreCase))
-            throw new LocalizedValidationException("Validation.CustomCss.Disallowed");
-        if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
-            throw new LocalizedValidationException("Validation.MinAge.GreaterThanMaxAge");
+        ValidateProjectProperties(project, imageUrl, minAge, maxAge, primaryColor, customCss);
 
         var nonEmptyIntros = introductionList.Where(i => !string.IsNullOrEmpty(i.Text)).ToList();
         if (nonEmptyIntros.Count > 0)
@@ -150,6 +119,13 @@ public class ProjectManager(
             }
             project.Introduction = intro;
         }
+
+        // Enable all available emojis by default for newly created projects.
+        // ReadAllForUpdateAsync loads tracked entities in one query, so EF Core can
+        // populate the many-to-many ProjectEmoji join table without N+1 round-trips.
+        var allEmojis = await emojiManager.GetAllForUpdateAsync();
+        foreach (var emoji in allEmojis)
+            project.Emojis.Add(emoji);
 
         var created = await projectRepository.CreateAsync(project);
         await uow.SaveChangesAsync();
@@ -178,44 +154,18 @@ public class ProjectManager(
         var supportedList = supportedLanguageCodes?.Distinct().ToList() ?? new List<string>();
         var introductionList = introductions?.ToList() ?? new List<IntroductionTranslationInput>();
 
-        var languages = await ValidateTranslationInputsAsync(
+        var languages = await translationValidator.ValidateAsync(
             translationList, supportedList, defaultLanguageCode, introductionList);
 
         if (shortForm != null && shortForm != project.ShortForm)
         {
             if (project.ProjectState != ProjectState.Draft)
                 throw new LocalizedValidationException("Validation.ShortForm.CannotChangeAfterPublish");
-            if (!shortFormService.IsValid(shortForm))
-                throw new LocalizedValidationException("Validation.ShortForm.Invalid", shortForm);
-            if (shortFormService.IsReserved(shortForm))
-                throw new LocalizedValidationException("Validation.ShortForm.Reserved", shortForm);
 
-            project.ShortForm = await shortFormService.EnsureUniqueAsync(shortForm, excludeProjectId: projectId);
+            project.ShortForm = await shortFormService.ResolveAsync(shortForm, defaultName: null, excludeProjectId: projectId);
         }
 
-        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
-        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
-        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
-        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
-        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
-        if (!string.IsNullOrEmpty(primaryColor) &&
-            !Regex.IsMatch(primaryColor, @"^#[0-9A-Fa-f]{6}$"))
-            throw new LocalizedValidationException("Validation.PrimaryColor.Invalid");
-        if (!string.IsNullOrEmpty(primaryColor))
-        {
-            const string lightBase = "#FFFFFF";
-            const string darkBase = "#1A1430"; // approx of oklch(15% 0.04 278)
-            if (ColorHelpers.ContrastRatio(primaryColor, lightBase) < 3.0
-             || ColorHelpers.ContrastRatio(primaryColor, darkBase) < 3.0)
-                throw new LocalizedValidationException("Validation.PrimaryColor.LowContrast");
-        }
-        if (!string.IsNullOrEmpty(customCss) &&
-            Regex.IsMatch(customCss,
-                @"<\s*/?\s*(script|style)\b|expression\s*\(|url\s*\(\s*['""]?\s*javascript:|@import\b|behavior\s*:",
-                RegexOptions.IgnoreCase))
-            throw new LocalizedValidationException("Validation.CustomCss.Disallowed");
-        if (minAge.HasValue && maxAge.HasValue && minAge > maxAge)
-            throw new LocalizedValidationException("Validation.MinAge.GreaterThanMaxAge");
+        ValidateProjectProperties(project, imageUrl, minAge, maxAge, primaryColor, customCss);
 
         project.ImageUrl = imageUrl;
         project.FormType = formType;
@@ -231,12 +181,7 @@ public class ProjectManager(
         project.PrimaryColor = primaryColor;
         project.CustomCss = customCss;
 
-        var supportedSet = supportedList.ToHashSet();
-        foreach (var existing in project.SupportedLanguages.Where(l => !supportedSet.Contains(l.Code)).ToList())
-            project.SupportedLanguages.Remove(existing);
-        foreach (var code in supportedList)
-            if (!project.SupportedLanguages.Any(l => l.Code == code))
-                project.SupportedLanguages.Add(languages[code]);
+        ReconcileSupportedLanguages(project, supportedList, languages);
 
         void ValidateProjectTranslation(ProjectTranslationInput input)
         {
@@ -296,49 +241,8 @@ public class ProjectManager(
                 });
         }
 
-        projectRepository.Update(project);
         await uow.SaveChangesAsync();
         return project;
-    }
-
-    private async Task<Dictionary<string, Language>> ValidateTranslationInputsAsync(
-        ICollection<ProjectTranslationInput> translations,
-        ICollection<string> supportedLanguageCodes,
-        string defaultLanguageCode,
-        ICollection<IntroductionTranslationInput> introductions)
-    {
-        if (string.IsNullOrWhiteSpace(defaultLanguageCode))
-            throw new LocalizedValidationException("Validation.Project.DefaultLanguageCodeRequired");
-        if (supportedLanguageCodes.Count == 0)
-            throw new LocalizedValidationException("Validation.Project.AtLeastOneSupportedLanguage");
-        if (!supportedLanguageCodes.Contains(defaultLanguageCode))
-            throw new LocalizedValidationException("Validation.Project.DefaultLanguageMustBeSupported");
-
-        var translationCodes = translations.Select(t => t.LanguageCode).ToList();
-        if (translationCodes.Distinct().Count() != translationCodes.Count)
-            throw new LocalizedValidationException("Validation.Translation.OneRowPerLanguage");
-        if (!supportedLanguageCodes.All(translationCodes.Contains))
-            throw new LocalizedValidationException("Validation.Project.AllSupportedLanguagesNeedTranslation");
-
-        var introByCode = introductions.GroupBy(i => i.LanguageCode).ToList();
-        if (introByCode.Any(g => g.Count() > 1))
-            throw new LocalizedValidationException("Validation.Project.IntroductionsOneRowPerLanguage");
-
-        var allCodes = supportedLanguageCodes
-            .Concat(translationCodes)
-            .Concat(introductions.Select(i => i.LanguageCode))
-            .Distinct()
-            .ToList();
-        var resolved = (await languageRepository.ReadByCodesForUpdateAsync(allCodes)).ToList();
-        if (resolved.Any(l => !l.IsActive))
-            throw new LocalizedValidationException("Validation.Project.InactiveLanguageNotAllowed");
-
-        var byCode = resolved.ToDictionary(l => l.Code);
-        var missing = allCodes.Where(c => !byCode.ContainsKey(c)).ToList();
-        if (missing.Count > 0)
-            throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
-
-        return byCode;
     }
 
     public Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null)
@@ -349,12 +253,8 @@ public class ProjectManager(
         var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
         if (project is null) return;
         project.ViewCount++;
-        projectRepository.Update(project);
         await uow.SaveChangesAsync();
     }
-
-    public Task<IEnumerable<Emoji>> GetAllEmojisAsync()
-        => emojiRepository.ReadAllReadOnlyAsync();
 
     public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
     {
@@ -363,7 +263,6 @@ public class ProjectManager(
             throw new ArgumentException($"Project {projectId} not found.");
 
         project.ProjectState = newState;
-        projectRepository.Update(project);
         await uow.SaveChangesAsync();
         return project;
     }
@@ -402,124 +301,13 @@ public class ProjectManager(
         var defaultCode = src.DefaultLanguage?.Code
             ?? throw new InvalidOperationException("Source project has no default language.");
 
-        var languages = await ValidateTranslationInputsAsync(
+        var languages = await translationValidator.ValidateAsync(
             translationList, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
 
         var defaultName = translationList.First(t => t.LanguageCode == defaultCode).Name;
-        var candidate = string.IsNullOrWhiteSpace(newShortForm)
-            ? shortFormService.Normalize(defaultName)
-            : newShortForm;
+        var uniqueShortForm = await shortFormService.ResolveAsync(newShortForm, defaultName);
 
-        if (!shortFormService.IsValid(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Invalid", candidate);
-        if (shortFormService.IsReserved(candidate))
-            throw new LocalizedValidationException("Validation.ShortForm.Reserved", candidate);
-
-        var uniqueShortForm = await shortFormService.EnsureUniqueAsync(candidate);
-
-        var copy = new Project
-        {
-            ShortForm = uniqueShortForm,
-            ImageUrl = src.ImageUrl,
-            FormType = src.FormType,
-            MinAge = src.MinAge,
-            MaxAge = src.MaxAge,
-            RequestContactInfo = src.RequestContactInfo,
-            AllowCrossLanguageIdeas = src.AllowCrossLanguageIdeas,
-            IdeaPageSize = src.IdeaPageSize,
-            ExtraIdeasReplaceExisting = src.ExtraIdeasReplaceExisting,
-            MaxExtraIdeaRequests = src.MaxExtraIdeaRequests,
-            CommentPageSize = src.CommentPageSize,
-            ProjectPlatformId = platformId,
-            ProjectState = ProjectState.Draft,
-            CreatedAt = DateTime.UtcNow,
-            ViewCount = 0,
-            DefaultLanguage = languages[defaultCode],
-            Theme = src.Theme,
-            PrimaryColor = src.PrimaryColor,
-            CustomCss = src.CustomCss,
-        };
-
-        foreach (var code in supportedCodes)
-            copy.SupportedLanguages.Add(languages[code]);
-
-        foreach (var t in translationList)
-            copy.Translations.Add(new ProjectTranslation
-            {
-                Language = languages[t.LanguageCode],
-                Name = t.Name,
-                Topic = t.Topic,
-            });
-
-        if (src.Introduction is not null && src.Introduction.Translations.Count > 0)
-        {
-            var introCopy = new Introduction();
-            foreach (var t in src.Introduction.Translations)
-                introCopy.Translations.Add(new IntroductionTranslation { Language = languages[t.Language.Code], Text = t.Text });
-            copy.Introduction = introCopy;
-        }
-
-        copy.Questionnaire = new Questionnaire();
-
-        if (src.Questionnaire is not null)
-        {
-            var sectionMap = new Dictionary<int, Section>();
-            var questionMap = new Dictionary<int, Question>();
-
-            foreach (var srcSection in src.Questionnaire.Sections)
-            {
-                var newSection = new Section();
-                foreach (var t in srcSection.Translations)
-                    newSection.Translations.Add(new SectionTranslation { Language = languages[t.Language.Code], Name = t.Name, Description = t.Description });
-                sectionMap[srcSection.SectionId] = newSection;
-                copy.Questionnaire.Sections.Add(newSection);
-            }
-
-            foreach (var srcQ in src.Questionnaire.Questions)
-            {
-                var newQ = new Question
-                {
-                    QuestionFormat = srcQ.QuestionFormat,
-                    IsMandatory = srcQ.IsMandatory,
-                    AnswerChoiceCount = srcQ.AnswerChoiceCount,
-                    ChoiceIndex = srcQ.ChoiceIndex,
-                    Position = srcQ.Position,
-                    Section = srcQ.Section is not null ? sectionMap[srcQ.Section.SectionId] : null,
-                };
-                foreach (var t in srcQ.Translations)
-                    newQ.Translations.Add(new QuestionTranslation { Language = languages[t.Language.Code], Text = t.Text, AnswerChoices = t.AnswerChoices.ToList(), MediaText = t.MediaText });
-                foreach (var ea in srcQ.EndingAnswers)
-                {
-                    var newEa = new EndingAnswer { Question = newQ };
-                    foreach (var t in ea.Translations)
-                        newEa.Translations.Add(new EndingAnswerTranslation { Language = languages[t.Language.Code], Value = t.Value });
-                    newQ.EndingAnswers.Add(newEa);
-                }
-                questionMap[srcQ.QuestionId] = newQ;
-                copy.Questionnaire.Questions.Add(newQ);
-            }
-
-            foreach (var srcQ in src.Questionnaire.Questions)
-            {
-                if (srcQ.ParentQuestion is not null && questionMap.TryGetValue(srcQ.ParentQuestion.QuestionId, out var newParent))
-                    questionMap[srcQ.QuestionId].ParentQuestion = newParent;
-            }
-        }
-
-        foreach (var srcCat in src.Categories)
-        {
-            var catCopy = new Category();
-            foreach (var t in srcCat.Translations)
-                catCopy.Translations.Add(new CategoryTranslation { Language = languages[t.Language.Code], Name = t.Name, Description = t.Description });
-            copy.Categories.Add(catCopy);
-        }
-
-        foreach (var srcEmoji in src.Emojis)
-        {
-            var tracked = await emojiRepository.ReadByIdForUpdateAsync(srcEmoji.EmojiId);
-            if (tracked is not null)
-                copy.Emojis.Add(tracked);
-        }
+        var copy = await projectDuplicationService.BuildCloneAsync(src, translationList, languages, uniqueShortForm, platformId);
 
         await projectRepository.CreateAsync(copy);
         await uow.SaveChangesAsync(ct);
@@ -531,13 +319,12 @@ public class ProjectManager(
         var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
         if (project == null) return false;
 
-        var emoji = await emojiRepository.ReadByIdForUpdateAsync(emojiId);
+        var emoji = await emojiManager.GetByIdForUpdateAsync(emojiId);
         if (emoji == null) return false;
 
         if (project.Emojis.Any(e => e.EmojiId == emojiId)) return true;
 
         project.Emojis.Add(emoji);
-        projectRepository.Update(project);
         await uow.SaveChangesAsync(ct);
         return true;
     }
@@ -554,5 +341,77 @@ public class ProjectManager(
         projectRepository.Update(project);
         await uow.SaveChangesAsync(ct);
         return true;
+    }
+
+    // Enables multiple emojis: one project read, one targeted emoji read for
+    // missing IDs only (WHERE EmojiId IN …), one SaveChanges.
+    public async Task<bool> EnableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var currentIds = project.Emojis.Select(e => e.EmojiId).ToHashSet();
+        var missing    = emojiIds.Where(id => !currentIds.Contains(id)).ToHashSet();
+        if (missing.Count == 0) return true;
+
+        var emojisToAdd = await emojiManager.GetByIdsForUpdateAsync(missing, ct);
+        foreach (var emoji in emojisToAdd)
+            project.Emojis.Add(emoji);
+
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Disables multiple emojis in a single DB round-trip: one project read,
+    // collection mutations in memory, one SaveChanges.
+    public async Task<bool> DisableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var idSet    = emojiIds.ToHashSet();
+        var toRemove = project.Emojis.Where(e => idSet.Contains(e.EmojiId)).ToList();
+        if (toRemove.Count == 0) return true;
+
+        foreach (var emoji in toRemove)
+            project.Emojis.Remove(emoji);
+
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private static void ValidateProjectProperties(
+        Project project,
+        string imageUrl,
+        int? minAge,
+        int? maxAge,
+        string primaryColor,
+        string customCss)
+    {
+        EntityValidator.ValidateProperty(project, imageUrl, nameof(Project.ImageUrl));
+        EntityValidator.ValidateProperty(project, minAge, nameof(Project.MinAge));
+        EntityValidator.ValidateProperty(project, maxAge, nameof(Project.MaxAge));
+        EntityValidator.ValidateProperty(project, primaryColor, nameof(Project.PrimaryColor));
+        EntityValidator.ValidateProperty(project, customCss, nameof(Project.CustomCss));
+        ProjectThemeValidator.ValidatePrimaryColor(primaryColor);
+        ProjectThemeValidator.ValidateCustomCss(customCss);
+        ProjectThemeValidator.ValidateAgeRange(minAge, maxAge);
+    }
+
+    private static void ReconcileSupportedLanguages(
+        Project project,
+        IReadOnlyCollection<string> desiredCodes,
+        IReadOnlyDictionary<string, Language> languages)
+    {
+        var desiredSet = desiredCodes.ToHashSet();
+        foreach (var existing in project.SupportedLanguages.Where(l => !desiredSet.Contains(l.Code)).ToList())
+            project.SupportedLanguages.Remove(existing);
+        foreach (var code in desiredCodes)
+            if (!project.SupportedLanguages.Any(l => l.Code == code))
+                project.SupportedLanguages.Add(languages[code]);
     }
 }

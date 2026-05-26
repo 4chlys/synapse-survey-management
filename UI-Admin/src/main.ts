@@ -14,6 +14,7 @@ import './project/question-detail-modal';
 import './questionnaire/questionnaire-dnd';
 import './project/project-ideation';
 import './admin/ideas-filter';
+import './admin/ideas-status-badge';
 import './admin/rawdata-export';
 import './admin/system-stats-export';
 import './project/project-stats-export';

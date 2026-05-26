@@ -42,6 +42,7 @@ export function readQuestionsI18n(el: HTMLElement | null): QuestionsI18n {
         mediaAudio:        ds?.i18nMediaAudio        ?? '',
         mediaGeneric:      ds?.i18nMediaGeneric      ?? '',
         statsTitle:        ds?.i18nStatsTitle        ?? '',
+        statsButtonLabel:  ds?.i18nStatsButtonLabel  ?? '',
         savedToast:        ds?.i18nSavedToast        ?? '',
         saveFailedToast:   ds?.i18nSaveFailedToast   ?? '',
     };

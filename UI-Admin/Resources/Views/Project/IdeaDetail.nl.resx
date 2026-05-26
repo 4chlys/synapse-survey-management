@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>Idee detail</value></data>
+  <data name="BackLink" xml:space="preserve"><value>Terug naar ideeën</value></data>
+  <data name="SubmittedBy" xml:space="preserve"><value>Ingediend door</value></data>
+  <data name="Anonymous" xml:space="preserve"><value>Anoniem</value></data>
+  <data name="ReactionsLabel" xml:space="preserve"><value>Reacties</value></data>
+  <data name="NoReactions" xml:space="preserve"><value>Nog geen reacties.</value></data>
+  <data name="CommentsHeading" xml:space="preserve"><value>Opmerkingen</value></data>
+  <data name="NoComments" xml:space="preserve"><value>Nog geen opmerkingen.</value></data>
+  <data name="CommentStatus_Approved" xml:space="preserve"><value>Goedgekeurd</value></data>
+  <data name="CommentStatus_Flagged" xml:space="preserve"><value>Gemarkeerd</value></data>
+  <data name="CommentStatus_Declined" xml:space="preserve"><value>Afgewezen</value></data>
+  <data name="CommentStatus_Unflagged" xml:space="preserve"><value>Nieuw</value></data>
+  <data name="ActionApprove" xml:space="preserve"><value>Goedkeuren</value></data>
+  <data name="ActionDecline" xml:space="preserve"><value>Afwijzen</value></data>
+  <data name="ActionFlag" xml:space="preserve"><value>Markeren</value></data>
+  <data name="ActionRemoveImage" xml:space="preserve"><value>Afbeelding verwijderen</value></data>
+  <data name="ConfirmRemoveImage" xml:space="preserve"><value>Weet je zeker dat je deze afbeelding wilt verwijderen?</value></data>
+  <data name="IdeaStatus_Approved" xml:space="preserve"><value>Goedgekeurd</value></data>
+  <data name="IdeaStatus_Flagged" xml:space="preserve"><value>Gemarkeerd</value></data>
+  <data name="IdeaStatus_Declined" xml:space="preserve"><value>Afgewezen</value></data>
+  <data name="IdeaStatus_Unflagged" xml:space="preserve"><value>Nieuw</value></data>
+</root>

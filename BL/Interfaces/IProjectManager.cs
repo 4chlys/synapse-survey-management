@@ -46,9 +46,10 @@ public interface IProjectManager
     Task<Project> GetProjectByShortFormAsync(string shortForm);
     Task<IEnumerable<Project>> GetAllProjectsAsync(int? platformId = null);
     Task IncrementViewCountAsync(int projectId);
-    Task<IEnumerable<Emoji>> GetAllEmojisAsync();
     Task<bool> EnableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
     Task<bool> DisableEmojiForProjectAsync(int projectId, int emojiId, CancellationToken ct = default);
+    Task<bool> EnableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default);
+    Task<bool> DisableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default);
     Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState);
     Task DeleteProjectAsync(int projectId);
     Task UpdateLastWizardStepAsync(int projectId, int step);

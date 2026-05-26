@@ -220,6 +220,7 @@ fi
 
 # 4. MIGs aanmaken
 create_migs
+configure_autohealing
 
 # 5. Load Balancer
 create_backend_services
@@ -233,6 +234,7 @@ add_mig_ips_to_armor
 # 6. Monitoring
 setup_logging_iam
 create_uptime_checks
+create_alert_policy
 
 LB_IP=$(gcloud compute addresses describe "synapse-${ENV}-lb-ip" \
   --global --format="value(address)" --project="${PROJECT_ID}")

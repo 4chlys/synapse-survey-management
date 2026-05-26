@@ -94,6 +94,77 @@
         </div>
     </div>
 
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <div>
+                <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["EmojisHeading"]</h2>
+                <p class="text-base-content/50 text-sm mt-2">@L["EmojisSubtitle"]</p>
+            </div>
+
+            @{
+                var emojis = ViewData["Emojis"] as List<EmojiAdminViewModel> ?? new List<EmojiAdminViewModel>();
+            }
+
+            @if (emojis.Any())
+            {
+                <div class="flex items-center gap-1 border-b border-base-200">
+                    @foreach (var tab in new[] {
+                        ("all",        "PresetAll"),
+                        ("standard",   "PresetStandard"),
+                        ("innovation", "PresetInnovation"),
+                        ("enthusiasm", "PresetEnthusiasm"),
+                    })
+                    {
+                        <button type="button"
+                                class="emoji-tab px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-transparent text-base-content/50"
+                                data-tab="@tab.Item1">
+                            @L[tab.Item2]
+                        </button>
+                    }
+                    @if (!isLocked)
+                    {
+                        <div class="ml-auto flex gap-1">
+                            <button type="button" id="emoji-select-all-btn"
+                                    class="btn btn-ghost btn-xs text-primary">
+                                @L["SelectAllButton"]
+                            </button>
+                            <button type="button" id="emoji-clear-all-btn"
+                                    class="btn btn-ghost btn-xs text-error">
+                                @L["ClearAllButton"]
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                @if (!isLocked)
+                {
+                    <form id="emoji-preset-form" action="/api/admin/projects/@projectId/emojis/enable-preset" method="post" class="hidden"></form>
+                    <form id="emoji-clear-form" action="/api/admin/projects/@projectId/emojis/disable-preset" method="post" class="hidden"></form>
+                }
+
+                <div id="emoji-grid" class="flex flex-wrap gap-2">
+                    @foreach (var emoji in emojis)
+                    {
+                        <form action="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/@(emoji.IsEnabled ? "disable" : "enable")" method="post"
+                              data-emoji-name="@emoji.Name" data-emoji-id="@emoji.EmojiId"
+                              data-enable-url="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/enable"
+                              data-disable-url="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/disable">
+                            <button type="submit" class="emoji-pill" data-enabled="@emoji.IsEnabled.ToString().ToLower()" @(isLocked ? "disabled" : "")>
+                                <span class="text-lg leading-none">@emoji.Symbol</span>
+                                <span class="leading-none">@emoji.Name</span>
+                                <svg class="emoji-check" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                        </form>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-base-content/40 italic text-sm">@L["EmojisEmpty"]</p>
+            }
+        </div>
+    </div>
+
     <details class="card bg-base-100 shadow-sm" @(isLocked ? "" : "open")>
         <summary class="card-body cursor-pointer flex-row items-center gap-2 py-4">
             <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60">@L["SettingsHeading"]</h2>
@@ -141,18 +212,27 @@
 
     <div class="flex justify-between">
         <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["QuestionsLink"]</a>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
             @if (!isLocked)
             {
+                <p id="categories-error" class="hidden text-sm text-error">@L["CategoriesError"]</p>
                 <form asp-action="SaveProgress" method="post" class="inline">
                     <input type="hidden" name="projectId" value="@projectId" />
                     <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                     <input type="hidden" name="step" value="3" />
                     <input type="hidden" name="returnAction" value="Ideation" />
-                    <button type="submit" class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
+                    <button type="button" id="save-btn" data-project-count="@Model.Count"
+                            class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
                 </form>
+                <button type="button" id="next-btn"
+                        data-project-count="@Model.Count"
+                        data-href="@Url.Action("Activate", new { projectId })"
+                        class="btn btn-primary btn-sm">@L["NextLink"] →</button>
             }
-            <a asp-action="@(isLocked ? "Dashboard" : "Activate")" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@(isLocked ? L["DashboardLink"].Value : L["NextLink"].Value) →</a>
+            else
+            {
+                <a asp-action="Dashboard" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@L["DashboardLink"] →</a>
+            }
         </div>
     </div>
 </div>
