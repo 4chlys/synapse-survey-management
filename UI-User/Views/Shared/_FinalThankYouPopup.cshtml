@@ -3,6 +3,7 @@
     var orgName = ViewData["OrganisationName"] as string;
     var orgLogo = ViewData["OrganisationLogoUrl"] as string;
     var orgSite = ViewData["OrganisationWebsiteUrl"] as string;
+    var redirectUrl = ViewData["ThankYouRedirectUrl"] as string;
 }
 
 <div id="thank-you-popup"
@@ -42,6 +43,18 @@
                         @L["ThankYouBody"]
                     </p>
                 </div>
+
+                @if (!string.IsNullOrEmpty(redirectUrl))
+                {
+                    <a href="@redirectUrl"
+                       class="btn btn-primary w-full rounded-field font-heading font-semibold text-base py-4 h-auto gap-2">
+                        @L["ViewIdeasButton"]
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </a>
+                }
 
                 @if (!string.IsNullOrEmpty(orgLogo))
                 {

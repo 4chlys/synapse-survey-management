@@ -147,4 +147,5 @@
 </div>
 </div>
 
+@{ ViewData["ThankYouRedirectUrl"] = Url.Action("CategoryList", "Category", new { projectId = Context.GetRouteValue("projectId") }); }
 @await Html.PartialAsync("_FinalThankYouPopup")

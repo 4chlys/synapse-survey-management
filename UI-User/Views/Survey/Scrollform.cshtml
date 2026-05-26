@@ -330,4 +330,5 @@
     <script type="application/json" id="existing-responses">@Html.Raw(JsonSerializer.Serialize(Model.ExistingResponses))</script>
 }
 
+@{ ViewData["ThankYouRedirectUrl"] = Url.Action("CategoryList", "Category", new { projectId = Context.GetRouteValue("projectId") }); }
 @await Html.PartialAsync("_FinalThankYouPopup")
