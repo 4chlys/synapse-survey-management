@@ -61,4 +61,5 @@
   <data name="Widget_Social_Note_LinkedIn" xml:space="preserve"><value>LinkedIn share-knop opent je project-link. Plak de tekst handmatig in de composer.</value></data>
   <data name="Widget_Social_Note_Facebook" xml:space="preserve"><value>Facebook share-knop opent met je project-link. Plak de tekst in de composer.</value></data>
   <data name="Widget_Social_Note_Instagram" xml:space="preserve"><value>Instagram heeft geen web share-URL. Kopieer de tekst en post handmatig via je telefoon.</value></data>
+  <data name="Widget_Social_Restart" xml:space="preserve"><value>Opnieuw</value></data>
 </root>

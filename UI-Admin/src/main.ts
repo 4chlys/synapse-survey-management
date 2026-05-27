@@ -20,6 +20,7 @@ import './admin/ideas-status-badge';
 import './admin/rawdata-export';
 import './admin/system-stats-export';
 import './project/project-stats-export';
+import './project/configure-dashboard';
 
 function init(): void {
     initTheme();

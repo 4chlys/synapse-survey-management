@@ -749,7 +749,18 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var sanitized = WidgetPreferenceService.SanitizeSlots(model.Slots);
+        var source = model.Slots ?? [];
+        var sanitized = source
+            .Select(input =>
+            {
+                var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
+                    ? input.WidgetType
+                    : WidgetPreferenceService.DefaultLayout[0];
+                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
+                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
+            })
+            .ToArray();
+
         await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
