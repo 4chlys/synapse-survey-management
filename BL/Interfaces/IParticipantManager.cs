@@ -17,5 +17,6 @@ public interface IParticipantManager
     Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30);
 
     Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId);
+    Task<List<ParticipantEmailWithLanguage>> GetParticipantEmailsWithLanguageByProjectAsync(int projectId);
     Task<IReadOnlyList<ProjectParticipantStats>> GetStatsByProjectsAsync(IEnumerable<int> projectIds);
 }

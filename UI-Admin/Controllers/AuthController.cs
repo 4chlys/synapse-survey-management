@@ -12,7 +12,6 @@ public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     EmailApiService emailApiService,
-    ILogger<AuthController> logger,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
     [HttpGet]
@@ -119,9 +118,20 @@ public class AuthController(
 
             var body = localizer["Email_ForgotPassword_Body", resetUrl].Value;
             var subject = localizer["Email_ForgotPassword_Subject"].Value;
-            try { await emailApiService.SendAsync(model.Email, subject, body, ct); }
-            catch (OperationCanceledException) { logger.LogInformation("Password reset email send cancelled for {Email}", model.Email); }
-            catch (Exception ex) { logger.LogWarning(ex, "Failed to send password reset email to {Email}", model.Email); }
+            // Enqueue rather than send inline — keeps the response fast and
+            // lets the queue worker handle transient transport failures.
+            await emailApiService.EnqueueAsync(new EnqueueEmailRequest(
+                To:                model.Email,
+                Bcc:               Array.Empty<string>(),
+                ReplyTo:           null,
+                Subject:           subject,
+                Body:              body,
+                Category:          "PasswordReset",
+                LanguageCode:      null,
+                ProjectPlatformId: user.ProjectPlatformId,
+                ProjectId:         null,
+                IdeaId:            null,
+                CreatedByUserId:   user.Id), ct);
         }
 
         // Always show the same message whether or not the email address exists (security)

@@ -70,8 +70,15 @@ else
                         <div class="min-w-0">
                             @if (!string.IsNullOrEmpty(idea.ParticipantEmail))
                             {
+                                @* Clicking this opens the two-step email choice modal
+                                   (handled by src/admin/email-compose.ts). The fallback
+                                   mailto: href keeps middle-click and right-click "open
+                                   in mail client" working. *@
                                 <a href="mailto:@idea.ParticipantEmail"
-                                   class="link link-primary text-xs block truncate max-w-[14rem]"
+                                   data-email-trigger
+                                   data-email="@idea.ParticipantEmail"
+                                   data-idea-id="@idea.IdeaId"
+                                   class="link link-primary text-xs block truncate max-w-[14rem] cursor-pointer"
                                    title="@idea.ParticipantEmail">@idea.ParticipantEmail</a>
                             }
                             else

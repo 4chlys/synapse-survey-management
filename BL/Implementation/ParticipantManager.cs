@@ -69,6 +69,9 @@ public class ParticipantManager(
     public Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId)
         => participantRepository.ReadEmailsByProjectIdReadOnlyAsync(projectId);
 
+    public Task<List<ParticipantEmailWithLanguage>> GetParticipantEmailsWithLanguageByProjectAsync(int projectId)
+        => participantRepository.ReadEmailsWithLanguageByProjectIdReadOnlyAsync(projectId);
+
     public async Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30)
     {
         var events = await participantRepository.ReadTimelineAsync(projectId, days);

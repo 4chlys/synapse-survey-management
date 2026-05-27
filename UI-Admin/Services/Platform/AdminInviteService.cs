@@ -5,21 +5,21 @@ using SynapseEnqueteManagement.UI.Admin.Services.Email;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
-// Result of an invite. EmailAttempted=false means the caller asked us to skip the email
-// (they'll deliver the link out-of-band). EmailAttempted=true but EmailSent=false means
-// we tried and the email API rejected/failed — the caller should surface a warning.
-public record AdminInviteResult(IdentityResult Identity, bool EmailAttempted, bool EmailSent);
+// Result of an invite. Just the identity result + the invite link (so the
+// controller can show it as a fallback if SendEmail=false). The earlier
+// EmailAttempted/EmailSent flags are gone: once the row lands in the
+// EmailJob queue we no longer know synchronously whether it sent, so there
+// is no honest value to surface here. The operator queue page is the place
+// to inspect delivery.
+public record AdminInviteResult(IdentityResult Identity, string InviteLink);
 
-// Single entry point for adding a platform administrator: creates a passwordless
-// account and (optionally) emails a set-password link. The account has no usable
-// password until the invitee follows the link. Shared by every admin-creation flow
-// so the invite behaviour stays consistent. The caller supplies buildResetUrl
-// because URL building belongs to the controller (it owns the routing context).
+// Creates a passwordless platform-admin account and (optionally) enqueues a
+// set-password welcome email. The account has no usable password until the
+// invitee follows the link.
 public class AdminInviteService(
     UserManager<ApplicationUser> userManager,
     EmailApiService emailApiService,
-    IStringLocalizer<SharedResource> localizer,
-    ILogger<AdminInviteService> logger)
+    IStringLocalizer<SharedResource> localizer)
 {
     public async Task<AdminInviteResult> InviteAdminAsync(
         int platformId, string platformName, string email, Func<string, string> buildResetUrl,
@@ -32,37 +32,39 @@ public class AdminInviteService(
             ProjectPlatformId = platformId
         };
         var identity = await userManager.CreateAsync(user);
-        if (!identity.Succeeded) return new AdminInviteResult(identity, false, false);
+        if (!identity.Succeeded) return new AdminInviteResult(identity, null);
 
         var roleResult = await userManager.AddToRoleAsync(user, "ProjectPlatformAdmin");
         if (!roleResult.Succeeded)
         {
-            // Compensating delete: the user was created but has no role — undo it so InviteAdminAsync stays all-or-nothing.
+            // Compensating delete: keep InviteAdminAsync all-or-nothing.
             await userManager.DeleteAsync(user);
-            return new AdminInviteResult(roleResult, false, false);
+            return new AdminInviteResult(roleResult, null);
         }
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var resetUrl = buildResetUrl(token);
 
-        if (!sendEmail) return new AdminInviteResult(identity, false, false);
+        if (!sendEmail) return new AdminInviteResult(identity, resetUrl);
 
         var subject = localizer["Email_Welcome_Subject", platformName].Value;
-        var body = localizer["Email_Welcome_Body", platformName, email, resetUrl].Value;
-        try
-        {
-            await emailApiService.SendAsync(email, subject, body, ct);
-            return new AdminInviteResult(identity, true, true);
-        }
-        catch (OperationCanceledException)
-        {
-            logger.LogInformation("Admin invite email send cancelled for {Email}", email);
-            return new AdminInviteResult(identity, true, false);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to send admin invite email to {Email}", email);
-            return new AdminInviteResult(identity, true, false);
-        }
+        var body    = localizer["Email_Welcome_Body", platformName, email, resetUrl].Value;
+
+        // Persists to the EmailJob queue and returns immediately — the
+        // EmailJobWorker handles transport + retries.
+        await emailApiService.EnqueueAsync(new EnqueueEmailRequest(
+            To:                email,
+            Bcc:               Array.Empty<string>(),
+            ReplyTo:           null,
+            Subject:           subject,
+            Body:              body,
+            Category:          "AdminInvite",
+            LanguageCode:      null,
+            ProjectPlatformId: platformId,
+            ProjectId:         null,
+            IdeaId:            null,
+            CreatedByUserId:   user.Id), ct);
+
+        return new AdminInviteResult(identity, resetUrl);
     }
 }

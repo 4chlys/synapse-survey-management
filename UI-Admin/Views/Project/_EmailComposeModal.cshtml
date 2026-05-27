@@ -1,0 +1,94 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasViewModel
+@inject IViewLocalizer L
+@using Microsoft.AspNetCore.Identity
+@using SynapseEnqueteManagement.UI.Admin.Data
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var adminEmail = (await UserManager.GetUserAsync(User))?.Email ?? string.Empty;
+    var sendUrl    = Url.Action("SendParticipantEmail", "Project", new { projectId = Model.ProjectId });
+}
+
+@*
+    Two-step modal:
+      1. #email-choice-modal asks "send from here vs your own mail program"
+      2. #email-compose-modal is the actual form (only used for the "from here" branch)
+    Both opened from JS by clicking a participant email in _IdeasTable.
+*@
+
+<dialog id="email-choice-modal" class="modal">
+    <div class="modal-box w-[420px] max-w-[92vw] rounded-2xl p-7 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <h3 class="font-heading font-bold text-base text-base-content">@L["EmailChoice_Title"]</h3>
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button></form>
+        </div>
+        <p class="text-sm text-base-content/70" data-email-choice-target>@L["EmailChoice_Body"]</p>
+        <div class="flex flex-col gap-2 mt-2">
+            <button type="button" id="email-choice-platform" class="btn btn-primary btn-sm">@L["EmailChoice_SendViaPlatform"]</button>
+            <a id="email-choice-mailto" href="#" class="btn btn-ghost btn-sm">@L["EmailChoice_OpenInMailClient"]</a>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+<dialog id="email-compose-modal" class="modal">
+    <div class="modal-box w-[540px] max-w-[94vw] max-h-[90vh] rounded-2xl overflow-y-auto p-7 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <h3 class="font-heading font-bold text-base text-base-content">@L["EmailCompose_Title"]</h3>
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button></form>
+        </div>
+
+        <form id="email-compose-form"
+              data-send-url="@sendUrl"
+              data-project-id="@Model.ProjectId"
+              class="flex flex-col gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ideaId" id="email-compose-ideaId" />
+            <input type="hidden" name="participantEmail" id="email-compose-participant" />
+            <input type="hidden" name="languageCode" id="email-compose-language" />
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_To"]</label>
+                <input type="text" id="email-compose-to" value="@adminEmail" disabled
+                       class="input input-bordered input-sm bg-base-200 text-base-content/70" />
+                <span class="text-[11px] text-base-content/50">@L["EmailField_To_Hint"]</span>
+            </div>
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_Bcc"]</label>
+                <input type="text" id="email-compose-bcc" disabled
+                       class="input input-bordered input-sm bg-base-200 text-base-content/70" />
+            </div>
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_ReplyTo"]</label>
+                <input type="email" name="replyTo" id="email-compose-replyto" value="@adminEmail" required
+                       class="input input-bordered input-sm" />
+            </div>
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_Subject"]</label>
+                <input type="text" name="subject" required maxlength="200"
+                       class="input input-bordered input-sm" />
+            </div>
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_Body"]</label>
+                <textarea name="body" required rows="8" maxlength="6000"
+                          class="textarea textarea-bordered text-sm leading-relaxed"></textarea>
+                <span id="email-compose-footer-preview" class="text-[11px] text-base-content/50 italic">
+                    @string.Format(L["Email_ReplyFooter"].Value, adminEmail)
+                </span>
+            </div>
+
+            <div id="email-compose-error" class="text-error text-sm hidden"></div>
+        </form>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm">@L["CancelButton"]</button></form>
+            <button type="button" id="email-compose-submit" class="btn btn-primary btn-sm">
+                @L["EmailCompose_SendButton"]
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

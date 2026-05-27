@@ -15,6 +15,7 @@
   <data name="Nav_Projects" xml:space="preserve"><value>Projects</value></data>
   <data name="Nav_Platform" xml:space="preserve"><value>Platform</value></data>
   <data name="Nav_Admins" xml:space="preserve"><value>Admins</value></data>
+  <data name="Nav_EmailQueue" xml:space="preserve"><value>Email queue</value></data>
   <data name="Nav_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Nav_Ideas" xml:space="preserve"><value>Ideas</value></data>
   <data name="Nav_Categories" xml:space="preserve"><value>Categories</value></data>
@@ -143,4 +144,6 @@ Set your password via the link below (valid for 24 hours):
   <data name="Activation_QuestionTranslation" xml:space="preserve"><value>Question #{0}: missing translation for language: {1}</value></data>
   <data name="Activation_CategoryTranslation" xml:space="preserve"><value>Category #{0}: missing translation for language: {1}</value></data>
   <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Ending answer #{0}: missing translation for language: {1}</value></data>
+
+  <data name="EmailBroadcast_NoMessages" xml:space="preserve"><value>Provide at least one Subject and Body before sending.</value></data>
 </root>

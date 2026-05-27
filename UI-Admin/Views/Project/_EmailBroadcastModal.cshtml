@@ -1,0 +1,77 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasViewModel
+@inject IViewLocalizer L
+@using Microsoft.AspNetCore.Identity
+@using SynapseEnqueteManagement.UI.Admin.Data
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var adminEmail   = (await UserManager.GetUserAsync(User))?.Email ?? string.Empty;
+    var broadcastUrl = Url.Action("BroadcastParticipantEmail", "Project", new { projectId = Model.ProjectId });
+    // SupportedLanguageCodes is filled by ProjectController.Ideas(...). For a
+    // single-language survey we still render one section.
+    var languages = Model.SupportedLanguageCodes?.ToList() ?? new List<string>();
+    if (languages.Count == 0 && !string.IsNullOrEmpty(Model.DefaultLanguageCode))
+        languages.Add(Model.DefaultLanguageCode);
+}
+
+<dialog id="email-broadcast-modal" class="modal">
+    <div class="modal-box w-[640px] max-w-[96vw] max-h-[92vh] rounded-2xl overflow-y-auto p-7 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <h3 class="font-heading font-bold text-base text-base-content">@L["EmailBroadcast_Title"]</h3>
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button></form>
+        </div>
+        <p class="text-sm text-base-content/60">@L["EmailBroadcast_Description"]</p>
+
+        <form id="email-broadcast-form"
+              data-send-url="@broadcastUrl"
+              data-project-id="@Model.ProjectId"
+              class="flex flex-col gap-3">
+            @Html.AntiForgeryToken()
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_To"]</label>
+                <input type="text" value="@adminEmail" disabled
+                       class="input input-bordered input-sm bg-base-200 text-base-content/70" />
+                <span class="text-[11px] text-base-content/50">@L["EmailField_To_Hint"]</span>
+            </div>
+
+            <div class="form-control gap-1">
+                <label class="text-xs font-semibold text-base-content/70">@L["EmailField_ReplyTo"]</label>
+                <input type="email" name="replyTo" value="@adminEmail" required
+                       class="input input-bordered input-sm" />
+            </div>
+
+            @* One Subject + Body per supported language. The server pairs them
+               by key on submit (subjects[en], bodies[en], subjects[nl], …)
+               via the model-binder's Dictionary<string,string> support. *@
+            @foreach (var code in languages)
+            {
+                <div class="rounded-xl border border-base-300 p-3 flex flex-col gap-2">
+                    <div class="text-[11px] uppercase font-bold tracking-wide text-base-content/50">
+                        @code
+                    </div>
+                    <input type="text" name="subjects[@code]" maxlength="200"
+                           placeholder="@L["EmailField_Subject"]"
+                           class="input input-bordered input-sm" />
+                    <textarea name="bodies[@code]" rows="6" maxlength="6000"
+                              placeholder="@L["EmailField_Body"]"
+                              class="textarea textarea-bordered text-sm leading-relaxed"></textarea>
+                </div>
+            }
+
+            <p class="text-[11px] text-base-content/50 italic">
+                @L["EmailBroadcast_PerLanguageHint"]
+            </p>
+
+            <div id="email-broadcast-error" class="text-error text-sm hidden"></div>
+            <div id="email-broadcast-success" class="text-success text-sm hidden"></div>
+        </form>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm">@L["CancelButton"]</button></form>
+            <button type="button" id="email-broadcast-submit" class="btn btn-primary btn-sm">
+                @L["EmailBroadcast_SendButton"]
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

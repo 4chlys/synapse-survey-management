@@ -17,6 +17,8 @@ import './questionnaire/questionnaire-dnd';
 import './project/project-ideation';
 import './admin/ideas-filter';
 import './admin/ideas-status-badge';
+import './admin/email-compose';
+import './admin/email-broadcast';
 import './admin/rawdata-export';
 import './admin/system-stats-export';
 import './project/project-stats-export';

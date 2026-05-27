@@ -17,5 +17,10 @@ public interface IParticipantRepository : IRepository<Participant>
 
     Task<List<string>> ReadEmailsByProjectIdReadOnlyAsync(int projectId);
 
+    // Same data as ReadEmailsByProjectIdReadOnlyAsync but grouped with the
+    // participant's chosen language — needed by admin broadcasts to send one
+    // translation per language group.
+    Task<List<ParticipantEmailWithLanguage>> ReadEmailsWithLanguageByProjectIdReadOnlyAsync(int projectId);
+
     Task<IReadOnlyList<ProjectParticipantStats>> ReadStatsByProjectsReadOnlyAsync(IEnumerable<int> projectIds);
 }
