@@ -9,37 +9,59 @@
     Layout = "_Layout";
 }
 
-<div class="max-w-2xl">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+<div>
+    <div class="mb-8">
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <p class="text-sm text-base-content/50 mt-1">@L["PageDescription"]</p>
+    </div>
 
-    @* Card 1 — Basisinformatie *@
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body gap-4">
-            <h2 class="font-semibold text-base-content">@L["BasicInfoHeading"]</h2>
-            <form asp-action="SaveBasicInfo" method="post" class="flex flex-col gap-4">
+    <div class="settings-grid">
+
+        @* ── Card 1 — Basic information ── *@
+        <div class="settings-card settings-card--general settings-card--wide">
+            <div class="settings-card-header">
+                <div class="settings-card-icon settings-card-icon--general">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-heading font-semibold text-base text-base-content">@L["BasicInfoHeading"]</h2>
+                    <p class="text-xs text-base-content/40 mt-0.5">@L["BasicInfoDescription"]</p>
+                </div>
+            </div>
+            <form asp-action="SaveBasicInfo" method="post" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["ContactNameLabel"]</span></div>
-                    <input name="ContactName" value="@Model.BasicInfo.ContactName" class="input input-bordered w-full" placeholder="@L["ContactNamePlaceholder"]" />
+                    <div class="label"><span class="label-text font-medium text-xs">@L["ContactNameLabel"]</span></div>
+                    <input name="ContactName" value="@Model.BasicInfo.ContactName" class="input input-bordered w-full input-sm" placeholder="@L["ContactNamePlaceholder"]" />
                 </label>
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["ContactEmailLabel"]</span></div>
-                    <input name="ContactEmail" type="email" value="@Model.BasicInfo.ContactEmail" class="input input-bordered w-full" placeholder="@L["ContactEmailPlaceholder"]" />
+                    <div class="label"><span class="label-text font-medium text-xs">@L["ContactEmailLabel"]</span></div>
+                    <input name="ContactEmail" type="email" value="@Model.BasicInfo.ContactEmail" class="input input-bordered w-full input-sm" placeholder="@L["ContactEmailPlaceholder"]" />
                 </label>
                 <label class="form-control">
-                    <div class="label"><span class="label-text font-medium">@L["BillingReferenceLabel"]</span></div>
-                    <input name="BillingReference" value="@Model.BasicInfo.BillingReference" class="input input-bordered w-full" placeholder="@L["BillingReferencePlaceholder"]" />
+                    <div class="label"><span class="label-text font-medium text-xs">@L["BillingReferenceLabel"]</span></div>
+                    <input name="BillingReference" value="@Model.BasicInfo.BillingReference" class="input input-bordered w-full input-sm" placeholder="@L["BillingReferencePlaceholder"]" />
                 </label>
-                <div class="card-actions justify-end">
+                <div class="flex justify-end lg:col-span-3 pt-1">
                     <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
-    </div>
 
-    @* Card 2 — AI-model *@
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body gap-4">
-            <h2 class="font-semibold text-base-content">@L["AiModelHeading"]</h2>
+        @* ── Card 2 — AI model ── *@
+        <div class="settings-card settings-card--ai">
+            <div class="settings-card-header">
+                <div class="settings-card-icon settings-card-icon--ai">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-heading font-semibold text-base text-base-content">@L["AiModelHeading"]</h2>
+                    <p class="text-xs text-base-content/40 mt-0.5">@L["AiModelDescription"]</p>
+                </div>
+            </div>
             @if (Model.AiSettings.AllowedModels.Count == 1)
             {
                 <p class="text-sm text-base-content/70">@string.Format(L["SingleModelText"].Value, Model.AiSettings.AllowedModels[0].DisplayName)</p>
@@ -50,131 +72,167 @@
             }
             else
             {
-                <form asp-action="SaveAiModel" method="post" class="flex flex-col gap-4">
-                    <div class="label"><span class="label-text font-medium">@L["SelectModelLabel"]</span></div>
+                <form asp-action="SaveAiModel" method="post" class="flex flex-col gap-3 flex-1">
                     <div class="flex flex-col gap-2">
                         @foreach (var provider in Enum.GetValues<AiProvider>())
                         {
-                            var group = Model.AiSettings.AllowedModels.Where(m => m.Provider == provider).ToList();
+                            var group = Model.AiSettings.AllowedModels
+                                .Where(m => m.Provider == provider && !Model.AiSettings.UnavailableModelIds.Contains(m.Id))
+                                .ToList();
                             if (!group.Any()) continue;
-                            <p class="text-xs text-base-content/50 uppercase tracking-wide mt-1">@provider.ToString()</p>
+                            <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-widest mt-1">@provider.ToString()</p>
                             @foreach (var aiModel in group)
                             {
-                                var isSelected    = aiModel.Id == Model.AiSettings.SelectedModelId;
-                                var isUnavailable = Model.AiSettings.UnavailableModelIds.Contains(aiModel.Id);
-                                <label class="flex items-start gap-3 p-3 rounded-lg border border-base-300 @(isUnavailable ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:border-primary")">
+                                var isSelected = aiModel.Id == Model.AiSettings.SelectedModelId;
+                                <label class="settings-model-option @(isSelected ? "settings-model-option--active" : "") cursor-pointer">
                                     <input type="radio" name="selectedModelId" value="@aiModel.Id"
-                                           class="radio radio-primary mt-0.5"
-                                           checked="@isSelected"
-                                           disabled="@isUnavailable" />
+                                           class="radio radio-primary radio-sm"
+                                           checked="@isSelected" />
                                     <span class="text-sm font-medium text-base-content">@aiModel.DisplayName</span>
-                                    @if (isUnavailable)
-                                    {
-                                        <span class="badge badge-error badge-xs">@L["ModelNotAvailable"]</span>
-                                    }
                                 </label>
                             }
                         }
                     </div>
-                    <div class="card-actions justify-end">
+                    <div class="flex justify-end mt-auto pt-3">
                         <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                     </div>
                 </form>
             }
         </div>
-    </div>
 
-    @* Card 3 — AI-assistentie modus *@
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body gap-4">
-            <h2 class="font-semibold text-base-content">@L["AiAssistanceHeading"]</h2>
-            <p class="text-sm text-base-content/70">@L["AiAssistanceDescription"]</p>
-            <form asp-action="SaveAiAssistanceMode" method="post" class="flex flex-col gap-4">
+        @* ── Card 3 — AI assistance mode ── *@
+        <div class="settings-card settings-card--mode">
+            <div class="settings-card-header">
+                <div class="settings-card-icon settings-card-icon--mode">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-heading font-semibold text-base text-base-content">@L["AiAssistanceHeading"]</h2>
+                    <p class="text-xs text-base-content/40 mt-0.5">@L["AiAssistanceDescription"]</p>
+                </div>
+            </div>
+            <form asp-action="SaveAiAssistanceMode" method="post" class="flex flex-col gap-3 flex-1">
+                @{
+                    var currentMode = Model.AiSettings.AiAssistanceMode;
+                }
                 <div class="flex flex-col gap-2">
-                    @{
-                        var currentMode = Model.AiSettings.AiAssistanceMode;
-                    }
-                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == AiAssistanceType.ProActive ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                    <label class="settings-mode-option @(currentMode == AiAssistanceType.ProActive ? "settings-mode-option--active" : "")">
                         <input type="radio" name="aiAssistanceMode" value="@nameof(AiAssistanceType.ProActive)" class="radio radio-primary radio-sm" checked="@(currentMode == AiAssistanceType.ProActive ? "checked" : null)" />
-                        <div>
+                        <div class="min-w-0">
                             <div class="text-sm font-semibold text-base-content">@L["AiMode_ProActive"]</div>
                             <div class="text-xs text-base-content/50">@L["AiMode_ProActive_Desc"]</div>
                         </div>
                     </label>
-                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == AiAssistanceType.AskFirst ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                    <label class="settings-mode-option @(currentMode == AiAssistanceType.AskFirst ? "settings-mode-option--active" : "")">
                         <input type="radio" name="aiAssistanceMode" value="@nameof(AiAssistanceType.AskFirst)" class="radio radio-primary radio-sm" checked="@(currentMode == AiAssistanceType.AskFirst ? "checked" : null)" />
-                        <div>
+                        <div class="min-w-0">
                             <div class="text-sm font-semibold text-base-content">@L["AiMode_AskFirst"]</div>
                             <div class="text-xs text-base-content/50">@L["AiMode_AskFirst_Desc"]</div>
                         </div>
                     </label>
-                    <label class="flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] cursor-pointer transition-colors @(currentMode == AiAssistanceType.Never ? "border-primary bg-primary/5" : "border-base-300 hover:border-base-content/20")">
+                    <label class="settings-mode-option @(currentMode == AiAssistanceType.Never ? "settings-mode-option--active" : "")">
                         <input type="radio" name="aiAssistanceMode" value="@nameof(AiAssistanceType.Never)" class="radio radio-primary radio-sm" checked="@(currentMode == AiAssistanceType.Never ? "checked" : null)" />
-                        <div>
+                        <div class="min-w-0">
                             <div class="text-sm font-semibold text-base-content">@L["AiMode_Never"]</div>
                             <div class="text-xs text-base-content/50">@L["AiMode_Never_Desc"]</div>
                         </div>
                     </label>
                 </div>
-                <div class="card-actions justify-end">
+                <div class="flex justify-end mt-auto pt-3">
+                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                </div>
+            </form>
+
+            <div class="divider my-4"></div>
+
+            <form asp-action="SaveIdeaSummaryMaxIdeas" method="post" class="flex flex-col gap-2">
+                <div>
+                    <p class="text-sm font-semibold text-base-content">@L["MaxIdeasLabel"]</p>
+                    <p class="text-xs text-base-content/50 mt-0.5">@L["MaxIdeasDescription"]</p>
+                </div>
+                <div class="flex items-center gap-3 mt-1">
+                    <input type="number" name="maxIdeas" value="@Model.IdeaSummaryMaxIdeas"
+                           min="10" max="2000" class="input input-bordered input-sm w-28" />
                     <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
-    </div>
 
-    @* Card 4 — Systeemprompts *@
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body gap-4">
-            <h2 class="font-semibold text-base-content">@L["PromptsHeading"]</h2>
-
-            <div class="alert alert-warning">
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        @* ── Card 4 — System prompts (full width, collapsed by default) ── *@
+        <div class="settings-card settings-card--prompts settings-card--wide">
+            <div class="settings-card-header settings-prompts-header" id="prompts-toggle" data-toggle-prompts="prompts-body" data-toggle-chevron="prompts-chevron">
+                <div class="settings-card-icon settings-card-icon--prompts">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/>
+                        <line x1="12" y1="4" x2="12" y2="20"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h2 class="font-heading font-semibold text-base text-base-content">@L["PromptsHeading"]</h2>
+                    <p class="text-xs text-base-content/40 mt-0.5">Advanced, click to expand and edit</p>
+                </div>
+                <div class="settings-badge-advanced">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    @L["WarningLabel"]
+                </div>
+                <svg id="prompts-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" class="settings-prompts-chevron ml-2 shrink-0">
+                    <polyline points="6 9 12 15 18 9"/>
                 </svg>
-                <span class="text-sm">
-                    <strong>@L["WarningLabel"]</strong> @L["WarningBody"]
-                </span>
             </div>
 
-            @foreach (var entry in Model.Prompts.Entries)
-            {
-                <div class="collapse collapse-arrow bg-base-200 rounded-lg">
-                    <input type="checkbox" />
-                    <div class="collapse-title font-medium text-sm flex items-center gap-2">
-                        @entry.Label
-                        @if (entry.IsOverridden)
-                        {
-                            <span class="badge badge-warning badge-xs">@L["CustomizedBadge"]</span>
-                        }
-                    </div>
-                    <div class="collapse-content flex flex-col gap-3">
-                        <form asp-action="SavePromptOverride" method="post" class="flex flex-col gap-3">
-                            <input type="hidden" name="promptType" value="@entry.PromptType" />
-                            <textarea name="value" class="textarea textarea-bordered w-full font-mono text-xs" rows="8">@entry.EffectivePrompt</textarea>
-                            <div class="flex justify-end gap-2">
-                                @if (entry.IsOverridden)
-                                {
-                                    <form asp-action="ResetPrompt" method="post" class="inline">
-                                        <input type="hidden" name="promptType" value="@entry.PromptType" />
-                                        <button type="submit" class="btn btn-ghost btn-sm">@L["ResetButton"]</button>
-                                    </form>
-                                }
-                                <button type="submit" class="btn btn-warning btn-sm">@Shared["Common_Save"]</button>
-                            </div>
-                        </form>
+            <div class="settings-prompts-body" id="prompts-body">
+                <div role="alert" class="alert alert-warning mb-5">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="shrink-0">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div>
+                        <p class="font-semibold text-sm">@L["WarningLabel"]</p>
+                        <p class="text-sm">@L["WarningBody"]</p>
                     </div>
                 </div>
-            }
 
-            @* Max ideas per summary *@
-            <div class="divider"></div>
-            <form asp-action="SaveIdeaSummaryMaxIdeas" method="post" class="flex items-center gap-3">
-                <label class="label-text font-medium flex-1">@L["MaxIdeasLabel"]</label>
-                <input type="number" name="maxIdeas" value="@Model.IdeaSummaryMaxIdeas"
-                       min="10" max="2000" class="input input-bordered input-sm w-28" />
-                <button type="submit" class="btn btn-primary btn-sm">@L["SaveButton"]</button>
-            </form>
+                <div class="settings-prompts-grid">
+                    @foreach (var entry in Model.Prompts.Entries)
+                    {
+                        <div class="collapse collapse-arrow settings-prompt-item">
+                            <input type="checkbox" />
+                            <div class="collapse-title font-medium text-sm flex items-center gap-2 py-3 min-h-0">
+                                <span class="w-1.5 h-1.5 rounded-full @(entry.IsOverridden ? "bg-warning" : "bg-base-content/15") shrink-0"></span>
+                                @entry.Label
+                                @if (entry.IsOverridden)
+                                {
+                                    <span class="badge badge-warning badge-xs">@L["CustomizedBadge"]</span>
+                                }
+                            </div>
+                            <div class="collapse-content flex flex-col gap-3">
+                                @if (entry.IsOverridden)
+                                {
+                                    <form asp-action="ResetPrompt" method="post" id="reset-prompt-@entry.PromptType">
+                                        <input type="hidden" name="promptType" value="@entry.PromptType" />
+                                    </form>
+                                }
+                                <form asp-action="SavePromptOverride" method="post" class="flex flex-col gap-3">
+                                    <input type="hidden" name="promptType" value="@entry.PromptType" />
+                                    <textarea name="value" class="textarea textarea-bordered w-full font-mono text-xs leading-relaxed" rows="8">@entry.EffectivePrompt</textarea>
+                                    <div class="flex justify-end gap-2">
+                                        @if (entry.IsOverridden)
+                                        {
+                                            <button type="submit" form="reset-prompt-@entry.PromptType" class="btn btn-ghost btn-sm">@L["ResetButton"]</button>
+                                        }
+                                        <button type="submit" class="btn btn-warning btn-sm">@Shared["Common_Save"]</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
+
     </div>
 </div>
+

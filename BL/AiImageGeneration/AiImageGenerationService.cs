@@ -15,12 +15,11 @@ public sealed class AiImageGenerationService(
         int projectId,
         string projectTopic = null,
         string introText = null,
+        string postCopy = null,
         CancellationToken ct = default)
     {
         try
         {
-            // Build optional context block: topic (highest priority), then intro snippet.
-            // Phrased as scene guidance so the model generates concrete real-world imagery.
             var contextParts = new List<string>();
             if (!string.IsNullOrWhiteSpace(projectTopic))
                 contextParts.Add($" Het gaat specifiek over: \"{projectTopic.Trim()}\".");
@@ -28,15 +27,39 @@ public sealed class AiImageGenerationService(
             {
                 var stripped = HtmlHelpers.StripHtml(introText);
                 if (stripped.Length > 300)
-                    stripped = stripped[..300].TrimEnd() + "…";
+                {
+                    var end = 300;
+                    if (char.IsHighSurrogate(stripped[end - 1])) end--;
+                    stripped = stripped[..end].TrimEnd() + "…";
+                }
                 if (!string.IsNullOrWhiteSpace(stripped))
                     contextParts.Add($" Achtergrondinformatie: \"{stripped}\".");
             }
             var context = string.Concat(contextParts);
 
-            var prompt = config.Prompt
-                .Replace("{project_name}", projectName)
-                .Replace("{context}", context);
+            string prompt;
+            if (!string.IsNullOrWhiteSpace(postCopy))
+            {
+                string trimmed;
+                var limit = 500;
+                if (postCopy.Length > limit)
+                {
+                    if (char.IsHighSurrogate(postCopy[limit - 1])) limit--;
+                    trimmed = postCopy[..limit].TrimEnd() + "…";
+                }
+                else
+                    trimmed = postCopy;
+                prompt = config.SocialPrompt
+                    .Replace("{post_copy}", trimmed)
+                    .Replace("{project_name}", projectName)
+                    .Replace("{context}", context);
+            }
+            else
+            {
+                prompt = config.Prompt
+                    .Replace("{project_name}", projectName)
+                    .Replace("{context}", context);
+            }
 
             var request = new GenerateContentRequest
             {

@@ -20,7 +20,7 @@ public class QuestionSupportController(
     [HttpPost("chat")]
     public async Task<ActionResult<QuestionSupportChatResponseDto>> Chat(
         int projectId,
-        [FromBody] QuestionSupportChatRequestDto dto,
+        QuestionSupportChatRequestDto dto,
         CancellationToken ct)
     {
         var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);

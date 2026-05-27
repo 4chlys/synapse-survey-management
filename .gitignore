@@ -524,7 +524,8 @@ deploy/config.*.env
 .claude/
 
 UI-Admin/.vite
-API/wwwroot/uploads/*
+API/wwwroot/uploads/
+API/uploads/
 
 # Git worktrees
 .worktrees/

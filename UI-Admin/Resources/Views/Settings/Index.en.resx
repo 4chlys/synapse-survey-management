@@ -15,6 +15,9 @@
   <data name="ContactEmailPlaceholder" xml:space="preserve"><value>contact@example.com</value></data>
   <data name="BillingReferenceLabel" xml:space="preserve"><value>Billing reference</value></data>
   <data name="BillingReferencePlaceholder" xml:space="preserve"><value>e.g. PO-2026-001</value></data>
+  <data name="PageDescription" xml:space="preserve"><value>Manage your organisation's contact details, AI model and assistance preferences.</value></data>
+  <data name="BasicInfoDescription" xml:space="preserve"><value>Organisation contact person and billing details.</value></data>
+  <data name="AiModelDescription" xml:space="preserve"><value>Choose which AI model powers content moderation and suggestions.</value></data>
   <data name="AiModelHeading" xml:space="preserve"><value>AI model</value></data>
   <data name="SingleModelText" xml:space="preserve"><value>Your platform uses {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>No AI models available. Please contact the system administrator.</value></data>
@@ -36,5 +39,6 @@
   <data name="CustomizedBadge" xml:space="preserve"><value>customised</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Reset to default</value></data>
   <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideas per summary</value></data>
+  <data name="MaxIdeasDescription" xml:space="preserve"><value>Maximum number of ideas the AI reads at once when generating a category summary. Lower values produce tighter summaries; higher values give broader coverage but cost more tokens.</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Save</value></data>
 </root>

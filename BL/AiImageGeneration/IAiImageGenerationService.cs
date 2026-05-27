@@ -14,5 +14,6 @@ public interface IAiImageGenerationService
         int projectId,
         string projectTopic = null,
         string introText = null,
+        string postCopy = null,
         CancellationToken ct = default);
 }

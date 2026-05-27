@@ -15,6 +15,9 @@
   <data name="ContactEmailPlaceholder" xml:space="preserve"><value>contact@voorbeeld.be</value></data>
   <data name="BillingReferenceLabel" xml:space="preserve"><value>Factuurreferentie</value></data>
   <data name="BillingReferencePlaceholder" xml:space="preserve"><value>bijv. PO-2026-001</value></data>
+  <data name="PageDescription" xml:space="preserve"><value>Beheer de contactgegevens, het AI-model en de assistentievoorkeuren van uw organisatie.</value></data>
+  <data name="BasicInfoDescription" xml:space="preserve"><value>Contactpersoon en facturatiegegevens van de organisatie.</value></data>
+  <data name="AiModelDescription" xml:space="preserve"><value>Kies welk AI-model contentmoderatie en suggesties aanstuurt.</value></data>
   <data name="AiModelHeading" xml:space="preserve"><value>AI-model</value></data>
   <data name="SingleModelText" xml:space="preserve"><value>Uw platform gebruikt {0}.</value></data>
   <data name="NoModelsText" xml:space="preserve"><value>Geen AI-modellen beschikbaar. Neem contact op met de systeembeheerder.</value></data>
@@ -36,5 +39,6 @@
   <data name="CustomizedBadge" xml:space="preserve"><value>aangepast</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Herstel standaard</value></data>
   <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideeën per samenvatting</value></data>
+  <data name="MaxIdeasDescription" xml:space="preserve"><value>Maximaal aantal ideeën dat de AI tegelijk leest bij het genereren van een categoriesamenvatting. Lagere waarden leveren compactere samenvattingen; hogere waarden geven een bredere dekking maar kosten meer tokens.</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
 </root>

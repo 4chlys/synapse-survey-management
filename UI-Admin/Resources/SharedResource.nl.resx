@@ -91,6 +91,7 @@
   <data name="Settings_InvalidModel" xml:space="preserve"><value>Ongeldig model geselecteerd.</value></data>
   <data name="Settings_AiModelSaved" xml:space="preserve"><value>AI-model opgeslagen.</value></data>
   <data name="Settings_InvalidPromptType" xml:space="preserve"><value>Ongeldig prompt-type.</value></data>
+  <data name="Settings_PromptEmpty" xml:space="preserve"><value>Systeemprompt mag niet leeg zijn.</value></data>
   <data name="Settings_PromptTooLong" xml:space="preserve"><value>Systeemprompt mag maximaal {0} tekens bevatten.</value></data>
   <data name="Settings_PromptSaved" xml:space="preserve"><value>Systeemprompt opgeslagen.</value></data>
   <data name="Settings_PromptReset" xml:space="preserve"><value>Systeemprompt hersteld naar standaard.</value></data>
