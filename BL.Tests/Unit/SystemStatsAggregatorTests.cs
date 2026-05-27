@@ -1,6 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 using SynapseEnqueteManagement.BL.Stats;
-using SynapseEnqueteManagement.DAL;
 
 namespace SynapseEnqueteManagement.BL.Tests.Unit;
 
@@ -34,7 +34,6 @@ public class SystemStatsAggregatorTests
 
         var result = _aggregator.Aggregate(projects, participantStats);
 
-        // (100*10 + 200*20 + 300*30) / 60 = 14000 / 60
         Assert.Equal(60, result.TotalCompleted);
         Assert.Equal(14000d / 60d, result.SysAvg, 10);
     }
@@ -52,7 +51,6 @@ public class SystemStatsAggregatorTests
 
         var result = _aggregator.Aggregate(projects, participantStats);
 
-        // (50 + 100 + 150) / 3 = 100 — NOT weighted by CompletedCount
         Assert.Equal(100d, result.SysMedian, 10);
     }
 
@@ -89,9 +87,7 @@ public class SystemStatsAggregatorTests
 
         var platform1 = result.PlatformRows.Single(r => r.PlatformId == 1);
         Assert.Equal(30, platform1.ParticipantCount);
-        // (100*10 + 200*20) / 30 = 5000/30
         Assert.Equal(5000d / 30d, platform1.AvgCompletionSeconds, 10);
-        // (50 + 100) / 2 = 75
         Assert.Equal(75d, platform1.MedianCompletionSeconds, 10);
 
         var platform2 = result.PlatformRows.Single(r => r.PlatformId == 2);
@@ -103,7 +99,6 @@ public class SystemStatsAggregatorTests
     [Fact]
     public void Aggregate_PlatformRollup_NoStatsForGroup_YieldsZeroAvgAndMedian()
     {
-        // Project exists but no participant stats row matches → gStats is empty
         var projects = new[] { Proj(1, platformId: 1) };
         var participantStats = Array.Empty<ProjectParticipantStats>();
 
@@ -157,7 +152,6 @@ public class SystemStatsAggregatorTests
     {
         var en = new Language { Code = "en" };
         var project = Proj(1, platformId: 1);
-        // DefaultLanguage is null — only an English translation exists. Picker must still find it.
         project.Translations =
         [
             new ProjectTranslation { Language = en, Name = "Only English" },
@@ -171,7 +165,7 @@ public class SystemStatsAggregatorTests
     [Fact]
     public void Aggregate_ProjectName_EmptyWhenNoTranslationsAtAll()
     {
-        var project = Proj(1, platformId: 1); // Translations not assigned
+        var project = Proj(1, platformId: 1);
         project.Translations = [];
 
         var result = _aggregator.Aggregate([project], []);

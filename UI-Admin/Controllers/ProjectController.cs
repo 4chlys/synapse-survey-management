@@ -739,7 +739,7 @@ public class ProjectController(
             ProjectName = project.Name,
             Layout = Array.ConvertAll(slots, s => s.WidgetType),
             Slots = Array.ConvertAll(slots, s => new WidgetSlotInput { WidgetType = s.WidgetType, QuestionId = s.QuestionId }),
-            AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
+            AllWidgetTypes = WidgetSlotValidator.AllWidgetTypes
         });
     }
 
@@ -749,7 +749,7 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var sanitized = WidgetPreferenceService.SanitizeSlots(model.Slots);
+        var sanitized = WidgetSlotValidator.SanitizeSlots(model.Slots);
         await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }

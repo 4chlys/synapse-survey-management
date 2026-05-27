@@ -3,8 +3,6 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.API.Services;
 
-// Maps Question(naire) entities to the survey/admin DTOs. Lives next to ProjectDtoMapper so
-// DTO shaping stays out of the controller (its job is HTTP, not translation projection).
 public static class QuestionDtoMapper
 {
     public static QuestionnaireDto ToQuestionnaireDto(Questionnaire questionnaire, string languageCode)

@@ -2,8 +2,6 @@ using SynapseEnqueteManagement.API.DTOs.Stats;
 
 namespace SynapseEnqueteManagement.API.Services.Export;
 
-// Maps an assembled SystemStatsDto into the export sheets for the requested sections.
-// Pure mapping — no HTTP, no data access — so the column layout lives in one place.
 public static class SystemStatsExportSheetBuilder
 {
     public static readonly IReadOnlySet<string> AllSections =

@@ -1,6 +1,7 @@
 using SynapseEnqueteManagement.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 
 namespace SynapseEnqueteManagement.DAL.Implementation;
 

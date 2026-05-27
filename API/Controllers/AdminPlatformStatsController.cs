@@ -20,16 +20,16 @@ public class AdminPlatformStatsController(
     public async Task<ActionResult<PlatformStatsDto>> GetStats([FromQuery] int platformId)
     {
         var projects = (await projectManager.GetAllProjectsAsync(platformId)).ToList();
-        var counts = new List<int>(projects.Count);
-        foreach (var p in projects)
-            counts.Add(await participantManager.CountCompletionsByProjectAsync(p.ProjectId));
+        var projectIds = projects.Select(p => p.ProjectId).ToList();
+        var participantStats = await participantManager.GetStatsByProjectsAsync(projectIds);
+        var rollup = statsAggregator.Aggregate(projects, participantStats);
 
         return Ok(new PlatformStatsDto
         {
-            ActiveCount   = projects.Count(p => p.ProjectState == ProjectState.Active),
-            DraftCount    = projects.Count(p => p.ProjectState == ProjectState.Draft),
-            ArchivedCount = projects.Count(p => p.ProjectState == ProjectState.Archived),
-            ParticipantCount = counts.Sum()
+            ActiveCount      = projects.Count(p => p.ProjectState == ProjectState.Active),
+            DraftCount       = projects.Count(p => p.ProjectState == ProjectState.Draft),
+            ArchivedCount    = projects.Count(p => p.ProjectState == ProjectState.Archived),
+            ParticipantCount = rollup.TotalCompleted,
         });
     }
 
@@ -47,7 +47,6 @@ public class AdminPlatformStatsController(
         var aiProject  = await usageManager.ReadServiceBreakdownByProjectsAsync(platformId, aiFrom);
 
 
-        // Roll-up math lives in the BL aggregator; map its result rows to the API DTOs here.
         var rollup = statsAggregator.Aggregate(projects, participantStats);
 
         var projectRows = rollup.ProjectRows.Select(r => new ProjectStatsRowDto

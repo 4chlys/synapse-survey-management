@@ -1,6 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 
 namespace SynapseEnqueteManagement.BL.Interfaces;
 

@@ -50,8 +50,6 @@ public class AdminPlatformStatsExportController(
         var aiPlatform = (await usageManager.ReadServiceBreakdownByPlatformAsync(platformId, null)).ToList();
         var aiProject  = (await usageManager.ReadServiceBreakdownByProjectsAsync(platformId, null)).ToList();
 
-        // Roll-up math lives in the BL aggregator; assemble the DTO once and reuse it for the
-        // sheet builder (csv/xlsx) and the chart renderer (xlsx graphics + png zip).
         var rollup = statsAggregator.Aggregate(projects, participantStats);
 
         var statsDto = new SystemStatsDto
