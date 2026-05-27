@@ -4,11 +4,11 @@
 // toggle. Event handlers are attached once to the stable #questions-list
 // container; re-rendering its innerHTML does not invalidate them.
 
-import { renderTree, Question, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
-import { readQuestionsI18n } from '../lib/questions-i18n';
-import { toast } from '../lib/notify';
-import { getAntiForgeryToken } from '../lib/utils';
-import type { MovePayload, EndingPayload, AdminQuestionResponse } from './types';
+import { renderTree, Question, RenderContext, QuestionsI18n } from './questionnaire-tree';
+import { readQuestionsI18n } from './questions-i18n';
+import { toast } from './notify';
+import { getAntiForgeryToken } from './utils';
+import type { MovePayload, EndingPayload, AdminQuestionResponse } from './questionnaire-types';
 
 async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Promise<Response | null> {
     try {

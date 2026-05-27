@@ -1,4 +1,4 @@
-import { QuestionSupportSession } from '../lib/questionsupport';
+import { QuestionSupportSession } from './questionsupport';
 
 // DOM references
 let messagesContainer: HTMLElement        | null = null;

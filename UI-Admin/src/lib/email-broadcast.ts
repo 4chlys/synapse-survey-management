@@ -6,7 +6,7 @@
 //   3. "Via platform" opens the per-language compose modal, which posts to
 //      ProjectController.BroadcastParticipantEmail and fans out into N rows.
 
-import { getAntiForgeryToken } from '../lib/utils';
+import { getAntiForgeryToken } from './utils';
 
 export function initEmailBroadcast(): void {
     const trigger      = document.querySelector<HTMLElement>('[data-broadcast-trigger]');

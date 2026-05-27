@@ -5,7 +5,7 @@
 //   3. "Via platform" opens the compose modal pre-filled with the participant
 //      in the (disabled) BCC field, posts to ProjectController.SendParticipantEmail
 //      on submit, and closes on success.
-import { getAntiForgeryToken } from '../lib/utils';
+import { getAntiForgeryToken } from './utils';
 
 function showError(box: HTMLElement, msg: string) {
     box.textContent = msg;
