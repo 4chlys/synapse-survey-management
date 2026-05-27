@@ -3,7 +3,7 @@
 // posts to ProjectController.BroadcastParticipantEmail, which fans the data
 // out into N EmailJob rows on the server (one per language × BCC chunk).
 
-function readToken(form: HTMLFormElement): string {
+function readBroadcastToken(form: HTMLFormElement): string {
     return form.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
 }
 
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(form.dataset.sendUrl ?? '', {
                 method: 'POST',
-                headers: { 'RequestVerificationToken': readToken(form) },
+                headers: { 'RequestVerificationToken': readBroadcastToken(form) },
                 body: new FormData(form),
             });
             if (!res.ok) {

@@ -6,7 +6,7 @@
 //      in the (disabled) BCC field, posts to ProjectController.SendParticipantEmail
 //      on submit, and closes on success.
 
-function readToken(form: HTMLFormElement): string {
+function readComposeToken(form: HTMLFormElement): string {
     return form.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
 }
 
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(composeForm);
             const res = await fetch(composeForm.dataset.sendUrl ?? '', {
                 method: 'POST',
-                headers: { 'RequestVerificationToken': readToken(composeForm) },
+                headers: { 'RequestVerificationToken': readComposeToken(composeForm) },
                 body: formData,
             });
             if (!res.ok) {
