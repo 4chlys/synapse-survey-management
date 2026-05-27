@@ -1,5 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 
 namespace SynapseEnqueteManagement.BL.Stats;
 

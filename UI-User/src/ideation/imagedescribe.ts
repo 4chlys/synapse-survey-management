@@ -1,8 +1,5 @@
 import {t} from '../lib/i18n';
-
-function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
-}
+import { getCsrfToken } from '../lib/utils';
 
 function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
     return new Promise((resolve) => {

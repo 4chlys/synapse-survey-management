@@ -1,21 +1,23 @@
-let bound = false;
+let popup: HTMLElement | null = null;
+
+function openThankYouPopup(): void {
+    if (!popup) return;
+    popup.classList.remove('hidden');
+    popup.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeThankYouPopup(): void {
+    if (!popup) return;
+    popup.classList.add('hidden');
+    popup.classList.remove('flex');
+    document.body.style.overflow = '';
+}
 
 export function initThankYouPopup(): void {
-    const popup = document.getElementById('thank-you-popup');
-    if (!popup || bound) return;
-    bound = true;
-
-    const open = () => {
-        popup.classList.remove('hidden');
-        popup.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    };
-
-    const close = () => {
-        popup.classList.add('hidden');
-        popup.classList.remove('flex');
-        document.body.style.overflow = '';
-    };
+    popup = document.getElementById('thank-you-popup');
+    if (!popup || popup.dataset.bound) return;
+    popup.dataset.bound = 'true';
 
     document.addEventListener('click', (e) => {
         const target = e.target;
@@ -24,24 +26,24 @@ export function initThankYouPopup(): void {
         const opener = target.closest('[data-action="show-thank-you"]');
         if (opener) {
             e.preventDefault();
-            open();
+            openThankYouPopup();
             return;
         }
 
         if (target.closest('[data-action="close-thank-you"]')) {
             e.preventDefault();
-            close();
+            closeThankYouPopup();
             return;
         }
 
         if (target === popup) {
-            close();
+            closeThankYouPopup();
         }
     });
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !popup.classList.contains('hidden')) {
-            close();
+        if (e.key === 'Escape' && popup && !popup.classList.contains('hidden')) {
+            closeThankYouPopup();
         }
     });
 }

@@ -3,10 +3,6 @@ using SynapseEnqueteManagement.BL.Helpers;
 
 namespace SynapseEnqueteManagement.API.Services.Export;
 
-// Maps a project's raw entities into the requested per-table sheets. The Dutch table names
-// and column layouts are the export contract and live here, out of the controller.
-// `defaultLanguageCode` makes the chosen translation reproducible — without it, EF's
-// arbitrary load order decides which translation appears in the export.
 public static class RawDataExportSheetBuilder
 {
     public static readonly IReadOnlySet<string> AllTables =

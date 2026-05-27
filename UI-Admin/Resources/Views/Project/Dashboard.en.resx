@@ -61,4 +61,5 @@
   <data name="Widget_Social_Note_LinkedIn" xml:space="preserve"><value>The LinkedIn share button opens your project link. Paste the text into the composer manually.</value></data>
   <data name="Widget_Social_Note_Facebook" xml:space="preserve"><value>The Facebook share button opens with your project link. Paste the text into the composer.</value></data>
   <data name="Widget_Social_Note_Instagram" xml:space="preserve"><value>Instagram has no web share URL. Copy the text and post manually from your phone.</value></data>
+  <data name="Widget_Social_Restart" xml:space="preserve"><value>Restart</value></data>
 </root>

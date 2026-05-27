@@ -6,76 +6,151 @@
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Admins";
     Layout = "_Layout";
+
+    var grouped = Model.Admins
+        .GroupBy(a => new { a.PlatformId, a.PlatformName })
+        .OrderBy(g => g.Key.PlatformName)
+        .ToList();
 }
 
-<h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
+<div class="flex items-start justify-between gap-4 mb-8">
+    <div>
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <p class="text-sm text-base-content/40 mt-0.5">@Model.Admins.Count @(Model.Admins.Count == 1 ? "admin" : "admins")</p>
+    </div>
+</div>
 
-@* Platform filter *@
+@* ── Platform filter ── *@
 <form method="get" asp-action="Index" class="flex flex-wrap gap-2 mb-6 items-center">
-    <select name="platformId" class="select select-bordered select-sm min-w-48"
-            data-submit-on-change>
-        <option value="">@L["FilterAllPlatforms"]</option>
+    <div class="flex items-center gap-2 p-1 bg-base-200 rounded-xl">
+        <a asp-action="Index"
+           class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all @(!Model.FilterPlatformId.HasValue ? "bg-base-100 text-base-content shadow-sm" : "text-base-content/50 hover:text-base-content")">
+            @L["FilterAllPlatforms"]
+        </a>
         @foreach (var platform in Model.Platforms)
         {
-            if (Model.FilterPlatformId == platform.ProjectPlatformId)
-            {
-                <option value="@platform.ProjectPlatformId" selected>@platform.Name</option>
-            }
-            else
-            {
-                <option value="@platform.ProjectPlatformId">@platform.Name</option>
-            }
+            <a asp-action="Index" asp-route-platformId="@platform.ProjectPlatformId"
+               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all @(Model.FilterPlatformId == platform.ProjectPlatformId ? "bg-base-100 text-base-content shadow-sm" : "text-base-content/50 hover:text-base-content")">
+                @platform.Name
+            </a>
         }
-    </select>
-    @if (Model.FilterPlatformId.HasValue)
-    {
-        <a asp-action="Index" class="btn btn-ghost btn-sm">@L["ClearFilter"]</a>
-    }
+    </div>
 </form>
 
 @if (!Model.Admins.Any())
 {
     <div class="card bg-base-100 shadow-sm">
-        <div class="card-body text-center text-base-content/60 text-sm">
-            @L["NoAdmins"]
+        <div class="card-body flex flex-col items-center justify-center gap-3 py-14 text-center">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-base-200 text-base-content/20">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+            </div>
+            <p class="text-sm text-base-content/40">@L["NoAdmins"]</p>
+        </div>
+    </div>
+}
+else if (Model.FilterPlatformId.HasValue)
+{
+    @* Single-platform view — flat roster *@
+    <div class="settings-card settings-card--general" style="max-width: 640px;">
+        <div class="settings-card-header">
+            <div class="settings-card-icon settings-card-icon--general">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+            </div>
+            <div>
+                <h2 class="font-heading font-semibold text-base text-base-content">
+                    @(Model.Platforms.FirstOrDefault(p => p.ProjectPlatformId == Model.FilterPlatformId)?.Name ?? "Platform")
+                </h2>
+                <p class="text-xs text-base-content/40 mt-0.5">@Model.Admins.Count @(Model.Admins.Count == 1 ? "admin" : "admins")</p>
+            </div>
+        </div>
+        <div class="flex flex-col gap-2">
+            @{ var idx = 0; }
+            @foreach (var admin in Model.Admins)
+            {
+                var initial = (admin.UserName?.FirstOrDefault().ToString() ?? admin.Email?.FirstOrDefault().ToString() ?? "?").ToUpper();
+                var hue = (admin.Email?.GetHashCode() ?? 0) % 360;
+                if (hue < 0) hue += 360;
+
+                <div class="admin-roster-row" style="animation-delay: @(idx * 0.04)s;">
+                    <div class="admin-avatar" style="--avatar-hue: @hue;">@initial</div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-base-content truncate">@admin.UserName</p>
+                        <p class="text-xs text-base-content/40 truncate">@admin.Email</p>
+                    </div>
+                    <a asp-controller="AdminMembership" asp-action="Index"
+                       asp-route-id="@admin.PlatformId"
+                       class="btn btn-ghost btn-xs shrink-0">@L["ViewAction"]</a>
+                </div>
+                idx++;
+            }
         </div>
     </div>
 }
 else
 {
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body p-0 overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>@L["TableUsername"]</th>
-                        <th>@L["TableEmail"]</th>
-                        <th>@L["TablePlatform"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var admin in Model.Admins)
+    @* All-platforms view — grouped by platform ── *@
+    <div class="flex flex-col gap-6">
+        @{ var gIdx = 0; }
+        @foreach (var group in grouped)
+        {
+            var accentColors = new[] {
+                "var(--color-primary)", "var(--color-info)",
+                "var(--color-secondary)", "var(--color-warning)"
+            };
+            var accent = accentColors[gIdx % accentColors.Length];
+            var iconBgColors = new[] {
+                "settings-card-icon--general", "settings-card-icon--ai",
+                "settings-card-icon--mode", "settings-card-icon--prompts"
+            };
+            var iconClass = iconBgColors[gIdx % iconBgColors.Length];
+            var cardClasses = new[] {
+                "settings-card--general", "settings-card--ai",
+                "settings-card--mode", "settings-card--prompts"
+            };
+            var cardClass = cardClasses[gIdx % cardClasses.Length];
+
+            <div class="settings-card @cardClass" style="max-width: 640px; animation-delay: @(gIdx * 0.06)s;">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon @iconClass">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <rect x="2" y="7" width="20" height="14" rx="2"/>
+                            <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="font-heading font-semibold text-base text-base-content">@group.Key.PlatformName</h2>
+                        <p class="text-xs text-base-content/40 mt-0.5">@group.Count() @(group.Count() == 1 ? "admin" : "admins")</p>
+                    </div>
+                    <a asp-controller="AdminMembership" asp-action="Index"
+                       asp-route-id="@group.Key.PlatformId"
+                       class="btn btn-ghost btn-xs shrink-0">Manage →</a>
+                </div>
+                <div class="flex flex-col gap-2">
+                    @{ var rIdx = 0; }
+                    @foreach (var admin in group)
                     {
-                        <tr class="hover">
-                            <td class="text-base-content">@admin.UserName</td>
-                            <td class="text-base-content/60">@admin.Email</td>
-                            <td>
-                                <a asp-controller="Platform" asp-action="Dashboard"
-                                   asp-route-id="@admin.PlatformId"
-                                   class="text-base-content/60 hover:text-base-content transition text-sm underline underline-offset-2">
-                                    @admin.PlatformName
-                                </a>
-                            </td>
-                            <td>
-                                <a asp-controller="AdminMembership" asp-action="Index"
-                                   asp-route-id="@admin.PlatformId"
-                                   class="btn btn-ghost btn-xs">@L["ViewAction"]</a>
-                            </td>
-                        </tr>
+                        var initial = (admin.UserName?.FirstOrDefault().ToString() ?? admin.Email?.FirstOrDefault().ToString() ?? "?").ToUpper();
+                        var hue = (admin.Email?.GetHashCode() ?? 0) % 360;
+                        if (hue < 0) hue += 360;
+
+                        <div class="admin-roster-row" style="animation-delay: @((gIdx * 0.06 + rIdx * 0.04))s;">
+                            <div class="admin-avatar" style="--avatar-hue: @hue;">@initial</div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-base-content truncate">@admin.UserName</p>
+                                <p class="text-xs text-base-content/40 truncate">@admin.Email</p>
+                            </div>
+                        </div>
+                        rIdx++;
                     }
-                </tbody>
-            </table>
-        </div>
+                </div>
+            </div>
+            gIdx++;
+        }
     </div>
 }

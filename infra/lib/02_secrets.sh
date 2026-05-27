@@ -1,6 +1,5 @@
 #!/bin/bash
-# Secret Manager — secrets aanmaken en waardes instellen
-# Alle secret-namen krijgen een "${ENV}-" prefix zodat omgevingen gescheiden blijven.
+# Secrets are prefixed with "${ENV}-" to isolate environments within the same GCP project.
 
 _create_secret() {
   local name="$1"

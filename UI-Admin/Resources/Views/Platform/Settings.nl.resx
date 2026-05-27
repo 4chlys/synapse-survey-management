@@ -27,10 +27,4 @@
   <data name="ContactEmailPlaceholder" xml:space="preserve"><value>contact@voorbeeld.be</value></data>
   <data name="BillingReferenceLabel" xml:space="preserve"><value>Factuurreferentie</value></data>
   <data name="BillingReferencePlaceholder" xml:space="preserve"><value>bijv. PO-2026-001</value></data>
-  <data name="AiMonitoringDivider" xml:space="preserve"><value>AI &amp; monitoring</value></data>
-  <data name="AiModelNameLabel" xml:space="preserve"><value>AI-modelnaam</value></data>
-  <data name="AiModelNamePlaceholder" xml:space="preserve"><value>bijv. Gemini 2.0 Flash</value></data>
-  <data name="AiModelNameHint" xml:space="preserve"><value>Vrije tekst — voor weergave op het dashboard</value></data>
-  <data name="CostDashboardUrlLabel" xml:space="preserve"><value>Kostendashboard-URL</value></data>
-  <data name="CostDashboardUrlHint" xml:space="preserve"><value>Data Studio of andere embed-URL voor kostenrapportage</value></data>
 </root>

@@ -1,5 +1,4 @@
 #!/bin/bash
-# Cloud Armor beveiligingsbeleid + WAF regels
 
 ARMOR_POLICY="synapse-${ENV}-armor"
 

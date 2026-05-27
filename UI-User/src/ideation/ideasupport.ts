@@ -1,4 +1,5 @@
-import { AiSupportSessionBase, AiSupportMessage, getCsrfToken, fetchWithTimeout } from './ai-support-base';
+import { AiSupportSessionBase, AiSupportMessage } from './ai-support-base';
+import { getCsrfToken, fetchWithTimeout } from '../lib/utils';
 
 export type { AiSupportMessage as IdeaSupportMessage };
 

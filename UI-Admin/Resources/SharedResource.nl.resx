@@ -82,6 +82,7 @@
   <data name="Platform_AdminAdded" xml:space="preserve"><value>Beheerder toegevoegd.</value></data>
   <data name="Platform_AdminRemoved" xml:space="preserve"><value>Beheerder verwijderd.</value></data>
   <data name="Platform_LastAdminBlocked" xml:space="preserve"><value>Je kan de laatste beheerder van een platform niet verwijderen.</value></data>
+  <data name="Platform_SelfRemoveBlocked" xml:space="preserve"><value>Je kan jezelf niet als beheerder verwijderen.</value></data>
   <data name="Platform_BasicInfoSaved" xml:space="preserve"><value>Basisinformatie opgeslagen.</value></data>
   <data name="Platform_SettingsSaved" xml:space="preserve"><value>Instellingen opgeslagen.</value></data>
   <data name="Platform_AiSettingsSaved" xml:space="preserve"><value>AI-instellingen opgeslagen.</value></data>

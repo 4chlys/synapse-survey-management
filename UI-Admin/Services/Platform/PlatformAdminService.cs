@@ -98,8 +98,6 @@ public class PlatformAdminService(
         settings.IdeationEnabled = model.IdeationEnabled;
         settings.MaxProjects = model.MaxProjects;
         settings.MaxAdmins = model.MaxAdmins;
-        settings.AiModelName = model.AiModelName;
-        settings.CostDashboardUrl = model.CostDashboardUrl;
 
         await SavePlatformSettingsAsync(settings);
     }

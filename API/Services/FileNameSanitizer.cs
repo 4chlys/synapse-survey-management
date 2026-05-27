@@ -1,7 +1,5 @@
 namespace SynapseEnqueteManagement.API.Services;
 
-// Turns an arbitrary display name into a safe, lowercase, dash-separated file-name stem.
-// Shared by the export controllers so the rule lives in one place.
 public static class FileNameSanitizer
 {
     public static string Sanitize(string name)
