@@ -28,6 +28,7 @@ export async function sendQuestionSupportMessage(
     history: QuestionSupportMessage[],
     userMessage: string,
     isFirstTurn: boolean,
+    questionLanguage: string | null,
     signal?: AbortSignal,
 ): Promise<QuestionSupportChatResponse> {
     const res = await fetchWithTimeout(
@@ -38,7 +39,7 @@ export async function sendQuestionSupportMessage(
                 'Content-Type': 'application/json',
                 'RequestVerificationToken': getCsrfToken(),
             },
-            body: JSON.stringify({ history, userMessage, isFirstTurn }),
+            body: JSON.stringify({ history, userMessage, isFirstTurn, questionLanguage }),
             signal,
         },
     );
@@ -57,7 +58,7 @@ export class QuestionSupportSession {
 
     get history(): readonly QuestionSupportMessage[] { return this._history; }
 
-    async send(userMessage: string, isFirstTurn = false): Promise<QuestionSupportChatResponse> {
+    async send(userMessage: string, isFirstTurn = false, questionLanguage: string | null = null): Promise<QuestionSupportChatResponse> {
         this._abortController?.abort();
         this._abortController = new AbortController();
 
@@ -66,6 +67,7 @@ export class QuestionSupportSession {
             [...this._history],
             userMessage,
             isFirstTurn,
+            questionLanguage,
             this._abortController.signal,
         );
 

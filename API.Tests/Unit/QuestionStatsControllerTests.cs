@@ -47,7 +47,7 @@ public class QuestionStatsControllerTests
     {
         _projectManager.Setup(m => m.GetProjectByIdReadOnlyAsync(ProjectId))
             .ReturnsAsync(new Project { ProjectId = ProjectId });
-        _statsManager.Setup(m => m.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.SingleChoice))
+        _statsManager.Setup(m => m.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.SingleChoice, It.IsAny<string>()))
             .ReturnsAsync(new QuestionLookup[]
             {
                 new(1, "Question One"),
@@ -70,7 +70,9 @@ public class QuestionStatsControllerTests
     public async Task GetSingleChoiceStats_ValidRequest_ReturnsMappedDto()
     {
         var counts = new List<OptionCount> { new("Yes", 7), new("No", 3) };
-        _statsManager.Setup(m => m.ReadSingleChoiceStatsAsync(ProjectId, QuestionId))
+        _projectManager.Setup(m => m.GetProjectByIdReadOnlyAsync(ProjectId))
+            .ReturnsAsync(new Project { ProjectId = ProjectId });
+        _statsManager.Setup(m => m.ReadSingleChoiceStatsAsync(ProjectId, QuestionId, It.IsAny<string>()))
             .ReturnsAsync(new SingleChoiceStats(QuestionId, 10, counts));
 
         var result = await _controller.GetSingleChoiceStats(ProjectId, QuestionId);
@@ -91,7 +93,9 @@ public class QuestionStatsControllerTests
     public async Task GetMultipleChoiceStats_ValidRequest_ReturnsMappedDto()
     {
         var counts = new List<OptionCount> { new("A", 4), new("B", 6), new("C", 1) };
-        _statsManager.Setup(m => m.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId))
+        _projectManager.Setup(m => m.GetProjectByIdReadOnlyAsync(ProjectId))
+            .ReturnsAsync(new Project { ProjectId = ProjectId });
+        _statsManager.Setup(m => m.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId, It.IsAny<string>()))
             .ReturnsAsync(new MultipleChoiceStats(QuestionId, 11, counts));
 
         var result = await _controller.GetMultipleChoiceStats(ProjectId, QuestionId);

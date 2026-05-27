@@ -50,9 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return min !== null && max !== null && min > max;
     }
 
-    const mainForm = document.getElementById('project-name-input')
-        ? document.querySelector<HTMLFormElement>('form[method="post"]')
-        : null;
+    const mainForm = document.getElementById('project-form') as HTMLFormElement | null;
     if (mainForm) {
         bindDirtyTracking(mainForm);
         if (new URLSearchParams(window.location.search).get('saved') === '1')
@@ -69,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const nameInput = document.getElementById('project-name-input') as HTMLInputElement | null;
     const browseBtn = document.getElementById('browse-btn') as HTMLButtonElement | null;
     const fileInput = document.getElementById('image-file-input') as HTMLInputElement | null;
     const imagePreview = document.getElementById('image-preview') as HTMLImageElement | null;
@@ -145,8 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generate-btn') as HTMLButtonElement | null;
 
     generateBtn?.addEventListener('click', async () => {
-        const name = nameInput?.value?.trim();
-        if (!name) { nameInput?.focus(); return; }
+        // Image generation uses the active tab's content as the prompt.
+        const activeLang = langs.find(l => l.tab.getAttribute('aria-selected') === 'true') ?? langs[0];
+        const activeName = activeLang?.nameInput;
+        const name = activeName?.value?.trim();
+        if (!name) { activeName?.focus(); return; }
 
         const originalText = generateBtn.textContent!;
         generateBtn.disabled = true;
@@ -156,8 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Send as JSON body to avoid query-string length limits.
             // The intro field can hold up to 5000 chars of Quill HTML; URI-encoding
             // that would exceed the ~8 KB limit many proxies enforce.
-            const topic = topicInput?.value?.trim();
-            const intro = (document.getElementById('Introduction') as HTMLInputElement | null)?.value?.trim();
+            const topic = activeLang?.topicInput.value?.trim();
+            const introHtml = activeLang?.quill?.root.innerHTML;
+            const intro = (introHtml && introHtml !== QUILL_EMPTY) ? introHtml.trim() : '';
 
             const response = await fetch('/Project/GenerateImage', {
                 method: 'POST',
@@ -190,66 +191,210 @@ document.addEventListener('DOMContentLoaded', () => {
         imagePlaceholder?.classList.add('hidden');
     }
 
-    // Quill rich text editor for Introduction
-    const editorEl = document.getElementById('intro-editor');
-    const introInput = document.getElementById('Introduction') as HTMLInputElement | null;
-    if (editorEl && introInput) {
-        const quill = new Quill(editorEl, {
-            theme: 'snow',
-            placeholder: 'Schrijf een korte introductie van je project voor de deelnemers',
-            modules: {
-                toolbar: [
-                    ['bold', 'italic', 'underline'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['link'],
-                    ['clean']
-                ]
-            }
-        });
+    // Multi-language setup: language picker, tab strip, per-language Quill,
+    // status dots, and submit-time per-language validation.
+    const MAX_INTRO = 5000;
+    const QUILL_EMPTY = '<p><br></p>';
+    const tabStrip = document.getElementById('translation-tabs');
+    const panes = Array.from(document.querySelectorAll<HTMLElement>('[data-translation-pane]'));
+    const langCheckboxes = Array.from(document.querySelectorAll<HTMLInputElement>('[data-language-checkbox]'));
+    const langRadios = Array.from(document.querySelectorAll<HTMLInputElement>('[data-language-default]'));
 
-        const introCounter = document.getElementById('intro-char-count');
-        const MAX_INTRO = 5000;
+    type LangCtx = {
+        code: string;
+        pane: HTMLElement;
+        tab: HTMLButtonElement;
+        nameInput: HTMLInputElement;
+        topicInput: HTMLInputElement;
+        introHidden: HTMLInputElement;
+        introCounter: HTMLElement | null;
+        quill: Quill | null;
+    };
 
-        function updateIntroCounter() {
-            if (!introCounter) return;
-            const html = quill.root.innerHTML;
-            const len = html === '<p><br></p>' ? 0 : html.length;
-            introCounter.textContent = `${len} / ${MAX_INTRO}`;
-            introCounter.classList.toggle('text-red-400', len > MAX_INTRO);
-            introCounter.classList.toggle('text-gray-500', len <= MAX_INTRO);
-        }
+    const langs: LangCtx[] = panes
+        .map(pane => {
+            const code = pane.dataset.translationPane!;
+            const tab = tabStrip?.querySelector<HTMLButtonElement>(`[data-translation-tab="${code}"]`);
+            const nameInput = pane.querySelector<HTMLInputElement>('[data-translation-field="name"]');
+            const topicInput = pane.querySelector<HTMLInputElement>('[data-translation-field="topic"]');
+            const introHidden = pane.querySelector<HTMLInputElement>('[data-translation-field="introduction"]');
+            const introCounter = document.querySelector<HTMLElement>(`[data-intro-char-count="${code}"]`);
+            const editorEl = pane.querySelector<HTMLElement>(`[data-intro-editor="${code}"]`);
+            const quill = editorEl ? new Quill(editorEl, {
+                theme: 'snow',
+                // Placeholder is localized per pane (data-intro-placeholder) so the
+                // editor prompts in the content language being authored.
+                placeholder: editorEl.dataset.introPlaceholder ?? '',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['link'],
+                        ['clean']
+                    ]
+                }
+            }) : null;
+            // Quill's default .ql-editor min-height is ~7em which looks cramped;
+            // bump it so the editor reads as a proper text area on first paint.
+            if (quill) (quill.root as HTMLElement).style.minHeight = '12rem';
+            return tab && nameInput && topicInput && introHidden
+                ? { code, pane, tab, nameInput, topicInput, introHidden, introCounter, quill }
+                : null;
+        })
+        .filter((x): x is LangCtx => x !== null);
 
-        quill.on('text-change', updateIntroCounter);
-        updateIntroCounter();
+    function isSupported(code: string): boolean {
+        const cb = langCheckboxes.find(c => c.value === code);
+        return cb?.checked ?? false;
+    }
 
-        editorEl.closest('form')?.addEventListener('submit', (e) => {
-            const html = quill.root.innerHTML;
-            const content = html === '<p><br></p>' ? '' : html;
-            introInput.value = content;
-            if (content.length > MAX_INTRO) {
-                e.preventDefault();
-                introCounter?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+    function updateStatusDot(l: LangCtx) {
+        const dot = l.tab.querySelector<HTMLElement>('[data-translation-status]');
+        if (!dot) return;
+        const introHtml = l.quill?.root.innerHTML ?? l.introHidden.value;
+        const introContent = introHtml === QUILL_EMPTY ? '' : introHtml;
+        const complete = l.nameInput.value.trim().length > 0
+            && l.topicInput.value.trim().length > 0
+            && introContent.length > 0
+            && introContent.length <= MAX_INTRO;
+        dot.classList.toggle('bg-success', complete);
+        dot.classList.toggle('bg-warning', !complete);
+        dot.classList.toggle('bg-base-300', false);
+    }
+
+    function updateIntroCounter(l: LangCtx) {
+        if (!l.introCounter || !l.quill) return;
+        const html = l.quill.root.innerHTML;
+        const len = html === QUILL_EMPTY ? 0 : html.length;
+        l.introCounter.textContent = `${len} / ${MAX_INTRO}`;
+        l.introCounter.classList.toggle('text-red-400', len > MAX_INTRO);
+        l.introCounter.classList.toggle('text-base-content/40', len <= MAX_INTRO);
+    }
+
+    // Segmented-control active state: raised white pill on the muted strip.
+    const ACTIVE_TAB_CLASSES = ['bg-base-100', 'text-primary', 'shadow-sm', 'ring-1', 'ring-base-300'];
+    function activateTab(code: string) {
+        langs.forEach(l => {
+            const active = l.code === code;
+            l.pane.hidden = !active;
+            ACTIVE_TAB_CLASSES.forEach(c => l.tab.classList.toggle(c, active));
+            l.tab.setAttribute('aria-selected', active ? 'true' : 'false');
         });
     }
 
-    // Blur-time field validation
-    if (nameInput) bindBlurValidation(nameInput, getErrorSpan('Name'), (inp) => {
-        if (!inp.value.trim()) return 'Projectnaam is verplicht.';
-        if (inp.value.length > 100) return 'Projectnaam mag maximaal 100 tekens zijn.';
-        return null;
+    function ensureVisibleActiveTab() {
+        // If the currently-active tab belongs to an unchecked language, jump
+        // to the first supported one.
+        const active = langs.find(l => l.tab.getAttribute('aria-selected') === 'true');
+        if (active && isSupported(active.code)) return;
+        const first = langs.find(l => isSupported(l.code));
+        if (first) activateTab(first.code);
+    }
+
+    function syncRadiosToCheckboxes() {
+        // Disable the "default" radio of any unchecked language; if the
+        // currently-selected default got disabled, promote the first
+        // remaining supported language to default.
+        langRadios.forEach(r => {
+            r.disabled = !isSupported(r.value);
+        });
+        const checkedRadio = langRadios.find(r => r.checked && !r.disabled);
+        if (!checkedRadio) {
+            const promote = langRadios.find(r => !r.disabled);
+            if (promote) promote.checked = true;
+        }
+    }
+
+    function syncCrossLanguageRow() {
+        const row = document.getElementById('cross-language-row');
+        if (!row) return;
+        const count = langCheckboxes.filter(c => c.checked).length;
+        row.hidden = count <= 1;
+    }
+
+    function syncDefaultBadges() {
+        // The "· default" badge sits on each tab; show it on whichever
+        // language's radio is currently selected.
+        const selected = langRadios.find(r => r.checked && !r.disabled)?.value;
+        document.querySelectorAll<HTMLElement>('[data-default-badge]').forEach(b => {
+            b.hidden = b.dataset.defaultBadge !== selected;
+        });
+    }
+
+    langs.forEach(l => {
+        l.tab.addEventListener('click', () => activateTab(l.code));
+        l.quill?.on('text-change', () => {
+            updateIntroCounter(l);
+            updateStatusDot(l);
+        });
+        l.nameInput.addEventListener('input', () => updateStatusDot(l));
+        l.topicInput.addEventListener('input', () => updateStatusDot(l));
+        updateIntroCounter(l);
+        updateStatusDot(l);
+    });
+
+    langCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            // Prevent unchecking the last supported language.
+            if (!cb.checked && langCheckboxes.filter(c => c.checked).length === 0) {
+                cb.checked = true;
+                return;
+            }
+            const tab = tabStrip?.querySelector<HTMLButtonElement>(`[data-translation-tab="${cb.value}"]`);
+            if (tab) tab.hidden = !cb.checked;
+            syncRadiosToCheckboxes();
+            syncDefaultBadges();
+            syncCrossLanguageRow();
+            ensureVisibleActiveTab();
+        });
+    });
+
+    langRadios.forEach(r => r.addEventListener('change', syncDefaultBadges));
+
+    syncRadiosToCheckboxes();
+    syncDefaultBadges();
+    syncCrossLanguageRow();
+    ensureVisibleActiveTab();
+
+    // Submit-time validation + Quill→hidden-input sync. The form has the
+    // wizard "next" button which submits with name=submitAction value=next;
+    // when "next" is in flight, Topic and Introduction also become required.
+    mainForm?.addEventListener('submit', (e) => {
+        const submitter = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+        const requireFull = submitter?.name === 'submitAction' && submitter?.value === 'next';
+
+        // Sync Quill HTML into hidden inputs for every language, regardless of
+        // checked state — typed-but-unchecked data is preserved in the POST and
+        // discarded server-side, so a later re-check restores it.
+        for (const l of langs) {
+            if (!l.quill) continue;
+            const html = l.quill.root.innerHTML;
+            l.introHidden.value = html === QUILL_EMPTY ? '' : html;
+        }
+
+        // Validate per supported language. Switch to the first bad tab and
+        // focus the offending field.
+        const supported = langs.filter(l => isSupported(l.code));
+        for (const l of supported) {
+            const introOverflows = l.introHidden.value.length > MAX_INTRO;
+            const missingName = !l.nameInput.value.trim();
+            const missingTopic = requireFull && !l.topicInput.value.trim();
+            const missingIntro = requireFull && !l.introHidden.value;
+            if (missingName || missingTopic || missingIntro || introOverflows) {
+                e.preventDefault();
+                activateTab(l.code);
+                if (missingName) l.nameInput.focus();
+                else if (missingTopic) l.topicInput.focus();
+                else l.quill?.focus();
+                return;
+            }
+        }
     });
 
     const shortFormInput = document.getElementById('project-shortform-input') as HTMLInputElement | null;
     if (shortFormInput) bindBlurValidation(shortFormInput, getErrorSpan('ShortForm'), (inp) => {
         if (inp.value && !/^[a-z0-9](-?[a-z0-9])*$/.test(inp.value))
             return 'Alleen kleine letters, cijfers en koppeltekens zijn toegestaan.';
-        return null;
-    });
-
-    const topicInput = document.querySelector<HTMLInputElement>('input[name="Topic"]');
-    if (topicInput) bindBlurValidation(topicInput, getErrorSpan('Topic'), (inp) => {
-        if (inp.value.length > 100) return 'Onderwerp mag maximaal 100 tekens zijn.';
         return null;
     });
 
@@ -264,25 +409,56 @@ document.addEventListener('DOMContentLoaded', () => {
     minInput?.addEventListener('blur', validateAgeBlur);
     maxInput?.addEventListener('blur', validateAgeBlur);
 
+    function sectionLangDisplayName(code: string): string {
+        if (code === 'nl') return 'Nederlands';
+        if (code === 'en') return 'English';
+        return code.toUpperCase();
+    }
+
     // Sections: add / remove
     const sectionsContainer = document.getElementById('sections-container');
     const addSectionBtn = document.getElementById('add-section');
     if (sectionsContainer && addSectionBtn) {
         let idx = parseInt(sectionsContainer.dataset.sectionCount ?? '0', 10);
+        const availableLangs = (sectionsContainer.dataset.availableLanguages ?? 'nl').split(',');
+        const multiLang = availableLangs.length > 1;
+        // langCode -> localized "Section name" placeholder, so a newly added row
+        // prompts in the content language of each per-language input.
+        const sectionNamePlaceholders: Record<string, string> =
+            JSON.parse(sectionsContainer.dataset.sectionNamePlaceholders ?? '{}');
+
         addSectionBtn.addEventListener('click', () => {
-            const emptyInput = sectionsContainer.querySelector<HTMLInputElement>('input[type="text"][value=""]') ??
-                [...sectionsContainer.querySelectorAll<HTMLInputElement>('input[type="text"]')].find(i => !i.value.trim());
-            if (emptyInput) {
-                emptyInput.focus();
-                emptyInput.classList.add('input-error');
-                emptyInput.addEventListener('input', () => emptyInput.classList.remove('input-error'), { once: true });
+            const hasEmptyRow = [...sectionsContainer.querySelectorAll<HTMLElement>('.section-row')]
+                .some(row => {
+                    const inputs = [...row.querySelectorAll<HTMLInputElement>('input.section-name-input')];
+                    return inputs.length > 0 && inputs.every(i => !i.value.trim());
+                });
+            if (hasEmptyRow) {
+                const firstEmptyInput = sectionsContainer.querySelector<HTMLInputElement>(
+                    '.section-row input.section-name-input:not([value])'
+                ) ?? [...sectionsContainer.querySelectorAll<HTMLInputElement>('.section-row input.section-name-input')]
+                    .find(i => !i.value.trim());
+                if (firstEmptyInput) {
+                    firstEmptyInput.focus();
+                    firstEmptyInput.classList.add('input-error');
+                    firstEmptyInput.addEventListener('input', () => firstEmptyInput.classList.remove('input-error'), { once: true });
+                }
                 return;
             }
             const row = document.createElement('div');
-            row.className = 'flex gap-1 items-center section-row';
-            row.innerHTML = `<input type="text" name="Sections[${idx}]" maxlength="20" class="input input-bordered input-sm flex-1" placeholder="Sectienaam" /><button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;
+            row.className = 'flex gap-2 items-end section-row';
+            let inner = '';
+            availableLangs.forEach((langCode, j) => {
+                inner += `<div class="flex flex-col gap-1 flex-1">`;
+                if (multiLang) inner += `<span class="text-xs text-base-content/50">${sectionLangDisplayName(langCode)}</span>`;
+                inner += `<input type="hidden" name="Sections[${idx}].Translations[${j}].LanguageCode" value="${langCode}" />`;
+                inner += `<input type="text" name="Sections[${idx}].Translations[${j}].Name" maxlength="20" class="input input-bordered input-sm w-full section-name-input" placeholder="${sectionNamePlaceholders[langCode] ?? ''}" data-lang="${langCode}" />`;
+                inner += `</div>`;
+            });
+            inner += `<button type="button" class="btn btn-ghost btn-sm text-error remove-section">\u00d7</button>`;
+            row.innerHTML = inner;
             sectionsContainer.appendChild(row);
-            row.querySelector('input')?.focus();
+            row.querySelector<HTMLInputElement>('input.section-name-input')?.focus();
             idx++;
         });
         sectionsContainer.addEventListener('click', (e) => {
@@ -291,11 +467,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Strip empty section rows before submit to prevent server exceptions
+    // Strip fully-empty section rows before submit
     mainForm?.addEventListener('submit', () => {
         sectionsContainer?.querySelectorAll<HTMLElement>('.section-row').forEach(row => {
-            const input = row.querySelector<HTMLInputElement>('input[type="text"]');
-            if (input && !input.value.trim()) row.remove();
+            const inputs = [...row.querySelectorAll<HTMLInputElement>('input.section-name-input')];
+            if (inputs.length > 0 && inputs.every(i => !i.value.trim())) row.remove();
         });
     });
 });

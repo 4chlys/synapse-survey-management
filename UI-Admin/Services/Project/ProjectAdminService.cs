@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
@@ -70,9 +71,9 @@ public class ProjectAdminService(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
     }
 
-    public async Task<ProjectAdminViewModel> CreateProjectAsync(string name, string topic, string introduction, string imageUrl, string interactionMode, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false, string theme = "Default", string primaryColor = null, string customCss = null, string languageCode = "nl")
+    public async Task<ProjectAdminViewModel> CreateProjectAsync(ICollection<ProjectTranslationViewModel> translations, ICollection<string> supportedLanguageCodes, string defaultLanguageCode, string imageUrl, string interactionMode, int? minAge, int? maxAge, bool requestContactInfo, int platformId, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false, string theme = "Default", string primaryColor = null, string customCss = null)
     {
-        var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = languageCode, SupportedLanguageCodes = new List<string> { languageCode }, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = name, Topic = topic, Introduction = introduction } } };
+        var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, PlatformId = platformId, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = defaultLanguageCode, SupportedLanguageCodes = supportedLanguageCodes, Translations = translations.Select(t => new ProjectTranslationPayload { LanguageCode = t.LanguageCode, Name = t.Name, Topic = t.Topic, Introduction = t.Introduction }).ToList() };
         var response = await httpClient.PostAsJsonAsync("api/projects", payload);
         await EnsureSuccessOrApiValidationAsync(response);
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
@@ -92,16 +93,35 @@ public class ProjectAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
+    private record ActivationProblemsBody(IReadOnlyList<ActivationProblemDto> Problems);
+
     public async Task<ProjectAdminViewModel> UpdateProjectStateAsync(int projectId, string state)
     {
         var response = await httpClient.PatchAsJsonAsync($"api/projects/{projectId}/state", new { State = state });
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var json = await response.Content.ReadAsStringAsync();
+            var body = JsonSerializer.Deserialize<ActivationProblemsBody>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (body?.Problems is { Count: > 0 })
+                throw new ProjectActivationValidationException(body.Problems);
+
+            var errorBody = JsonSerializer.Deserialize<ApiErrorBody>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (!string.IsNullOrWhiteSpace(errorBody?.Error))
+                throw new ApiValidationException(errorBody.Error);
+        }
+
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();
+        return null;
     }
 
-    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, string name, string topic, string introduction, string imageUrl, string interactionMode, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false, string theme = "Default", string primaryColor = null, string customCss = null, string languageCode = "nl")
+    public async Task<ProjectAdminViewModel> UpdateProjectAsync(int projectId, ICollection<ProjectTranslationViewModel> translations, ICollection<string> supportedLanguageCodes, string defaultLanguageCode, string imageUrl, string interactionMode, int? minAge, int? maxAge, bool requestContactInfo, string shortForm = null, int ideaPageSize = 5, bool extraIdeasReplaceExisting = false, int maxExtraIdeaRequests = 3, bool allowCrossLanguageIdeas = false, string theme = "Default", string primaryColor = null, string customCss = null)
     {
-        var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = languageCode, SupportedLanguageCodes = new List<string> { languageCode }, Translations = new List<ProjectTranslationPayload> { new() { LanguageCode = languageCode, Name = name, Topic = topic, Introduction = introduction } } };
+        var payload = new ProjectRequest { ShortForm = shortForm, ImageUrl = imageUrl, InteractionMode = interactionMode, MinAge = minAge, MaxAge = maxAge, RequestContactInfo = requestContactInfo, AllowCrossLanguageIdeas = allowCrossLanguageIdeas, IdeaPageSize = ideaPageSize, ExtraIdeasReplaceExisting = extraIdeasReplaceExisting, MaxExtraIdeaRequests = maxExtraIdeaRequests, Theme = theme, PrimaryColor = primaryColor, CustomCss = customCss, DefaultLanguageCode = defaultLanguageCode, SupportedLanguageCodes = supportedLanguageCodes, Translations = translations.Select(t => new ProjectTranslationPayload { LanguageCode = t.LanguageCode, Name = t.Name, Topic = t.Topic, Introduction = t.Introduction }).ToList() };
         var response = await httpClient.PutAsJsonAsync($"api/projects/{projectId}", payload);
         await EnsureSuccessOrApiValidationAsync(response);
         return await response.Content.ReadFromJsonAsync<ProjectAdminViewModel>();

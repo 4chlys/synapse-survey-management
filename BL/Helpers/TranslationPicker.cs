@@ -2,16 +2,29 @@ using SynapseEnqueteManagement.BL.Domain;
 
 namespace SynapseEnqueteManagement.BL.Helpers;
 
-// Centralises the "translation in this language, else first translation" fallback that
-// every translation-aware lookup needs (display names, choice labels, branching values).
+// Centralises the "translation in this language, else fall back" lookup that every
+// translation-aware projection needs (display names, choice labels, branching values).
 // Callers project off the picked entity (?.Name, ?.Text, ?.AnswerChoices, ...).
 public static class TranslationPicker
 {
+    // 2-tier: requested → first available. Use when there is no project-default context.
     public static T Pick<T>(IEnumerable<T> translations, string languageCode)
         where T : class, IHasLanguage
     {
         if (translations is null) return null;
         return translations.FirstOrDefault(t => t.Language?.Code == languageCode)
+            ?? translations.FirstOrDefault();
+    }
+
+    // 3-tier: requested → project default → first available. Use when the caller knows
+    // the project's default language and wants stat/export output to land there if the
+    // requested language is missing.
+    public static T Pick<T>(IEnumerable<T> translations, string languageCode, string defaultLanguageCode)
+        where T : class, IHasLanguage
+    {
+        if (translations is null) return null;
+        return translations.FirstOrDefault(t => t.Language?.Code == languageCode)
+            ?? translations.FirstOrDefault(t => t.Language?.Code == defaultLanguageCode)
             ?? translations.FirstOrDefault();
     }
 }

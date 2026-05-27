@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 using SynapseEnqueteManagement.BL.Exceptions;
