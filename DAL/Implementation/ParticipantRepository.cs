@@ -45,6 +45,18 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
             .OrderBy(e => e)
             .ToListAsync();
 
+    public Task<List<ParticipantEmailWithLanguage>> ReadEmailsWithLanguageByProjectIdReadOnlyAsync(int projectId)
+        => Context.Set<Participant>()
+            .AsNoTracking()
+            .Where(p => EF.Property<int>(p, "ProjectId") == projectId
+                        && p.Email != null
+                        && p.Email != "")
+            // Distinct on (Email, LanguageCode) — same email under two
+            // languages stays as two rows so each group gets its own copy.
+            .Select(p => new ParticipantEmailWithLanguage(p.Email, p.Language != null ? p.Language.Code : null))
+            .Distinct()
+            .ToListAsync();
+
     public async Task<IReadOnlyList<ProjectParticipantStats>> ReadStatsByProjectsReadOnlyAsync(IEnumerable<int> projectIds)
     {
         var rows = await Context.Set<Participant>()

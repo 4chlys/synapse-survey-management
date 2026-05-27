@@ -22,6 +22,8 @@ import { initSystemStatsExport } from './admin/system-stats-export';
 import { initProjectStatsExport } from './project/project-stats-export';
 import { initConfigureDashboard } from './project/configure-dashboard';
 import { initDashboard } from './admin/dashboard';
+import './admin/email-compose';
+import './admin/email-broadcast';
 
 function init(): void {
     initTheme();

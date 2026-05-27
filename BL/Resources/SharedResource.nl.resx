@@ -141,4 +141,8 @@
   <data name="Validation.Question.AnswerChoicesCountMismatch" xml:space="preserve">
     <value>Vertaling '{0}' heeft {1} antwoordkeuzes maar AnswerChoiceCount is {2}.</value>
   </data>
+
+  <data name="Email_ReplyFooter" xml:space="preserve">
+    <value>Antwoorden aub aan {0}</value>
+  </data>
 </root>

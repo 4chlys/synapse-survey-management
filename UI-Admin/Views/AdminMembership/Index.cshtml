@@ -33,10 +33,6 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-base-content">@L["InviteLinkNotice"]</p>
-                    @if (TempData["EmailFailed"] is true)
-                    {
-                        <p class="text-xs text-warning mt-0.5">@L["EmailFailedNotice"]</p>
-                    }
                 </div>
             </div>
             <div class="flex items-center gap-2 mt-3">
@@ -45,12 +41,6 @@
                 <button type="button" data-copy-from="#invite-link"
                         class="btn-cancel shrink-0">@L["CopyButton"]</button>
             </div>
-        </div>
-    }
-    else if (TempData["EmailFailed"] is true)
-    {
-        <div class="settings-card mb-5" style="border-left-color: var(--color-warning);">
-            <p class="text-sm text-warning">@L["EmailFailedNotice"]</p>
         </div>
     }
 

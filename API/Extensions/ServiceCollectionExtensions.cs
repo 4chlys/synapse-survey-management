@@ -33,6 +33,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISectionRepository, SectionRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
+        services.AddScoped<IProjectPlatformRepository, ProjectPlatformRepository>();
+        services.AddScoped<IEmailJobRepository, EmailJobRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }
@@ -82,6 +84,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IResponseManager, ResponseManager>();
         services.AddScoped<ICategoryManager, CategoryManager>();
         services.AddScoped<IProjectManager, ProjectManager>();
+        services.AddScoped<IProjectPlatformManager, ProjectPlatformManager>();
         services.AddScoped<IIdeaManager, IdeaManager>();
         services.AddScoped<IProjectDuplicationService, ProjectDuplicationService>();
         services.AddScoped<IDashboardManager, DashboardManager>();
@@ -93,6 +96,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IIdeaSubmissionManager, IdeaSubmissionManager>();
         services.AddScoped<IParticipantLanguageCoordinator, ParticipantLanguageCoordinator>();
         services.AddScoped<IQuestionStatsManager, QuestionStatsManager>();
+        services.AddScoped<IEmailJobManager, EmailJobManager>();
         return services;
     }
 
@@ -123,6 +127,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IIdeaSummarySamplingService, IdeaSummarySamplingService>();
         services.AddSingleton<IdeaSummaryExporter>();
         services.AddHostedService<IdeaSummaryWorker>();
+
+        // Outbound email queue worker — non-AI but co-located with the other
+        // BackgroundService for symmetry. Repo + manager are registered above
+        // in AddRepositories / AddManagers.
+        services.AddHostedService<EmailJobWorker>();
 
         // AI configuration
         //

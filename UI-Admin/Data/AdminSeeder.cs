@@ -1,16 +1,21 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SynapseEnqueteManagement.BL.Domain.Ai;
-using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using SynapseEnqueteManagement.UI.Admin.Models.Ai;
+using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Data;
 
+// Seeds Identity roles, the SystemAdmin account, the per-platform admin accounts
+// (one per known platform), and the row in the UI-Admin-owned SystemAiSettings table.
+// Platforms themselves are fetched over HTTP from the API — UI-Admin has no
+// EF mapping of the ProjectPlatforms table.
 public class AdminSeeder(
     RoleManager<IdentityRole> roleManager,
     UserManager<ApplicationUser> userManager,
     IConfiguration configuration,
     AdminDbContext db,
+    PlatformApiService platformApi,
     ILogger<AdminSeeder> logger)
 {
     public async Task SeedAsync()
@@ -53,16 +58,19 @@ public class AdminSeeder(
         await userManager.AddToRoleAsync(user, "SystemAdmin");
     }
 
+    // Reads platforms over HTTP from the API. If the API is unreachable at startup
+    // (cold-start race), the call returns an empty list and we skip — the next restart
+    // (or admin invitation flow) will seed the per-platform admins.
     private async Task EnsurePlatformAdminsAsync()
     {
-        List<ProjectPlatform> platforms;
+        List<Models.Platform.PlatformDto> platforms;
         try
         {
-            platforms = await db.ProjectPlatforms.ToListAsync();
+            platforms = await platformApi.GetAllAsync();
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to load ProjectPlatforms during admin seeding");
+            logger.LogWarning(ex, "Skipping platform-admin seeding: API not reachable at startup");
             return;
         }
 

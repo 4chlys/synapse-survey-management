@@ -18,8 +18,13 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.13" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="Vite.AspNetCore" Version="2.4.1" />
-        <ProjectReference Include="..\Domain\Domain.csproj" />
-        <ProjectReference Include="..\BL\BL.csproj" />
+        <!--
+            UI-Admin is intentionally free of <ProjectReference> entries to BL/DAL/Domain.
+            All cross-boundary communication with the API happens over HTTP, mirroring UI-User.
+            The AdminDbContext owns only UI-Admin-specific tables (Identity + PlatformSettings +
+            SystemAiSettings + UserWidgetPreferences); the ProjectPlatforms table is owned by
+            the API and read via PlatformApiService.
+        -->
     </ItemGroup>
 
     <ItemGroup>

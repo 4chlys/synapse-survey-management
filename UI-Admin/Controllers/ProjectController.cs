@@ -21,7 +21,7 @@ using SynapseEnqueteManagement.UI.Admin.Models.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
-using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -42,7 +42,9 @@ public class ProjectController(
     ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings,
     IStringLocalizer<SharedResource> localizer,
-    IdeaSummaryAdminService ideaSummaryService) : Controller
+    IdeaSummaryAdminService ideaSummaryService,
+    EmailApiService emailApiService,
+    BroadcastService broadcastService) : Controller
 {
     // Canonical list lives in ProjectTranslationForm (the testable form logic).
     private static readonly string[] AvailableLanguageCodes = ProjectTranslationForm.AvailableLanguageCodes;
@@ -570,7 +572,9 @@ public class ProjectController(
             TotalPending   = pending,
             TotalFlagged   = flagged,
             TotalDeclined  = Math.Max(0, total - approved - pending - flagged),
-            Categories     = categories
+            Categories     = categories,
+            DefaultLanguageCode    = project.DefaultLanguageCode,
+            SupportedLanguageCodes = project.SupportedLanguageCodes
         };
 
         return View(vm);
@@ -612,6 +616,8 @@ public class ProjectController(
             Ideas         = items,
             PlatformId            = project.PlatformId,
             IdeaSummaryMaxIdeas   = platformSettings?.IdeaSummaryMaxIdeas ?? 200,
+            DefaultLanguageCode   = project.DefaultLanguageCode,
+            SupportedLanguageCodes = project.SupportedLanguageCodes,
             Categories    = categories.Select(c => new CategoryOptionViewModel
                 
             {
@@ -657,6 +663,99 @@ public class ProjectController(
 
         var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
         return File(bytes, contentType, fileName);
+    }
+
+    // Returns the project's participant emails as JSON, for the broadcast
+    // "open in my mail program" branch to build a mailto bcc list client-side.
+    [HttpGet]
+    public async Task<IActionResult> ParticipantEmailsJson(int projectId)
+    {
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+        return Json(await participantService.GetParticipantEmailsAsync(projectId));
+    }
+
+    // Compose-modal submit: enqueues one EmailJob with the participant in BCC.
+    // The Resend send (and any retries) happen in the API process; this call
+    // just persists the row and returns immediately.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendParticipantEmail(
+        int projectId,
+        int? ideaId,
+        string participantEmail,
+        string subject,
+        string body,
+        string replyTo,
+        string languageCode,
+        CancellationToken ct)
+    {
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+        if (string.IsNullOrWhiteSpace(participantEmail)) return BadRequest("participantEmail required");
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
+            return BadRequest("subject/body required");
+
+        var user = await userManager.GetUserAsync(User);
+        if (user?.Email is null) return Unauthorized();
+
+        await emailApiService.EnqueueAsync(new EnqueueEmailRequest(
+            To:                user.Email,
+            Bcc:               new[] { participantEmail },
+            ReplyTo:           string.IsNullOrWhiteSpace(replyTo) ? user.Email : replyTo,
+            Subject:           subject,
+            Body:              body,
+            Category:          "AdminReply",
+            LanguageCode:      string.IsNullOrWhiteSpace(languageCode) ? null : languageCode,
+            ProjectPlatformId: user.ProjectPlatformId,
+            ProjectId:         projectId,
+            IdeaId:            ideaId,
+            CreatedByUserId:   user.Id), ct);
+
+        return Ok();
+    }
+
+    // Broadcast-modal submit: one POST carrying per-language Subject+Body.
+    // BroadcastService fans out into N enqueue calls (one per language ×
+    // BCC chunk).
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BroadcastParticipantEmail(
+        int projectId,
+        [FromForm] string replyTo,
+        [FromForm] Dictionary<string, string> subjects,
+        [FromForm] Dictionary<string, string> bodies,
+        CancellationToken ct)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        var user = await userManager.GetUserAsync(User);
+        if (user?.Email is null) return Unauthorized();
+        if (!user.ProjectPlatformId.HasValue) return Unauthorized();
+
+        // Pair (subject, body) per language; drop any language whose entries
+        // are blank so participants don't get an empty broadcast.
+        var perLanguage = subjects
+            .Where(kv => bodies.TryGetValue(kv.Key, out var b)
+                         && !string.IsNullOrWhiteSpace(kv.Value)
+                         && !string.IsNullOrWhiteSpace(b))
+            .ToDictionary(
+                kv => kv.Key,
+                kv => (Subject: kv.Value.Trim(), Body: bodies[kv.Key].Trim()));
+
+        if (perLanguage.Count == 0)
+            return BadRequest(localizer["EmailBroadcast_NoMessages"].Value);
+
+        var result = await broadcastService.SendBroadcastAsync(
+            projectId:           projectId,
+            projectPlatformId:   user.ProjectPlatformId.Value,
+            perLanguageMessages: perLanguage,
+            defaultLanguageCode: project.DefaultLanguageCode,
+            to:                  user.Email,
+            replyTo:             string.IsNullOrWhiteSpace(replyTo) ? user.Email : replyTo,
+            createdByUserId:     user.Id,
+            ct:                  ct);
+
+        return Ok(new { result.JobsEnqueued, result.RecipientsReached });
     }
 
     public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx", string tables = "")

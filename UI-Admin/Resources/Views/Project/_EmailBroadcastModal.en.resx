@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="EmailBroadcast_Eyebrow" xml:space="preserve"><value>Broadcast</value></data>
+  <data name="EmailBroadcast_Title" xml:space="preserve"><value>Send to all participants</value></data>
+  <data name="EmailBroadcast_LanguageSection" xml:space="preserve"><value>{0} translation</value></data>
+
+  <data name="EmailChoice_Body" xml:space="preserve"><value>How would you like to send this email?</value></data>
+  <data name="EmailChoice_SendViaPlatform" xml:space="preserve"><value>Send via platform</value></data>
+  <data name="EmailBroadcast_Choice_PlatformHint" xml:space="preserve"><value>Compose here with a translation per language; everyone is BCC'd.</value></data>
+  <data name="EmailChoice_OpenInMailClient" xml:space="preserve"><value>Open in my mail program</value></data>
+  <data name="EmailBroadcast_Choice_MailtoHint" xml:space="preserve"><value>Opens a draft with all participants BCC'd (single message, no per-language split).</value></data>
+  <data name="EmailBroadcast_Description" xml:space="preserve"><value>All participants will be BCC'd; each participant only sees their own address. Provide a translation per language so each recipient gets the version that matches their chosen language.</value></data>
+  <data name="EmailBroadcast_SendButton" xml:space="preserve"><value>Send broadcast</value></data>
+  <data name="EmailBroadcast_PerLanguageHint" xml:space="preserve"><value>Languages left empty are skipped — participants in those languages will not be sent anything.</value></data>
+
+  <data name="EmailField_To" xml:space="preserve"><value>From / To (you)</value></data>
+  <data name="EmailField_To_Hint" xml:space="preserve"><value>Recipients see this address; replies arrive in your inbox.</value></data>
+  <data name="EmailField_ReplyTo" xml:space="preserve"><value>Reply-To</value></data>
+  <data name="EmailField_Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="EmailField_Body" xml:space="preserve"><value>Message</value></data>
+
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+</root>

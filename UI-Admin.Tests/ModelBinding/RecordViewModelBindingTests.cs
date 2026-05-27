@@ -3,8 +3,8 @@ using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
-using DomainMediaType = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionMediaType;
-using BlQuestionFormat = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat;
+using QuestionMediaType = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionMediaType;
+using QuestionFormat = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionFormat;
 
 namespace SynapseEnqueteManagement.UI.Admin.Tests.ModelBinding;
 
@@ -145,11 +145,11 @@ public class RecordViewModelBindingTests
         // indexed `Translations[i].*` keys; structural fields stay flat.
         var form = new Dictionary<string, StringValues>
         {
-            ["QuestionFormat"] = nameof(BlQuestionFormat.SingleChoice),
+            ["QuestionFormat"] = nameof(QuestionFormat.SingleChoice),
             ["IsMandatory"] = "true",
             ["SectionId"] = "2",
             ["MediaUrl"] = "https://media.example/poll.png",
-            ["MediaType"] = nameof(DomainMediaType.Image),
+            ["MediaType"] = nameof(QuestionMediaType.Image),
             ["MediaIsEmbed"] = "false",
             ["Translations[0].LanguageCode"]     = "nl",
             ["Translations[0].Text"]             = "Wat is je favoriete kleur?",
@@ -164,11 +164,11 @@ public class RecordViewModelBindingTests
         var (model, modelState) = await FormBinderTestHarness.BindAsync<CreateQuestionViewModel>(form);
 
         Assert.True(modelState.IsValid);
-        Assert.Equal(BlQuestionFormat.SingleChoice, model.QuestionFormat);
+        Assert.Equal(QuestionFormat.SingleChoice, model.QuestionFormat);
         Assert.True(model.IsMandatory);
         Assert.Equal(2, model.SectionId);
         Assert.Equal("https://media.example/poll.png", model.MediaUrl);
-        Assert.Equal(DomainMediaType.Image, model.MediaType);
+        Assert.Equal(QuestionMediaType.Image, model.MediaType);
         Assert.False(model.MediaIsEmbed);
         Assert.Equal(2, model.Translations.Count);
         var nl = model.Translations.Single(t => t.LanguageCode == "nl");
@@ -189,11 +189,11 @@ public class RecordViewModelBindingTests
         var form = new Dictionary<string, StringValues>
         {
             ["QuestionId"] = "11",
-            ["QuestionFormat"] = nameof(BlQuestionFormat.MultipleChoice),
+            ["QuestionFormat"] = nameof(QuestionFormat.MultipleChoice),
             ["IsMandatory"] = "false",
             ["SectionId"] = "9",
             ["MediaUrl"] = "https://media.example/edit.mp4",
-            ["MediaType"] = nameof(DomainMediaType.Video),
+            ["MediaType"] = nameof(QuestionMediaType.Video),
             ["MediaIsEmbed"] = "true",
             ["Translations[0].LanguageCode"]     = "nl",
             ["Translations[0].Text"]             = "Aangepaste vraag",
@@ -205,11 +205,11 @@ public class RecordViewModelBindingTests
 
         Assert.True(modelState.IsValid);
         Assert.Equal(11, model.QuestionId);
-        Assert.Equal(BlQuestionFormat.MultipleChoice, model.QuestionFormat);
+        Assert.Equal(QuestionFormat.MultipleChoice, model.QuestionFormat);
         Assert.False(model.IsMandatory);
         Assert.Equal(9, model.SectionId);
         Assert.Equal("https://media.example/edit.mp4", model.MediaUrl);
-        Assert.Equal(DomainMediaType.Video, model.MediaType);
+        Assert.Equal(QuestionMediaType.Video, model.MediaType);
         Assert.True(model.MediaIsEmbed);
         Assert.Single(model.Translations);
         var nl = model.Translations[0];

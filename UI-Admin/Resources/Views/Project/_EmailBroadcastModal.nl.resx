@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="EmailBroadcast_Eyebrow" xml:space="preserve"><value>Verzenden</value></data>
+  <data name="EmailBroadcast_Title" xml:space="preserve"><value>Naar alle deelnemers sturen</value></data>
+  <data name="EmailBroadcast_LanguageSection" xml:space="preserve"><value>Vertaling {0}</value></data>
+
+  <data name="EmailChoice_Body" xml:space="preserve"><value>Hoe wil je deze e-mail versturen?</value></data>
+  <data name="EmailChoice_SendViaPlatform" xml:space="preserve"><value>Via platform versturen</value></data>
+  <data name="EmailBroadcast_Choice_PlatformHint" xml:space="preserve"><value>Stel hier op met een vertaling per taal; iedereen komt in BCC.</value></data>
+  <data name="EmailChoice_OpenInMailClient" xml:space="preserve"><value>In mijn mailprogramma openen</value></data>
+  <data name="EmailBroadcast_Choice_MailtoHint" xml:space="preserve"><value>Opent een concept met alle deelnemers in BCC (één bericht, geen splitsing per taal).</value></data>
+  <data name="EmailBroadcast_Description" xml:space="preserve"><value>Alle deelnemers krijgen het bericht in BCC; elke deelnemer ziet alleen het eigen adres. Vul per taal een vertaling in zodat iedereen de juiste versie ontvangt.</value></data>
+  <data name="EmailBroadcast_SendButton" xml:space="preserve"><value>Verzenden</value></data>
+  <data name="EmailBroadcast_PerLanguageHint" xml:space="preserve"><value>Talen die je leeg laat worden overgeslagen — deelnemers in die talen krijgen niks.</value></data>
+
+  <data name="EmailField_To" xml:space="preserve"><value>Van / Aan (jij)</value></data>
+  <data name="EmailField_To_Hint" xml:space="preserve"><value>Ontvangers zien dit adres; antwoorden komen in jouw inbox aan.</value></data>
+  <data name="EmailField_ReplyTo" xml:space="preserve"><value>Reply-To</value></data>
+  <data name="EmailField_Subject" xml:space="preserve"><value>Onderwerp</value></data>
+  <data name="EmailField_Body" xml:space="preserve"><value>Bericht</value></data>
+
+  <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+</root>
