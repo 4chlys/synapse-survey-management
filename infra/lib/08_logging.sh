@@ -1,9 +1,6 @@
 #!/bin/bash
-# Cloud Logging & Monitoring — IAM rollen + uptime checks + alert policy
-#
-# Uptime checks en alert policies worden aangemaakt via de Monitoring REST API
-# omdat de gcloud CLI geen --use-ssl flag ondersteunt voor uptime checks.
-# De REST API is nodig om useSsl: true en validateSsl: true in te stellen.
+# Uptime checks and alert policies use the Monitoring REST API because gcloud
+# has no --use-ssl flag for uptime checks; REST is the only way to set useSsl: true.
 
 setup_logging_iam() {
   echo ">>> Logging/Monitoring IAM rollen toekennen aan compute SA..."
@@ -22,13 +19,10 @@ setup_logging_iam() {
   echo "  Docker stdout/stderr op COS VMs wordt automatisch doorgestuurd naar Cloud Logging."
 }
 
-# ── Monitoring REST API helpers ──────────────────────────────────
-
 _monitoring_token() {
   gcloud auth print-access-token
 }
 
-# Prints the resource name of an uptime check with the given display name, or nothing.
 _find_uptime_check() {
   local display="$1" token="$2"
   curl -sf \
@@ -42,7 +36,6 @@ for c in json.load(sys.stdin).get('uptimeCheckConfigs', []):
 " "${display}" 2>/dev/null
 }
 
-# Prints the resource name of an alert policy with the given display name, or nothing.
 _find_alert_policy() {
   local display="$1" token="$2"
   curl -sf \
@@ -55,8 +48,6 @@ for p in json.load(sys.stdin).get('alertPolicies', []):
         print(p['name']); break
 " "${display}" 2>/dev/null
 }
-
-# ── Uptime checks ────────────────────────────────────────────────
 
 create_uptime_checks() {
   echo ">>> Uptime checks aanmaken via REST API (HTTPS, omgeving: ${ENV})..."
@@ -144,16 +135,10 @@ for c in json.load(sys.stdin).get('uptimeCheckConfigs', []):
   done <<< "${names}"
 }
 
-# ── Alert policy ─────────────────────────────────────────────────
-#
-# Filtert op checker_location="eur-belgium" omdat Cloud Armor
-# non-EU checkers blokkeert met een 403 — dat is normaal gedrag
-# en mag geen alert triggeren.
-#
-# Notification channels worden NIET automatisch aangemaakt.
-# Voeg ze manueel toe via Cloud Console na de bootstrap:
+# Filters on checker_location="eur-belgium" because Cloud Armor blocks non-EU checkers
+# with 403 — that is expected behaviour and must not trigger an alert.
+# Notification channels cannot be created via gcloud and must be added manually in Console:
 #   https://console.cloud.google.com/monitoring/alerting
-
 create_alert_policy() {
   echo ">>> Alert policy aanmaken (omgeving: ${ENV}, filter: eur-belgium)..."
   local token

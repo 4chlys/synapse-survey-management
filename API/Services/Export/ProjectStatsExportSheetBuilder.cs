@@ -2,7 +2,6 @@ using SynapseEnqueteManagement.API.DTOs.Stats;
 
 namespace SynapseEnqueteManagement.API.Services.Export;
 
-// Maps a project's export data into the requested dashboard sheets. Pure mapping.
 public static class ProjectStatsExportSheetBuilder
 {
     public static readonly IReadOnlySet<string> AllSections =

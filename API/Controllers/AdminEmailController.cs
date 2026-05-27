@@ -10,7 +10,6 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/emails")]
-[EnableRateLimiting("admin-email-send")]
 public class AdminEmailController(
     IEmailService emailService,
     IEmailJobManager jobManager) : ControllerBase
@@ -18,7 +17,10 @@ public class AdminEmailController(
     // Legacy synchronous path — kept for callers that haven't moved to the
     // queue yet (none after the AdminInvite/PasswordReset migration; remove
     // once verified). Production traffic should use Enqueue instead.
+    // Rate-limited because it actually sends; the GET reads below are not, so
+    // the operator page's parallel fetches never trip the limiter.
     [HttpPost]
+    [EnableRateLimiting("admin-email-send")]
     public async Task<ActionResult> Send(SendEmailDto dto, CancellationToken ct)
     {
         await emailService.SendAsync(EmailSendRequest.Simple(dto.To, dto.Subject, dto.Body), ct);
@@ -28,6 +30,7 @@ public class AdminEmailController(
     // Non-blocking path: persists one row to the EmailJob queue and returns
     // 202 immediately. The EmailJobWorker picks it up on its next 5s tick.
     [HttpPost("queue")]
+    [EnableRateLimiting("admin-email-send")]
     public async Task<ActionResult> Enqueue(EnqueueEmailDto dto, CancellationToken ct)
     {
         if (!Enum.TryParse<EmailJobCategory>(dto.Category, ignoreCase: true, out var category))

@@ -2,9 +2,6 @@ using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 namespace SynapseEnqueteManagement.BL.Implementation;
 
-// In-memory sibling reordering for MoveQuestion: drop the moved question from its old scope,
-// (optionally) re-insert it at a clamped target index, then renumber Position 1..N.
-// Pure list manipulation — kept out of the manager so the math is unit-testable without a DbContext.
 internal static class QuestionPositionReorderer
 {
     public static void Reorder(

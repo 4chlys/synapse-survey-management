@@ -1,5 +1,4 @@
 #!/bin/bash
-# Cloud Storage bucket aanmaken en configureren
 
 create_storage_bucket() {
   echo ">>> Cloud Storage bucket aanmaken: gs://${GCS_BUCKET}..."

@@ -29,7 +29,6 @@ success() { echo -e "${GREEN}✅ $*${RESET}"; }
 warn()    { echo -e "${YELLOW}⚠️  $*${RESET}"; }
 error()   { echo -e "${RED}❌ $*${RESET}"; }
 
-# ── Config laden ───────────────────────────────────────────────
 if [[ -f "${CONFIG_FILE}" ]]; then
   source "${CONFIG_FILE}"
 else
@@ -43,7 +42,6 @@ fi
 
 gcloud config set project "${PROJECT_ID}" --quiet 2>/dev/null
 
-# ── Helpers ────────────────────────────────────────────────────
 mig_status() {
   local mig="$1"
   local size
@@ -87,7 +85,6 @@ show_logs() {
     --format="table(timestamp,resource.labels.instance_id,textPayload)" 2>/dev/null | head -50
 }
 
-# ── Hoofdmenu ─────────────────────────────────────────────────
 while true; do
   echo ""
   echo -e "${BOLD}╔══════════════════════════════════════════════╗${RESET}"
@@ -188,6 +185,8 @@ while true; do
       ;;
     10)
       info "SSL certificaat status..."
+      gcloud certificate-manager certificates list --project="${PROJECT_ID}" \
+        --format="table(name,managed.state,managed.domains)" 2>/dev/null || \
       gcloud compute ssl-certificates list --project="${PROJECT_ID}" \
         --format="table(name,managed.status,managed.domainStatus)" 2>/dev/null
       ;;

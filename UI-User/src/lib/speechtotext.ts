@@ -7,7 +7,7 @@ import { t, currentCulture, type Strings } from './i18n';
  * UI/state-machine glue lives in speechtotext-attach.ts.
  */
 
-import { getCsrfToken, fetchWithTimeout } from '../ideation/ai-support-base';
+import { getCsrfToken, fetchWithTimeout } from './utils';
 
 // --- Types -------------------------------------------------------------------
 

@@ -122,9 +122,7 @@ public class RecordViewModelBindingTests
             ["AiAssistanceEnabled"] = "true",
             ["IdeationEnabled"] = "true",
             ["MaxProjects"] = "10",
-            ["MaxAdmins"] = "4",
-            ["AiModelName"] = "gemini-2.5-flash",
-            ["CostDashboardUrl"] = "https://dashboards.example/acme"
+            ["MaxAdmins"] = "4"
         };
 
         var (model, modelState) = await FormBinderTestHarness.BindAsync<PlatformConfigurationViewModel>(form);
@@ -138,8 +136,6 @@ public class RecordViewModelBindingTests
         Assert.True(model.IdeationEnabled);
         Assert.Equal(10, model.MaxProjects);
         Assert.Equal(4, model.MaxAdmins);
-        Assert.Equal("gemini-2.5-flash", model.AiModelName);
-        Assert.Equal("https://dashboards.example/acme", model.CostDashboardUrl);
     }
 
     [Fact]

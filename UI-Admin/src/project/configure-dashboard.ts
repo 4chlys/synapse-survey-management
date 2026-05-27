@@ -1,28 +1,9 @@
 interface WidgetOption {
     value: string;
     label: string;
-}
-
-interface WidgetMeta {
     cat: string;
     span: number;
 }
-
-const META: Record<string, WidgetMeta> = {
-    ViewCount:             { cat: 'kpi',      span: 1 },
-    CompletionCount:       { cat: 'kpi',      span: 1 },
-    CompletionRate:        { cat: 'kpi',      span: 1 },
-    ParticipationTimeline: { cat: 'timeline', span: 3 },
-    TopCategories:         { cat: 'list',     span: 1 },
-    TopIdeas:              { cat: 'list',     span: 1 },
-    SurveyDistribution:    { cat: 'distrib',  span: 1 },
-    IdeaFeed:              { cat: 'feed',     span: 1 },
-    ModerationQueue:       { cat: 'moderate', span: 1 },
-    QuestionSinglePie:     { cat: 'chart',    span: 1 },
-    QuestionMultiBar:      { cat: 'chart',    span: 1 },
-    QuestionLikertBar:     { cat: 'chart',    span: 1 },
-    SocialMediaPost:       { cat: 'social',   span: 1 },
-};
 
 document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('configure-dashboard');
@@ -35,8 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewGrid = document.getElementById('cfg-preview-grid') as HTMLElement;
     const addBtn = document.getElementById('cfg-add-slot');
 
-    function getMeta(widgetType: string): WidgetMeta {
-        return META[widgetType] ?? { cat: 'kpi', span: 1 };
+    function getMeta(widgetType: string): { cat: string; span: number } {
+        const opt = opts.find(o => o.value === widgetType);
+        return opt ?? { cat: 'kpi', span: 1 };
     }
 
     function getLabel(widgetType: string): string {

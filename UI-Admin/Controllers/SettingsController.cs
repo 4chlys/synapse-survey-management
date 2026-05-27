@@ -51,8 +51,6 @@ public class SettingsController(
             IdeationEnabled     = settings?.IdeationEnabled ?? true,
             MaxProjects         = settings?.MaxProjects,
             MaxAdmins           = settings?.MaxAdmins,
-            AiModelName         = settings?.AiModelName,
-            CostDashboardUrl    = settings?.CostDashboardUrl,
         });
 
         TempData["Success"] = localizer["Platform_BasicInfoSaved"].Value;

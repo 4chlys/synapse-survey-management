@@ -838,7 +838,7 @@ public class ProjectController(
             ProjectName = project.Name,
             Layout = Array.ConvertAll(slots, s => s.WidgetType),
             Slots = Array.ConvertAll(slots, s => new WidgetSlotInput { WidgetType = s.WidgetType, QuestionId = s.QuestionId }),
-            AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
+            AllWidgetTypes = WidgetSlotValidator.AllWidgetTypes
         });
     }
 
@@ -848,18 +848,7 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var source = model.Slots ?? [];
-        var sanitized = source
-            .Select(input =>
-            {
-                var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
-                    ? input.WidgetType
-                    : WidgetPreferenceService.DefaultLayout[0];
-                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
-                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
-            })
-            .ToArray();
-
+        var sanitized = WidgetSlotValidator.SanitizeSlots(model.Slots);
         await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }

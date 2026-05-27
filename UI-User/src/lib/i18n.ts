@@ -38,6 +38,7 @@ export type Strings = {
     aiChatDraftLabel: string;
     aiChatDraftYes: string;
     aiChatDraftNo: string;
+    aiChatDraftAddContent: string;
     aiChatNoProblem: string;
     aiChatRefining: string;
     aiChatRefinedText: string;

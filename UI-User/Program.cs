@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Vite.AspNetCore;
 using SynapseEnqueteManagement.UI.User.Filters;
 using SynapseEnqueteManagement.UI.User.Middleware;
+using SynapseEnqueteManagement.UI.User.Options;
 using SynapseEnqueteManagement.UI.User.Services.IdeaImage;
 using SynapseEnqueteManagement.UI.User.Services.Ideation;
 using SynapseEnqueteManagement.UI.User.Services.Moderation;
@@ -169,7 +170,8 @@ builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
 builder.Services.AddSingleton<IFormStrategy, ChatFormStrategy>();
 builder.Services.AddSingleton<IFormStrategyFactory, FormStrategyFactory>();
 
-// Image URL allow-list for idea uploads.
+builder.Services.Configure<StorageOptions>(o =>
+    o.BucketName = Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod");
 builder.Services.AddSingleton<IdeaImageUrlValidator>();
 
 // ---- Service Configuration ----
