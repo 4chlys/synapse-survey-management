@@ -11,6 +11,7 @@
             bg-black/50 backdrop-blur-sm p-0 sm:p-6">
 
     <div id="comment-support-panel"
+         role="dialog" aria-modal="true" aria-labelledby="comment-support-heading"
          class="relative bg-base-100 flex flex-col shadow-2xl
                 w-full max-w-full sm:max-w-xl md:max-w-2xl
                 h-[80dvh] sm:h-[75dvh] md:h-[70dvh]
@@ -27,7 +28,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm font-heading font-semibold text-base-content leading-none">@L["HeaderTitle"]</p>
+                    <p id="comment-support-heading" class="text-sm font-heading font-semibold text-base-content leading-none">@L["HeaderTitle"]</p>
                     <p class="text-xs text-primary mt-0.5">@L["HeaderSubtitle"]</p>
                 </div>
             </div>

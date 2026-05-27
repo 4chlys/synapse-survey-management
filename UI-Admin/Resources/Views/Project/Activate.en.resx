@@ -16,4 +16,6 @@
   <data name="FormTypeChat" xml:space="preserve"><value>Chat</value></data>
   <data name="FormTypeScroll" xml:space="preserve"><value>Scroll</value></data>
   <data name="InfoText" xml:space="preserve"><value>Once activated, participants can access the project using a shared link. You can deactivate or archive the project at any time from the dashboard.</value></data>
+  <data name="BlockingTitle" xml:space="preserve"><value>Project cannot be activated yet</value></data>
+  <data name="BlockingIntro" xml:space="preserve"><value>The following items are incomplete:</value></data>
 </root>

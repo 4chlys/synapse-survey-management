@@ -655,8 +655,11 @@ function renderDone(ctx: Ctx): void {
     appendSystemBubble(ctx, t('surveyDone'), false);
     setTimeout(() => {
         const popup = document.getElementById('thank-you-popup');
-        if (popup) popup.classList.remove('hidden');
-    }, 3000);
+        if (popup) {
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+        }
+    }, 1500);
 }
 
 function updateBackBtn(ctx: Ctx): void {

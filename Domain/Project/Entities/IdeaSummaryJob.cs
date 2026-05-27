@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain;
 
@@ -8,7 +9,9 @@ public class IdeaSummaryJob : IHasCreatedAt
 {
     public Guid IdeaSummaryJobId { get; set; }
     public int ProjectPlatformId { get; set; }
+    [Required] public ProjectPlatform ProjectPlatform { get; set; }
     public int ProjectId { get; set; }
+    [Required] public Project Project { get; set; }
     public IdeaSummaryJobStatus Status { get; set; } = IdeaSummaryJobStatus.Pending;
     [Required] public string FilterJson { get; set; }
     public IdeaSummaryExportFormat ExportFormat { get; set; }

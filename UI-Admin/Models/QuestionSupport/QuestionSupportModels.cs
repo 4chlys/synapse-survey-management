@@ -11,6 +11,9 @@ public sealed record QuestionSupportChatRequest
     public IReadOnlyList<QuestionSupportMessage> History     { get; init; } = [];
     public string                                UserMessage { get; init; } = string.Empty;
     public bool                                  IsFirstTurn { get; init; }
+    // Active modal tab's language; the API uses it as the target language for
+    // any rewritten/suggested question text. Null falls back to project default.
+    public string                                QuestionLanguage { get; init; }
 }
 
 public sealed record QuestionSupportChatResponse

@@ -8,7 +8,7 @@ public class OpenResponseValidator : IResponseValidator
 {
     public QuestionFormat Format => QuestionFormat.Open;
 
-    public void Validate(string value, Question question)
+    public void Validate(string value, Question question, string languageCode)
     {
         // Open questions accept any text — no additional validation needed.
     }

@@ -15,14 +15,11 @@ public class SectionAdminService(HttpClient httpClient)
                ?? new List<SectionViewModel>();
     }
 
-    public async Task CreateSectionAsync(int projectId, string name, string description, string languageCode)
+    public async Task CreateSectionAsync(int projectId, ICollection<SectionTranslationViewModel> translations)
     {
         var payload = new
         {
-            Translations = new[]
-            {
-                new { LanguageCode = languageCode, Name = name, Description = description }
-            }
+            Translations = translations.Select(t => new { t.LanguageCode, t.Name, t.Description })
         };
         var response = await httpClient.PostAsJsonAsync(
             $"api/projects/{projectId}/sections", payload);

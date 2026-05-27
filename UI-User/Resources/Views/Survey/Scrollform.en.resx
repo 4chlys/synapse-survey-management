@@ -51,4 +51,7 @@
   <data name="SubmitAnswers" xml:space="preserve">
     <value>Continue to ideas</value>
   </data>
+  <data name="SurveyProgressLabel" xml:space="preserve">
+    <value>Survey progress</value>
+  </data>
 </root>

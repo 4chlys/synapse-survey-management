@@ -1,24 +1,19 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseEnqueteManagement.UI.Admin.Models.Section;
 namespace SynapseEnqueteManagement.UI.Admin.Models.Project;
 
 public record CreateProjectViewModel
 {
     public int? ProjectId { get; init; }
 
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; init; }
-
     [MaxLength(30)]
     [RegularExpression(@"^[a-z0-9](-?[a-z0-9])*$",
         ErrorMessage = "ShortForm_Invalid")]
     public string ShortForm { get; init; }
 
-    [MaxLength(100)]
-    public string Topic { get; init; }
-
-    [MaxLength(5000, ErrorMessage = "Introduction_TooLong")]
-    public string Introduction { get; init; }
+    // One entry per language the form renders (always all platform languages),
+    // even if SupportedLanguageCodes excludes some. Server filters on submit.
+    public IList<ProjectTranslationViewModel> Translations { get; init; } = new List<ProjectTranslationViewModel>();
 
     public string InteractionMode { get; init; } = "VerticalScroll";
 
@@ -31,7 +26,7 @@ public record CreateProjectViewModel
     [MaxLength(500)]
     public string ImageUrl { get; init; }
 
-    public IList<string> Sections { get; init; } = new List<string>();
+    public IList<SectionInputViewModel> Sections { get; init; } = new List<SectionInputViewModel>();
 
     public bool ContactOptIn { get; init; } = true;
     public bool AllowCrossLanguageIdeas { get; init; } = false;

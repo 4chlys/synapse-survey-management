@@ -4,6 +4,7 @@ using SynapseEnqueteManagement.API.DTOs.QuestionSupport;
 using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiQuestionSupport;
 using SynapseEnqueteManagement.BL.AiSupport;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -34,16 +35,11 @@ public class QuestionSupportController(
         var defaultLang = project.DefaultLanguage?.Code;
 
         var projectDescription =
-            (project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
-             ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
-             ?? project.Introduction?.Translations.FirstOrDefault())?.Text
+            TranslationPicker.Pick(project.Introduction?.Translations, lang, defaultLang)?.Text
             ?? string.Empty;
 
         var existingQuestions = questions
-            .Select(q =>
-                (q.Translations.FirstOrDefault(t => t.Language?.Code == lang)
-                 ?? q.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
-                 ?? q.Translations.FirstOrDefault())?.Text)
+            .Select(q => TranslationPicker.Pick(q.Translations, lang, defaultLang)?.Text)
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .ToList();
 
@@ -58,7 +54,11 @@ public class QuestionSupportController(
             UserMessage      = dto.UserMessage ?? string.Empty,
             IsFirstTurn      = dto.IsFirstTurn,
             ChatLanguage     = lang,
-            QuestionLanguage = defaultLang ?? lang,
+            // Modal passes the active tab's language; fall back to project default
+            // so chat outside the multi-language modal still gets a sensible target.
+            QuestionLanguage = !string.IsNullOrWhiteSpace(dto.QuestionLanguage)
+                ? dto.QuestionLanguage
+                : defaultLang ?? lang,
         };
 
         var platformConfig = await platformAiConfig.ResolveAsync(project.ProjectPlatformId, ct);

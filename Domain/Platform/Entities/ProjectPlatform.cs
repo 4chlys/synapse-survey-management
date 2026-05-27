@@ -11,8 +11,10 @@ public class ProjectPlatform : IHasCreatedAt
     [Required] [MaxLength(100)] public string Name { get; set; }
 
     [MaxLength(500)]
+    [RegularExpression(@"^https?://.*", ErrorMessage = "Only http and https URLs are allowed.")]
     public string LogoUrl { get; set; }
 
     [MaxLength(500)]
+    [RegularExpression(@"^https?://.*", ErrorMessage = "Only http and https URLs are allowed.")]
     public string WebsiteUrl { get; set; }
 }

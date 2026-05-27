@@ -4,6 +4,17 @@
 
 @custom-variant dark ([data-theme="synapse-dark"] &);
 
+/* These elements are shown/hidden via the `hidden` attribute but also carry a
+   Tailwind display utility (`.flex` / `.form-control`). A layered utility
+   outranks the UA `[hidden]{display:none}`, so without this the inactive
+   language panes and unsupported tabs stay visible. This rule is unlayered and
+   higher-specificity than `.flex`, so it wins without needing `!important`. */
+[data-translation-pane][hidden],
+[data-translation-tab][hidden],
+#cross-language-row[hidden] {
+  display: none;
+}
+
 @plugin "daisyui/theme" {
   name: "synapse-light";
   default: true;
