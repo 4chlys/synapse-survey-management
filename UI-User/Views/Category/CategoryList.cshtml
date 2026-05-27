@@ -9,7 +9,7 @@
 
 @await Html.PartialAsync("_BackgroundAnimation")
 
-<div class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-[calc(100dvh-64px)] page-enter relative z-10">
+<div class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-content page-enter relative z-10">
 
     @* Page header *@
     <div class="w-full mb-8 flex items-start justify-between gap-4">
@@ -22,8 +22,8 @@
             </p>
         </div>
         <button type="button" data-action="show-thank-you"
-           aria-label="@L["CloseNavLabel"]"
-           class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-base-content/65 hover:text-error hover:bg-error/10 transition-colors cursor-pointer bg-transparent border-0">
+               aria-label="@L["CloseNavLabel"]"
+               class="shrink-0 btn-exit">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -33,9 +33,10 @@
     </div>
 
     @* Category cards *@
-    <div class="w-full flex flex-col gap-3">
+    <ul class="w-full flex flex-col gap-3">
         @foreach (var category in Model.Categories)
         {
+            <li>
             <a asp-controller="Ideation" asp-action="IdeaHub" asp-route-projectId="@Model.ProjectId"
                    asp-route-categoryId="@category.CategoryId" class="group relative flex items-center gap-4 px-5 py-7 rounded-field
                 bg-base-100 border border-base-300
@@ -72,8 +73,9 @@
                 </div>
 
             </a>
+            </li>
         }
-    </div>
+    </ul>
 
 </div>
 
