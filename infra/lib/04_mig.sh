@@ -56,9 +56,55 @@ create_instance_templates() {
   _create_template "synapse-${ENV}-admin-template" "e2-micro"  "startup-admin.sh"
 }
 
+_wait_api_schema_ready() {
+  echo "  ⏳ Wachten op API database-initialisatie (max 8 minuten)..."
+
+  gcloud compute instance-groups managed wait-until "synapse-${ENV}-api-mig" \
+    --stable --zone="${ZONE}" --project="${PROJECT_ID}" 2>/dev/null || true
+
+  local api_vm
+  api_vm=$(gcloud compute instance-groups managed list-instances "synapse-${ENV}-api-mig" \
+    --zone="${ZONE}" --project="${PROJECT_ID}" \
+    --format="value(instance)" 2>/dev/null | head -1 | sed 's|.*/||')
+
+  if [[ -z "$api_vm" ]]; then
+    echo "  ⚠️  Geen API VM gevonden, 4 minuten wachten als fallback..."
+    sleep 240
+    return
+  fi
+
+  local elapsed=0
+  while [[ $elapsed -lt 480 ]]; do
+    local status
+    status=$(gcloud compute ssh "${api_vm}" \
+      --zone="${ZONE}" --project="${PROJECT_ID}" \
+      --ssh-flag="-o StrictHostKeyChecking=no -o LogLevel=ERROR" \
+      --command="docker inspect mvp-api --format='{{.State.Status}}' 2>/dev/null" \
+      --quiet 2>/dev/null || echo "")
+
+    if [[ "${status}" == "running" ]]; then
+      echo "  ✅ API container actief — 60s buffer voor EnsureCreated + seeding..."
+      sleep 60
+      echo "  ✅ API schema klaar"
+      return
+    fi
+
+    echo "  ... (${elapsed}s) API nog niet actief (${status:-onbekend})..."
+    sleep 20
+    elapsed=$((elapsed + 20))
+  done
+
+  echo "  ⚠️  Timeout na 8 minuten — Admin toch starten"
+}
+
 create_migs() {
   echo ">>> Managed Instance Groups aanmaken (omgeving: ${ENV})..."
-  _create_mig "synapse-${ENV}-api-mig"   "synapse-${ENV}-api-template"   1 5
+
+  # API eerst: EnsureCreated() moet het schema aanmaken voordat
+  # Admin's MigrateAsync() dezelfde database ziet en overslaat.
+  _create_mig "synapse-${ENV}-api-mig" "synapse-${ENV}-api-template" 1 5
+  _wait_api_schema_ready
+
   _create_mig "synapse-${ENV}-ui-mig"    "synapse-${ENV}-ui-template"    1 5
   _create_mig "synapse-${ENV}-admin-mig" "synapse-${ENV}-admin-template" 1 1
 }
