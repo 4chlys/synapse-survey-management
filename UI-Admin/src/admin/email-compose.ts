@@ -5,17 +5,14 @@
 //   3. "Via platform" opens the compose modal pre-filled with the participant
 //      in the (disabled) BCC field, posts to ProjectController.SendParticipantEmail
 //      on submit, and closes on success.
-
-function readComposeToken(form: HTMLFormElement): string {
-    return form.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
-}
+import { getAntiForgeryToken } from '../lib/utils';
 
 function showError(box: HTMLElement, msg: string) {
     box.textContent = msg;
     box.classList.remove('hidden');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+export function initEmailCompose(): void {
     const choiceModal  = document.getElementById('email-choice-modal') as HTMLDialogElement | null;
     const composeModal = document.getElementById('email-compose-modal') as HTMLDialogElement | null;
     if (!choiceModal || !composeModal) return;
@@ -85,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(composeForm);
             const res = await fetch(composeForm.dataset.sendUrl ?? '', {
                 method: 'POST',
-                headers: { 'RequestVerificationToken': readComposeToken(composeForm) },
+                headers: { 'RequestVerificationToken': getAntiForgeryToken() },
                 body: formData,
             });
             if (!res.ok) {
@@ -99,4 +96,4 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.disabled = false;
         }
     });
-});
+}

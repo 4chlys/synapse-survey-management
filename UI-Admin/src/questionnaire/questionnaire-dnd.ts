@@ -4,23 +4,11 @@
 // toggle. Event handlers are attached once to the stable #questions-list
 // container; re-rendering its innerHTML does not invalidate them.
 
-import { renderTree, Question, QuestionTranslation, EndingAnswerSlot, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
+import { renderTree, Question, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
 import { readQuestionsI18n } from '../lib/questions-i18n';
 import { toast } from '../lib/notify';
-
-interface MovePayload {
-    parentQuestionId: number | null;
-    choiceIndex: number | null;
-    position: number;
-}
-
-interface EndingPayload {
-    endingAnswers: string[];
-}
-
-function getAntiforgeryToken(): string {
-    return document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
-}
+import { getAntiForgeryToken } from '../lib/utils';
+import type { MovePayload, EndingPayload, AdminQuestionResponse } from './types';
 
 async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Promise<Response | null> {
     try {
@@ -28,34 +16,13 @@ async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Pro
             method,
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': getAntiforgeryToken(),
+                'RequestVerificationToken': getAntiForgeryToken(),
             },
             body: JSON.stringify(body),
         });
     } catch {
         return null;
     }
-}
-
-// The admin GET returns the multilingual shape. The tree renders one language;
-// the modal needs all of them. Flatten each question's default-language values
-// onto the existing tree fields while keeping translations/endingAnswerSlots
-// for the edit modal to read from the rendered card's data-attrs.
-interface AdminQuestionResponse {
-    questionId: number;
-    questionFormat: string;
-    isMandatory: boolean;
-    position: number;
-    answerChoiceCount: number;
-    choiceIndex: number | null;
-    parentQuestionId: number | null;
-    sectionId: number | null;
-    sectionName: string | null;
-    mediaUrl: string | null;
-    mediaType: number | null;
-    mediaIsEmbed: boolean;
-    translations: QuestionTranslation[];
-    endingAnswers: EndingAnswerSlot[];
 }
 
 async function fetchQuestions(endpoint: string, defaultLang: string): Promise<Question[]> {
@@ -119,7 +86,26 @@ function applyExpandedIds(list: HTMLElement, ids: Set<string>): void {
     });
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+let _list: HTMLElement | null = null;
+let _questionsEndpoint = '';
+let _defaultLang = 'nl';
+let _ctx: RenderContext | null = null;
+
+async function reload(): Promise<void> {
+    if (!_list || !_ctx) return;
+    const expanded = captureExpandedIds(_list);
+    try {
+        const questions = await fetchQuestions(_questionsEndpoint, _defaultLang);
+        renderTree(_list, questions, _ctx);
+        applyExpandedIds(_list, expanded);
+        const nextBtn = document.getElementById('questions-next-btn') as HTMLButtonElement | null;
+        if (nextBtn) nextBtn.dataset.questionCount = String(questions.length);
+    } catch (err) {
+        _list.innerHTML = `<p class="text-red-400 text-sm">${String(err)}</p>`;
+    }
+}
+
+export async function initQuestionnaireDnd(): Promise<void> {
     const list = document.getElementById('questions-list') as HTMLElement | null;
     if (!list) return;
 
@@ -133,18 +119,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const i18n: QuestionsI18n = readQuestionsI18n(list);
     const ctx: RenderContext = { deleteEndpoint, projectId, locked, isNew, i18n };
 
-    async function reload(): Promise<void> {
-        const expanded = captureExpandedIds(list!);
-        try {
-            const questions = await fetchQuestions(questionsEndpoint, defaultLang);
-            renderTree(list!, questions, ctx);
-            applyExpandedIds(list!, expanded);
-            const nextBtn = document.getElementById('questions-next-btn') as HTMLButtonElement | null;
-            if (nextBtn) nextBtn.dataset.questionCount = String(questions.length);
-        } catch (err) {
-            list!.innerHTML = `<p class="text-red-400 text-sm">${String(err)}</p>`;
-        }
-    }
+    _list = list;
+    _questionsEndpoint = questionsEndpoint;
+    _defaultLang = defaultLang;
+    _ctx = ctx;
 
     await reload();
 
@@ -249,4 +227,4 @@ document.addEventListener('DOMContentLoaded', async () => {
             toast(i18n.saveFailedToast, 'error');
         }
     });
-});
+}

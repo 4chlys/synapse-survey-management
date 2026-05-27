@@ -2,100 +2,7 @@
 // checkbox both feed a single hidden input (PrimaryColor) so an empty value
 // reaches the server when the user wants the theme's own colour.
 
-const picker     = document.getElementById('primary-color-picker') as HTMLInputElement | null;
-const hidden     = document.getElementById('PrimaryColor')         as HTMLInputElement | null;
-const useDefault = document.getElementById('use-theme-color')      as HTMLInputElement | null;
-
-// ── Client-side contrast advisory ──────────────────────────────────
-// Mirror of BL/Helpers/ColorHelpers.cs. Server validation is authoritative;
-// this just shows the admin the problem before they hit submit.
-function srgbToLinear(c: number): number {
-    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-}
-
-function relativeLuminance(hex: string): number {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
-}
-
-function contrastRatio(hex1: string, hex2: string): number {
-    const l1 = relativeLuminance(hex1);
-    const l2 = relativeLuminance(hex2);
-    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-}
-
-const contrastWarning = document.getElementById('primary-color-contrast-warning');
-const contrastWarningText = contrastWarning?.querySelector<HTMLSpanElement>('[data-warning-text]');
-
-function updateContrastWarning(hex: string): void {
-    if (!contrastWarning || !contrastWarningText) return;
-    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) {
-        contrastWarning.classList.add('hidden');
-        return;
-    }
-    const lightBase = contrastWarning.dataset.lightBase ?? '#FFFFFF';
-    const darkBase  = contrastWarning.dataset.darkBase  ?? '#1A1430';
-    const minRatio  = parseFloat(contrastWarning.dataset.minRatio ?? '3');
-    const failsLight = contrastRatio(hex, lightBase) < minRatio;
-    const failsDark  = contrastRatio(hex, darkBase)  < minRatio;
-    if (!failsLight && !failsDark) {
-        contrastWarning.classList.add('hidden');
-        return;
-    }
-    const msg = failsLight && failsDark
-        ? contrastWarning.dataset.msgBoth
-        : failsLight
-            ? contrastWarning.dataset.msgLight
-            : contrastWarning.dataset.msgDark;
-    contrastWarningText.textContent = msg ?? '';
-    contrastWarning.classList.remove('hidden');
-}
-
-if (picker && hidden && useDefault) {
-    const initial = hidden.value.trim();
-    if (initial === '') {
-        useDefault.checked = true;
-        picker.disabled = true;
-    } else {
-        useDefault.checked = false;
-        picker.disabled = false;
-        picker.value = initial;
-        updateContrastWarning(initial);
-    }
-
-    useDefault.addEventListener('change', () => {
-        if (useDefault.checked) {
-            picker.disabled = true;
-            hidden.value = '';
-            updateContrastWarning('');
-        } else {
-            picker.disabled = false;
-            hidden.value = picker.value;
-            updateContrastWarning(picker.value);
-        }
-    });
-
-    picker.addEventListener('input', () => {
-        if (!useDefault.checked) hidden.value = picker.value;
-        updateContrastWarning(useDefault.checked ? '' : picker.value);
-    });
-
-    // Topic swatches: a click just fills the picker with a curated hex. Dispatching
-    // a synthetic 'input' reuses every existing picker listener (hidden value,
-    // contrast warning, preview) — no duplicated wiring.
-    document.getElementById('primary-color-swatches')
-        ?.querySelectorAll<HTMLButtonElement>('[data-swatch-color]')
-        .forEach(btn => btn.addEventListener('click', () => {
-            const hex = btn.dataset.swatchColor;
-            if (!hex) return;
-            useDefault.checked = false;
-            picker.disabled = false;
-            picker.value = hex;
-            picker.dispatchEvent(new Event('input', { bubbles: true }));
-        }));
-}
+import type { PreviewRefs } from './types';
 
 // Mirror of UI-User/src/main.css per-project-theme blocks. Keep in sync
 // when UI-User adds or changes a theme. Injected into the shadow root so
@@ -239,18 +146,75 @@ const SYNAPSE_BASE_THEMES_CSS = `
 }
 `;
 
-// ── Live theme preview ─────────────────────────────────────────────
-const themeSelect      = document.getElementById('Theme')               as HTMLSelectElement | null;
-const cssTextarea      = document.getElementById('CustomCss')           as HTMLTextAreaElement | null;
-const previewHostLight = document.getElementById('theme-preview-light') as HTMLDivElement | null;
-const previewHostDark  = document.getElementById('theme-preview-dark')  as HTMLDivElement | null;
+const CSS_VARIABLES: ReadonlyArray<{ name: string; hint: string }> = [
+    { name: '--color-primary',         hint: 'Hoofdkleur (knoppen, accenten)' },
+    { name: '--color-primary-content', hint: 'Tekstkleur op primaire vlakken' },
+    { name: '--color-secondary',       hint: 'Secundaire kleur' },
+    { name: '--color-accent',          hint: 'Accentkleur' },
+    { name: '--color-base-100',        hint: 'Hoofdoppervlak' },
+    { name: '--color-base-200',        hint: 'Sectie-achtergrond' },
+    { name: '--color-base-content',    hint: 'Hoofdtekstkleur' },
+    { name: '--color-warning',         hint: 'Waarschuwingskleur' },
+    { name: '--color-error',           hint: 'Foutkleur' },
+    { name: '--font-heading',          hint: 'Lettertype voor koppen' },
+    { name: '--radius-field',          hint: 'Hoekradius inputs/knoppen' },
+    { name: '--radius-box',            hint: 'Hoekradius kaarten' },
+];
 
-interface PreviewRefs {
-    shadow:     ShadowRoot;
-    themeStyle: HTMLStyleElement;
-    primaryStyle: HTMLStyleElement;
-    userStyle:  HTMLStyleElement;
-    wrapper:    HTMLDivElement;
+// Module-level refs set by initProjectStyle()
+let picker: HTMLInputElement | null = null;
+let hidden: HTMLInputElement | null = null;
+let useDefault: HTMLInputElement | null = null;
+let contrastWarning: HTMLElement | null = null;
+let contrastWarningText: HTMLSpanElement | null = null;
+let themeSelect: HTMLSelectElement | null = null;
+let cssTextarea: HTMLTextAreaElement | null = null;
+let lightRefs: PreviewRefs | null = null;
+let darkRefs: PreviewRefs | null = null;
+let syntaxHint: HTMLElement | null = null;
+
+// ── Client-side contrast advisory ──────────────────────────────────
+// Mirror of BL/Helpers/ColorHelpers.cs. Server validation is authoritative;
+// this just shows the admin the problem before they hit submit.
+function srgbToLinear(c: number): number {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(hex: string): number {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+}
+
+function contrastRatio(hex1: string, hex2: string): number {
+    const l1 = relativeLuminance(hex1);
+    const l2 = relativeLuminance(hex2);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+function updateContrastWarning(hex: string): void {
+    if (!contrastWarning || !contrastWarningText) return;
+    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        contrastWarning.classList.add('hidden');
+        return;
+    }
+    const lightBase = contrastWarning.dataset.lightBase ?? '#FFFFFF';
+    const darkBase  = contrastWarning.dataset.darkBase  ?? '#1A1430';
+    const minRatio  = parseFloat(contrastWarning.dataset.minRatio ?? '3');
+    const failsLight = contrastRatio(hex, lightBase) < minRatio;
+    const failsDark  = contrastRatio(hex, darkBase)  < minRatio;
+    if (!failsLight && !failsDark) {
+        contrastWarning.classList.add('hidden');
+        return;
+    }
+    const msg = failsLight && failsDark
+        ? contrastWarning.dataset.msgBoth
+        : failsLight
+            ? contrastWarning.dataset.msgLight
+            : contrastWarning.dataset.msgDark;
+    contrastWarningText.textContent = msg ?? '';
+    contrastWarning.classList.remove('hidden');
 }
 
 function buildPreview(host: HTMLDivElement, mode: 'light' | 'dark'): PreviewRefs {
@@ -344,9 +308,6 @@ function buildPreview(host: HTMLDivElement, mode: 'light' | 'dark'): PreviewRefs
     return { shadow, themeStyle, primaryStyle, userStyle, wrapper };
 }
 
-const lightRefs = previewHostLight ? buildPreview(previewHostLight, 'light') : null;
-const darkRefs  = previewHostDark  ? buildPreview(previewHostDark,  'dark')  : null;
-
 // Mirror of UI-User/Helpers/ColorHelpers.cs — keep threshold in sync (0.45).
 function hexRelativeLuminance(hex: string): number {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -363,10 +324,10 @@ function contrastingForeground(hex: string): string {
 // OKLab derivation mirror — must produce identical hex to BL/UI-User ColorHelpers
 // ShiftLightness / ComplementaryHue. Used to drive the preview palette without
 // relying on relative-color OKLCH support inside the shadow root.
-// (srgbToLinear is defined once near the top, in the contrast-advisory block.)
 function linearToSrgb(c: number): number {
     return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1.0 / 2.4) - 0.055;
 }
+
 function hexToOkLab(hex: string): { L: number; a: number; b: number } {
     const r = srgbToLinear(parseInt(hex.slice(1, 3), 16) / 255);
     const g = srgbToLinear(parseInt(hex.slice(3, 5), 16) / 255);
@@ -386,6 +347,7 @@ function hexToOkLab(hex: string): { L: number; a: number; b: number } {
         b: 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_,
     };
 }
+
 function okLabToHex(L: number, a: number, b: number): string {
     const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
     const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
@@ -403,10 +365,12 @@ function okLabToHex(L: number, a: number, b: number): string {
     const toHex = (c: number): string => Math.round(linearToSrgb(clamp(c)) * 255).toString(16).padStart(2, '0').toUpperCase();
     return `#${toHex(r)}${toHex(g)}${toHex(bb)}`;
 }
+
 function shiftLightness(hex: string, deltaL: number): string {
     const { L, a, b } = hexToOkLab(hex);
     return okLabToHex(Math.min(1, Math.max(0, L + deltaL)), a, b);
 }
+
 function complementaryHue(hex: string): string {
     const { L, a, b } = hexToOkLab(hex);
     return okLabToHex(L, -a, -b);
@@ -446,63 +410,6 @@ function applyPreview(): void {
     }
 }
 
-themeSelect?.addEventListener('change', applyPreview);
-picker?.addEventListener('input', applyPreview);
-useDefault?.addEventListener('change', applyPreview);
-cssTextarea?.addEventListener('input', applyPreview);
-applyPreview();
-
-// ── Custom-CSS helper ──────────────────────────────────────────────
-const variablesEl = document.querySelector<HTMLDivElement>('[data-helper-group="variables"]');
-const snippetsEl  = document.querySelector<HTMLDivElement>('[data-helper-group="snippets"]');
-const syntaxHint  = document.getElementById('customcss-syntax-hint');
-
-const CSS_VARIABLES: ReadonlyArray<{ name: string; hint: string }> = [
-    { name: '--color-primary',         hint: 'Hoofdkleur (knoppen, accenten)' },
-    { name: '--color-primary-content', hint: 'Tekstkleur op primaire vlakken' },
-    { name: '--color-secondary',       hint: 'Secundaire kleur' },
-    { name: '--color-accent',          hint: 'Accentkleur' },
-    { name: '--color-base-100',        hint: 'Hoofdoppervlak' },
-    { name: '--color-base-200',        hint: 'Sectie-achtergrond' },
-    { name: '--color-base-content',    hint: 'Hoofdtekstkleur' },
-    { name: '--color-warning',         hint: 'Waarschuwingskleur' },
-    { name: '--color-error',           hint: 'Foutkleur' },
-    { name: '--font-heading',          hint: 'Lettertype voor koppen' },
-    { name: '--radius-field',          hint: 'Hoekradius inputs/knoppen' },
-    { name: '--radius-box',            hint: 'Hoekradius kaarten' },
-];
-
-const SNIPPETS: ReadonlyArray<{ label: string; body: string }> = [
-    {
-        label: snippetsEl?.dataset.labelPrimaryColor ?? 'Override primaire kleur',
-        body: '[data-project-theme] {\n    --color-primary: #16A34A;\n}\n',
-    },
-    {
-        label: snippetsEl?.dataset.labelRoundedButtons ?? 'Afgeronde knoppen',
-        body: '[data-project-theme] .btn.btn-primary {\n    border-radius: 9999px;\n}\n',
-    },
-    {
-        label: snippetsEl?.dataset.labelIdeaCardShadow ?? 'Schaduw op ideekaarten',
-        body: '[data-project-theme] #ideas-list a {\n    box-shadow: 0 4px 12px rgba(0,0,0,0.08);\n}\n',
-    },
-    {
-        label: snippetsEl?.dataset.labelHeadingFont ?? 'Koplettertype',
-        body: '[data-project-theme] {\n    --font-heading: "Georgia", serif;\n}\n',
-    },
-    {
-        label: snippetsEl?.dataset.labelRoundedButtonsEverywhere ?? 'Afgeronde knoppen overal',
-        body: '[data-project-theme] {\n    --radius-field: 9999px;\n}\n',
-    },
-    {
-        label: snippetsEl?.dataset.labelBrandGradientHeader ?? 'Kleurverloop in kopbal',
-        body: '[data-project-theme] header {\n    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));\n}\n',
-    },
-    {
-        label: snippetsEl?.dataset.labelStrongerFocusRing ?? 'Sterkere focusring',
-        body: '[data-project-theme] :focus-visible {\n    outline: 3px solid var(--color-primary);\n}\n',
-    },
-];
-
 function insertAtCaret(text: string): void {
     if (!cssTextarea) return;
     const start = cssTextarea.selectionStart ?? cssTextarea.value.length;
@@ -526,18 +433,6 @@ function makeChip(label: string, title: string, onClick: () => void): HTMLButton
     b.title = title;
     b.addEventListener('click', onClick);
     return b;
-}
-
-if (variablesEl) {
-    for (const v of CSS_VARIABLES) {
-        variablesEl.appendChild(makeChip(v.name, v.hint, () => insertAtCaret(`${v.name}: ;`)));
-    }
-}
-
-if (snippetsEl) {
-    for (const s of SNIPPETS) {
-        snippetsEl.appendChild(makeChip(s.label, s.body, () => insertAtCaret(s.body)));
-    }
 }
 
 function updateSyntaxHint(): void {
@@ -564,14 +459,127 @@ function updateSyntaxHint(): void {
     }
 }
 
-cssTextarea?.addEventListener('input', updateSyntaxHint);
-updateSyntaxHint();
+export function initProjectStyle(): void {
+    picker     = document.getElementById('primary-color-picker') as HTMLInputElement | null;
+    hidden     = document.getElementById('PrimaryColor')         as HTMLInputElement | null;
+    useDefault = document.getElementById('use-theme-color')      as HTMLInputElement | null;
+    contrastWarning = document.getElementById('primary-color-contrast-warning');
+    contrastWarningText = contrastWarning?.querySelector<HTMLSpanElement>('[data-warning-text]') ?? null;
+    themeSelect  = document.getElementById('Theme')     as HTMLSelectElement   | null;
+    cssTextarea  = document.getElementById('CustomCss') as HTMLTextAreaElement | null;
+    syntaxHint   = document.getElementById('customcss-syntax-hint');
 
-const resetBtn = document.getElementById('customcss-reset') as HTMLButtonElement | null;
-resetBtn?.addEventListener('click', () => {
-    const msg = resetBtn.dataset.confirm ?? '';
-    if (msg && !confirm(msg)) return;
-    if (!cssTextarea) return;
-    cssTextarea.value = '';
-    cssTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-});
+    const previewHostLight = document.getElementById('theme-preview-light') as HTMLDivElement | null;
+    const previewHostDark  = document.getElementById('theme-preview-dark')  as HTMLDivElement | null;
+    const variablesEl = document.querySelector<HTMLDivElement>('[data-helper-group="variables"]');
+    const snippetsEl  = document.querySelector<HTMLDivElement>('[data-helper-group="snippets"]');
+
+    lightRefs = previewHostLight ? buildPreview(previewHostLight, 'light') : null;
+    darkRefs  = previewHostDark  ? buildPreview(previewHostDark,  'dark')  : null;
+
+    if (picker && hidden && useDefault) {
+        const initial = hidden.value.trim();
+        if (initial === '') {
+            useDefault.checked = true;
+            picker.disabled = true;
+        } else {
+            useDefault.checked = false;
+            picker.disabled = false;
+            picker.value = initial;
+            updateContrastWarning(initial);
+        }
+
+        useDefault.addEventListener('change', () => {
+            if (useDefault!.checked) {
+                picker!.disabled = true;
+                hidden!.value = '';
+                updateContrastWarning('');
+            } else {
+                picker!.disabled = false;
+                hidden!.value = picker!.value;
+                updateContrastWarning(picker!.value);
+            }
+        });
+
+        picker.addEventListener('input', () => {
+            if (!useDefault!.checked) hidden!.value = picker!.value;
+            updateContrastWarning(useDefault!.checked ? '' : picker!.value);
+        });
+
+        // Topic swatches: a click just fills the picker with a curated hex. Dispatching
+        // a synthetic 'input' reuses every existing picker listener (hidden value,
+        // contrast warning, preview) — no duplicated wiring.
+        document.getElementById('primary-color-swatches')
+            ?.querySelectorAll<HTMLButtonElement>('[data-swatch-color]')
+            .forEach(btn => btn.addEventListener('click', () => {
+                const hex = btn.dataset.swatchColor;
+                if (!hex) return;
+                useDefault!.checked = false;
+                picker!.disabled = false;
+                picker!.value = hex;
+                picker!.dispatchEvent(new Event('input', { bubbles: true }));
+            }));
+    }
+
+    themeSelect?.addEventListener('change', applyPreview);
+    picker?.addEventListener('input', applyPreview);
+    useDefault?.addEventListener('change', applyPreview);
+    cssTextarea?.addEventListener('input', applyPreview);
+    applyPreview();
+
+    // ── Custom-CSS helper ──────────────────────────────────────────────
+    const SNIPPETS: ReadonlyArray<{ label: string; body: string }> = [
+        {
+            label: snippetsEl?.dataset.labelPrimaryColor ?? 'Override primaire kleur',
+            body: '[data-project-theme] {\n    --color-primary: #16A34A;\n}\n',
+        },
+        {
+            label: snippetsEl?.dataset.labelRoundedButtons ?? 'Afgeronde knoppen',
+            body: '[data-project-theme] .btn.btn-primary {\n    border-radius: 9999px;\n}\n',
+        },
+        {
+            label: snippetsEl?.dataset.labelIdeaCardShadow ?? 'Schaduw op ideekaarten',
+            body: '[data-project-theme] #ideas-list a {\n    box-shadow: 0 4px 12px rgba(0,0,0,0.08);\n}\n',
+        },
+        {
+            label: snippetsEl?.dataset.labelHeadingFont ?? 'Koplettertype',
+            body: '[data-project-theme] {\n    --font-heading: "Georgia", serif;\n}\n',
+        },
+        {
+            label: snippetsEl?.dataset.labelRoundedButtonsEverywhere ?? 'Afgeronde knoppen overal',
+            body: '[data-project-theme] {\n    --radius-field: 9999px;\n}\n',
+        },
+        {
+            label: snippetsEl?.dataset.labelBrandGradientHeader ?? 'Kleurverloop in kopbal',
+            body: '[data-project-theme] header {\n    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));\n}\n',
+        },
+        {
+            label: snippetsEl?.dataset.labelStrongerFocusRing ?? 'Sterkere focusring',
+            body: '[data-project-theme] :focus-visible {\n    outline: 3px solid var(--color-primary);\n}\n',
+        },
+    ];
+
+    if (variablesEl) {
+        for (const v of CSS_VARIABLES) {
+            variablesEl.appendChild(makeChip(v.name, v.hint, () => insertAtCaret(`${v.name}: ;`)));
+        }
+    }
+
+    if (snippetsEl) {
+        for (const s of SNIPPETS) {
+            snippetsEl.appendChild(makeChip(s.label, s.body, () => insertAtCaret(s.body)));
+        }
+    }
+
+    cssTextarea?.addEventListener('input', updateSyntaxHint);
+    updateSyntaxHint();
+
+    const resetBtn = document.getElementById('customcss-reset') as HTMLButtonElement | null;
+    resetBtn?.addEventListener('click', () => {
+        const msg = resetBtn.dataset.confirm ?? '';
+        if (msg && !confirm(msg)) return;
+        if (!cssTextarea) return;
+        cssTextarea.value = '';
+        cssTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+}

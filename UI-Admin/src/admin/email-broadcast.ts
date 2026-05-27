@@ -6,11 +6,9 @@
 //   3. "Via platform" opens the per-language compose modal, which posts to
 //      ProjectController.BroadcastParticipantEmail and fans out into N rows.
 
-function readBroadcastToken(form: HTMLFormElement): string {
-    return form.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value ?? '';
-}
+import { getAntiForgeryToken } from '../lib/utils';
 
-document.addEventListener('DOMContentLoaded', () => {
+export function initEmailBroadcast(): void {
     const trigger      = document.querySelector<HTMLElement>('[data-broadcast-trigger]');
     const choiceModal  = document.getElementById('email-broadcast-choice-modal') as HTMLDialogElement | null;
     const composeModal = document.getElementById('email-broadcast-modal') as HTMLDialogElement | null;
@@ -66,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(form.dataset.sendUrl ?? '', {
                 method: 'POST',
-                headers: { 'RequestVerificationToken': readBroadcastToken(form) },
+                headers: { 'RequestVerificationToken': getAntiForgeryToken() },
                 body: new FormData(form),
             });
             if (!res.ok) {
@@ -85,4 +83,4 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.disabled = false;
         }
     });
-});
+}
