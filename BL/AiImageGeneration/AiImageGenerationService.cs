@@ -27,7 +27,11 @@ public sealed class AiImageGenerationService(
             {
                 var stripped = HtmlHelpers.StripHtml(introText);
                 if (stripped.Length > 300)
-                    stripped = stripped[..300].TrimEnd() + "…";
+                {
+                    var end = 300;
+                    if (char.IsHighSurrogate(stripped[end - 1])) end--;
+                    stripped = stripped[..end].TrimEnd() + "…";
+                }
                 if (!string.IsNullOrWhiteSpace(stripped))
                     contextParts.Add($" Achtergrondinformatie: \"{stripped}\".");
             }
@@ -36,7 +40,15 @@ public sealed class AiImageGenerationService(
             string prompt;
             if (!string.IsNullOrWhiteSpace(postCopy))
             {
-                var trimmed = postCopy.Length > 500 ? postCopy[..500].TrimEnd() + "…" : postCopy;
+                string trimmed;
+                var limit = 500;
+                if (postCopy.Length > limit)
+                {
+                    if (char.IsHighSurrogate(postCopy[limit - 1])) limit--;
+                    trimmed = postCopy[..limit].TrimEnd() + "…";
+                }
+                else
+                    trimmed = postCopy;
                 prompt = config.SocialPrompt
                     .Replace("{post_copy}", trimmed)
                     .Replace("{project_name}", projectName)
