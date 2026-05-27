@@ -1,21 +1,38 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Question
-@using SynapseEnqueteManagement.UI.Admin.Models.Enums
-@using SynapseEnqueteManagement.UI.Admin.Models.Project
 @using SynapseEnqueteManagement.UI.Admin.Models.Section
-@using System.Text.Json
-@model List<QuestionViewModel>
+@model List<AdminQuestionViewModel>
 @inject IViewLocalizer L
 @inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     Layout = "_Layout";
-    int projectId = (int)ViewData["ProjectId"];
+    int projectId = (int)ViewData["ProjectId"]!;
     string aiAssistance = ViewData["AiAssistance"]?.ToString() ?? "ProActive";
     var sections = ViewData["Sections"] as List<SectionViewModel> ?? new List<SectionViewModel>();
     var projectState = ViewData["ProjectState"]?.ToString() ?? "";
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
     if (isNew) ViewData["WizardStep"] = 2;
+    var supportedLanguageCodes = (ViewData["SupportedLanguageCodes"] as ICollection<string>)?.ToList()
+                                 ?? new List<string> { "nl" };
+    var defaultLanguageCode = ViewData["DefaultLanguageCode"]?.ToString() ?? "nl";
+    var supportedLangsJoined = string.Join(",", supportedLanguageCodes);
+
+    // Per-language placeholders prompt in the language being authored, not the
+    // admin's UI culture, so each tab's hint matches the content language.
+    string PlaceholderIn(string languageCode, string key)
+    {
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(languageCode);
+            return L[key].Value;
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
+    }
 }
 <div class="w-full flex flex-col gap-4">
 <div class="flex flex-col gap-4">
@@ -39,6 +56,8 @@
          data-ai-assistance="@aiAssistance"
          data-locked="@(isLocked ? "true" : "false")"
          data-is-new="@(isNew ? "true" : "false")"
+         data-default-language-code="@defaultLanguageCode"
+         data-supported-languages="@supportedLangsJoined"
          data-i18n-add-question="@L["AddQuestionHeading"]"
          data-i18n-empty-no-questions="@L["EmptyNoQuestions"]"
          data-i18n-empty-section-add="@L["EmptySectionAdd"]"
@@ -222,17 +241,68 @@
             <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
             <input type="hidden" name="questionId" id="QuestionId" value="" />
             <input type="hidden" name="QuestionFormat" id="QuestionFormat" value="MultipleChoice" />
-            <input type="hidden" name="AnswerChoicesRaw" id="AnswerChoicesRaw" />
             <input type="hidden" name="ParentQuestionId" id="ParentQuestionId" value="" />
             <input type="hidden" name="ChoiceIndex" id="ChoiceIndex" value="" />
 
-            <label class="form-control mb-3">
-                <div class="label"><span class="label-text text-xs">@L["QuestionTextLabel"]</span></div>
-                <textarea name="Text" id="QuestionText" rows="3"
-                          class="textarea textarea-bordered textarea-sm w-full resize-none"
-                          placeholder="@L["ModalQuestionPlaceholder"]"></textarea>
-                <span id="text-error" class="hidden text-error text-xs mt-1">@L["FieldRequiredError"]</span>
-            </label>
+            @* ── Per-language tab strip: Text + MediaText vary per supported
+                 language. Slot/parallel-array invariant: every language's
+                 Translations[i].AnswerChoicesRaw has the same number of slots
+                 (project-questions.ts joins each row's per-language values into
+                 these hidden inputs at submit time). ── *@
+            <div class="border border-base-300 rounded-lg bg-base-100 overflow-hidden mb-3">
+                <div role="tablist" id="question-translation-tabs"
+                     class="flex items-center gap-1 p-1.5 bg-base-200/60 border-b border-base-300">
+                    @for (var li = 0; li < supportedLanguageCodes.Count; li++)
+                    {
+                        var languageCode = supportedLanguageCodes[li];
+                        <button type="button" role="tab"
+                                class="question-translation-tab flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold text-base-content/70 hover:text-base-content hover:bg-base-100/60 transition-colors"
+                                data-translation-tab="@languageCode">
+                            <span class="w-2 h-2 rounded-full bg-warning shrink-0" data-translation-status></span>
+                            <span class="uppercase">@languageCode</span>
+                            @if (languageCode == defaultLanguageCode)
+                            {
+                                <span class="text-xs text-base-content/50 font-normal">· @L["DefaultLabel"]</span>
+                            }
+                        </button>
+                    }
+                </div>
+                <div class="p-4">
+                    @for (var li = 0; li < supportedLanguageCodes.Count; li++)
+                    {
+                        var languageCode = supportedLanguageCodes[li];
+                        <div data-translation-pane="@languageCode" class="flex flex-col gap-3" hidden>
+                            <input type="hidden" name="Translations[@li].LanguageCode" value="@languageCode" />
+
+                            <label class="form-control">
+                                <div class="label"><span class="label-text text-xs">@L["QuestionTextLabel"]</span></div>
+                                <textarea name="Translations[@li].Text" rows="3" maxlength="500"
+                                          class="textarea textarea-bordered textarea-sm w-full resize-none question-text-input"
+                                          data-language="@languageCode"
+                                          placeholder="@PlaceholderIn(languageCode, "ModalQuestionPlaceholder")"></textarea>
+                                <span class="hidden text-error text-xs mt-1 question-text-error" data-language="@languageCode"></span>
+                            </label>
+
+                            <label class="form-control">
+                                <div class="label">
+                                    <span class="label-text text-xs">@L["MediaTextMarkdownLabel"]</span>
+                                    <span class="label-text-alt text-xs" data-media-text-counter="@languageCode">0 / 2000</span>
+                                </div>
+                                <textarea name="Translations[@li].MediaText" rows="3" maxlength="2000"
+                                          class="textarea textarea-bordered textarea-sm w-full resize-none question-media-text-input"
+                                          data-language="@languageCode"
+                                          placeholder="@PlaceholderIn(languageCode, "MediaTextPlaceholder")"></textarea>
+                            </label>
+
+                            @* Hidden field populated at submit by project-questions.ts:
+                                 newline-separated answer choice values for this language,
+                                 one entry per slot. ── *@
+                            <input type="hidden" name="Translations[@li].AnswerChoicesRaw"
+                                   data-translation-field="answer-choices-raw" data-language="@languageCode" />
+                        </div>
+                    }
+                </div>
+            </div>
 
             @* Legacy type buttons — hidden, picker drives type selection; project-questions.ts still uses these to set QuestionFormat *@
             <div class="hidden">
@@ -313,15 +383,10 @@
 
                     <input type="hidden" name="MediaUrl" id="MediaUrl" value="" />
 
-                    <label class="form-control">
-                        <div class="label">
-                            <span class="label-text text-xs">@L["MediaTextMarkdownLabel"]</span>
-                            <span id="media-text-counter" class="label-text-alt text-xs">0 / 2000</span>
-                        </div>
-                        <textarea id="MediaText" name="MediaText" rows="4" maxlength="2000"
-                                  class="textarea textarea-bordered textarea-sm w-full resize-none"
-                                  placeholder="@L["MediaTextPlaceholder"]"></textarea>
-                    </label>
+                    @* MediaText moved to the per-language tab panes above — it
+                         varies per supported language and is bound to
+                         Translations[i].MediaText. The media block here only
+                         holds language-agnostic media settings. ── *@
                 </div>
             </details>
 

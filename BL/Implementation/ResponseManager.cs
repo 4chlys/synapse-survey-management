@@ -18,15 +18,16 @@ public class ResponseManager(
         var question = await questionRepository.ReadByIdWithTranslationsForUpdateAsync(questionId)
                        ?? throw new KeyNotFoundException($"Question {questionId} not found.");
 
+        var language = ContentLanguageResolver.Resolve(participant, null, null);
         var validator = validatorFactory.GetValidator(question.QuestionFormat);
-        validator.Validate(value, question);
+        validator.Validate(value, question, language?.Code);
 
         var response = new Response
         {
             Value = value,
             Question = question,
             Participant = participant,
-            Language = ContentLanguageResolver.Resolve(participant, null, null),
+            Language = language,
             CreatedAt = DateTime.UtcNow
         };
         EntityValidator.Validate(response);
@@ -40,8 +41,9 @@ public class ResponseManager(
         var question = await questionRepository.ReadByIdWithTranslationsForUpdateAsync(questionId)
                        ?? throw new KeyNotFoundException($"Question {questionId} not found.");
 
+        var language = ContentLanguageResolver.Resolve(participant, null, null);
         var validator = validatorFactory.GetValidator(question.QuestionFormat);
-        validator.Validate(value, question);
+        validator.Validate(value, question, language?.Code);
 
         var existing = await responseRepository.ReadByQuestionAndParticipantForUpdateAsync(questionId, participant.ParticipantId);
 
@@ -59,7 +61,7 @@ public class ResponseManager(
             Value = value,
             Question = question,
             Participant = participant,
-            Language = ContentLanguageResolver.Resolve(participant, null, null),
+            Language = language,
             CreatedAt = DateTime.UtcNow,
             IsCommitted = false
         };

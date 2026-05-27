@@ -1,6 +1,7 @@
 using System.Globalization;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 
 namespace SynapseEnqueteManagement.API.Services;
 
@@ -10,11 +11,7 @@ public static class ProjectDtoMapper
     {
         var t = ResolveTranslation(p);
         var active = ActiveCulture();
-        var introText = p.Introduction?.Translations
-                            .FirstOrDefault(it => it.Language?.Code == active)?.Text
-                        ?? p.Introduction?.Translations
-                            .FirstOrDefault(it => it.Language?.Code == p.DefaultLanguage?.Code)?.Text
-                        ?? p.Introduction?.Translations.FirstOrDefault()?.Text
+        var introText = TranslationPicker.Pick(p.Introduction?.Translations, active, p.DefaultLanguage?.Code)?.Text
                         ?? string.Empty;
         return new ProjectDto
         {
@@ -41,6 +38,14 @@ public static class ProjectDtoMapper
             LanguageCode = t?.Language?.Code ?? p.DefaultLanguage?.Code,
             DefaultLanguageCode = p.DefaultLanguage?.Code,
             SupportedLanguageCodes = p.SupportedLanguages.Select(l => l.Code).ToList(),
+            Translations = p.Translations.Select(pt => new ProjectTranslationDto
+            {
+                LanguageCode = pt.Language?.Code,
+                Name = pt.Name,
+                Topic = pt.Topic,
+                Introduction = p.Introduction?.Translations
+                    .FirstOrDefault(it => it.Language?.Code == pt.Language?.Code)?.Text,
+            }).ToList(),
             LastWizardStep = p.LastWizardStep,
             Theme = p.Theme.ToString(),
             PrimaryColor = p.PrimaryColor,
@@ -87,12 +92,7 @@ public static class ProjectDtoMapper
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
     private static ProjectTranslation ResolveTranslation(Project p)
-    {
-        var active = ActiveCulture();
-        return p.Translations.FirstOrDefault(t => t.Language?.Code == active)
-               ?? p.Translations.FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)
-               ?? p.Translations.FirstOrDefault();
-    }
+        => TranslationPicker.Pick(p.Translations, ActiveCulture(), p.DefaultLanguage?.Code);
 
     private static bool IsAiGeneratedImageUrl(string imageUrl) =>
         !string.IsNullOrWhiteSpace(imageUrl)

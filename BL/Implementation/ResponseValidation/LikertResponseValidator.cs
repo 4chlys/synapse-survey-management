@@ -10,7 +10,7 @@ public class LikertResponseValidator : IResponseValidator
 
     private const int DefaultMax = 10;
 
-    public void Validate(string value, Question question)
+    public void Validate(string value, Question question, string languageCode)
     {
         if (!int.TryParse(value, out var numericValue))
             throw new ArgumentException("Likert response must be a number.", nameof(value));

@@ -5,6 +5,7 @@ using SynapseEnqueteManagement.API.Helpers;
 using SynapseEnqueteManagement.BL.AiIdeaSupport;
 using SynapseEnqueteManagement.BL.AiSupport;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.InputValidation;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -64,18 +65,13 @@ public class IdeaSupportController(
 
         var projectName         = isFirstTurn ? (project?.ProjectPlatform?.Name ?? string.Empty) : string.Empty;
         var projectIntroduction = isFirstTurn
-            ? (project?.Introduction?.Translations
-                   .FirstOrDefault(t => t.Language?.Code == lang)?.Text
-               ?? project?.Introduction?.Translations
-                   .FirstOrDefault(t => t.Language?.Code == project?.DefaultLanguage?.Code)?.Text
-               ?? project?.Introduction?.Translations.FirstOrDefault()?.Text
+            ? (TranslationPicker.Pick(project?.Introduction?.Translations, lang, project?.DefaultLanguage?.Code)?.Text
                ?? string.Empty)
             : string.Empty;
         if (projectIntroduction.Length > platformConfig.IdeaSupport.MaxIntroductionLength)
             projectIntroduction = projectIntroduction[..platformConfig.IdeaSupport.MaxIntroductionLength] + "…";
 
-        var catTranslation = category.Translations?.FirstOrDefault(t => t.Language?.Code == lang)
-            ?? category.Translations?.FirstOrDefault();
+        var catTranslation = TranslationPicker.Pick(category.Translations, lang);
 
         var request = new IdeaSupportChatRequest
         {

@@ -7,4 +7,5 @@ public record CategoryDto
     public string Description { get; init; }
     public int IdeaCount { get; init; }
     public string LanguageCode { get; init; }
+    public ICollection<CategoryTranslationDto> Translations { get; init; } = new List<CategoryTranslationDto>();
 }

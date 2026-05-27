@@ -69,7 +69,7 @@ public class ResponsesController(
     public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, CreateResponseDto createDto,
         CancellationToken ct)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         var response =

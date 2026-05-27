@@ -8,6 +8,17 @@ interface IdeaFeedItem {
     createdAt: string;
 }
 
+function timeAgo(dateStr: string, locale: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1) return locale === 'nl' ? 'nu' : 'now';
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+}
+
 export function initIdeaFeedWidget(el: HTMLElement): () => void {
     const projectId = el.dataset.projectId ?? '';
     const apiBase = el.dataset.apiBase ?? '';
@@ -22,42 +33,71 @@ export function initIdeaFeedWidget(el: HTMLElement): () => void {
             if (!res.ok) return;
             const items: IdeaFeedItem[] = await res.json();
 
-            el.innerHTML = `<p class="text-xs text-base-content/50 mb-2">${titleText}</p>`;
+            el.innerHTML = '';
+
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-3';
+            header.innerHTML = `
+                <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">${titleText}</p>
+                <span class="text-[10px] font-bold text-primary/60 tabular-nums">${items.length}</span>
+            `;
+            el.appendChild(header);
+
             if (items.length === 0) {
                 const empty = document.createElement('p');
-                empty.className = 'text-base-content/40 text-xs';
+                empty.className = 'text-base-content/30 text-xs py-4 text-center';
                 empty.textContent = emptyText;
                 el.appendChild(empty);
                 return;
             }
 
+            const list = document.createElement('div');
+            list.className = 'flex flex-col gap-0.5';
+
             items.forEach(item => {
-                const time = new Date(item.createdAt).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+                const ago = timeAgo(item.createdAt, locale);
 
                 const row = document.createElement('div');
-                row.className = 'py-1 border-b border-base-300';
+                row.className = 'group flex items-start gap-2.5 py-2 px-2 -mx-2 rounded-lg hover:bg-base-200/60 transition-colors';
 
-                const top = document.createElement('div');
-                top.className = 'flex justify-between items-start gap-1';
+                const dot = document.createElement('div');
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-primary/40 mt-1.5 shrink-0';
 
-                const descSpan = document.createElement('span');
-                descSpan.className = 'text-base-content text-xs flex-1';
-                descSpan.textContent = item.description;
+                const body = document.createElement('div');
+                body.className = 'flex-1 min-w-0';
 
-                const timeSpan = document.createElement('span');
-                timeSpan.className = 'text-base-content/40 text-xs whitespace-nowrap';
-                timeSpan.textContent = time;
+                const descLine = document.createElement('p');
+                descLine.className = 'text-sm text-base-content leading-snug line-clamp-2';
+                descLine.textContent = item.description;
 
-                const catSpan = document.createElement('span');
-                catSpan.className = 'text-xs text-blue-400';
-                catSpan.textContent = item.categoryName;
+                const meta = document.createElement('div');
+                meta.className = 'flex items-center gap-2 mt-1';
 
-                top.appendChild(descSpan);
-                top.appendChild(timeSpan);
-                row.appendChild(top);
-                row.appendChild(catSpan);
-                el.appendChild(row);
+                const cat = document.createElement('span');
+                cat.className = 'text-[10px] font-medium text-primary/70 bg-primary/8 px-1.5 py-0.5 rounded';
+                cat.textContent = item.categoryName;
+
+                const reactions = document.createElement('span');
+                reactions.className = 'text-[10px] text-base-content/40 tabular-nums';
+                reactions.textContent = item.reactionCount > 0 ? `${item.reactionCount} reactions` : '';
+
+                meta.appendChild(cat);
+                if (item.reactionCount > 0) meta.appendChild(reactions);
+
+                body.appendChild(descLine);
+                body.appendChild(meta);
+
+                const time = document.createElement('span');
+                time.className = 'text-[10px] text-base-content/30 tabular-nums shrink-0 mt-0.5';
+                time.textContent = ago;
+
+                row.appendChild(dot);
+                row.appendChild(body);
+                row.appendChild(time);
+                list.appendChild(row);
             });
+
+            el.appendChild(list);
         } catch { /* ignore */ }
     }
 

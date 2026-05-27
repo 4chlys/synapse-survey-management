@@ -3,6 +3,7 @@ using SynapseEnqueteManagement.API.DTOs.AiUsage;
 using SynapseEnqueteManagement.API.DTOs.Stats;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -50,10 +51,8 @@ public class AdminPlatformStatsController(
         var projectRows = projects.Select(p =>
         {
             statsById.TryGetValue(p.ProjectId, out var ps);
-            var name = p.Translations
-                .FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)?.Name
-                ?? p.Translations.FirstOrDefault()?.Name
-                ?? string.Empty;
+            var name = TranslationPicker.Pick(p.Translations, p.DefaultLanguage?.Code)?.Name
+                       ?? string.Empty;
             return new ProjectStatsRowDto
             {
                 ProjectId               = p.ProjectId,
