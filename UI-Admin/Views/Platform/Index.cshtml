@@ -13,7 +13,7 @@
         <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
         <p class="text-sm text-base-content/40 mt-0.5">@platforms.Count @(platforms.Count == 1 ? "organisation" : "organisations")</p>
     </div>
-    <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm shrink-0 gap-1.5">
+    <a asp-controller="Platform" asp-action="Create" class="btn-action shrink-0">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -35,7 +35,7 @@
                 <p class="text-sm font-semibold text-base-content">@L["Empty"]</p>
                 <p class="text-xs text-base-content/40 mt-0.5">@L["NewButton"] to get started</p>
             </div>
-            <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm gap-1.5">
+            <a asp-controller="Platform" asp-action="Create" class="btn-action">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>

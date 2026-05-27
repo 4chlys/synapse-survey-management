@@ -17,7 +17,7 @@
                 </div>
             </div>
             <form method="dialog">
-                <button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button>
+                <button type="submit" class="btn-icon-close">×</button>
             </form>
         </div>
 
@@ -90,15 +90,15 @@
         <div id="summary-status" class="hidden flex flex-col gap-2 px-4 py-3 bg-base-200/60 rounded-xl text-sm">
             <div id="summary-status-text" class="text-base-content/70">@L["StatusQueued"]</div>
             <div id="summary-background-hint" class="text-base-content/50 text-xs hidden">@L["StatusBackgroundHint"]</div>
-            <a id="summary-download-link" href="#" class="btn btn-success btn-sm hidden">
+            <a id="summary-download-link" href="#" class="btn-approve hidden">
                 @L["DownloadButton"]
             </a>
             <div id="summary-error" class="text-error hidden"></div>
         </div>
 
         <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
-            <button id="summary-retry" type="button" class="btn btn-ghost btn-sm hidden">@L["RetryButton"]</button>
-            <button type="button" id="summary-submit" class="btn btn-primary btn-sm gap-1">
+            <button id="summary-retry" type="button" class="btn-cancel hidden">@L["RetryButton"]</button>
+            <button type="button" id="summary-submit" class="btn-action gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
                 </svg>

@@ -109,7 +109,7 @@
                             </div>
                         }
                         <div>
-                            <button type="submit" class="btn btn-primary btn-sm gap-1">
+                            <button type="submit" class="btn-action gap-1">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                                 @L["AddButton"]
                             </button>
@@ -230,14 +230,14 @@
                 </div>
                 @if (!isLocked)
                 {
-                    <div><button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button></div>
+                    <div><button type="submit" class="btn-save">@Shared["Common_Save"]</button></div>
                 }
             </form>
         </div>
     </details>
 
     <div class="flex justify-between">
-        <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["QuestionsLink"]</a>
+        <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn-cancel">← @L["QuestionsLink"]</a>
         <div class="flex items-center gap-2">
             @if (!isLocked)
             {
@@ -248,16 +248,16 @@
                     <input type="hidden" name="step" value="3" />
                     <input type="hidden" name="returnAction" value="Ideation" />
                     <button type="button" id="save-btn" data-project-count="@Model.Count"
-                            class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
+                            class="btn-save-outline">@Shared["Common_Save"]</button>
                 </form>
                 <button type="button" id="next-btn"
                         data-project-count="@Model.Count"
                         data-href="@Url.Action("Activate", new { projectId })"
-                        class="btn btn-primary btn-sm">@L["NextLink"] →</button>
+                        class="btn-save">@L["NextLink"] →</button>
             }
             else
             {
-                <a asp-action="Dashboard" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@L["DashboardLink"] →</a>
+                <a asp-action="Dashboard" asp-route-projectId="@projectId" class="btn-save">@L["DashboardLink"] →</a>
             }
         </div>
     </div>
