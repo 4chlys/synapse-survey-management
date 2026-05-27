@@ -5,7 +5,9 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
+  <data name="EmailBroadcast_Eyebrow" xml:space="preserve"><value>Broadcast</value></data>
   <data name="EmailBroadcast_Title" xml:space="preserve"><value>Send to all participants</value></data>
+  <data name="EmailBroadcast_LanguageSection" xml:space="preserve"><value>{0} translation</value></data>
   <data name="EmailBroadcast_Description" xml:space="preserve"><value>All participants will be BCC'd; each participant only sees their own address. Provide a translation per language so each recipient gets the version that matches their chosen language.</value></data>
   <data name="EmailBroadcast_SendButton" xml:space="preserve"><value>Send broadcast</value></data>
   <data name="EmailBroadcast_PerLanguageHint" xml:space="preserve"><value>Languages left empty are skipped — participants in those languages will not be sent anything.</value></data>

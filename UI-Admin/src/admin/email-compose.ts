@@ -23,7 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const composeForm    = document.getElementById('email-compose-form') as HTMLFormElement | null;
     const submitBtn      = document.getElementById('email-compose-submit') as HTMLButtonElement | null;
     const errorBox       = document.getElementById('email-compose-error') as HTMLElement | null;
-    const bccField       = document.getElementById('email-compose-bcc') as HTMLInputElement | null;
+    // BCC is a read-only <span> in the recipient strip, not an input — we
+    // set its textContent so the admin can see the participant address.
+    const bccField       = document.getElementById('email-compose-bcc') as HTMLElement | null;
     const participantHid = document.getElementById('email-compose-participant') as HTMLInputElement | null;
     const ideaHid        = document.getElementById('email-compose-ideaId') as HTMLInputElement | null;
     const languageHid    = document.getElementById('email-compose-language') as HTMLInputElement | null;
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         choiceModal.close();
         composeForm.reset();
         errorBox.classList.add('hidden');
-        bccField.value          = pendingParticipant;
+        bccField.textContent    = pendingParticipant;
         participantHid.value    = pendingParticipant;
         if (ideaHid)     ideaHid.value     = pendingIdeaId ?? '';
         if (languageHid) languageHid.value = pendingLanguage ?? '';
