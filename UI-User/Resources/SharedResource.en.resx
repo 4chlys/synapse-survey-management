@@ -54,6 +54,9 @@
   <data name="IdeaCard_UseAsStartingPoint" xml:space="preserve">
     <value>Use as starting point</value>
   </data>
+  <data name="ImageUpload_NoFile" xml:space="preserve">
+    <value>No file received.</value>
+  </data>
   <data name="ImageUpload_InvalidType" xml:space="preserve">
     <value>Only images (jpeg, png, webp, gif) are allowed.</value>
   </data>

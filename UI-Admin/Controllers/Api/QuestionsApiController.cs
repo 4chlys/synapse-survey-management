@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
 using SynapseEnqueteManagement.UI.Admin.Services.Project;
@@ -11,7 +12,10 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 [Authorize(Roles = "ProjectPlatformAdmin")]
 [RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questions")]
-public class QuestionsApiController(QuestionAdminService questionService, ProjectAdminService projectService) : ControllerBase
+public class QuestionsApiController(
+    QuestionAdminService questionService,
+    ProjectAdminService projectService,
+    IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<List<AdminQuestionViewModel>>> GetQuestions(int projectId)
@@ -28,7 +32,7 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project?.ProjectState is "Active" or "Archived")
-            return StatusCode(403, "Project is locked");
+            return StatusCode(403, localizer["Project_IsLocked"].Value);
         try
         {
             await questionService.MoveQuestionAsync(projectId, questionId,
@@ -46,7 +50,7 @@ public class QuestionsApiController(QuestionAdminService questionService, Projec
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project?.ProjectState is "Active" or "Archived")
-            return StatusCode(403, "Project is locked");
+            return StatusCode(403, localizer["Project_IsLocked"].Value);
         var questions = await questionService.GetQuestionsAsync(projectId);
         var question = questions.FirstOrDefault(q => q.QuestionId == questionId);
         if (question is null) return NotFound();

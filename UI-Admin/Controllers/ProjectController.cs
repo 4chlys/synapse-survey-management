@@ -690,9 +690,9 @@ public class ProjectController(
         CancellationToken ct)
     {
         if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
-        if (string.IsNullOrWhiteSpace(participantEmail)) return BadRequest("participantEmail required");
+        if (string.IsNullOrWhiteSpace(participantEmail)) return BadRequest(localizer["Email_ParticipantEmailRequired"].Value);
         if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
-            return BadRequest("subject/body required");
+            return BadRequest(localizer["Email_SubjectBodyRequired"].Value);
 
         var user = await userManager.GetUserAsync(User);
         if (user?.Email is null) return Unauthorized();
@@ -864,7 +864,7 @@ public class ProjectController(
         var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value, req);
 
         if (jobId is null)
-            return BadRequest(new { error = "Failed to start summary generation." });
+            return BadRequest(new { error = localizer["Project_SummaryGenerationFailed"].Value });
 
         return Ok(new { jobId });
     }

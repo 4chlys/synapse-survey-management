@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
@@ -12,7 +13,8 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 [Route("api/projects/{projectId:int}/social")]
 public class SocialMediaProxyController(
     SocialMediaProxyService proxy,
-    UploadAdminService uploadService) : Controller
+    UploadAdminService uploadService,
+    IStringLocalizer<SharedResource> localizer) : Controller
 {
     [HttpPost("generate"), IgnoreAntiforgeryToken]
     public async Task<IActionResult> Generate(int projectId)
@@ -35,7 +37,7 @@ public class SocialMediaProxyController(
     [HttpPost("upload-image"), IgnoreAntiforgeryToken]
     public async Task<IActionResult> UploadImage(int projectId, IFormFile file)
     {
-        if (file is null || file.Length == 0) return BadRequest(new { error = "No file" });
+        if (file is null || file.Length == 0) return BadRequest(new { error = localizer["Upload_NoFileProvided"].Value });
         var url = await uploadService.UploadImageAsync(file);
         return Ok(new { url });
     }

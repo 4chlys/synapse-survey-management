@@ -146,4 +146,15 @@ Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
   <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Eindsantwoord #{0}: vertaling ontbreekt voor taal: {1}</value></data>
 
   <data name="EmailBroadcast_NoMessages" xml:space="preserve"><value>Vul minstens één Onderwerp en Bericht in voordat je verzendt.</value></data>
+
+  <data name="Upload_NoFileProvided" xml:space="preserve"><value>Geen bestand ontvangen.</value></data>
+  <data name="Upload_InvalidMediaType" xml:space="preserve"><value>Ongeldig mediatype.</value></data>
+  <data name="Upload_FileTypeForbidden" xml:space="preserve"><value>Bestandstype '{0}' is niet toegestaan voor {1}.</value></data>
+  <data name="Upload_FileSizeExceeded" xml:space="preserve"><value>Bestand overschrijdt de limiet van {0} MB voor {1}.</value></data>
+
+  <data name="Project_IsLocked" xml:space="preserve"><value>Project is vergrendeld.</value></data>
+  <data name="Project_SummaryGenerationFailed" xml:space="preserve"><value>Samenvatting starten mislukt.</value></data>
+
+  <data name="Email_ParticipantEmailRequired" xml:space="preserve"><value>E-mailadres van deelnemer is verplicht.</value></data>
+  <data name="Email_SubjectBodyRequired" xml:space="preserve"><value>Onderwerp en bericht zijn verplicht.</value></data>
 </root>
