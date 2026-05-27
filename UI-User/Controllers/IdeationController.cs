@@ -18,8 +18,7 @@ public class IdeationController(
     EmojiService emojiService,
     IProjectApiService projectApiService,
     ParticipantService participantService,
-    IWebHostEnvironment env,
-    IConfiguration configuration,
+    IdeaImageUrlValidator imageUrlValidator,
     ILogger<IdeationController> logger,
     ISessionService sessionService)
     : Controller
@@ -171,7 +170,7 @@ public class IdeationController(
         string imageModerationToken = null,
         string languageCode = null)
     {
-        if (!string.IsNullOrEmpty(imageUrl) && !IsAllowedImageUrl(imageUrl))
+        if (!string.IsNullOrEmpty(imageUrl) && !imageUrlValidator.IsAllowed(imageUrl))
         {
             logger.LogWarning("Rejected imageUrl {Url} for project {ProjectId} — fails origin check", imageUrl, projectId);
             imageUrl = null;
@@ -277,26 +276,4 @@ public class IdeationController(
         return RedirectToAction("Detail", new { projectId, categoryId, ideaId });
     }
 
-    private bool IsAllowedImageUrl(string url)
-    {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
-
-        // Always allow uploads from the configured API origin (local dev + Cloud Run test with LocalStorage)
-        var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5159";
-        if (Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri)
-            && (uri.Scheme == "https" || uri.Scheme == "http")
-            && string.Equals(uri.Authority, apiUri.Authority, StringComparison.OrdinalIgnoreCase)
-            && uri.AbsolutePath.StartsWith("/uploads/tmp/ideas/", StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (env.IsDevelopment()) return false;
-
-        // In production, also allow GCS uploads
-        var bucket = configuration["GcsBucket"]
-                     ?? Environment.GetEnvironmentVariable("GCS_BUCKET")
-                     ?? "synapse-assets-prod";
-        return uri.Scheme == "https"
-            && string.Equals(uri.Host, "storage.googleapis.com", StringComparison.OrdinalIgnoreCase)
-            && uri.AbsolutePath.StartsWith($"/{bucket}/tmp/ideas/", StringComparison.OrdinalIgnoreCase);
-    }
 }

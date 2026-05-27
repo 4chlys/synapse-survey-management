@@ -102,11 +102,7 @@ public class ProjectController(
             Sections = BuildSections(sections)
         };
         ViewData["Project"] = project;
-        ViewData["ProjectId"]     = projectId.Value;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Settings";
+        SetProjectChrome(projectId.Value, project, "Settings");
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
@@ -167,10 +163,7 @@ public class ProjectController(
             {
                 var lockCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
                 if (IsProjectLocked(lockCheck))
-                {
-                    TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-                    return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
-                }
+                    return LockedRedirect(nameof(Create), new { projectId = model.ProjectId.Value });
                 project = await projectService.UpdateProjectAsync(
                     model.ProjectId.Value, activeTranslations, supportedCodes, model.DefaultLanguageCode,
                     model.ImageUrl, model.InteractionMode, model.MinAge, model.MaxAge,
@@ -221,19 +214,7 @@ public class ProjectController(
         }
 
         // Replace all sections: delete existing, recreate from form data filtered to supported languages.
-        var existingSections = await sectionService.GetSectionsAsync(project.ProjectId);
-        foreach (var s in existingSections)
-            await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
-
-        foreach (var sectionInput in model.Sections ?? new List<SectionInputViewModel>())
-        {
-            var translations = (sectionInput.Translations ?? new List<SectionTranslationViewModel>())
-                .Where(t => supportedCodes.Contains(t.LanguageCode) && !string.IsNullOrWhiteSpace(t.Name))
-                .Select(t => new SectionTranslationViewModel { LanguageCode = t.LanguageCode, Name = t.Name.Trim() })
-                .ToList();
-            if (translations.Count == 0) continue;
-            await sectionService.CreateSectionAsync(project.ProjectId, translations);
-        }
+        await sectionService.SyncSectionsAsync(project.ProjectId, model.Sections, supportedCodes);
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
@@ -259,11 +240,7 @@ public class ProjectController(
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 2);
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project?.Name ?? "";
-        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Questions";
+        SetProjectChrome(projectId, project, "Questions");
         ViewData["AiAssistance"]  = aiAssistance.ToString();
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
@@ -295,10 +272,7 @@ public class ProjectController(
     {
         var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForCreate))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Questions), new { projectId, isNew });
         if (ModelState.IsValid)
             await questionService.CreateQuestionAsync(projectId, model.QuestionFormat.ToString(),
                 model.IsMandatory, ResolveSlotCount(model), model.Translations,
@@ -316,10 +290,7 @@ public class ProjectController(
     {
         var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForUpdate))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Questions), new { projectId, isNew });
         if (ModelState.IsValid)
             await questionService.UpdateQuestionAsync(projectId, model.QuestionId,
                 model.QuestionFormat.ToString(), model.IsMandatory, ResolveSlotCount(model),
@@ -349,11 +320,7 @@ public class ProjectController(
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 3);
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project?.Name ?? "";
-        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categories";
+        SetProjectChrome(projectId, project, "Categories");
         ViewData["Project"]       = project;
         ViewData["Emojis"]        = emojis;
         ViewData["IsNew"]         = isNew;
@@ -367,10 +334,7 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(project))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Ideation), new { projectId, isNew });
 
         await projectService.UpdateProjectAsync(
             projectId, project.Translations, project.SupportedLanguageCodes, project.DefaultLanguageCode ?? "nl",
@@ -388,17 +352,9 @@ public class ProjectController(
     {
         var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForAdd))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Ideation), new { projectId, isNew });
         if (ModelState.IsValid)
             await categoryService.CreateCategoryAsync(projectId, model.Translations);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForAdd?.Name ?? "";
-        ViewData["PlatformName"]  = projectForAdd?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForAdd?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categories";
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
@@ -407,16 +363,8 @@ public class ProjectController(
     {
         var projectForDelete = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForDelete))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Ideation), new { projectId, isNew });
         await categoryService.DeleteCategoryAsync(projectId, categoryId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForDelete?.Name ?? "";
-        ViewData["PlatformName"]  = projectForDelete?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForDelete?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categories";
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
@@ -521,11 +469,7 @@ public class ProjectController(
         var questions  = await questionService.GetQuestionsAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Settings";
+        SetProjectChrome(projectId, project, "Settings");
         ViewData["QuestionCount"] = questions.Count;
         ViewData["CategoryCount"] = categories.Count;
         return View(project);
@@ -547,11 +491,7 @@ public class ProjectController(
             var questions  = await questionService.GetQuestionsAsync(projectId);
             var categories = await categoryService.GetCategoriesAsync(projectId);
 
-            ViewData["ProjectId"]          = projectId;
-            ViewData["ProjectName"]        = project.Name;
-            ViewData["PlatformName"]       = project.OrganisationName ?? "";
-            ViewData["ProjectState"]       = project.ProjectState ?? "";
-            ViewData["ActiveSection"]      = "Settings";
+            SetProjectChrome(projectId, project, "Settings");
             ViewData["QuestionCount"]      = questions.Count;
             ViewData["CategoryCount"]      = categories.Count;
             ViewData["ActivationProblems"] = ex.Problems;
@@ -567,11 +507,7 @@ public class ProjectController(
         if (project.ProjectState != "Active")
             return RedirectToAction(nameof(Dashboard), new { projectId });
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
+        SetProjectChrome(projectId, project, "Dashboard");
         return View(project);
     }
 
@@ -609,11 +545,7 @@ public class ProjectController(
             SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
         };
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
+        SetProjectChrome(projectId, project, "Dashboard");
         return View(dashboard);
     }
 
@@ -622,11 +554,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName;
-        ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideas";
+        SetProjectChrome(projectId, project, "Ideas");
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
@@ -658,11 +586,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName;
-        ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideas";
+        SetProjectChrome(projectId, project, "Ideas");
 
         var (items, total, approved, pending, flagged) =
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
@@ -710,11 +634,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName;
-        ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideas";
+        SetProjectChrome(projectId, project, "Ideas");
 
         var vm = await ideaService.GetIdeaDetailAsync(projectId, ideaId);
         if (vm is null) return NotFound();
@@ -812,18 +732,14 @@ public class ProjectController(
         if (project is null) return NotFound();
 
         var slots = await widgetPreferenceService.GetSlotsAsync(user.Id, projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
+        SetProjectChrome(projectId, project, "Dashboard");
         return View(new ConfigureDashboardViewModel
         {
             ProjectId = projectId,
             ProjectName = project.Name,
             Layout = Array.ConvertAll(slots, s => s.WidgetType),
             Slots = Array.ConvertAll(slots, s => new WidgetSlotInput { WidgetType = s.WidgetType, QuestionId = s.QuestionId }),
-            AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
+            AllWidgetTypes = WidgetSlotValidator.AllWidgetTypes
         });
     }
 
@@ -833,25 +749,8 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var source = model.Slots ?? [];
-        var sanitized = source
-            .Select(input =>
-            {
-                var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
-                    ? input.WidgetType
-                    : WidgetPreferenceService.DefaultLayout[0];
-                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
-                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
-            })
-            .ToArray();
-
+        var sanitized = WidgetSlotValidator.SanitizeSlots(model.Slots);
         await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
-        var projectForConfigure = await projectService.GetProjectByIdAsync(projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForConfigure?.Name ?? "";
-        ViewData["PlatformName"]  = projectForConfigure?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForConfigure?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
@@ -900,6 +799,26 @@ public class ProjectController(
 
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>
         project?.ProjectState is "Active" or "Archived";
+
+    // Lock-toast redirect for write actions on Active/Archived projects. Centralises the
+    // "Project_LockedNotEditable" TempData key so the message lives in one place.
+    private IActionResult LockedRedirect(string redirectAction, object routeValues)
+    {
+        TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
+        return RedirectToAction(redirectAction, routeValues);
+    }
+
+    // The five chrome ViewData keys that the project layout reads. Most actions set the same
+    // five with values derived from the project — pulled into one helper so adding a key only
+    // touches this method.
+    private void SetProjectChrome(int projectId, ProjectAdminViewModel project, string activeSection)
+    {
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project?.Name ?? "";
+        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project?.ProjectState ?? "";
+        ViewData["ActiveSection"] = activeSection;
+    }
 }
 
 // Request body for ProjectController.GenerateImage.

@@ -3,8 +3,8 @@ using SynapseEnqueteManagement.API.DTOs.AiUsage;
 using SynapseEnqueteManagement.API.DTOs.Stats;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.BL.Stats;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -13,22 +13,23 @@ namespace SynapseEnqueteManagement.API.Controllers;
 public class AdminPlatformStatsController(
     IProjectManager projectManager,
     IParticipantManager participantManager,
-    IAiUsageManager usageManager) : ControllerBase
+    IAiUsageManager usageManager,
+    ISystemStatsAggregator statsAggregator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<PlatformStatsDto>> GetStats([FromQuery] int platformId)
     {
         var projects = (await projectManager.GetAllProjectsAsync(platformId)).ToList();
-        var counts = new List<int>(projects.Count);
-        foreach (var p in projects)
-            counts.Add(await participantManager.CountCompletionsByProjectAsync(p.ProjectId));
+        var projectIds = projects.Select(p => p.ProjectId).ToList();
+        var participantStats = await participantManager.GetStatsByProjectsAsync(projectIds);
+        var rollup = statsAggregator.Aggregate(projects, participantStats);
 
         return Ok(new PlatformStatsDto
         {
-            ActiveCount   = projects.Count(p => p.ProjectState == ProjectState.Active),
-            DraftCount    = projects.Count(p => p.ProjectState == ProjectState.Draft),
-            ArchivedCount = projects.Count(p => p.ProjectState == ProjectState.Archived),
-            ParticipantCount = counts.Sum()
+            ActiveCount      = projects.Count(p => p.ProjectState == ProjectState.Active),
+            DraftCount       = projects.Count(p => p.ProjectState == ProjectState.Draft),
+            ArchivedCount    = projects.Count(p => p.ProjectState == ProjectState.Archived),
+            ParticipantCount = rollup.TotalCompleted,
         });
     }
 
@@ -46,68 +47,37 @@ public class AdminPlatformStatsController(
         var aiProject  = await usageManager.ReadServiceBreakdownByProjectsAsync(platformId, aiFrom);
 
 
-        var statsById = participantStats.ToDictionary(s => s.ProjectId);
+        var rollup = statsAggregator.Aggregate(projects, participantStats);
 
-        var projectRows = projects.Select(p =>
+        var projectRows = rollup.ProjectRows.Select(r => new ProjectStatsRowDto
         {
-            statsById.TryGetValue(p.ProjectId, out var ps);
-            var name = TranslationPicker.Pick(p.Translations, p.DefaultLanguage?.Code)?.Name
-                       ?? string.Empty;
-            return new ProjectStatsRowDto
-            {
-                ProjectId               = p.ProjectId,
-                ProjectName             = name,
-                ShortForm               = p.ShortForm,
-                PlatformId              = p.ProjectPlatformId,
-                PlatformName            = p.ProjectPlatform?.Name ?? string.Empty,
-                State                   = p.ProjectState.ToString(),
-                ParticipantCount        = ps?.CompletedCount ?? 0,
-                StartedCount            = ps?.StartedCount ?? 0,
-                AvgCompletionSeconds    = ps?.AvgCompletionSeconds ?? 0,
-                MedianCompletionSeconds = ps?.MedianCompletionSeconds ?? 0,
-                MinCompletionSeconds    = ps?.MinCompletionSeconds ?? 0,
-                Q1CompletionSeconds     = ps?.Q1CompletionSeconds ?? 0,
-                Q3CompletionSeconds     = ps?.Q3CompletionSeconds ?? 0,
-                MaxCompletionSeconds    = ps?.MaxCompletionSeconds ?? 0,
-            };
+            ProjectId               = r.ProjectId,
+            ProjectName             = r.ProjectName,
+            ShortForm               = r.ShortForm,
+            PlatformId              = r.PlatformId,
+            PlatformName            = r.PlatformName,
+            State                   = r.State,
+            ParticipantCount        = r.ParticipantCount,
+            StartedCount            = r.StartedCount,
+            AvgCompletionSeconds    = r.AvgCompletionSeconds,
+            MedianCompletionSeconds = r.MedianCompletionSeconds,
+            MinCompletionSeconds    = r.MinCompletionSeconds,
+            Q1CompletionSeconds     = r.Q1CompletionSeconds,
+            Q3CompletionSeconds     = r.Q3CompletionSeconds,
+            MaxCompletionSeconds    = r.MaxCompletionSeconds,
         }).ToList();
 
-        var platformRows = projects
-            .GroupBy(p => p.ProjectPlatformId)
-            .Select(g =>
-            {
-                var gProjects = g.ToList();
-                // Look up via statsById (O(1)) instead of scanning participantStats
-                var gStats = gProjects
-                    .Select(p => statsById.GetValueOrDefault(p.ProjectId))
-                    .Where(s => s is not null)
-                    .ToList();
-                int gCompleted = gStats.Sum(s => s.CompletedCount);
-                double gAvg = gCompleted > 0
-                    ? gStats.Sum(s => s.AvgCompletionSeconds * s.CompletedCount) / gCompleted
-                    : 0;
-                // avg-of-project-medians; true platform median needs per-participant durations
-                double gMedian = gStats.Count > 0 ? gStats.Average(s => s.MedianCompletionSeconds) : 0;
-                return new PlatformStatsRowDto
-                {
-                    PlatformId              = g.Key,
-                    Name                    = gProjects.First().ProjectPlatform?.Name ?? string.Empty,
-                    ActiveCount             = gProjects.Count(p => p.ProjectState == ProjectState.Active),
-                    DraftCount              = gProjects.Count(p => p.ProjectState == ProjectState.Draft),
-                    ArchivedCount           = gProjects.Count(p => p.ProjectState == ProjectState.Archived),
-                    ParticipantCount        = gCompleted,
-                    AvgCompletionSeconds    = gAvg,
-                    MedianCompletionSeconds = gMedian,
-                };
-            }).ToList();
-
-        int totalCompleted = participantStats.Sum(s => s.CompletedCount);
-        double systemAvg = totalCompleted > 0
-            ? participantStats.Sum(s => s.AvgCompletionSeconds * s.CompletedCount) / totalCompleted
-            : 0;
-        double systemMedian = participantStats.Count > 0
-            ? participantStats.Average(s => s.MedianCompletionSeconds)
-            : 0;
+        var platformRows = rollup.PlatformRows.Select(r => new PlatformStatsRowDto
+        {
+            PlatformId              = r.PlatformId,
+            Name                    = r.Name,
+            ActiveCount             = r.ActiveCount,
+            DraftCount              = r.DraftCount,
+            ArchivedCount           = r.ArchivedCount,
+            ParticipantCount        = r.ParticipantCount,
+            AvgCompletionSeconds    = r.AvgCompletionSeconds,
+            MedianCompletionSeconds = r.MedianCompletionSeconds,
+        }).ToList();
 
         return Ok(new SystemStatsDto
         {
@@ -115,9 +85,9 @@ public class AdminPlatformStatsController(
             ActiveProjectCount      = projects.Count(p => p.ProjectState == ProjectState.Active),
             DraftProjectCount       = projects.Count(p => p.ProjectState == ProjectState.Draft),
             ArchivedProjectCount    = projects.Count(p => p.ProjectState == ProjectState.Archived),
-            TotalParticipants       = totalCompleted,
-            AvgCompletionSeconds    = systemAvg,
-            MedianCompletionSeconds = systemMedian,
+            TotalParticipants       = rollup.TotalCompleted,
+            AvgCompletionSeconds    = rollup.SysAvg,
+            MedianCompletionSeconds = rollup.SysMedian,
             Platforms               = platformRows,
             Projects                = projectRows,
             AiUsageBySystem = aiSystem.Select(s => new ServiceCostAggregateDto(

@@ -6,8 +6,6 @@ using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
 
@@ -39,7 +37,7 @@ public class IdeasController(
 
         return Ok(new IdeaIndexResponseDto
         {
-            Items = result.Items.Select(i => MapIdeaToDto(i, participantId)),
+            Items = result.Items.Select(i => IdeaDtoMapper.ToDto(i, participantId)),
             Page = result.Page,
             PageSize = result.PageSize,
             TotalCount = result.TotalCount,
@@ -80,7 +78,7 @@ public class IdeasController(
 
         var ideas = await ideaManager.GetParticipantIdeasByCategoryWithCommentsReadOnlyAsync(categoryId,
             participant.ParticipantId);
-        return Ok(ideas.Select(i => MapIdeaToDto(i, participant.ParticipantId)));
+        return Ok(ideas.Select(i => IdeaDtoMapper.ToDto(i, participant.ParticipantId)));
     }
 
     [HttpGet("{ideaId}")]
@@ -91,7 +89,7 @@ public class IdeasController(
         var idea = await ideaManager.GetIdeaByIdWithCommentsReadOnlyAsync(ideaId);
         if (idea == null) return NotFound();
 
-        return Ok(MapIdeaToDto(idea, participantId));
+        return Ok(IdeaDtoMapper.ToDto(idea, participantId));
     }
 
     [HttpGet("{ideaId}/comments")]
@@ -107,7 +105,7 @@ public class IdeasController(
 
         return Ok(new PagedResult<TextCommentDto>
         {
-            Items = paged.Items.Select(c => MapCommentToDto(c, participantId, ideaAuthorParticipantId)),
+            Items = paged.Items.Select(c => IdeaDtoMapper.ToCommentDto(c, participantId, ideaAuthorParticipantId)),
             Page = paged.Page,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount
@@ -129,40 +127,4 @@ public class IdeasController(
         return (p?.ParticipantId, p?.Language?.Code);
     }
 
-    private static IdeaDto MapIdeaToDto(Idea i, int? participantId) => new()
-    {
-        IdeaId = i.IdeaId,
-        Description = i.Description,
-        ImageUrl = i.ImageUrl,
-        CreatedAt = i.CreatedAt,
-        CommentsCount = i.Comments.OfType<TextComment>().Count(),
-        IsOwnedByCurrentUser = participantId.HasValue && i.Participant?.ParticipantId == participantId.Value,
-        IsFlagged = i.Status == ModerationStatus.Flagged,
-        LanguageCode = i.Language?.Code,
-        Emojis = GroupEmojiReactions(i.Comments.OfType<IconComment>(), participantId)
-    };
-
-    private static TextCommentDto MapCommentToDto(TextComment c, int? participantId, int? ideaAuthorParticipantId = null) => new()
-    {
-        CommentId = c.CommentId,
-        Text = c.Text,
-        CreatedAt = c.CreatedAt,
-        IsOwnedByCurrentUser = participantId.HasValue && c.Participant?.ParticipantId == participantId.Value,
-        IsPostedByIdeaAuthor = ideaAuthorParticipantId.HasValue && c.Participant?.ParticipantId == ideaAuthorParticipantId.Value,
-        IsFlagged = c.ModerationStatus == ModerationStatus.Flagged,
-        LanguageCode = c.Language?.Code,
-        Emojis = GroupEmojiReactions(c.EmojiReactions.Where(r => r.Emoji != null), participantId)
-    };
-
-    private static List<IconCommentDto> GroupEmojiReactions(IEnumerable<IconComment> reactions, int? participantId) =>
-        reactions
-            .GroupBy(r => r.Emoji.EmojiId)
-            .Select(g => new IconCommentDto
-            {
-                EmojiId = g.Key,
-                Symbol = g.First().Emoji.Symbol,
-                Count = g.Count(),
-                PostedByCurrentUser = participantId.HasValue &&
-                                      g.Any(r => r.Participant?.ParticipantId == participantId.Value)
-            }).ToList();
 }

@@ -1,8 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.BL.Helpers;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -23,7 +22,7 @@ public class CategoriesController(
         var categories = (await categoryManager.GetCategoriesForProjectReadOnlyAsync(projectId)).ToList();
         var lang = ActiveCulture();
         var counts = await ideaManager.CountVisibleByCategoriesAsync(categories.Select(c => c.CategoryId), lang);
-        return Ok(categories.Select(c => MapToDto(c, counts.GetValueOrDefault(c.CategoryId, 0), lang)));
+        return Ok(categories.Select(c => CategoryDtoMapper.ToDto(c, counts.GetValueOrDefault(c.CategoryId, 0), lang)));
     }
 
     [HttpGet("{id}")]
@@ -33,7 +32,7 @@ public class CategoriesController(
         if (category is null || category.Project?.ProjectId != projectId) return NotFound();
         var lang = ActiveCulture();
         var count = await ideaManager.CountVisibleByCategoryAsync(id, lang);
-        return Ok(MapToDto(category, count, lang));
+        return Ok(CategoryDtoMapper.ToDto(category, count, lang));
     }
 
     [HttpPost]
@@ -46,7 +45,7 @@ public class CategoriesController(
 
         var translations = dto.Translations.Select(t => new CategoryTranslationInput(t.LanguageCode, t.Name, t.Description));
         var category = await categoryManager.CreateCategoryAsync(project, translations, ct);
-        return Created(string.Empty, MapToAdminDto(category, 0));
+        return Created(string.Empty, CategoryDtoMapper.ToAdminDto(category, 0));
     }
 
     [HttpPut("{id}")]
@@ -70,34 +69,4 @@ public class CategoriesController(
         return NoContent();
     }
 
-    private static CategoryDto MapToDto(Category category, int ideaCount, string languageCode)
-    {
-        var t = TranslationPicker.Pick(category.Translations, languageCode, category.Project?.DefaultLanguage?.Code);
-        return new CategoryDto
-        {
-            CategoryId = category.CategoryId,
-            Name = t?.Name ?? string.Empty,
-            Description = t?.Description ?? string.Empty,
-            IdeaCount = ideaCount,
-            LanguageCode = t?.Language?.Code ?? languageCode,
-            Translations = category.Translations.Select(tr => new CategoryTranslationDto
-            {
-                LanguageCode = tr.Language?.Code,
-                Name = tr.Name,
-                Description = tr.Description,
-            }).ToList(),
-        };
-    }
-
-    private static AdminCategoryDto MapToAdminDto(Category category, int ideaCount) => new()
-    {
-        CategoryId = category.CategoryId,
-        IdeaCount = ideaCount,
-        Translations = category.Translations.Select(t => new CategoryTranslationDto
-        {
-            LanguageCode = t.Language?.Code,
-            Name = t.Name,
-            Description = t.Description,
-        }).ToList(),
-    };
 }

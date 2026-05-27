@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.BL.Helpers;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -23,7 +22,7 @@ public class SectionsController(
         }
 
         var sections = await sectionManager.GetSectionsReadOnlyAsync(projectId);
-        var dtos = sections.Select(s => MapToDto(s, languageCode));
+        var dtos = sections.Select(s => SectionDtoMapper.ToDto(s, languageCode));
         return Ok(dtos);
     }
 
@@ -38,7 +37,7 @@ public class SectionsController(
         if (section is null)
             return NotFound();
 
-        return Created(string.Empty, MapToAdminDto(section));
+        return Created(string.Empty, SectionDtoMapper.ToAdminDto(section));
     }
 
     [HttpPut("{sectionId}")]
@@ -63,34 +62,4 @@ public class SectionsController(
 
         return NoContent();
     }
-
-    private static SectionDto MapToDto(Section section, string languageCode)
-    {
-        var translation = TranslationPicker.Pick(section.Translations, languageCode);
-
-        return new SectionDto
-        {
-            SectionId = section.SectionId,
-            Name = translation?.Name,
-            Description = translation?.Description,
-            Translations = section.Translations?.Select(t => new SectionTranslationDto
-            {
-                LanguageCode = t.Language?.Code,
-                Name = t.Name,
-                Description = t.Description
-            }).ToList() ?? new List<SectionTranslationDto>()
-        };
-    }
-
-    private static AdminSectionDto MapToAdminDto(Section section)
-        => new()
-        {
-            SectionId = section.SectionId,
-            Translations = section.Translations?.Select(t => new SectionTranslationDto
-            {
-                LanguageCode = t.Language?.Code,
-                Name = t.Name,
-                Description = t.Description
-            }).ToList() ?? new List<SectionTranslationDto>()
-        };
 }

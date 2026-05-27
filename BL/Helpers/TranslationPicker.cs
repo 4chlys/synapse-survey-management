@@ -18,13 +18,16 @@ public static class TranslationPicker
 
     // 3-tier: requested → project default → first available. Use when the caller knows
     // the project's default language and wants stat/export output to land there if the
-    // requested language is missing.
+    // requested language is missing (also covers UI-culture + project-default scenarios
+    // like social-post generation). The materialisation prevents triple enumeration when
+    // callers pass a LINQ chain.
     public static T Pick<T>(IEnumerable<T> translations, string languageCode, string defaultLanguageCode)
         where T : class, IHasLanguage
     {
         if (translations is null) return null;
-        return translations.FirstOrDefault(t => t.Language?.Code == languageCode)
-            ?? translations.FirstOrDefault(t => t.Language?.Code == defaultLanguageCode)
-            ?? translations.FirstOrDefault();
+        var list = translations as IList<T> ?? translations.ToList();
+        return list.FirstOrDefault(t => t.Language?.Code == languageCode)
+            ?? list.FirstOrDefault(t => t.Language?.Code == defaultLanguageCode)
+            ?? list.FirstOrDefault();
     }
 }

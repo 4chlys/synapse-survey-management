@@ -1,4 +1,4 @@
-namespace SynapseEnqueteManagement.DAL;
+namespace SynapseEnqueteManagement.BL.Domain.Stats;
 
 public sealed record ProjectParticipantStats(
     int ProjectId,
