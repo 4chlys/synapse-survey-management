@@ -1,4 +1,4 @@
-using SynapseEnqueteManagement.BL.Domain.Ai;
+using SynapseEnqueteManagement.UI.Admin.Models.Ai;
 using AiAssistanceType = SynapseEnqueteManagement.UI.Admin.Models.Enums.AiAssistanceType;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Settings;

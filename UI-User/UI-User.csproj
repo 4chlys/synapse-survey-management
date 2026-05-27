@@ -40,6 +40,17 @@
     <_ContentIncludedByDefault Remove="Views\ProjectLandingPage\Inactive.cshtml" />
     <_ContentIncludedByDefault Remove="Views\ProjectLandingPage\Index.cshtml" />
     <_ContentIncludedByDefault Remove="Views\ProjectLandingPage\NotFound.cshtml" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\fonts\inter\latin.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\fonts\nunito\latin.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\fonts\source-sans-3\latin.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\fonts\space-grotesk\latin.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-B09h3PKj.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-BO5iwG1N.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-CizAahWu.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-CK4cgwFd.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-Covlb-u4.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-DfnoDCE2.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\main-DKFlX2G6.js" />
   </ItemGroup>
 
   <ItemGroup>

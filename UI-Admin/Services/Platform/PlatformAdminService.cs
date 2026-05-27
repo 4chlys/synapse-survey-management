@@ -1,27 +1,32 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
-public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser> userManager)
+// Platform-level data + admin-user queries used by UI-Admin.
+// Platform CRUD (ProjectPlatform rows) is delegated to the API via PlatformApiService —
+// UI-Admin no longer knows about the BL/Domain ProjectPlatform entity.
+// PlatformSettings + SystemAiSettings tables are UI-Admin-owned and still queried locally.
+public class PlatformAdminService(
+    AdminDbContext db,
+    UserManager<ApplicationUser> userManager,
+    PlatformApiService platformApi)
 {
-    public async Task<List<ProjectPlatform>> GetAllPlatformsAsync()
-    {
-        return await db.ProjectPlatforms.OrderBy(p => p.Name).ToListAsync();
-    }
+    // ---- Platform CRUD (delegated to API) ----
 
-    public async Task<ProjectPlatform> GetPlatformByIdAsync(int id)
-    {
-        return await db.ProjectPlatforms.FindAsync(id);
-    }
+    public Task<List<PlatformDto>> GetAllPlatformsAsync()
+        => platformApi.GetAllAsync();
 
-    // Basic platform info as a view model, so controllers don't have to touch the domain entity.
+    public Task<PlatformDto> GetPlatformByIdAsync(int id)
+        => platformApi.GetByIdAsync(id);
+
+    // Basic platform info as a view model, so controllers don't have to touch the
+    // platform DTO directly. Backed by the API (no EF access to ProjectPlatforms).
     public async Task<PlatformFormViewModel> GetPlatformFormAsync(int id)
     {
-        var platform = await db.ProjectPlatforms.FindAsync(id);
+        var platform = await platformApi.GetByIdAsync(id);
         return platform is null
             ? null
             : new PlatformFormViewModel
@@ -33,29 +38,13 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
             };
     }
 
-    public async Task<ProjectPlatform> CreatePlatformAsync(string name, string logoUrl, string websiteUrl)
-    {
-        var platform = new ProjectPlatform
-        {
-            Name = name,
-            LogoUrl = logoUrl,
-            WebsiteUrl = websiteUrl,
-            CreatedAt = DateTime.UtcNow
-        };
-        db.ProjectPlatforms.Add(platform);
-        await db.SaveChangesAsync();
-        return platform;
-    }
+    public Task<PlatformDto> CreatePlatformAsync(string name, string logoUrl, string websiteUrl)
+        => platformApi.CreateAsync(name, logoUrl, websiteUrl);
 
-    public async Task UpdatePlatformAsync(int id, string name, string logoUrl, string websiteUrl)
-    {
-        var platform = await db.ProjectPlatforms.FindAsync(id);
-        if (platform is null) return;
-        platform.Name = name;
-        platform.LogoUrl = logoUrl;
-        platform.WebsiteUrl = websiteUrl;
-        await db.SaveChangesAsync();
-    }
+    public Task UpdatePlatformAsync(int id, string name, string logoUrl, string websiteUrl)
+        => platformApi.UpdateAsync(id, name, logoUrl, websiteUrl);
+
+    // ---- Admin users (local Identity store) ----
 
     public async Task<List<ApplicationUser>> GetAdminsForPlatformAsync(int platformId)
     {
@@ -72,15 +61,26 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
         return await userManager.DeleteAsync(user);
     }
 
+    // Returns admins with non-null platform id. Sorted by platform name (resolved via the
+    // API instead of an EF join), then by email. Page is small — in-memory sort is fine.
     public async Task<List<ApplicationUser>> GetAllAdminsAsync()
     {
-        return await userManager.Users
-            .Include(u => u.ProjectPlatform)
+        var admins = await userManager.Users
             .Where(u => u.ProjectPlatformId != null)
-            .OrderBy(u => u.ProjectPlatform.Name)
-            .ThenBy(u => u.Email)
             .ToListAsync();
+
+        if (admins.Count == 0) return admins;
+
+        var platforms = await platformApi.GetAllAsync();
+        var nameById = platforms.ToDictionary(p => p.ProjectPlatformId, p => p.Name ?? string.Empty);
+
+        return admins
+            .OrderBy(u => nameById.TryGetValue(u.ProjectPlatformId!.Value, out var n) ? n : string.Empty)
+            .ThenBy(u => u.Email)
+            .ToList();
     }
+
+    // ---- PlatformSettings (UI-Admin-owned table) ----
 
     public async Task<PlatformSettings> GetPlatformSettingsAsync(int platformId)
     {

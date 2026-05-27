@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
-using SynapseEnqueteManagement.BL.Ai;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
@@ -154,6 +153,8 @@ builder.Services.AddHttpClient<SystemStatsAdminService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 builder.Services.AddHttpClient<EmailApiService>(ConfigureApiClient)
     .ConfigurePrimaryHttpMessageHandler(CreateHandler);
+builder.Services.AddHttpClient<PlatformApiService>(ConfigureApiClient)
+    .ConfigurePrimaryHttpMessageHandler(CreateHandler);
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -169,9 +170,6 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
-
-builder.Services.AddSingleton(AiConfigLoader.Load(
-    LoggerFactory.Create(b => b.AddConsole()).CreateLogger("AiConfig")));
 
 builder.Services.AddScoped<PlatformAdminService>();
 builder.Services.AddScoped<AdminInviteService>();

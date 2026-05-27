@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
-using SynapseEnqueteManagement.BL.Ai;
-using SynapseEnqueteManagement.BL.Domain.Ai;
+using SynapseEnqueteManagement.UI.Admin.Models.Ai;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Settings;
 using SynapseEnqueteManagement.UI.Admin.Services.Ai;
@@ -17,7 +16,6 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 public class SettingsController(
     PlatformAdminService platformService,
     UserManager<ApplicationUser> userManager,
-    AiConfig aiConfig,
     AiAdminService aiAdminService,
     IStringLocalizer<SharedResource> localizer) : Controller
 {
@@ -169,9 +167,9 @@ public class SettingsController(
             .ToList();
         var unavailableModelIds = modelAvailability.Where(kv => !kv.Value).Select(kv => kv.Key).ToHashSet();
 
-        // API-fetched prompts are preferred; fall back to locally loaded AiConfig if the API is unreachable.
-        string Fallback(string apiPrompt, string localPrompt) =>
-            !string.IsNullOrEmpty(apiPrompt) ? apiPrompt : localPrompt;
+        // The API loads ai-config.json and serves the platform-wide default prompts via
+        // aiAdminService.GetGlobalPromptsAsync() — that is the single source of truth.
+        // UI-Admin shows the platform-specific override if any, otherwise the API default.
 
         var basicInfo = new PlatformAdminBasicInfoViewModel(
             settings?.ContactName      ?? string.Empty,
@@ -190,14 +188,14 @@ public class SettingsController(
         );
 
         var prompts = new PlatformAdminPromptsViewModel([
-            new("Moderation",        localizer["Prompt_Moderation"].Value,        settings?.PromptModeration        ?? Fallback(globalPrompts.Moderation,        aiConfig.Moderation.ModerationPrompt),        settings?.PromptModeration        is not null),
-            new("CommentModeration", localizer["Prompt_CommentModeration"].Value, settings?.PromptCommentModeration ?? Fallback(globalPrompts.CommentModeration,  aiConfig.Moderation.CommentModerationPrompt),  settings?.PromptCommentModeration is not null),
-            new("Rewrite",           localizer["Prompt_Rewrite"].Value,           settings?.PromptRewrite           ?? Fallback(globalPrompts.Rewrite,            aiConfig.Moderation.RewritePrompt),            settings?.PromptRewrite           is not null),
-            new("ImageModeration",   localizer["Prompt_ImageModeration"].Value,   settings?.PromptImageModeration   ?? Fallback(globalPrompts.ImageModeration,    aiConfig.Moderation.ImageModerationPrompt),    settings?.PromptImageModeration   is not null),
-            new("IdeaSupport",       localizer["Prompt_IdeaSupport"].Value,       settings?.PromptIdeaSupport       ?? Fallback(globalPrompts.IdeaSupport,        aiConfig.IdeaSupport.SystemPrompt),            settings?.PromptIdeaSupport       is not null),
-            new("CommentSupport",    localizer["Prompt_CommentSupport"].Value,    settings?.PromptCommentSupport    ?? Fallback(globalPrompts.CommentSupport,     aiConfig.CommentSupport.SystemPrompt),         settings?.PromptCommentSupport    is not null),
-            new("QuestionSupport",   localizer["Prompt_QuestionSupport"].Value,   settings?.PromptQuestionSupport   ?? Fallback(globalPrompts.QuestionSupport,    aiConfig.QuestionSupport.SystemPrompt),        settings?.PromptQuestionSupport   is not null),
-            new("IdeaSummary",       localizer["Prompt_IdeaSummary"].Value,       settings?.PromptIdeaSummary       ?? Fallback(globalPrompts.IdeaSummary,        aiConfig.IdeaSummary.SystemPrompt),            settings?.PromptIdeaSummary       is not null),
+            new("Moderation",        localizer["Prompt_Moderation"].Value,        settings?.PromptModeration        ?? globalPrompts.Moderation        ?? string.Empty, settings?.PromptModeration        is not null),
+            new("CommentModeration", localizer["Prompt_CommentModeration"].Value, settings?.PromptCommentModeration ?? globalPrompts.CommentModeration ?? string.Empty, settings?.PromptCommentModeration is not null),
+            new("Rewrite",           localizer["Prompt_Rewrite"].Value,           settings?.PromptRewrite           ?? globalPrompts.Rewrite           ?? string.Empty, settings?.PromptRewrite           is not null),
+            new("ImageModeration",   localizer["Prompt_ImageModeration"].Value,   settings?.PromptImageModeration   ?? globalPrompts.ImageModeration   ?? string.Empty, settings?.PromptImageModeration   is not null),
+            new("IdeaSupport",       localizer["Prompt_IdeaSupport"].Value,       settings?.PromptIdeaSupport       ?? globalPrompts.IdeaSupport       ?? string.Empty, settings?.PromptIdeaSupport       is not null),
+            new("CommentSupport",    localizer["Prompt_CommentSupport"].Value,    settings?.PromptCommentSupport    ?? globalPrompts.CommentSupport    ?? string.Empty, settings?.PromptCommentSupport    is not null),
+            new("QuestionSupport",   localizer["Prompt_QuestionSupport"].Value,   settings?.PromptQuestionSupport   ?? globalPrompts.QuestionSupport   ?? string.Empty, settings?.PromptQuestionSupport   is not null),
+            new("IdeaSummary",       localizer["Prompt_IdeaSummary"].Value,       settings?.PromptIdeaSummary       ?? globalPrompts.IdeaSummary       ?? string.Empty, settings?.PromptIdeaSummary       is not null),
         ]);
 
         return new PlatformAdminSettingsViewModel(platformId, platformName, basicInfo, aiSettings, prompts, settings?.IdeaSummaryMaxIdeas ?? 200);
