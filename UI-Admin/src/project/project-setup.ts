@@ -2,7 +2,7 @@ import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
 import { toast, bindDirtyTracking } from '../lib/notify';
-import type { LangCtx } from './types';
+import type { LangCtx } from '../lib/project-types';
 
 const MAX_INTRO = 5000;
 const QUILL_EMPTY = '<p><br></p>';

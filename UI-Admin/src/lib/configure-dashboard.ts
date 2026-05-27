@@ -1,4 +1,4 @@
-import type { WidgetOption } from './types';
+import type { WidgetOption } from './project-types';
 
 let _opts: WidgetOption[] = [];
 let _container: HTMLElement;

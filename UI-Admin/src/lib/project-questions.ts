@@ -1,7 +1,7 @@
-import { toast } from '../lib/notify';
-import { wireQuestionMediaPanel, hydrateMediaPanel } from '../lib/question-media';
-import { readQuestionsI18n, readFormI18n } from '../lib/questions-i18n';
-import type { QuestionTranslationData, EndingAnswerSlotData } from './types';
+import { toast } from './notify';
+import { wireQuestionMediaPanel, hydrateMediaPanel } from './question-media';
+import { readQuestionsI18n, readFormI18n } from './questions-i18n';
+import type { QuestionTranslationData, EndingAnswerSlotData } from './project-types';
 
 // Module-level state set by initProjectQuestions()
 let _modal: HTMLDivElement | null = null;

@@ -2,7 +2,7 @@
 // checkbox both feed a single hidden input (PrimaryColor) so an empty value
 // reaches the server when the user wants the theme's own colour.
 
-import type { PreviewRefs } from './types';
+import type { PreviewRefs } from './project-types';
 
 // Mirror of UI-User/src/main.css per-project-theme blocks. Keep in sync
 // when UI-User adds or changes a theme. Injected into the shadow root so

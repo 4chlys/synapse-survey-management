@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Localization;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 using SynapseEnqueteManagement.UI.Admin.Filters;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
@@ -11,7 +12,9 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers.Api;
 [Authorize(Roles = "ProjectPlatformAdmin")]
 [RequireProjectPlatformOwnership]
 [Route("api/admin/projects/{projectId:int}/questions/media")]
-public class QuestionMediaApiController(IQuestionMediaService mediaService) : ControllerBase
+public class QuestionMediaApiController(
+    IQuestionMediaService mediaService,
+    IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
     private static readonly HashSet<string> AllowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     private static readonly HashSet<string> AllowedVideoTypes = ["video/mp4", "video/webm"];
@@ -25,7 +28,7 @@ public class QuestionMediaApiController(IQuestionMediaService mediaService) : Co
         [FromQuery] QuestionMediaType mediaType, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
-            return BadRequest("No file provided.");
+            return BadRequest(localizer["Upload_NoFileProvided"].Value);
 
         var (allowed, maxBytes) = mediaType switch
         {
@@ -36,11 +39,11 @@ public class QuestionMediaApiController(IQuestionMediaService mediaService) : Co
         };
 
         if (allowed is null)
-            return BadRequest("Invalid media type.");
+            return BadRequest(localizer["Upload_InvalidMediaType"].Value);
         if (!allowed.Contains(file.ContentType))
-            return BadRequest($"File type '{file.ContentType}' is not allowed for {mediaType}.");
+            return BadRequest(string.Format(localizer["Upload_FileTypeForbidden"].Value, file.ContentType, mediaType));
         if (file.Length > maxBytes)
-            return BadRequest($"File exceeds the {maxBytes / (1024 * 1024)} MB limit for {mediaType}.");
+            return BadRequest(string.Format(localizer["Upload_FileSizeExceeded"].Value, maxBytes / (1024 * 1024), mediaType));
 
         var result = await mediaService.UploadAsync(file, mediaType, ct);
         if (!result.Success)

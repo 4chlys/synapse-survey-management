@@ -146,4 +146,15 @@ Set your password via the link below (valid for 24 hours):
   <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Ending answer #{0}: missing translation for language: {1}</value></data>
 
   <data name="EmailBroadcast_NoMessages" xml:space="preserve"><value>Provide at least one Subject and Body before sending.</value></data>
+
+  <data name="Upload_NoFileProvided" xml:space="preserve"><value>No file provided.</value></data>
+  <data name="Upload_InvalidMediaType" xml:space="preserve"><value>Invalid media type.</value></data>
+  <data name="Upload_FileTypeForbidden" xml:space="preserve"><value>File type '{0}' is not allowed for {1}.</value></data>
+  <data name="Upload_FileSizeExceeded" xml:space="preserve"><value>File exceeds the {0} MB limit for {1}.</value></data>
+
+  <data name="Project_IsLocked" xml:space="preserve"><value>Project is locked.</value></data>
+  <data name="Project_SummaryGenerationFailed" xml:space="preserve"><value>Failed to start summary generation.</value></data>
+
+  <data name="Email_ParticipantEmailRequired" xml:space="preserve"><value>Participant email is required.</value></data>
+  <data name="Email_SubjectBodyRequired" xml:space="preserve"><value>Subject and body are required.</value></data>
 </root>

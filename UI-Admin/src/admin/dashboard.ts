@@ -13,7 +13,7 @@ import { initQuestionSinglePieWidget } from '../widgets/widget-question-single-p
 import { initQuestionMultiBarWidget } from '../widgets/widget-question-multi-bar';
 import { initQuestionLikertBarWidget } from '../widgets/widget-question-likert-bar';
 import { initSocialMediaWidget } from '../lib/widget-social-media';
-import type { WidgetInit } from './types';
+import type { WidgetInit } from '../lib/admin-types';
 
 export const POLL_INTERVAL_MS = 30_000;
 
