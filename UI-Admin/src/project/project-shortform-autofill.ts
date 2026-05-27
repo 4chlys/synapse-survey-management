@@ -11,6 +11,13 @@ let checkTimeout: ReturnType<typeof setTimeout> | null = null;
 let lastChecked = '';
 let shortFormValid = true;
 
+let _nameInputs: HTMLInputElement[] = [];
+let _defaultRadios: HTMLInputElement[] = [];
+let _shortFormInput: HTMLInputElement | null = null;
+let _projectId: string | null = null;
+let _msgEl: HTMLElement | null = null;
+let _dirty = false;
+
 async function checkUniqueness(shortForm: string, projectId: string | null, msgEl: HTMLElement): Promise<void> {
     if (!shortForm) {
         msgEl.textContent = '';
@@ -36,65 +43,61 @@ async function checkUniqueness(shortForm: string, projectId: string | null, msgE
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const nameInputs = Array.from(
-        document.querySelectorAll<HTMLInputElement>('[data-translation-field="name"]')
-    );
-    const defaultRadios = Array.from(
-        document.querySelectorAll<HTMLInputElement>('[data-language-default]')
-    );
-    const shortFormInput = document.getElementById('project-shortform-input') as HTMLInputElement | null;
+function getDefaultNameInput(): HTMLInputElement | null {
+    const selected = _defaultRadios.find(r => r.checked && !r.disabled);
+    if (selected) {
+        return _nameInputs.find(i => i.dataset.language === selected.value) ?? null;
+    }
+    return _nameInputs[0] ?? null;
+}
+
+function scheduleCheck(value: string): void {
+    if (checkTimeout !== null) clearTimeout(checkTimeout);
+    if (value === lastChecked || !_msgEl) return;
+    lastChecked = value;
+    checkTimeout = setTimeout(() => { void checkUniqueness(value, _projectId, _msgEl!); }, 400);
+}
+
+function regenerateFromDefault(): void {
+    if (_dirty) return;
+    const inp = getDefaultNameInput();
+    if (!inp || !_shortFormInput) return;
+    const normalized = normalizeToShortForm(inp.value);
+    _shortFormInput.value = normalized;
+    scheduleCheck(normalized);
+}
+
+export function initShortformAutofill(): void {
+    _nameInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-translation-field="name"]'));
+    _defaultRadios = Array.from(document.querySelectorAll<HTMLInputElement>('[data-language-default]'));
+    _shortFormInput = document.getElementById('project-shortform-input') as HTMLInputElement | null;
     const projectIdInput = document.getElementById('ProjectId') as HTMLInputElement | null;
-    const msgEl = document.getElementById('shortform-availability-msg');
-    const form = shortFormInput?.closest('form');
+    _msgEl = document.getElementById('shortform-availability-msg');
+    const form = _shortFormInput?.closest('form');
 
-    if (nameInputs.length === 0 || !shortFormInput) return;
-    if (shortFormInput.hasAttribute('readonly')) return;
+    if (_nameInputs.length === 0 || !_shortFormInput) return;
+    if (_shortFormInput.hasAttribute('readonly')) return;
 
-    const projectId = projectIdInput?.value || null;
-    let dirty = shortFormInput.value.length > 0;
+    _projectId = projectIdInput?.value || null;
+    _dirty = _shortFormInput.value.length > 0;
 
-    function getDefaultNameInput(): HTMLInputElement | null {
-        const selected = defaultRadios.find(r => r.checked && !r.disabled);
-        if (selected) {
-            return nameInputs.find(i => i.dataset.language === selected.value) ?? null;
-        }
-        return nameInputs[0] ?? null;
-    }
-
-    function scheduleCheck(value: string): void {
-        if (checkTimeout !== null) clearTimeout(checkTimeout);
-        if (value === lastChecked || !msgEl) return;
-        lastChecked = value;
-        checkTimeout = setTimeout(() => { void checkUniqueness(value, projectId, msgEl); }, 400);
-    }
-
-    function regenerateFromDefault(): void {
-        if (dirty) return;
-        const inp = getDefaultNameInput();
-        if (!inp || !shortFormInput) return;
-        const normalized = normalizeToShortForm(inp.value);
-        shortFormInput.value = normalized;
-        scheduleCheck(normalized);
-    }
-
-    shortFormInput.addEventListener('input', () => {
-        dirty = true;
-        scheduleCheck(shortFormInput.value);
+    _shortFormInput.addEventListener('input', () => {
+        _dirty = true;
+        scheduleCheck(_shortFormInput!.value);
     });
 
-    shortFormInput.addEventListener('blur', () => {
+    _shortFormInput.addEventListener('blur', () => {
         if (checkTimeout !== null) clearTimeout(checkTimeout);
-        const val = shortFormInput.value;
-        if (msgEl && val !== lastChecked) {
+        const val = _shortFormInput!.value;
+        if (_msgEl && val !== lastChecked) {
             lastChecked = val;
-            void checkUniqueness(val, projectId, msgEl);
+            void checkUniqueness(val, _projectId, _msgEl);
         }
     });
 
     // Only the default-language's Name drives the shortform; other languages'
     // Name inputs fire too but only act when they ARE the current default.
-    nameInputs.forEach(inp => {
+    _nameInputs.forEach(inp => {
         inp.addEventListener('input', () => {
             const def = getDefaultNameInput();
             if (inp === def) regenerateFromDefault();
@@ -103,12 +106,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // When the admin switches the default language while shortform is still
     // pristine, regenerate from the newly-default Name.
-    defaultRadios.forEach(r => r.addEventListener('change', regenerateFromDefault));
+    _defaultRadios.forEach(r => r.addEventListener('change', regenerateFromDefault));
 
     form?.addEventListener('submit', (e) => {
         if (!shortFormValid) {
             e.preventDefault();
-            if (msgEl) msgEl.textContent = 'Kies een unieke shortform voordat je opslaat.';
+            if (_msgEl) _msgEl.textContent = 'Kies een unieke shortform voordat je opslaat.';
         }
     });
-});
+}

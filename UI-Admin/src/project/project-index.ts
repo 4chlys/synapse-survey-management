@@ -1,22 +1,22 @@
-document.addEventListener('DOMContentLoaded', () => {
+function closeAllMenus(): void {
+    document.querySelectorAll<HTMLElement>('.project-menu').forEach(m => {
+        m.classList.add('hidden');
+        const card = m.closest<HTMLElement>('.card');
+        if (card) {
+            card.style.zIndex = '';
+            card.style.transform = '';
+            card.style.transition = '';
+        }
+    });
+}
+
+export function initProjectIndex(): void {
     const modal = document.getElementById('delete-modal') as HTMLElement;
     const projectNameEl = document.getElementById('delete-project-name') as HTMLElement;
     const projectIdInput = document.getElementById('delete-project-id') as HTMLInputElement;
     const cancelBtn = document.getElementById('delete-cancel') as HTMLButtonElement;
 
     if (!modal) return;
-
-    function closeAllMenus() {
-        document.querySelectorAll<HTMLElement>('.project-menu').forEach(m => {
-            m.classList.add('hidden');
-            const card = m.closest<HTMLElement>('.card');
-            if (card) {
-                card.style.zIndex = '';
-                card.style.transform = '';
-                card.style.transition = '';
-            }
-        });
-    }
 
     document.querySelectorAll<HTMLButtonElement>('.project-menu-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -72,4 +72,4 @@ document.addEventListener('DOMContentLoaded', () => {
             if (submitBtn) submitBtn.disabled = true;
         });
     });
-});
+}

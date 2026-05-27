@@ -1,4 +1,35 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Nunito:wght@400;500;600;700&family=Source+Sans+3:wght@400;600&display=swap');
+@font-face {
+  font-family: 'Inter';
+  src: url('/dist/fonts/inter/latin.woff2') format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/dist/fonts/space-grotesk/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('/dist/fonts/nunito/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/dist/fonts/source-sans-3/latin.woff2') format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 @plugin "daisyui";
 

@@ -13,10 +13,9 @@ import { initQuestionSinglePieWidget } from '../widgets/widget-question-single-p
 import { initQuestionMultiBarWidget } from '../widgets/widget-question-multi-bar';
 import { initQuestionLikertBarWidget } from '../widgets/widget-question-likert-bar';
 import { initSocialMediaWidget } from '../lib/widget-social-media';
+import type { WidgetInit } from './types';
 
-const POLL_INTERVAL_MS = 30_000;
-
-type WidgetInit = (el: HTMLElement) => (() => void) | void;
+export const POLL_INTERVAL_MS = 30_000;
 
 const widgetRegistry: Record<string, WidgetInit> = {
     ViewCount: initStatWidget,
@@ -38,8 +37,22 @@ const widgetRegistry: Record<string, WidgetInit> = {
     SocialMediaPost: initSocialMediaWidget,
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const inflightRequests = new Map<string, Promise<unknown>>();
+
+export function fetchJson<T>(url: string): Promise<T> {
+    if (!inflightRequests.has(url)) {
+        const p = fetch(url)
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<T>; })
+            .finally(() => inflightRequests.delete(url));
+        inflightRequests.set(url, p);
+    }
+    return inflightRequests.get(url) as Promise<T>;
+}
+
+export function initDashboard(): void {
     const slots = document.querySelectorAll<HTMLElement>('[data-widget]');
+    if (!slots.length) return;
+
     const cleanups: Array<() => void> = [];
 
     document.querySelectorAll<HTMLElement>('.db-grid > *').forEach((el, i) => {
@@ -59,18 +72,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('beforeunload', () => cleanups.forEach(fn => fn()));
-});
-
-export { POLL_INTERVAL_MS };
-
-const inflightRequests = new Map<string, Promise<unknown>>();
-
-export function fetchJson<T>(url: string): Promise<T> {
-    if (!inflightRequests.has(url)) {
-        const p = fetch(url)
-            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<T>; })
-            .finally(() => inflightRequests.delete(url));
-        inflightRequests.set(url, p);
-    }
-    return inflightRequests.get(url) as Promise<T>;
 }

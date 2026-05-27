@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+export function initRawdataExport(): void {
     const modal = document.getElementById('rawdata-modal') as HTMLDialogElement | null;
     const dlBtn = document.getElementById('rawdata-download') as HTMLButtonElement | null;
     if (!modal || !dlBtn) return;
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ).map(cb => cb.dataset.rawdataTable);
 
         if (checked.length === 0) {
-            alert('Selecteer minstens \u00e9\u00e9n gegevenstype.');
+            alert('Selecteer minstens één gegevenstype.');
             return;
         }
 
@@ -22,4 +22,4 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = `${baseUrl}${separator}format=${format}&tables=${encodeURIComponent(tables)}`;
         modal.close();
     });
-});
+}
