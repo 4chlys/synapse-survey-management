@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const askFirstJa = document.getElementById('ask-first-ja') as HTMLButtonElement | null;
     const answersError = document.getElementById('answers-error') as HTMLElement | null;
 
+    // This module only drives the Questions page. Like the other feature modules
+    // (e.g. project-shortform-autofill), bail when our page isn't present —
+    // otherwise the document-wide `panes()` query below toggles the `hidden`
+    // state of unrelated [data-translation-pane] elements (the project language
+    // tabs on Create), fighting project-setup.ts over the same panes.
+    if (!questionForm) return;
+
     const i18n = { ...readQuestionsI18n(questionsList), ...readFormI18n(questionForm) };
 
     // Multi-language setup: derived from #questions-list dataset (populated by

@@ -44,9 +44,8 @@ public class ProjectController(
     IStringLocalizer<SharedResource> localizer,
     IdeaSummaryAdminService ideaSummaryService) : Controller
 {
-    // Languages the admin form lets you toggle. Seeded in DummyDataSeeder.
-    // Keep in sync with Create.cshtml's checkbox list.
-    private static readonly string[] AvailableLanguageCodes = ["nl", "en"];
+    // Canonical list lives in ProjectTranslationForm (the testable form logic).
+    private static readonly string[] AvailableLanguageCodes = ProjectTranslationForm.AvailableLanguageCodes;
 
     public async Task<IActionResult> Index()
     {
@@ -114,75 +113,28 @@ public class ProjectController(
         return View(model);
     }
 
-    // Picks the admin's current UI language for a new project's default, falling
-    // back to the first available language if the current culture isn't one we
-    // support yet.
     private static string ResolveAdminLanguage()
-    {
-        var current = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        return AvailableLanguageCodes.Contains(current) ? current : AvailableLanguageCodes[0];
-    }
+        => ProjectTranslationForm.ResolveDefaultLanguage(
+            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
 
-    // Pads the project's existing translations with empty rows for any language
-    // the admin form supports but the project doesn't have yet, so the view can
-    // render one tab per available language and preserve typed data across
-    // checkbox toggles.
     private static IList<SectionInputViewModel> BuildSections(IEnumerable<SectionViewModel> existingSections)
-        => existingSections.Select(s => new SectionInputViewModel
-        {
-            Translations = AvailableLanguageCodes
-                .Select(code =>
-                {
-                    var t = s.Translations?.FirstOrDefault(t => t.LanguageCode == code);
-                    return new SectionTranslationViewModel { LanguageCode = code, Name = t?.Name ?? "" };
-                })
-                .ToList()
-        }).ToList();
+        => ProjectTranslationForm.BuildSections(existingSections);
 
     private static IList<ProjectTranslationViewModel> BuildTranslations(
         ICollection<ProjectTranslationViewModel> existing)
-    {
-        var byCode = (existing ?? new List<ProjectTranslationViewModel>())
-            .Where(t => !string.IsNullOrEmpty(t.LanguageCode))
-            .ToDictionary(t => t.LanguageCode, t => t);
-        return AvailableLanguageCodes
-            .Select(code => byCode.TryGetValue(code, out var t)
-                ? t
-                : new ProjectTranslationViewModel { LanguageCode = code })
-            .ToList();
-    }
+        => ProjectTranslationForm.BuildTranslations(existing);
 
     [HttpPost]
     [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
-        // Keep only translations for currently-supported languages; the form
-        // submits hidden inputs for unchecked languages too so typed data
-        // survives toggles, but those rows must not reach the API.
-        var supportedCodes = (model.SupportedLanguageCodes ?? new List<string>())
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .Distinct()
-            .ToList();
-        var activeTranslations = (model.Translations ?? new List<ProjectTranslationViewModel>())
-            .Where(t => supportedCodes.Contains(t.LanguageCode))
-            .ToList();
-
-        // Per-supported-language validation. Name is always required; Topic
-        // and Introduction become required on "next" (mirrors the prior
-        // single-language rule, applied per language).
-        var requireTopicAndIntro = submitAction == "next";
-        foreach (var t in activeTranslations)
-        {
-            if (string.IsNullOrWhiteSpace(t.Name))
-                ModelState.AddModelError($"Translations[{model.Translations.IndexOf(t)}].Name",
-                    localizer["Project_NameRequired"]);
-            if (requireTopicAndIntro && string.IsNullOrWhiteSpace(t.Topic))
-                ModelState.AddModelError($"Translations[{model.Translations.IndexOf(t)}].Topic",
-                    localizer["Project_TopicRequired"]);
-            if (requireTopicAndIntro && string.IsNullOrWhiteSpace(t.Introduction))
-                ModelState.AddModelError($"Translations[{model.Translations.IndexOf(t)}].Introduction",
-                    localizer["Project_IntroductionRequired"]);
-        }
+        // Filter to supported languages + validate each, in one testable place.
+        var submission = ProjectTranslationForm.PrepareSubmission(
+            model.Translations, model.SupportedLanguageCodes, requireTopicAndIntro: submitAction == "next");
+        var supportedCodes = submission.SupportedCodes.ToList();
+        var activeTranslations = submission.ActiveTranslations.ToList();
+        foreach (var error in submission.Errors)
+            ModelState.AddModelError(error.FieldKey, localizer[error.ResourceKey]);
 
         if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
             ModelState.AddModelError(nameof(model.MinAge), localizer["Project_AgeRange"]);

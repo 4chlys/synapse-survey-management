@@ -115,15 +115,6 @@
                             <span class="text-xs text-base-content/50">@L["PerLanguageContentHint"]</span>
                         </div>
 
-                        @* Initial active language: the default if it's supported, else the first
-                           supported one. Rendered active in the HTML so the first paint is correct
-                           without depending on JS timing; project-setup.ts only handles later clicks. *@
-                        @{
-                            var supportedCodes = Model.SupportedLanguageCodes ?? new List<string>();
-                            var initialActiveCode = supportedCodes.Contains(Model.DefaultLanguageCode)
-                                ? Model.DefaultLanguageCode
-                                : supportedCodes.FirstOrDefault();
-                        }
                         <div class="border border-base-300 rounded-lg bg-base-100 overflow-hidden">
                             <div role="tablist" id="translation-tabs"
                                  class="flex items-center gap-1 p-1.5 bg-base-200/60 border-b border-base-300">
@@ -132,13 +123,11 @@
                                     var t = Model.Translations[i];
                                     var visible = Model.SupportedLanguageCodes?.Contains(t.LanguageCode) ?? false;
                                     var isTabDefault = Model.DefaultLanguageCode == t.LanguageCode;
-                                    var isActiveTab = t.LanguageCode == initialActiveCode;
                                     <button type="button" role="tab"
                                             class="translation-tab flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold
                                                    text-base-content/70 hover:text-base-content hover:bg-base-100/60
-                                                   transition-colors @(isActiveTab ? "bg-base-100 text-primary shadow-sm ring-1 ring-base-300" : "")"
+                                                   transition-colors"
                                             data-translation-tab="@t.LanguageCode"
-                                            aria-selected="@(isActiveTab ? "true" : "false")"
                                             hidden="@(!visible)">
                                         <span class="w-2 h-2 rounded-full bg-warning shrink-0" data-translation-status></span>
                                         <span>@LanguageDisplayName(t.LanguageCode)</span>
