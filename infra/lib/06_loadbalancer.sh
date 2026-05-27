@@ -1,5 +1,4 @@
 #!/bin/bash
-# Global HTTPS Load Balancer: health checks, backend services, URL map, SSL, forwarding rules
 
 create_health_checks() {
   echo ">>> Health checks aanmaken (omgeving: ${ENV})..."
@@ -72,8 +71,6 @@ create_url_map() {
 create_ssl_and_proxy() {
   echo ">>> SSL certificaat + HTTPS proxy aanmaken via Certificate Manager (omgeving: ${ENV})..."
 
-  # DNS authorization — vereist een CNAME-record bij de domeinregistrar.
-  # Het certificaat dekt zowel het apex-domein als alle subdomains (*.${DOMAIN}).
   gcloud certificate-manager dns-authorizations create "synapse-${ENV}-dns-auth" \
     --domain="${DOMAIN}" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-dns-auth al aanwezig)"
@@ -85,19 +82,19 @@ create_ssl_and_proxy() {
     --project="${PROJECT_ID}" --format="value(dnsResourceRecord.data)")
 
   echo ""
+  # Certificate Manager requires DNS-01 validation via a CNAME at the registrar;
+  # this must be set manually before the wildcard cert can provision.
   echo "  ⚠️  Voeg dit CNAME-record toe bij je domeinregistrar (voor wildcard SSL):"
   echo "     Naam  : ${cname_name}"
   echo "     Waarde: ${cname_target}"
   echo "  Het certificaat provisioneert automatisch zodra het CNAME-record zichtbaar is."
   echo ""
 
-  # Certificate Manager certificaat met wildcard
   gcloud certificate-manager certificates create "synapse-${ENV}-cert" \
     --domains="${DOMAIN},*.${DOMAIN}" \
     --dns-authorizations="synapse-${ENV}-dns-auth" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-cert al aanwezig)"
 
-  # Certificate map + entries (apex en wildcard)
   gcloud certificate-manager maps create "synapse-${ENV}-cert-map" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-cert-map al aanwezig)"
 
@@ -113,7 +110,7 @@ create_ssl_and_proxy() {
     --hostname="*.${DOMAIN}" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-cert-entry-wildcard al aanwezig)"
 
-  # HTTPS proxy met certificate map (ondersteunt wildcards, ipv ssl-certificates)
+  # Certificate map is required instead of ssl-certificates because it supports wildcard hostname matching.
   gcloud compute target-https-proxies create "synapse-${ENV}-https-proxy" \
     --url-map="synapse-${ENV}-url-map" \
     --certificate-map="synapse-${ENV}-cert-map" \
@@ -179,7 +176,6 @@ destroy_loadbalancer() {
   gcloud compute url-maps delete "synapse-${ENV}-url-map" "synapse-${ENV}-http-redirect" \
     --global --quiet --project="${PROJECT_ID}" 2>/dev/null || true
 
-  # Certificate Manager resources
   gcloud certificate-manager maps entries delete "synapse-${ENV}-cert-entry-apex" \
     --map="synapse-${ENV}-cert-map" --quiet --project="${PROJECT_ID}" 2>/dev/null || true
   gcloud certificate-manager maps entries delete "synapse-${ENV}-cert-entry-wildcard" \
@@ -190,7 +186,7 @@ destroy_loadbalancer() {
     --quiet --project="${PROJECT_ID}" 2>/dev/null || true
   gcloud certificate-manager dns-authorizations delete "synapse-${ENV}-dns-auth" \
     --quiet --project="${PROJECT_ID}" 2>/dev/null || true
-  # Verouderd: verwijder ook eventuele legacy ssl-certificates
+  # Also removes legacy compute ssl-certificates that may exist from a previous bootstrap.
   gcloud compute ssl-certificates delete "synapse-${ENV}-ssl-cert" \
     --global --quiet --project="${PROJECT_ID}" 2>/dev/null || true
 

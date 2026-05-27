@@ -1,5 +1,4 @@
 #!/bin/bash
-# GCP APIs inschakelen + service account + IAM rollen
 
 enable_apis() {
   echo ">>> APIs inschakelen..."

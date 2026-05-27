@@ -28,7 +28,6 @@ warn()    { echo -e "${YELLOW}⚠️  $*${RESET}"; }
 error()   { echo -e "${RED}❌ $*${RESET}"; exit 1; }
 ask()     { echo -e "${BOLD}$*${RESET}"; }
 
-# ── Stap 1: Omgeving als parameter ───────────────────────────
 ENV="${1:-}"
 if [[ -z "${ENV}" ]]; then
   error "Geef een omgeving op als argument: ./bootstrap.sh <test|prod>"
@@ -38,7 +37,6 @@ export ENV
 
 CONFIG_FILE="${SCRIPT_DIR}/config.${ENV}.env"
 
-# ── Banner ─────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${RESET}"
 echo -e "${BOLD}║        Synapse Infrastructure Setup          ║${RESET}"
@@ -47,14 +45,12 @@ echo -e "${BOLD}║   Omgeving: ${ENV}$(printf '%*s' $((30-${#ENV})) '')║${RES
 echo -e "${BOLD}╚══════════════════════════════════════════════╝${RESET}"
 echo ""
 
-# ── Stap 2: Prerequisites ─────────────────────────────────────
 info "Vereisten controleren..."
 command -v gcloud >/dev/null 2>&1 || error "gcloud is niet geïnstalleerd."
 command -v gsutil >/dev/null 2>&1 || error "gsutil is niet geïnstalleerd (komt mee met gcloud)."
 command -v docker  >/dev/null 2>&1 || warn  "Docker niet gevonden — niet vereist voor infra setup."
 success "gcloud en gsutil gevonden."
 
-# ── Stap 3: Config laden of interactief invullen ──────────────
 if [[ -f "${CONFIG_FILE}" ]]; then
   info "Configuratie laden uit config.${ENV}.env..."
   # shellcheck source=/dev/null
@@ -115,10 +111,9 @@ EOF
   success "Configuratie opgeslagen in deploy/config.${ENV}.env"
 fi
 
-# GCS_BUCKET standaardwaarde als niet in config
 GCS_BUCKET="${GCS_BUCKET:-${PROJECT_ID}-assets-${ENV}}"
 
-# Fallback: RESEND_API_KEY kan ontbreken in een oudere config
+# RESEND_API_KEY may be absent in configs created before it was added.
 if [[ -z "${RESEND_API_KEY:-}" ]]; then
   ask "Resend API sleutel (re_...) — ontbreekt in config.${ENV}.env:"
   read -rs RESEND_API_KEY
@@ -128,7 +123,6 @@ if [[ -z "${RESEND_API_KEY:-}" ]]; then
   success "RESEND_API_KEY toegevoegd aan config.${ENV}.env"
 fi
 
-# ── Stap 4: Samenvatten en bevestigen ─────────────────────────
 echo ""
 echo -e "${BOLD}── Configuratieoverzicht (omgeving: ${ENV}) ────${RESET}"
 echo "  Project ID      : ${PROJECT_ID}"
@@ -147,7 +141,6 @@ ask "Alles correct? Typ 'ja' om te starten:"
 read -r confirm
 [[ "${confirm}" == "ja" ]] || { echo "Afgebroken."; exit 1; }
 
-# ── Stap 5: GCP authenticatie ─────────────────────────────────
 info "GCP authenticatie controleren..."
 gcloud auth print-access-token >/dev/null 2>&1 || {
   warn "Nog niet ingelogd bij GCP. Login wordt gestart..."
@@ -159,7 +152,6 @@ PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projec
 export PROJECT_NUMBER
 success "Ingelogd bij project ${PROJECT_ID} (${PROJECT_NUMBER})"
 
-# ── Stap 6: Lib functies laden ─────────────────────────────────
 info "Infra functies laden..."
 export PROJECT_ID REGION ZONE GCS_BUCKET PROJECT_NUMBER ENV
 export DB_PASSWORD API_KEY RESEND_API_KEY DOMAIN
@@ -177,14 +169,12 @@ source "${INFRA_DIR}/lib/08_logging.sh"
 source "${INFRA_DIR}/lib/09_armor.sh"
 source "${INFRA_DIR}/lib/10_backup.sh"
 
-# ── Stap 7: Setup uitvoeren ────────────────────────────────────
 echo ""
 echo -e "${BOLD}── Setup starten voor omgeving '${ENV}' (Parallel) ──${RESET}"
 
-# 1. APIs moeten eerst actief zijn (eenmalig, project-breed)
+# APIs must be enabled project-wide before any resource creation can succeed.
 enable_apis
 
-# 2. Parallelle processen
 ( create_service_account && assign_iam_roles ) &
 PID_IAM=$!
 
@@ -200,14 +190,12 @@ PID_HC=$!
 ( create_instance_templates ) &
 PID_TEMPLATES=$!
 
-# VPC peering is project-breed — sla over als al aanwezig
+# VPC peering is project-wide; skip silently if already present.
 ( create_vpc_peering && create_firewall_rules && create_cloud_sql ) &
 PID_SQL=$!
 
-# 3. Wacht op alles voor MIGs
 wait $PID_SQL $PID_IAM $PID_SECRETS $PID_BUCKET $PID_TEMPLATES $PID_HC
 
-# db-host secret updaten met het echte Cloud SQL privaat IP
 DB_HOST=$(gcloud sql instances describe "mvp-postgres-${ENV}" \
   --project="${PROJECT_ID}" \
   --format="value(ipAddresses[0].ipAddress)" 2>/dev/null || echo "PENDING")
@@ -215,14 +203,11 @@ if [[ "${DB_HOST}" != "PENDING" ]]; then
   update_secret "db-host" "${DB_HOST}"
 fi
 
-# pgvector wordt door de API zelf geïnstalleerd bij opstart via ExecuteSqlRaw
-# (vereist geen cloud-sql-proxy in het bootstrap script)
+# pgvector is installed by the API on startup via ExecuteSqlRaw; no cloud-sql-proxy needed here.
 
-# 4. MIGs aanmaken
 create_migs
 configure_autohealing
 
-# 5. Load Balancer
 create_backend_services
 create_url_map
 create_ssl_and_proxy
@@ -231,7 +216,6 @@ create_forwarding_rules
 create_cloud_armor
 add_mig_ips_to_armor
 
-# 6. Monitoring
 setup_logging_iam
 create_uptime_checks
 create_alert_policy
@@ -239,7 +223,6 @@ create_alert_policy
 LB_IP=$(gcloud compute addresses describe "synapse-${ENV}-lb-ip" \
   --global --format="value(address)" --project="${PROJECT_ID}")
 
-# ── Stap 8: Samenvatting ───────────────────────────────────────
 echo ""
 echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════╗${RESET}"
 echo -e "${GREEN}${BOLD}║  Setup klaar! Omgeving: ${ENV}$(printf '%*s' $((20-${#ENV})) '') ║${RESET}"

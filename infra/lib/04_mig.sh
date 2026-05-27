@@ -1,5 +1,4 @@
 #!/bin/bash
-# MIG instance templates + Managed Instance Groups + autoscalers
 
 _INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -8,8 +7,8 @@ _create_template() {
   local machine_type="$2"
   local startup_script="$3"
   echo "  - template: ${name} (${machine_type})"
-  # ENV en PROJECT_ID als instance-metadata meegeven zodat startup scripts ze
-  # kunnen opvragen via de Metadata Server, onafhankelijk van de aanroepende shell.
+  # Passed as instance metadata so startup scripts can read them via the Metadata Server
+  # without depending on the calling shell's environment variables.
   gcloud compute instance-templates create "${name}" \
     --machine-type="${machine_type}" \
     --image-family=cos-stable \
@@ -100,8 +99,8 @@ _wait_api_schema_ready() {
 create_migs() {
   echo ">>> Managed Instance Groups aanmaken (omgeving: ${ENV})..."
 
-  # API eerst: EnsureCreated() moet het schema aanmaken voordat
-  # Admin's MigrateAsync() dezelfde database ziet en overslaat.
+  # API runs EnsureCreated first; Admin's MigrateAsync must see the schema already present
+  # or it will attempt to re-create it and fail.
   _create_mig "synapse-${ENV}-api-mig" "synapse-${ENV}-api-template" 1 5
   _wait_api_schema_ready
 
