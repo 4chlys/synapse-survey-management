@@ -12,7 +12,7 @@
 <div>
     <div class="mb-8">
         <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
-        <p class="text-sm text-base-content/50 mt-1">@L["AiAssistanceDescription"]</p>
+        <p class="text-sm text-base-content/50 mt-1">@L["PageDescription"]</p>
     </div>
 
     <div class="settings-grid">
@@ -27,7 +27,7 @@
                 </div>
                 <div>
                     <h2 class="font-heading font-semibold text-base text-base-content">@L["BasicInfoHeading"]</h2>
-                    <p class="text-xs text-base-content/40 mt-0.5">@L["ContactEmailPlaceholder"]</p>
+                    <p class="text-xs text-base-content/40 mt-0.5">@L["BasicInfoDescription"]</p>
                 </div>
             </div>
             <form asp-action="SaveBasicInfo" method="post" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
@@ -59,7 +59,7 @@
                 </div>
                 <div>
                     <h2 class="font-heading font-semibold text-base text-base-content">@L["AiModelHeading"]</h2>
-                    <p class="text-xs text-base-content/40 mt-0.5">@L["SelectModelLabel"]</p>
+                    <p class="text-xs text-base-content/40 mt-0.5">@L["AiModelDescription"]</p>
                 </div>
             </div>
             @if (Model.AiSettings.AllowedModels.Count == 1)
