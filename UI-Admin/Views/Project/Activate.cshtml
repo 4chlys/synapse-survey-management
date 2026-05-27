@@ -1,5 +1,8 @@
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.ProjectAdminViewModel
 @inject IViewLocalizer L
+@using Microsoft.Extensions.Localization
+@using SynapseEnqueteManagement.UI.Admin.Services
+@inject IStringLocalizer<SynapseEnqueteManagement.UI.Admin.SharedResource> SR
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Settings";
@@ -10,6 +13,20 @@
     var questionCount = (int)(ViewData["QuestionCount"] ?? 0);
     var categoryCount = (int)(ViewData["CategoryCount"] ?? 0);
     var formType = Model.FormType ?? "VerticalScroll";
+    var problems = ViewData["ActivationProblems"] as IReadOnlyList<ActivationProblemDto>
+                   ?? Array.Empty<ActivationProblemDto>();
+
+    string FormatProblem(ActivationProblemDto p) => p.EntityType switch
+    {
+        "NoCategory"               => SR["Activation_NoCategory"].Value,
+        "ProjectTranslation"       => string.Format(SR["Activation_ProjectTranslation"].Value, p.LanguageCode),
+        "IntroductionTranslation"  => string.Format(SR["Activation_IntroductionTranslation"].Value, p.LanguageCode),
+        "SectionTranslation"       => string.Format(SR["Activation_SectionTranslation"].Value, p.EntityId, p.LanguageCode),
+        "QuestionTranslation"      => string.Format(SR["Activation_QuestionTranslation"].Value, p.EntityId, p.LanguageCode),
+        "CategoryTranslation"      => string.Format(SR["Activation_CategoryTranslation"].Value, p.EntityId, p.LanguageCode),
+        "EndingAnswerTranslation"  => string.Format(SR["Activation_EndingAnswerTranslation"].Value, p.EntityId, p.LanguageCode),
+        _                          => p.EntityType
+    };
 }
 
 <div class="w-full flex flex-col items-center justify-center py-12">
@@ -64,14 +81,41 @@
             </div>
         </div>
 
+        @if (problems.Count > 0)
+        {
+            <div class="w-full bg-error/10 rounded-xl border border-error/30 p-5">
+                <div class="flex items-start gap-3 mb-3">
+                    <svg class="w-5 h-5 text-error flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                    <p class="text-sm font-semibold text-error">@L["BlockingTitle"]</p>
+                </div>
+                <p class="text-xs text-base-content/60 mb-3">@L["BlockingIntro"]</p>
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach (var p in problems)
+                    {
+                        <li class="text-sm text-base-content/70">@FormatProblem(p)</li>
+                    }
+                </ul>
+            </div>
+        }
+
         <div class="w-full flex flex-col gap-3">
-            <form asp-action="ActivateProject" method="post" class="w-full">
-                <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                <button type="submit" class="btn btn-success w-full btn-lg gap-2">
+            @if (problems.Count == 0)
+            {
+                <form asp-action="ActivateProject" method="post" class="w-full">
+                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                    <button type="submit" class="btn btn-success w-full btn-lg gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m0 0a6 6 0 01-7.38-5.84h4.8" /></svg>
+                        @L["ActivateButton"]
+                    </button>
+                </form>
+            }
+            else
+            {
+                <button type="button" class="btn btn-success w-full btn-lg gap-2 btn-disabled" disabled>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.84 2.58m0 0a6 6 0 01-7.38-5.84h4.8" /></svg>
                     @L["ActivateButton"]
                 </button>
-            </form>
+            }
             <a asp-action="Index" class="btn btn-ghost w-full">@L["NotYetButton"]</a>
         </div>
     </div>

@@ -151,8 +151,18 @@ public class ProjectsController(
         if (!Enum.TryParse<ProjectState>(dto.State, ignoreCase: true, out var newState))
             return BadRequest(new { error = "Invalid project state." });
 
-        var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
-        return Ok(ProjectDtoMapper.ToAdminDto(project));
+        try
+        {
+            var project = await projectManager.UpdateProjectStateAsync(projectId, newState);
+            return Ok(ProjectDtoMapper.ToAdminDto(project));
+        }
+        catch (ProjectActivationException ex)
+        {
+            return BadRequest(new
+            {
+                problems = ex.Problems.Select(p => new { p.EntityType, p.EntityId, p.LanguageCode })
+            });
+        }
     }
 
     [HttpPatch("{projectId}/wizard-step")]
@@ -170,7 +180,7 @@ public class ProjectsController(
         if (string.IsNullOrWhiteSpace(request?.Name))
             throw new LocalizedValidationException("Validation.Project.NameRequired");
 
-        var result = await imageGenerationService.GenerateProjectImageAsync(request.Name, 0, request.Topic, request.Intro, ct);
+        var result = await imageGenerationService.GenerateProjectImageAsync(request.Name, 0, request.Topic, request.Intro, ct: ct);
         if (!result.IsSuccess)
             return BadRequest(new { error = result.ErrorMessage });
 
@@ -183,7 +193,4 @@ public class ProjectsController(
 
 }
 
-// [FromBody] keeps large intro payloads out of the URL.
-// The intro field can hold up to 5000 chars of Quill HTML; URI-encoding it would
-// exceed the ~8 KB query-string limit enforced by many proxies and servers.
 public sealed record GenerateImageRequest(string Name, string Topic, string Intro);

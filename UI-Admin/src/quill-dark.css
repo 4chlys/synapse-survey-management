@@ -1,5 +1,5 @@
 /* Quill editor layout — applies in all themes */
-#intro-editor .ql-editor {
+[data-intro-editor] .ql-editor {
     min-height: 140px;
     max-height: 220px;
     overflow-y: auto;
@@ -7,11 +7,11 @@
 }
 
 /* Dark theme overrides */
-[data-theme="synapse-dark"] #intro-editor .ql-editor {
+[data-theme="synapse-dark"] [data-intro-editor] .ql-editor {
     color: #fff;
 }
 
-[data-theme="synapse-dark"] #intro-editor .ql-editor.ql-blank::before {
+[data-theme="synapse-dark"] [data-intro-editor] .ql-editor.ql-blank::before {
     color: #6b7280;
     font-style: italic;
 }
@@ -43,6 +43,6 @@
     fill: #fff !important;
 }
 
-[data-theme="synapse-dark"] #intro-editor.ql-container.ql-snow {
+[data-theme="synapse-dark"] [data-intro-editor].ql-container.ql-snow {
     border-color: #6b7280 !important;
 }

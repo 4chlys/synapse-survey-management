@@ -74,7 +74,7 @@ public class SocialMediaController(
 
     [HttpPost("image")]
     public async Task<ActionResult<GenerateSocialImageResponseDto>> GenerateImage(
-        int projectId, CancellationToken ct)
+        int projectId, GenerateSocialImageRequestDto dto, CancellationToken ct)
     {
         var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
         if (project is null) return NotFound();
@@ -87,6 +87,7 @@ public class SocialMediaController(
             projectTr?.Name ?? "", projectId,
             projectTopic: projectTr?.Topic,
             introText: introTr?.Text ?? "",
+            postCopy: dto?.PostCopy,
             ct: ct);
         if (!result.IsSuccess)
             return StatusCode(502, new { error = result.ErrorMessage });

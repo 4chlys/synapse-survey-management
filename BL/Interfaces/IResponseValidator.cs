@@ -6,7 +6,7 @@ namespace SynapseEnqueteManagement.BL.Interfaces;
 public interface IResponseValidator
 {
     QuestionFormat Format { get; }
-    void Validate(string value, Question question);
+    void Validate(string value, Question question, string languageCode);
 }
 
 public interface IResponseValidatorFactory

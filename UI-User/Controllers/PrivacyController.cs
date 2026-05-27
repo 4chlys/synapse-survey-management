@@ -6,13 +6,15 @@ namespace SynapseEnqueteManagement.UI.User.Controllers;
 
 public class PrivacyController(IProjectApiService projectApiService) : Controller
 {
-    public async Task<IActionResult> Index(int projectId)
+    public async Task<IActionResult> Index(int projectId, string returnUrl)
     {
         var project = await projectApiService.GetProjectAsync(projectId);
         if (project is null) return View("NotFound");
 
         this.SetLayoutData(project, projectId);
         ViewData["OrganisationName"] = project.OrganisationName;
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            ViewData["PrivacyReturnUrl"] = returnUrl;
         return View();
     }
 }

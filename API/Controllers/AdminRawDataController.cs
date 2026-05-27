@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.API.Services.Export;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -42,9 +43,13 @@ public class AdminRawDataController(
         var responses = (await responseManager.GetCommittedResponsesForProjectReadOnlyAsync(projectId)).ToList();
         var categories = (await categoryManager.GetCategoriesWithIdeasForProjectReadOnlyAsync(projectId)).ToList();
 
-        var projectName = project.Translations.FirstOrDefault()?.Name ?? project.ShortForm ?? $"project-{projectId}";
+        // Export labels land on the project's default language so a download is reproducible —
+        // otherwise FirstOrDefault() picked whichever translation EF happened to load first.
+        var exportLanguage = project.DefaultLanguage?.Code;
+        var projectName = TranslationPicker.Pick(project.Translations, exportLanguage)?.Name
+                          ?? project.ShortForm ?? $"project-{projectId}";
         var safeName = FileNameSanitizer.Sanitize(projectName);
-        var sheets = RawDataExportSheetBuilder.Build(questions, responses, categories, selectedTables);
+        var sheets = RawDataExportSheetBuilder.Build(questions, responses, categories, selectedTables, exportLanguage);
 
         if (normalized == "xlsx")
         {

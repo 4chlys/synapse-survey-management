@@ -58,6 +58,11 @@
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="NextButton" xml:space="preserve"><value>Next</value></data>
   <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
+  <data name="LanguagesLabel" xml:space="preserve"><value>Languages</value></data>
+  <data name="LanguagesHint" xml:space="preserve"><value>Pick which languages this project supports and which is the default. For each picked language you'll need to fill in the project details.</value></data>
+  <data name="DefaultLabel" xml:space="preserve"><value>default</value></data>
+  <data name="PerLanguageContentLabel" xml:space="preserve"><value>Project content per language</value></data>
+  <data name="PerLanguageContentHint" xml:space="preserve"><value>Switch tabs to fill in each language</value></data>
   <data name="StyleDivider" xml:space="preserve"><value>Style</value></data>
   <data name="ThemeLabel" xml:space="preserve"><value>Theme</value></data>
   <data name="PreviewLabel" xml:space="preserve"><value>Preview</value></data>
@@ -102,6 +107,7 @@
   <data name="SectionBehavior" xml:space="preserve"><value>Behavior &amp; settings</value></data>
   <data name="ShortformHint" xml:space="preserve"><value>This becomes your project's own web address as a subdomain (e.g. mental-wellbeing.synapse-ip.xyz)</value></data>
   <data name="IntroductionHint" xml:space="preserve"><value>Shown on the welcome slide at the start of the survey, before the first question</value></data>
+  <data name="IntroductionPlaceholder" xml:space="preserve"><value>Write a short introduction to your project for participants</value></data>
   <data name="ImageHint" xml:space="preserve"><value>Shown next to the introduction on the welcome slide at the start of the survey</value></data>
   <data name="InteractionModeHint" xml:space="preserve"><value>Sets how the questionnaire is presented: questions shown one by one as scrollable cards (vertical scroll), or as a chat conversation (chat)</value></data>
   <data name="AiAssistanceHint" xml:space="preserve"><value>Whether AI suggests improvements when participants type their ideas</value></data>

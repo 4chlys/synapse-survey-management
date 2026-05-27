@@ -30,7 +30,7 @@ public class QuestionStatsManagerTests
         SetupOwnership(false);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId));
+            _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId, "en"));
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class QuestionStatsManagerTests
         SetupOwnership(false);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _manager.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId));
+            _manager.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId, "en"));
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class QuestionStatsManagerTests
         _questionnaireManager.Setup(m => m.GetQuestionByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(("en", new[] { "Yes", "No" })));
 
-        var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId);
+        var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId, "en");
 
         Assert.Equal(QuestionId, result.QuestionId);
         Assert.Equal(10, result.TotalResponses);
@@ -113,9 +113,9 @@ public class QuestionStatsManagerTests
                 ("en", new[] { "Yes", "No" }),
                 ("nl", new[] { "Ja", "Nee" })));
 
-        var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId);
+        var result = await _manager.ReadSingleChoiceStatsAsync(ProjectId, QuestionId, "en");
 
-        // Two logical options, summed across languages, labelled in the default (first) translation.
+        // Two logical options, summed across languages, labelled in the requested language.
         Assert.Equal(2, result.Counts.Count);
         Assert.Contains(result.Counts, c => c.Option == "Yes" && c.Count == 12);
         Assert.Contains(result.Counts, c => c.Option == "No" && c.Count == 4);
@@ -133,7 +133,7 @@ public class QuestionStatsManagerTests
         _questionnaireManager.Setup(m => m.GetQuestionByIdWithTranslationsReadOnlyAsync(QuestionId))
             .ReturnsAsync(QuestionWithTranslations(("en", new[] { "A", "B", "C" })));
 
-        var result = await _manager.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId);
+        var result = await _manager.ReadMultipleChoiceStatsAsync(ProjectId, QuestionId, "en");
 
         Assert.Equal(QuestionId, result.QuestionId);
         Assert.Equal(11, result.TotalResponses);
@@ -218,7 +218,7 @@ public class QuestionStatsManagerTests
         _questionnaireManager.Setup(m => m.GetQuestionsForProjectAsync(ProjectId))
             .ReturnsAsync(questions);
 
-        var result = await _manager.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.SingleChoice);
+        var result = await _manager.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.SingleChoice, "en");
 
         Assert.Equal(2, result.Count);
         Assert.All(result, q => Assert.Contains(q.QuestionId, new[] { 1, 3 }));
@@ -230,7 +230,7 @@ public class QuestionStatsManagerTests
         _questionnaireManager.Setup(m => m.GetQuestionsForProjectAsync(ProjectId))
             .ReturnsAsync(Array.Empty<Question>());
 
-        var result = await _manager.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.MultipleChoice);
+        var result = await _manager.ReadQuestionsByFormatAsync(ProjectId, QuestionFormat.MultipleChoice, "en");
 
         Assert.Empty(result);
     }

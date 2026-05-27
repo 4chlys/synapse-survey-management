@@ -1,5 +1,6 @@
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 
 namespace SynapseEnqueteManagement.API.Services;
 
@@ -7,9 +8,7 @@ public static class CategoryDtoMapper
 {
     public static CategoryDto ToDto(Category category, int ideaCount, string languageCode)
     {
-        var t = category.Translations.FirstOrDefault(t => t.Language?.Code == languageCode)
-                ?? category.Translations.FirstOrDefault(t => t.Language?.Code == category.Project?.DefaultLanguage?.Code)
-                ?? category.Translations.FirstOrDefault();
+        var t = TranslationPicker.Pick(category.Translations, languageCode, category.Project?.DefaultLanguage?.Code);
         return new CategoryDto
         {
             CategoryId = category.CategoryId,
@@ -17,6 +16,12 @@ public static class CategoryDtoMapper
             Description = t?.Description ?? string.Empty,
             IdeaCount = ideaCount,
             LanguageCode = t?.Language?.Code ?? languageCode,
+            Translations = category.Translations.Select(tr => new CategoryTranslationDto
+            {
+                LanguageCode = tr.Language?.Code,
+                Name = tr.Name,
+                Description = tr.Description,
+            }).ToList(),
         };
     }
 

@@ -7,13 +7,13 @@ namespace SynapseEnqueteManagement.API.Services;
 // DTO shaping stays out of the controller (its job is HTTP, not translation projection).
 public static class QuestionDtoMapper
 {
-    public static QuestionnaireDto ToQuestionnaireDto(Questionnaire questionnaire)
+    public static QuestionnaireDto ToQuestionnaireDto(Questionnaire questionnaire, string languageCode)
         => new()
         {
             QuestionnaireId = questionnaire.QuestionnaireId,
             Questions = questionnaire.Questions
                 .OrderBy(q => q.Position)
-                .Select(q => ToDto(q, null))
+                .Select(q => ToDto(q, languageCode))
                 .ToList()
         };
 

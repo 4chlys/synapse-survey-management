@@ -15,14 +15,11 @@ public class SectionAdminService(HttpClient httpClient)
                ?? new List<SectionViewModel>();
     }
 
-    public async Task CreateSectionAsync(int projectId, string name, string description, string languageCode)
+    public async Task CreateSectionAsync(int projectId, ICollection<SectionTranslationViewModel> translations)
     {
         var payload = new
         {
-            Translations = new[]
-            {
-                new { LanguageCode = languageCode, Name = name, Description = description }
-            }
+            Translations = translations.Select(t => new { t.LanguageCode, t.Name, t.Description })
         };
         var response = await httpClient.PostAsJsonAsync(
             $"api/projects/{projectId}/sections", payload);
@@ -36,25 +33,28 @@ public class SectionAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    // Drive the project's sections to match the given names (in any order): delete sections
-    // whose name is no longer in the list, create those that are new. Existing matches are
-    // left untouched (preserves SectionIds and per-section question/translation state).
-    public async Task SyncSectionsAsync(int projectId, IEnumerable<string> sectionNames, string defaultLanguageCode)
+    // Replace all sections for the project: delete the existing ones, then recreate from the
+    // posted multilingual input — keeping only translations in a supported language with a
+    // non-empty name. Sections whose translations are all empty/unsupported are skipped.
+    public async Task SyncSectionsAsync(
+        int projectId,
+        IEnumerable<SectionInputViewModel> sections,
+        IEnumerable<string> supportedLanguageCodes)
     {
-        var newNames = (sectionNames ?? Enumerable.Empty<string>())
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Select(s => s.Trim())
-            .ToList();
+        var supported = supportedLanguageCodes as ISet<string> ?? supportedLanguageCodes.ToHashSet();
 
         var existing = await GetSectionsAsync(projectId);
-
         foreach (var s in existing)
-            if (!newNames.Contains(s.Name))
-                await DeleteSectionAsync(projectId, s.SectionId);
+            await DeleteSectionAsync(projectId, s.SectionId);
 
-        var existingNames = existing.Select(s => s.Name).ToList();
-        foreach (var name in newNames)
-            if (!existingNames.Contains(name))
-                await CreateSectionAsync(projectId, name, string.Empty, defaultLanguageCode);
+        foreach (var sectionInput in sections ?? new List<SectionInputViewModel>())
+        {
+            var translations = (sectionInput.Translations ?? new List<SectionTranslationViewModel>())
+                .Where(t => supported.Contains(t.LanguageCode) && !string.IsNullOrWhiteSpace(t.Name))
+                .Select(t => new SectionTranslationViewModel { LanguageCode = t.LanguageCode, Name = t.Name.Trim() })
+                .ToList();
+            if (translations.Count == 0) continue;
+            await CreateSectionAsync(projectId, translations);
+        }
     }
 }

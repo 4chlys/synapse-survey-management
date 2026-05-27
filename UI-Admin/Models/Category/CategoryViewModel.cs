@@ -6,4 +6,5 @@ public record CategoryViewModel
     public string Name { get; init; }
     public string Description { get; init; }
     public int IdeaCount { get; init; }
+    public ICollection<CategoryTranslationViewModel> Translations { get; init; } = new List<CategoryTranslationViewModel>();
 }

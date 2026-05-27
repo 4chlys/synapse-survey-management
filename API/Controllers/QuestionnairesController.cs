@@ -24,13 +24,20 @@ public class QuestionnairesController(
     private readonly string _gcsBucket = storageOptions.Value.BucketName;
 
     [HttpGet]
-    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
+    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId,
+        [FromQuery] string languageCode = null)
     {
         var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
-        var dto = QuestionDtoMapper.ToQuestionnaireDto(questionnaire);
+        if (languageCode is null)
+        {
+            var project = await GetProjectByIdReadOnlyAsync(projectId);
+            languageCode = project?.DefaultLanguage?.Code ?? "nl";
+        }
+
+        var dto = QuestionDtoMapper.ToQuestionnaireDto(questionnaire, languageCode);
         return Ok(dto);
     }
 
@@ -50,6 +57,21 @@ public class QuestionnairesController(
 
         var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
         var dtos = questions.Select(q => QuestionDtoMapper.ToDto(q, languageCode)).ToList();
+        return Ok(dtos);
+    }
+
+    [HttpGet("questions/admin")]
+    public async Task<ActionResult<IEnumerable<AdminQuestionDto>>> GetAdminQuestions(int projectId)
+    {
+        // Admin authoring view: returns the full multilingual shape (Translations[],
+        // per-language EndingAnswers, AnswerChoiceCount) needed by the edit modal.
+        // Distinct from the participant-facing GET above, which flattens to one language.
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdReadOnlyAsync(projectId);
+        if (questionnaire is null)
+            return NotFound();
+
+        var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
+        var dtos = questions.Select(QuestionDtoMapper.ToAdminDto).ToList();
         return Ok(dtos);
     }
 

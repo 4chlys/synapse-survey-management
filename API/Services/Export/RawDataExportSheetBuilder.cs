@@ -1,9 +1,12 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 
 namespace SynapseEnqueteManagement.API.Services.Export;
 
 // Maps a project's raw entities into the requested per-table sheets. The Dutch table names
-// and column layouts are the export contract and live here, out of the controller. Pure mapping.
+// and column layouts are the export contract and live here, out of the controller.
+// `defaultLanguageCode` makes the chosen translation reproducible — without it, EF's
+// arbitrary load order decides which translation appears in the export.
 public static class RawDataExportSheetBuilder
 {
     public static readonly IReadOnlySet<string> AllTables =
@@ -13,7 +16,8 @@ public static class RawDataExportSheetBuilder
         IReadOnlyList<Question> questions,
         IReadOnlyList<Response> responses,
         IReadOnlyList<Category> categories,
-        IReadOnlySet<string> tables)
+        IReadOnlySet<string> tables,
+        string defaultLanguageCode)
     {
         var sheets = new List<ExportSheet>();
 
@@ -22,8 +26,8 @@ public static class RawDataExportSheetBuilder
                 ["VraagId", "Tekst", "Type", "Verplicht", "Sectie", "Antwoordkeuzes"],
                 questions.Select(q =>
                 {
-                    var qt = q.Translations?.FirstOrDefault();
-                    var st = q.Section?.Translations?.FirstOrDefault();
+                    var qt = TranslationPicker.Pick(q.Translations, defaultLanguageCode);
+                    var st = TranslationPicker.Pick(q.Section?.Translations, defaultLanguageCode);
                     return new[]
                     {
                         q.QuestionId.ToString(),
@@ -52,7 +56,7 @@ public static class RawDataExportSheetBuilder
                 ["CategorieId", "Naam", "Beschrijving", "AantalIdeeën"],
                 categories.Select(c =>
                 {
-                    var ct = c.Translations?.FirstOrDefault();
+                    var ct = TranslationPicker.Pick(c.Translations, defaultLanguageCode);
                     return new[]
                     {
                         c.CategoryId.ToString(),
@@ -67,7 +71,7 @@ public static class RawDataExportSheetBuilder
                 ["IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
                 categories.SelectMany(c => c.Ideas.Select(i =>
                 {
-                    var catName = c.Translations?.FirstOrDefault()?.Name ?? "";
+                    var catName = TranslationPicker.Pick(c.Translations, defaultLanguageCode)?.Name ?? "";
                     var emojiReactions = i.Comments.OfType<IconComment>()
                         .Where(ic => ic.TextComment == null)
                         .ToList();
