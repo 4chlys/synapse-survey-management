@@ -15,6 +15,7 @@
   <data name="Nav_Projects" xml:space="preserve"><value>Projecten</value></data>
   <data name="Nav_Platform" xml:space="preserve"><value>Platform</value></data>
   <data name="Nav_Admins" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="Nav_EmailQueue" xml:space="preserve"><value>E-mailwachtrij</value></data>
   <data name="Nav_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Nav_Ideas" xml:space="preserve"><value>Ideeën</value></data>
   <data name="Nav_Categories" xml:space="preserve"><value>Categorieën</value></data>
@@ -143,4 +144,6 @@ Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
   <data name="Activation_QuestionTranslation" xml:space="preserve"><value>Vraag #{0}: vertaling ontbreekt voor taal: {1}</value></data>
   <data name="Activation_CategoryTranslation" xml:space="preserve"><value>Categorie #{0}: vertaling ontbreekt voor taal: {1}</value></data>
   <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Eindsantwoord #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+
+  <data name="EmailBroadcast_NoMessages" xml:space="preserve"><value>Vul minstens één Onderwerp en Bericht in voordat je verzendt.</value></data>
 </root>

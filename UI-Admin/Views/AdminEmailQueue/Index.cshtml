@@ -1,0 +1,132 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Admin.EmailQueueViewModel
+@inject IViewLocalizer L
+@{
+    ViewData["Title"] = L["PageTitle"].Value;
+    Layout = "_Layout";
+}
+
+<div class="mb-6">
+    <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+    <p class="text-sm text-base-content/50 mt-0.5">@L["Subheading"]</p>
+</div>
+
+@* Given-up rows surface first — those need a human. *@
+<section class="mb-8">
+    <h2 class="font-heading font-semibold text-lg text-error mb-2">
+        @string.Format(L["GivenUpHeading"].Value, Model.GivenUp.Count)
+    </h2>
+    @if (Model.GivenUp.Count == 0)
+    {
+        <p class="text-sm text-base-content/40 italic">@L["GivenUpEmpty"]</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto card bg-base-100 shadow-sm">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>@L["ColTo"]</th>
+                        <th>@L["ColSubject"]</th>
+                        <th>@L["ColCategory"]</th>
+                        <th>@L["ColAttempts"]</th>
+                        <th>@L["ColLastError"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.GivenUp)
+                    {
+                        <tr>
+                            <td class="text-xs">@row.To</td>
+                            <td class="text-xs">@row.Subject</td>
+                            <td class="text-xs">@row.Category</td>
+                            <td class="text-xs">@row.AttemptCount / @row.MaxAttempts</td>
+                            <td class="text-xs text-error max-w-[20rem] truncate" title="@row.LastError">@row.LastError</td>
+                            <td>
+                                <form asp-action="Retry" method="post" class="inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@row.EmailJobId" />
+                                    <button type="submit" class="btn btn-xs btn-warning">@L["RetryButton"]</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="mb-8">
+    <h2 class="font-heading font-semibold text-lg text-base-content mb-2">
+        @string.Format(L["PendingHeading"].Value, Model.Pending.Count)
+    </h2>
+    @if (Model.Pending.Count == 0)
+    {
+        <p class="text-sm text-base-content/40 italic">@L["PendingEmpty"]</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto card bg-base-100 shadow-sm">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>@L["ColTo"]</th>
+                        <th>@L["ColSubject"]</th>
+                        <th>@L["ColCategory"]</th>
+                        <th>@L["ColAttempts"]</th>
+                        <th>@L["ColScheduledAt"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Pending)
+                    {
+                        <tr>
+                            <td class="text-xs">@row.To</td>
+                            <td class="text-xs">@row.Subject</td>
+                            <td class="text-xs">@row.Category</td>
+                            <td class="text-xs">@row.AttemptCount / @row.MaxAttempts</td>
+                            <td class="text-xs">@row.ScheduledAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section>
+    <h2 class="font-heading font-semibold text-lg text-success mb-2">
+        @string.Format(L["RecentSentHeading"].Value, Model.RecentSent.Count)
+    </h2>
+    @if (Model.RecentSent.Count == 0)
+    {
+        <p class="text-sm text-base-content/40 italic">@L["RecentSentEmpty"]</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto card bg-base-100 shadow-sm">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>@L["ColTo"]</th>
+                        <th>@L["ColSubject"]</th>
+                        <th>@L["ColCategory"]</th>
+                        <th>@L["ColSentAt"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.RecentSent)
+                    {
+                        <tr>
+                            <td class="text-xs">@row.To</td>
+                            <td class="text-xs">@row.Subject</td>
+                            <td class="text-xs">@row.Category</td>
+                            <td class="text-xs">@(row.SentAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

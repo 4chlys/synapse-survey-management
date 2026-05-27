@@ -64,10 +64,10 @@ public class AdminMembershipController(
             return View("Index", await BuildViewModel(scopedId.Value, platform.Name));
         }
 
-        TempData["Success"] = localizer["Platform_AdminAdded"].Value;
+        TempData["Success"]    = localizer["Platform_AdminAdded"].Value;
         TempData["InviteLink"] = inviteLink;
-        if (result.EmailAttempted && !result.EmailSent)
-            TempData["EmailFailed"] = true;
+        // No more EmailFailed banner: delivery is asynchronous now. Operators
+        // who want to confirm a send can check /Admin/EmailQueue.
         return RedirectToAction(nameof(Index), new { id = scopedId.Value });
     }
 

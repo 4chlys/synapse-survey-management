@@ -1,0 +1,158 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.IdeasViewModel
+@inject IViewLocalizer L
+@using Microsoft.AspNetCore.Identity
+@using SynapseEnqueteManagement.UI.Admin.Data
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var adminEmail = (await UserManager.GetUserAsync(User))?.Email ?? string.Empty;
+    var sendUrl    = Url.Action("SendParticipantEmail", "Project", new { projectId = Model.ProjectId });
+}
+
+@*
+    Two-step modal:
+      1. #email-choice-modal asks "send from here vs your own mail program"
+      2. #email-compose-modal is the actual form (only used for the "from here" branch)
+    Both opened from JS by clicking a participant email in _IdeasTable.
+*@
+
+<dialog id="email-choice-modal" class="modal">
+    <div class="modal-box w-[440px] max-w-[92vw] rounded-2xl p-7 flex flex-col gap-5">
+
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l9 6 9-6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[11px] uppercase font-bold tracking-wide text-base-content/50">Email</div>
+                    <div class="font-heading font-bold text-base text-base-content truncate">@L["EmailChoice_Title"]</div>
+                </div>
+            </div>
+            <form method="dialog">
+                <button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button>
+            </form>
+        </div>
+
+        <p class="text-sm text-base-content/60">@L["EmailChoice_Body"]</p>
+
+        <div class="flex flex-col gap-2">
+            @* Each option is a card-style button so the user perceives them as
+               equivalent choices, not a primary/secondary action pair. *@
+            <button type="button" id="email-choice-platform"
+                    class="group flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-base-300 hover:border-primary hover:bg-primary/5 transition-colors text-left">
+                <div class="w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l9 6 9-6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-base-content">@L["EmailChoice_SendViaPlatform"]</div>
+                    <div class="text-xs text-base-content/50">@L["EmailChoice_SendViaPlatform_Hint"]</div>
+                </div>
+            </button>
+
+            <a id="email-choice-mailto" href="#"
+               class="group flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-base-300 hover:border-secondary hover:bg-secondary/5 transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-secondary/15 text-secondary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 14L21 3m0 0h-7m7 0v7M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-base-content">@L["EmailChoice_OpenInMailClient"]</div>
+                    <div class="text-xs text-base-content/50">@L["EmailChoice_OpenInMailClient_Hint"]</div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+<dialog id="email-compose-modal" class="modal">
+    <div class="modal-box w-[560px] max-w-[94vw] max-h-[92vh] rounded-2xl overflow-y-auto p-7 flex flex-col gap-5">
+
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[11px] uppercase font-bold tracking-wide text-base-content/50">@L["EmailCompose_Eyebrow"]</div>
+                    <div class="font-heading font-bold text-base text-base-content truncate">@L["EmailCompose_Title"]</div>
+                </div>
+            </div>
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button></form>
+        </div>
+
+        <form id="email-compose-form"
+              data-send-url="@sendUrl"
+              data-project-id="@Model.ProjectId"
+              class="flex flex-col gap-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ideaId" id="email-compose-ideaId" />
+            <input type="hidden" name="participantEmail" id="email-compose-participant" />
+            <input type="hidden" name="languageCode" id="email-compose-language" />
+
+            @* Recipient strip — read-only display of who appears in the To /
+               BCC headers. Visually grouped so users see the routing at a
+               glance instead of reading two disabled inputs. *@
+            <div class="rounded-xl border border-base-200 bg-base-200/30 p-3 flex flex-col gap-2 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost badge-sm font-mono">@L["EmailField_To"]</span>
+                    <span class="text-base-content font-medium truncate">@adminEmail</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost badge-sm font-mono">@L["EmailField_Bcc"]</span>
+                    <span id="email-compose-bcc" class="text-base-content font-medium truncate"></span>
+                </div>
+                <p class="text-[11px] text-base-content/50 leading-snug mt-1">@L["EmailField_To_Hint"]</p>
+            </div>
+
+            <div class="form-control gap-1.5">
+                <label class="text-sm font-semibold text-base-content">@L["EmailField_ReplyTo"]</label>
+                <input type="email" name="replyTo" id="email-compose-replyto" value="@adminEmail" required
+                       class="input input-bordered input-sm w-full" />
+                <span class="text-[11px] text-base-content/50">@L["EmailField_ReplyTo_Hint"]</span>
+            </div>
+
+            <div class="form-control gap-1.5">
+                <label class="text-sm font-semibold text-base-content">@L["EmailField_Subject"]</label>
+                <input type="text" name="subject" required maxlength="200"
+                       class="input input-bordered input-sm w-full" />
+            </div>
+
+            <div class="form-control gap-1.5">
+                <label class="text-sm font-semibold text-base-content">@L["EmailField_Body"]</label>
+                <textarea name="body" required rows="8" maxlength="6000"
+                          class="textarea textarea-bordered text-sm leading-relaxed w-full"></textarea>
+                @* Footer preview lives in its own hint box so the admin sees
+                   exactly the line the server will append after their body. *@
+                <div class="flex items-start gap-2 px-3 py-2 rounded-lg bg-base-200/50 border border-dashed border-base-300">
+                    <svg class="w-3.5 h-3.5 mt-0.5 text-base-content/40 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    <span id="email-compose-footer-preview" class="text-[11px] text-base-content/60 italic leading-snug">
+                        @string.Format(L["Email_ReplyFooter"].Value, adminEmail)
+                    </span>
+                </div>
+            </div>
+
+            <div id="email-compose-error" class="text-error text-sm hidden"></div>
+        </form>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm">@L["CancelButton"]</button></form>
+            <button type="button" id="email-compose-submit" class="btn btn-primary btn-sm gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+                @L["EmailCompose_SendButton"]
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

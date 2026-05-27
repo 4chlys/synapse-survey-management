@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="PageTitle" xml:space="preserve"><value>E-mailwachtrij</value></data>
+  <data name="Heading" xml:space="preserve"><value>E-mailwachtrij</value></data>
+  <data name="Subheading" xml:space="preserve"><value>Status van uitgaande e-mails. Opgegeven rijen vragen om actie; in behandeling staat ingepland; recent verzonden is ter controle.</value></data>
+
+  <data name="GivenUpHeading" xml:space="preserve"><value>Opgegeven ({0})</value></data>
+  <data name="GivenUpEmpty" xml:space="preserve"><value>Geen vastgelopen berichten.</value></data>
+  <data name="PendingHeading" xml:space="preserve"><value>In behandeling ({0})</value></data>
+  <data name="PendingEmpty" xml:space="preserve"><value>De wachtrij is leeg.</value></data>
+  <data name="RecentSentHeading" xml:space="preserve"><value>Recent verzonden ({0})</value></data>
+  <data name="RecentSentEmpty" xml:space="preserve"><value>Niets recent verzonden.</value></data>
+
+  <data name="ColTo" xml:space="preserve"><value>Aan</value></data>
+  <data name="ColSubject" xml:space="preserve"><value>Onderwerp</value></data>
+  <data name="ColCategory" xml:space="preserve"><value>Categorie</value></data>
+  <data name="ColAttempts" xml:space="preserve"><value>Pogingen</value></data>
+  <data name="ColLastError" xml:space="preserve"><value>Laatste fout</value></data>
+  <data name="ColScheduledAt" xml:space="preserve"><value>Volgende poging</value></data>
+  <data name="ColSentAt" xml:space="preserve"><value>Verzonden</value></data>
+  <data name="RetryButton" xml:space="preserve"><value>Opnieuw</value></data>
+</root>

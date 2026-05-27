@@ -36,4 +36,5 @@
   <data name="ConfirmRemoveImage" xml:space="preserve"><value>Are you sure you want to remove this image?</value></data>
   <data name="PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
   <data name="AiSummaryButton" xml:space="preserve"><value>AI summary</value></data>
+  <data name="EmailBroadcast_TriggerButton" xml:space="preserve"><value>Send to all participants</value></data>
 </root>
