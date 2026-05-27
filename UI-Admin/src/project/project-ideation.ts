@@ -103,10 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', async e => {
             e.preventDefault();
             const btn = form.querySelector<HTMLButtonElement>('button')!;
+            const enabling = btn.dataset.enabled !== 'true';
             btn.disabled = true;
             try {
                 const res = await fetch(form.action, { method: 'POST' });
-                if (res.ok) setEmojiState(form, form.action === form.dataset.enableUrl);
+                if (res.ok) setEmojiState(form, enabling);
             } finally {
                 btn.disabled = false;
             }

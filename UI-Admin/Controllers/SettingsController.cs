@@ -111,7 +111,13 @@ public class SettingsController(
             return RedirectToAction(nameof(Index));
         }
 
-        if (!string.IsNullOrEmpty(value) && value.Length > MaxPromptLength)
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            TempData["Error"] = localizer["Settings_PromptEmpty"].Value;
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (value.Length > MaxPromptLength)
         {
             TempData["Error"] = string.Format(localizer["Settings_PromptTooLong"].Value, MaxPromptLength);
             return RedirectToAction(nameof(Index));

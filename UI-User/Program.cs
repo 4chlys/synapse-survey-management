@@ -169,6 +169,9 @@ builder.Services.AddSingleton<IFormStrategy, ScrollFormStrategy>();
 builder.Services.AddSingleton<IFormStrategy, ChatFormStrategy>();
 builder.Services.AddSingleton<IFormStrategyFactory, FormStrategyFactory>();
 
+// Image URL allow-list for idea uploads.
+builder.Services.AddSingleton<IdeaImageUrlValidator>();
+
 // ---- Service Configuration ----
 // Add Vite services.
 builder.Services.AddViteServices();

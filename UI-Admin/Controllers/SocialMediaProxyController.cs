@@ -26,7 +26,9 @@ public class SocialMediaProxyController(
     [HttpPost("image"), IgnoreAntiforgeryToken, EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> GenerateImage(int projectId)
     {
-        var (status, content) = await proxy.PostAsync($"api/projects/{projectId}/social/image");
+        var body = new StreamContent(Request.Body);
+        body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        var (status, content) = await proxy.PostAsync($"api/projects/{projectId}/social/image", body);
         return new ContentResult { StatusCode = status, Content = content, ContentType = "application/json" };
     }
 

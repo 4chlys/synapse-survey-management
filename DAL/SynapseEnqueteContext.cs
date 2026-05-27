@@ -248,8 +248,9 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Supports "which participants answered this question?" queries.
-            e.HasIndex("QuestionId", "ParticipantId");
+            // One response per (question, participant) — also supports
+            // "which participants answered this question?" queries.
+            e.HasIndex("QuestionId", "ParticipantId").IsUnique();
             e.HasIndex("ParticipantId");
         });
 
@@ -406,6 +407,17 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
             }
             e.Property(j => j.Status).HasConversion<string>();
             e.Property(j => j.ExportFormat).HasConversion<string>();
+
+            e.HasOne(j => j.Project)
+                .WithMany()
+                .HasForeignKey(j => j.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(j => j.ProjectPlatform)
+                .WithMany()
+                .HasForeignKey(j => j.ProjectPlatformId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             e.HasIndex(j => new { j.ProjectId, j.Status });
         });
 

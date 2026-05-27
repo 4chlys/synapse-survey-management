@@ -13,6 +13,7 @@ public class ProjectManager(
     IProjectRepository projectRepository,
     IEmojiManager emojiManager,
     IProjectTranslationValidator translationValidator,
+    IProjectActivationValidator activationValidator,
     IShortFormService shortFormService,
     IProjectDuplicationService projectDuplicationService,
     IUnitOfWork uow) : IProjectManager
@@ -87,8 +88,8 @@ public class ProjectManager(
             CustomCss = customCss,
         };
 
-        foreach (var code in supportedList)
-            project.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in supportedList)
+            project.SupportedLanguages.Add(languages[languageCode]);
 
         foreach (var t in translationList)
         {
@@ -258,6 +259,17 @@ public class ProjectManager(
 
     public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
     {
+        if (newState == ProjectState.Active)
+        {
+            var fullGraph = await projectRepository.ReadByIdForActivationReadOnlyAsync(projectId);
+            if (fullGraph is null)
+                throw new ArgumentException($"Project {projectId} not found.");
+
+            var problems = activationValidator.Validate(fullGraph);
+            if (problems.Count > 0)
+                throw new ProjectActivationException(problems);
+        }
+
         var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
         if (project is null)
             throw new ArgumentException($"Project {projectId} not found.");
@@ -410,8 +422,8 @@ public class ProjectManager(
         var desiredSet = desiredCodes.ToHashSet();
         foreach (var existing in project.SupportedLanguages.Where(l => !desiredSet.Contains(l.Code)).ToList())
             project.SupportedLanguages.Remove(existing);
-        foreach (var code in desiredCodes)
-            if (!project.SupportedLanguages.Any(l => l.Code == code))
-                project.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in desiredCodes)
+            if (!project.SupportedLanguages.Any(l => l.Code == languageCode))
+                project.SupportedLanguages.Add(languages[languageCode]);
     }
 }

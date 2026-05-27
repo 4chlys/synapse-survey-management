@@ -1,12 +1,16 @@
 using Google;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SynapseEnqueteManagement.API.Options;
 
 namespace SynapseEnqueteManagement.API.Services;
 
-public class GoogleCloudStorageService(ILogger<GoogleCloudStorageService> logger) : IStorageService
+public class GoogleCloudStorageService(
+    ILogger<GoogleCloudStorageService> logger,
+    IOptions<StorageOptions> storageOptions) : IStorageService
 {
-    private readonly string _bucketName = Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod";
+    private readonly string _bucketName = storageOptions.Value.BucketName;
 
     public async Task<string> UploadAsync(IFormFile file, string folder)
     {

@@ -67,7 +67,12 @@ public class SurveyFlowManager(
         var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participantId);
         // Each response carries its own source language (the participant's language at save time),
         // so branching/ending lookups must use that language — not the participant's current one.
-        var responseByQId = responses.ToDictionary(r => r.Question.QuestionId, r => r);
+        // Defensive GroupBy: a unique index on (QuestionId, ParticipantId) prevents duplicates at the
+        // schema level, but if a race or backfill ever inserts two rows we take the first rather than
+        // crash the survey flow.
+        var responseByQId = responses
+            .GroupBy(r => r.Question.QuestionId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var path = new List<Question>();
         var visited = new HashSet<int>();

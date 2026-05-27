@@ -124,6 +124,8 @@ builder.Services.AddRepositories()
     .AddAiServices(builder.Configuration, aiConfig);
 
 // Storage
+builder.Services.Configure<StorageOptions>(o =>
+    o.BucketName = Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod");
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddHttpContextAccessor();

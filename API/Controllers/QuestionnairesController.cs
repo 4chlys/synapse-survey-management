@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.API.Helpers;
+using SynapseEnqueteManagement.API.Options;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -16,20 +17,27 @@ public class QuestionnairesController(
     IParticipantManager participantManager,
     IProjectManager projectManager,
     IQuestionMediaCleanupService mediaCleanup,
+    IOptions<StorageOptions> storageOptions,
     IWebHostEnvironment env)
     : ParticipantControllerBase(participantManager, projectManager)
 {
-    private static readonly string GcsBucket =
-        Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod";
+    private readonly string _gcsBucket = storageOptions.Value.BucketName;
 
     [HttpGet]
-    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
+    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId,
+        [FromQuery] string languageCode = null)
     {
         var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
-        var dto = MapToQuestionnaireDto(questionnaire);
+        if (languageCode is null)
+        {
+            var project = await GetProjectByIdReadOnlyAsync(projectId);
+            languageCode = project?.DefaultLanguage?.Code ?? "nl";
+        }
+
+        var dto = QuestionDtoMapper.ToQuestionnaireDto(questionnaire, languageCode);
         return Ok(dto);
     }
 
@@ -48,7 +56,22 @@ public class QuestionnairesController(
         }
 
         var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
-        var dtos = questions.Select(q => MapToDto(q, languageCode)).ToList();
+        var dtos = questions.Select(q => QuestionDtoMapper.ToDto(q, languageCode)).ToList();
+        return Ok(dtos);
+    }
+
+    [HttpGet("questions/admin")]
+    public async Task<ActionResult<IEnumerable<AdminQuestionDto>>> GetAdminQuestions(int projectId)
+    {
+        // Admin authoring view: returns the full multilingual shape (Translations[],
+        // per-language EndingAnswers, AnswerChoiceCount) needed by the edit modal.
+        // Distinct from the participant-facing GET above, which flattens to one language.
+        var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdReadOnlyAsync(projectId);
+        if (questionnaire is null)
+            return NotFound();
+
+        var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
+        var dtos = questions.Select(QuestionDtoMapper.ToAdminDto).ToList();
         return Ok(dtos);
     }
 
@@ -60,7 +83,7 @@ public class QuestionnairesController(
             return BadRequest("Invalid QuestionFormat.");
 
         var (mediaValid, canonicalUrl, mediaError) = MediaUrlValidator.Validate(
-            dto.MediaUrl, dto.MediaType, dto.MediaIsEmbed, GcsBucket, env.IsDevelopment());
+            dto.MediaUrl, dto.MediaType, dto.MediaIsEmbed, _gcsBucket, env.IsDevelopment());
         if (!mediaValid)
             return BadRequest(mediaError);
 
@@ -82,7 +105,7 @@ public class QuestionnairesController(
         if (question is null)
             return NotFound();
 
-        return Created(string.Empty, MapToAdminDto(question));
+        return Created(string.Empty, QuestionDtoMapper.ToAdminDto(question));
     }
 
     [HttpPut("questions/{questionId}")]
@@ -96,7 +119,7 @@ public class QuestionnairesController(
             return NotFound();
 
         var (mediaValid, canonicalUrl, mediaError) = MediaUrlValidator.Validate(
-            dto.MediaUrl, dto.MediaType, dto.MediaIsEmbed, GcsBucket, env.IsDevelopment());
+            dto.MediaUrl, dto.MediaType, dto.MediaIsEmbed, _gcsBucket, env.IsDevelopment());
         if (!mediaValid)
             return BadRequest(mediaError);
 
@@ -159,7 +182,7 @@ public class QuestionnairesController(
         if (moved is null)
             return NotFound();
 
-        return Ok(MapToAdminDto(moved));
+        return Ok(QuestionDtoMapper.ToAdminDto(moved));
     }
 
     [HttpGet("next-question")]
@@ -202,82 +225,4 @@ public class QuestionnairesController(
         var path = await surveyFlowManager.ComputeVisiblePathAsync(projectId, participant.ParticipantId);
         return Ok(new { questionIds = path });
     }
-
-    private static QuestionnaireDto MapToQuestionnaireDto(Questionnaire questionnaire)
-        => new()
-        {
-            QuestionnaireId = questionnaire.QuestionnaireId,
-            Questions = questionnaire.Questions
-                .OrderBy(q => q.Position)
-                .Select(q => MapToDto(q, null))
-                .ToList()
-        };
-
-    private static QuestionDto MapToDto(Question question, string languageCode)
-    {
-        var translation = languageCode is not null
-            ? question.Translations?.FirstOrDefault(t => t.Language?.Code == languageCode)
-              ?? question.Translations?.FirstOrDefault()
-            : question.Translations?.FirstOrDefault();
-
-        return new QuestionDto
-        {
-            QuestionId = question.QuestionId,
-            Text = translation?.Text,
-            QuestionFormat = question.QuestionFormat.ToString(),
-            AnswerChoices = translation?.AnswerChoices?.ToList() ?? new List<string>(),
-            AnswerChoiceCount = question.AnswerChoiceCount,
-            IsMandatory = question.IsMandatory,
-            Position = question.Position,
-            ChoiceIndex = question.ChoiceIndex,
-            ParentQuestionId = question.ParentQuestion?.QuestionId,
-            EndingAnswers = question.EndingAnswers
-                .Select(ea => ea.Translations
-                    .FirstOrDefault(t => languageCode is not null && t.Language?.Code == languageCode)?.Value
-                    ?? ea.Translations.FirstOrDefault()?.Value)
-                .Where(v => v is not null)
-                .ToList(),
-            SectionName = question.Section?.Translations
-                ?.FirstOrDefault(t => languageCode is not null && t.Language?.Code == languageCode)?.Name
-                ?? question.Section?.Translations?.FirstOrDefault()?.Name,
-            SectionId = question.Section?.SectionId,
-            MediaUrl = question.MediaUrl,
-            MediaType = question.MediaType,
-            MediaIsEmbed = question.MediaIsEmbed,
-            MediaText = translation?.MediaText
-        };
-    }
-
-    private static AdminQuestionDto MapToAdminDto(Question question)
-        => new()
-        {
-            QuestionId = question.QuestionId,
-            QuestionFormat = question.QuestionFormat.ToString(),
-            IsMandatory = question.IsMandatory,
-            Position = question.Position,
-            AnswerChoiceCount = question.AnswerChoiceCount,
-            ChoiceIndex = question.ChoiceIndex,
-            ParentQuestionId = question.ParentQuestion?.QuestionId,
-            SectionId = question.Section?.SectionId,
-            SectionName = question.Section?.Translations?.FirstOrDefault()?.Name,
-            MediaUrl = question.MediaUrl,
-            MediaType = question.MediaType,
-            MediaIsEmbed = question.MediaIsEmbed,
-            Translations = question.Translations?.Select(t => new QuestionTranslationDto
-            {
-                LanguageCode = t.Language?.Code,
-                Text = t.Text,
-                AnswerChoices = t.AnswerChoices?.ToList() ?? new List<string>(),
-                MediaText = t.MediaText
-            }).ToList() ?? new List<QuestionTranslationDto>(),
-            EndingAnswers = question.EndingAnswers?.Select(ea => new EndingAnswerDto
-            {
-                EndingAnswerId = ea.EndingAnswerId,
-                Translations = ea.Translations?.Select(t => new EndingAnswerTranslationDto
-                {
-                    LanguageCode = t.Language?.Code,
-                    Value = t.Value
-                }).ToList() ?? new List<EndingAnswerTranslationDto>()
-            }).ToList() ?? new List<EndingAnswerDto>()
-        };
 }

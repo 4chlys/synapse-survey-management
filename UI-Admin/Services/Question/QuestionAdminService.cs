@@ -22,6 +22,7 @@ public class QuestionAdminService(HttpClient httpClient)
 
     private record QuestionRequest
     {
+        // Slot count — every translation's AnswerChoices list has exactly this many entries.
         public int AnswerChoiceCount { get; init; }
         public string QuestionFormat { get; init; }
         public bool IsMandatory { get; init; }
@@ -29,6 +30,8 @@ public class QuestionAdminService(HttpClient httpClient)
         public int? ParentQuestionId { get; init; }
         public int? ChoiceIndex { get; init; }
         public ICollection<QuestionTranslationDto> Translations { get; init; }
+        // Outer collection = slot (one per ending-answer slot, mirroring choice slots).
+        // Inner collection = per-language values for that slot. Null = preserve existing.
         public ICollection<ICollection<EndingAnswerTranslationDto>> EndingAnswers { get; init; }
         public string MediaUrl { get; init; }
         public QuestionMediaType? MediaType { get; init; }
@@ -37,46 +40,41 @@ public class QuestionAdminService(HttpClient httpClient)
 
     private record MoveRequest(int? ParentQuestionId, int? ChoiceIndex, int Position);
 
-    public async Task<List<QuestionViewModel>> GetQuestionsAsync(int projectId)
+    // Returns the full multilingual question shape (Translations[], per-language
+    // EndingAnswers, AnswerChoiceCount) for the admin authoring view. Calls the
+    // dedicated admin GET endpoint; the participant-facing list GET flattens to
+    // one language and is unsuitable for edit rehydration.
+    public async Task<List<AdminQuestionViewModel>> GetQuestionsAsync(int projectId)
     {
         var response = await
-            httpClient.GetAsync($"api/projects/{projectId}/questionnaire/questions");
+            httpClient.GetAsync($"api/projects/{projectId}/questionnaire/questions/admin");
         if (!response.IsSuccessStatusCode)
-            return new List<QuestionViewModel>();
+            return new List<AdminQuestionViewModel>();
 
         return await
-                   response.Content.ReadFromJsonAsync<List<QuestionViewModel>>()
-               ?? new List<QuestionViewModel>();
+                   response.Content.ReadFromJsonAsync<List<AdminQuestionViewModel>>()
+               ?? new List<AdminQuestionViewModel>();
     }
 
-    public async Task CreateQuestionAsync(int projectId, string text, string questionFormat,
-        bool isMandatory, ICollection<string> answerChoices, int? sectionId = null,
+    public async Task CreateQuestionAsync(int projectId, string questionFormat,
+        bool isMandatory, int answerChoiceCount,
+        ICollection<QuestionTranslationFormViewModel> translations,
+        int? sectionId = null,
         int? parentQuestionId = null, int? choiceIndex = null,
-        ICollection<string> endingAnswers = null,
+        ICollection<EndingAnswerSlotFormViewModel> endingAnswerSlots = null,
         string mediaUrl = null, QuestionMediaType? mediaType = null,
-        bool mediaIsEmbed = false, string mediaText = null)
+        bool mediaIsEmbed = false)
     {
-        var translation = new QuestionTranslationDto
-        {
-            LanguageCode = "nl",
-            Text = text,
-            AnswerChoices = answerChoices ?? new List<string>(),
-            MediaText = mediaText
-        };
         var payload = new QuestionRequest
         {
-            AnswerChoiceCount = answerChoices?.Count ?? 0,
+            AnswerChoiceCount = answerChoiceCount,
             QuestionFormat = questionFormat,
             IsMandatory = isMandatory,
             SectionId = sectionId,
             ParentQuestionId = parentQuestionId,
             ChoiceIndex = choiceIndex,
-            Translations = new List<QuestionTranslationDto> { translation },
-            EndingAnswers = endingAnswers?
-                .Select(v => (ICollection<EndingAnswerTranslationDto>)new List<EndingAnswerTranslationDto>
-                {
-                    new() { LanguageCode = "nl", Value = v }
-                }).ToList() ?? new List<ICollection<EndingAnswerTranslationDto>>(),
+            Translations = MapTranslations(translations),
+            EndingAnswers = MapEndingAnswers(endingAnswerSlots),
             MediaUrl = mediaUrl,
             MediaType = mediaType,
             MediaIsEmbed = mediaIsEmbed,
@@ -87,31 +85,22 @@ public class QuestionAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task UpdateQuestionAsync(int projectId, int questionId, string text, string questionFormat,
-        bool isMandatory, ICollection<string> answerChoices, int? sectionId = null,
-        ICollection<string> endingAnswers = null,
+    public async Task UpdateQuestionAsync(int projectId, int questionId, string questionFormat,
+        bool isMandatory, int answerChoiceCount,
+        ICollection<QuestionTranslationFormViewModel> translations,
+        int? sectionId = null,
+        ICollection<EndingAnswerSlotFormViewModel> endingAnswerSlots = null,
         string mediaUrl = null, QuestionMediaType? mediaType = null,
-        bool mediaIsEmbed = false, string mediaText = null)
+        bool mediaIsEmbed = false)
     {
-        var translation = new QuestionTranslationDto
-        {
-            LanguageCode = "nl",
-            Text = text,
-            AnswerChoices = answerChoices ?? new List<string>(),
-            MediaText = mediaText
-        };
         var payload = new QuestionRequest
         {
-            AnswerChoiceCount = answerChoices?.Count ?? 0,
+            AnswerChoiceCount = answerChoiceCount,
             QuestionFormat = questionFormat,
             IsMandatory = isMandatory,
             SectionId = sectionId,
-            Translations = new List<QuestionTranslationDto> { translation },
-            EndingAnswers = endingAnswers?
-                .Select(v => (ICollection<EndingAnswerTranslationDto>)new List<EndingAnswerTranslationDto>
-                {
-                    new() { LanguageCode = "nl", Value = v }
-                }).ToList() ?? new List<ICollection<EndingAnswerTranslationDto>>(),
+            Translations = MapTranslations(translations),
+            EndingAnswers = MapEndingAnswers(endingAnswerSlots),
             MediaUrl = mediaUrl,
             MediaType = mediaType,
             MediaIsEmbed = mediaIsEmbed,
@@ -119,6 +108,37 @@ public class QuestionAdminService(HttpClient httpClient)
         var response = await httpClient.PutAsJsonAsync(
             $"api/projects/{projectId}/questionnaire/questions/{questionId}", payload);
         response.EnsureSuccessStatusCode();
+    }
+
+    private static ICollection<QuestionTranslationDto> MapTranslations(
+        ICollection<QuestionTranslationFormViewModel> translations) =>
+        (translations ?? new List<QuestionTranslationFormViewModel>())
+            .Select(t => new QuestionTranslationDto
+            {
+                LanguageCode = t.LanguageCode,
+                Text = t.Text,
+                AnswerChoices = t.GetAnswerChoices(),
+                MediaText = t.MediaText
+            })
+            .ToList();
+
+    // null → null on the wire (manager preserves existing endings on update).
+    // Empty list → [] on the wire (manager clears endings). Non-empty → mapped.
+    // This distinction matters for the tree's "Ends survey" toggle path, which
+    // needs to explicitly clear all endings when every toggle is unchecked.
+    private static ICollection<ICollection<EndingAnswerTranslationDto>> MapEndingAnswers(
+        ICollection<EndingAnswerSlotFormViewModel> endingAnswerSlots)
+    {
+        if (endingAnswerSlots is null) return null;
+        return endingAnswerSlots
+            .Select(slot => (ICollection<EndingAnswerTranslationDto>)slot.Translations
+                .Select(t => new EndingAnswerTranslationDto
+                {
+                    LanguageCode = t.LanguageCode,
+                    Value = t.Value ?? string.Empty
+                })
+                .ToList())
+            .ToList();
     }
 
     public async Task DeleteQuestionAsync(int projectId, int questionId)

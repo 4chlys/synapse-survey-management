@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Participants;
 using SynapseEnqueteManagement.API.DTOs.Project;
 using SynapseEnqueteManagement.API.DTOs.Survey;
+using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Interfaces;
-using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -69,12 +69,12 @@ public class ResponsesController(
     public async Task<ActionResult<ResponseDto>> CreateResponse(int projectId, CreateResponseDto createDto,
         CancellationToken ct)
     {
-        var (participant, error) = await GetParticipantAsync();
+        var (participant, error) = await GetParticipantAsync(projectId);
         if (error is not null) return error;
 
         var response =
             await responseManager.UpdateOrCreateResponseAsync(createDto.QuestionId, createDto.Value, participant, ct);
-        var dto = MapToDto(response);
+        var dto = ResponseDtoMapper.ToDto(response);
         return Created(string.Empty, dto);
     }
 
@@ -95,7 +95,7 @@ public class ResponsesController(
         if (error is not null) return error;
 
         var responses = await responseManager.GetResponsesForParticipantReadOnlyAsync(participant);
-        var dtos = responses.Select(MapToDto).ToList();
+        var dtos = responses.Select(ResponseDtoMapper.ToDto).ToList();
         return Ok(dtos);
     }
 
@@ -109,15 +109,4 @@ public class ResponsesController(
         return Ok(new ParticipantStatusDto { HasResponded = hasSubmitted });
     }
 
-    private static ResponseDto MapToDto(Response response)
-    {
-        return new ResponseDto
-        {
-            ResponseId = response.ResponseId,
-            Value = response.Value,
-            QuestionId = response.Question?.QuestionId ?? 0,
-            ParticipantId = response.Participant?.ParticipantId ?? 0,
-            LanguageCode = response.Language?.Code
-        };
-    }
 }

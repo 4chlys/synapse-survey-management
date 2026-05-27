@@ -36,7 +36,7 @@ public class SectionManagerTests
     public async Task GetSectionsReadOnlyAsync_DelegatesToRepository()
     {
         var sections = new List<Section> { new() { SectionId = SectionId } };
-        _sectionRepo.Setup(r => r.ReadByProjectIdReadOnlyAsync(ProjectId)).ReturnsAsync(sections);
+        _sectionRepo.Setup(r => r.ReadByProjectIdWithTranslationsReadOnlyAsync(ProjectId)).ReturnsAsync(sections);
 
         var result = await _manager.GetSectionsReadOnlyAsync(ProjectId);
 

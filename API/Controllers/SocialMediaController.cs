@@ -39,12 +39,8 @@ public class SocialMediaController(
         var completionRate  = project.ViewCount > 0
             ? Math.Round((double)completionCount / project.ViewCount * 100, 1) : 0d;
 
-        var projectTr = project.Translations.FirstOrDefault(t => t.Language?.Code == lang)
-                        ?? project.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
-                        ?? project.Translations.FirstOrDefault();
-        var introTr = project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
-                      ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
-                      ?? project.Introduction?.Translations.FirstOrDefault();
+        var projectTr = TranslationPicker.Pick(project.Translations, lang, defaultLang);
+        var introTr = TranslationPicker.Pick(project.Introduction?.Translations, lang, defaultLang);
 
         var intro = HtmlHelpers.StripHtml(introTr?.Text ?? "");
 
@@ -78,23 +74,20 @@ public class SocialMediaController(
 
     [HttpPost("image")]
     public async Task<ActionResult<GenerateSocialImageResponseDto>> GenerateImage(
-        int projectId, CancellationToken ct)
+        int projectId, GenerateSocialImageRequestDto dto, CancellationToken ct)
     {
         var project = await projectManager.GetProjectByIdWithIntroductionReadOnlyAsync(projectId);
         if (project is null) return NotFound();
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var defaultLang = project.DefaultLanguage?.Code ?? lang;
-        var projectTr = project.Translations.FirstOrDefault(t => t.Language?.Code == lang)
-                        ?? project.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
-                        ?? project.Translations.FirstOrDefault();
-        var introTr = project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == lang)
-                      ?? project.Introduction?.Translations.FirstOrDefault(t => t.Language?.Code == defaultLang)
-                      ?? project.Introduction?.Translations.FirstOrDefault();
+        var projectTr = TranslationPicker.Pick(project.Translations, lang, defaultLang);
+        var introTr = TranslationPicker.Pick(project.Introduction?.Translations, lang, defaultLang);
         var result = await imageGenerator.GenerateProjectImageAsync(
             projectTr?.Name ?? "", projectId,
             projectTopic: projectTr?.Topic,
             introText: introTr?.Text ?? "",
+            postCopy: dto?.PostCopy,
             ct: ct);
         if (!result.IsSuccess)
             return StatusCode(502, new { error = result.ErrorMessage });

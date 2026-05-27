@@ -76,6 +76,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILanguageResolver, LanguageResolver>();
         services.AddScoped<IEmojiManager, EmojiManager>();
         services.AddScoped<IProjectTranslationValidator, ProjectTranslationValidator>();
+        services.AddScoped<IProjectActivationValidator, ProjectActivationValidator>();
         services.AddScoped<IQuestionnaireManager, QuestionnaireManager>();
         services.AddScoped<ISectionManager, SectionManager>();
         services.AddScoped<IParticipantManager, ParticipantManager>();

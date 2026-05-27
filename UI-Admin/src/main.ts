@@ -4,6 +4,8 @@ import { initDomHandlers } from './lib/dom-handlers';
 import { initAlerts } from './lib/alerts';
 import { initPasswordToggle } from './lib/password-toggle';
 import { initExportEmails } from './lib/export-emails';
+import { initSettingsPrompts } from './settings/settings-prompts';
+import { initSettingsRadio } from './settings/settings-radio';
 import './admin/admin-ai-usage';
 import './project/project-index';
 import './project/project-setup';
@@ -25,6 +27,8 @@ function init(): void {
     initAlerts();
     initPasswordToggle();
     initExportEmails();
+    initSettingsPrompts();
+    initSettingsRadio();
 }
 
 if (document.readyState === 'loading') {

@@ -23,6 +23,7 @@ public record ProjectAdminViewModel
     public bool AllowCrossLanguageIdeas { get; init; }
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
+    public ICollection<ProjectTranslationViewModel> Translations { get; init; } = new List<ProjectTranslationViewModel>();
 
     public int LastWizardStep { get; init; } = 1;
 
