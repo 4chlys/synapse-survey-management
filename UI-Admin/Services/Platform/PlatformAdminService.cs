@@ -84,8 +84,6 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
         settings.IdeationEnabled = model.IdeationEnabled;
         settings.MaxProjects = model.MaxProjects;
         settings.MaxAdmins = model.MaxAdmins;
-        settings.AiModelName = model.AiModelName;
-        settings.CostDashboardUrl = model.CostDashboardUrl;
 
         if (settings.Id == 0)
             db.PlatformSettings.Add(settings);

@@ -70,9 +70,7 @@ public class PlatformController(
                 platformStats?.ActiveCount ?? 0,
                 platformStats?.DraftCount ?? 0,
                 platformStats?.ArchivedCount ?? 0,
-                platformStats?.ParticipantCount ?? 0,
-                settings?.AiModelName ?? string.Empty,
-                settings?.CostDashboardUrl ?? string.Empty
+                platformStats?.ParticipantCount ?? 0
             ));
         }
 
@@ -187,9 +185,7 @@ public class PlatformController(
             stats.ActiveCount,
             stats.DraftCount,
             stats.ArchivedCount,
-            stats.ParticipantCount,
-            settings?.AiModelName ?? string.Empty,
-            settings?.CostDashboardUrl ?? string.Empty
+            stats.ParticipantCount
         )
         {
             Projects = systemStats.Projects.Select(p => new ProjectRowViewModel
@@ -269,9 +265,7 @@ public class PlatformController(
                 AiAssistanceEnabled = settings.AiAssistanceEnabled,
                 IdeationEnabled = settings.IdeationEnabled,
                 MaxProjects = settings.MaxProjects,
-                MaxAdmins = settings.MaxAdmins,
-                AiModelName = settings.AiModelName,
-                CostDashboardUrl = settings.CostDashboardUrl
+                MaxAdmins = settings.MaxAdmins
             }
             : new PlatformConfigurationViewModel
             {

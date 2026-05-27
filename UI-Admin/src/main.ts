@@ -4,9 +4,8 @@ import { initDomHandlers } from './lib/dom-handlers';
 import { initAlerts } from './lib/alerts';
 import { initPasswordToggle } from './lib/password-toggle';
 import { initExportEmails } from './lib/export-emails';
-import { initSettingsPrompts } from './settings/settings-prompts';
-import { initSettingsRadio } from './settings/settings-radio';
-import './admin/admin-ai-usage';
+import { initSettingsPrompts } from './lib/settings-prompts';
+import { initSettingsRadio } from './lib/settings-radio';
 import './project/project-index';
 import './project/project-setup';
 import './project/project-style';
@@ -20,6 +19,7 @@ import './admin/ideas-status-badge';
 import './admin/rawdata-export';
 import './admin/system-stats-export';
 import './project/project-stats-export';
+import './project/configure-dashboard';
 
 function init(): void {
     initTheme();

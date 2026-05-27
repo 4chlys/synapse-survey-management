@@ -23,4 +23,5 @@
   <data name="EmailFailedNotice" xml:space="preserve"><value>De welkomstmail kon niet worden verzonden. De account is aangemaakt — je moet de onderstaande link handmatig delen.</value></data>
   <data name="SendEmailLabel" xml:space="preserve"><value>Welkomstmail met de link versturen</value></data>
   <data name="CopyButton" xml:space="preserve"><value>Kopiëren</value></data>
+  <data name="YouLabel" xml:space="preserve"><value>jij</value></data>
 </root>
