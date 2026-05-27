@@ -458,11 +458,11 @@ async function renderQuestion(ctx: Ctx, index: number, withTyping = true): Promi
 
     const media: BubbleMedia | undefined = q.mediaType
         ? {
-            imageUrl: q.mediaType === 1 ? q.mediaUrl : undefined,
-            videoUrl: q.mediaType === 2 ? q.mediaUrl : undefined,
-            audioUrl: q.mediaType === 3 ? q.mediaUrl : undefined,
+            imageUrl: q.mediaType === 1 ? (q.mediaUrl ?? undefined) : undefined,
+            videoUrl: q.mediaType === 2 ? (q.mediaUrl ?? undefined) : undefined,
+            audioUrl: q.mediaType === 3 ? (q.mediaUrl ?? undefined) : undefined,
             isEmbed: q.mediaIsEmbed,
-            extraText: q.mediaText,
+            extraText: q.mediaText ?? undefined,
         }
         : (q.mediaText ? { extraText: q.mediaText } : undefined);
     const sysBubble = await appendSystemBubble(ctx, q.text, withTyping, media);

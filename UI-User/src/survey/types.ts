@@ -20,10 +20,10 @@ export interface QuestionData {
     totalQuestions: number;
     isMandatory: boolean;
     position: number;
-    mediaUrl?: string;
-    mediaType?: number;
+    mediaUrl: string | null;
+    mediaType: number | null;
     mediaIsEmbed: boolean;
-    mediaText?: string;
+    mediaText: string | null;
 }
 
 export interface QuestionEntry {

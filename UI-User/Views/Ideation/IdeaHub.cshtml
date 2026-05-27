@@ -260,7 +260,8 @@
          data-sort="@Model.CurrentSort"
          data-replace="@Model.ExtraIdeasReplaceExisting.ToString().ToLower()"
          data-max-extra="@Model.MaxExtraIdeaRequests"
-         data-current-page="@(Model.MaxExtraIdeaRequests - Model.RemainingExtraRequests + 1)">
+         data-current-page="@(Model.MaxExtraIdeaRequests - Model.RemainingExtraRequests + 1)"
+         data-empty-label="@L["EmptyState"]">
         @if (!Model.Ideas.Any())
         {
             <li class="text-center py-16 flex flex-col items-center gap-3">

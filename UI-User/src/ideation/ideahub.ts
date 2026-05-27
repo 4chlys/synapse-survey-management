@@ -8,56 +8,6 @@ import { t, currentCulture } from '../lib/i18n';
 import { EmojiReaction, IdeaResponse, LoadIdeasResponse } from './types';
 import { escapeHtml, escapeAttr } from '../lib/utils';
 
-let modeOverlay: HTMLElement | null = null;
-let modePanel: HTMLElement | null = null;
-let commentModeOverlay: HTMLElement | null = null;
-let commentModePanel: HTMLElement | null = null;
-let lightbox: HTMLElement | null = null;
-let lightboxImg: HTMLImageElement | null = null;
-
-function openModeSelect(): void {
-    if (!modeOverlay) return;
-    modeOverlay.classList.remove('hidden');
-    modeOverlay.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    modePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
-}
-
-function closeModeSelect(): void {
-    if (!modeOverlay) return;
-    modeOverlay.classList.add('hidden');
-    modeOverlay.classList.remove('flex');
-    document.body.style.overflow = '';
-}
-
-function openCommentModeSelect(): void {
-    if (!commentModeOverlay) return;
-    commentModeOverlay.classList.remove('hidden');
-    commentModeOverlay.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    commentModePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
-}
-
-function closeCommentModeSelect(): void {
-    if (!commentModeOverlay) return;
-    commentModeOverlay.classList.add('hidden');
-    commentModeOverlay.classList.remove('flex');
-    document.body.style.overflow = '';
-}
-
-function openLightbox(src: string): void {
-    if (!lightbox || !lightboxImg) return;
-    lightboxImg.src = src;
-    lightbox.classList.remove('hidden');
-    lightbox.classList.add('flex');
-}
-
-function closeLightbox(): void {
-    if (!lightbox) return;
-    lightbox.classList.add('hidden');
-    lightbox.classList.remove('flex');
-}
-
 export function initIdeation(): void {
     const projectId = getProjectId();
     const showAllToggle = document.getElementById('show-all-languages-toggle') as HTMLInputElement | null;
@@ -87,8 +37,23 @@ export function initIdeation(): void {
         });
     }
 
-    modeOverlay = document.getElementById('mode-select-overlay');
-    modePanel   = document.getElementById('mode-select-panel');
+    const modeOverlay = document.getElementById('mode-select-overlay');
+    const modePanel   = document.getElementById('mode-select-panel');
+
+    function openModeSelect(): void {
+        if (!modeOverlay) return;
+        modeOverlay.classList.remove('hidden');
+        modeOverlay.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        modePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
+    }
+
+    function closeModeSelect(): void {
+        if (!modeOverlay) return;
+        modeOverlay.classList.add('hidden');
+        modeOverlay.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
 
     modeOverlay?.addEventListener('click', (e: MouseEvent) => {
         if (modePanel && !modePanel.contains(e.target as Node)) closeModeSelect();
@@ -116,8 +81,23 @@ export function initIdeation(): void {
         }
     }
 
-    commentModeOverlay = document.getElementById('comment-mode-overlay');
-    commentModePanel   = document.getElementById('comment-mode-panel');
+    const commentModeOverlay = document.getElementById('comment-mode-overlay');
+    const commentModePanel   = document.getElementById('comment-mode-panel');
+
+    function openCommentModeSelect(): void {
+        if (!commentModeOverlay) return;
+        commentModeOverlay.classList.remove('hidden');
+        commentModeOverlay.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        commentModePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
+    }
+
+    function closeCommentModeSelect(): void {
+        if (!commentModeOverlay) return;
+        commentModeOverlay.classList.add('hidden');
+        commentModeOverlay.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
 
     commentModeOverlay?.addEventListener('click', (e: MouseEvent) => {
         if (commentModePanel && !commentModePanel.contains(e.target as Node))
@@ -176,8 +156,21 @@ export function initIdeation(): void {
         }
     });
 
-    lightbox    = document.getElementById('image-lightbox');
-    lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+    const lightbox    = document.getElementById('image-lightbox');
+    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+
+    function openLightbox(src: string): void {
+        if (!lightbox || !lightboxImg) return;
+        lightboxImg.src = src;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+    }
+
+    function closeLightbox(): void {
+        if (!lightbox) return;
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+    }
 
     lightbox?.addEventListener('click', () => closeLightbox());
 
@@ -393,14 +386,17 @@ async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<voi
             btn.setAttribute('disabled', 'true');
         }
 
-        if (data.ideas.length === 0) return;
-
-        const html = data.ideas.map(idea => renderIdeaCard(idea, projectId!, categoryId!)).join('');
-
         if (replace) {
             list.querySelectorAll(':scope > li').forEach(el => el.remove());
+            if (data.ideas.length === 0) {
+                list.insertAdjacentHTML('beforeend', renderEmptyState(list.dataset.emptyLabel ?? ''));
+                return;
+            }
+        } else if (data.ideas.length === 0) {
+            return;
         }
 
+        const html = data.ideas.map(idea => renderIdeaCard(idea, projectId!, categoryId!)).join('');
         list.insertAdjacentHTML('beforeend', html);
     } catch {
         // Silently fail
@@ -408,6 +404,19 @@ async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<voi
         spinner?.classList.add('hidden');
         icon?.classList.remove('hidden');
     }
+}
+
+function renderEmptyState(label: string): string {
+    return `<li class="text-center py-16 flex flex-col items-center gap-3">
+        <div class="w-14 h-14 rounded-field bg-primary/10 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary/70" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+        </div>
+        <p class="text-base-content/70 text-sm font-medium">${escapeHtml(label)}</p>
+    </li>`;
 }
 
 function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: string): string {
