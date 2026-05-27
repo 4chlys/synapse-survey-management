@@ -525,8 +525,9 @@ public class ProjectManagerTests
         _projectRepository.Setup(r => r.CreateAsync(built)).ReturnsAsync(built);
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        // Only the default-language (nl) translation is supplied — exactly what the copy dialog sends.
-        await _manager.DuplicateProjectAsync(srcId, Translations(("nl", "Renamed NL")), platformId);
+        // Only the default-language (nl) name is supplied with no topic — exactly what the copy dialog sends.
+        var overrides = new[] { new ProjectTranslationInput("nl", "Renamed NL", "") };
+        await _manager.DuplicateProjectAsync(srcId, overrides, platformId);
 
         Assert.NotNull(captured);
         Assert.Equal(2, captured.Count);
