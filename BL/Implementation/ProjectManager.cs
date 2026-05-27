@@ -88,8 +88,8 @@ public class ProjectManager(
             CustomCss = customCss,
         };
 
-        foreach (var code in supportedList)
-            project.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in supportedList)
+            project.SupportedLanguages.Add(languages[languageCode]);
 
         foreach (var t in translationList)
         {
@@ -422,8 +422,8 @@ public class ProjectManager(
         var desiredSet = desiredCodes.ToHashSet();
         foreach (var existing in project.SupportedLanguages.Where(l => !desiredSet.Contains(l.Code)).ToList())
             project.SupportedLanguages.Remove(existing);
-        foreach (var code in desiredCodes)
-            if (!project.SupportedLanguages.Any(l => l.Code == code))
-                project.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in desiredCodes)
+            if (!project.SupportedLanguages.Any(l => l.Code == languageCode))
+                project.SupportedLanguages.Add(languages[languageCode]);
     }
 }

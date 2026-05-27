@@ -10,40 +10,40 @@ public class ProjectActivationValidator : IProjectActivationValidator
         var problems = new List<ActivationProblem>();
         var supportedCodes = project.SupportedLanguages.Select(l => l.Code).ToList();
 
-        foreach (var code in supportedCodes)
+        foreach (var languageCode in supportedCodes)
         {
-            if (!project.Translations.Any(t => t.Language?.Code == code))
-                problems.Add(new ActivationProblem("ProjectTranslation", null, code));
+            if (!project.Translations.Any(t => t.Language?.Code == languageCode))
+                problems.Add(new ActivationProblem("ProjectTranslation", null, languageCode));
 
             if (project.Introduction is not null
-                && !project.Introduction.Translations.Any(t => t.Language?.Code == code))
-                problems.Add(new ActivationProblem("IntroductionTranslation", null, code));
+                && !project.Introduction.Translations.Any(t => t.Language?.Code == languageCode))
+                problems.Add(new ActivationProblem("IntroductionTranslation", null, languageCode));
 
             if (project.Questionnaire is not null)
             {
                 foreach (var section in project.Questionnaire.Sections)
                 {
-                    if (!section.Translations.Any(t => t.Language?.Code == code))
-                        problems.Add(new ActivationProblem("SectionTranslation", section.SectionId, code));
+                    if (!section.Translations.Any(t => t.Language?.Code == languageCode))
+                        problems.Add(new ActivationProblem("SectionTranslation", section.SectionId, languageCode));
                 }
 
                 foreach (var question in project.Questionnaire.Questions)
                 {
-                    if (!question.Translations.Any(t => t.Language?.Code == code))
-                        problems.Add(new ActivationProblem("QuestionTranslation", question.QuestionId, code));
+                    if (!question.Translations.Any(t => t.Language?.Code == languageCode))
+                        problems.Add(new ActivationProblem("QuestionTranslation", question.QuestionId, languageCode));
 
                     foreach (var endingAnswer in question.EndingAnswers)
                     {
-                        if (!endingAnswer.Translations.Any(t => t.Language?.Code == code))
-                            problems.Add(new ActivationProblem("EndingAnswerTranslation", endingAnswer.EndingAnswerId, code));
+                        if (!endingAnswer.Translations.Any(t => t.Language?.Code == languageCode))
+                            problems.Add(new ActivationProblem("EndingAnswerTranslation", endingAnswer.EndingAnswerId, languageCode));
                     }
                 }
             }
 
             foreach (var category in project.Categories)
             {
-                if (!category.Translations.Any(t => t.Language?.Code == code))
-                    problems.Add(new ActivationProblem("CategoryTranslation", category.CategoryId, code));
+                if (!category.Translations.Any(t => t.Language?.Code == languageCode))
+                    problems.Add(new ActivationProblem("CategoryTranslation", category.CategoryId, languageCode));
             }
         }
 
