@@ -102,14 +102,16 @@ public class WidgetPreferenceService(AdminDbContext db)
         if (prefs.Count == 0)
             return Array.ConvertAll(DefaultLayout, t => new WidgetSlot(t, null));
 
-        var sparse = new WidgetSlot[9];
+        var maxPos = prefs.Max(p => p.Position);
+        var sparse = new WidgetSlot[maxPos + 1];
         foreach (var p in prefs)
-            if (p.Position >= 0 && p.Position < 9)
+            if (p.Position >= 0)
                 sparse[p.Position] = new WidgetSlot(p.WidgetType, p.QuestionId);
 
-        var slots = new WidgetSlot[9];
-        for (var i = 0; i < 9; i++)
-            slots[i] = sparse[i] ?? new WidgetSlot(DefaultLayout[i], null);
+        var slots = new WidgetSlot[maxPos + 1];
+        for (var i = 0; i <= maxPos; i++)
+            slots[i] = sparse[i] ?? new WidgetSlot(
+                DefaultLayout[Math.Min(i, DefaultLayout.Length - 1)], null);
 
         return slots;
     }
@@ -134,7 +136,7 @@ public class WidgetPreferenceService(AdminDbContext db)
 
         db.UserWidgetPreferences.RemoveRange(existing);
 
-        for (var i = 0; i < Math.Min(slots.Length, 9); i++)
+        for (var i = 0; i < slots.Length; i++)
         {
             db.UserWidgetPreferences.Add(new UserWidgetPreference
             {
