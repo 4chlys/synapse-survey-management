@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.UI.Admin.Models.Enums;
-using QuestionFormat = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionFormat;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Question;
 

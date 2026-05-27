@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISectionRepository, SectionRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
+        services.AddScoped<IProjectPlatformRepository, ProjectPlatformRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }
@@ -81,6 +82,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IResponseManager, ResponseManager>();
         services.AddScoped<ICategoryManager, CategoryManager>();
         services.AddScoped<IProjectManager, ProjectManager>();
+        services.AddScoped<IProjectPlatformManager, ProjectPlatformManager>();
         services.AddScoped<IIdeaManager, IdeaManager>();
         services.AddScoped<IProjectDuplicationService, ProjectDuplicationService>();
         services.AddScoped<IDashboardManager, DashboardManager>();

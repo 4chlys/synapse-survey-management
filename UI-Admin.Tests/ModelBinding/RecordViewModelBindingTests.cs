@@ -3,9 +3,8 @@ using SynapseEnqueteManagement.UI.Admin.Models.Category;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 using SynapseEnqueteManagement.UI.Admin.Models.Project;
 using SynapseEnqueteManagement.UI.Admin.Models.Question;
-using DomainMediaType = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionMediaType;
-using BlQuestionFormat = SynapseEnqueteManagement.BL.Domain.Project.Enums.QuestionFormat;
-using AdminQuestionFormat = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionFormat;
+using QuestionMediaType = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionMediaType;
+using QuestionFormat = SynapseEnqueteManagement.UI.Admin.Models.Enums.QuestionFormat;
 
 namespace SynapseEnqueteManagement.UI.Admin.Tests.ModelBinding;
 
@@ -146,12 +145,12 @@ public class RecordViewModelBindingTests
         var form = new Dictionary<string, StringValues>
         {
             ["Text"] = "What is your favourite colour?",
-            ["QuestionFormat"] = nameof(BlQuestionFormat.SingleChoice),
+            ["QuestionFormat"] = nameof(QuestionFormat.SingleChoice),
             ["IsMandatory"] = "true",
             ["AnswerChoicesRaw"] = "Red\nGreen\nBlue",
             ["SectionId"] = "2",
             ["MediaUrl"] = "https://media.example/poll.png",
-            ["MediaType"] = nameof(DomainMediaType.Image),
+            ["MediaType"] = nameof(QuestionMediaType.Image),
             ["MediaIsEmbed"] = "false",
             ["MediaText"] = "Pick one colour from the list"
         };
@@ -160,12 +159,12 @@ public class RecordViewModelBindingTests
 
         Assert.True(modelState.IsValid);
         Assert.Equal("What is your favourite colour?", model.Text);
-        Assert.Equal(BlQuestionFormat.SingleChoice, model.QuestionFormat);
+        Assert.Equal(QuestionFormat.SingleChoice, model.QuestionFormat);
         Assert.True(model.IsMandatory);
         Assert.Equal("Red\nGreen\nBlue", model.AnswerChoicesRaw);
         Assert.Equal(2, model.SectionId);
         Assert.Equal("https://media.example/poll.png", model.MediaUrl);
-        Assert.Equal(DomainMediaType.Image, model.MediaType);
+        Assert.Equal(QuestionMediaType.Image, model.MediaType);
         Assert.False(model.MediaIsEmbed);
         Assert.Equal("Pick one colour from the list", model.MediaText);
     }
@@ -177,12 +176,12 @@ public class RecordViewModelBindingTests
         {
             ["QuestionId"] = "11",
             ["Text"] = "Refined question text",
-            ["QuestionFormat"] = nameof(AdminQuestionFormat.MultipleChoice),
+            ["QuestionFormat"] = nameof(QuestionFormat.MultipleChoice),
             ["IsMandatory"] = "false",
             ["AnswerChoicesRaw"] = "A\nB\nC\nD",
             ["SectionId"] = "9",
             ["MediaUrl"] = "https://media.example/edit.mp4",
-            ["MediaType"] = nameof(DomainMediaType.Video),
+            ["MediaType"] = nameof(QuestionMediaType.Video),
             ["MediaIsEmbed"] = "true",
             ["MediaText"] = "Updated description"
         };
@@ -192,12 +191,12 @@ public class RecordViewModelBindingTests
         Assert.True(modelState.IsValid);
         Assert.Equal(11, model.QuestionId);
         Assert.Equal("Refined question text", model.Text);
-        Assert.Equal(AdminQuestionFormat.MultipleChoice, model.QuestionFormat);
+        Assert.Equal(QuestionFormat.MultipleChoice, model.QuestionFormat);
         Assert.False(model.IsMandatory);
         Assert.Equal("A\nB\nC\nD", model.AnswerChoicesRaw);
         Assert.Equal(9, model.SectionId);
         Assert.Equal("https://media.example/edit.mp4", model.MediaUrl);
-        Assert.Equal(DomainMediaType.Video, model.MediaType);
+        Assert.Equal(QuestionMediaType.Video, model.MediaType);
         Assert.True(model.MediaIsEmbed);
         Assert.Equal("Updated description", model.MediaText);
     }

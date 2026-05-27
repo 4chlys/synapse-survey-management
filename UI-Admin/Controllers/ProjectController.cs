@@ -20,7 +20,6 @@ using SynapseEnqueteManagement.UI.Admin.Services.Platform;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
-using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 

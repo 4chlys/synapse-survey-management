@@ -18,6 +18,10 @@ public class AdminController(PlatformAdminService platformService) : Controller
             ? allAdmins.Where(a => a.ProjectPlatformId == platformId).ToList()
             : allAdmins;
 
+        // Resolve platform names through the already-fetched platform list — UI-Admin
+        // no longer has an EF navigation from ApplicationUser to ProjectPlatform.
+        var platformNameById = platforms.ToDictionary(p => p.ProjectPlatformId, p => p.Name);
+
         ViewData["ActiveSection"] = "Admins";
 
         return View(new AdminListViewModel(
@@ -26,7 +30,7 @@ public class AdminController(PlatformAdminService platformService) : Controller
                 a.UserName ?? a.Email ?? string.Empty,
                 a.Email ?? string.Empty,
                 a.ProjectPlatformId ?? 0,
-                a.ProjectPlatform?.Name ?? "—"
+                a.ProjectPlatformId is int pid && platformNameById.TryGetValue(pid, out var name) ? name : "—"
             )).ToList(),
             platforms.Select(p => new PlatformViewModel
             {

@@ -1,4 +1,4 @@
-using SynapseEnqueteManagement.BL.Domain.Ai;
+using SynapseEnqueteManagement.UI.Admin.Models.Ai;
 
 namespace SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
