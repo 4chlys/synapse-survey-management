@@ -76,18 +76,6 @@
                     @string.Format(L["CreatedAt"].Value, Model.CreatedAt.ToString("d MMMM yyyy"))
                 </p>
             </div>
-            @if (!string.IsNullOrEmpty(Model.AiModelName))
-            {
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <div class="w-6 h-6 rounded-lg flex items-center justify-center"
-                         style="background: color-mix(in oklch, var(--color-info) 10%, transparent); color: var(--color-info);">
-                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                    </div>
-                    <span class="text-xs text-base-content/50">@Model.AiModelName</span>
-                </div>
-            }
         </div>
     </div>
 
@@ -201,79 +189,6 @@
                         }
                     </tbody>
                 </table>
-            </div>
-        </div>
-    }
-
-    @* ── Live AI cost ── *@
-    <div class="flex items-center gap-2.5 mb-5">
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-             style="background: color-mix(in oklch, var(--color-warning) 10%, transparent); color: var(--color-warning);">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-        </div>
-        <h2 class="font-heading font-semibold text-base-content">@L["LiveAiCostHeading"]</h2>
-    </div>
-
-    <div class="card bg-base-100 shadow-sm mb-10" data-ai-cost-container data-platform-id="@Model.ProjectPlatformId" data-empty-label="@L["AiCost_Empty"]">
-        <div class="card-body p-0 overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>@L["AiCost_Project"]</th>
-                        <th class="text-right">@L["AiCost_InputTokens"]</th>
-                        <th class="text-right">@L["AiCost_OutputTokens"]</th>
-                        <th class="text-right">@L["AiCost_Cost"]</th>
-                    </tr>
-                </thead>
-                <tbody data-ai-usage>
-                    <tr><td colspan="4" class="text-center text-base-content/40 text-sm py-5">@L["AiCost_Loading"]</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    @* ── Cost monitoring dashboard ── *@
-    <div class="flex items-center gap-2.5 mb-5">
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-             style="background: color-mix(in oklch, var(--color-accent) 10%, transparent); color: var(--color-accent);">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-        </div>
-        <h2 class="font-heading font-semibold text-base-content">@L["CostMonitoringHeading"]</h2>
-    </div>
-
-    @if (!string.IsNullOrEmpty(Model.CostDashboardUrl))
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body gap-4">
-                <iframe src="@Model.CostDashboardUrl"
-                        class="w-full rounded-xl"
-                        style="height:600px;border:none;"
-                        title="@string.Format(L["CostIframeTitle"].Value, Model.Name)"
-                        loading="lazy">
-                </iframe>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body text-center gap-3 py-10">
-                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto bg-base-200 text-base-content/20">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                </div>
-                <p class="text-sm text-base-content/50">@L["NoCostDashboard"]</p>
-                <p class="text-xs text-base-content/30">
-                    @Html.Raw(string.Format(L["AddCostDashboardHint"].Value,
-                        $"<a href=\"{Url.Action("Settings", "Platform", new { id = Model.ProjectPlatformId })}\" class=\"underline hover:text-base-content transition\">{L["SettingsLink"].Value}</a>"))
-                </p>
             </div>
         </div>
     }

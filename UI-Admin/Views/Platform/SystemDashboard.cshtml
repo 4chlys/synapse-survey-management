@@ -12,8 +12,6 @@
     var totalArchived = Model.Platforms.Sum(p => p.ArchivedProjectCount);
     var totalAdmins = Model.Platforms.Sum(p => p.AdminCount);
     var totalParticipants = Model.Platforms.Sum(p => p.ParticipantCount);
-    var platformsWithCost = Model.Platforms.Where(p => !string.IsNullOrEmpty(p.CostDashboardUrl)).ToList();
-
     Func<double, string> FormatSeconds = (seconds) =>
     {
         if (seconds <= 0) return "—";
@@ -194,11 +192,7 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <h3 class="font-heading font-semibold text-sm text-base-content truncate">@platform.Name</h3>
-                        @if (!string.IsNullOrEmpty(platform.AiModelName))
-                        {
-                            <p class="text-xs text-base-content/40 truncate">@platform.AiModelName</p>
-                        }
-                    </div>
+                        </div>
                 </div>
 
                 <div class="grid grid-cols-4 gap-2 text-center mb-3">
@@ -412,88 +406,6 @@
             </table>
         </div>
     </div>
-
-    @* ── Live AI cost ── *@
-    <h2 class="font-semibold text-base-content mb-4">@L["LiveAiCostHeading"]</h2>
-    <div class="card bg-base-100 shadow-sm mb-10" data-ai-cost-container data-empty-label="@L["AiCost_Empty"]">
-        <div class="card-body p-0 overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>@L["AiCost_Platform"]</th>
-                        <th>@L["AiCost_Project"]</th>
-                        <th class="text-right">@L["AiCost_InputTokens"]</th>
-                        <th class="text-right">@L["AiCost_OutputTokens"]</th>
-                        <th class="text-right">@L["AiCost_Cost"]</th>
-                    </tr>
-                </thead>
-                <tbody data-ai-usage>
-                    <tr><td colspan="5" class="text-center text-base-content/40 text-sm py-5">@L["AiCost_Loading"]</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    @* ── Cost monitoring dashboards ── *@
-    <div class="flex items-center gap-2.5 mb-5">
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-             style="background: color-mix(in oklch, var(--color-accent) 10%, transparent); color: var(--color-accent);">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-        </div>
-        <h2 class="font-heading font-semibold text-base-content">@L["CostMonitoringHeading"]</h2>
-    </div>
-
-    @if (platformsWithCost.Any())
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body gap-4">
-                @if (platformsWithCost.Count > 1)
-                {
-                    <div role="tablist" class="tabs tabs-bordered" id="cost-tabs">
-                        @for (int i = 0; i < platformsWithCost.Count; i++)
-                        {
-                            var p = platformsWithCost[i];
-                            <button role="tab" type="button"
-                                    class="tab @(i == 0 ? "tab-active" : "")"
-                                    data-cost-tab="@p.ProjectPlatformId">
-                                @p.Name
-                            </button>
-                        }
-                    </div>
-                }
-                @for (int i = 0; i < platformsWithCost.Count; i++)
-                {
-                    var p = platformsWithCost[i];
-                    <div id="cost-@p.ProjectPlatformId" class="@(i > 0 ? "hidden" : "")">
-                        <iframe src="@p.CostDashboardUrl"
-                                class="w-full rounded-xl"
-                                style="height:600px;border:none;"
-                                title="@string.Format(L["CostIframeTitle"].Value, p.Name)"
-                                loading="lazy">
-                        </iframe>
-                    </div>
-                }
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body text-center gap-3 py-10">
-                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto bg-base-200 text-base-content/20">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                </div>
-                <p class="text-sm text-base-content/50">@L["NoCostDashboard"]</p>
-                <p class="text-xs text-base-content/30">@L["AddCostDashboardHint"]</p>
-            </div>
-        </div>
-    }
 
     @* ── Export modal ── *@
     <dialog id="system-export-modal" class="modal"

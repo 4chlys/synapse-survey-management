@@ -134,7 +134,7 @@
     };
     bool IsNavActive(string section) => activeSection == section
         || (section == "Projects" && projectId.HasValue && !isWizard)
-        || (section == "Platform" && (platformId.HasValue || activeSection == "Admins"));
+        || (section == "Platform" && (platformId.HasValue && (activeSection == "Platform" || activeSection == "Admins" || activeSection == "Settings" || activeSection == "Dashboard")));
 }
 
 @if (User.Identity?.IsAuthenticated == true)
