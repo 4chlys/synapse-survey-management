@@ -7,50 +7,103 @@ const PRESETS: Record<string, string[] | null> = {
     enthusiasm:   ['fire', 'rocket', 'party', 'raisinghands', 'muscle'],
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+let _emojiGrid: HTMLElement | null = null;
+let _nameToId: Record<string, number> = {};
+let _activeTab = 'all';
+let _tabs: NodeListOf<HTMLButtonElement>;
+
+function validateCount(btn: HTMLButtonElement, categoriesError: HTMLElement | null): boolean {
+    const count = parseInt(btn.dataset.projectCount ?? '0', 10);
+    if (count < 1) {
+        categoriesError?.classList.remove('hidden');
+        return false;
+    }
+    categoriesError?.classList.add('hidden');
+    return true;
+}
+
+function switchTab(tab: string, storageKey: string): void {
+    _activeTab = tab;
+    sessionStorage.setItem(storageKey, tab);
+    const allowed = PRESETS[tab] ?? null;
+
+    _emojiGrid!.querySelectorAll<HTMLElement>('[data-emoji-name]').forEach(form => {
+        form.style.display =
+            (!allowed || allowed.includes(form.dataset.emojiName!)) ? '' : 'none';
+    });
+
+    _tabs.forEach(btn => {
+        const active = btn.dataset.tab === tab;
+        btn.classList.toggle('border-primary',       active);
+        btn.classList.toggle('text-primary',          active);
+        btn.classList.toggle('border-transparent',   !active);
+        btn.classList.toggle('text-base-content/50', !active);
+    });
+}
+
+function setEmojiState(form: HTMLFormElement, enabled: boolean): void {
+    form.querySelector<HTMLButtonElement>('button')!.dataset.enabled = String(enabled);
+    form.action = enabled
+        ? form.dataset.disableUrl!
+        : form.dataset.enableUrl!;
+}
+
+function activeIds(): number[] {
+    const names = PRESETS[_activeTab] ?? null;
+    return names
+        ? names.map(n => _nameToId[n]).filter((id): id is number => id !== undefined)
+        : Object.values(_nameToId);
+}
+
+async function fetchPreset(form: HTMLFormElement, targetEnabled: boolean): Promise<void> {
+    const ids  = activeIds();
+    const data = new FormData(form);
+    ids.forEach(id => data.append('emojiIds', String(id)));
+
+    const res = await fetch(form.action, { method: 'POST', body: data });
+    if (!res.ok) return;
+
+    const idSet = new Set(ids);
+    _emojiGrid!.querySelectorAll<HTMLFormElement>('[data-emoji-name]').forEach(emojiForm => {
+        if (idSet.has(parseInt(emojiForm.dataset.emojiId!, 10)))
+            setEmojiState(emojiForm, targetEnabled);
+    });
+}
+
+export function initProjectIdeation(): void {
     const saveBtn = document.getElementById('save-btn') as HTMLButtonElement | null;
     const nextBtn = document.getElementById('next-btn') as HTMLButtonElement | null;
 
     if (saveBtn && nextBtn) {
         const categoriesError = document.getElementById('categories-error');
 
-        function validateCount(btn: HTMLButtonElement): boolean {
-            const count = parseInt(btn.dataset.projectCount ?? '0', 10);
-            if (count < 1) {
-                categoriesError?.classList.remove('hidden');
-                return false;
-            }
-            categoriesError?.classList.add('hidden');
-            return true;
-        }
-
         // Save: validate then submit the enclosing POST form (not a GET redirect).
         saveBtn.addEventListener('click', () => {
-            if (!validateCount(saveBtn)) return;
+            if (!validateCount(saveBtn, categoriesError)) return;
             (saveBtn.closest('form') as HTMLFormElement | null)?.submit();
         });
 
         // Next: validate then navigate via href stored in data attribute.
         nextBtn.addEventListener('click', () => {
-            if (!validateCount(nextBtn)) return;
+            if (!validateCount(nextBtn, categoriesError)) return;
             window.location.href = nextBtn.dataset.href ?? '/';
         });
     }
 
-    // Emoji preset tabs + select-all 
-    const emojiGrid    = document.getElementById('emoji-grid');
-    const tabs         = document.querySelectorAll<HTMLButtonElement>('.emoji-tab');
-    const selectAllBtn  = document.getElementById('emoji-select-all-btn') as HTMLButtonElement | null;
-    const clearAllBtn   = document.getElementById('emoji-clear-all-btn')  as HTMLButtonElement | null;
-    const presetForm    = document.getElementById('emoji-preset-form')    as HTMLFormElement | null;
-    const clearForm     = document.getElementById('emoji-clear-form')     as HTMLFormElement | null;
+    // Emoji preset tabs + select-all
+    _emojiGrid   = document.getElementById('emoji-grid');
+    _tabs        = document.querySelectorAll<HTMLButtonElement>('.emoji-tab');
+    const selectAllBtn = document.getElementById('emoji-select-all-btn') as HTMLButtonElement | null;
+    const clearAllBtn  = document.getElementById('emoji-clear-all-btn')  as HTMLButtonElement | null;
+    const presetForm   = document.getElementById('emoji-preset-form')    as HTMLFormElement | null;
+    const clearForm    = document.getElementById('emoji-clear-form')     as HTMLFormElement | null;
 
-    if (!emojiGrid || !tabs.length) return;
+    if (!_emojiGrid || !_tabs.length) return;
 
     // Build name → id lookup from the rendered emoji forms.
-    const nameToId: Record<string, number> = {};
-    emojiGrid.querySelectorAll<HTMLElement>('[data-emoji-name]').forEach(form => {
-        nameToId[form.dataset.emojiName!] = parseInt(form.dataset.emojiId!, 10);
+    _nameToId = {};
+    _emojiGrid.querySelectorAll<HTMLElement>('[data-emoji-name]').forEach(form => {
+        _nameToId[form.dataset.emojiName!] = parseInt(form.dataset.emojiId!, 10);
     });
 
     // Persist the active tab across page reloads (e.g. after enabling/disabling an emoji).
@@ -58,48 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectId  = new URLSearchParams(location.search).get('projectId') ?? '0';
     const storageKey = `emojiTab_${projectId}`;
 
-    let activeTab = 'all';
-
-    function switchTab(tab: string): void {
-        activeTab = tab;
-        sessionStorage.setItem(storageKey, tab);
-        const allowed = PRESETS[tab] ?? null;
-
-        // Show/hide emoji pills based on the active preset.
-        emojiGrid!.querySelectorAll<HTMLElement>('[data-emoji-name]').forEach(form => {
-            form.style.display =
-                (!allowed || allowed.includes(form.dataset.emojiName!)) ? '' : 'none';
-        });
-
-        // Update tab button active styles.
-        tabs.forEach(btn => {
-            const active = btn.dataset.tab === tab;
-            btn.classList.toggle('border-primary',       active);
-            btn.classList.toggle('text-primary',          active);
-            btn.classList.toggle('border-transparent',   !active);
-            btn.classList.toggle('text-base-content/50', !active);
-        });
-    }
-
     // Restore the last active tab, falling back to 'all' if the stored value is unknown.
     const savedTab = sessionStorage.getItem(storageKey) ?? 'all';
-    switchTab(savedTab in PRESETS ? savedTab : 'all');
+    switchTab(savedTab in PRESETS ? savedTab : 'all', storageKey);
 
-    tabs.forEach(btn =>
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab!))
+    _tabs.forEach(btn =>
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab!, storageKey))
     );
 
-    // Sets a single emoji pill to enabled/disabled by flipping data-enabled on the
-    // button (CSS handles all styling) and swapping the form action for the next click.
-    function setEmojiState(form: HTMLFormElement, enabled: boolean): void {
-        form.querySelector<HTMLButtonElement>('button')!.dataset.enabled = String(enabled);
-        form.action = enabled
-            ? form.dataset.disableUrl!
-            : form.dataset.enableUrl!;
-    }
-
     // AJAX toggle for individual emoji pills — no full-page reload.
-    emojiGrid.querySelectorAll<HTMLFormElement>('[data-emoji-name]').forEach(form => {
+    _emojiGrid.querySelectorAll<HTMLFormElement>('[data-emoji-name]').forEach(form => {
         form.addEventListener('submit', async e => {
             e.preventDefault();
             const btn = form.querySelector<HTMLButtonElement>('button')!;
@@ -113,30 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
-    // Returns the emoji IDs visible in the currently active tab.
-    function activeIds(): number[] {
-        const names = PRESETS[activeTab] ?? null;
-        return names
-            ? names.map(n => nameToId[n]).filter((id): id is number => id !== undefined)
-            : Object.values(nameToId);
-    }
-
-    // POSTs emoji IDs to a preset form via AJAX, then updates the pills in the grid.
-    async function fetchPreset(form: HTMLFormElement, targetEnabled: boolean): Promise<void> {
-        const ids  = activeIds();
-        const data = new FormData(form);
-        ids.forEach(id => data.append('emojiIds', String(id)));
-
-        const res = await fetch(form.action, { method: 'POST', body: data });
-        if (!res.ok) return;
-
-        const idSet = new Set(ids);
-        emojiGrid!.querySelectorAll<HTMLFormElement>('[data-emoji-name]').forEach(emojiForm => {
-            if (idSet.has(parseInt(emojiForm.dataset.emojiId!, 10)))
-                setEmojiState(emojiForm, targetEnabled);
-        });
-    }
 
     if (selectAllBtn && presetForm) {
         selectAllBtn.addEventListener('click', async () => {
@@ -153,4 +150,4 @@ document.addEventListener('DOMContentLoaded', () => {
             finally { clearAllBtn.disabled = false; }
         });
     }
-});
+}

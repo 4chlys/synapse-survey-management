@@ -38,7 +38,7 @@
 <div class="w-full max-w-3xl">
 
     <!-- Back link -->
-    <div class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-5">
         <a href="@Model.BackUrl"
            class="inline-flex items-center gap-1.5 text-sm text-base-content/50 hover:text-base-content transition-colors">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -46,10 +46,10 @@
             </svg>
             @L["BackLink"]
         </a>
-    </div>
+    </nav>
 
     <!-- Idea card -->
-    <div class="card bg-base-100 shadow-sm border border-base-200 mb-6">
+    <article class="card bg-base-100 shadow-sm border border-base-200 mb-6">
         <div class="card-body gap-4">
 
             <!-- Category + status row -->
@@ -116,7 +116,7 @@
                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                        <button type="submit" class="btn btn-success btn-sm gap-1.5">
+                        <button type="submit" class="btn-approve">
                             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
                             @L["ActionApprove"]
                         </button>
@@ -129,7 +129,7 @@
                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                        <button type="submit" class="btn btn-error btn-sm gap-1.5">
+                        <button type="submit" class="btn-decline">
                             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
                             @L["ActionDecline"]
                         </button>
@@ -142,7 +142,7 @@
                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                        <button type="submit" class="btn btn-warning btn-sm btn-outline gap-1.5">
+                        <button type="submit" class="btn-flag">
                             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
                             @L["ActionFlag"]
                         </button>
@@ -155,7 +155,7 @@
                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                         <input type="hidden" name="returnUrl" value="@ideasUrl" />
-                        <button type="submit" class="btn btn-ghost btn-sm gap-1.5" data-confirm="@L["ConfirmRemoveImage"].Value">
+                        <button type="submit" class="btn-cancel" data-confirm="@L["ConfirmRemoveImage"].Value">
                             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                             @L["ActionRemoveImage"]
                         </button>
@@ -164,10 +164,10 @@
             </div>
 
         </div>
-    </div>
+    </article>
 
     <!-- Comments section -->
-    <div>
+    <section>
         <div class="flex items-center gap-3 mb-4">
             <h2 class="font-heading font-semibold text-sm text-base-content/60 uppercase tracking-widest">
                 @L["CommentsHeading"] (@Model.Comments.Count)
@@ -196,7 +196,7 @@
                         "Declined" => "border-base-300 opacity-60",
                         _          => "border-base-200"
                     };
-                    <div class="card bg-base-100 shadow-sm border @cardBorder">
+                    <article class="card bg-base-100 shadow-sm border @cardBorder">
                         <div class="card-body gap-3 py-4">
 
                             <!-- Comment header: status + date -->
@@ -250,7 +250,7 @@
                                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                                         <input type="hidden" name="commentId" value="@comment.CommentId" />
                                         <input type="hidden" name="returnUrl" value="@Url.Action("IdeaDetail", new { Model.ProjectId, Model.IdeaId, Model.CategoryId, categoryName = Model.CategoryName, returnUrl = Model.BackUrl })" />
-                                        <button type="submit" class="btn btn-success btn-outline btn-xs gap-1">
+                                        <button type="submit" class="btn-mod-approve">
                                             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
                                             @L["ActionApprove"]
                                         </button>
@@ -264,7 +264,7 @@
                                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                                         <input type="hidden" name="commentId" value="@comment.CommentId" />
                                         <input type="hidden" name="returnUrl" value="@Url.Action("IdeaDetail", new { Model.ProjectId, Model.IdeaId, Model.CategoryId, categoryName = Model.CategoryName, returnUrl = Model.BackUrl })" />
-                                        <button type="submit" class="btn btn-error btn-outline btn-xs gap-1">
+                                        <button type="submit" class="btn-mod-decline">
                                             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
                                             @L["ActionDecline"]
                                         </button>
@@ -278,7 +278,7 @@
                                         <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                                         <input type="hidden" name="commentId" value="@comment.CommentId" />
                                         <input type="hidden" name="returnUrl" value="@Url.Action("IdeaDetail", new { Model.ProjectId, Model.IdeaId, Model.CategoryId, categoryName = Model.CategoryName, returnUrl = Model.BackUrl })" />
-                                        <button type="submit" class="btn btn-warning btn-outline btn-xs gap-1">
+                                        <button type="submit" class="btn-mod-flag">
                                             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
                                             @L["ActionFlag"]
                                         </button>
@@ -287,10 +287,10 @@
                             </div>
 
                         </div>
-                    </div>
+                    </article>
                 }
             </div>
         }
-    </div>
+    </section>
 
 </div>

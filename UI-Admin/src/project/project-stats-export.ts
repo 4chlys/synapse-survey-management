@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+export function initProjectStatsExport(): void {
     const modal = document.getElementById('project-export-modal') as HTMLDialogElement | null;
     const dlBtn = document.getElementById('project-export-download') as HTMLButtonElement | null;
     if (!modal || !dlBtn) return;
@@ -9,11 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatSelect = document.getElementById('project-export-format') as HTMLSelectElement | null;
     const graphicsCheckbox = document.querySelector<HTMLInputElement>('[data-project-graphics]');
 
-    if (formatSelect && graphicsCheckbox) {
-        formatSelect.addEventListener('input', () => {
-            graphicsCheckbox.disabled = formatSelect.value !== 'xlsx';
-        });
-    }
+    formatSelect?.addEventListener('input', () => {
+        if (graphicsCheckbox) graphicsCheckbox.disabled = formatSelect.value !== 'xlsx';
+    });
 
     dlBtn.addEventListener('click', () => {
         const checked = Array.from(
@@ -21,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ).map(cb => cb.dataset.projectSection);
 
         if (checked.length === 0) {
-            alert('Select at least one section.');
+            alert('Selecteer minstens één sectie.');
             return;
         }
 
@@ -32,4 +30,4 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = `${baseUrl}${separator}format=${encodeURIComponent(format)}&sections=${encodeURIComponent(sections)}&includeGraphics=${graphicsEnabled}`;
         modal.close();
     });
-});
+}

@@ -35,9 +35,7 @@ function validateEmbedUrl(url: string, type: number): string | null {
     return null;
 }
 
-function getAntiForgeryToken(): string {
-    return (document.querySelector('input[name="__RequestVerificationToken"]') as HTMLInputElement | null)?.value ?? '';
-}
+import { getAntiForgeryToken } from './utils';
 
 export function wireQuestionMediaPanel(
     prefix: string,

@@ -44,7 +44,7 @@
                     <input name="BillingReference" value="@Model.BasicInfo.BillingReference" class="input input-bordered w-full input-sm" placeholder="@L["BillingReferencePlaceholder"]" />
                 </label>
                 <div class="flex justify-end lg:col-span-3 pt-1">
-                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                    <button type="submit" class="btn-save">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -94,7 +94,7 @@
                         }
                     </div>
                     <div class="flex justify-end mt-auto pt-3">
-                        <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                        <button type="submit" class="btn-save">@Shared["Common_Save"]</button>
                     </div>
                 </form>
             }
@@ -141,7 +141,7 @@
                     </label>
                 </div>
                 <div class="flex justify-end mt-auto pt-3">
-                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                    <button type="submit" class="btn-save">@Shared["Common_Save"]</button>
                 </div>
             </form>
 
@@ -155,7 +155,7 @@
                 <div class="flex items-center gap-3 mt-1">
                     <input type="number" name="maxIdeas" value="@Model.IdeaSummaryMaxIdeas"
                            min="10" max="2000" class="input input-bordered input-sm w-28" />
-                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
+                    <button type="submit" class="btn-save">@Shared["Common_Save"]</button>
                 </div>
             </form>
         </div>
@@ -221,9 +221,9 @@
                                     <div class="flex justify-end gap-2">
                                         @if (entry.IsOverridden)
                                         {
-                                            <button type="submit" form="reset-prompt-@entry.PromptType" class="btn btn-ghost btn-sm">@L["ResetButton"]</button>
+                                            <button type="submit" form="reset-prompt-@entry.PromptType" class="btn-cancel">@L["ResetButton"]</button>
                                         }
-                                        <button type="submit" class="btn btn-warning btn-sm">@Shared["Common_Save"]</button>
+                                        <button type="submit" class="btn-save-warning">@Shared["Common_Save"]</button>
                                     </div>
                                 </form>
                             </div>

@@ -88,7 +88,7 @@
     </div>
 
     <div id="questions-action-bar" class="flex justify-between transition-[padding] duration-200">
-        <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["SettingsLink"]</a>
+        <a asp-action="Create" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn-cancel">← @L["SettingsLink"]</a>
         <div class="flex gap-2">
             @if (!isLocked)
             {
@@ -97,16 +97,16 @@
                     <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                     <input type="hidden" name="step" value="2" />
                     <input type="hidden" name="returnAction" value="Questions" />
-                    <button type="submit" class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
+                    <button type="submit" class="btn-save-outline">@Shared["Common_Save"]</button>
                 </form>
                 <button type="button" id="questions-next-btn"
-                        class="btn btn-primary btn-sm"
+                        class="btn-save"
                         data-question-count="@Model.Count"
                         data-href="@Url.Action("Ideation", new { projectId, isNew })">@L["NextLink"] →</button>
             }
             else
             {
-                <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-primary btn-sm">@L["NextLink"] →</a>
+                <a asp-action="Ideation" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn-save">@L["NextLink"] →</a>
             }
         </div>
     </div>
@@ -146,7 +146,7 @@
                           class="textarea textarea-bordered textarea-sm w-full resize-none"
                           placeholder="@L["AiInputPlaceholder"]"></textarea>
                 <button id="qs-btn-send" type="button"
-                        class="btn btn-primary btn-sm self-end">
+                        class="btn-save self-end">
                     @L["SendButton"]
                 </button>
             </div>
@@ -169,7 +169,7 @@
     <div class="modal-box w-[720px] max-w-[92vw] rounded-2xl p-7">
         <div class="flex items-center justify-between mb-1">
             <h2 class="font-heading font-bold text-xl text-base-content tracking-tight">@L["PickerHeading"]</h2>
-            <button type="button" id="type-picker-close" class="btn btn-ghost btn-sm btn-circle">×</button>
+            <button type="button" id="type-picker-close" class="btn-icon-close">×</button>
         </div>
         <p class="text-base-content/50 text-sm mb-5">@L["PickerSubtitle"]</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
@@ -219,7 +219,7 @@
                     <div id="drawer-type-label" class="font-heading font-bold text-base text-base-content truncate">@L["Type_MultipleChoice"]</div>
                 </div>
             </div>
-            <button type="button" id="modal-close" class="btn btn-ghost btn-sm btn-circle">×</button>
+            <button type="button" id="modal-close" class="btn-icon-close">×</button>
         </div>
 
         @Html.AntiForgeryToken()
@@ -393,8 +393,8 @@
             <div class="flex-1"></div>
 
             <div class="flex justify-end gap-2 pt-3 border-t border-base-200 mt-2">
-                <button type="button" id="modal-cancel" class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
-                <button type="submit" class="btn btn-primary btn-sm gap-1">
+                <button type="button" id="modal-cancel" class="btn-cancel">@L["CancelButton"]</button>
+                <button type="submit" class="btn-save gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     @L["AddButton"]
                 </button>
@@ -417,7 +417,7 @@
         <div class="flex justify-between items-center mb-3">
             <h3 id="question-detail-title" class="font-bold text-base truncate pr-4"></h3>
             <form method="dialog">
-                <button class="btn btn-ghost btn-sm btn-circle">×</button>
+                <button class="btn-icon-close">×</button>
             </form>
         </div>
         <div id="question-detail-stats" class="flex gap-4 text-sm text-base-content/60 mb-3"></div>

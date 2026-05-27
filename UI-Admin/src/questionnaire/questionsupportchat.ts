@@ -232,34 +232,37 @@ function setActionBarPadding(open: boolean, popupWidth: number): void {
     actionBar.style.paddingRight = open ? `${popupWidth + 16}px` : '';
 }
 
+let _floatPopup: HTMLElement | null = null;
+let _floatIconOpen: HTMLElement | null = null;
+let _floatIconClose: HTMLElement | null = null;
+
+function setOpen(open: boolean): void {
+    _floatPopup!.classList.toggle('hidden', !open);
+    _floatPopup!.classList.toggle('flex', open);
+    _floatIconOpen?.classList.toggle('hidden', open);
+    _floatIconClose?.classList.toggle('hidden', !open);
+    setActionBarPadding(open, _floatPopup!.offsetWidth);
+}
+
 function wireFloatingToggle(): void {
     const toggle = document.getElementById('qs-chat-toggle');
-    const popup = document.getElementById('qs-chat-popup');
+    _floatPopup    = document.getElementById('qs-chat-popup');
     const closeBtn = document.getElementById('qs-chat-close');
-    const iconOpen = document.getElementById('qs-chat-icon-open');
-    const iconClose = document.getElementById('qs-chat-icon-close');
-    if (!toggle || !popup) return;
-
-    function setOpen(open: boolean): void {
-        popup!.classList.toggle('hidden', !open);
-        popup!.classList.toggle('flex', open);
-        iconOpen?.classList.toggle('hidden', open);
-        iconClose?.classList.toggle('hidden', !open);
-        setActionBarPadding(open, popup!.offsetWidth);
-    }
+    _floatIconOpen  = document.getElementById('qs-chat-icon-open');
+    _floatIconClose = document.getElementById('qs-chat-icon-close');
+    if (!toggle || !_floatPopup) return;
 
     toggle.addEventListener('click', () => {
-        const isOpen = !popup.classList.contains('hidden');
+        const isOpen = !_floatPopup!.classList.contains('hidden');
         setOpen(!isOpen);
     });
     closeBtn?.addEventListener('click', () => setOpen(false));
 }
 
-// Auto-initialize when loaded as a Vite module
-document.addEventListener('DOMContentLoaded', () => {
+export function initSupportChatPage(): void {
     wireFloatingToggle();
     const questionsListEl = document.getElementById('questions-list');
     if (!questionsListEl) return;
     const pid = parseInt(questionsListEl.dataset['projectId'] ?? '0', 10);
     if (pid) initQuestionSupportChat(pid);
-});
+}

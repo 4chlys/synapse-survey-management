@@ -1,0 +1,55 @@
+/* Reusable component classes — change one rule to restyle every instance. */
+
+@layer components {
+
+  /* ── Primary actions ─────────────────────────────────────── */
+
+  /* Save / submit form (no leading icon) */
+  .btn-save { @apply btn btn-primary btn-sm; }
+
+  /* Create, add, export — primary with icon slot */
+  .btn-action { @apply btn btn-primary btn-sm gap-1.5; }
+
+  /* Secondary action with icon (AI summary, secondary exports, …) */
+  .btn-action-secondary { @apply btn btn-secondary btn-sm gap-1.5; }
+
+  /* Outline variant with icon (dashboard toolbar, browse, …) */
+  .btn-action-outline { @apply btn btn-outline btn-sm gap-1.5; }
+
+  /* ── Neutral / navigation ────────────────────────────────── */
+
+  /* Cancel dialogs and back navigation */
+  .btn-cancel { @apply btn btn-ghost btn-sm; }
+
+  /* ── Destructive ─────────────────────────────────────────── */
+
+  /* Delete project, remove (modal confirm) */
+  .btn-delete { @apply btn btn-error btn-sm; }
+
+  /* Archive — warning-level destructive outline */
+  .btn-archive { @apply btn btn-outline btn-warning btn-sm gap-1.5; }
+
+  /* ── Idea / comment moderation — detail page (sm) ───────── */
+
+  .btn-approve { @apply btn btn-success btn-sm gap-1.5; }
+  .btn-decline { @apply btn btn-error btn-sm gap-1.5; }
+  .btn-flag    { @apply btn btn-warning btn-sm btn-outline gap-1.5; }
+
+  /* ── Idea / comment moderation — inline card (xs) ───────── */
+
+  .btn-mod-approve { @apply btn btn-success btn-outline btn-xs gap-1; }
+  .btn-mod-decline { @apply btn btn-error btn-outline btn-xs gap-1; }
+  .btn-mod-flag    { @apply btn btn-warning btn-outline btn-xs gap-1; }
+
+  /* Ghost xs — review / detail link, remove image */
+  .btn-ghost-xs { @apply btn btn-ghost btn-xs gap-1; }
+
+  /* Outline save — secondary/outline variant of save */
+  .btn-save-outline { @apply btn btn-outline btn-sm; }
+
+  /* Warning save — used for destructive-adjacent saves (AI prompt overrides) */
+  .btn-save-warning { @apply btn btn-warning btn-sm; }
+
+  /* Circular close/dismiss button */
+  .btn-icon-close { @apply btn btn-ghost btn-sm btn-circle; }
+}

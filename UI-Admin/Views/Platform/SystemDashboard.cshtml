@@ -28,7 +28,7 @@
             <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
             <p class="text-sm text-base-content/40 mt-0.5">@totalPlatforms @L["StatPlatforms"].Value.ToLower()</p>
         </div>
-        <button type="button" class="btn btn-outline btn-sm gap-1.5"
+        <button type="button" class="btn-action-outline"
                 data-open-modal="system-export-modal">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -461,9 +461,9 @@
 
             <div class="modal-action">
                 <form method="dialog">
-                    <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                    <button class="btn-cancel">@L["CancelButton"]</button>
                 </form>
-                <button type="button" class="btn btn-primary btn-sm" id="system-export-download">@L["ExportButton"]</button>
+                <button type="button" class="btn-save" id="system-export-download">@L["ExportButton"]</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
