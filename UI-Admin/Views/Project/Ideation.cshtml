@@ -11,6 +11,7 @@
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
     var project = ViewData["Project"] as ProjectAdminViewModel;
+    var availableLangs = (ViewData["AvailableLanguageCodes"] as string[]) ?? new[] { "nl" };
     if (isNew) ViewData["WizardStep"] = 3;
 }
 <div class="w-full flex flex-col gap-4">
@@ -41,10 +42,19 @@
                             <div class="w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
                                 <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"/></svg>
                             </div>
-                            <div class="text-sm font-bold text-base-content">@cat.Name</div>
-                            @if (!string.IsNullOrWhiteSpace(cat.Description))
+                            @foreach (var langCode in availableLangs)
                             {
-                                <div class="text-xs text-base-content/50 leading-snug">@cat.Description</div>
+                                var t = cat.Translations.FirstOrDefault(tr => tr.LanguageCode == langCode);
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-xs font-bold uppercase text-base-content/30 w-6 shrink-0 mt-0.5">@langCode</span>
+                                    <div>
+                                        <div class="text-sm font-bold text-base-content">@(t?.Name ?? "")</div>
+                                        @if (!string.IsNullOrWhiteSpace(t?.Description))
+                                        {
+                                            <div class="text-xs text-base-content/50 leading-snug">@t.Description</div>
+                                        }
+                                    </div>
+                                </div>
                             }
                             @if (!isLocked)
                             {
@@ -73,21 +83,37 @@
                     {
                         <p class="text-sm text-base-content/50 mb-3">@L["EmptyHint"]</p>
                     }
-                    <form asp-action="AddCategory" method="post" class="flex gap-3 items-end">
+                    <form asp-action="AddCategory" method="post" class="flex flex-col gap-2">
                         <input type="hidden" name="projectId" value="@projectId" />
                         <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                        <div class="form-control gap-1.5 w-56">
-                            <label class="text-sm font-semibold text-base-content">@L["NameRequired"]</label>
-                            <input type="text" name="Name" class="input input-bordered input-sm w-full" placeholder="@L["CategoryNamePlaceholder"]" required />
+                        @for (var i = 0; i < availableLangs.Length; i++)
+                        {
+                            var languageCode = availableLangs[i];
+                            <div class="flex gap-3 items-end">
+                                <span class="text-xs font-bold uppercase text-base-content/40 w-6 shrink-0 self-end pb-1.5">@languageCode</span>
+                                <input type="hidden" name="Translations[@i].LanguageCode" value="@languageCode" />
+                                <div class="form-control gap-1.5 w-56">
+                                    @if (i == 0)
+                                    {
+                                        <label class="text-sm font-semibold text-base-content">@L["NameRequired"]</label>
+                                    }
+                                    <input type="text" name="Translations[@i].Name" class="input input-bordered input-sm w-full" placeholder="@L["CategoryNamePlaceholder"]" required />
+                                </div>
+                                <div class="form-control gap-1.5 flex-1 max-w-sm">
+                                    @if (i == 0)
+                                    {
+                                        <label class="text-sm font-semibold text-base-content">@L["DescriptionLabel"]</label>
+                                    }
+                                    <input type="text" name="Translations[@i].Description" class="input input-bordered input-sm w-full" placeholder="@L["OptionalPlaceholder"]" />
+                                </div>
+                            </div>
+                        }
+                        <div>
+                            <button type="submit" class="btn btn-primary btn-sm gap-1">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                                @L["AddButton"]
+                            </button>
                         </div>
-                        <div class="form-control gap-1.5 flex-1 max-w-sm">
-                            <label class="text-sm font-semibold text-base-content">@L["DescriptionLabel"]</label>
-                            <input type="text" name="Description" class="input input-bordered input-sm w-full" placeholder="@L["OptionalPlaceholder"]" />
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm gap-1">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                            @L["AddButton"]
-                        </button>
                     </form>
                 </div>
             }

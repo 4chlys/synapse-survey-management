@@ -103,8 +103,8 @@ export function initCharCounter(slide: HTMLElement): void {
     const update = () => {
         const len = ta.value.length;
         counter.textContent = `${len} / ${MAX_LENGTH}`;
-        counter.classList.toggle('text-red-500', len > MAX_LENGTH);
-        counter.classList.toggle('text-gray-400', len <= MAX_LENGTH);
+        counter.classList.toggle('text-error', len > MAX_LENGTH);
+        counter.classList.toggle('text-base-content/40', len <= MAX_LENGTH);
     };
 
     ta.addEventListener('input', update);

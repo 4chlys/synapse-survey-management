@@ -21,4 +21,7 @@
   <data name="CloseLabel" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="ViewIdeasButton" xml:space="preserve">
+    <value>View ideas &amp; respond</value>
+  </data>
 </root>

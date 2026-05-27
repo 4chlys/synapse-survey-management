@@ -18,8 +18,8 @@ internal static class TranslationUpserter
 
         foreach (var input in inputList)
         {
-            var code = inputLanguageCode(input);
-            var match = existing.FirstOrDefault(t => existingLanguageCode(t) == code);
+            var languageCode = inputLanguageCode(input);
+            var match = existing.FirstOrDefault(t => existingLanguageCode(t) == languageCode);
             if (match is null)
                 existing.Add(create(input));
             else

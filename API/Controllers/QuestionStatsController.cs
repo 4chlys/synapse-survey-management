@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Stats.QuestionStats;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
@@ -14,15 +15,18 @@ public class QuestionStatsController(
     [HttpGet]
     public async Task<ActionResult<ICollection<QuestionLookupDto>>> GetQuestions(
         int projectId,
-        [FromQuery] QuestionFormat? format = null)
+        [FromQuery] QuestionFormat? format = null,
+        [FromQuery] string languageCode = null)
     {
         if (format is null)
             return BadRequest("The 'format' query parameter is required.");
 
-        if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
+        var project = await projectManager.GetProjectByIdReadOnlyAsync(projectId);
+        if (project is null)
             return NotFound();
 
-        var items = await questionStatsManager.ReadQuestionsByFormatAsync(projectId, format.Value);
+        var resolvedLanguage = ResolveLanguageFromContext(languageCode);
+        var items = await questionStatsManager.ReadQuestionsByFormatAsync(projectId, format.Value, resolvedLanguage);
         return Ok(items.Select(q => new QuestionLookupDto
         {
             QuestionId = q.QuestionId,
@@ -31,9 +35,11 @@ public class QuestionStatsController(
     }
 
     [HttpGet("{questionId}/single-stats")]
-    public async Task<ActionResult<SingleChoiceStatsDto>> GetSingleChoiceStats(int projectId, int questionId)
+    public async Task<ActionResult<SingleChoiceStatsDto>> GetSingleChoiceStats(int projectId, int questionId,
+        [FromQuery] string languageCode = null)
     {
-        var stats = await questionStatsManager.ReadSingleChoiceStatsAsync(projectId, questionId);
+        var resolvedLanguage = ResolveLanguageFromContext(languageCode);
+        var stats = await questionStatsManager.ReadSingleChoiceStatsAsync(projectId, questionId, resolvedLanguage);
         return Ok(new SingleChoiceStatsDto
         {
             QuestionId = stats.QuestionId,
@@ -47,9 +53,11 @@ public class QuestionStatsController(
     }
 
     [HttpGet("{questionId}/multi-stats")]
-    public async Task<ActionResult<MultipleChoiceStatsDto>> GetMultipleChoiceStats(int projectId, int questionId)
+    public async Task<ActionResult<MultipleChoiceStatsDto>> GetMultipleChoiceStats(int projectId, int questionId,
+        [FromQuery] string languageCode = null)
     {
-        var stats = await questionStatsManager.ReadMultipleChoiceStatsAsync(projectId, questionId);
+        var resolvedLanguage = ResolveLanguageFromContext(languageCode);
+        var stats = await questionStatsManager.ReadMultipleChoiceStatsAsync(projectId, questionId, resolvedLanguage);
         return Ok(new MultipleChoiceStatsDto
         {
             QuestionId = stats.QuestionId,
@@ -98,4 +106,10 @@ public class QuestionStatsController(
             }).ToList()
         });
     }
+
+    // BL takes the resolved language as a parameter; the API picks it from request context here.
+    // CurrentUICulture is set per request by the localization middleware from the admin's cookie/header,
+    // which is why the BL no longer reads it directly.
+    private static string ResolveLanguageFromContext(string explicitCode)
+        => explicitCode ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }

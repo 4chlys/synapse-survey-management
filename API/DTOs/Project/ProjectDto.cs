@@ -26,6 +26,7 @@ public record ProjectDto
     public string LanguageCode { get; init; }
     public string DefaultLanguageCode { get; init; }
     public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
+    public ICollection<ProjectTranslationDto> Translations { get; init; } = new List<ProjectTranslationDto>();
 
     public int LastWizardStep { get; init; }
 

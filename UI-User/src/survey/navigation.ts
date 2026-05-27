@@ -25,6 +25,11 @@ function navigateTo(state: SurveyState, targetIndex: number, goingForward: boole
     state.maxProgressPct = updateProgressBar(state.progressBar, getVisiblePosition(state), state.visibleIndices.length, goingForward ? state.maxProgressPct : 0);
     state.onSlideChange?.(state);
 
+    const announceEl = document.getElementById('survey-announce');
+    if (announceEl) {
+        announceEl.textContent = state.slides[targetIndex].querySelector('h2')?.textContent?.trim() ?? '';
+    }
+
     setTimeout(() => { state.isAnimating = false; }, TRANSITION_MS);
 }
 

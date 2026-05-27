@@ -4,7 +4,7 @@
 // toggle. Event handlers are attached once to the stable #questions-list
 // container; re-rendering its innerHTML does not invalidate them.
 
-import { renderTree, Question, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
+import { renderTree, Question, QuestionTranslation, EndingAnswerSlot, RenderContext, QuestionsI18n } from '../lib/questionnaire-tree';
 import { readQuestionsI18n } from '../lib/questions-i18n';
 import { toast } from '../lib/notify';
 
@@ -37,10 +37,62 @@ async function sendJson(url: string, method: 'PUT' | 'POST', body: unknown): Pro
     }
 }
 
-async function fetchQuestions(endpoint: string): Promise<Question[]> {
+// The admin GET returns the multilingual shape. The tree renders one language;
+// the modal needs all of them. Flatten each question's default-language values
+// onto the existing tree fields while keeping translations/endingAnswerSlots
+// for the edit modal to read from the rendered card's data-attrs.
+interface AdminQuestionResponse {
+    questionId: number;
+    questionFormat: string;
+    isMandatory: boolean;
+    position: number;
+    answerChoiceCount: number;
+    choiceIndex: number | null;
+    parentQuestionId: number | null;
+    sectionId: number | null;
+    sectionName: string | null;
+    mediaUrl: string | null;
+    mediaType: number | null;
+    mediaIsEmbed: boolean;
+    translations: QuestionTranslation[];
+    endingAnswers: EndingAnswerSlot[];
+}
+
+async function fetchQuestions(endpoint: string, defaultLang: string): Promise<Question[]> {
     const response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
     if (!response.ok) throw new Error(`Failed to fetch questions: ${response.status}`);
-    return (await response.json()) as Question[];
+    const raw = (await response.json()) as AdminQuestionResponse[];
+    return raw.map(q => flattenToDefault(q, defaultLang));
+}
+
+function flattenToDefault(q: AdminQuestionResponse, defaultLang: string): Question {
+    const t = q.translations.find(tr => tr.languageCode === defaultLang)
+        ?? q.translations[0];
+    const endings = q.endingAnswers.map(slot => {
+        const et = slot.translations.find(tr => tr.languageCode === defaultLang)
+            ?? slot.translations[0];
+        return et?.value ?? '';
+    }).filter(v => v !== '');
+    return {
+        questionId:        q.questionId,
+        text:              t?.text ?? '',
+        questionFormat:    q.questionFormat,
+        answerChoices:     t?.answerChoices ?? [],
+        answerChoiceCount: q.answerChoiceCount,
+        isMandatory:       q.isMandatory,
+        position:          q.position,
+        parentQuestionId:  q.parentQuestionId,
+        choiceIndex:       q.choiceIndex,
+        endingAnswers:     endings,
+        sectionName:       q.sectionName,
+        sectionId:         q.sectionId,
+        mediaUrl:          q.mediaUrl,
+        mediaType:         q.mediaType,
+        mediaIsEmbed:      q.mediaIsEmbed,
+        mediaText:         t?.mediaText ?? null,
+        translations:      q.translations,
+        endingAnswerSlots: q.endingAnswers,
+    };
 }
 
 function captureExpandedIds(list: HTMLElement): Set<string> {
@@ -76,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const deleteEndpoint = list.dataset.deleteEndpoint ?? '';
     const locked = list.dataset.locked === 'true';
     const isNew = list.dataset.isNew === 'true';
+    const defaultLang = list.dataset.defaultLanguageCode ?? 'nl';
 
     const i18n: QuestionsI18n = readQuestionsI18n(list);
     const ctx: RenderContext = { deleteEndpoint, projectId, locked, isNew, i18n };
@@ -83,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function reload(): Promise<void> {
         const expanded = captureExpandedIds(list!);
         try {
-            const questions = await fetchQuestions(questionsEndpoint);
+            const questions = await fetchQuestions(questionsEndpoint, defaultLang);
             renderTree(list!, questions, ctx);
             applyExpandedIds(list!, expanded);
             const nextBtn = document.getElementById('questions-next-btn') as HTMLButtonElement | null;

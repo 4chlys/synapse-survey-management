@@ -29,6 +29,7 @@ public class QuestionSupportApiController(
                 body.History,
                 body.UserMessage,
                 body.IsFirstTurn,
+                body.QuestionLanguage,
                 ct);
             return Ok(result);
         }

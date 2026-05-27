@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Dashboard;
 using SynapseEnqueteManagement.API.DTOs.Stats;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -45,10 +46,8 @@ public class ProjectStatsExportController(
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var defaultLang = project.DefaultLanguage?.Code ?? lang;
-        var projectName = project.Translations
-            .FirstOrDefault(t => t.Language?.Code == defaultLang)?.Name
-            ?? project.Translations.FirstOrDefault()?.Name
-            ?? string.Empty;
+        var projectName = TranslationPicker.Pick(project.Translations, defaultLang)?.Name
+                          ?? string.Empty;
 
         var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
         var metrics = await dashboardManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);

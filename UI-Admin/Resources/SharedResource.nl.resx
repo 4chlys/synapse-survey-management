@@ -135,4 +135,12 @@ Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
 {2}</value></data>
 
   <data name="Common_ProgressSaved" xml:space="preserve"><value>Opgeslagen.</value></data>
+
+  <data name="Activation_NoCategory" xml:space="preserve"><value>Minimaal één categorie is vereist</value></data>
+  <data name="Activation_ProjectTranslation" xml:space="preserve"><value>Projectnaam ontbreekt voor taal: {0}</value></data>
+  <data name="Activation_IntroductionTranslation" xml:space="preserve"><value>Introductie ontbreekt voor taal: {0}</value></data>
+  <data name="Activation_SectionTranslation" xml:space="preserve"><value>Sectie #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+  <data name="Activation_QuestionTranslation" xml:space="preserve"><value>Vraag #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+  <data name="Activation_CategoryTranslation" xml:space="preserve"><value>Categorie #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+  <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Eindsantwoord #{0}: vertaling ontbreekt voor taal: {1}</value></data>
 </root>

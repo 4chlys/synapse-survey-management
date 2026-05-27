@@ -46,17 +46,30 @@ export function initIdeation(): void {
         if (!modeOverlay) return;
         modeOverlay.classList.remove('hidden');
         modeOverlay.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        modePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
     }
 
     function closeModeSelect(): void {
         if (!modeOverlay) return;
         modeOverlay.classList.add('hidden');
         modeOverlay.classList.remove('flex');
+        document.body.style.overflow = '';
     }
 
     // Dismiss mode sheet on backdrop click (outside the panel)
     modeOverlay?.addEventListener('click', (e: MouseEvent) => {
         if (modePanel && !modePanel.contains(e.target as Node)) closeModeSelect();
+    });
+
+    const contactPopup = document.getElementById('contactInfoPopup');
+    const contactPanel = contactPopup?.querySelector<HTMLElement>('.rounded-t-3xl') ?? null;
+
+    contactPopup?.addEventListener('click', (e: MouseEvent) => {
+        if (contactPanel && !contactPanel.contains(e.target as Node)) {
+            contactPopup.classList.add('hidden');
+            contactPopup.classList.remove('flex');
+        }
     });
 
     // Add-comment form
@@ -79,12 +92,15 @@ export function initIdeation(): void {
         if (!commentModeOverlay) return;
         commentModeOverlay.classList.remove('hidden');
         commentModeOverlay.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        commentModePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
     }
 
     function closeCommentModeSelect(): void {
         if (!commentModeOverlay) return;
         commentModeOverlay.classList.add('hidden');
         commentModeOverlay.classList.remove('flex');
+        document.body.style.overflow = '';
     }
 
     commentModeOverlay?.addEventListener('click', (e: MouseEvent) => {
@@ -164,7 +180,14 @@ export function initIdeation(): void {
     lightbox?.addEventListener('click', () => closeLightbox());
 
     document.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Escape') closeLightbox();
+        if (e.key !== 'Escape') return;
+        if (lightbox && !lightbox.classList.contains('hidden')) { closeLightbox(); return; }
+        if (modeOverlay && !modeOverlay.classList.contains('hidden')) { closeModeSelect(); return; }
+        if (commentModeOverlay && !commentModeOverlay.classList.contains('hidden')) { closeCommentModeSelect(); return; }
+        if (contactPopup && !contactPopup.classList.contains('hidden')) {
+            contactPopup.classList.add('hidden');
+            contactPopup.classList.remove('flex');
+        }
     });
 
     // Button delegation
@@ -356,6 +379,11 @@ async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<voi
 
     const showAll = toggle?.checked ?? false;
 
+    const spinner = document.getElementById('refresh-ideas-spinner');
+    const icon    = document.getElementById('refresh-ideas-icon');
+    spinner?.classList.remove('hidden');
+    icon?.classList.add('hidden');
+
     try {
         const showAllParam = showAll ? '&showAllLanguages=true' : '';
         const url = `/${projectId}/Ideation/LoadIdeas?categoryId=${categoryId}&page=${currentPage}&sort=${encodeURIComponent(sort)}${showAllParam}`;
@@ -376,12 +404,15 @@ async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<voi
         const html = data.ideas.map(idea => renderIdeaCard(idea, projectId!, categoryId!)).join('');
 
         if (replace) {
-            list.querySelectorAll(':scope > a').forEach(el => el.remove());
+            list.querySelectorAll(':scope > div').forEach(el => el.remove());
         }
 
         list.insertAdjacentHTML('beforeend', html);
     } catch {
         // Silently fail
+    } finally {
+        spinner?.classList.add('hidden');
+        icon?.classList.remove('hidden');
     }
 }
 
@@ -421,8 +452,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         ? ` lang="${idea.languageCode}"`
         : '';
 
-    return `<a href="/${projectId}/Ideation/Detail?categoryId=${categoryId}&ideaId=${idea.ideaId}"
-       class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] ${borderClass}">
+    return `<div class="group relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] cursor-pointer ${borderClass}">
         <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-neutral/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -431,7 +461,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         </div>
         ${statusLabel}
         <p class="text-base-content text-sm leading-relaxed pr-8"${langAttr}>${escapeHtml(idea.description)}</p>
-        <div class="mt-3">
+        <div class="mt-3 relative z-[2]">
             <button type="button" data-action="copy-idea"
                     data-idea-description="${escapeAttr(idea.description)}"
                     class="inline-flex items-center gap-1.5 text-xs text-base-content/50 hover:text-primary transition-colors cursor-pointer">
@@ -441,8 +471,11 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
                 ${t('ideaCardUseAsStartingPoint')}
             </button>
         </div>
-        ${emojiHtml ? `<div class="flex gap-2 mt-4 items-center flex-wrap">${emojiHtml}</div>` : ''}
-    </a>`;
+        ${emojiHtml ? `<div class="flex gap-2 mt-4 items-center flex-wrap relative z-[2]">${emojiHtml}</div>` : ''}
+        <a href="/${projectId}/Ideation/Detail?categoryId=${categoryId}&ideaId=${idea.ideaId}"
+           class="absolute inset-0 rounded-field z-[1] focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+           aria-label="${escapeAttr(idea.description)}"></a>
+    </div>`;
 }
 
 function escapeHtml(text: string): string {

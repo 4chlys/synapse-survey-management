@@ -17,7 +17,7 @@ public class ResponseManagerTests
     public ResponseManagerTests()
     {
         _validatorFactory.Setup(f => f.GetValidator(It.IsAny<QuestionFormat>())).Returns(_validator.Object);
-        _validator.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<Question>()));
+        _validator.Setup(v => v.Validate(It.IsAny<string>(), It.IsAny<Question>(), It.IsAny<string>()));
         _questionRepository.Setup(r => r.ReadByIdWithTranslationsForUpdateAsync(_question.QuestionId)).ReturnsAsync(_question);
         _manager = new ResponseManager(_responseRepository.Object, _questionRepository.Object, _uow.Object, _validatorFactory.Object);
     }

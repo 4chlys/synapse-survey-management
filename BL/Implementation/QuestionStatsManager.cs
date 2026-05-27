@@ -1,4 +1,3 @@
-using System.Globalization;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Helpers;
@@ -12,38 +11,38 @@ public class QuestionStatsManager(
     IQuestionStatsRepository questionStatsRepository,
     IQuestionnaireManager questionnaireManager) : IQuestionStatsManager
 {
-    public async Task<SingleChoiceStats> ReadSingleChoiceStatsAsync(int projectId, int questionId)
+    public async Task<SingleChoiceStats> ReadSingleChoiceStatsAsync(int projectId, int questionId, string languageCode)
     {
         await ValidateOwnershipAsync(projectId, questionId);
         var question = await questionnaireManager.GetQuestionByIdWithTranslationsReadOnlyAsync(questionId);
         var counts = await questionStatsRepository.ReadCountsBySingleChoiceQuestionReadOnlyAsync(questionId);
         var total = await questionStatsRepository.CountResponsesByQuestionAsync(questionId);
         // Order ascending by option index so the chart follows the question's choice order.
-        var merged = MergeByChoiceIndex(counts, question).OrderBy(c => c.Index);
+        var merged = MergeByChoiceIndex(counts, question, languageCode).OrderBy(c => c.Index);
         return new SingleChoiceStats(questionId, total, merged.Select(c => c.Count).ToList());
     }
 
-    public async Task<MultipleChoiceStats> ReadMultipleChoiceStatsAsync(int projectId, int questionId)
+    public async Task<MultipleChoiceStats> ReadMultipleChoiceStatsAsync(int projectId, int questionId, string languageCode)
     {
         await ValidateOwnershipAsync(projectId, questionId);
         var question = await questionnaireManager.GetQuestionByIdWithTranslationsReadOnlyAsync(questionId);
         var counts = await questionStatsRepository.ReadCountsByMultipleChoiceQuestionReadOnlyAsync(questionId);
         var total = await questionStatsRepository.CountResponsesByQuestionAsync(questionId);
         // Keep the existing most-selected-first ordering for the bar chart.
-        var merged = MergeByChoiceIndex(counts, question).OrderByDescending(c => c.Count.Count);
+        var merged = MergeByChoiceIndex(counts, question, languageCode).OrderByDescending(c => c.Count.Count);
         return new MultipleChoiceStats(questionId, total, merged.Select(c => c.Count).ToList());
     }
 
     // Choice answers are stored as the raw text in the language the participant used, so the same option
     // appears once per language ("zeer tevreden" vs "very satisfied"). Options are positionally aligned across
     // translations, so the option's index is its language-independent identity: regroup the per-text counts by
-    // index, sum them, and relabel using the admin's current UI culture. Texts that match no choice keep their
+    // index, sum them, and relabel using the requested language. Texts that match no choice keep their
     // own bucket as a fallback.
     private static IEnumerable<(int Index, OptionCount Count)> MergeByChoiceIndex(
-        IReadOnlyList<OptionCount> counts, Question question)
+        IReadOnlyList<OptionCount> counts, Question question, string languageCode)
     {
         var textToIndex = BuildTextToIndexMap(question);
-        var labels = LabelsForCurrentCulture(question);
+        var labels = LabelsForLanguage(question, languageCode);
 
         return counts
             // Matched texts group by their shared option index; unmatched texts keep their own bucket
@@ -72,10 +71,9 @@ public class QuestionStatsManager(
         return map;
     }
 
-    private static IReadOnlyList<string> LabelsForCurrentCulture(Question question)
+    private static IReadOnlyList<string> LabelsForLanguage(Question question, string languageCode)
     {
-        var cultureCode = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        return TranslationPicker.Pick(question?.Translations, cultureCode)?.AnswerChoices?.ToList()
+        return TranslationPicker.Pick(question?.Translations, languageCode)?.AnswerChoices?.ToList()
                ?? new List<string>();
     }
 
@@ -95,16 +93,15 @@ public class QuestionStatsManager(
         return new OpenAnswerPage(questionId, total, answers.ToList());
     }
 
-    public async Task<IReadOnlyList<QuestionLookup>> ReadQuestionsByFormatAsync(int projectId, QuestionFormat format)
+    public async Task<IReadOnlyList<QuestionLookup>> ReadQuestionsByFormatAsync(int projectId, QuestionFormat format, string languageCode)
     {
         var questions = await questionnaireManager.GetQuestionsForProjectAsync(projectId);
-        var cultureCode = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
         return questions
             .Where(q => q.QuestionFormat == format)
             .Select(q => new QuestionLookup(
                 q.QuestionId,
-                TranslationPicker.Pick(q.Translations, cultureCode)?.Text ?? string.Empty))
+                TranslationPicker.Pick(q.Translations, languageCode)?.Text ?? string.Empty))
             .ToList();
     }
 

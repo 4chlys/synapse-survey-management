@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Survey;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -65,15 +66,19 @@ public class SectionsController(
 
     private static SectionDto MapToDto(Section section, string languageCode)
     {
-        var translation = section.Translations
-            ?.FirstOrDefault(t => t.Language?.Code == languageCode)
-            ?? section.Translations?.FirstOrDefault();
+        var translation = TranslationPicker.Pick(section.Translations, languageCode);
 
         return new SectionDto
         {
             SectionId = section.SectionId,
             Name = translation?.Name,
-            Description = translation?.Description
+            Description = translation?.Description,
+            Translations = section.Translations?.Select(t => new SectionTranslationDto
+            {
+                LanguageCode = t.Language?.Code,
+                Name = t.Name,
+                Description = t.Description
+            }).ToList() ?? new List<SectionTranslationDto>()
         };
     }
 

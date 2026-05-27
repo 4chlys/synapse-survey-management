@@ -16,4 +16,6 @@
   <data name="FormTypeChat" xml:space="preserve"><value>Chat</value></data>
   <data name="FormTypeScroll" xml:space="preserve"><value>Scroll</value></data>
   <data name="InfoText" xml:space="preserve"><value>Eenmaal geactiveerd kunnen deelnemers het project bereiken via een gedeelde link. Je kunt het project op elk moment deactiveren of archiveren vanuit het dashboard.</value></data>
+  <data name="BlockingTitle" xml:space="preserve"><value>Project kan nog niet worden geactiveerd</value></data>
+  <data name="BlockingIntro" xml:space="preserve"><value>De volgende onderdelen zijn onvolledig:</value></data>
 </root>
