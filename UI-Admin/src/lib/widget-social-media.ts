@@ -43,6 +43,7 @@ export function initSocialMediaWidget(el: HTMLElement): void {
         openPlatform:  el.dataset.i18nOpenPlatform    ?? '',
         openInFmt:     el.dataset.i18nOpenIn          ?? '{0}',
         charCountFmt:  el.dataset.i18nCharCount       ?? '{0}',
+        restart:       el.dataset.i18nRestart         ?? 'Restart',
     };
     const platformNotes: Record<Platform, string> = {
         LinkedIn:  el.dataset.i18nNoteLinkedin  ?? '',
@@ -89,10 +90,16 @@ export function initSocialMediaWidget(el: HTMLElement): void {
                     <span data-role="result-platform-icon" class="text-base-content/60"></span>
                     <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider" data-role="result-platform-name"></span>
                 </div>
-                <button class="btn btn-ghost btn-xs gap-1" data-role="regenerate">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-                    ${i18n.generate}
-                </button>
+                <div class="flex items-center gap-1">
+                    <button class="btn btn-ghost btn-xs gap-1" data-role="regenerate">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                        ${i18n.generate}
+                    </button>
+                    <button class="btn btn-ghost btn-xs gap-1" data-role="restart">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                        ${i18n.restart}
+                    </button>
+                </div>
             </div>
 
             <textarea class="textarea textarea-bordered textarea-sm w-full font-mono text-xs" rows="6"
@@ -144,6 +151,7 @@ export function initSocialMediaWidget(el: HTMLElement): void {
     const imagePrev   = $<HTMLImageElement>('image-preview');
     const copyBtn     = $<HTMLButtonElement>('copy');
     const shareLink   = $<HTMLAnchorElement>('share');
+    const restartBtn  = $<HTMLButtonElement>('restart');
 
     function setActivePlatform(p: Platform): void {
         platformInput.value = p;
@@ -195,8 +203,22 @@ export function initSocialMediaWidget(el: HTMLElement): void {
         }
     }
 
+    function restart(): void {
+        userDesc.value = '';
+        outputEl.value = '';
+        charCount.textContent = '';
+        imagePrev.src = '';
+        imagePrev.classList.add('hidden');
+        fileInput.value = '';
+        el.querySelectorAll('.social-image-loading').forEach(l => l.remove());
+        stepResult.classList.add('hidden');
+        stepInput.classList.remove('hidden');
+        setActivePlatform('LinkedIn');
+    }
+
     generateBtn.addEventListener('click', generate);
     regenerateBtn.addEventListener('click', generate);
+    restartBtn.addEventListener('click', restart);
 
     outputEl.addEventListener('input', () => {
         charCount.textContent = i18n.charCountFmt.replace('{0}', String(outputEl.value.length));
