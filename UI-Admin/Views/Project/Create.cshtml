@@ -78,25 +78,25 @@
                             @InfoIcon(L["LanguagesHint"].Value)
                         </div>
                         <div id="language-picker" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            @foreach (var code in availableLanguages)
+                            @foreach (var languageCode in availableLanguages)
                             {
-                                var isSupported = Model.SupportedLanguageCodes?.Contains(code) ?? false;
-                                var isDefault = Model.DefaultLanguageCode == code;
+                                var isSupported = Model.SupportedLanguageCodes?.Contains(languageCode) ?? false;
+                                var isDefault = Model.DefaultLanguageCode == languageCode;
                                 <div class="relative flex flex-col gap-2 border-2 border-base-300 rounded-lg p-3
                                             has-[[data-language-checkbox]:checked]:border-primary
                                             has-[[data-language-checkbox]:checked]:bg-primary/5
                                             transition-colors">
                                     <label class="flex items-center gap-2.5 cursor-pointer">
-                                        <input type="checkbox" name="SupportedLanguageCodes" value="@code"
+                                        <input type="checkbox" name="SupportedLanguageCodes" value="@languageCode"
                                                class="checkbox checkbox-sm checkbox-primary"
-                                               data-language-checkbox="@code"
+                                               data-language-checkbox="@languageCode"
                                                checked="@isSupported" />
-                                        <span class="text-sm font-semibold text-base-content">@LanguageDisplayName(code)</span>
+                                        <span class="text-sm font-semibold text-base-content">@LanguageDisplayName(languageCode)</span>
                                     </label>
                                     <label class="flex items-center gap-1.5 cursor-pointer text-xs text-base-content/60 pl-7">
-                                        <input type="radio" name="DefaultLanguageCode" value="@code"
+                                        <input type="radio" name="DefaultLanguageCode" value="@languageCode"
                                                class="radio radio-xs radio-primary"
-                                               data-language-default="@code"
+                                               data-language-default="@languageCode"
                                                checked="@isDefault"
                                                disabled="@(!isSupported)" />
                                         <span>@L["DefaultLabel"]</span>

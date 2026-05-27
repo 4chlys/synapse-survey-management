@@ -88,10 +88,10 @@
                         <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                         @for (var i = 0; i < availableLangs.Length; i++)
                         {
-                            var code = availableLangs[i];
+                            var languageCode = availableLangs[i];
                             <div class="flex gap-3 items-end">
-                                <span class="text-xs font-bold uppercase text-base-content/40 w-6 shrink-0 self-end pb-1.5">@code</span>
-                                <input type="hidden" name="Translations[@i].LanguageCode" value="@code" />
+                                <span class="text-xs font-bold uppercase text-base-content/40 w-6 shrink-0 self-end pb-1.5">@languageCode</span>
+                                <input type="hidden" name="Translations[@i].LanguageCode" value="@languageCode" />
                                 <div class="form-control gap-1.5 w-56">
                                     @if (i == 0)
                                     {
