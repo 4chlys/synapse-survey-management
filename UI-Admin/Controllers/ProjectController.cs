@@ -834,13 +834,12 @@ public class ProjectController(
         if (user is null) return RedirectToAction("Login", "Auth");
 
         var source = model.Slots ?? [];
-        var sanitized = Enumerable.Range(0, 9)
-            .Select(i =>
+        var sanitized = source
+            .Select(input =>
             {
-                var input = i < source.Length ? source[i] : null;
                 var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
                     ? input.WidgetType
-                    : WidgetPreferenceService.DefaultLayout[i];
+                    : WidgetPreferenceService.DefaultLayout[0];
                 var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
                 return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
             })

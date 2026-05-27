@@ -6,13 +6,13 @@
     var pageLang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 
-<div class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-[calc(100dvh-64px)] page-enter">
+<div class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-content page-enter">
 
     @* Top bar — back left, exit right *@
-    <div class="w-full flex items-center justify-between gap-4 mb-6">
+    <nav class="w-full flex items-center justify-between gap-4 mb-6">
         <a asp-controller="Ideation" asp-action="IdeaHub"
            asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
-           class="inline-flex items-center gap-1.5 text-sm font-medium text-base-content/70 hover:text-primary transition-colors">
+           class="btn-back">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
@@ -20,15 +20,15 @@
             @L["BackToIdeasLabel"]
         </a>
         <button type="button" data-action="show-thank-you"
-           aria-label="@L["CloseNavLabel"]"
-           class="w-9 h-9 rounded-full flex items-center justify-center text-base-content/65 hover:text-error hover:bg-error/10 transition-colors cursor-pointer bg-transparent border-0">
+               aria-label="@L["CloseNavLabel"]"
+               class="btn-exit">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
         </button>
-    </div>
+    </nav>
 
     @* Header *@
     <div class="w-full mb-8">
@@ -38,10 +38,10 @@
     </div>
 
     @* Ideas list *@
-    <div class="w-full flex flex-col gap-3">
+    <ul class="w-full flex flex-col gap-3">
         @if (!Model.Ideas.Any())
         {
-            <div class="text-center py-16 flex flex-col items-center gap-3">
+            <li class="text-center py-16 flex flex-col items-center gap-3">
                 <div class="w-12 h-12 rounded-field bg-base-200 border border-base-300 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-neutral" fill="none" viewBox="0 0 24 24"
                          stroke="currentColor" stroke-width="1.5">
@@ -50,12 +50,13 @@
                     </svg>
                 </div>
                 <p class="text-neutral text-sm">@L["EmptyState"]</p>
-            </div>
+            </li>
         }
         else
         {
             @foreach (var idea in Model.Ideas)
             {
+                <li>
                 <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
                        asp-route-categoryId="@Model.CategoryId" asp-route-ideaId="@idea.IdeaId"
                        class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99]
@@ -104,9 +105,10 @@
                         </div>
                     }
                 </a>
+                </li>
             }
         }
-    </div>
+    </ul>
 
 </div>
 

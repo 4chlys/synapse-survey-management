@@ -133,7 +133,10 @@
     <value>Yes, submit</value>
   </data>
   <data name="AiChat_DraftNo" xml:space="preserve">
-    <value>No, adjust</value>
+    <value>Adjust</value>
+  </data>
+  <data name="AiChat_DraftAddContent" xml:space="preserve">
+    <value>Add media</value>
   </data>
   <data name="AiChat_NoProblem" xml:space="preserve">
     <value>No problem! Tell me what you want to change.</value>

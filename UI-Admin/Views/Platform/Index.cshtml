@@ -5,80 +5,118 @@
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = L["NavActive"].Value;
     Layout = "_Layout";
+    var platforms = Model.ToList();
 }
 
-<h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
-
-<div class="flex items-center justify-between mb-6">
-    <div></div>
-    <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm">
-        + @L["NewButton"]
+<div class="flex items-start justify-between gap-4 mb-8">
+    <div>
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <p class="text-sm text-base-content/40 mt-0.5">@platforms.Count @(platforms.Count == 1 ? "organisation" : "organisations")</p>
+    </div>
+    <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm shrink-0 gap-1.5">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        @L["NewButton"]
     </a>
 </div>
 
-@if (!Model.Any())
+@if (!platforms.Any())
 {
     <div class="card bg-base-100 shadow-sm">
-        <div class="card-body text-center text-base-content/60 text-sm">
-            @L["Empty"]
+        <div class="card-body flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-base-200 text-base-content/20">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-base-content">@L["Empty"]</p>
+                <p class="text-xs text-base-content/40 mt-0.5">@L["NewButton"] to get started</p>
+            </div>
+            <a asp-controller="Platform" asp-action="Create" class="btn btn-primary btn-sm gap-1.5">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                @L["NewButton"]
+            </a>
         </div>
     </div>
 }
 else
 {
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body p-0 overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>@L["TableName"]</th>
-                        <th>@L["TableLogo"]</th>
-                        <th>@L["TableWebsite"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var platform in Model)
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @{ var idx = 0; }
+        @foreach (var platform in platforms)
+        {
+            var accentColors = new[] {
+                "var(--color-primary)", "var(--color-info)",
+                "var(--color-secondary)", "var(--color-warning)"
+            };
+            var accent = accentColors[idx % accentColors.Length];
+
+            <div class="settings-card" style="border-left-color: @accent; animation-delay: @(idx * 0.06)s;">
+                <div class="settings-card-header">
+                    @if (!string.IsNullOrEmpty(platform.LogoUrl))
                     {
-                        <tr class="hover">
-                            <td class="text-base-content">@platform.Name</td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(platform.LogoUrl))
-                                {
-                                    <img src="@platform.LogoUrl" alt="@platform.Name @L["LogoAltSuffix"]"
-                                         class="h-8 w-auto object-contain" />
-                                }
-                                else
-                                {
-                                    <span class="text-base-content/60 text-xs italic">—</span>
-                                }
-                            </td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(platform.WebsiteUrl))
-                                {
-                                    <a href="@platform.WebsiteUrl" target="_blank" rel="noopener noreferrer"
-                                       class="text-base-content/60 hover:text-base-content transition underline underline-offset-2">
-                                        @platform.WebsiteUrl
-                                    </a>
-                                }
-                                else
-                                {
-                                    <span class="text-base-content/60 text-xs italic">—</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="flex items-center gap-2 justify-end">
-                                    <a asp-controller="Platform" asp-action="Dashboard"
-                                       asp-route-id="@platform.ProjectPlatformId"
-                                       class="btn btn-ghost btn-sm">
-                                        @L["OpenAction"]
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-base-200">
+                            <img src="@platform.LogoUrl" alt="@platform.Name"
+                                 class="h-7 w-auto max-w-full object-contain" />
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
+                    else
+                    {
+                        <div class="settings-card-icon" style="background: color-mix(in oklch, @accent 10%, transparent); color: @accent;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                            </svg>
+                        </div>
+                    }
+                    <div class="min-w-0 flex-1">
+                        <h2 class="font-heading font-semibold text-sm text-base-content truncate">@platform.Name</h2>
+                        @if (!string.IsNullOrEmpty(platform.WebsiteUrl))
+                        {
+                            <a href="@platform.WebsiteUrl" target="_blank" rel="noopener noreferrer"
+                               class="text-xs text-base-content/40 hover:text-base-content transition truncate block max-w-full">
+                                @platform.WebsiteUrl
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-xs text-base-content/30 italic">—</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 mt-auto pt-1">
+                    <a asp-controller="Platform" asp-action="Dashboard"
+                       asp-route-id="@platform.ProjectPlatformId"
+                       class="btn btn-primary btn-xs flex-1">
+                        @L["OpenAction"]
+                    </a>
+                    <a asp-controller="AdminMembership" asp-action="Index"
+                       asp-route-id="@platform.ProjectPlatformId"
+                       class="btn btn-ghost btn-xs gap-1">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                        </svg>
+                        Admins
+                    </a>
+                    <a asp-controller="Platform" asp-action="Settings"
+                       asp-route-id="@platform.ProjectPlatformId"
+                       class="btn btn-ghost btn-xs">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            idx++;
+        }
     </div>
 }

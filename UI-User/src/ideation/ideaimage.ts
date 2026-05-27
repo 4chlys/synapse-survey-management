@@ -1,11 +1,8 @@
 import {t} from '../lib/i18n';
+import { getCsrfToken } from '../lib/utils';
 
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-
-function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
-}
 
 function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
     return new Promise((resolve) => {

@@ -79,6 +79,13 @@ public class AdminMembershipController(
 
         // A platform must never end up with zero admins via a PPA action.
         // SystemAdmins can override via the stronger client-side confirm dialog.
+        var currentUser = await userManager.GetUserAsync(User);
+        if (currentUser?.Id == userId)
+        {
+            TempData["Error"] = localizer["Platform_SelfRemoveBlocked"].Value;
+            return RedirectToAction(nameof(Index), new { id = scopedId.Value });
+        }
+
         var admins = await platformService.GetAdminsForPlatformAsync(scopedId.Value);
         var wouldBeLast = !admins.Any(a => a.Id != userId);
         if (wouldBeLast && !User.IsInRole("SystemAdmin"))

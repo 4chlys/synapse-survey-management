@@ -38,23 +38,13 @@ const widgetRegistry: Record<string, WidgetInit> = {
     SocialMediaPost: initSocialMediaWidget,
 };
 
-function initCostTabs(): void {
-    const tabs = document.querySelectorAll<HTMLButtonElement>('#cost-tabs [data-cost-tab]');
-    if (tabs.length === 0) return;
-
-    tabs.forEach(tab => tab.addEventListener('click', () => {
-        const platformId = tab.dataset.costTab;
-        document.querySelectorAll<HTMLElement>('[id^="cost-"]')
-            .forEach(el => el.classList.add('hidden'));
-        document.getElementById(`cost-${platformId}`)?.classList.remove('hidden');
-        tabs.forEach(t => t.classList.remove('tab-active'));
-        tab.classList.add('tab-active');
-    }));
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const slots = document.querySelectorAll<HTMLElement>('[data-widget]');
     const cleanups: Array<() => void> = [];
+
+    document.querySelectorAll<HTMLElement>('.db-grid > *').forEach((el, i) => {
+        el.style.animationDelay = `${i * 0.04}s`;
+    });
 
     slots.forEach(el => {
         if (el.dataset.widgetInitialized === 'true') return;
@@ -67,8 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const cleanup = init(el);
         if (cleanup) cleanups.push(cleanup);
     });
-
-    initCostTabs();
 
     window.addEventListener('beforeunload', () => cleanups.forEach(fn => fn()));
 });

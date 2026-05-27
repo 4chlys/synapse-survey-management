@@ -1,56 +1,12 @@
 import { startSession, saveResponse, getNextQuestion, getResumeQuestion, submitSurvey, removeAllResponses } from './api';
 import { t } from '../lib/i18n';
+import type { QuestionData, BubbleMedia, ChipsOptions, Ctx } from './types';
 
 const enum Fmt {
     Open = 1,
     SingleChoice = 2,
     MultipleChoice = 3,
     Likert = 4,
-}
-
-interface QuestionData {
-    questionId: number;
-    text: string;
-    format: number;
-    answerChoices: string[] | null;
-    questionNumber: number;
-    totalQuestions: number;
-    isMandatory: boolean;
-    position: number;
-    mediaUrl: string | null;
-    mediaType: number | null;
-    mediaIsEmbed: boolean;
-    mediaText: string | null;
-}
-
-interface QuestionEntry {
-    qid: number;
-    sysBubble: HTMLElement;
-    ansBubble: HTMLElement | null;
-}
-
-interface Ctx {
-    projectId: number;
-    questions: QuestionData[];
-    questionIndexById: Map<number, number>;
-    existingResponses: Record<string, string>;
-    hasSession: boolean;
-    messagesEl: HTMLElement;
-    optionsRow: HTMLElement;
-    inputRow: HTMLElement;
-    inputEl: HTMLTextAreaElement;
-    sendBtn: HTMLButtonElement;
-    rootEl: HTMLElement;
-    backBtns: HTMLButtonElement[];
-    restartBtns: HTMLButtonElement[];
-    questionStack: QuestionEntry[];
-    activeChips: HTMLElement | null;
-    confirmBubble: HTMLElement | null;
-    userTypingBubble: HTMLElement | null;
-    openHandlers: { send: () => void; key: (e: KeyboardEvent) => void } | null;
-    introText: string;
-    introImage: string;
-    introShown: boolean;
 }
 
 // ─── Visual class constants ──────────────────────────────
@@ -124,16 +80,6 @@ function removeUserTyping(ctx: Ctx): void {
         ctx.userTypingBubble.remove();
         ctx.userTypingBubble = null;
     }
-}
-
-interface BubbleMedia {
-    imageUrl?: string | null;
-    videoUrl?: string | null;
-    audioUrl?: string | null;
-    isEmbed?: boolean;
-    extraText?: string | null;
-    // Set to true when `text` passed to appendSystemBubble contains trusted HTML (e.g. Quill intro).
-    isHtml?: boolean;
 }
 
 // Async: shows typing indicator, then resolves with the real bubble element
@@ -266,12 +212,6 @@ function removeActiveChips(ctx: Ctx): void {
         ctx.activeChips.remove();
         ctx.activeChips = null;
     }
-}
-
-interface ChipsOptions {
-    multi: boolean;
-    onSelect?: (value: string, sourceEl?: HTMLElement) => void;
-    onConfirm?: (values: string[], sourceEl?: HTMLElement) => void;
 }
 
 function showChips(ctx: Ctx, items: string[], opts: ChipsOptions): void {
@@ -518,11 +458,11 @@ async function renderQuestion(ctx: Ctx, index: number, withTyping = true): Promi
 
     const media: BubbleMedia | undefined = q.mediaType
         ? {
-            imageUrl: q.mediaType === 1 ? q.mediaUrl : null,
-            videoUrl: q.mediaType === 2 ? q.mediaUrl : null,
-            audioUrl: q.mediaType === 3 ? q.mediaUrl : null,
+            imageUrl: q.mediaType === 1 ? (q.mediaUrl ?? undefined) : undefined,
+            videoUrl: q.mediaType === 2 ? (q.mediaUrl ?? undefined) : undefined,
+            audioUrl: q.mediaType === 3 ? (q.mediaUrl ?? undefined) : undefined,
             isEmbed: q.mediaIsEmbed,
-            extraText: q.mediaText,
+            extraText: q.mediaText ?? undefined,
         }
         : (q.mediaText ? { extraText: q.mediaText } : undefined);
     const sysBubble = await appendSystemBubble(ctx, q.text, withTyping, media);
@@ -727,7 +667,7 @@ async function showIntro(ctx: Ctx): Promise<void> {
     if (!hasText && !hasImage) return;
     const text = hasText ? ctx.introText : '';
     await appendSystemBubble(ctx, text, true, {
-        imageUrl: hasImage ? ctx.introImage : null,
+        imageUrl: hasImage ? ctx.introImage : undefined,
         isHtml: hasText,
     });
 }
