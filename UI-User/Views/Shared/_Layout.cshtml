@@ -89,6 +89,7 @@
           aiChatDraftLabel = Shared["AiChat_DraftLabel"].Value,
           aiChatDraftYes = Shared["AiChat_DraftYes"].Value,
           aiChatDraftNo = Shared["AiChat_DraftNo"].Value,
+          aiChatDraftAddContent = Shared["AiChat_DraftAddContent"].Value,
           aiChatNoProblem = Shared["AiChat_NoProblem"].Value,
           aiChatRefining = Shared["AiChat_Refining"].Value,
           aiChatRefinedText = Shared["AiChat_RefinedText"].Value,
@@ -187,20 +188,21 @@
 
                 @* Language switcher — segmented pill *@
                 @{ var activeCulture = CultureInfo.CurrentUICulture.Name; }
-                <form asp-controller="Culture" asp-action="SetCulture" method="post"
-                      class="flex items-center rounded-full border border-base-content/20 bg-base-200 overflow-hidden"
-                      aria-label="@Shared["LanguageMenu_Switch"]">
-                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
-                    @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
-                    {
-                        var isActive = string.Equals(c.Name, activeCulture, StringComparison.OrdinalIgnoreCase);
-                        <button type="submit" name="culture" value="@c.Name"
-                                class="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer @(isActive ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-primary")"
-                                aria-current="@(isActive ? "true" : "false")">
-                            @c.TwoLetterISOLanguageName
-                        </button>
-                    }
-                </form>
+                <nav aria-label="@Shared["LanguageMenu_Switch"]">
+                    <form asp-controller="Culture" asp-action="SetCulture" method="post"
+                          class="flex items-center rounded-full border border-base-content/20 bg-base-200 overflow-hidden">
+                        <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                        @foreach (var c in LocalizationOptions.Value.SupportedUICultures ?? [])
+                        {
+                            var isActive = string.Equals(c.Name, activeCulture, StringComparison.OrdinalIgnoreCase);
+                            <button type="submit" name="culture" value="@c.Name"
+                                    class="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer @(isActive ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-primary")"
+                                    aria-current="@(isActive ? "true" : "false")">
+                                @c.TwoLetterISOLanguageName
+                            </button>
+                        }
+                    </form>
+                </nav>
 
                 @* Theme toggle pill *@
                 <button id="theme-toggle" aria-label="@L["ThemeToggleLabel"]"
@@ -234,16 +236,19 @@
                               returnUrl = Context.Request.Path + Context.Request.QueryString
                           });
                 }
-                <a href="@privacyHref"
-                   class="w-7 h-7 rounded-full border border-base-content/20 bg-base-200 flex items-center justify-center text-base-content/50 hover:text-base-content/80 transition-colors"
-                   title="Privacy">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </a>
-            </div>
+                @if (ViewData["ProjectId"] is not null)
+                {
+                    <a href="@privacyHref"
+                       class="w-7 h-7 rounded-full border border-base-content/20 bg-base-200 flex items-center justify-center text-base-content/50 hover:text-base-content/80 transition-colors"
+                       title="Privacy">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </a>
+                }
+            </div >
 
-        </div>
+            </div>
     </header>
     }
 

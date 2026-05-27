@@ -12,7 +12,8 @@
 
 import { CommentSupportSession } from './commentsupport';
 import { t } from '../lib/i18n';
-import { escapeHtml, renderMarkdown, setupAutoGrow } from './ai-support-base';
+import { renderMarkdown, setupAutoGrow } from './ai-support-base';
+import { escapeHtml } from '../lib/utils';
 
 // DOM references
 

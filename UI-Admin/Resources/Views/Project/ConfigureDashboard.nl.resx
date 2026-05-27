@@ -7,8 +7,10 @@
 
   <data name="PageTitle" xml:space="preserve"><value>Widgets instellen</value></data>
   <data name="Heading" xml:space="preserve"><value>Widgets instellen</value></data>
-  <data name="PositionLabel" xml:space="preserve"><value>Positie</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="AddWidgetButton" xml:space="preserve"><value>Widget toevoegen</value></data>
+  <data name="LayoutPreviewLabel" xml:space="preserve"><value>Indelingsvoorbeeld</value></data>
+  <data name="LayoutPreviewHint" xml:space="preserve"><value>Widgets worden van links naar rechts in een raster van 3 kolommen geplaatst. De Timeline-widget beslaat alle 3 kolommen.</value></data>
   <data name="Widget_ViewCount" xml:space="preserve"><value>Bekeken (aantal)</value></data>
   <data name="Widget_CompletionCount" xml:space="preserve"><value>Ingevuld (aantal)</value></data>
   <data name="Widget_CompletionRate" xml:space="preserve"><value>Voltooiingsgraad (%)</value></data>
@@ -21,4 +23,5 @@
   <data name="Widget_QuestionSinglePie" xml:space="preserve"><value>Vraag: Enkelvoudige keuze (taartdiagram)</value></data>
   <data name="Widget_QuestionMultiBar" xml:space="preserve"><value>Vraag: Meervoudige keuze (staafdiagram)</value></data>
   <data name="Widget_QuestionLikertBar" xml:space="preserve"><value>Vraag: Likertschaal (histogram)</value></data>
+  <data name="Widget_SocialMediaPost" xml:space="preserve"><value>Socialmediabericht</value></data>
 </root>

@@ -1,0 +1,9 @@
+.chip-soft {
+  background-color: color-mix(in oklch, var(--color-primary) 12%, var(--color-base-100));
+  color: var(--color-primary);
+  border: 1px solid color-mix(in oklch, var(--color-primary) 18%, var(--color-base-100));
+}
+
+.accent-strip {
+  background: var(--color-primary);
+}

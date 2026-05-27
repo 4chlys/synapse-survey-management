@@ -1,5 +1,4 @@
 #!/bin/bash
-# Cloud SQL PostgreSQL instantie, database en gebruiker
 
 create_cloud_sql() {
   echo ">>> Cloud SQL instantie aanmaken: mvp-postgres-${ENV}..."

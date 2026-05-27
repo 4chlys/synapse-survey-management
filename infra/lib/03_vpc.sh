@@ -1,5 +1,4 @@
 #!/bin/bash
-# VPC Private Services Access + firewall rules
 
 create_vpc_peering() {
   echo ">>> VPC peering instellen voor Cloud SQL..."

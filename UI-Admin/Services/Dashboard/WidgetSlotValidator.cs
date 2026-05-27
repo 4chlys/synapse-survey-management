@@ -22,16 +22,18 @@ public static class WidgetSlotValidator
         "SocialMediaPost"
     ];
 
+    // Validates form input and produces one WidgetSlot per posted entry. Unknown widget types
+    // fall back to the per-index default (or the last default for positions beyond the default
+    // layout). QuestionId is dropped unless the slot's type is a question-bound widget.
     public static WidgetSlot[] SanitizeSlots(WidgetSlotInput[] source)
     {
         source ??= [];
-        return Enumerable.Range(0, 9)
-            .Select(i =>
+        return source
+            .Select((input, i) =>
             {
-                var input = i < source.Length ? source[i] : null;
                 var type = input is not null && AllWidgetTypes.Contains(input.WidgetType)
                     ? input.WidgetType
-                    : DefaultLayout[i];
+                    : DefaultLayout[Math.Min(i, DefaultLayout.Length - 1)];
                 var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
                 return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
             })

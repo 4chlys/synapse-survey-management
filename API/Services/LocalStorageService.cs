@@ -55,6 +55,11 @@ public class LocalStorageService(IWebHostEnvironment env, IHttpContextAccessor h
 
     public Task DeleteAsync(string url)
     {
+        // Never delete app-bundled seed files: they are shared static content needed to re-seed
+        // the database on restart. Removing the entity's link is fine; the file must stay.
+        if (SeedAsset.IsSeedUrl(url))
+            return Task.CompletedTask;
+
         try
         {
             var uri = new Uri(url);

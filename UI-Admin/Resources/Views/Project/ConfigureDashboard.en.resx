@@ -7,8 +7,10 @@
 
   <data name="PageTitle" xml:space="preserve"><value>Configure widgets</value></data>
   <data name="Heading" xml:space="preserve"><value>Configure widgets</value></data>
-  <data name="PositionLabel" xml:space="preserve"><value>Position</value></data>
   <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AddWidgetButton" xml:space="preserve"><value>Add widget</value></data>
+  <data name="LayoutPreviewLabel" xml:space="preserve"><value>Layout preview</value></data>
+  <data name="LayoutPreviewHint" xml:space="preserve"><value>Widgets flow left-to-right in a 3-column grid. The Timeline widget spans all 3 columns.</value></data>
   <data name="Widget_ViewCount" xml:space="preserve"><value>Views (count)</value></data>
   <data name="Widget_CompletionCount" xml:space="preserve"><value>Completions (count)</value></data>
   <data name="Widget_CompletionRate" xml:space="preserve"><value>Completion rate (%)</value></data>
@@ -21,4 +23,5 @@
   <data name="Widget_QuestionSinglePie" xml:space="preserve"><value>Question: Single choice (pie chart)</value></data>
   <data name="Widget_QuestionMultiBar" xml:space="preserve"><value>Question: Multiple choice (bar chart)</value></data>
   <data name="Widget_QuestionLikertBar" xml:space="preserve"><value>Question: Likert scale (histogram)</value></data>
+  <data name="Widget_SocialMediaPost" xml:space="preserve"><value>Social media post</value></data>
 </root>

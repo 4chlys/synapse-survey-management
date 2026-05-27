@@ -11,9 +11,10 @@
  *   Error    → fallback message shown, input re-enabled
  */
 
-import { IdeaSupportSession } from './ideasupport';
+import { IdeaSupportSession, IdeaSupportChatResponse } from './ideasupport';
 import { t } from '../lib/i18n';
-import { escapeHtml, renderMarkdown, setupAutoGrow } from './ai-support-base';
+import { renderMarkdown, setupAutoGrow } from './ai-support-base';
+import { escapeHtml } from '../lib/utils';
 
 //  DOM references (resolved once on first open)
 
@@ -38,17 +39,7 @@ let onSubmitCallback: ((text: string) => void) | null = null;
 let onSwitchToManualCallback: ((draft: string | null) => void) | null = null;
 let isInitialised = false;
 
-// Types & Interfaces
-
 type ChatPhase = 'INTRO' | 'IDEATION' | 'DRAFT' | 'CONFIRM' | 'ERROR';
-
-interface AiChatResponse {
-    assistantMessage: string;
-    suggestedDraft:   string | null;
-    phase:            string;
-}
-
-//  Initialisation
 
 function ensureRefs(): boolean {
     if (isInitialised) return true;
@@ -140,7 +131,7 @@ async function fireOpeningTurn(): Promise<void> {
 
     try {
         // Empty userMessage signals the server to generate the greeting.
-        const reply = await activeSession!.send('') as AiChatResponse;
+        const reply = await activeSession!.send('');
         await handleAiReply(reply);
     } catch {
         hideLoading();
@@ -158,7 +149,7 @@ async function fireOpeningTurn(): Promise<void> {
  * DRAFT  / CONFIRM : show message + inline YES/NO card, lock input until user decides.
  * ERROR            : show fallback message, re-enable input.
  */
-async function handleAiReply(reply: AiChatResponse): Promise<void> {
+async function handleAiReply(reply: IdeaSupportChatResponse): Promise<void> {
     hideLoading();
 
     // Guard: an empty message means the backend silently failed — show the fallback.
@@ -216,7 +207,7 @@ async function handleSend(): Promise<void> {
     setSendingState(true);
 
     try {
-        const reply = await activeSession!.send(text) as AiChatResponse;
+        const reply = await activeSession!.send(text);
         await handleAiReply(reply);
     } catch {
         hideLoading();
@@ -264,37 +255,54 @@ function showDraftConfirmation(draft: string): void {
     draftPara.textContent = draft;
 
     const btnRow = document.createElement('div');
-    btnRow.className = 'flex gap-2';
+    btnRow.className = 'flex flex-col gap-2';
 
-    const yesBtn = document.createElement('button');
-    yesBtn.type = 'button';
-    yesBtn.className =
-        'flex-1 py-2 rounded-field bg-primary text-primary-content text-sm font-semibold ' +
+    const submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className =
+        'w-full py-2 rounded-field bg-primary text-primary-content text-sm font-semibold ' +
         'hover:bg-primary/90 active:scale-95 transition-all cursor-pointer';
-    yesBtn.textContent = t('aiChatDraftYes');
+    submitBtn.textContent = t('aiChatDraftYes');
 
-    const noBtn = document.createElement('button');
-    noBtn.type = 'button';
-    noBtn.className =
-        'flex-1 py-2 rounded-field border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
+    const addContentBtn = document.createElement('button');
+    addContentBtn.type = 'button';
+    addContentBtn.className =
+        'w-full py-2 rounded-field border-2 border-primary/40 text-primary text-sm font-medium ' +
+        'hover:bg-primary/10 active:scale-95 transition-all cursor-pointer';
+    addContentBtn.textContent = t('aiChatDraftAddContent');
+
+    const adjustBtn = document.createElement('button');
+    adjustBtn.type = 'button';
+    adjustBtn.className =
+        'w-full py-2 rounded-field border-2 border-base-300 text-base-content/70 text-sm font-medium ' +
         'hover:bg-base-200 active:scale-95 transition-all cursor-pointer';
-    noBtn.textContent = t('aiChatDraftNo');
+    adjustBtn.textContent = t('aiChatDraftNo');
 
-    yesBtn.addEventListener('click', () => {
-        yesBtn.disabled = true;
-        noBtn.disabled  = true;
+    function disableAll(): void {
+        submitBtn.disabled    = true;
+        addContentBtn.disabled = true;
+        adjustBtn.disabled    = true;
+    }
+
+    submitBtn.addEventListener('click', () => {
+        disableAll();
         handleUseDraft();
     });
 
-    noBtn.addEventListener('click', () => {
-        yesBtn.disabled = true;
-        noBtn.disabled  = true;
+    addContentBtn.addEventListener('click', () => {
+        disableAll();
+        handleSwitchToManual();
+    });
+
+    adjustBtn.addEventListener('click', () => {
+        disableAll();
         appendAssistantBubble(t('aiChatNoProblem'));
         setSendingState(false);
     });
 
-    btnRow.appendChild(yesBtn);
-    btnRow.appendChild(noBtn);
+    btnRow.appendChild(submitBtn);
+    btnRow.appendChild(addContentBtn);
+    btnRow.appendChild(adjustBtn);
 
     card.appendChild(label);
     card.appendChild(draftPara);

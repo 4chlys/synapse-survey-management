@@ -1,13 +1,17 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
+@using SynapseEnqueteManagement.UI.Admin.Data
+@using Microsoft.AspNetCore.Identity
 @model PlatformAdminsViewModel
 @inject IViewLocalizer L
 @inject IHtmlLocalizer<SharedResource> Shared
+@inject UserManager<ApplicationUser> UserManager
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Admins";
     Layout = "_Layout";
     var isSystemAdmin = User.IsInRole("SystemAdmin");
     var isLastAdmin = Model.Admins.Count == 1;
+    var currentUserId = UserManager.GetUserId(User);
 }
 
 <div>
@@ -94,7 +98,11 @@
                                 <p class="text-sm font-semibold text-base-content truncate">@admin.UserName</p>
                                 <p class="text-xs text-base-content/40 truncate">@admin.Email</p>
                             </div>
-                            @if (isSystemAdmin || !isLastAdmin)
+                            @if (admin.UserId == currentUserId)
+                            {
+                                <span class="text-xs text-base-content/40 px-2">@L["YouLabel"]</span>
+                            }
+                            else if (isSystemAdmin || !isLastAdmin)
                             {
                                 var confirmMsg = isLastAdmin
                                     ? string.Format(L["RemoveConfirmLastAdmin"].Value, admin.Email)

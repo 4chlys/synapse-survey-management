@@ -15,21 +15,7 @@
   <data name="StatAdmins" xml:space="preserve"><value>Beheerders</value></data>
   <data name="StatParticipants" xml:space="preserve"><value>Deelnemers</value></data>
   <data name="PlatformsHeading" xml:space="preserve"><value>Platformen</value></data>
-  <data name="AiShort" xml:space="preserve"><value>AI</value></data>
   <data name="OpenAction" xml:space="preserve"><value>Openen</value></data>
-  <data name="AdminsAction" xml:space="preserve"><value>Beheerders</value></data>
-  <data name="CostMonitoringHeading" xml:space="preserve"><value>Kosten &amp; monitoring</value></data>
-  <data name="CostIframeTitle" xml:space="preserve"><value>Kostenoverzicht {0}</value></data>
-  <data name="NoCostDashboard" xml:space="preserve"><value>Geen kostendashboard geconfigureerd.</value></data>
-  <data name="AddCostDashboardHint" xml:space="preserve"><value>Voeg een Data Studio embed-URL toe via Platform → Instellingen voor elk platform.</value></data>
-  <data name="LiveAiCostHeading" xml:space="preserve"><value>Live AI-kosten (laatste 24u)</value></data>
-  <data name="AiCost_Platform" xml:space="preserve"><value>Platform</value></data>
-  <data name="AiCost_Project" xml:space="preserve"><value>Project</value></data>
-  <data name="AiCost_InputTokens" xml:space="preserve"><value>Input-tokens</value></data>
-  <data name="AiCost_OutputTokens" xml:space="preserve"><value>Output-tokens</value></data>
-  <data name="AiCost_Cost" xml:space="preserve"><value>Kosten (EUR)</value></data>
-  <data name="AiCost_Loading" xml:space="preserve"><value>Laden...</value></data>
-  <data name="AiCost_Empty" xml:space="preserve"><value>Geen AI-gebruik in de laatste 24u.</value></data>
 
   <data name="StatAvgTime" xml:space="preserve"><value>Gem. doorlooptijd</value></data>
   <data name="StatMedianTime" xml:space="preserve"><value>Mediaan doorlooptijd</value></data>

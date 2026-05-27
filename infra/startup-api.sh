@@ -11,7 +11,7 @@ ENV=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attri
 PROJECT_ID=$(curl -s "http://metadata.google.internal/computeMetadata/v1/project/project-id" \
   -H "Metadata-Flavor: Google")
 
-# prod gebruikt :latest, andere omgevingen gebruiken :{ENV}-latest
+# prod pulls :latest so the prod MIG always gets the stable image, not an env-tagged one.
 IMAGE_TAG="$([ "${ENV}" = "prod" ] && echo "latest" || echo "${ENV}-latest")"
 
 get_secret() {

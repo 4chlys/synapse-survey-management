@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.UI.Admin.Data;
-using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 
@@ -17,14 +16,19 @@ public class WidgetPreferenceService(AdminDbContext db)
         if (prefs.Count == 0)
             return Array.ConvertAll(WidgetSlotValidator.DefaultLayout, t => new WidgetSlot(t, null));
 
-        var sparse = new WidgetSlot[9];
+        // Size to the highest stored position so dashboards aren't truncated to 9 slots.
+        var maxPos = prefs.Max(p => p.Position);
+        var size = Math.Max(maxPos + 1, WidgetSlotValidator.DefaultLayout.Length);
+
+        var sparse = new WidgetSlot[size];
         foreach (var p in prefs)
-            if (p.Position >= 0 && p.Position < 9)
+            if (p.Position >= 0 && p.Position < size)
                 sparse[p.Position] = new WidgetSlot(p.WidgetType, p.QuestionId);
 
-        var slots = new WidgetSlot[9];
-        for (var i = 0; i < 9; i++)
-            slots[i] = sparse[i] ?? new WidgetSlot(WidgetSlotValidator.DefaultLayout[i], null);
+        var slots = new WidgetSlot[size];
+        for (var i = 0; i < size; i++)
+            slots[i] = sparse[i] ?? new WidgetSlot(
+                WidgetSlotValidator.DefaultLayout[Math.Min(i, WidgetSlotValidator.DefaultLayout.Length - 1)], null);
 
         return slots;
     }
@@ -47,7 +51,7 @@ public class WidgetPreferenceService(AdminDbContext db)
 
         db.UserWidgetPreferences.RemoveRange(existing);
 
-        for (var i = 0; i < Math.Min(slots.Length, 9); i++)
+        for (var i = 0; i < slots.Length; i++)
         {
             db.UserWidgetPreferences.Add(new UserWidgetPreference
             {
