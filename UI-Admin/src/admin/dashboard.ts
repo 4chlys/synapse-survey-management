@@ -56,6 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const slots = document.querySelectorAll<HTMLElement>('[data-widget]');
     const cleanups: Array<() => void> = [];
 
+    document.querySelectorAll<HTMLElement>('.db-grid > *').forEach((el, i) => {
+        el.style.animationDelay = `${i * 0.04}s`;
+    });
+
     slots.forEach(el => {
         if (el.dataset.widgetInitialized === 'true') return;
         el.dataset.widgetInitialized = 'true';

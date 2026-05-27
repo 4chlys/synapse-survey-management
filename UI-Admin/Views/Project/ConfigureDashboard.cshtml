@@ -20,7 +20,7 @@
         "QuestionSinglePie"     => L["Widget_QuestionSinglePie"].Value,
         "QuestionMultiBar"      => L["Widget_QuestionMultiBar"].Value,
         "QuestionLikertBar"     => L["Widget_QuestionLikertBar"].Value,
-        "SocialMediaPost"       => "Social media post",
+        "SocialMediaPost"       => L["Widget_SocialMediaPost"].Value,
         _                       => type
     };
 
@@ -36,8 +36,13 @@
         _                                                                 => "kpi"
     };
 
+    Func<string, int> getSpan = type => type switch {
+        "ParticipationTimeline" => 3,
+        _                       => 1
+    };
+
     var widgetOptions = Model.AllWidgetTypes
-        .Select(t => new { value = t, label = getLabel(t) })
+        .Select(t => new { value = t, label = getLabel(t), cat = getCat(t), span = getSpan(t) })
         .ToList();
     var widgetOptionsJson = System.Text.Json.JsonSerializer.Serialize(widgetOptions);
 }
@@ -97,7 +102,7 @@
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path d="M12 5v14M5 12h14"/>
                 </svg>
-                Add widget
+                @L["AddWidgetButton"]
             </button>
 
             <div class="flex justify-end">
@@ -112,13 +117,11 @@
         <div class="card bg-base-100 shadow-sm sticky top-4">
             <div class="card-body p-4 gap-3">
                 <p class="text-xs font-bold uppercase tracking-widest text-base-content/30">
-                    Layout preview
+                    @L["LayoutPreviewLabel"]
                 </p>
                 <div id="cfg-preview-grid" class="cfg-preview-grid"></div>
                 <p class="text-xs text-base-content/30 leading-relaxed">
-                    Widgets flow left-to-right in a 3-column grid.
-                    The <span class="font-semibold" style="color:oklch(58% 0.18 215)">Timeline</span>
-                    widget spans all 3 columns.
+                    @L["LayoutPreviewHint"]
                 </p>
             </div>
         </div>
