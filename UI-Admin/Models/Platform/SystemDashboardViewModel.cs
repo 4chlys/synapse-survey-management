@@ -19,9 +19,7 @@ public sealed record PlatformSummaryViewModel(
     int ActiveProjectCount,
     int DraftProjectCount,
     int ArchivedProjectCount,
-    int ParticipantCount,
-    string AiModelName,
-    string CostDashboardUrl
+    int ParticipantCount
 );
 
 public class ProjectRowViewModel

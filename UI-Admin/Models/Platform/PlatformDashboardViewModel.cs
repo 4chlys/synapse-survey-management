@@ -10,9 +10,7 @@ public sealed record PlatformDashboardViewModel(
     int ActiveProjectCount,
     int DraftProjectCount,
     int ArchivedProjectCount,
-    int ParticipantCount,
-    string AiModelName,
-    string CostDashboardUrl
+    int ParticipantCount
 )
 {
     public ICollection<ProjectRowViewModel> Projects { get; init; } = [];
