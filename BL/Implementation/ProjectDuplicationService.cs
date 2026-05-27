@@ -43,8 +43,8 @@ public class ProjectDuplicationService(IEmojiManager emojiManager) : IProjectDup
             CustomCss = src.CustomCss,
         };
 
-        foreach (var code in supportedCodes)
-            copy.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in supportedCodes)
+            copy.SupportedLanguages.Add(languages[languageCode]);
 
         foreach (var t in translations)
             copy.Translations.Add(new ProjectTranslation

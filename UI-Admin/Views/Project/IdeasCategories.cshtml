@@ -19,7 +19,7 @@
                  data-export-url="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId })"
                  data-failed-message="@L["ExportFailedAlert"].Value"
                  data-text-format-description="@L["ExportFormat_TextDescription"].Value">
-                <button type="button" class="btn btn-primary btn-sm gap-1.5" data-export-trigger>
+                <button type="button" class="btn-action" data-export-trigger>
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
                     </svg>
@@ -31,6 +31,12 @@
                     <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "xlsx" })">Excel (.xlsx)</a></li>
                 </ul>
             </div>
+            <button type="button" data-broadcast-trigger class="btn btn-accent btn-sm gap-1.5">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M3 8l9 6 9-6M3 8v10a2 2 0 002 2h14a2 2 0 002-2V8M3 8l9-5 9 5"/>
+                </svg>
+                @L["EmailBroadcast_TriggerButton"]
+            </button>
             <span class="badge badge-success gap-1">✓ @string.Format(L["BadgeApproved"].Value, Model.TotalApproved)</span>
             <span class="badge badge-info gap-1">● @string.Format(L["BadgeNew"].Value, Model.TotalPending)</span>
             <span class="badge badge-warning gap-1">⚑ @string.Format(L["BadgeFlagged"].Value, Model.TotalFlagged)</span>
@@ -94,3 +100,6 @@
     }
 
 </div>
+
+@await Html.PartialAsync("_EmailBroadcastModal", new SynapseEnqueteManagement.UI.Admin.Models.Project.EmailBroadcastModalModel(
+    Model.ProjectId, Model.SupportedLanguageCodes.ToList(), Model.DefaultLanguageCode))

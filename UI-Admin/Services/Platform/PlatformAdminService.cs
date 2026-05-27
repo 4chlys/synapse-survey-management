@@ -1,46 +1,50 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.UI.Admin.Data;
 using SynapseEnqueteManagement.UI.Admin.Models.Platform;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Platform;
 
-public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser> userManager)
+// Platform-level data + admin-user queries used by UI-Admin.
+// Platform CRUD (ProjectPlatform rows) is delegated to the API via PlatformApiService —
+// UI-Admin no longer knows about the BL/Domain ProjectPlatform entity.
+// PlatformSettings + SystemAiSettings tables are UI-Admin-owned and still queried locally.
+public class PlatformAdminService(
+    AdminDbContext db,
+    UserManager<ApplicationUser> userManager,
+    PlatformApiService platformApi)
 {
-    public async Task<List<ProjectPlatform>> GetAllPlatformsAsync()
+    // ---- Platform CRUD (delegated to API) ----
+
+    public Task<List<PlatformDto>> GetAllPlatformsAsync()
+        => platformApi.GetAllAsync();
+
+    public Task<PlatformDto> GetPlatformByIdAsync(int id)
+        => platformApi.GetByIdAsync(id);
+
+    // Basic platform info as a view model, so controllers don't have to touch the
+    // platform DTO directly. Backed by the API (no EF access to ProjectPlatforms).
+    public async Task<PlatformFormViewModel> GetPlatformFormAsync(int id)
     {
-        return await db.ProjectPlatforms.OrderBy(p => p.Name).ToListAsync();
+        var platform = await platformApi.GetByIdAsync(id);
+        return platform is null
+            ? null
+            : new PlatformFormViewModel
+            {
+                ProjectPlatformId = platform.ProjectPlatformId,
+                Name = platform.Name,
+                LogoUrl = platform.LogoUrl,
+                WebsiteUrl = platform.WebsiteUrl
+            };
     }
 
-    public async Task<ProjectPlatform> GetPlatformByIdAsync(int id)
-    {
-        return await db.ProjectPlatforms.FindAsync(id);
-    }
+    public Task<PlatformDto> CreatePlatformAsync(string name, string logoUrl, string websiteUrl)
+        => platformApi.CreateAsync(name, logoUrl, websiteUrl);
 
-    public async Task<ProjectPlatform> CreatePlatformAsync(string name, string logoUrl, string websiteUrl)
-    {
-        var platform = new ProjectPlatform
-        {
-            Name = name,
-            LogoUrl = logoUrl,
-            WebsiteUrl = websiteUrl,
-            CreatedAt = DateTime.UtcNow
-        };
-        db.ProjectPlatforms.Add(platform);
-        await db.SaveChangesAsync();
-        return platform;
-    }
+    public Task UpdatePlatformAsync(int id, string name, string logoUrl, string websiteUrl)
+        => platformApi.UpdateAsync(id, name, logoUrl, websiteUrl);
 
-    public async Task UpdatePlatformAsync(int id, string name, string logoUrl, string websiteUrl)
-    {
-        var platform = await db.ProjectPlatforms.FindAsync(id);
-        if (platform is null) return;
-        platform.Name = name;
-        platform.LogoUrl = logoUrl;
-        platform.WebsiteUrl = websiteUrl;
-        await db.SaveChangesAsync();
-    }
+    // ---- Admin users (local Identity store) ----
 
     public async Task<List<ApplicationUser>> GetAdminsForPlatformAsync(int platformId)
     {
@@ -57,15 +61,26 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
         return await userManager.DeleteAsync(user);
     }
 
+    // Returns admins with non-null platform id. Sorted by platform name (resolved via the
+    // API instead of an EF join), then by email. Page is small — in-memory sort is fine.
     public async Task<List<ApplicationUser>> GetAllAdminsAsync()
     {
-        return await userManager.Users
-            .Include(u => u.ProjectPlatform)
+        var admins = await userManager.Users
             .Where(u => u.ProjectPlatformId != null)
-            .OrderBy(u => u.ProjectPlatform.Name)
-            .ThenBy(u => u.Email)
             .ToListAsync();
+
+        if (admins.Count == 0) return admins;
+
+        var platforms = await platformApi.GetAllAsync();
+        var nameById = platforms.ToDictionary(p => p.ProjectPlatformId, p => p.Name ?? string.Empty);
+
+        return admins
+            .OrderBy(u => nameById.TryGetValue(u.ProjectPlatformId!.Value, out var n) ? n : string.Empty)
+            .ThenBy(u => u.Email)
+            .ToList();
     }
+
+    // ---- PlatformSettings (UI-Admin-owned table) ----
 
     public async Task<PlatformSettings> GetPlatformSettingsAsync(int platformId)
     {
@@ -74,8 +89,7 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
 
     public async Task SavePlatformSettingsAsync(int platformId, PlatformConfigurationViewModel model)
     {
-        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
-            ?? new PlatformSettings { ProjectPlatformId = platformId };
+        var settings = await GetOrCreatePlatformSettingsAsync(platformId);
 
         settings.ContactName = model.ContactName;
         settings.ContactEmail = model.ContactEmail;
@@ -84,12 +98,20 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
         settings.IdeationEnabled = model.IdeationEnabled;
         settings.MaxProjects = model.MaxProjects;
         settings.MaxAdmins = model.MaxAdmins;
-        settings.AiModelName = model.AiModelName;
-        settings.CostDashboardUrl = model.CostDashboardUrl;
 
+        await SavePlatformSettingsAsync(settings);
+    }
+
+    // A PlatformSettings row may not exist yet for a platform; load it or stage a new one.
+    private async Task<PlatformSettings> GetOrCreatePlatformSettingsAsync(int platformId)
+        => await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
+            ?? new PlatformSettings { ProjectPlatformId = platformId };
+
+    // Attach the row on first save (Id == 0 means it was newly created above), then persist.
+    private async Task SavePlatformSettingsAsync(PlatformSettings settings)
+    {
         if (settings.Id == 0)
             db.PlatformSettings.Add(settings);
-
         await db.SaveChangesAsync();
     }
 
@@ -113,34 +135,21 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
 
     public async Task SaveAiAssistanceModeAsync(int platformId, string mode)
     {
-        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
-            ?? new PlatformSettings { ProjectPlatformId = platformId };
-
+        var settings = await GetOrCreatePlatformSettingsAsync(platformId);
         settings.AiAssistanceMode = mode;
-
-        if (settings.Id == 0)
-            db.PlatformSettings.Add(settings);
-
-        await db.SaveChangesAsync();
+        await SavePlatformSettingsAsync(settings);
     }
 
     public async Task SaveSelectedAiModelAsync(int platformId, string selectedModelId)
     {
-        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
-            ?? new PlatformSettings { ProjectPlatformId = platformId };
-
+        var settings = await GetOrCreatePlatformSettingsAsync(platformId);
         settings.SelectedAiModel = selectedModelId;
-
-        if (settings.Id == 0)
-            db.PlatformSettings.Add(settings);
-
-        await db.SaveChangesAsync();
+        await SavePlatformSettingsAsync(settings);
     }
 
     public async Task SavePromptOverrideAsync(int platformId, string promptType, string value)
     {
-        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
-            ?? new PlatformSettings { ProjectPlatformId = platformId };
+        var settings = await GetOrCreatePlatformSettingsAsync(platformId);
 
         switch (promptType)
         {
@@ -155,22 +164,13 @@ public class PlatformAdminService(AdminDbContext db, UserManager<ApplicationUser
             default: return;
         }
 
-        if (settings.Id == 0)
-            db.PlatformSettings.Add(settings);
-
-        await db.SaveChangesAsync();
+        await SavePlatformSettingsAsync(settings);
     }
 
     public async Task SaveIdeaSummaryMaxIdeasAsync(int platformId, int maxIdeas)
     {
-        var settings = await db.PlatformSettings.FirstOrDefaultAsync(s => s.ProjectPlatformId == platformId)
-            ?? new PlatformSettings { ProjectPlatformId = platformId };
-
+        var settings = await GetOrCreatePlatformSettingsAsync(platformId);
         settings.IdeaSummaryMaxIdeas = Math.Clamp(maxIdeas, 10, 2000);
-
-        if (settings.Id == 0)
-            db.PlatformSettings.Add(settings);
-
-        await db.SaveChangesAsync();
+        await SavePlatformSettingsAsync(settings);
     }
 }

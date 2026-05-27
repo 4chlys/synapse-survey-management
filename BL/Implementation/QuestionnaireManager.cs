@@ -319,28 +319,11 @@ public class QuestionnaireManager(
         var siblings = (await questionRepository.ReadSiblingsForUpdateAsync(
             parentQuestionId, choiceIndex, questionnaireId)).ToList();
 
-        if (excludeId.HasValue)
-            siblings.RemoveAll(s => s.QuestionId == excludeId.Value);
+        var insertTarget = insertId.HasValue
+            ? await questionRepository.ReadByIdWithSectionForUpdateAsync(insertId.Value)
+            : null;
 
-        if (insertId.HasValue)
-        {
-            siblings.RemoveAll(s => s.QuestionId == insertId.Value);
-            var target = await questionRepository.ReadByIdWithSectionForUpdateAsync(insertId.Value);
-            if (target is not null)
-            {
-                var clamped = Math.Clamp(insertAt ?? siblings.Count, 0, siblings.Count);
-                siblings.Insert(clamped, target);
-            }
-        }
-
-        for (var i = 0; i < siblings.Count; i++)
-        {
-            var desired = i + 1;
-            if (siblings[i].Position != desired)
-            {
-                siblings[i].Position = desired;
-            }
-        }
+        QuestionPositionReorderer.Reorder(siblings, excludeId, insertId, insertTarget, insertAt);
     }
 
     private Task<IReadOnlyDictionary<string, Language>> ValidateQuestionTranslationInputsAsync(

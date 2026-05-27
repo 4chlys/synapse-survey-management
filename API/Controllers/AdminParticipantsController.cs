@@ -34,4 +34,17 @@ public class AdminParticipantsController(
 
         return File(bytes, contentType, fileName);
     }
+
+    // Used by the admin "Send to all participants" broadcast. UI-Admin
+    // groups the returned rows by LanguageCode, then enqueues one EmailJob
+    // per language × ≤49-BCC chunk (Resend's per-message recipient cap).
+    [HttpGet("emails-by-language")]
+    public async Task<IActionResult> EmailsByLanguage(int projectId, CancellationToken ct)
+    {
+        if (await projectManager.GetProjectByIdReadOnlyAsync(projectId) is null)
+            return NotFound();
+
+        var rows = await participantManager.GetParticipantEmailsWithLanguageByProjectAsync(projectId);
+        return Ok(rows);
+    }
 }

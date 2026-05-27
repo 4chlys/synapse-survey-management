@@ -1,0 +1,151 @@
+@model SynapseEnqueteManagement.UI.Admin.Models.Project.EmailBroadcastModalModel
+@inject IViewLocalizer L
+@using Microsoft.AspNetCore.Identity
+@using SynapseEnqueteManagement.UI.Admin.Data
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var adminEmail   = (await UserManager.GetUserAsync(User))?.Email ?? string.Empty;
+    var broadcastUrl = Url.Action("BroadcastParticipantEmail", "Project", new { projectId = Model.ProjectId });
+    var emailsUrl    = Url.Action("ParticipantEmailsJson", "Project", new { projectId = Model.ProjectId });
+    var languages = Model.SupportedLanguageCodes?.ToList() ?? new List<string>();
+    if (languages.Count == 0 && !string.IsNullOrEmpty(Model.DefaultLanguageCode))
+        languages.Add(Model.DefaultLanguageCode);
+}
+
+@* Step 1 — choice: send via platform vs open in the admin's own mail program
+   (the latter builds a mailto with every participant BCC'd, fetched lazily). *@
+<dialog id="email-broadcast-choice-modal" class="modal">
+    <div class="modal-box w-[440px] max-w-[92vw] rounded-2xl p-7 flex flex-col gap-5">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 11l18-7-7 18-2-8-9-3z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[11px] uppercase font-bold tracking-wide text-base-content/50">@L["EmailBroadcast_Eyebrow"]</div>
+                    <div class="font-heading font-bold text-base text-base-content truncate">@L["EmailBroadcast_Title"]</div>
+                </div>
+            </div>
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button></form>
+        </div>
+
+        <p class="text-sm text-base-content/60">@L["EmailChoice_Body"]</p>
+
+        <div class="flex flex-col gap-2">
+            <button type="button" id="email-broadcast-choice-platform"
+                    class="group flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-base-300 hover:border-primary hover:bg-primary/5 transition-colors text-left">
+                <div class="w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l9 6 9-6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-base-content">@L["EmailChoice_SendViaPlatform"]</div>
+                    <div class="text-xs text-base-content/50">@L["EmailBroadcast_Choice_PlatformHint"]</div>
+                </div>
+            </button>
+
+            <button type="button" id="email-broadcast-choice-mailto"
+                    data-emails-url="@emailsUrl"
+                    class="group flex items-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-base-300 hover:border-secondary hover:bg-secondary/5 transition-colors text-left">
+                <div class="w-9 h-9 rounded-lg bg-secondary/15 text-secondary flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 14L21 3m0 0h-7m7 0v7M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-base-content">@L["EmailChoice_OpenInMailClient"]</div>
+                    <div class="text-xs text-base-content/50">@L["EmailBroadcast_Choice_MailtoHint"]</div>
+                </div>
+            </button>
+        </div>
+        <div id="email-broadcast-choice-error" class="text-error text-xs hidden"></div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+@* Step 2 — platform compose: one Subject+Body per supported language. *@
+<dialog id="email-broadcast-modal" class="modal">
+    <div class="modal-box w-[680px] max-w-[96vw] max-h-[92vh] rounded-2xl overflow-y-auto p-7 flex flex-col gap-5">
+
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 11l18-7-7 18-2-8-9-3z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-[11px] uppercase font-bold tracking-wide text-base-content/50">@L["EmailBroadcast_Eyebrow"]</div>
+                    <div class="font-heading font-bold text-base text-base-content truncate">@L["EmailBroadcast_Title"]</div>
+                </div>
+            </div>
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm btn-circle">×</button></form>
+        </div>
+
+        <p class="text-sm text-base-content/60 leading-relaxed">@L["EmailBroadcast_Description"]</p>
+
+        <form id="email-broadcast-form"
+              data-send-url="@broadcastUrl"
+              data-project-id="@Model.ProjectId"
+              class="flex flex-col gap-4">
+            @Html.AntiForgeryToken()
+
+            <div class="rounded-xl border border-base-200 bg-base-200/30 p-3 flex flex-col gap-3 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost badge-sm font-mono">@L["EmailField_To"]</span>
+                    <span class="text-base-content font-medium truncate">@adminEmail</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost badge-sm font-mono">@L["EmailField_ReplyTo"]</span>
+                    <input type="email" name="replyTo" value="@adminEmail" required
+                           class="input input-bordered input-xs flex-1 min-w-0" />
+                </div>
+                <p class="text-[11px] text-base-content/50 leading-snug">@L["EmailField_To_Hint"]</p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                @foreach (var code in languages)
+                {
+                    <div class="rounded-xl border-[1.5px] border-base-300 p-4 flex flex-col gap-2 bg-base-100">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="badge badge-primary badge-sm font-mono uppercase">@code</span>
+                            <span class="text-xs text-base-content/50">@string.Format(L["EmailBroadcast_LanguageSection"].Value, code.ToUpper())</span>
+                        </div>
+                        <input type="text" name="subjects[@code]" maxlength="200"
+                               placeholder="@L["EmailField_Subject"]"
+                               class="input input-bordered input-sm w-full" />
+                        <textarea name="bodies[@code]" rows="5" maxlength="6000"
+                                  placeholder="@L["EmailField_Body"]"
+                                  class="textarea textarea-bordered text-sm leading-relaxed w-full"></textarea>
+                    </div>
+                }
+            </div>
+
+            <div class="flex items-start gap-2 px-3 py-2 rounded-lg bg-base-200/50 border border-dashed border-base-300">
+                <svg class="w-3.5 h-3.5 mt-0.5 text-base-content/40 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                <span class="text-[11px] text-base-content/60 italic leading-snug">
+                    @L["EmailBroadcast_PerLanguageHint"]
+                </span>
+            </div>
+
+            <div id="email-broadcast-error" class="text-error text-sm hidden"></div>
+            <div id="email-broadcast-success" class="text-success text-sm hidden"></div>
+        </form>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
+            <form method="dialog"><button type="submit" class="btn btn-ghost btn-sm">@L["CancelButton"]</button></form>
+            <button type="button" id="email-broadcast-submit" class="btn btn-primary btn-sm gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 11l18-7-7 18-2-8-9-3z"/>
+                </svg>
+                @L["EmailBroadcast_SendButton"]
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

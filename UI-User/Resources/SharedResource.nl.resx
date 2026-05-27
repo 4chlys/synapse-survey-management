@@ -54,6 +54,9 @@
   <data name="IdeaCard_UseAsStartingPoint" xml:space="preserve">
     <value>Gebruiken als startpunt</value>
   </data>
+  <data name="ImageUpload_NoFile" xml:space="preserve">
+    <value>Geen bestand ontvangen.</value>
+  </data>
   <data name="ImageUpload_InvalidType" xml:space="preserve">
     <value>Alleen afbeeldingen (jpeg, png, webp, gif) zijn toegestaan.</value>
   </data>
@@ -133,7 +136,10 @@
     <value>Ja, indienen</value>
   </data>
   <data name="AiChat_DraftNo" xml:space="preserve">
-    <value>Nee, aanpassen</value>
+    <value>Aanpassen</value>
+  </data>
+  <data name="AiChat_DraftAddContent" xml:space="preserve">
+    <value>Media toevoegen</value>
   </data>
   <data name="AiChat_NoProblem" xml:space="preserve">
     <value>Geen probleem! Vertel me wat je wil aanpassen.</value>

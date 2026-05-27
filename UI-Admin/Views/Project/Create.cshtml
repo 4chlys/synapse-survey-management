@@ -1,4 +1,4 @@
-@using SynapseEnqueteManagement.BL.Domain.Project.Enums
+@using SynapseEnqueteManagement.UI.Admin.Models.Enums
 @model SynapseEnqueteManagement.UI.Admin.Models.Project.CreateProjectViewModel
 @inject IViewLocalizer L
 @inject IHtmlLocalizer<SharedResource> Shared
@@ -12,6 +12,30 @@
     ViewData["ActiveSection"] = "Settings";
     Layout = "_Layout";
     if (!isEdit || isNew) ViewData["WizardStep"] = 1;
+
+    var availableLanguages = (ViewData["AvailableLanguageCodes"] as string[]) ?? new[] { "nl" };
+    string LanguageDisplayName(string code) => code switch
+    {
+        "nl" => "Nederlands",
+        "en" => "English",
+        _ => code.ToUpperInvariant()
+    };
+
+    // Per-language placeholders prompt in the language being authored, not the
+    // admin's UI culture, so each tab's hint matches the content language.
+    string PlaceholderIn(string code, string key)
+    {
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo(code);
+            return L[key].Value;
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
+    }
 }
 
 @* Inline helper: label + optional tooltip icon *@
@@ -47,28 +71,134 @@
                 <div class="card-body gap-5">
                     <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["SectionGeneral"]</h2>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="form-control gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <label class="text-sm font-semibold text-base-content" for="project-name-input">@L["NameLabel"] <span class="text-error">*</span></label>
-                            </div>
-                            <input asp-for="Name" id="project-name-input" class="input input-bordered w-full" placeholder="@L["NamePlaceholder"]" maxlength="100" required />
-                            <span asp-validation-for="Name" class="text-xs text-error"></span>
+                    @* ── Language picker: which languages does this project support, and which is default ── *@
+                    <div class="form-control gap-2">
+                        <div class="flex items-center gap-1.5">
+                            <label class="text-sm font-semibold text-base-content">@L["LanguagesLabel"] <span class="text-error">*</span></label>
+                            @InfoIcon(L["LanguagesHint"].Value)
+                        </div>
+                        <div id="language-picker" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            @foreach (var languageCode in availableLanguages)
+                            {
+                                var isSupported = Model.SupportedLanguageCodes?.Contains(languageCode) ?? false;
+                                var isDefault = Model.DefaultLanguageCode == languageCode;
+                                <div class="relative flex flex-col gap-2 border-2 border-base-300 rounded-lg p-3
+                                            has-[[data-language-checkbox]:checked]:border-primary
+                                            has-[[data-language-checkbox]:checked]:bg-primary/5
+                                            transition-colors">
+                                    <label class="flex items-center gap-2.5 cursor-pointer">
+                                        <input type="checkbox" name="SupportedLanguageCodes" value="@languageCode"
+                                               class="checkbox checkbox-sm checkbox-primary"
+                                               data-language-checkbox="@languageCode"
+                                               checked="@isSupported" />
+                                        <span class="text-sm font-semibold text-base-content">@LanguageDisplayName(languageCode)</span>
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer text-xs text-base-content/60 pl-7">
+                                        <input type="radio" name="DefaultLanguageCode" value="@languageCode"
+                                               class="radio radio-xs radio-primary"
+                                               data-language-default="@languageCode"
+                                               checked="@isDefault"
+                                               disabled="@(!isSupported)" />
+                                        <span>@L["DefaultLabel"]</span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="DefaultLanguageCode" class="text-xs text-error"></span>
+                    </div>
+
+                    @* ── Per-language editor: tab strip lives inside a bordered card; only the active
+                         tab's pane is shown. Underline-style tabs sit on the card's top border. ── *@
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-semibold text-base-content">@L["PerLanguageContentLabel"]</label>
+                            <span class="text-xs text-base-content/50">@L["PerLanguageContentHint"]</span>
                         </div>
 
-                        <div class="form-control gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <label class="text-sm font-semibold text-base-content">@L["LanguageLabel"] <span class="text-error">*</span></label>
+                        <div class="border border-base-300 rounded-lg bg-base-100 overflow-hidden">
+                            <div role="tablist" id="translation-tabs"
+                                 class="flex items-center gap-1 p-1.5 bg-base-200/60 border-b border-base-300">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    var t = Model.Translations[i];
+                                    var visible = Model.SupportedLanguageCodes?.Contains(t.LanguageCode) ?? false;
+                                    var isTabDefault = Model.DefaultLanguageCode == t.LanguageCode;
+                                    <button type="button" role="tab"
+                                            class="translation-tab flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold
+                                                   text-base-content/70 hover:text-base-content hover:bg-base-100/60
+                                                   transition-colors"
+                                            data-translation-tab="@t.LanguageCode"
+                                            hidden="@(!visible)">
+                                        <span class="w-2 h-2 rounded-full bg-warning shrink-0" data-translation-status></span>
+                                        <span>@LanguageDisplayName(t.LanguageCode)</span>
+                                        <span class="text-xs text-base-content/50 font-normal"
+                                              data-default-badge="@t.LanguageCode"
+                                              hidden="@(!isTabDefault)">· @L["DefaultLabel"]</span>
+                                    </button>
+                                }
                             </div>
-                            <select asp-for="DefaultLanguageCode" class="select select-bordered w-full">
-                                <option value="nl">Nederlands</option>
-                                <option value="en">English</option>
-                            </select>
-                            <span asp-validation-for="DefaultLanguageCode" class="text-xs text-error"></span>
+
+                            <div class="p-5">
+                                @for (int i = 0; i < Model.Translations.Count; i++)
+                                {
+                                    var t = Model.Translations[i];
+                                    <div data-translation-pane="@t.LanguageCode" class="flex flex-col gap-5" hidden>
+                                        <input type="hidden" name="Translations[@i].LanguageCode" value="@t.LanguageCode" />
+
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="form-control gap-1.5">
+                                                <div class="flex items-center gap-1.5">
+                                                    <label class="text-sm font-semibold text-base-content">@L["NameLabel"] <span class="text-error">*</span></label>
+                                                </div>
+                                                <input type="text" name="Translations[@i].Name" value="@t.Name"
+                                                       class="input input-bordered w-full" placeholder="@PlaceholderIn(t.LanguageCode, "NamePlaceholder")"
+                                                       maxlength="100" data-translation-field="name" data-language="@t.LanguageCode" />
+                                                <span asp-validation-for="Translations[i].Name" class="text-xs text-error"></span>
+                                            </div>
+
+                                            <div class="form-control gap-1.5">
+                                                <div class="flex items-center gap-1.5">
+                                                    <label class="text-sm font-semibold text-base-content">@L["TopicLabel"] <span class="text-error">*</span></label>
+                                                </div>
+                                                <input type="text" name="Translations[@i].Topic" value="@t.Topic"
+                                                       class="input input-bordered w-full" placeholder="@PlaceholderIn(t.LanguageCode, "TopicPlaceholder")"
+                                                       maxlength="100" data-translation-field="topic" data-language="@t.LanguageCode" />
+                                                <span asp-validation-for="Translations[i].Topic" class="text-xs text-error"></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-control gap-1.5">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-sm font-semibold text-base-content">@L["IntroductionLabel"] <span class="text-error">*</span></span>
+                                                @InfoIcon(L["IntroductionHint"].Value)
+                                            </div>
+                                            @if (isLocked)
+                                            {
+                                                <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
+                                                    @Html.Raw(t.Introduction)
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-base-100"
+                                                     data-intro-editor="@t.LanguageCode"
+                                                     data-intro-placeholder="@PlaceholderIn(t.LanguageCode, "IntroductionPlaceholder")">@Html.Raw(t.Introduction)</div>
+                                            }
+                                            <input type="hidden" name="Translations[@i].Introduction" value="@t.Introduction"
+                                                   data-translation-field="introduction" data-language="@t.LanguageCode" />
+                                            <div class="flex justify-between">
+                                                <span asp-validation-for="Translations[i].Introduction" class="text-xs text-error"></span>
+                                                <span class="text-xs text-base-content/40" data-intro-char-count="@t.LanguageCode"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    @* ── Shared (language-agnostic) fields ── *@
+                    <div class="grid grid-cols-2 gap-4 items-start">
                         <div class="form-control gap-1.5">
                             <div class="flex items-center gap-1.5">
                                 <label class="text-sm font-semibold text-base-content" for="project-shortform-input">@L["ShortformLabel"]</label>
@@ -80,38 +210,6 @@
                                    readonly="@shortFormReadonly" />
                             <span asp-validation-for="ShortForm" class="text-xs text-error"></span>
                             <span id="shortform-availability-msg" class="text-xs text-warning"></span>
-                        </div>
-
-                        <div class="form-control gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <label class="text-sm font-semibold text-base-content">@L["TopicLabel"] <span class="text-error">*</span></label>
-                            </div>
-                            <input asp-for="Topic" class="input input-bordered w-full" placeholder="@L["TopicPlaceholder"]" maxlength="100" />
-                            <span asp-validation-for="Topic" class="text-xs text-error"></span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 items-start">
-                        <div class="form-control gap-1.5">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-sm font-semibold text-base-content">@L["IntroductionLabel"] <span class="text-error">*</span></span>
-                                @InfoIcon(L["IntroductionHint"].Value)
-                            </div>
-                            @if (isLocked)
-                            {
-                                <div class="prose max-w-none border border-base-300 rounded p-3 bg-base-200">
-                                    @Html.Raw(Model.Introduction)
-                                </div>
-                            }
-                            else
-                            {
-                                <div id="intro-editor" class="bg-base-100">@Html.Raw(Model.Introduction)</div>
-                            }
-                            <input type="hidden" asp-for="Introduction" id="Introduction" />
-                            <div class="flex justify-between">
-                                <span asp-validation-for="Introduction" class="text-xs text-error"></span>
-                                <span id="intro-char-count" class="text-xs text-base-content/40"></span>
-                            </div>
                         </div>
 
                         <div class="form-control gap-1.5">
@@ -164,8 +262,8 @@
                         @if (!isLocked)
                         {
                             <div class="flex gap-2">
-                                <button type="button" id="browse-btn" class="btn btn-outline btn-sm flex-1">@L["BrowseButton"]</button>
-                                <button type="button" id="generate-btn" class="btn btn-outline btn-sm flex-1"
+                                <button type="button" id="browse-btn" class="btn-save-outline flex-1">@L["BrowseButton"]</button>
+                                <button type="button" id="generate-btn" class="btn-save-outline flex-1"
                                         data-generating-text="@L["GeneratingText"]"
                                         data-error-text="@L["GenerateErrorText"]">@L["GenerateButton"]</button>
                             </div>
@@ -173,16 +271,13 @@
                         }
                     </div>
 
-                    @if ((Model.SupportedLanguageCodes?.Count ?? 0) > 1)
-                    {
-                        <div class="form-control gap-1">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
-                                <span class="text-sm text-base-content">@L["CrossLanguageLabel"]</span>
-                            </label>
-                            <span class="text-xs text-base-content/50 pl-9">@L["CrossLanguageHint"]</span>
-                        </div>
-                    }
+                    <div id="cross-language-row" class="form-control gap-1" hidden="@((Model.SupportedLanguageCodes?.Count ?? 0) <= 1)">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input asp-for="AllowCrossLanguageIdeas" type="checkbox" class="checkbox checkbox-primary" />
+                            <span class="text-sm text-base-content">@L["CrossLanguageLabel"]</span>
+                        </label>
+                        <span class="text-xs text-base-content/50 pl-9">@L["CrossLanguageHint"]</span>
+                    </div>
                 </div>
             </div>
 
@@ -376,17 +471,35 @@
                             <span class="text-sm font-semibold text-base-content">@L["SectionsDivider"]</span>
                             @InfoIcon(L["SectionsHint"].Value)
                         </div>
-                        <div id="sections-container" class="grid grid-cols-2 gap-2" data-section-count="@(Model.Sections?.Count ?? 0)">
+                        <div id="sections-container" class="flex flex-col gap-2"
+                             data-section-count="@(Model.Sections?.Count ?? 0)"
+                             data-available-languages="@string.Join(",", availableLanguages)"
+                             data-section-name-placeholders="@System.Text.Json.JsonSerializer.Serialize(availableLanguages.ToDictionary(c => c, c => PlaceholderIn(c, "SectionNamePlaceholder")))">
                             @for (int i = 0; i < (Model.Sections?.Count ?? 0); i++)
                             {
-                                <div class="flex gap-1 items-center section-row">
-                                    <input type="text" name="Sections[@i]" value="@Model.Sections![i]" maxlength="20"
-                                           class="input input-bordered input-sm flex-1" placeholder="@L["SectionNamePlaceholder"]" />
-                                    <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
+                                <div class="flex gap-2 items-end section-row">
+                                    @for (int j = 0; j < availableLanguages.Length; j++)
+                                    {
+                                        var langCode = availableLanguages[j];
+                                        var translation = Model.Sections![i].Translations?.FirstOrDefault(t => t.LanguageCode == langCode);
+                                        <div class="flex flex-col gap-1 flex-1">
+                                            @if (availableLanguages.Length > 1)
+                                            {
+                                                <span class="text-xs text-base-content/50">@LanguageDisplayName(langCode)</span>
+                                            }
+                                            <input type="hidden" name="Sections[@i].Translations[@j].LanguageCode" value="@langCode" />
+                                            <input type="text" name="Sections[@i].Translations[@j].Name"
+                                                   value="@(translation?.Name ?? "")" maxlength="20"
+                                                   class="input input-bordered input-sm w-full section-name-input"
+                                                   placeholder="@PlaceholderIn(langCode, "SectionNamePlaceholder")"
+                                                   data-lang="@langCode" />
+                                        </div>
+                                    }
+                                    <button type="button" class="btn-cancel text-error remove-section">&times;</button>
                                 </div>
                             }
                         </div>
-                        <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
+                        <button type="button" id="add-section" class="btn-cancel gap-1 self-start">
                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                             @L["AddSectionButton"]
                         </button>
@@ -401,7 +514,7 @@
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body">
                     <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200 mb-2">@L["ExportDivider"]</h2>
-                    <button type="button" class="btn btn-outline btn-sm gap-1.5 self-start"
+                    <button type="button" class="btn-action-outline self-start"
                             data-open-modal="rawdata-modal">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -416,13 +529,13 @@
         <div class="flex justify-end gap-2 pb-4">
             @if (!isLocked)
             {
-                <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@Shared["Common_Save"]</button>
+                <a asp-action="Index" class="btn-cancel">@L["CancelButton"]</a>
+                <button type="submit" form="project-form" name="submitAction" value="save" class="btn-save-outline">@Shared["Common_Save"]</button>
                 <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
             }
             else
             {
-                <a asp-action="Index" class="btn btn-ghost">@Shared["Common_Back"]</a>
+                <a asp-action="Index" class="btn-cancel">@Shared["Common_Back"]</a>
                 @if (Model.ProjectId.HasValue)
                 {
                     <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">@L["NextButton"] &rarr;</a>
@@ -475,9 +588,9 @@
                 </div>
                 <div class="modal-action">
                     <form method="dialog">
-                        <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                        <button class="btn-cancel">@L["CancelButton"]</button>
                     </form>
-                    <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
+                    <button type="button" class="btn-save" id="rawdata-download">@L["ExportButton"]</button>
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop"><button>close</button></form>

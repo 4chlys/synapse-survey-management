@@ -6,57 +6,125 @@
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
+
+    Func<string, string> getLabel = type => type switch {
+        "ViewCount"             => L["Widget_ViewCount"].Value,
+        "CompletionCount"       => L["Widget_CompletionCount"].Value,
+        "CompletionRate"        => L["Widget_CompletionRate"].Value,
+        "ParticipationTimeline" => L["Widget_ParticipationTimeline"].Value,
+        "TopCategories"         => L["Widget_TopCategories"].Value,
+        "TopIdeas"              => L["Widget_TopIdeas"].Value,
+        "SurveyDistribution"    => L["Widget_SurveyDistribution"].Value,
+        "IdeaFeed"              => L["Widget_IdeaFeed"].Value,
+        "ModerationQueue"       => L["Widget_ModerationQueue"].Value,
+        "QuestionSinglePie"     => L["Widget_QuestionSinglePie"].Value,
+        "QuestionMultiBar"      => L["Widget_QuestionMultiBar"].Value,
+        "QuestionLikertBar"     => L["Widget_QuestionLikertBar"].Value,
+        "SocialMediaPost"       => L["Widget_SocialMediaPost"].Value,
+        _                       => type
+    };
+
+    Func<string, string> getCat = type => type switch {
+        "ViewCount" or "CompletionCount" or "CompletionRate"             => "kpi",
+        "ParticipationTimeline"                                           => "timeline",
+        "TopCategories" or "TopIdeas"                                    => "list",
+        "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar" => "chart",
+        "IdeaFeed"                                                        => "feed",
+        "ModerationQueue"                                                 => "moderate",
+        "SurveyDistribution"                                              => "distrib",
+        "SocialMediaPost"                                                 => "social",
+        _                                                                 => "kpi"
+    };
+
+    Func<string, int> getSpan = type => type switch {
+        "ParticipationTimeline" => 3,
+        _                       => 1
+    };
+
+    var widgetOptions = Model.AllWidgetTypes
+        .Select(t => new { value = t, label = getLabel(t), cat = getCat(t), span = getSpan(t) })
+        .ToList();
+    var widgetOptionsJson = System.Text.Json.JsonSerializer.Serialize(widgetOptions);
 }
-<div class="max-w-lg">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body gap-4">
-            <form asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId" method="post" class="flex flex-col gap-3">
-                @for (var i = 0; i < 9; i++)
+
+@* Localized widget options for TypeScript *@
+<script type="application/json" id="cfg-widget-opts">@Html.Raw(widgetOptionsJson)</script>
+
+<div class="flex items-center justify-between mb-6" style="max-width:860px">
+    <div>
+        <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+        <p class="text-xs text-base-content/40 mt-0.5 font-medium tracking-wide">@Model.ProjectName</p>
+    </div>
+    <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId"
+       class="btn-cancel">@L["CancelButton"]</a>
+</div>
+
+<div id="configure-dashboard" class="cfg-layout">
+
+    @* Left panel: slot list *@
+    <div>
+        <form asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId" method="post">
+
+            <div id="slots-container" class="flex flex-col gap-1.5 mb-2">
+                @for (var i = 0; i < Model.Slots.Length; i++)
                 {
                     var slot = Model.Slots[i];
-                    <div class="flex items-center gap-3">
-                        <span class="text-base-content/40 text-xs w-20">@L["PositionLabel"] @(i + 1)</span>
-                        <select name="Slots[@i].WidgetType" class="select select-bordered select-sm flex-1">
+                    <div class="cfg-slot" data-slot-row>
+                        <span class="cfg-slot-num">@((i + 1).ToString("D2"))</span>
+                        <span class="cfg-dot" data-cat="@getCat(slot.WidgetType)"></span>
+                        <select name="Slots[@i].WidgetType"
+                                class="select select-bordered select-sm flex-1 min-w-0">
                             @foreach (var type in Model.AllWidgetTypes)
                             {
-                                var isSelected = slot.WidgetType == type;
-                                var label = type switch {
-                                    "ViewCount" => L["Widget_ViewCount"].Value,
-                                    "CompletionCount" => L["Widget_CompletionCount"].Value,
-                                    "CompletionRate" => L["Widget_CompletionRate"].Value,
-                                    "ParticipationTimeline" => L["Widget_ParticipationTimeline"].Value,
-                                    "TopCategories" => L["Widget_TopCategories"].Value,
-                                    "TopIdeas" => L["Widget_TopIdeas"].Value,
-                                    "SurveyDistribution" => L["Widget_SurveyDistribution"].Value,
-                                    "IdeaFeed" => L["Widget_IdeaFeed"].Value,
-                                    "ModerationQueue" => L["Widget_ModerationQueue"].Value,
-                                    "QuestionSinglePie" => L["Widget_QuestionSinglePie"].Value,
-                                    "QuestionMultiBar" => L["Widget_QuestionMultiBar"].Value,
-                                    "QuestionLikertBar" => L["Widget_QuestionLikertBar"].Value,
-                                    "SocialMediaPost" => "Social media post",
-                                    _ => type
-                                };
-                                if (isSelected)
+                                if (slot.WidgetType == type)
                                 {
-                                    <option value="@type" selected>@label</option>
+                                    <option value="@type" selected>@getLabel(type)</option>
                                 }
                                 else
                                 {
-                                    <option value="@type">@label</option>
+                                    <option value="@type">@getLabel(type)</option>
                                 }
                             }
                         </select>
-                        @* QuestionId is chosen via the live dropdown on the dashboard;
-                           carried through here so a layout save does not clear it. *@
-                        <input type="hidden" name="Slots[@i].QuestionId" value="@(slot.QuestionId?.ToString() ?? string.Empty)" />
+                        <input type="hidden" name="Slots[@i].QuestionId"
+                               value="@(slot.QuestionId?.ToString() ?? string.Empty)" />
+                        <button type="button" class="cfg-remove btn btn-ghost btn-xs text-error px-1.5"
+                                data-remove-slot>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
                     </div>
                 }
-                <div class="card-actions justify-end gap-2 pt-2">
-                    <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost btn-sm">@L["CancelButton"]</a>
-                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
-                </div>
-            </form>
+            </div>
+
+            <button type="button" id="cfg-add-slot" class="cfg-add-btn mb-4">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                @L["AddWidgetButton"]
+            </button>
+
+            <div class="flex justify-end">
+                <button type="submit" class="btn-save">@Shared["Common_Save"]</button>
+            </div>
+
+        </form>
+    </div>
+
+    @* Right panel: live preview (hidden on small screens) *@
+    <div class="cfg-preview-panel">
+        <div class="card bg-base-100 shadow-sm sticky top-4">
+            <div class="card-body p-4 gap-3">
+                <p class="text-xs font-bold uppercase tracking-widest text-base-content/30">
+                    @L["LayoutPreviewLabel"]
+                </p>
+                <div id="cfg-preview-grid" class="cfg-preview-grid"></div>
+                <p class="text-xs text-base-content/30 leading-relaxed">
+                    @L["LayoutPreviewHint"]
+                </p>
+            </div>
         </div>
     </div>
+
 </div>

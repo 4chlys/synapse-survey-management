@@ -19,9 +19,11 @@ export function initTimelineWidget(el: HTMLElement): () => void {
     const completedLabel = el.dataset.i18nSeriesCompleted ?? '';
 
     const canvas = document.createElement('canvas');
-    canvas.style.width = '100%';
+    const wrap = document.createElement('div');
+    wrap.className = 'db-chart-canvas-wrap';
+    wrap.appendChild(canvas);
     el.innerHTML = `<p class="text-xs text-base-content/50 mb-2">${titleText}</p>`;
-    el.appendChild(canvas);
+    el.appendChild(wrap);
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'synapse-dark';
     const labelColor = isDark ? '#d1d5db' : '#374151';

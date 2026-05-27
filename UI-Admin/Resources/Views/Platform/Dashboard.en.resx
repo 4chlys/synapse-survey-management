@@ -15,18 +15,6 @@
   <data name="StatProjects" xml:space="preserve"><value>Projects</value></data>
   <data name="StatParticipants" xml:space="preserve"><value>Participants</value></data>
   <data name="AdminsLink" xml:space="preserve"><value>Admins</value></data>
-  <data name="AiModel" xml:space="preserve"><value>AI model</value></data>
-  <data name="CostMonitoringHeading" xml:space="preserve"><value>Cost &amp; monitoring</value></data>
-  <data name="CostIframeTitle" xml:space="preserve"><value>Cost overview {0}</value></data>
-  <data name="NoCostDashboard" xml:space="preserve"><value>No cost dashboard configured.</value></data>
-  <data name="AddCostDashboardHint" xml:space="preserve"><value>Add a Data Studio embed URL via {0}.</value></data>
-  <data name="LiveAiCostHeading" xml:space="preserve"><value>Live AI cost (last 24h)</value></data>
-  <data name="AiCost_Project" xml:space="preserve"><value>Project</value></data>
-  <data name="AiCost_InputTokens" xml:space="preserve"><value>Input tokens</value></data>
-  <data name="AiCost_OutputTokens" xml:space="preserve"><value>Output tokens</value></data>
-  <data name="AiCost_Cost" xml:space="preserve"><value>Cost (EUR)</value></data>
-  <data name="AiCost_Loading" xml:space="preserve"><value>Loading...</value></data>
-  <data name="AiCost_Empty" xml:space="preserve"><value>No AI usage in the last 24h.</value></data>
 
   <data name="ProjectsTableHeading" xml:space="preserve"><value>Projects</value></data>
   <data name="Col_Project" xml:space="preserve"><value>Project</value></data>

@@ -27,6 +27,22 @@ public class EmojiManagerTests
     }
 
     [Fact]
+    public async Task GetAllForUpdateAsync_DelegatesToRepository()
+    {
+        var emojis = new[]
+        {
+            new Emoji { EmojiId = 1, Symbol = "👍", Name = "thumbsup" },
+            new Emoji { EmojiId = 2, Symbol = "❤️", Name = "heart" },
+        };
+        _emojiRepo.Setup(r => r.ReadAllForUpdateAsync()).ReturnsAsync(emojis);
+
+        var result = await _manager.GetAllForUpdateAsync();
+
+        Assert.Same(emojis, result);
+        _emojiRepo.VerifyAll();
+    }
+
+    [Fact]
     public async Task GetByIdForUpdateAsync_DelegatesToRepository()
     {
         var emoji = new Emoji { EmojiId = 7, Symbol = "🎯", Name = "target" };

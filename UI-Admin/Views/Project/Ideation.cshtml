@@ -11,6 +11,7 @@
     var isLocked = projectState is "Active" or "Archived";
     bool isNew = ViewData["IsNew"] is true;
     var project = ViewData["Project"] as ProjectAdminViewModel;
+    var availableLangs = (ViewData["AvailableLanguageCodes"] as string[]) ?? new[] { "nl" };
     if (isNew) ViewData["WizardStep"] = 3;
 }
 <div class="w-full flex flex-col gap-4">
@@ -41,10 +42,19 @@
                             <div class="w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
                                 <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"/></svg>
                             </div>
-                            <div class="text-sm font-bold text-base-content">@cat.Name</div>
-                            @if (!string.IsNullOrWhiteSpace(cat.Description))
+                            @foreach (var langCode in availableLangs)
                             {
-                                <div class="text-xs text-base-content/50 leading-snug">@cat.Description</div>
+                                var t = cat.Translations.FirstOrDefault(tr => tr.LanguageCode == langCode);
+                                <div class="flex items-start gap-1.5">
+                                    <span class="text-xs font-bold uppercase text-base-content/30 w-6 shrink-0 mt-0.5">@langCode</span>
+                                    <div>
+                                        <div class="text-sm font-bold text-base-content">@(t?.Name ?? "")</div>
+                                        @if (!string.IsNullOrWhiteSpace(t?.Description))
+                                        {
+                                            <div class="text-xs text-base-content/50 leading-snug">@t.Description</div>
+                                        }
+                                    </div>
+                                </div>
                             }
                             @if (!isLocked)
                             {
@@ -73,23 +83,110 @@
                     {
                         <p class="text-sm text-base-content/50 mb-3">@L["EmptyHint"]</p>
                     }
-                    <form asp-action="AddCategory" method="post" class="flex gap-3 items-end">
+                    <form asp-action="AddCategory" method="post" class="flex flex-col gap-2">
                         <input type="hidden" name="projectId" value="@projectId" />
                         <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
-                        <div class="form-control gap-1.5 w-56">
-                            <label class="text-sm font-semibold text-base-content">@L["NameRequired"]</label>
-                            <input type="text" name="Name" class="input input-bordered input-sm w-full" placeholder="@L["CategoryNamePlaceholder"]" required />
+                        @for (var i = 0; i < availableLangs.Length; i++)
+                        {
+                            var languageCode = availableLangs[i];
+                            <div class="flex gap-3 items-end">
+                                <span class="text-xs font-bold uppercase text-base-content/40 w-6 shrink-0 self-end pb-1.5">@languageCode</span>
+                                <input type="hidden" name="Translations[@i].LanguageCode" value="@languageCode" />
+                                <div class="form-control gap-1.5 w-56">
+                                    @if (i == 0)
+                                    {
+                                        <label class="text-sm font-semibold text-base-content">@L["NameRequired"]</label>
+                                    }
+                                    <input type="text" name="Translations[@i].Name" class="input input-bordered input-sm w-full" placeholder="@L["CategoryNamePlaceholder"]" required />
+                                </div>
+                                <div class="form-control gap-1.5 flex-1 max-w-sm">
+                                    @if (i == 0)
+                                    {
+                                        <label class="text-sm font-semibold text-base-content">@L["DescriptionLabel"]</label>
+                                    }
+                                    <input type="text" name="Translations[@i].Description" class="input input-bordered input-sm w-full" placeholder="@L["OptionalPlaceholder"]" />
+                                </div>
+                            </div>
+                        }
+                        <div>
+                            <button type="submit" class="btn-action gap-1">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                                @L["AddButton"]
+                            </button>
                         </div>
-                        <div class="form-control gap-1.5 flex-1 max-w-sm">
-                            <label class="text-sm font-semibold text-base-content">@L["DescriptionLabel"]</label>
-                            <input type="text" name="Description" class="input input-bordered input-sm w-full" placeholder="@L["OptionalPlaceholder"]" />
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm gap-1">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                            @L["AddButton"]
-                        </button>
                     </form>
                 </div>
+            }
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-sm">
+        <div class="card-body gap-5">
+            <div>
+                <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200">@L["EmojisHeading"]</h2>
+                <p class="text-base-content/50 text-sm mt-2">@L["EmojisSubtitle"]</p>
+            </div>
+
+            @{
+                var emojis = ViewData["Emojis"] as List<EmojiAdminViewModel> ?? new List<EmojiAdminViewModel>();
+            }
+
+            @if (emojis.Any())
+            {
+                <div class="flex items-center gap-1 border-b border-base-200">
+                    @foreach (var tab in new[] {
+                        ("all",        "PresetAll"),
+                        ("standard",   "PresetStandard"),
+                        ("innovation", "PresetInnovation"),
+                        ("enthusiasm", "PresetEnthusiasm"),
+                    })
+                    {
+                        <button type="button"
+                                class="emoji-tab px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-transparent text-base-content/50"
+                                data-tab="@tab.Item1">
+                            @L[tab.Item2]
+                        </button>
+                    }
+                    @if (!isLocked)
+                    {
+                        <div class="ml-auto flex gap-1">
+                            <button type="button" id="emoji-select-all-btn"
+                                    class="btn btn-ghost btn-xs text-primary">
+                                @L["SelectAllButton"]
+                            </button>
+                            <button type="button" id="emoji-clear-all-btn"
+                                    class="btn btn-ghost btn-xs text-error">
+                                @L["ClearAllButton"]
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                @if (!isLocked)
+                {
+                    <form id="emoji-preset-form" action="/api/admin/projects/@projectId/emojis/enable-preset" method="post" class="hidden"></form>
+                    <form id="emoji-clear-form" action="/api/admin/projects/@projectId/emojis/disable-preset" method="post" class="hidden"></form>
+                }
+
+                <div id="emoji-grid" class="flex flex-wrap gap-2">
+                    @foreach (var emoji in emojis)
+                    {
+                        <form action="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/@(emoji.IsEnabled ? "disable" : "enable")" method="post"
+                              data-emoji-name="@emoji.Name" data-emoji-id="@emoji.EmojiId"
+                              data-enable-url="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/enable"
+                              data-disable-url="/api/admin/projects/@projectId/emojis/@emoji.EmojiId/disable">
+                            <button type="submit" class="emoji-pill" data-enabled="@emoji.IsEnabled.ToString().ToLower()" @(isLocked ? "disabled" : "")>
+                                <span class="text-lg leading-none">@emoji.Symbol</span>
+                                <span class="leading-none">@emoji.Name</span>
+                                <svg class="emoji-check" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                        </form>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-base-content/40 italic text-sm">@L["EmojisEmpty"]</p>
             }
         </div>
     </div>
@@ -133,26 +230,35 @@
                 </div>
                 @if (!isLocked)
                 {
-                    <div><button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button></div>
+                    <div><button type="submit" class="btn-save">@Shared["Common_Save"]</button></div>
                 }
             </form>
         </div>
     </details>
 
     <div class="flex justify-between">
-        <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn btn-ghost btn-sm">← @L["QuestionsLink"]</a>
-        <div class="flex gap-2">
+        <a asp-action="Questions" asp-route-projectId="@projectId" asp-route-isNew="@isNew" class="btn-cancel">← @L["QuestionsLink"]</a>
+        <div class="flex items-center gap-2">
             @if (!isLocked)
             {
+                <p id="categories-error" class="hidden text-sm text-error">@L["CategoriesError"]</p>
                 <form asp-action="SaveProgress" method="post" class="inline">
                     <input type="hidden" name="projectId" value="@projectId" />
                     <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
                     <input type="hidden" name="step" value="3" />
                     <input type="hidden" name="returnAction" value="Ideation" />
-                    <button type="submit" class="btn btn-outline btn-sm">@Shared["Common_Save"]</button>
+                    <button type="button" id="save-btn" data-project-count="@Model.Count"
+                            class="btn-save-outline">@Shared["Common_Save"]</button>
                 </form>
+                <button type="button" id="next-btn"
+                        data-project-count="@Model.Count"
+                        data-href="@Url.Action("Activate", new { projectId })"
+                        class="btn-save">@L["NextLink"] →</button>
             }
-            <a asp-action="@(isLocked ? "Dashboard" : "Activate")" asp-route-projectId="@projectId" class="btn btn-primary btn-sm">@(isLocked ? L["DashboardLink"].Value : L["NextLink"].Value) →</a>
+            else
+            {
+                <a asp-action="Dashboard" asp-route-projectId="@projectId" class="btn-save">@L["DashboardLink"] →</a>
+            }
         </div>
     </div>
 </div>

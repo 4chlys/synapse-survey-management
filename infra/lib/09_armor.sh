@@ -1,5 +1,4 @@
 #!/bin/bash
-# Cloud Armor beveiligingsbeleid + WAF regels
 
 ARMOR_POLICY="synapse-${ENV}-armor"
 
@@ -93,6 +92,11 @@ add_mig_ips_to_armor() {
 
 destroy_cloud_armor() {
   echo ">>> Cloud Armor policy ontkoppelen en verwijderen (omgeving: ${ENV})..."
+  if ! gcloud compute security-policies describe "${ARMOR_POLICY}" \
+      --project="${PROJECT_ID}" --quiet &>/dev/null; then
+    echo "  (${ARMOR_POLICY} niet gevonden, overgeslagen)"
+    return
+  fi
   for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
     gcloud compute backend-services update "${backend}" \
       --security-policy="" \

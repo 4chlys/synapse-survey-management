@@ -1,6 +1,5 @@
 import {t} from '../lib/i18n';
-
-// Types
+import { getCsrfToken } from '../lib/utils';
 
 export interface ModerationCallbacks {
     onBlock: (reason: string, flaggedBy: 'Regex' | 'AI') => void;
@@ -22,12 +21,6 @@ interface SuggestResponse {
 export interface RewritePopupOutcome {
     action: 'accepted' | 'rewrite' | 'submitFlagged';
     text: string;
-}
-
-// CSRF
-
-function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>('meta[name="__RequestVerificationToken"]')?.content ?? '';
 }
 
 // Config

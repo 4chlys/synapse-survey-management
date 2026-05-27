@@ -1,4 +1,4 @@
-@using SynapseEnqueteManagement.BL.Domain.Ai
+@using SynapseEnqueteManagement.UI.Admin.Models.Ai
 @model SynapseEnqueteManagement.UI.Admin.Models.Platform.SystemAiSettingsViewModel
 @inject IViewLocalizer L
 @inject IHtmlLocalizer<SharedResource> Shared
@@ -6,58 +6,88 @@
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "AiSettings";
     Layout = "_Layout";
+    var providers = Enum.GetValues<AiProvider>()
+        .Where(p => Model.AllModels.Any(m => m.Provider == p))
+        .ToList();
 }
 
-<div class="max-w-2xl">
-    <h1 class="font-heading font-bold text-2xl text-base-content mb-6">@L["Heading"]</h1>
-
-    <div class="card bg-base-100 shadow-sm">
-        <div class="card-body gap-5">
-            <h2 class="font-semibold text-base-content">@L["ModelsHeading"]</h2>
-            <p class="text-sm text-base-content/60">@L["ModelsDescription"]</p>
-
-            <form asp-action="SaveSystemAiSettings" method="post" class="flex flex-col gap-5">
-
-                @foreach (var provider in Enum.GetValues<AiProvider>())
-                {
-                    var group = Model.AllModels.Where(m => m.Provider == provider).ToList();
-                    if (!group.Any()) continue;
-
-                    <div>
-                        <div class="divider my-0 text-xs text-base-content/40">@provider.ToString()</div>
-                        <div class="flex flex-col gap-2 mt-3">
-                            @foreach (var aiModel in group)
-                            {
-                                var hasApiKey       = Model.AvailableModelIds.Contains(aiModel.Id);
-                                var regionAvailable = hasApiKey && Model.ModelAvailability.GetValueOrDefault(aiModel.Id, false);
-                                <label class="label justify-start gap-3 @(hasApiKey ? "cursor-pointer" : "cursor-not-allowed opacity-40")"
-                                       title="@(hasApiKey ? "" : L["NoApiKeyTooltip"].Value)">
-                                    <input type="checkbox"
-                                           name="AllowedModelIds"
-                                           value="@aiModel.Id"
-                                           class="checkbox checkbox-primary checkbox-sm"
-                                           @(Model.AllowedModelIds.Contains(aiModel.Id) ? "checked" : "")
-                                           @(hasApiKey ? "" : "disabled") />
-                                    <span class="label-text">@aiModel.DisplayName</span>
-                                    <span class="text-xs text-base-content/40 ml-1">(@aiModel.Id)</span>
-                                    @if (!hasApiKey)
-                                    {
-                                        <span class="badge badge-ghost badge-xs">@L["NoApiKeyBadge"]</span>
-                                    }
-                                    else if (!regionAvailable)
-                                    {
-                                        <span class="badge badge-error badge-xs">@L["RegionUnavailableBadge"]</span>
-                                    }
-                                </label>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <div class="card-actions justify-end">
-                    <button type="submit" class="btn btn-primary btn-sm">@Shared["Common_Save"]</button>
-                </div>
-            </form>
-        </div>
-    </div>
+<div class="mb-8">
+    <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
+    <p class="text-sm text-base-content/40 mt-0.5">@L["ModelsDescription"]</p>
 </div>
+
+<form asp-action="SaveSystemAiSettings" method="post">
+    <div class="settings-grid" style="max-width: 900px;">
+
+        @{ var pIdx = 0; }
+        @foreach (var provider in providers)
+        {
+            var group = Model.AllModels.Where(m => m.Provider == provider).ToList();
+            var cardClasses = new[] { "settings-card--general", "settings-card--ai", "settings-card--mode", "settings-card--prompts" };
+            var iconClasses = new[] { "settings-card-icon--general", "settings-card-icon--ai", "settings-card-icon--mode", "settings-card-icon--prompts" };
+            var cardClass = cardClasses[pIdx % cardClasses.Length];
+            var iconClass = iconClasses[pIdx % iconClasses.Length];
+
+            <div class="settings-card @cardClass">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon @iconClass">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="font-heading font-semibold text-base text-base-content">@provider.ToString()</h2>
+                        <p class="text-xs text-base-content/40 mt-0.5">
+                            @group.Count(m => Model.AllowedModelIds.Contains(m.Id)) / @group.Count enabled
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    @foreach (var aiModel in group)
+                    {
+                        var hasApiKey       = Model.AvailableModelIds.Contains(aiModel.Id);
+                        var regionAvailable = hasApiKey && Model.ModelAvailability.GetValueOrDefault(aiModel.Id, false);
+                        var isAllowed       = Model.AllowedModelIds.Contains(aiModel.Id);
+                        var optionClass     = isAllowed && hasApiKey ? "settings-model-option--active" : "";
+
+                        <label class="settings-model-option @optionClass @(hasApiKey ? "" : "opacity-40 cursor-not-allowed")"
+                               title="@(hasApiKey ? "" : L["NoApiKeyTooltip"].Value)">
+                            <input type="checkbox"
+                                   name="AllowedModelIds"
+                                   value="@aiModel.Id"
+                                   class="checkbox checkbox-primary checkbox-sm"
+                                   @(isAllowed ? "checked" : "")
+                                   @(hasApiKey ? "" : "disabled") />
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-base-content">@aiModel.DisplayName</p>
+                                <p class="text-xs text-base-content/40 font-mono truncate">@aiModel.Id</p>
+                            </div>
+                            @if (!hasApiKey)
+                            {
+                                <span class="badge badge-ghost badge-xs shrink-0">@L["NoApiKeyBadge"]</span>
+                            }
+                            else if (!regionAvailable)
+                            {
+                                <span class="badge badge-error badge-xs shrink-0">@L["RegionUnavailableBadge"]</span>
+                            }
+                            else if (isAllowed)
+                            {
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                                     class="shrink-0" style="color: var(--color-success);">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            }
+                        </label>
+                    }
+                </div>
+            </div>
+            pIdx++;
+        }
+
+    </div>
+
+    <div class="flex justify-end mt-6" style="max-width: 900px;">
+        <button type="submit" class="btn-save">@Shared["Common_Save"]</button>
+    </div>
+</form>

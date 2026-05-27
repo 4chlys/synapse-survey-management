@@ -4,8 +4,8 @@ using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.AiUsage;
 using SynapseEnqueteManagement.BL.Domain.Ai.Entities;
 using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 using SynapseEnqueteManagement.BL.Stats;
-using SynapseEnqueteManagement.DAL;
 using SynapseEnqueteManagement.DAL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Tests;
@@ -28,7 +28,8 @@ public class AdminPlatformStatsControllerTests
         _statsController = new AdminPlatformStatsController(
             _projectManager.Object,
             _participantManager.Object,
-            _usageManager.Object);
+            _usageManager.Object,
+            _statsAggregator.Object);
 
         _exportController = new AdminPlatformStatsExportController(
             _projectManager.Object,
@@ -92,11 +93,28 @@ public class AdminPlatformStatsControllerTests
     };
 
     [Fact]
-    public async Task GetSystemStats_NoFilter_ReturnsAggregateAcrossAllPlatforms()
+    public async Task GetSystemStats_NoFilter_MapsAggregatorRollupOntoDto()
     {
+        var projects = new[] { MakeProject(1, 10), MakeProject(2, 20) };
         _projectManager
             .Setup(m => m.GetAllProjectsAsync(null))
-            .ReturnsAsync(new[] { MakeProject(1, 10), MakeProject(2, 20) });
+            .ReturnsAsync(projects);
+
+        var rollup = new SystemStatsRollup(
+            ProjectRows:
+            [
+                new ProjectStatsRow(1, "P1", "p1", 10, "Platform 10", "Active", 5, 5, 60, 60, 0, 0, 0, 0),
+                new ProjectStatsRow(2, "P2", "p2", 20, "Platform 20", "Active", 3, 3, 90, 90, 0, 0, 0, 0),
+            ],
+            PlatformRows:
+            [
+                new PlatformStatsRow(10, "Platform 10", 1, 0, 0, 5, 60, 60),
+                new PlatformStatsRow(20, "Platform 20", 1, 0, 0, 3, 90, 90),
+            ],
+            TotalCompleted: 8, SysAvg: 71.25, SysMedian: 75);
+        _statsAggregator
+            .Setup(a => a.Aggregate(It.IsAny<IReadOnlyList<Project>>(), It.IsAny<IReadOnlyList<ProjectParticipantStats>>()))
+            .Returns(rollup);
 
         var result = await _statsController.GetSystemStats(null, null);
 
@@ -104,6 +122,11 @@ public class AdminPlatformStatsControllerTests
         var dto = Assert.IsType<SystemStatsDto>(ok.Value);
         Assert.Equal(2, dto.PlatformCount);
         Assert.Equal(2, dto.Projects.Count);
+        Assert.Equal(8, dto.TotalParticipants);
+        Assert.Equal(71.25, dto.AvgCompletionSeconds);
+        _statsAggregator.Verify(a => a.Aggregate(
+            It.Is<IReadOnlyList<Project>>(p => p.Count == 2),
+            It.IsAny<IReadOnlyList<ProjectParticipantStats>>()), Times.Once);
     }
 
     [Fact]

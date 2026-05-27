@@ -30,4 +30,14 @@
   <data name="QuestionsLink" xml:space="preserve"><value>Vragen</value></data>
   <data name="DashboardLink" xml:space="preserve"><value>Dashboard</value></data>
   <data name="NextLink" xml:space="preserve"><value>Volgende</value></data>
+  <data name="EmojisHeading" xml:space="preserve"><value>Emoji reacties</value></data>
+  <data name="EmojisSubtitle" xml:space="preserve"><value>Kies welke emojis deelnemers kunnen gebruiken om op ideeën te reageren</value></data>
+  <data name="EmojisEmpty" xml:space="preserve"><value>Geen emojis beschikbaar in het systeem.</value></data>
+  <data name="PresetAll" xml:space="preserve"><value>Alles</value></data>
+  <data name="PresetStandard" xml:space="preserve"><value>Standaard</value></data>
+  <data name="PresetInnovation" xml:space="preserve"><value>Innovatie</value></data>
+  <data name="PresetEnthusiasm" xml:space="preserve"><value>Enthousiasme</value></data>
+  <data name="SelectAllButton" xml:space="preserve"><value>Selecteer alle</value></data>
+  <data name="ClearAllButton" xml:space="preserve"><value>Deselecteer alle</value></data>
+  <data name="CategoriesError" xml:space="preserve"><value>Voeg minimaal één categorie toe.</value></data>
 </root>

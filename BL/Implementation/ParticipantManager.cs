@@ -1,6 +1,6 @@
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 using SynapseEnqueteManagement.DAL.Interfaces;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -68,6 +68,9 @@ public class ParticipantManager(
 
     public Task<List<string>> GetParticipantEmailsByProjectAsync(int projectId)
         => participantRepository.ReadEmailsByProjectIdReadOnlyAsync(projectId);
+
+    public Task<List<ParticipantEmailWithLanguage>> GetParticipantEmailsWithLanguageByProjectAsync(int projectId)
+        => participantRepository.ReadEmailsWithLanguageByProjectIdReadOnlyAsync(projectId);
 
     public async Task<TimelineResult> GetTimelineAsync(int projectId, int days = 30)
     {

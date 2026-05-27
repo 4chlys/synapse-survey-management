@@ -13,6 +13,7 @@ public class ProjectManager(
     IProjectRepository projectRepository,
     IEmojiManager emojiManager,
     IProjectTranslationValidator translationValidator,
+    IProjectActivationValidator activationValidator,
     IShortFormService shortFormService,
     IProjectDuplicationService projectDuplicationService,
     IUnitOfWork uow) : IProjectManager
@@ -87,8 +88,8 @@ public class ProjectManager(
             CustomCss = customCss,
         };
 
-        foreach (var code in supportedList)
-            project.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in supportedList)
+            project.SupportedLanguages.Add(languages[languageCode]);
 
         foreach (var t in translationList)
         {
@@ -119,6 +120,13 @@ public class ProjectManager(
             }
             project.Introduction = intro;
         }
+
+        // Enable all available emojis by default for newly created projects.
+        // ReadAllForUpdateAsync loads tracked entities in one query, so EF Core can
+        // populate the many-to-many ProjectEmoji join table without N+1 round-trips.
+        var allEmojis = await emojiManager.GetAllForUpdateAsync();
+        foreach (var emoji in allEmojis)
+            project.Emojis.Add(emoji);
 
         var created = await projectRepository.CreateAsync(project);
         await uow.SaveChangesAsync();
@@ -251,6 +259,17 @@ public class ProjectManager(
 
     public async Task<Project> UpdateProjectStateAsync(int projectId, ProjectState newState)
     {
+        if (newState == ProjectState.Active)
+        {
+            var fullGraph = await projectRepository.ReadByIdForActivationReadOnlyAsync(projectId);
+            if (fullGraph is null)
+                throw new ArgumentException($"Project {projectId} not found.");
+
+            var problems = activationValidator.Validate(fullGraph);
+            if (problems.Count > 0)
+                throw new ProjectActivationException(problems);
+        }
+
         var project = await projectRepository.ReadByIdForUpdateAsync(projectId);
         if (project is null)
             throw new ArgumentException($"Project {projectId} not found.");
@@ -294,13 +313,28 @@ public class ProjectManager(
         var defaultCode = src.DefaultLanguage?.Code
             ?? throw new InvalidOperationException("Source project has no default language.");
 
-        var languages = await translationValidator.ValidateAsync(
-            translationList, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
+        // Callers (e.g. the copy dialog) typically supply only a renamed default-language
+        // translation. Clone the source's own translation for every other supported language so
+        // the duplicate keeps its localized names/topics and satisfies the validator's
+        // all-supported-languages-need-a-translation rule. A supplied override replaces the
+        // source's Name/Topic for that language, falling back to the source value when blank.
+        var overrides = translationList.ToDictionary(t => t.LanguageCode);
+        var mergedTranslations = src.Translations
+            .Select(t => overrides.TryGetValue(t.Language.Code, out var ov)
+                ? new ProjectTranslationInput(
+                    t.Language.Code,
+                    string.IsNullOrWhiteSpace(ov.Name) ? t.Name : ov.Name,
+                    string.IsNullOrWhiteSpace(ov.Topic) ? t.Topic : ov.Topic)
+                : new ProjectTranslationInput(t.Language.Code, t.Name, t.Topic))
+            .ToList();
 
-        var defaultName = translationList.First(t => t.LanguageCode == defaultCode).Name;
+        var languages = await translationValidator.ValidateAsync(
+            mergedTranslations, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
+
+        var defaultName = mergedTranslations.First(t => t.LanguageCode == defaultCode).Name;
         var uniqueShortForm = await shortFormService.ResolveAsync(newShortForm, defaultName);
 
-        var copy = await projectDuplicationService.BuildCloneAsync(src, translationList, languages, uniqueShortForm, platformId);
+        var copy = await projectDuplicationService.BuildCloneAsync(src, mergedTranslations, languages, uniqueShortForm, platformId);
 
         await projectRepository.CreateAsync(copy);
         await uow.SaveChangesAsync(ct);
@@ -331,6 +365,46 @@ public class ProjectManager(
         if (emoji == null) return false;
 
         project.Emojis.Remove(emoji);
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Enables multiple emojis: one project read, one targeted emoji read for
+    // missing IDs only (WHERE EmojiId IN …), one SaveChanges.
+    public async Task<bool> EnableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var currentIds = project.Emojis.Select(e => e.EmojiId).ToHashSet();
+        var missing    = emojiIds.Where(id => !currentIds.Contains(id)).ToHashSet();
+        if (missing.Count == 0) return true;
+
+        var emojisToAdd = await emojiManager.GetByIdsForUpdateAsync(missing, ct);
+        foreach (var emoji in emojisToAdd)
+            project.Emojis.Add(emoji);
+
+        projectRepository.Update(project);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Disables multiple emojis in a single DB round-trip: one project read,
+    // collection mutations in memory, one SaveChanges.
+    public async Task<bool> DisableEmojisForProjectAsync(int projectId, IEnumerable<int> emojiIds, CancellationToken ct = default)
+    {
+        var project = await projectRepository.ReadByIdWithEmojisForUpdateAsync(projectId);
+        if (project == null) return false;
+
+        var idSet    = emojiIds.ToHashSet();
+        var toRemove = project.Emojis.Where(e => idSet.Contains(e.EmojiId)).ToList();
+        if (toRemove.Count == 0) return true;
+
+        foreach (var emoji in toRemove)
+            project.Emojis.Remove(emoji);
+
+        projectRepository.Update(project);
         await uow.SaveChangesAsync(ct);
         return true;
     }
@@ -363,8 +437,8 @@ public class ProjectManager(
         var desiredSet = desiredCodes.ToHashSet();
         foreach (var existing in project.SupportedLanguages.Where(l => !desiredSet.Contains(l.Code)).ToList())
             project.SupportedLanguages.Remove(existing);
-        foreach (var code in desiredCodes)
-            if (!project.SupportedLanguages.Any(l => l.Code == code))
-                project.SupportedLanguages.Add(languages[code]);
+        foreach (var languageCode in desiredCodes)
+            if (!project.SupportedLanguages.Any(l => l.Code == languageCode))
+                project.SupportedLanguages.Add(languages[languageCode]);
     }
 }

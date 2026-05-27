@@ -37,6 +37,7 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
     public DbSet<EndingAnswer> EndingAnswers { get; set; }
     public DbSet<AiUsageEvent> AiUsageEvents { get; set; }
     public DbSet<IdeaSummaryJob> IdeaSummaryJobs { get; set; }
+    public DbSet<EmailJob> EmailJobs { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -248,8 +249,9 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Supports "which participants answered this question?" queries.
-            e.HasIndex("QuestionId", "ParticipantId");
+            // One response per (question, participant) — also supports
+            // "which participants answered this question?" queries.
+            e.HasIndex("QuestionId", "ParticipantId").IsUnique();
             e.HasIndex("ParticipantId");
         });
 
@@ -406,7 +408,45 @@ public class SynapseEnqueteContext(DbContextOptions<SynapseEnqueteContext> optio
             }
             e.Property(j => j.Status).HasConversion<string>();
             e.Property(j => j.ExportFormat).HasConversion<string>();
+
+            e.HasOne(j => j.Project)
+                .WithMany()
+                .HasForeignKey(j => j.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(j => j.ProjectPlatform)
+                .WithMany()
+                .HasForeignKey(j => j.ProjectPlatformId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             e.HasIndex(j => new { j.ProjectId, j.Status });
+        });
+
+        // EmailJob — outbound email queue (mirrors IdeaSummaryJob's
+        // concurrency-token + DB-branching). Nav properties only (no scalar
+        // FK columns on the entity); EF infers shadow FKs.
+        builder.Entity<EmailJob>(e =>
+        {
+            e.HasKey(j => j.EmailJobId);
+            if (Database.IsNpgsql())
+            {
+                e.Property<uint>("xmin").HasColumnType("xid").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
+            }
+            else
+            {
+                e.Property(j => j.RowVersion).IsRowVersion();
+            }
+            e.Property(j => j.Status).HasConversion<string>();
+            e.Property(j => j.Category).HasConversion<string>();
+
+            // All three nav properties optional — different categories carry
+            // different context (see EmailJob.cs comment).
+            e.HasOne(j => j.ProjectPlatform).WithMany().IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(j => j.Project).WithMany().IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(j => j.Idea).WithMany().IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+
+            // Worker poll: "next due Pending row".
+            e.HasIndex(j => new { j.Status, j.ScheduledAt });
         });
 
         // Project-Emoji many-to-many (implicit join table)

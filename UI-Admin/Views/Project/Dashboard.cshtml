@@ -1,4 +1,5 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Dashboard
+@using SynapseEnqueteManagement.UI.Admin.Services.Dashboard
 @model DashboardViewModel
 @inject IViewLocalizer L
 @inject IHtmlLocalizer<SharedResource> Shared
@@ -6,21 +7,45 @@
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "Dashboard";
     Layout = "_Layout";
+
+    string WidgetCss(string wt) => wt switch {
+        "ViewCount"             => "db-w db-w--kpi",
+        "CompletionCount"       => "db-w db-w--kpi",
+        "CompletionRate"        => "db-w db-w--kpi",
+        "ParticipationTimeline" => "db-w db-w--timeline",
+        "TopCategories"         => "db-w db-w--chart",
+        "TopIdeas"              => "db-w db-w--list",
+        "QuestionSinglePie"     => "db-w db-w--chart",
+        "QuestionMultiBar"      => "db-w db-w--chart",
+        "QuestionLikertBar"     => "db-w db-w--chart",
+        "IdeaFeed"              => "db-w db-w--feed",
+        "ModerationQueue"       => "db-w db-w--moderation",
+        "SurveyDistribution"    => "db-w db-w--distribution",
+        "SocialMediaPost"       => "db-w db-w--social",
+        _                       => "db-w"
+    };
 }
-<div class="w-full">
+<div class="w-full db-root">
     @Html.AntiForgeryToken()
-    <div class="flex items-center justify-between mb-6">
+
+    @* ── Header ── *@
+    <div class="flex items-center justify-between mb-2">
         <h1 class="font-heading font-bold text-2xl text-base-content">@L["Heading"]</h1>
         <div class="flex items-center gap-2">
             @if (ViewData["ProjectState"] as string == "Active")
             {
                 <a asp-action="Archive" asp-route-projectId="@Model.ProjectId"
-                   class="btn btn-outline btn-warning btn-sm gap-1.5">
+                   class="btn-archive">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
                     @L["ArchiveButton"]
                 </a>
             }
-            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+            <button type="button" class="btn-action-outline"
+                    data-open-modal="social-media-modal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                @L["Widget_Social_Title"]
+            </button>
+            <button type="button" class="btn-action-outline"
                     data-open-modal="project-export-modal">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -28,70 +53,41 @@
                 @L["ExportButton"]
             </button>
             <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
-               class="btn btn-outline btn-sm gap-1.5">
+               class="btn-action-outline">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
                 @L["ConfigureButton"]
             </a>
         </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    @* ── Widget grid ── *@
+    <div class="db-grid">
         @for (var i = 0; i < Model.WidgetSlots.Length; i++)
         {
             var slot = Model.WidgetSlots[i];
-            var widgetType = slot.WidgetType;
-            @if (widgetType == "QuestionSinglePie")
+            var wt = slot.WidgetType;
+            var css = WidgetCss(wt);
+            var isQuestion = wt is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
+
+            if (isQuestion)
             {
-                <div data-widget="QuestionSinglePie"
+                <div data-widget="@wt"
                      data-position="@i"
                      data-project-id="@Model.ProjectId"
                      data-question-id="@slot.QuestionId"
                      data-api-base="@Model.ApiBaseUrl"
+                     @if (wt == "QuestionMultiBar") { <text>data-x-axis-label="@L["Widget_XAxisLabel"]"</text> }
                      data-i18n-load-failed="@L["Widget_LoadFailed"]"
                      data-i18n-no-answers="@L["Widget_NoAnswers"]"
                      data-i18n-no-question="@L["Widget_NoQuestion"]"
-                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
+                     class="@css flex flex-col">
                     <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
                     <div data-widget-body class="relative flex-1 min-h-0">
                         <canvas></canvas>
                     </div>
                 </div>
             }
-            else if (widgetType == "QuestionMultiBar")
-            {
-                <div data-widget="QuestionMultiBar"
-                     data-position="@i"
-                     data-project-id="@Model.ProjectId"
-                     data-question-id="@slot.QuestionId"
-                     data-api-base="@Model.ApiBaseUrl"
-                     data-x-axis-label="@L["Widget_XAxisLabel"]"
-                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
-                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
-                     data-i18n-no-question="@L["Widget_NoQuestion"]"
-                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
-                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
-                    <div data-widget-body class="relative flex-1 min-h-0">
-                        <canvas></canvas>
-                    </div>
-                </div>
-            }
-            else if (widgetType == "QuestionLikertBar")
-            {
-                <div data-widget="QuestionLikertBar"
-                     data-position="@i"
-                     data-project-id="@Model.ProjectId"
-                     data-question-id="@slot.QuestionId"
-                     data-api-base="@Model.ApiBaseUrl"
-                     data-i18n-load-failed="@L["Widget_LoadFailed"]"
-                     data-i18n-no-answers="@L["Widget_NoAnswers"]"
-                     data-i18n-no-question="@L["Widget_NoQuestion"]"
-                     class="card bg-base-100 shadow-sm p-4 h-56 flex flex-col">
-                    <select data-question-select class="select select-bordered select-xs mb-2 w-full"></select>
-                    <div data-widget-body class="relative flex-1 min-h-0">
-                        <canvas></canvas>
-                    </div>
-                </div>
-            }
-            else if (widgetType == "SurveyDistribution")
+            else if (wt == "SurveyDistribution")
             {
                 <div data-widget="SurveyDistribution"
                      data-project-id="@Model.ProjectId"
@@ -102,11 +98,11 @@
                      data-i18n-copied="@L["Widget_Copied"]"
                      data-i18n-download-qr="@L["Widget_DownloadQr"]"
                      data-i18n-qr-alt="@L["Widget_QrAlt"]"
-                     class="card bg-base-100 shadow-sm p-4 min-h-28">
-                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                     class="@css">
+                    <p class="text-base-content/20 text-xs">@Shared["Common_Loading"]</p>
                 </div>
             }
-            else if (widgetType == "SocialMediaPost")
+            else if (wt == "SocialMediaPost")
             {
                 <div data-widget="SocialMediaPost"
                      data-project-id="@Model.ProjectId"
@@ -120,20 +116,19 @@
                      data-i18n-copy-text="@L["Widget_Social_CopyText"]"
                      data-i18n-copied="@L["Widget_Copied"]"
                      data-i18n-open-platform="@L["Widget_Social_OpenPlatform"]"
-                     data-i18n-open-in="@L["Widget_Social_OpenIn"]"
-                     data-i18n-char-count="@L["Widget_Social_CharCount"]"
+                     data-i18n-open-in="@L["Widget_Social_OpenIn"].Value"
+                     data-i18n-char-count="@L["Widget_Social_CharCount"].Value"
                      data-i18n-note-linkedin="@L["Widget_Social_Note_LinkedIn"]"
                      data-i18n-note-facebook="@L["Widget_Social_Note_Facebook"]"
                      data-i18n-note-instagram="@L["Widget_Social_Note_Instagram"]"
-                     class="card bg-base-100 shadow-sm p-4 h-56">
-                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                     data-i18n-restart="@L["Widget_Social_Restart"]"
+                     class="@css">
+                    <p class="text-base-content/20 text-xs">@Shared["Common_Loading"]</p>
                 </div>
             }
             else
             {
-                var isChart = widgetType is "ParticipationTimeline" or "TopCategories";
-                var isTall  = widgetType is "SocialMediaPost";
-                <div data-widget="@widgetType"
+                <div data-widget="@wt"
                      data-project-id="@Model.ProjectId"
                      data-api-base="@Model.ApiBaseUrl"
                      data-survey-url="@Model.SurveyUrl"
@@ -154,15 +149,15 @@
                      data-i18n-moderation-new="@L["Widget_Moderation_New"]"
                      data-i18n-moderation-flagged="@L["Widget_Moderation_Flagged"]"
                      data-i18n-moderation-declined="@L["Widget_Moderation_Declined"]"
-                     class="card bg-base-100 shadow-sm p-4 @(isChart || isTall ? "h-56" : "min-h-28")">
-                    <p class="text-base-content/30 text-xs">@Shared["Common_Loading"]</p>
+                     class="@css">
+                    <p class="text-base-content/20 text-xs">@Shared["Common_Loading"]</p>
                 </div>
             }
         }
     </div>
 </div>
 
-@* Project dashboard export modal *@
+@* ── Export modal (unchanged) ── *@
 <dialog id="project-export-modal" class="modal"
         data-export-url="/api/projects/@Model.ProjectId/stats/export">
     <div class="modal-box">
@@ -203,9 +198,40 @@
 
         <div class="modal-action">
             <form method="dialog">
-                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                <button class="btn-cancel">@L["CancelButton"]</button>
             </form>
-            <button type="button" class="btn btn-primary btn-sm" id="project-export-download">@L["ExportButton"]</button>
+            <button type="button" class="btn-save" id="project-export-download">@L["ExportButton"]</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+@* ── Social media post modal ── *@
+<dialog id="social-media-modal" class="modal">
+    <div class="modal-box max-w-lg">
+        <div data-widget="SocialMediaPost"
+             data-project-id="@Model.ProjectId"
+             data-api-base="@Model.ApiBaseUrl"
+             data-survey-url="@Model.SurveyUrl"
+             data-i18n-title="@L["Widget_Social_Title"]"
+             data-i18n-desc-placeholder="@L["Widget_Social_DescPlaceholder"]"
+             data-i18n-ai-image="@L["Widget_Social_AiImage"]"
+             data-i18n-generate="@L["Widget_Social_Generate"]"
+             data-i18n-generating="@L["Widget_Social_Generating"]"
+             data-i18n-copy-text="@L["Widget_Social_CopyText"]"
+             data-i18n-copied="@L["Widget_Copied"]"
+             data-i18n-open-platform="@L["Widget_Social_OpenPlatform"]"
+             data-i18n-open-in="@L["Widget_Social_OpenIn"].Value"
+             data-i18n-char-count="@L["Widget_Social_CharCount"].Value"
+             data-i18n-note-linkedin="@L["Widget_Social_Note_LinkedIn"]"
+             data-i18n-note-facebook="@L["Widget_Social_Note_Facebook"]"
+             data-i18n-note-instagram="@L["Widget_Social_Note_Instagram"]"
+             data-i18n-restart="@L["Widget_Social_Restart"]">
+        </div>
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn-cancel">@L["CancelButton"]</button>
+            </form>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop"><button>close</button></form>

@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using SynapseEnqueteManagement.BL.Domain.Project.Enums;
+using SynapseEnqueteManagement.UI.Admin.Models.Enums;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Question;
 

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Dashboard;
 using SynapseEnqueteManagement.API.DTOs.Stats;
 using SynapseEnqueteManagement.API.Services;
+using SynapseEnqueteManagement.API.Services.Export;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -16,8 +18,6 @@ public class ProjectStatsExportController(
     IExportService exportService,
     IChartRendererService chartRenderer) : ControllerBase
 {
-    private static readonly HashSet<string> AllSections = ["summary", "timeline", "categories", "ideas"];
-
     [HttpGet("export")]
     public async Task<IActionResult> Export(
         int projectId,
@@ -35,20 +35,18 @@ public class ProjectStatsExportController(
             return NotFound();
 
         var selectedSections = string.IsNullOrWhiteSpace(sections)
-            ? AllSections
+            ? ProjectStatsExportSheetBuilder.AllSections
             : sections.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(s => s.ToLowerInvariant())
-                .Where(AllSections.Contains)
+                .Where(ProjectStatsExportSheetBuilder.AllSections.Contains)
                 .ToHashSet();
         if (selectedSections.Count == 0)
-            selectedSections = AllSections;
+            selectedSections = ProjectStatsExportSheetBuilder.AllSections;
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var defaultLang = project.DefaultLanguage?.Code ?? lang;
-        var projectName = project.Translations
-            .FirstOrDefault(t => t.Language?.Code == defaultLang)?.Name
-            ?? project.Translations.FirstOrDefault()?.Name
-            ?? string.Empty;
+        var projectName = TranslationPicker.Pick(project.Translations, defaultLang)?.Name
+                          ?? string.Empty;
 
         var completionCount = await participantManager.CountCompletionsByProjectAsync(projectId);
         var metrics = await dashboardManager.GetDashboardMetricsAsync(projectId, lang, defaultLang);
@@ -83,59 +81,13 @@ public class ProjectStatsExportController(
             }).ToList(),
         };
 
-        var sheets = new List<(string Key, string SheetName, string[] Headers, IEnumerable<string[]> Rows)>();
+        var sheets = ProjectStatsExportSheetBuilder.Build(exportData, selectedSections);
 
-        if (selectedSections.Contains("summary"))
-        {
-            sheets.Add(("summary", "Summary", ["Metric", "Value"],
-            [
-                ["Views", exportData.ViewCount.ToString()],
-                ["Completions", exportData.CompletionCount.ToString()],
-                ["Completion rate", (exportData.CompletionRate * 100).ToString("F1") + "%"],
-            ]));
-        }
-
-        if (selectedSections.Contains("timeline"))
-        {
-            sheets.Add(("timeline", "Timeline",
-                ["Date", "Started", "Completed"],
-                exportData.TimelineDates.Select((d, i) => new[]
-                {
-                    d,
-                    exportData.TimelineStarts.ElementAtOrDefault(i).ToString(),
-                    exportData.TimelineCompletions.ElementAtOrDefault(i).ToString(),
-                })));
-        }
-
-        if (selectedSections.Contains("categories"))
-        {
-            sheets.Add(("categories", "Categories",
-                ["Category", "Ideas", "Reactions"],
-                exportData.TopCategories.Select(c => new[]
-                {
-                    c.Name,
-                    c.IdeaCount.ToString(),
-                    c.TotalReactions.ToString(),
-                })));
-        }
-
-        if (selectedSections.Contains("ideas"))
-        {
-            sheets.Add(("ideas", "Ideas",
-                ["Description", "Reactions", "Comments"],
-                exportData.TopIdeas.Select(i => new[]
-                {
-                    i.Description ?? string.Empty,
-                    i.ReactionCount.ToString(),
-                    i.CommentCount.ToString(),
-                })));
-        }
-
-        var safeName = SanitizeFileName(projectName.Length > 0 ? projectName : projectId.ToString());
+        var safeName = FileNameSanitizer.Sanitize(projectName.Length > 0 ? projectName : projectId.ToString());
 
         if (normalized == "xlsx")
         {
-            var xlsxSheets = sheets.Select(s => (s.SheetName, s.Headers, s.Rows));
+            var xlsxSheets = sheets.Select(s => (s.Name, s.Headers, s.Rows));
             var bytes = exportService.BuildXlsx(xlsxSheets);
 
             if (includeGraphics)
@@ -156,12 +108,5 @@ public class ProjectStatsExportController(
         var zipFiles = sheets.Select(s => ($"{safeName}-{s.Key}.csv", s.Headers, s.Rows));
         var zipBytes = exportService.BuildZip(zipFiles);
         return File(zipBytes, "application/zip", $"{safeName}-dashboard.zip");
-    }
-
-    private static string SanitizeFileName(string name)
-    {
-        var invalid = Path.GetInvalidFileNameChars();
-        var sanitized = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
-        return sanitized.Trim().Replace(' ', '-').ToLowerInvariant();
     }
 }

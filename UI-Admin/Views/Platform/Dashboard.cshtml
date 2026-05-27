@@ -14,13 +14,18 @@
             ? $"{(int)ts.TotalMinutes}m {ts.Seconds}s"
             : $"{ts.Seconds}s";
     };
+
+    var totalProjects = Model.ActiveProjectCount + Model.DraftProjectCount + Model.ArchivedProjectCount;
 }
 
 <div class="w-full">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="font-heading font-bold text-2xl text-base-content">@Model.Name</h1>
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="font-heading font-bold text-2xl text-base-content">@Model.Name</h1>
+            <p class="text-sm text-base-content/40 mt-0.5">@totalProjects @L["StatProjects"].Value.ToLower()</p>
+        </div>
         <div class="flex items-center gap-2">
-            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+            <button type="button" class="btn-action-outline"
                     data-open-modal="system-export-modal">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -28,175 +33,167 @@
                 @L["ExportButton"]
             </button>
             <a asp-action="Settings" asp-route-id="@Model.ProjectPlatformId"
-               class="btn btn-ghost btn-sm gap-1.5">
+               class="btn-cancel">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 @L["SettingsLink"]
             </a>
         </div>
     </div>
 
-    @* Platform info card *@
-    <div class="card bg-base-100 shadow-sm mb-6">
-        <div class="card-body">
-            <div class="flex items-center gap-4">
-                @if (!string.IsNullOrEmpty(Model.LogoUrl))
+    @* ── Platform info card ── *@
+    <div class="settings-card settings-card--general mb-6" style="max-width: none;">
+        <div class="settings-card-header" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+            @if (!string.IsNullOrEmpty(Model.LogoUrl))
+            {
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-base-200">
+                    <img src="@Model.LogoUrl" alt="@Model.Name @L["LogoAltSuffix"]" class="h-10 w-auto max-w-full object-contain" />
+                </div>
+            }
+            else
+            {
+                <div class="settings-card-icon settings-card-icon--general" style="width: 2.75rem; height: 2.75rem;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                    </svg>
+                </div>
+            }
+            <div class="flex-1 min-w-0">
+                <h2 class="font-heading font-semibold text-base text-base-content">@Model.Name</h2>
+                @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
                 {
-                    <img src="@Model.LogoUrl" alt="@Model.Name @L["LogoAltSuffix"]" class="h-14 w-auto object-contain" />
+                    <a href="@Model.WebsiteUrl" target="_blank" rel="noopener noreferrer"
+                       class="text-xs text-base-content/40 hover:text-base-content transition truncate block">
+                        @Model.WebsiteUrl
+                    </a>
                 }
-                <div>
-                    <p class="font-semibold text-base-content">@Model.Name</p>
-                    @if (!string.IsNullOrEmpty(Model.WebsiteUrl))
-                    {
-                        <a href="@Model.WebsiteUrl" target="_blank" rel="noopener noreferrer"
-                           class="text-sm text-base-content/60 hover:text-base-content transition underline underline-offset-2">
-                            @Model.WebsiteUrl
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="text-sm text-base-content/40 italic">@L["NoWebsite"]</span>
-                    }
-                    <p class="text-xs text-base-content/40 mt-1">
-                        @string.Format(L["CreatedAt"].Value, Model.CreatedAt.ToString("d MMMM yyyy"))
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @* Stats row *@
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body items-center text-center gap-1">
-                <p class="text-3xl font-bold text-base-content">@Model.ActiveProjectCount</p>
-                <p class="text-xs font-semibold text-success uppercase tracking-wide">@L["StatActive"]</p>
-                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body items-center text-center gap-1">
-                <p class="text-3xl font-bold text-base-content">@Model.DraftProjectCount</p>
-                <p class="text-xs font-semibold text-warning uppercase tracking-wide">@L["StatDraft"]</p>
-                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body items-center text-center gap-1">
-                <p class="text-3xl font-bold text-base-content">@Model.ArchivedProjectCount</p>
-                <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wide">@L["StatArchived"]</p>
-                <p class="text-sm text-base-content/60">@L["StatProjects"]</p>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body items-center text-center gap-1">
-                <p class="text-3xl font-bold text-base-content">@Model.ParticipantCount</p>
-                <p class="text-sm text-base-content/60">@L["StatParticipants"]</p>
-                <a asp-controller="AdminMembership" asp-action="Index" asp-route-id="@Model.ProjectPlatformId"
-                   class="btn btn-ghost btn-xs mt-2">@L["AdminsLink"] →</a>
-            </div>
-        </div>
-    </div>
-
-    @* Projects table *@
-    @if (Model.Projects.Count > 0)
-    {
-        <h2 class="font-semibold text-base-content mb-4">@L["ProjectsTableHeading"]</h2>
-        <div class="card bg-base-100 shadow-sm mb-6">
-            <div class="card-body">
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra">
-                        <thead>
-                            <tr>
-                                <th>@L["Col_Project"]</th>
-                                <th>@L["Col_State"]</th>
-                                <th class="text-right">@L["Col_Participants"]</th>
-                                <th class="text-right">@L["Col_AvgTime"]</th>
-                                <th class="text-right">@L["Col_MedianTime"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in Model.Projects)
-                            {
-                                <tr>
-                                    <td>@row.ProjectName</td>
-                                    <td>@row.State</td>
-                                    <td class="text-right">@row.ParticipantCount</td>
-                                    <td class="text-right">@FormatSeconds(row.AvgCompletionSeconds)</td>
-                                    <td class="text-right">@FormatSeconds(row.MedianCompletionSeconds)</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    }
-
-    @* AI model info *@
-    @if (!string.IsNullOrEmpty(Model.AiModelName))
-    {
-        <div class="card bg-base-100 shadow-sm mb-6">
-            <div class="card-body py-3">
-                <p class="text-sm text-base-content/60">
-                    <span class="font-medium text-base-content">@L["AiModel"]:</span> @Model.AiModelName
+                else
+                {
+                    <span class="text-xs text-base-content/30 italic">@L["NoWebsite"]</span>
+                }
+                <p class="text-xs text-base-content/30 mt-0.5">
+                    @string.Format(L["CreatedAt"].Value, Model.CreatedAt.ToString("d MMMM yyyy"))
                 </p>
             </div>
         </div>
-    }
+    </div>
 
-    @* Live AI cost card *@
-    <h2 class="font-semibold text-base-content mb-4">@L["LiveAiCostHeading"]</h2>
-    <div class="card bg-base-100 shadow-sm mb-6" data-ai-cost-container data-platform-id="@Model.ProjectPlatformId" data-empty-label="@L["AiCost_Empty"]">
-        <div class="card-body">
-            <div class="overflow-x-auto">
-                <table class="table table-sm">
+    @* ── KPI stats ── *@
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+        <div class="card bg-base-100 shadow-sm" style="border-left: 3px solid var(--color-success);">
+            <div class="card-body gap-2 py-4 px-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                     style="background: color-mix(in oklch, var(--color-success) 10%, transparent); color: var(--color-success);">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold text-base-content leading-none">@Model.ActiveProjectCount</p>
+                <p class="text-xs text-success font-semibold uppercase tracking-wide leading-tight">@L["StatActive"]</p>
+                <p class="text-xs text-base-content/50 -mt-1">@L["StatProjects"]</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-sm" style="border-left: 3px solid var(--color-warning);">
+            <div class="card-body gap-2 py-4 px-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                     style="background: color-mix(in oklch, var(--color-warning) 10%, transparent); color: var(--color-warning);">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold text-base-content leading-none">@Model.DraftProjectCount</p>
+                <p class="text-xs text-warning font-semibold uppercase tracking-wide leading-tight">@L["StatDraft"]</p>
+                <p class="text-xs text-base-content/50 -mt-1">@L["StatProjects"]</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-sm" style="border-left: 3px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);">
+            <div class="card-body gap-2 py-4 px-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-base-200 text-base-content/40">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/>
+                        <line x1="10" y1="12" x2="14" y2="12"/>
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold text-base-content leading-none">@Model.ArchivedProjectCount</p>
+                <p class="text-xs text-base-content/40 font-semibold uppercase tracking-wide leading-tight">@L["StatArchived"]</p>
+                <p class="text-xs text-base-content/50 -mt-1">@L["StatProjects"]</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-sm" style="border-left: 3px solid var(--color-secondary);">
+            <div class="card-body gap-2 py-4 px-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                     style="background: color-mix(in oklch, var(--color-secondary) 10%, transparent); color: var(--color-secondary);">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold text-base-content leading-none">@Model.ParticipantCount</p>
+                <p class="text-xs text-base-content/50 leading-tight">@L["StatParticipants"]</p>
+                <a asp-controller="AdminMembership" asp-action="Index" asp-route-id="@Model.ProjectPlatformId"
+                   class="text-xs text-primary hover:underline mt-1">@L["AdminsLink"] →</a>
+            </div>
+        </div>
+    </div>
+
+    @* ── Projects table ── *@
+    @if (Model.Projects.Count > 0)
+    {
+        <div class="flex items-center gap-2.5 mb-5">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                 style="background: color-mix(in oklch, var(--color-primary) 10%, transparent); color: var(--color-primary);">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>
+                </svg>
+            </div>
+            <h2 class="font-heading font-semibold text-base-content">@L["ProjectsTableHeading"]</h2>
+        </div>
+
+        <div class="card bg-base-100 shadow-sm mb-10">
+            <div class="card-body p-0 overflow-x-auto">
+                <table class="table table-zebra table-sm">
                     <thead>
                         <tr>
-                            <th>@L["AiCost_Project"]</th>
-                            <th class="text-right">@L["AiCost_InputTokens"]</th>
-                            <th class="text-right">@L["AiCost_OutputTokens"]</th>
-                            <th class="text-right">@L["AiCost_Cost"]</th>
+                            <th>@L["Col_Project"]</th>
+                            <th>@L["Col_State"]</th>
+                            <th class="text-right">@L["Col_Participants"]</th>
+                            <th class="text-right">@L["Col_AvgTime"]</th>
+                            <th class="text-right">@L["Col_MedianTime"]</th>
                         </tr>
                     </thead>
-                    <tbody data-ai-usage>
-                        <tr><td colspan="4" class="text-center text-base-content/40 text-sm py-4">@L["AiCost_Loading"]</td></tr>
+                    <tbody>
+                        @foreach (var row in Model.Projects)
+                        {
+                            <tr>
+                                <td class="font-medium">@row.ProjectName</td>
+                                <td>
+                                    @{
+                                        var stateClass = row.State?.ToLower() switch {
+                                            "active"   => "badge-success",
+                                            "draft"    => "badge-warning",
+                                            "archived" => "badge-ghost",
+                                            _          => "badge-ghost"
+                                        };
+                                    }
+                                    <span class="badge badge-xs @stateClass">@row.State</span>
+                                </td>
+                                <td class="text-right">@row.ParticipantCount</td>
+                                <td class="text-right text-base-content/60">@FormatSeconds(row.AvgCompletionSeconds)</td>
+                                <td class="text-right text-base-content/60">@FormatSeconds(row.MedianCompletionSeconds)</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
-
-    @* Cost dashboard *@
-    <h2 class="font-semibold text-base-content mb-4">@L["CostMonitoringHeading"]</h2>
-    @if (!string.IsNullOrEmpty(Model.CostDashboardUrl))
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body p-0">
-                <iframe src="@Model.CostDashboardUrl"
-                        class="w-full rounded-2xl"
-                        style="height:600px;border:none;"
-                        title="@string.Format(L["CostIframeTitle"].Value, Model.Name)"
-                        loading="lazy">
-                </iframe>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="card bg-base-100 shadow-sm">
-            <div class="card-body text-center gap-2">
-                <p class="text-sm text-base-content/60">@L["NoCostDashboard"]</p>
-                <p class="text-xs text-base-content/40">
-                    @Html.Raw(string.Format(L["AddCostDashboardHint"].Value,
-                        $"<a href=\"{Url.Action("Settings", "Platform", new { id = Model.ProjectPlatformId })}\" class=\"underline hover:text-base-content transition\">{L["SettingsLink"].Value}</a>"))
-                </p>
-            </div>
-        </div>
     }
 
-    @* System stats export modal *@
+    @* ── Export modal ── *@
     <dialog id="system-export-modal" class="modal"
             data-export-url="/api/system-stats/export?platformId=@Model.ProjectPlatformId">
         <div class="modal-box">
@@ -249,9 +246,9 @@
 
             <div class="modal-action">
                 <form method="dialog">
-                    <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                    <button class="btn-cancel">@L["CancelButton"]</button>
                 </form>
-                <button type="button" class="btn btn-primary btn-sm" id="system-export-download">@L["ExportButton"]</button>
+                <button type="button" class="btn-save" id="system-export-download">@L["ExportButton"]</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>

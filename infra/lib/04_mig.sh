@@ -1,5 +1,4 @@
 #!/bin/bash
-# MIG instance templates + Managed Instance Groups + autoscalers
 
 _INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -8,8 +7,8 @@ _create_template() {
   local machine_type="$2"
   local startup_script="$3"
   echo "  - template: ${name} (${machine_type})"
-  # ENV en PROJECT_ID als instance-metadata meegeven zodat startup scripts ze
-  # kunnen opvragen via de Metadata Server, onafhankelijk van de aanroepende shell.
+  # Passed as instance metadata so startup scripts can read them via the Metadata Server
+  # without depending on the calling shell's environment variables.
   gcloud compute instance-templates create "${name}" \
     --machine-type="${machine_type}" \
     --image-family=cos-stable \
@@ -56,9 +55,55 @@ create_instance_templates() {
   _create_template "synapse-${ENV}-admin-template" "e2-micro"  "startup-admin.sh"
 }
 
+_wait_api_schema_ready() {
+  echo "  ⏳ Wachten op API database-initialisatie (max 8 minuten)..."
+
+  gcloud compute instance-groups managed wait-until "synapse-${ENV}-api-mig" \
+    --stable --zone="${ZONE}" --project="${PROJECT_ID}" 2>/dev/null || true
+
+  local api_vm
+  api_vm=$(gcloud compute instance-groups managed list-instances "synapse-${ENV}-api-mig" \
+    --zone="${ZONE}" --project="${PROJECT_ID}" \
+    --format="value(instance)" 2>/dev/null | head -1 | sed 's|.*/||')
+
+  if [[ -z "$api_vm" ]]; then
+    echo "  ⚠️  Geen API VM gevonden, 4 minuten wachten als fallback..."
+    sleep 240
+    return
+  fi
+
+  local elapsed=0
+  while [[ $elapsed -lt 480 ]]; do
+    local status
+    status=$(gcloud compute ssh "${api_vm}" \
+      --zone="${ZONE}" --project="${PROJECT_ID}" \
+      --ssh-flag="-o StrictHostKeyChecking=no -o LogLevel=ERROR" \
+      --command="docker inspect mvp-api --format='{{.State.Status}}' 2>/dev/null" \
+      --quiet 2>/dev/null || echo "")
+
+    if [[ "${status}" == "running" ]]; then
+      echo "  ✅ API container actief — 60s buffer voor EnsureCreated + seeding..."
+      sleep 60
+      echo "  ✅ API schema klaar"
+      return
+    fi
+
+    echo "  ... (${elapsed}s) API nog niet actief (${status:-onbekend})..."
+    sleep 20
+    elapsed=$((elapsed + 20))
+  done
+
+  echo "  ⚠️  Timeout na 8 minuten — Admin toch starten"
+}
+
 create_migs() {
   echo ">>> Managed Instance Groups aanmaken (omgeving: ${ENV})..."
-  _create_mig "synapse-${ENV}-api-mig"   "synapse-${ENV}-api-template"   1 5
+
+  # API runs EnsureCreated first; Admin's MigrateAsync must see the schema already present
+  # or it will attempt to re-create it and fail.
+  _create_mig "synapse-${ENV}-api-mig" "synapse-${ENV}-api-template" 1 5
+  _wait_api_schema_ready
+
   _create_mig "synapse-${ENV}-ui-mig"    "synapse-${ENV}-ui-template"    1 5
   _create_mig "synapse-${ENV}-admin-mig" "synapse-${ENV}-admin-template" 1 1
 }

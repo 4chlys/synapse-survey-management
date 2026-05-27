@@ -11,22 +11,21 @@
 
 @* Mode-selection sheet *@
 <div id="mode-select-overlay"
-     class="fixed inset-0 z-40 hidden items-center justify-center
+     class="fixed inset-0 z-50 hidden items-center justify-center
             bg-black/40 backdrop-blur-sm p-6">
     <div id="mode-select-panel"
+         role="dialog" aria-modal="true" aria-labelledby="mode-select-heading"
          class="bg-base-100 w-full max-w-sm rounded-[1.25rem]
                 px-5 pt-5 pb-5 shadow-2xl">
 
-        <p class="text-sm font-semibold text-base-content/50 uppercase tracking-wide mb-4">
+        <p id="mode-select-heading" class="text-sm font-semibold text-base-content/50 uppercase tracking-wide mb-4">
             @L["ModeSelectHeading"]
         </p>
 
         <div class="flex flex-col gap-3">
 
             @* AI chat option *@
-            <button type="button" data-action="show-ai-form"
-                    class="flex items-center gap-4 p-4 rounded-box border-2 border-primary/20
-                           bg-primary/5 hover:border-primary/40 active:scale-[0.98] transition-all text-left w-full cursor-pointer">
+            <button type="button" data-action="show-ai-form" class="btn-mode-option">
                 <div class="w-10 h-10 rounded-field bg-primary/15 flex items-center justify-center flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -44,9 +43,7 @@
             </button>
 
             @* Classic form option *@
-            <button type="button" data-action="show-manual-form"
-                    class="flex items-center gap-4 p-4 rounded-box border-2 border-base-300
-                           hover:border-primary/30 bg-base-100 active:scale-[0.98] transition-all text-left w-full cursor-pointer">
+            <button type="button" data-action="show-manual-form" class="btn-mode-option-ghost">
                 <div class="w-10 h-10 rounded-field bg-base-200 flex items-center justify-center flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-base-content/50"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -66,15 +63,15 @@
 </div>
 
 <div id="ideation-page"
-     class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-[calc(100dvh-64px)] page-enter"
+     class="max-w-2xl mx-auto px-6 pt-10 pb-10 min-h-content page-enter"
      data-category-id="@Model.CategoryId"
      data-category-name="@Model.Category.Name"
      data-category-description="@Model.Category.Description">
 
     @* Top bar — back left, MyIdeas + exit right *@
-    <div class="w-full flex items-center justify-between gap-4 mb-6">
+    <nav class="w-full flex items-center justify-between gap-4 mb-6">
         <a asp-controller="Category" asp-action="CategoryList" asp-route-projectId="@Model.ProjectId"
-           class="inline-flex items-center gap-1.5 text-sm font-medium text-base-content/70 hover:text-primary transition-colors">
+           class="btn-back">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
@@ -84,12 +81,12 @@
         <div class="flex items-center gap-2">
             <a asp-controller="Ideation" asp-action="MyIdeas"
                asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.Category.CategoryId"
-               class="px-3 h-9 rounded-full inline-flex items-center text-xs font-semibold border border-base-300 text-base-content/80 hover:border-primary hover:text-primary transition-colors">
+               class="nav-link-pill">
                 @L["MyIdeasNavLabel"]
             </a>
             <button type="button" data-action="show-thank-you"
                aria-label="@L["CloseNavLabel"]"
-               class="w-9 h-9 rounded-full flex items-center justify-center text-base-content/65 hover:text-error hover:bg-error/10 transition-colors cursor-pointer bg-transparent border-0">
+               class="btn-exit">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                      stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -97,7 +94,7 @@
                 </svg>
             </button>
         </div>
-    </div>
+    </nav>
 
     @* Page header *@
     <div class="w-full mb-8">
@@ -133,10 +130,8 @@
                 <label class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2 block">
                     @L["YourIdeaLabel"]
                 </label>
-                <textarea id="idea-description-input" name="description" required maxlength="1000" rows="4" class="w-full px-4 py-3 border border-base-300 rounded-field bg-base-100
-                text-base-content text-sm placeholder:text-base-content/40
-                focus:border-primary focus:outline-none resize-none transition-colors"
-                          placeholder="@L["IdeaPlaceholder"]"></textarea>
+                <textarea id="idea-description-input" name="description" required maxlength="1000" rows="4"
+                          class="input-field" placeholder="@L["IdeaPlaceholder"]"></textarea>
                 <div class="mt-2 flex justify-end">
                     <partial name="_MicButton"
                              model='new MicButtonModel(TargetSelector: "#idea-description-input", SizeClass: "w-9 h-9")' />
@@ -147,10 +142,10 @@
             {
                 <div class="mb-4">
                     <label class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2 block">@L["SubmissionLanguageLabel"]</label>
-                    <select name="languageCode" class="w-full px-4 py-2.5 border border-base-300 rounded-field bg-base-100 text-base-content text-sm focus:border-primary focus:outline-none transition-colors">
+                    <select name="languageCode" class="select-field">
                         @foreach (var languageCode in Model.SupportedLanguageCodes)
                         {
-                            var displayName = languageCode switch { "nl" => "Nederlands", "en" => "English", _ => languageCode }; 
+                            var displayName = LanguageHelpers.DisplayName(languageCode);
                             <option value="@languageCode" selected="@(languageCode == Model.ParticipantLanguageCode)">@displayName</option>
                         }
                     </select>
@@ -251,22 +246,25 @@
         </div>
     }
 
-    @* AI disclaimer *@
-    <p class="text-xs text-base-content/40 italic mb-3">
-        @L["AiDisclaimer"]
-    </p>
+    @if (Model.Ideas.Any())
+    {
+        <p class="text-xs text-base-content/40 italic mb-3">
+            @L["AiDisclaimer"]
+        </p>
+    }
 
     @* Ideas list *@
-    <div id="ideas-list" class="w-full flex flex-col gap-3 mb-4"
+    <ul id="ideas-list" class="w-full flex flex-col gap-3 mb-4"
          data-project-id="@Model.ProjectId"
          data-category-id="@Model.CategoryId"
          data-sort="@Model.CurrentSort"
          data-replace="@Model.ExtraIdeasReplaceExisting.ToString().ToLower()"
          data-max-extra="@Model.MaxExtraIdeaRequests"
-         data-current-page="@(Model.MaxExtraIdeaRequests - Model.RemainingExtraRequests + 1)">
+         data-current-page="@(Model.MaxExtraIdeaRequests - Model.RemainingExtraRequests + 1)"
+         data-empty-label="@L["EmptyState"]">
         @if (!Model.Ideas.Any())
         {
-            <div class="text-center py-16 flex flex-col items-center gap-3">
+            <li class="text-center py-16 flex flex-col items-center gap-3">
                 <div class="w-14 h-14 rounded-field bg-primary/10 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary/70" fill="none"
                          viewBox="0 0 24 24"
@@ -276,16 +274,14 @@
                     </svg>
                 </div>
                 <p class="text-base-content/70 text-sm font-medium">@L["EmptyState"]</p>
-            </div>
+            </li>
         }
         else
         {
             @foreach (var idea in Model.Ideas)
             {
-                <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
-                   asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
-                   class="block relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99]
-                    @(idea.IsFlagged ? "bg-warning/5 border-warning/30 hover:border-warning/50" : idea.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20 hover:border-primary/40" : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
+                <li class="group relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] cursor-pointer
+                     @(idea.IsFlagged ? "bg-warning/5 border-warning/30 hover:border-warning/50" : idea.IsOwnedByCurrentUser ? "bg-primary/5 border-primary/20 hover:border-primary/40" : "bg-base-100 border-base-300 hover:border-primary/30 hover:shadow-sm")">
 
                     @* Comment count badge *@
                     <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300
@@ -323,7 +319,7 @@
                     }
 
                     @* Copy idea button *@
-                    <div class="mt-3">
+                    <div class="mt-3 relative z-[2]">
                         <button type="button" data-action="copy-idea"
                                 data-idea-description="@idea.Description"
                                 class="inline-flex items-center gap-1.5 text-xs text-base-content/50 hover:text-primary transition-colors cursor-pointer">
@@ -335,7 +331,7 @@
                     </div>
 
                     @* Emoji reactions *@
-                    <div class="flex gap-2 mt-4 items-center flex-wrap" data-emoji-container
+                    <div class="flex gap-2 mt-4 items-center flex-wrap relative z-[2]" data-emoji-container
                          data-project-id="@Model.ProjectId"
                          data-category-id="@Model.Category.CategoryId" data-idea-id="@idea.IdeaId"
                          data-return-page="IdeaHub"
@@ -365,7 +361,9 @@
 
                         @if (Model.Emojis.Any())
                         {
-                            <button type="button" data-action="toggle-emoji-picker" data-target="picker-@idea.IdeaId" class="w-7 h-7 rounded-full border border-dashed border-base-300
+                            <button type="button" data-action="toggle-emoji-picker" data-target="picker-@idea.IdeaId"
+                                    aria-label="@L["AddEmojiAriaLabel"]"
+                                    class="w-7 h-7 rounded-full border border-dashed border-base-300
                             flex items-center justify-center text-base-content/40
                             hover:border-primary hover:text-primary transition-colors cursor-pointer">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
@@ -379,7 +377,7 @@
                     @if (Model.Emojis.Any())
                     {
                         @* Emoji picker *@
-                        <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-base-200 rounded-field border border-base-300">
+                        <div id="picker-@idea.IdeaId" class="hidden mt-3 p-3 bg-base-200 rounded-field border border-base-300 relative z-[2]">
                             <form asp-action="AddIconComment" method="post" data-emoji-form data-idea-id="@idea.IdeaId">
                                 <input type="hidden" name="projectId" value="@Model.ProjectId"/>
                                 <input type="hidden" name="categoryId" value="@Model.Category.CategoryId"/>
@@ -398,10 +396,14 @@
                         </div>
                     }
 
-                </a>
+                    <a asp-controller="Ideation" asp-action="Detail" asp-route-projectId="@Model.ProjectId"
+                       asp-route-categoryId="@Model.Category.CategoryId" asp-route-ideaId="@idea.IdeaId"
+                       class="absolute inset-0 rounded-field z-[1] focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                       aria-label="@idea.Description"></a>
+                </li>
             }
         }
-    </div>
+    </ul>
 
     @* Refresh ideas button *@
     @if (Model.MaxExtraIdeaRequests > 0 && Model.Ideas.Any())
@@ -409,7 +411,10 @@
         <button id="refresh-ideas-btn" type="button" data-action="refresh-ideas"
                 class="w-full btn btn-outline btn-sm rounded-field font-heading font-semibold text-sm py-3 h-auto gap-2 mb-4 cursor-pointer @(Model.RemainingExtraRequests <= 0 ? "btn-disabled" : "")"
                 @(Model.RemainingExtraRequests <= 0 ? "disabled" : "")>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+            <svg id="refresh-ideas-spinner" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <svg id="refresh-ideas-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>

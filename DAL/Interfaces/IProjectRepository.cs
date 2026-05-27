@@ -29,4 +29,6 @@ public interface IProjectRepository : IRepository<Project>
     Task<Project> ReadByIdWithTranslationsAndLanguagesForUpdateAsync(int projectId);
 
     Task<ProjectTranslation> ReadTranslationForUpdateAsync(int projectId, string languageCode);
+
+    Task<Project> ReadByIdForActivationReadOnlyAsync(int projectId);
 }

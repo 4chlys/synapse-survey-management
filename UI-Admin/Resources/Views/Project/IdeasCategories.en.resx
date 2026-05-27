@@ -19,4 +19,5 @@
   <data name="NoCategories" xml:space="preserve"><value>No categories have been set up yet.</value></data>
   <data name="AddCategoriesLink" xml:space="preserve"><value>Set up categories</value></data>
   <data name="IdeasLabel" xml:space="preserve"><value>ideas</value></data>
+  <data name="EmailBroadcast_TriggerButton" xml:space="preserve"><value>Send to all participants</value></data>
 </root>

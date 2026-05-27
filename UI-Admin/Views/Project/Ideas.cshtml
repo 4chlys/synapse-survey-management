@@ -8,7 +8,7 @@
 <div class="w-full">
 
     <!-- Breadcrumb back link -->
-    <div class="mb-4">
+    <nav aria-label="breadcrumb" class="mb-4">
         <a asp-action="IdeasCategories" asp-route-projectId="@Model.ProjectId"
            class="inline-flex items-center gap-1.5 text-sm text-base-content/50 hover:text-base-content transition-colors">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -16,7 +16,7 @@
             </svg>
             @L["BackToCategories"]
         </a>
-    </div>
+    </nav>
 
     <!-- Header + summary badges -->
     <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
@@ -30,17 +30,23 @@
                  data-export-url="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId })"
                  data-failed-message="@L["ExportFailedAlert"].Value"
                  data-text-format-description="@L["ExportFormat_TextDescription"].Value">
-                <button type="button" class="btn btn-primary btn-sm gap-1.5" data-export-trigger>
+                <button type="button" class="btn-action" data-export-trigger>
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
                     </svg>
                     @L["ExportEmailsButton"]
                 </button>
-                <button id="summary-trigger-btn" data-open-modal="summary-modal" type="button" class="btn btn-secondary btn-sm gap-1.5">
+                <button id="summary-trigger-btn" data-open-modal="summary-modal" type="button" class="btn-action-secondary">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
                     </svg>
                     @L["AiSummaryButton"]
+                </button>
+                <button type="button" data-broadcast-trigger class="btn btn-accent btn-sm gap-1.5">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M3 8l9 6 9-6M3 8v10a2 2 0 002 2h14a2 2 0 002-2V8M3 8l9-5 9 5"/>
+                    </svg>
+                    @L["EmailBroadcast_TriggerButton"]
                 </button>
                 <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-44 p-2 shadow hidden" data-export-fallback>
                     <li><a href="@Url.Action("ExportParticipantEmails", new { projectId = Model.ProjectId, format = "csv" })">CSV (.csv)</a></li>
@@ -102,11 +108,11 @@
             else { <option value="Declined">@L["Status_Declined"]</option> }
         </select>
 
-        <button type="submit" class="btn btn-primary btn-sm">@L["SearchButton"]</button>
+        <button type="submit" class="btn-save">@L["SearchButton"]</button>
         @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Status))
         {
             <a asp-action="Ideas" asp-route-projectId="@Model.ProjectId" asp-route-categoryId="@Model.CategoryId"
-               class="btn btn-ghost btn-sm" data-clear-filter>@L["ClearButton"]</a>
+               class="btn-cancel" data-clear-filter>@L["ClearButton"]</a>
         }
     </form>
 
@@ -117,3 +123,6 @@
 </div>
 
 @await Html.PartialAsync("_IdeaSummaryPanel", Model)
+@await Html.PartialAsync("_EmailComposeModal", Model)
+@await Html.PartialAsync("_EmailBroadcastModal", new SynapseEnqueteManagement.UI.Admin.Models.Project.EmailBroadcastModalModel(
+    Model.ProjectId, Model.SupportedLanguageCodes.ToList(), Model.DefaultLanguageCode))

@@ -12,9 +12,9 @@ public record DashboardViewModel
     public string SurveyUrl { get; init; }
     public ICollection<CategoryMetricViewModel> TopCategories { get; init; } = new List<CategoryMetricViewModel>();
     public ICollection<IdeaMetricViewModel> TopIdeas { get; init; } = new List<IdeaMetricViewModel>();
-    public string[] WidgetLayout { get; init; } = WidgetPreferenceService.DefaultLayout;
+    public string[] WidgetLayout { get; init; } = WidgetSlotValidator.DefaultLayout;
     public WidgetSlot[] WidgetSlots { get; init; } = Array.ConvertAll(
-        WidgetPreferenceService.DefaultLayout, t => new WidgetSlot(t, null));
+        WidgetSlotValidator.DefaultLayout, t => new WidgetSlot(t, null));
     public string ApiBaseUrl { get; init; } = string.Empty;
 }
 

@@ -10,6 +10,7 @@ public class ProjectManagerTests
     private readonly Mock<IProjectRepository> _projectRepository = new(MockBehavior.Strict);
     private readonly Mock<IEmojiManager> _emojiManager = new(MockBehavior.Strict);
     private readonly Mock<IProjectTranslationValidator> _translationValidator = new(MockBehavior.Strict);
+    private readonly Mock<IProjectActivationValidator> _activationValidator = new(MockBehavior.Strict);
     private readonly Mock<IShortFormService> _shortFormService = new(MockBehavior.Strict);
     private readonly Mock<IProjectDuplicationService> _duplicationService = new(MockBehavior.Strict);
     private readonly Mock<IUnitOfWork> _uow = new(MockBehavior.Strict);
@@ -27,6 +28,7 @@ public class ProjectManagerTests
             _projectRepository.Object,
             _emojiManager.Object,
             _translationValidator.Object,
+            _activationValidator.Object,
             _shortFormService.Object,
             _duplicationService.Object,
             _uow.Object);
@@ -59,6 +61,12 @@ public class ProjectManagerTests
                     throw new LocalizedValidationException("Validation.Language.UnknownCodes", string.Join(", ", missing));
                 return (IReadOnlyDictionary<string, Language>)byCode;
             });
+
+        // CreateProjectAsync enables all emojis by default; return an empty list so that
+        // existing tests stay focused on their own assertions without needing emoji data.
+        _emojiManager
+            .Setup(m => m.GetAllForUpdateAsync())
+            .ReturnsAsync(new List<Emoji>());
     }
 
     private static IEnumerable<ProjectTranslationInput> Translations(params (string code, string name)[] entries) =>
@@ -445,6 +453,11 @@ public class ProjectManagerTests
             ShortForm = "source",
             DefaultLanguage = LanguageNl,
             SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Source NL", Topic = "Topic NL" },
+                new() { Language = LanguageEn, Name = "Source EN", Topic = "Topic EN" },
+            },
         };
         var built = new Project { ShortForm = "new-project" };
 
@@ -470,6 +483,62 @@ public class ProjectManagerTests
         _duplicationService.VerifyAll();
         _projectRepository.Verify(r => r.CreateAsync(built), Times.Once);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DuplicateProjectAsync_OnlyDefaultLanguageOverridden_ClonesOtherLanguagesFromSource()
+    {
+        // Regression: the copy dialog supplies a rename for the default language only. The manager
+        // must clone the source's translation for every other supported language, otherwise the
+        // validator rejects the copy with AllSupportedLanguagesNeedTranslation (multi-language
+        // projects could no longer be copied).
+        const int srcId = 10;
+        const int platformId = 5;
+
+        var source = new Project
+        {
+            ProjectId = srcId,
+            ProjectPlatformId = platformId,
+            ShortForm = "source",
+            DefaultLanguage = LanguageNl,
+            SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Source NL", Topic = "Topic NL" },
+                new() { Language = LanguageEn, Name = "Source EN", Topic = "Topic EN" },
+            },
+        };
+        var built = new Project { ShortForm = "new-project" };
+
+        IReadOnlyList<ProjectTranslationInput> captured = null;
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
+        _shortFormService.Setup(s => s.ResolveAsync(null, "Renamed NL", null)).ReturnsAsync("new-project");
+        _duplicationService
+            .Setup(s => s.BuildCloneAsync(
+                source,
+                It.IsAny<IReadOnlyList<ProjectTranslationInput>>(),
+                It.IsAny<IReadOnlyDictionary<string, Language>>(),
+                "new-project",
+                platformId))
+            .Callback((Project _, IReadOnlyList<ProjectTranslationInput> t, IReadOnlyDictionary<string, Language> _, string _, int _) => captured = t)
+            .ReturnsAsync(built);
+        _projectRepository.Setup(r => r.CreateAsync(built)).ReturnsAsync(built);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Only the default-language (nl) name is supplied with no topic — exactly what the copy dialog sends.
+        var overrides = new[] { new ProjectTranslationInput("nl", "Renamed NL", "") };
+        await _manager.DuplicateProjectAsync(srcId, overrides, platformId);
+
+        Assert.NotNull(captured);
+        Assert.Equal(2, captured.Count);
+
+        var nl = captured.Single(t => t.LanguageCode == "nl");
+        Assert.Equal("Renamed NL", nl.Name);        // override applied
+        Assert.Equal("Topic NL", nl.Topic);         // source topic preserved
+
+        var en = captured.Single(t => t.LanguageCode == "en");
+        Assert.Equal("Source EN", en.Name);         // cloned from source
+        Assert.Equal("Topic EN", en.Topic);
     }
 
     [Fact]
@@ -560,6 +629,7 @@ public class ProjectManagerTests
         var project = new Project { ProjectId = ProjectId, Emojis = new List<Emoji> { emoji } };
         _projectRepository.Setup(r => r.ReadByIdWithEmojisForUpdateAsync(ProjectId))
             .ReturnsAsync(project);
+        _projectRepository.Setup(r => r.Update(project));
         _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1)
             .Verifiable(Times.Exactly(1));
@@ -603,6 +673,89 @@ public class ProjectManagerTests
         Assert.False(result);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _projectRepository.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
+    }
+
+    #endregion
+
+    #region UpdateProjectStateAsync
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_ActivateWithProblems_ThrowsAndDoesNotSave()
+    {
+        // Arrange — activation graph loads, validator reports an incomplete translation
+        var graph = new Project { ProjectId = ProjectId };
+        var problems = new List<ActivationProblem> { new("ProjectTranslation", null, "en") };
+        _projectRepository.Setup(r => r.ReadByIdForActivationReadOnlyAsync(ProjectId))
+            .ReturnsAsync(graph);
+        _activationValidator.Setup(v => v.Validate(graph)).Returns(problems);
+
+        // Act
+        var ex = await Assert.ThrowsAsync<ProjectActivationException>(
+            () => _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Active));
+
+        // Assert — the blocking problems travel on the exception; nothing is persisted
+        Assert.Equal(problems, ex.Problems);
+        _projectRepository.Verify(r => r.ReadByIdForUpdateAsync(It.IsAny<int>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_ActivateWhenComplete_SetsActiveAndSaves()
+    {
+        // Arrange — validator returns no problems, so the transition proceeds
+        var graph = new Project { ProjectId = ProjectId };
+        var tracked = new Project { ProjectId = ProjectId, ProjectState = ProjectState.Draft };
+        _projectRepository.Setup(r => r.ReadByIdForActivationReadOnlyAsync(ProjectId))
+            .ReturnsAsync(graph);
+        _activationValidator.Setup(v => v.Validate(graph))
+            .Returns(new List<ActivationProblem>());
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId))
+            .ReturnsAsync(tracked);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Verifiable(Times.Exactly(1));
+
+        // Act
+        var result = await _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Active);
+
+        // Assert
+        Assert.Same(tracked, result);
+        Assert.Equal(ProjectState.Active, tracked.ProjectState);
+        _uow.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_NonActiveTransition_SkipsValidationAndSaves()
+    {
+        // Arrange — archiving must not run the activation gate at all
+        var tracked = new Project { ProjectId = ProjectId, ProjectState = ProjectState.Active };
+        _projectRepository.Setup(r => r.ReadByIdForUpdateAsync(ProjectId))
+            .ReturnsAsync(tracked);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Archived);
+
+        // Assert — validator and activation-graph read are never touched (strict mocks)
+        Assert.Equal(ProjectState.Archived, result.ProjectState);
+        _activationValidator.Verify(v => v.Validate(It.IsAny<Project>()), Times.Never);
+        _projectRepository.Verify(r => r.ReadByIdForActivationReadOnlyAsync(It.IsAny<int>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProjectStateAsync_ActivateProjectNotFound_ThrowsWithoutValidating()
+    {
+        // Arrange — activation graph missing
+        _projectRepository.Setup(r => r.ReadByIdForActivationReadOnlyAsync(ProjectId))
+            .ReturnsAsync((Project)null);
+
+        // Act + Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _manager.UpdateProjectStateAsync(ProjectId, ProjectState.Active));
+        _activationValidator.Verify(v => v.Validate(It.IsAny<Project>()), Times.Never);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion

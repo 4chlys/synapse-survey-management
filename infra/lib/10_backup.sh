@@ -1,5 +1,4 @@
 #!/bin/bash
-# Database backup en restore via Cloud SQL export/import naar GCS
 
 BACKUP_BUCKET="${PROJECT_ID}-db-backups"
 SQL_INSTANCE="mvp-postgres-${ENV}"

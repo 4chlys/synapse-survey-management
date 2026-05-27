@@ -23,7 +23,6 @@ export ENV
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/../deploy/config.${ENV}.env"
 
-# Config laden voor PROJECT_ID, REGION, ZONE
 if [[ -f "${CONFIG_FILE}" ]]; then
   # shellcheck source=/dev/null
   source "${CONFIG_FILE}"
@@ -38,7 +37,6 @@ export PROJECT_ID REGION ZONE
 GCS_BUCKET="${GCS_BUCKET:-${PROJECT_ID}-assets-${ENV}}"
 export GCS_BUCKET
 
-# Lib laden
 source "${SCRIPT_DIR}/lib/01_apis_iam.sh"
 source "${SCRIPT_DIR}/lib/02_secrets.sh"
 source "${SCRIPT_DIR}/lib/03_vpc.sh"
@@ -60,13 +58,12 @@ read -r -p "Typ 'ja' om te bevestigen: " confirm
 
 echo ""
 
-# 1. Cloud Armor en Load Balancer eerst
+# LB must be torn down before backends to avoid dangling forwarding rules.
 destroy_cloud_armor
 destroy_alert_policy
 destroy_uptime_checks
 destroy_loadbalancer
 
-# 2. Omgeving-specifieke resources parallel verwijderen
 ( destroy_migs && destroy_instance_templates ) &
 PID_MIGS=$!
 
@@ -81,7 +78,7 @@ PID_SECRETS=$!
 
 wait $PID_MIGS $PID_SQL $PID_BUCKET $PID_SECRETS
 
-# VPC en firewall worden NIET verwijderd — die zijn project-breed en gedeeld
+# VPC and firewall rules are project-wide; removing them would break other environments.
 # destroy_firewall_rules && destroy_vpc_peering
 
 echo ""

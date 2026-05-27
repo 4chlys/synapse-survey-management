@@ -1,6 +1,7 @@
 using SynapseEnqueteManagement.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Stats;
 
 namespace SynapseEnqueteManagement.DAL.Implementation;
 
@@ -42,6 +43,18 @@ public class ParticipantRepository(DbContext context) : Repository<Participant>(
             .Select(p => p.Email)
             .Distinct()
             .OrderBy(e => e)
+            .ToListAsync();
+
+    public Task<List<ParticipantEmailWithLanguage>> ReadEmailsWithLanguageByProjectIdReadOnlyAsync(int projectId)
+        => Context.Set<Participant>()
+            .AsNoTracking()
+            .Where(p => EF.Property<int>(p, "ProjectId") == projectId
+                        && p.Email != null
+                        && p.Email != "")
+            // Distinct on (Email, LanguageCode) — same email under two
+            // languages stays as two rows so each group gets its own copy.
+            .Select(p => new ParticipantEmailWithLanguage(p.Email, p.Language != null ? p.Language.Code : null))
+            .Distinct()
             .ToListAsync();
 
     public async Task<IReadOnlyList<ProjectParticipantStats>> ReadStatsByProjectsReadOnlyAsync(IEnumerable<int> projectIds)

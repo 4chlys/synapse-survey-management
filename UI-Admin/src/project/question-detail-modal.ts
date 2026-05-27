@@ -5,18 +5,7 @@ import { renderInto as renderBar } from '../widgets/widget-question-multi-bar';
 import type { MultipleChoiceStats } from '../widgets/widget-question-multi-bar';
 import { renderInto as renderLikert } from '../widgets/widget-question-likert-bar';
 import type { LikertStats } from '../widgets/widget-question-likert-bar';
-
-interface ModalStrings {
-    loadFailed: string;
-    responsesUnit: string;
-    xAxisLabel: string;
-}
-
-interface OpenAnswerPage {
-    questionId: number;
-    totalAnswers: number;
-    answers: { value: string; createdAt: string }[];
-}
+import type { ModalStrings, OpenAnswerPage } from '../lib/project-types';
 
 let activeChart: Chart | null = null;
 
@@ -248,4 +237,3 @@ function appendAnswerCard(list: HTMLElement, answer: { value: string; createdAt:
     list.appendChild(card);
 }
 
-document.addEventListener('DOMContentLoaded', init);

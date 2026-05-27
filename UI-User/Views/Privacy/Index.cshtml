@@ -4,7 +4,7 @@
     ViewData["Title"] = L["PageTitle"].Value;
 }
 
-<div class="min-h-[calc(100dvh-64px)] px-6 py-12 page-enter">
+<div class="min-h-content px-6 py-12 page-enter">
     <div class="w-full max-w-3xl mx-auto prose prose-sm text-base-content">
         <h1 class="font-heading text-2xl font-semibold">@L["PageTitle"]</h1>
 
@@ -26,7 +26,11 @@
         <p>@L["ContactBody"]</p>
     </div>
 
-    <a asp-controller="LandingPage" asp-action="Index" asp-route-projectId="@ViewData["ProjectId"]"
+    @{
+        var returnUrl = ViewData["PrivacyReturnUrl"] as string
+            ?? Url.Action("Index", "LandingPage", new { projectId = ViewData["ProjectId"] });
+    }
+    <a href="@returnUrl"
        class="fixed bottom-6 left-6 btn btn-sm btn-ghost gap-1 text-base-content/60 hover:text-base-content z-50">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M19 12H5M12 19l-7-7 7-7"/>

@@ -18,6 +18,12 @@ public record IdeasViewModel
     public bool RequestContactInfo { get; init; }
     public int PlatformId { get; init; }
     public int IdeaSummaryMaxIdeas { get; init; }
+
+    // Used by the broadcast modal to render one Subject+Body section per
+    // language the survey supports. DefaultLanguageCode is the fallback when
+    // a participant's Language doesn't appear in SupportedLanguageCodes.
+    public string DefaultLanguageCode { get; init; }
+    public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
     public ICollection<IdeaRowViewModel> Ideas { get; init; } = new List<IdeaRowViewModel>();
     public ICollection<CategoryOptionViewModel> Categories { get; init; } = new List<CategoryOptionViewModel>();
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);

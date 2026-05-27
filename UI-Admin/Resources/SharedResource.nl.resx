@@ -15,6 +15,7 @@
   <data name="Nav_Projects" xml:space="preserve"><value>Projecten</value></data>
   <data name="Nav_Platform" xml:space="preserve"><value>Platform</value></data>
   <data name="Nav_Admins" xml:space="preserve"><value>Beheerders</value></data>
+  <data name="Nav_EmailQueue" xml:space="preserve"><value>E-mailwachtrij</value></data>
   <data name="Nav_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Nav_Ideas" xml:space="preserve"><value>Ideeën</value></data>
   <data name="Nav_Categories" xml:space="preserve"><value>Categorieën</value></data>
@@ -82,6 +83,7 @@
   <data name="Platform_AdminAdded" xml:space="preserve"><value>Beheerder toegevoegd.</value></data>
   <data name="Platform_AdminRemoved" xml:space="preserve"><value>Beheerder verwijderd.</value></data>
   <data name="Platform_LastAdminBlocked" xml:space="preserve"><value>Je kan de laatste beheerder van een platform niet verwijderen.</value></data>
+  <data name="Platform_SelfRemoveBlocked" xml:space="preserve"><value>Je kan jezelf niet als beheerder verwijderen.</value></data>
   <data name="Platform_BasicInfoSaved" xml:space="preserve"><value>Basisinformatie opgeslagen.</value></data>
   <data name="Platform_SettingsSaved" xml:space="preserve"><value>Instellingen opgeslagen.</value></data>
   <data name="Platform_AiSettingsSaved" xml:space="preserve"><value>AI-instellingen opgeslagen.</value></data>
@@ -91,6 +93,7 @@
   <data name="Settings_InvalidModel" xml:space="preserve"><value>Ongeldig model geselecteerd.</value></data>
   <data name="Settings_AiModelSaved" xml:space="preserve"><value>AI-model opgeslagen.</value></data>
   <data name="Settings_InvalidPromptType" xml:space="preserve"><value>Ongeldig prompt-type.</value></data>
+  <data name="Settings_PromptEmpty" xml:space="preserve"><value>Systeemprompt mag niet leeg zijn.</value></data>
   <data name="Settings_PromptTooLong" xml:space="preserve"><value>Systeemprompt mag maximaal {0} tekens bevatten.</value></data>
   <data name="Settings_PromptSaved" xml:space="preserve"><value>Systeemprompt opgeslagen.</value></data>
   <data name="Settings_PromptReset" xml:space="preserve"><value>Systeemprompt hersteld naar standaard.</value></data>
@@ -133,4 +136,25 @@ Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
 {2}</value></data>
 
   <data name="Common_ProgressSaved" xml:space="preserve"><value>Opgeslagen.</value></data>
+
+  <data name="Activation_NoCategory" xml:space="preserve"><value>Minimaal één categorie is vereist</value></data>
+  <data name="Activation_ProjectTranslation" xml:space="preserve"><value>Projectnaam ontbreekt voor taal: {0}</value></data>
+  <data name="Activation_IntroductionTranslation" xml:space="preserve"><value>Introductie ontbreekt voor taal: {0}</value></data>
+  <data name="Activation_SectionTranslation" xml:space="preserve"><value>Sectie #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+  <data name="Activation_QuestionTranslation" xml:space="preserve"><value>Vraag #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+  <data name="Activation_CategoryTranslation" xml:space="preserve"><value>Categorie #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+  <data name="Activation_EndingAnswerTranslation" xml:space="preserve"><value>Eindsantwoord #{0}: vertaling ontbreekt voor taal: {1}</value></data>
+
+  <data name="EmailBroadcast_NoMessages" xml:space="preserve"><value>Vul minstens één Onderwerp en Bericht in voordat je verzendt.</value></data>
+
+  <data name="Upload_NoFileProvided" xml:space="preserve"><value>Geen bestand ontvangen.</value></data>
+  <data name="Upload_InvalidMediaType" xml:space="preserve"><value>Ongeldig mediatype.</value></data>
+  <data name="Upload_FileTypeForbidden" xml:space="preserve"><value>Bestandstype '{0}' is niet toegestaan voor {1}.</value></data>
+  <data name="Upload_FileSizeExceeded" xml:space="preserve"><value>Bestand overschrijdt de limiet van {0} MB voor {1}.</value></data>
+
+  <data name="Project_IsLocked" xml:space="preserve"><value>Project is vergrendeld.</value></data>
+  <data name="Project_SummaryGenerationFailed" xml:space="preserve"><value>Samenvatting starten mislukt.</value></data>
+
+  <data name="Email_ParticipantEmailRequired" xml:space="preserve"><value>E-mailadres van deelnemer is verplicht.</value></data>
+  <data name="Email_SubjectBodyRequired" xml:space="preserve"><value>Onderwerp en bericht zijn verplicht.</value></data>
 </root>

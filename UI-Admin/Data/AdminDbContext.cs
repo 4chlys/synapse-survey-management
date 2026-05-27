@@ -1,13 +1,11 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 
 namespace SynapseEnqueteManagement.UI.Admin.Data;
 
 public class AdminDbContext(DbContextOptions<AdminDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
-    public DbSet<ProjectPlatform> ProjectPlatforms { get; set; }
     public DbSet<UserWidgetPreference> UserWidgetPreferences { get; set; }
     public DbSet<PlatformSettings> PlatformSettings { get; set; }
     public DbSet<SystemAiSettings> SystemAiSettings { get; set; }
@@ -16,21 +14,16 @@ public class AdminDbContext(DbContextOptions<AdminDbContext> options)
     {
         base.OnModelCreating(builder);
 
-        // ProjectPlatforms table is owned by SynapseEnqueteContext.
-        // AdminDbContext can read/write it but must not create or modify it in migrations.
-        builder.Entity<ProjectPlatform>(e =>
-        {
-            e.ToTable("ProjectPlatforms", t => t.ExcludeFromMigrations());
-        });
-
-        // ApplicationUser → ProjectPlatform FK (no navigation on ProjectPlatform side)
+        // ApplicationUser.ProjectPlatformId is a plain scalar FK to the API-owned
+        // ProjectPlatforms table. AdminDbContext does NOT map ProjectPlatforms — it is
+        // owned by SynapseEnqueteContext (API side). The FK column is declared here by
+        // name so EF knows the column exists; no typed relationship to ProjectPlatform
+        // is configured because that would require referencing the Domain entity, which
+        // UI-Admin must not do. Referential integrity is enforced by application logic
+        // (platform-delete endpoints, if added, must null out admin users' FK first).
         builder.Entity<ApplicationUser>(e =>
         {
-            e.HasOne(u => u.ProjectPlatform)
-                .WithMany()
-                .HasForeignKey(u => u.ProjectPlatformId)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
+            e.Property(u => u.ProjectPlatformId).HasColumnName("ProjectPlatformId");
         });
 
         builder.Entity<UserWidgetPreference>(e =>

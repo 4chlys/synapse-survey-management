@@ -1,35 +1,4 @@
-// Shared CSRF utility
-export function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>(
-        'meta[name="__RequestVerificationToken"]'
-    )?.content ?? '';
-}
-
-// Shared fetch with 30s timeout
-const FETCH_TIMEOUT_MS = 30_000;
-
-export async function fetchWithTimeout(
-    url: string,
-    options: RequestInit,
-): Promise<Response> {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-        return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-        clearTimeout(id);
-    }
-}
-
-// Shared text utilities
-export function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g,  '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#39;');
-}
+import { escapeHtml } from '../lib/utils';
 
 export function renderMarkdown(text: string): string {
     let safe = escapeHtml(text);
@@ -40,7 +9,6 @@ export function renderMarkdown(text: string): string {
     return safe;
 }
 
-// Shared auto-grow textarea setup
 export function setupAutoGrow(textarea: HTMLTextAreaElement): void {
     textarea.addEventListener('input', () => {
         textarea.style.height = 'auto';
@@ -48,13 +16,11 @@ export function setupAutoGrow(textarea: HTMLTextAreaElement): void {
     });
 }
 
-// Shared message type
 export interface AiSupportMessage {
     role: 'user' | 'assistant';
     content: string;
 }
 
-// Abstract-style base session class
 export abstract class AiSupportSessionBase {
     protected readonly _history: AiSupportMessage[] = [];
     protected _abortController: AbortController | null = null;

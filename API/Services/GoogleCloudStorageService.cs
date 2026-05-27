@@ -1,12 +1,16 @@
 using Google;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SynapseEnqueteManagement.API.Options;
 
 namespace SynapseEnqueteManagement.API.Services;
 
-public class GoogleCloudStorageService(ILogger<GoogleCloudStorageService> logger) : IStorageService
+public class GoogleCloudStorageService(
+    ILogger<GoogleCloudStorageService> logger,
+    IOptions<StorageOptions> storageOptions) : IStorageService
 {
-    private readonly string _bucketName = Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod";
+    private readonly string _bucketName = storageOptions.Value.BucketName;
 
     public async Task<string> UploadAsync(IFormFile file, string folder)
     {
@@ -51,6 +55,11 @@ public class GoogleCloudStorageService(ILogger<GoogleCloudStorageService> logger
 
     public async Task DeleteAsync(string url)
     {
+        // Never delete app-bundled seed files: they are shared static content needed to re-seed
+        // the database on restart. Removing the entity's link is fine; the file must stay.
+        if (SeedAsset.IsSeedUrl(url))
+            return;
+
         try
         {
             // GCS URL shape: https://storage.googleapis.com/{bucket}/{objectName}

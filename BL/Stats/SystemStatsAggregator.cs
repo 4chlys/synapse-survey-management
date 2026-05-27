@@ -1,6 +1,7 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
 using SynapseEnqueteManagement.BL.Domain.Project.Enums;
-using SynapseEnqueteManagement.DAL;
+using SynapseEnqueteManagement.BL.Domain.Stats;
+using SynapseEnqueteManagement.BL.Helpers;
 
 namespace SynapseEnqueteManagement.BL.Stats;
 
@@ -15,10 +16,8 @@ public sealed class SystemStatsAggregator : ISystemStatsAggregator
         var projectRows = projects.Select(p =>
         {
             statsById.TryGetValue(p.ProjectId, out var ps);
-            var name = p.Translations
-                .FirstOrDefault(t => t.Language?.Code == p.DefaultLanguage?.Code)?.Name
-                ?? p.Translations.FirstOrDefault()?.Name
-                ?? string.Empty;
+            var name = TranslationPicker.Pick(p.Translations, p.DefaultLanguage?.Code)?.Name
+                       ?? string.Empty;
             return new ProjectStatsRow(
                 ProjectId:               p.ProjectId,
                 ProjectName:             name,

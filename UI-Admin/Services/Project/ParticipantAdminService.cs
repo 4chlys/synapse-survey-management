@@ -2,6 +2,18 @@ namespace SynapseEnqueteManagement.UI.Admin.Services.Project;
 
 public class ParticipantAdminService(HttpClient httpClient)
 {
+    private record EmailWithLanguage(string Email, string LanguageCode);
+
+    // Flat distinct participant-email list, used by the broadcast "open in my
+    // mail program" branch to build a mailto with everyone BCC'd. Reuses the
+    // emails-by-language API endpoint and collapses the language grouping.
+    public async Task<List<string>> GetParticipantEmailsAsync(int projectId)
+    {
+        var rows = await httpClient.GetFromJsonAsync<List<EmailWithLanguage>>(
+            $"api/admin/projects/{projectId}/participants/emails-by-language");
+        return rows?.Select(r => r.Email).Distinct().ToList() ?? new List<string>();
+    }
+
     public async Task<(byte[] Bytes, string ContentType, string FileName)> ExportEmailsAsync(int projectId, string format)
     {
         var url = $"api/admin/projects/{projectId}/participants/emails/export?format={Uri.EscapeDataString(format)}";

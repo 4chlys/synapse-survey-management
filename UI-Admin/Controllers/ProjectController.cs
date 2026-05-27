@@ -17,10 +17,11 @@ using SynapseEnqueteManagement.UI.Admin.Services.Project;
 using SynapseEnqueteManagement.UI.Admin.Services.Question;
 using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 using SynapseEnqueteManagement.UI.Admin.Services.Platform;
+using SynapseEnqueteManagement.UI.Admin.Models.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Section;
 using SynapseEnqueteManagement.UI.Admin.Services.Upload;
 using SynapseEnqueteManagement.UI.Admin.Services.IdeaSummary;
-using SynapseEnqueteManagement.BL.Interfaces;
+using SynapseEnqueteManagement.UI.Admin.Services.Email;
 
 namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
@@ -30,6 +31,7 @@ public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
+    EmojiAdminService emojiService,
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
     UploadAdminService uploadService,
@@ -40,8 +42,13 @@ public class ProjectController(
     ParticipantAdminService participantService,
     IOptions<AdminSettings> adminSettings,
     IStringLocalizer<SharedResource> localizer,
-    IdeaSummaryAdminService ideaSummaryService) : Controller
+    IdeaSummaryAdminService ideaSummaryService,
+    EmailApiService emailApiService,
+    BroadcastService broadcastService) : Controller
 {
+    // Canonical list lives in ProjectTranslationForm (the testable form logic).
+    private static readonly string[] AvailableLanguageCodes = ProjectTranslationForm.AvailableLanguageCodes;
+
     public async Task<IActionResult> Index()
     {
         var user = await userManager.GetUserAsync(User);
@@ -63,21 +70,26 @@ public class ProjectController(
             }
             ViewData["IsNew"]       = true;
             ViewData["HideSidebar"] = true;
-            return View(new CreateProjectViewModel());
+            ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
+            var initialLang = ResolveAdminLanguage();
+            return View(new CreateProjectViewModel
+            {
+                DefaultLanguageCode = initialLang,
+                SupportedLanguageCodes = new List<string> { initialLang },
+                Translations = BuildTranslations(null)
+            });
         }
 
         var project = await projectService.GetProjectByIdAsync(projectId.Value);
         if (project is null)
-            return View(new CreateProjectViewModel());
+            return View(new CreateProjectViewModel { Translations = BuildTranslations(null) });
 
         var sections = await sectionService.GetSectionsAsync(projectId.Value);
         var model = new CreateProjectViewModel
         {
             ProjectId = projectId,
-            Name = project.Name,
             ShortForm = project.ShortForm,
-            Topic = project.Topic,
-            Introduction = project.Introduction,
+            Translations = BuildTranslations(project.Translations),
             ImageUrl = project.ProjectImage,
             InteractionMode = project.FormType,
             MinAge = project.MinAge,
@@ -89,31 +101,38 @@ public class ProjectController(
             Theme = project.Theme,
             PrimaryColor = project.PrimaryColor,
             CustomCss = project.CustomCss,
-            Sections = sections.Select(s => s.Name).ToList()
+            Sections = BuildSections(sections)
         };
         ViewData["Project"] = project;
-        ViewData["ProjectId"]     = projectId.Value;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Settings";
+        SetProjectChrome(projectId.Value, project, "Settings");
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
+        ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
         return View(model);
     }
+
+    private static string ResolveAdminLanguage()
+        => ProjectTranslationForm.ResolveDefaultLanguage(
+            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+
+    private static IList<SectionInputViewModel> BuildSections(IEnumerable<SectionViewModel> existingSections)
+        => ProjectTranslationForm.BuildSections(existingSections);
+
+    private static IList<ProjectTranslationViewModel> BuildTranslations(
+        ICollection<ProjectTranslationViewModel> existing)
+        => ProjectTranslationForm.BuildTranslations(existing);
 
     [HttpPost]
     [EnableRateLimiting("ai-image-generation")]
     public async Task<IActionResult> Create(CreateProjectViewModel model, string submitAction, bool isNew = false)
     {
-        // For "next", Topic and Introduction are also required
-        if (submitAction == "next")
-        {
-            if (string.IsNullOrWhiteSpace(model.Topic))
-                ModelState.AddModelError(nameof(model.Topic), localizer["Project_TopicRequired"]);
-            if (string.IsNullOrWhiteSpace(model.Introduction))
-                ModelState.AddModelError(nameof(model.Introduction), localizer["Project_IntroductionRequired"]);
-        }
+        // Filter to supported languages + validate each, in one testable place.
+        var submission = ProjectTranslationForm.PrepareSubmission(
+            model.Translations, model.SupportedLanguageCodes, requireTopicAndIntro: submitAction == "next");
+        var supportedCodes = submission.SupportedCodes.ToList();
+        var activeTranslations = submission.ActiveTranslations.ToList();
+        foreach (var error in submission.Errors)
+            ModelState.AddModelError(error.FieldKey, localizer[error.ResourceKey]);
 
         if (model.MinAge.HasValue && model.MaxAge.HasValue && model.MinAge > model.MaxAge)
             ModelState.AddModelError(nameof(model.MinAge), localizer["Project_AgeRange"]);
@@ -126,13 +145,14 @@ public class ProjectController(
             {
                 var existingProject = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
                 ViewData["ProjectId"]     = model.ProjectId.Value;
-                ViewData["ProjectName"]   = existingProject?.Name ?? model.Name ?? "";
+                ViewData["ProjectName"]   = existingProject?.Name ?? "";
                 ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
             ViewData["ActiveSection"] = "Settings";
             ViewData["IsNew"]         = wizardActive;
             ViewData["HideSidebar"]   = wizardActive;
+            ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
             return View(model);
         }
 
@@ -145,18 +165,14 @@ public class ProjectController(
             {
                 var lockCheck = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
                 if (IsProjectLocked(lockCheck))
-                {
-                    TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-                    return RedirectToAction(nameof(Create), new { projectId = model.ProjectId.Value });
-                }
+                    return LockedRedirect(nameof(Create), new { projectId = model.ProjectId.Value });
                 project = await projectService.UpdateProjectAsync(
-                    model.ProjectId.Value, model.Name, model.Topic, model.Introduction,
+                    model.ProjectId.Value, activeTranslations, supportedCodes, model.DefaultLanguageCode,
                     model.ImageUrl, model.InteractionMode, model.MinAge, model.MaxAge,
                     model.ContactOptIn, model.ShortForm,
                     lockCheck.IdeaPageSize, lockCheck.ExtraIdeasReplaceExisting, lockCheck.MaxExtraIdeaRequests,
                     model.AllowCrossLanguageIdeas,
-                    model.Theme, model.PrimaryColor, model.CustomCss,
-                    model.DefaultLanguageCode);
+                    model.Theme, model.PrimaryColor, model.CustomCss);
             }
             else
             {
@@ -166,7 +182,7 @@ public class ProjectController(
                     return View(model);
                 }
                 project = await projectService.CreateProjectAsync(
-                    model.Name, model.Topic, model.Introduction,
+                    activeTranslations, supportedCodes, model.DefaultLanguageCode,
                     model.ImageUrl, model.InteractionMode,
                     model.MinAge, model.MaxAge, model.ContactOptIn,
                     platformId: user.ProjectPlatformId.Value,
@@ -174,8 +190,7 @@ public class ProjectController(
                     allowCrossLanguageIdeas: model.AllowCrossLanguageIdeas,
                     theme: model.Theme,
                     primaryColor: model.PrimaryColor,
-                    customCss: model.CustomCss,
-                    languageCode: model.DefaultLanguageCode);
+                    customCss: model.CustomCss);
             }
         }
         catch (ApiValidationException ex)
@@ -189,32 +204,19 @@ public class ProjectController(
             {
                 var existingProject = await projectService.GetProjectByIdAsync(model.ProjectId.Value);
                 ViewData["ProjectId"]     = model.ProjectId.Value;
-                ViewData["ProjectName"]   = existingProject?.Name ?? model.Name ?? "";
+                ViewData["ProjectName"]   = existingProject?.Name ?? "";
                 ViewData["PlatformName"]  = existingProject?.OrganisationName ?? "";
                 ViewData["ProjectState"]  = existingProject?.ProjectState ?? "";
             }
             ViewData["ActiveSection"] = "Settings";
             ViewData["IsNew"]         = wizardActive;
             ViewData["HideSidebar"]   = wizardActive;
+            ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
             return View(model);
         }
 
-        // Sync sections: keep existing by name, delete removed, add new
-        var existingSections = await sectionService.GetSectionsAsync(project.ProjectId);
-        var newNames = (model.Sections ?? new List<string>())
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Select(s => s.Trim())
-            .ToList();
-
-        foreach (var s in existingSections)
-            if (!newNames.Contains(s.Name))
-                await sectionService.DeleteSectionAsync(project.ProjectId, s.SectionId);
-
-        var existingNames = existingSections.Select(s => s.Name).ToList();
-        foreach (var name in newNames)
-            if (!existingNames.Contains(name))
-                await sectionService.CreateSectionAsync(project.ProjectId, name, string.Empty,
-                    model.DefaultLanguageCode ?? "nl");
+        // Replace all sections: delete existing, recreate from form data filtered to supported languages.
+        await sectionService.SyncSectionsAsync(project.ProjectId, model.Sections, supportedCodes);
 
         if (submitAction == "next")
             return RedirectToAction(nameof(Questions),
@@ -240,16 +242,18 @@ public class ProjectController(
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 2);
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project?.Name ?? "";
-        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Questions";
+        SetProjectChrome(projectId, project, "Questions");
         ViewData["AiAssistance"]  = aiAssistance.ToString();
         ViewData["Project"]       = project;
         ViewData["Sections"]      = sections;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
+        // Multilingual modal: needs the project's enabled languages to render
+        // the tab strip and validate per supported language at submit time.
+        ViewData["AvailableLanguageCodes"] = AvailableLanguageCodes;
+        ViewData["SupportedLanguageCodes"] = project?.SupportedLanguageCodes
+                                             ?? new List<string> { "nl" };
+        ViewData["DefaultLanguageCode"]    = project?.DefaultLanguageCode ?? "nl";
         return View(questions);
     }
 
@@ -270,16 +274,15 @@ public class ProjectController(
     {
         var projectForCreate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForCreate))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Questions), new { projectId, isNew });
         if (ModelState.IsValid)
-            await questionService.CreateQuestionAsync(projectId, model.Text, model.QuestionFormat.ToString(),
-                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+            await questionService.CreateQuestionAsync(projectId, model.QuestionFormat.ToString(),
+                model.IsMandatory, ResolveSlotCount(model), model.Translations,
+                model.SectionId,
                 parentQuestionId: model.ParentQuestionId, choiceIndex: model.ChoiceIndex,
+                endingAnswerSlots: model.EndingAnswerSlots,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
-                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
+                mediaIsEmbed: model.MediaIsEmbed);
         return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
 
@@ -289,34 +292,42 @@ public class ProjectController(
     {
         var projectForUpdate = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForUpdate))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Questions), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Questions), new { projectId, isNew });
         if (ModelState.IsValid)
-            await questionService.UpdateQuestionAsync(projectId, model.QuestionId, model.Text, model.QuestionFormat.ToString(),
-                model.IsMandatory, model.GetAnswerChoices(), model.SectionId,
+            await questionService.UpdateQuestionAsync(projectId, model.QuestionId,
+                model.QuestionFormat.ToString(), model.IsMandatory, ResolveSlotCount(model),
+                model.Translations, model.SectionId,
+                endingAnswerSlots: model.EndingAnswerSlots,
                 mediaUrl: model.MediaUrl, mediaType: model.MediaType,
-                mediaIsEmbed: model.MediaIsEmbed, mediaText: model.MediaText);
+                mediaIsEmbed: model.MediaIsEmbed);
         return RedirectToAction(nameof(Questions), new { projectId, isNew, saved = 1 });
     }
+
+    // Slot/parallel-array invariant: every supported language has the same
+    // number of AnswerChoices entries. The client enforces parity; on the
+    // server we derive the structural slot count from the longest translation
+    // so a malformed posting still maps consistently (manager will validate).
+    private static int ResolveSlotCount(CreateQuestionViewModel model) =>
+        model.Translations
+            .Select(t => t.GetAnswerChoices().Count)
+            .DefaultIfEmpty(0)
+            .Max();
 
     public async Task<IActionResult> Ideation(int projectId, bool isNew = false)
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var emojis = await emojiService.GetEmojisForProjectAsync(projectId);
 
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 3);
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project?.Name ?? "";
-        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categories";
+        SetProjectChrome(projectId, project, "Categories");
         ViewData["Project"]       = project;
+        ViewData["Emojis"]        = emojis;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
+        ViewData["AvailableLanguageCodes"] = project?.SupportedLanguageCodes?.ToArray() ?? AvailableLanguageCodes;
         return View(categories);
     }
 
@@ -325,19 +336,15 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(project))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Ideation), new { projectId, isNew });
 
         await projectService.UpdateProjectAsync(
-            projectId, project.Name, project.Topic, project.Introduction,
+            projectId, project.Translations, project.SupportedLanguageCodes, project.DefaultLanguageCode ?? "nl",
             project.ProjectImage, project.FormType,
             project.MinAge, project.MaxAge, project.RequestContactInfo,
             project.ShortForm, ideaPageSize, extraIdeasReplaceExisting, maxExtraIdeaRequests,
             project.AllowCrossLanguageIdeas,
-            project.Theme, project.PrimaryColor, project.CustomCss,
-            project.DefaultLanguageCode ?? "nl");
+            project.Theme, project.PrimaryColor, project.CustomCss);
 
         return RedirectToAction(nameof(Ideation), new { projectId, isNew, saved = 1 });
     }
@@ -347,17 +354,9 @@ public class ProjectController(
     {
         var projectForAdd = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForAdd))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Ideation), new { projectId, isNew });
         if (ModelState.IsValid)
-            await categoryService.CreateCategoryAsync(projectId, model.Name, model.Description ?? string.Empty);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForAdd?.Name ?? "";
-        ViewData["PlatformName"]  = projectForAdd?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForAdd?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categories";
+            await categoryService.CreateCategoryAsync(projectId, model.Translations);
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
@@ -366,16 +365,8 @@ public class ProjectController(
     {
         var projectForDelete = await projectService.GetProjectByIdAsync(projectId);
         if (IsProjectLocked(projectForDelete))
-        {
-            TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
-            return RedirectToAction(nameof(Ideation), new { projectId, isNew });
-        }
+            return LockedRedirect(nameof(Ideation), new { projectId, isNew });
         await categoryService.DeleteCategoryAsync(projectId, categoryId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForDelete?.Name ?? "";
-        ViewData["PlatformName"]  = projectForDelete?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForDelete?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Categories";
         return RedirectToAction(nameof(Ideation), new { projectId, isNew });
     }
 
@@ -480,11 +471,7 @@ public class ProjectController(
         var questions  = await questionService.GetQuestionsAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Settings";
+        SetProjectChrome(projectId, project, "Settings");
         ViewData["QuestionCount"] = questions.Count;
         ViewData["CategoryCount"] = categories.Count;
         return View(project);
@@ -493,14 +480,25 @@ public class ProjectController(
     [HttpPost]
     public async Task<IActionResult> ActivateProject(int projectId)
     {
-        await projectService.UpdateProjectStateAsync(projectId, "Active");
-        var projectForActivate = await projectService.GetProjectByIdAsync(projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForActivate?.Name ?? "";
-        ViewData["PlatformName"]  = projectForActivate?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForActivate?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Settings";
-        return RedirectToAction(nameof(Dashboard), new { projectId });
+        try
+        {
+            await projectService.UpdateProjectStateAsync(projectId, "Active");
+            return RedirectToAction(nameof(Dashboard), new { projectId });
+        }
+        catch (SynapseEnqueteManagement.UI.Admin.Services.ProjectActivationValidationException ex)
+        {
+            var project = await projectService.GetProjectByIdAsync(projectId);
+            if (project is null) return NotFound();
+
+            var questions  = await questionService.GetQuestionsAsync(projectId);
+            var categories = await categoryService.GetCategoriesAsync(projectId);
+
+            SetProjectChrome(projectId, project, "Settings");
+            ViewData["QuestionCount"]      = questions.Count;
+            ViewData["CategoryCount"]      = categories.Count;
+            ViewData["ActivationProblems"] = ex.Problems;
+            return View(nameof(Activate), project);
+        }
     }
 
     public async Task<IActionResult> Archive(int projectId)
@@ -511,11 +509,7 @@ public class ProjectController(
         if (project.ProjectState != "Active")
             return RedirectToAction(nameof(Dashboard), new { projectId });
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
+        SetProjectChrome(projectId, project, "Dashboard");
         return View(project);
     }
 
@@ -553,11 +547,7 @@ public class ProjectController(
             SurveyUrl = $"{scheme}://{project.ShortForm}.{participantDomain}"
         };
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
+        SetProjectChrome(projectId, project, "Dashboard");
         return View(dashboard);
     }
 
@@ -566,11 +556,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName;
-        ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideas";
+        SetProjectChrome(projectId, project, "Ideas");
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
@@ -586,7 +572,9 @@ public class ProjectController(
             TotalPending   = pending,
             TotalFlagged   = flagged,
             TotalDeclined  = Math.Max(0, total - approved - pending - flagged),
-            Categories     = categories
+            Categories     = categories,
+            DefaultLanguageCode    = project.DefaultLanguageCode,
+            SupportedLanguageCodes = project.SupportedLanguageCodes
         };
 
         return View(vm);
@@ -602,11 +590,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName;
-        ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideas";
+        SetProjectChrome(projectId, project, "Ideas");
 
         var (items, total, approved, pending, flagged) =
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
@@ -632,6 +616,8 @@ public class ProjectController(
             Ideas         = items,
             PlatformId            = project.PlatformId,
             IdeaSummaryMaxIdeas   = platformSettings?.IdeaSummaryMaxIdeas ?? 200,
+            DefaultLanguageCode   = project.DefaultLanguageCode,
+            SupportedLanguageCodes = project.SupportedLanguageCodes,
             Categories    = categories.Select(c => new CategoryOptionViewModel
                 
             {
@@ -654,11 +640,7 @@ public class ProjectController(
         var project = await projectService.GetProjectByIdAsync(projectId);
         if (project is null) return NotFound();
 
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName;
-        ViewData["ProjectState"]  = project.ProjectState;
-        ViewData["ActiveSection"] = "Ideas";
+        SetProjectChrome(projectId, project, "Ideas");
 
         var vm = await ideaService.GetIdeaDetailAsync(projectId, ideaId);
         if (vm is null) return NotFound();
@@ -681,6 +663,99 @@ public class ProjectController(
 
         var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
         return File(bytes, contentType, fileName);
+    }
+
+    // Returns the project's participant emails as JSON, for the broadcast
+    // "open in my mail program" branch to build a mailto bcc list client-side.
+    [HttpGet]
+    public async Task<IActionResult> ParticipantEmailsJson(int projectId)
+    {
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+        return Json(await participantService.GetParticipantEmailsAsync(projectId));
+    }
+
+    // Compose-modal submit: enqueues one EmailJob with the participant in BCC.
+    // The Resend send (and any retries) happen in the API process; this call
+    // just persists the row and returns immediately.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendParticipantEmail(
+        int projectId,
+        int? ideaId,
+        string participantEmail,
+        string subject,
+        string body,
+        string replyTo,
+        string languageCode,
+        CancellationToken ct)
+    {
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+        if (string.IsNullOrWhiteSpace(participantEmail)) return BadRequest(localizer["Email_ParticipantEmailRequired"].Value);
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
+            return BadRequest(localizer["Email_SubjectBodyRequired"].Value);
+
+        var user = await userManager.GetUserAsync(User);
+        if (user?.Email is null) return Unauthorized();
+
+        await emailApiService.EnqueueAsync(new EnqueueEmailRequest(
+            To:                user.Email,
+            Bcc:               new[] { participantEmail },
+            ReplyTo:           string.IsNullOrWhiteSpace(replyTo) ? user.Email : replyTo,
+            Subject:           subject,
+            Body:              body,
+            Category:          "AdminReply",
+            LanguageCode:      string.IsNullOrWhiteSpace(languageCode) ? null : languageCode,
+            ProjectPlatformId: user.ProjectPlatformId,
+            ProjectId:         projectId,
+            IdeaId:            ideaId,
+            CreatedByUserId:   user.Id), ct);
+
+        return Ok();
+    }
+
+    // Broadcast-modal submit: one POST carrying per-language Subject+Body.
+    // BroadcastService fans out into N enqueue calls (one per language ×
+    // BCC chunk).
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BroadcastParticipantEmail(
+        int projectId,
+        [FromForm] string replyTo,
+        [FromForm] Dictionary<string, string> subjects,
+        [FromForm] Dictionary<string, string> bodies,
+        CancellationToken ct)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        var user = await userManager.GetUserAsync(User);
+        if (user?.Email is null) return Unauthorized();
+        if (!user.ProjectPlatformId.HasValue) return Unauthorized();
+
+        // Pair (subject, body) per language; drop any language whose entries
+        // are blank so participants don't get an empty broadcast.
+        var perLanguage = subjects
+            .Where(kv => bodies.TryGetValue(kv.Key, out var b)
+                         && !string.IsNullOrWhiteSpace(kv.Value)
+                         && !string.IsNullOrWhiteSpace(b))
+            .ToDictionary(
+                kv => kv.Key,
+                kv => (Subject: kv.Value.Trim(), Body: bodies[kv.Key].Trim()));
+
+        if (perLanguage.Count == 0)
+            return BadRequest(localizer["EmailBroadcast_NoMessages"].Value);
+
+        var result = await broadcastService.SendBroadcastAsync(
+            projectId:           projectId,
+            projectPlatformId:   user.ProjectPlatformId.Value,
+            perLanguageMessages: perLanguage,
+            defaultLanguageCode: project.DefaultLanguageCode,
+            to:                  user.Email,
+            replyTo:             string.IsNullOrWhiteSpace(replyTo) ? user.Email : replyTo,
+            createdByUserId:     user.Id,
+            ct:                  ct);
+
+        return Ok(new { result.JobsEnqueued, result.RecipientsReached });
     }
 
     public async Task<IActionResult> ExportRawData(int projectId, string format = "xlsx", string tables = "")
@@ -756,18 +831,14 @@ public class ProjectController(
         if (project is null) return NotFound();
 
         var slots = await widgetPreferenceService.GetSlotsAsync(user.Id, projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = project.Name;
-        ViewData["PlatformName"]  = project.OrganisationName ?? "";
-        ViewData["ProjectState"]  = project.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
+        SetProjectChrome(projectId, project, "Dashboard");
         return View(new ConfigureDashboardViewModel
         {
             ProjectId = projectId,
             ProjectName = project.Name,
             Layout = Array.ConvertAll(slots, s => s.WidgetType),
             Slots = Array.ConvertAll(slots, s => new WidgetSlotInput { WidgetType = s.WidgetType, QuestionId = s.QuestionId }),
-            AllWidgetTypes = WidgetPreferenceService.AllWidgetTypes
+            AllWidgetTypes = WidgetSlotValidator.AllWidgetTypes
         });
     }
 
@@ -777,26 +848,8 @@ public class ProjectController(
         var user = await userManager.GetUserAsync(User);
         if (user is null) return RedirectToAction("Login", "Auth");
 
-        var source = model.Slots ?? [];
-        var sanitized = Enumerable.Range(0, 9)
-            .Select(i =>
-            {
-                var input = i < source.Length ? source[i] : null;
-                var type = input is not null && WidgetPreferenceService.AllWidgetTypes.Contains(input.WidgetType)
-                    ? input.WidgetType
-                    : WidgetPreferenceService.DefaultLayout[i];
-                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
-                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
-            })
-            .ToArray();
-
+        var sanitized = WidgetSlotValidator.SanitizeSlots(model.Slots);
         await widgetPreferenceService.SaveSlotsAsync(user.Id, projectId, sanitized);
-        var projectForConfigure = await projectService.GetProjectByIdAsync(projectId);
-        ViewData["ProjectId"]     = projectId;
-        ViewData["ProjectName"]   = projectForConfigure?.Name ?? "";
-        ViewData["PlatformName"]  = projectForConfigure?.OrganisationName ?? "";
-        ViewData["ProjectState"]  = projectForConfigure?.ProjectState ?? "";
-        ViewData["ActiveSection"] = "Dashboard";
         return RedirectToAction(nameof(Dashboard), new { projectId });
     }
 
@@ -811,7 +864,7 @@ public class ProjectController(
         var jobId = await ideaSummaryService.EnqueueAsync(projectId, user.ProjectPlatformId.Value, req);
 
         if (jobId is null)
-            return BadRequest(new { error = "Failed to start summary generation." });
+            return BadRequest(new { error = localizer["Project_SummaryGenerationFailed"].Value });
 
         return Ok(new { jobId });
     }
@@ -845,6 +898,26 @@ public class ProjectController(
 
     private static bool IsProjectLocked(ProjectAdminViewModel project) =>
         project?.ProjectState is "Active" or "Archived";
+
+    // Lock-toast redirect for write actions on Active/Archived projects. Centralises the
+    // "Project_LockedNotEditable" TempData key so the message lives in one place.
+    private IActionResult LockedRedirect(string redirectAction, object routeValues)
+    {
+        TempData["Error"] = localizer["Project_LockedNotEditable"].Value;
+        return RedirectToAction(redirectAction, routeValues);
+    }
+
+    // The five chrome ViewData keys that the project layout reads. Most actions set the same
+    // five with values derived from the project — pulled into one helper so adding a key only
+    // touches this method.
+    private void SetProjectChrome(int projectId, ProjectAdminViewModel project, string activeSection)
+    {
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project?.Name ?? "";
+        ViewData["PlatformName"]  = project?.OrganisationName ?? "";
+        ViewData["ProjectState"]  = project?.ProjectState ?? "";
+        ViewData["ActiveSection"] = activeSection;
+    }
 }
 
 // Request body for ProjectController.GenerateImage.

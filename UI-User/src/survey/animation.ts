@@ -30,17 +30,16 @@ export function activateSlide(
     if (prev) {
         stopSlideMedia(prev);
         prev.classList.remove('is-active');
+        prev.setAttribute('inert', '');
         if (goingForward) {
-            // Exit upward
             prev.classList.add('is-above');
         }
-        // Going backward: removing is-active returns the slide to the default
-        // "below" state (translateY(56px)), so it animates downward naturally.
     }
 
     if (next) {
-        next.classList.remove('is-above'); // coming from above when going backward
+        next.classList.remove('is-above');
         next.classList.add('is-active');
+        next.removeAttribute('inert');
     }
 }
 
@@ -56,6 +55,9 @@ export function shakeSlide(slide: HTMLElement): void {
 export function updateProgressBar(bar: HTMLElement | null, index: number, total: number, minPct: number): number {
     const raw = total <= 1 ? 100 : Math.round((index / (total - 1)) * 100);
     const pct = Math.max(raw, minPct);
-    if (bar) bar.style.width = `${pct}%`;
+    if (bar) {
+        bar.style.width = `${pct}%`;
+        bar.parentElement?.setAttribute('aria-valuenow', String(pct));
+    }
     return pct;
 }

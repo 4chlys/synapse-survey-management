@@ -90,4 +90,7 @@
   <data name="AiDisclaimer" xml:space="preserve">
     <value>Ideeën op dit platform zijn mogelijk opgesteld met behulp van AI-ondersteuning.</value>
   </data>
+  <data name="AddEmojiAriaLabel" xml:space="preserve">
+    <value>Reactie toevoegen</value>
+  </data>
 </root>

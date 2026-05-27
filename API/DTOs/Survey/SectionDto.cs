@@ -5,4 +5,5 @@ public record SectionDto
     public int SectionId { get; init; }
     public string Name { get; init; }
     public string Description { get; init; }
+    public ICollection<SectionTranslationDto> Translations { get; init; } = new List<SectionTranslationDto>();
 }

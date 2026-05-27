@@ -1,7 +1,4 @@
-function getCsrfToken(): string {
-    const input = document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]');
-    return input?.value ?? '';
-}
+import { getCsrfToken } from '../lib/utils';
 
 function getHeaders(): HeadersInit {
     return {
