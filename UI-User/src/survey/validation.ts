@@ -4,56 +4,29 @@ const MAX_LENGTH = 500;
 
 interface QuestionValidator {
     canValidate(format: string): boolean;
-
     isAnswered(slide: HTMLElement): boolean;
 }
 
-class OpenQuestionValidator implements QuestionValidator {
-    canValidate(format: string) {
-        return format === 'Open';
-    }
-
-    isAnswered(slide: HTMLElement) {
-        const ta = slide.querySelector<HTMLTextAreaElement>('textarea');
-        return !!ta && ta.value.trim().length > 0;
-    }
-}
-
-class SingleChoiceValidator implements QuestionValidator {
-    canValidate(format: string) {
-        return format === 'SingleChoice';
-    }
-
-    isAnswered(slide: HTMLElement) {
-        return !!slide.querySelector<HTMLInputElement>('input[type="radio"]:checked');
-    }
-}
-
-class MultipleChoiceValidator implements QuestionValidator {
-    canValidate(format: string) {
-        return format === 'MultipleChoice';
-    }
-
-    isAnswered(slide: HTMLElement) {
-        return !!slide.querySelector<HTMLInputElement>('input[type="checkbox"]:checked');
-    }
-}
-
-class LikertValidator implements QuestionValidator {
-    canValidate(format: string) {
-        return format === 'Likert';
-    }
-
-    isAnswered(_slide: HTMLElement) {
-        return true;
-    }
-}
-
 const validators: QuestionValidator[] = [
-    new OpenQuestionValidator(),
-    new SingleChoiceValidator(),
-    new MultipleChoiceValidator(),
-    new LikertValidator(),
+    {
+        canValidate: (f) => f === 'Open',
+        isAnswered: (slide) => {
+            const ta = slide.querySelector<HTMLTextAreaElement>('textarea');
+            return !!ta && ta.value.trim().length > 0;
+        },
+    },
+    {
+        canValidate: (f) => f === 'SingleChoice',
+        isAnswered: (slide) => !!slide.querySelector<HTMLInputElement>('input[type="radio"]:checked'),
+    },
+    {
+        canValidate: (f) => f === 'MultipleChoice',
+        isAnswered: (slide) => !!slide.querySelector<HTMLInputElement>('input[type="checkbox"]:checked'),
+    },
+    {
+        canValidate: (f) => f === 'Likert',
+        isAnswered: () => true,
+    },
 ];
 
 export function isSlideAnswered(slide: HTMLElement): boolean {

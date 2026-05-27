@@ -85,6 +85,7 @@ export function wireIdeationForm(
                 tokenInput.value = result.moderationToken ?? '';
                 await submitFormViaFetch(form);
             } else {
+                form.dispatchEvent(new CustomEvent('idea:needs-edit', { bubbles: true }));
                 return;
             }
 
@@ -97,6 +98,48 @@ export function wireIdeationForm(
             }
         }
     });
+}
+
+export async function submitIdeaDirectly(
+    form: HTMLFormElement,
+    descriptionEl: HTMLTextAreaElement,
+    moderationEl: HTMLInputElement | null,
+    draftText: string,
+    projectId: number,
+    onModerationBlocked: () => void,
+): Promise<void> {
+    descriptionEl.value = draftText;
+    if (moderationEl) moderationEl.value = '';
+
+    try {
+        const result = await callModerationAi(draftText, projectId, 'idea');
+
+        if (result.isAcceptable) {
+            if (moderationEl) moderationEl.value = result.moderationToken ?? '';
+            await submitFormViaFetch(form);
+            return;
+        }
+
+        const suggestResult = await callSuggest(draftText, projectId);
+        const outcome = await showRewritePopup(
+            draftText,
+            suggestResult.suggestion,
+            result.reason ?? t('contentNotAllowed'),
+        );
+
+        if (outcome.action === 'accepted') {
+            descriptionEl.value = outcome.text;
+            if (moderationEl) moderationEl.value = suggestResult.moderationToken ?? '';
+            await submitFormViaFetch(form);
+        } else if (outcome.action === 'submitFlagged') {
+            if (moderationEl) moderationEl.value = result.moderationToken ?? '';
+            await submitFormViaFetch(form);
+        } else {
+            onModerationBlocked();
+        }
+    } catch {
+        onModerationBlocked();
+    }
 }
 
 async function submitFormViaFetch(form: HTMLFormElement): Promise<void> {

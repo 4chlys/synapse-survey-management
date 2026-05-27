@@ -1,16 +1,61 @@
-import { wireIdeationForm } from './ideationform';
+import { wireIdeationForm, submitIdeaDirectly } from './ideationform';
 import { wireModerationField } from './moderation';
 import { wireIdeaImageField } from './ideaimage';
 import { wireImageDescribeButton } from './imagedescribe';
 import { openIdeaSupportChat } from './ideasupportchat';
 import { openCommentSupportChat } from './commentsupportchat';
 import { t, currentCulture } from '../lib/i18n';
+import { EmojiReaction, IdeaResponse, LoadIdeasResponse } from './types';
+import { escapeHtml, escapeAttr } from '../lib/utils';
 
-interface EmojiReaction {
-    emojiId: number;
-    symbol: string;
-    count: number;
-    postedByCurrentUser: boolean;
+let modeOverlay: HTMLElement | null = null;
+let modePanel: HTMLElement | null = null;
+let commentModeOverlay: HTMLElement | null = null;
+let commentModePanel: HTMLElement | null = null;
+let lightbox: HTMLElement | null = null;
+let lightboxImg: HTMLImageElement | null = null;
+
+function openModeSelect(): void {
+    if (!modeOverlay) return;
+    modeOverlay.classList.remove('hidden');
+    modeOverlay.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    modePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
+}
+
+function closeModeSelect(): void {
+    if (!modeOverlay) return;
+    modeOverlay.classList.add('hidden');
+    modeOverlay.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+function openCommentModeSelect(): void {
+    if (!commentModeOverlay) return;
+    commentModeOverlay.classList.remove('hidden');
+    commentModeOverlay.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    commentModePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
+}
+
+function closeCommentModeSelect(): void {
+    if (!commentModeOverlay) return;
+    commentModeOverlay.classList.add('hidden');
+    commentModeOverlay.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+function openLightbox(src: string): void {
+    if (!lightbox || !lightboxImg) return;
+    lightboxImg.src = src;
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+}
+
+function closeLightbox(): void {
+    if (!lightbox) return;
+    lightbox.classList.add('hidden');
+    lightbox.classList.remove('flex');
 }
 
 export function initIdeation(): void {
@@ -19,7 +64,7 @@ export function initIdeation(): void {
 
     const createFormEl    = document.getElementById('createForm');
     const createForm      = createFormEl?.querySelector<HTMLFormElement>('form') ?? null;
-    
+
     const categoryIdInput = createForm?.querySelector<HTMLInputElement>('input[name="categoryId"]') ?? null;
     const descriptionEl   = createForm?.querySelector<HTMLTextAreaElement>('textarea[name="description"]') ?? null;
     const moderationEl    = createForm?.querySelector<HTMLInputElement>('input[name="moderationToken"]') ?? null;
@@ -36,28 +81,15 @@ export function initIdeation(): void {
         if (descriptionEl) {
             wireModerationField(descriptionEl, projectId);
         }
+        createForm.addEventListener('idea:needs-edit', () => {
+            createFormEl?.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
 
-    // Mode-selection sheet
-    const modeOverlay = document.getElementById('mode-select-overlay');
-    const modePanel   = document.getElementById('mode-select-panel');
+    modeOverlay = document.getElementById('mode-select-overlay');
+    modePanel   = document.getElementById('mode-select-panel');
 
-    function openModeSelect(): void {
-        if (!modeOverlay) return;
-        modeOverlay.classList.remove('hidden');
-        modeOverlay.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-        modePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
-    }
-
-    function closeModeSelect(): void {
-        if (!modeOverlay) return;
-        modeOverlay.classList.add('hidden');
-        modeOverlay.classList.remove('flex');
-        document.body.style.overflow = '';
-    }
-
-    // Dismiss mode sheet on backdrop click (outside the panel)
     modeOverlay?.addEventListener('click', (e: MouseEvent) => {
         if (modePanel && !modePanel.contains(e.target as Node)) closeModeSelect();
     });
@@ -84,24 +116,8 @@ export function initIdeation(): void {
         }
     }
 
-    // Comment mode selector
-    const commentModeOverlay = document.getElementById('comment-mode-overlay');
-    const commentModePanel   = document.getElementById('comment-mode-panel');
-
-    function openCommentModeSelect(): void {
-        if (!commentModeOverlay) return;
-        commentModeOverlay.classList.remove('hidden');
-        commentModeOverlay.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-        commentModePanel?.querySelector<HTMLElement>('[data-action]')?.focus();
-    }
-
-    function closeCommentModeSelect(): void {
-        if (!commentModeOverlay) return;
-        commentModeOverlay.classList.add('hidden');
-        commentModeOverlay.classList.remove('flex');
-        document.body.style.overflow = '';
-    }
+    commentModeOverlay = document.getElementById('comment-mode-overlay');
+    commentModePanel   = document.getElementById('comment-mode-panel');
 
     commentModeOverlay?.addEventListener('click', (e: MouseEvent) => {
         if (commentModePanel && !commentModePanel.contains(e.target as Node))
@@ -160,22 +176,8 @@ export function initIdeation(): void {
         }
     });
 
-    // Image lightbox
-    const lightbox    = document.getElementById('image-lightbox');
-    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
-
-    function openLightbox(src: string): void {
-        if (!lightbox || !lightboxImg) return;
-        lightboxImg.src = src;
-        lightbox.classList.remove('hidden');
-        lightbox.classList.add('flex');
-    }
-
-    function closeLightbox(): void {
-        if (!lightbox) return;
-        lightbox.classList.add('hidden');
-        lightbox.classList.remove('flex');
-    }
+    lightbox    = document.getElementById('image-lightbox');
+    lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
 
     lightbox?.addEventListener('click', () => closeLightbox());
 
@@ -213,10 +215,18 @@ export function initIdeation(): void {
                         categoryId,
                         categoryName,
                         (draftText) => {
-                            // Reveal the form before dispatching submit so that, if moderation
-                            // flags the text and the user picks "Bewerken", the editor is visible.
-                            createFormEl?.classList.remove('hidden');
-                            submitIdeaFromChat(createForm, descriptionEl, moderationEl, draftText);
+                            if (!createForm || !descriptionEl) return;
+                            void submitIdeaDirectly(
+                                createForm,
+                                descriptionEl,
+                                moderationEl,
+                                draftText,
+                                projectId,
+                                () => {
+                                    createFormEl?.classList.remove('hidden');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                },
+                            );
                         },
                         (draft) => {
                             createFormEl?.classList.remove('hidden');
@@ -343,22 +353,6 @@ export function initIdeation(): void {
     });
 }
 
-// Refresh ideas logic
-interface IdeaResponse {
-    ideaId: number;
-    description: string;
-    commentsCount: number;
-    isOwnedByCurrentUser: boolean;
-    isFlagged: boolean;
-    languageCode?: string;
-    emojis: EmojiReaction[];
-}
-
-interface LoadIdeasResponse {
-    ideas: IdeaResponse[];
-    remaining: number;
-}
-
 async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<void> {
     const list = document.getElementById('ideas-list');
     const btn = document.getElementById('refresh-ideas-btn');
@@ -404,7 +398,7 @@ async function handleRefreshIdeas(toggle?: HTMLInputElement | null): Promise<voi
         const html = data.ideas.map(idea => renderIdeaCard(idea, projectId!, categoryId!)).join('');
 
         if (replace) {
-            list.querySelectorAll(':scope > div').forEach(el => el.remove());
+            list.querySelectorAll(':scope > li').forEach(el => el.remove());
         }
 
         list.insertAdjacentHTML('beforeend', html);
@@ -452,7 +446,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         ? ` lang="${idea.languageCode}"`
         : '';
 
-    return `<div class="group relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] cursor-pointer ${borderClass}">
+    return `<li class="group relative rounded-field border p-5 transition-all duration-150 active:scale-[0.99] cursor-pointer ${borderClass}">
         <div class="absolute -top-3 -right-3 bg-base-100 border border-base-300 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-neutral/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -475,22 +469,7 @@ function renderIdeaCard(idea: IdeaResponse, projectId: string, categoryId: strin
         <a href="/${projectId}/Ideation/Detail?categoryId=${categoryId}&ideaId=${idea.ideaId}"
            class="absolute inset-0 rounded-field z-[1] focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
            aria-label="${escapeAttr(idea.description)}"></a>
-    </div>`;
-}
-
-function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function escapeAttr(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    </li>`;
 }
 
 // Submit a comment that came from the AI chat
@@ -503,21 +482,6 @@ async function submitCommentFromChat(
     if (!form || !textEl) return;
 
     textEl.value = commentText;
-    if (moderationEl) moderationEl.value = '';
-
-    form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
-}
-
-// Submit an idea that came from the AI chat
-async function submitIdeaFromChat(
-    form: HTMLFormElement | null,
-    descriptionEl: HTMLTextAreaElement | null,
-    moderationEl: HTMLInputElement | null,
-    draftText: string,
-): Promise<void> {
-    if (!form || !descriptionEl) return;
-
-    descriptionEl.value = draftText;
     if (moderationEl) moderationEl.value = '';
 
     form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
