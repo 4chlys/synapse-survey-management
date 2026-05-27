@@ -20,7 +20,7 @@
                     <input type="hidden" name="projectId" value="@Model.ProjectId" />
                     <button type="submit" class="btn btn-warning w-full">@L["ArchiveButton"]</button>
                 </form>
-                <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn btn-ghost w-full">@L["CancelButton"]</a>
+                <a asp-action="Dashboard" asp-route-projectId="@Model.ProjectId" class="btn-cancel w-full">@L["CancelButton"]</a>
             </div>
         </div>
     </div>

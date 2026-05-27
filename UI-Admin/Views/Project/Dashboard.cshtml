@@ -35,17 +35,17 @@
             @if (ViewData["ProjectState"] as string == "Active")
             {
                 <a asp-action="Archive" asp-route-projectId="@Model.ProjectId"
-                   class="btn btn-outline btn-warning btn-sm gap-1.5">
+                   class="btn-archive">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
                     @L["ArchiveButton"]
                 </a>
             }
-            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+            <button type="button" class="btn-action-outline"
                     data-open-modal="social-media-modal">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                 @L["Widget_Social_Title"]
             </button>
-            <button type="button" class="btn btn-outline btn-sm gap-1.5"
+            <button type="button" class="btn-action-outline"
                     data-open-modal="project-export-modal">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -53,7 +53,7 @@
                 @L["ExportButton"]
             </button>
             <a asp-action="ConfigureDashboard" asp-route-projectId="@Model.ProjectId"
-               class="btn btn-outline btn-sm gap-1.5">
+               class="btn-action-outline">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
                 @L["ConfigureButton"]
             </a>
@@ -198,9 +198,9 @@
 
         <div class="modal-action">
             <form method="dialog">
-                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                <button class="btn-cancel">@L["CancelButton"]</button>
             </form>
-            <button type="button" class="btn btn-primary btn-sm" id="project-export-download">@L["ExportButton"]</button>
+            <button type="button" class="btn-save" id="project-export-download">@L["ExportButton"]</button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -230,7 +230,7 @@
         </div>
         <div class="modal-action">
             <form method="dialog">
-                <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                <button class="btn-cancel">@L["CancelButton"]</button>
             </form>
         </div>
     </div>

@@ -262,8 +262,8 @@
                         @if (!isLocked)
                         {
                             <div class="flex gap-2">
-                                <button type="button" id="browse-btn" class="btn btn-outline btn-sm flex-1">@L["BrowseButton"]</button>
-                                <button type="button" id="generate-btn" class="btn btn-outline btn-sm flex-1"
+                                <button type="button" id="browse-btn" class="btn-save-outline flex-1">@L["BrowseButton"]</button>
+                                <button type="button" id="generate-btn" class="btn-save-outline flex-1"
                                         data-generating-text="@L["GeneratingText"]"
                                         data-error-text="@L["GenerateErrorText"]">@L["GenerateButton"]</button>
                             </div>
@@ -495,11 +495,11 @@
                                                    data-lang="@langCode" />
                                         </div>
                                     }
-                                    <button type="button" class="btn btn-ghost btn-sm text-error remove-section">&times;</button>
+                                    <button type="button" class="btn-cancel text-error remove-section">&times;</button>
                                 </div>
                             }
                         </div>
-                        <button type="button" id="add-section" class="btn btn-ghost btn-sm gap-1 self-start">
+                        <button type="button" id="add-section" class="btn-cancel gap-1 self-start">
                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                             @L["AddSectionButton"]
                         </button>
@@ -514,7 +514,7 @@
             <div class="card bg-base-100 shadow-sm">
                 <div class="card-body">
                     <h2 class="font-heading font-semibold text-base text-base-content uppercase tracking-wide opacity-60 pb-1 border-b border-base-200 mb-2">@L["ExportDivider"]</h2>
-                    <button type="button" class="btn btn-outline btn-sm gap-1.5 self-start"
+                    <button type="button" class="btn-action-outline self-start"
                             data-open-modal="rawdata-modal">
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
@@ -529,13 +529,13 @@
         <div class="flex justify-end gap-2 pb-4">
             @if (!isLocked)
             {
-                <a asp-action="Index" class="btn btn-ghost">@L["CancelButton"]</a>
-                <button type="submit" form="project-form" name="submitAction" value="save" class="btn btn-outline">@Shared["Common_Save"]</button>
+                <a asp-action="Index" class="btn-cancel">@L["CancelButton"]</a>
+                <button type="submit" form="project-form" name="submitAction" value="save" class="btn-save-outline">@Shared["Common_Save"]</button>
                 <button type="submit" form="project-form" name="submitAction" value="next" class="btn btn-primary">@L["NextButton"] &rarr;</button>
             }
             else
             {
-                <a asp-action="Index" class="btn btn-ghost">@Shared["Common_Back"]</a>
+                <a asp-action="Index" class="btn-cancel">@Shared["Common_Back"]</a>
                 @if (Model.ProjectId.HasValue)
                 {
                     <a asp-action="Questions" asp-route-projectId="@Model.ProjectId" class="btn btn-primary">@L["NextButton"] &rarr;</a>
@@ -588,9 +588,9 @@
                 </div>
                 <div class="modal-action">
                     <form method="dialog">
-                        <button class="btn btn-ghost btn-sm">@L["CancelButton"]</button>
+                        <button class="btn-cancel">@L["CancelButton"]</button>
                     </form>
-                    <button type="button" class="btn btn-primary btn-sm" id="rawdata-download">@L["ExportButton"]</button>
+                    <button type="button" class="btn-save" id="rawdata-download">@L["ExportButton"]</button>
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop"><button>close</button></form>
