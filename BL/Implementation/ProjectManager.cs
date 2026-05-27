@@ -334,7 +334,7 @@ public class ProjectManager(
         var defaultName = mergedTranslations.First(t => t.LanguageCode == defaultCode).Name;
         var uniqueShortForm = await shortFormService.ResolveAsync(newShortForm, defaultName);
 
-        var copy = await projectDuplicationService.BuildCloneAsync(src, translationList, languages, uniqueShortForm, platformId);
+        var copy = await projectDuplicationService.BuildCloneAsync(src, mergedTranslations, languages, uniqueShortForm, platformId);
 
         await projectRepository.CreateAsync(copy);
         await uow.SaveChangesAsync(ct);
