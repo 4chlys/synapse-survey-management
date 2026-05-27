@@ -313,10 +313,25 @@ public class ProjectManager(
         var defaultCode = src.DefaultLanguage?.Code
             ?? throw new InvalidOperationException("Source project has no default language.");
 
-        var languages = await translationValidator.ValidateAsync(
-            translationList, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
+        // Callers (e.g. the copy dialog) typically supply only a renamed default-language
+        // translation. Clone the source's own translation for every other supported language so
+        // the duplicate keeps its localized names/topics and satisfies the validator's
+        // all-supported-languages-need-a-translation rule. A supplied override replaces the
+        // source's Name/Topic for that language, falling back to the source value when blank.
+        var overrides = translationList.ToDictionary(t => t.LanguageCode);
+        var mergedTranslations = src.Translations
+            .Select(t => overrides.TryGetValue(t.Language.Code, out var ov)
+                ? new ProjectTranslationInput(
+                    t.Language.Code,
+                    string.IsNullOrWhiteSpace(ov.Name) ? t.Name : ov.Name,
+                    string.IsNullOrWhiteSpace(ov.Topic) ? t.Topic : ov.Topic)
+                : new ProjectTranslationInput(t.Language.Code, t.Name, t.Topic))
+            .ToList();
 
-        var defaultName = translationList.First(t => t.LanguageCode == defaultCode).Name;
+        var languages = await translationValidator.ValidateAsync(
+            mergedTranslations, supportedCodes, defaultCode, Array.Empty<IntroductionTranslationInput>());
+
+        var defaultName = mergedTranslations.First(t => t.LanguageCode == defaultCode).Name;
         var uniqueShortForm = await shortFormService.ResolveAsync(newShortForm, defaultName);
 
         var copy = await projectDuplicationService.BuildCloneAsync(src, translationList, languages, uniqueShortForm, platformId);

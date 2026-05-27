@@ -453,6 +453,11 @@ public class ProjectManagerTests
             ShortForm = "source",
             DefaultLanguage = LanguageNl,
             SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Source NL", Topic = "Topic NL" },
+                new() { Language = LanguageEn, Name = "Source EN", Topic = "Topic EN" },
+            },
         };
         var built = new Project { ShortForm = "new-project" };
 
@@ -478,6 +483,61 @@ public class ProjectManagerTests
         _duplicationService.VerifyAll();
         _projectRepository.Verify(r => r.CreateAsync(built), Times.Once);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DuplicateProjectAsync_OnlyDefaultLanguageOverridden_ClonesOtherLanguagesFromSource()
+    {
+        // Regression: the copy dialog supplies a rename for the default language only. The manager
+        // must clone the source's translation for every other supported language, otherwise the
+        // validator rejects the copy with AllSupportedLanguagesNeedTranslation (multi-language
+        // projects could no longer be copied).
+        const int srcId = 10;
+        const int platformId = 5;
+
+        var source = new Project
+        {
+            ProjectId = srcId,
+            ProjectPlatformId = platformId,
+            ShortForm = "source",
+            DefaultLanguage = LanguageNl,
+            SupportedLanguages = new List<Language> { LanguageNl, LanguageEn },
+            Translations = new List<ProjectTranslation>
+            {
+                new() { Language = LanguageNl, Name = "Source NL", Topic = "Topic NL" },
+                new() { Language = LanguageEn, Name = "Source EN", Topic = "Topic EN" },
+            },
+        };
+        var built = new Project { ShortForm = "new-project" };
+
+        IReadOnlyList<ProjectTranslationInput> captured = null;
+        _projectRepository.Setup(r => r.ReadByIdForDuplicationReadOnlyAsync(srcId)).ReturnsAsync(source);
+        _shortFormService.Setup(s => s.ResolveAsync(null, "Renamed NL", null)).ReturnsAsync("new-project");
+        _duplicationService
+            .Setup(s => s.BuildCloneAsync(
+                source,
+                It.IsAny<IReadOnlyList<ProjectTranslationInput>>(),
+                It.IsAny<IReadOnlyDictionary<string, Language>>(),
+                "new-project",
+                platformId))
+            .Callback((Project _, IReadOnlyList<ProjectTranslationInput> t, IReadOnlyDictionary<string, Language> _, string _, int _) => captured = t)
+            .ReturnsAsync(built);
+        _projectRepository.Setup(r => r.CreateAsync(built)).ReturnsAsync(built);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Only the default-language (nl) translation is supplied — exactly what the copy dialog sends.
+        await _manager.DuplicateProjectAsync(srcId, Translations(("nl", "Renamed NL")), platformId);
+
+        Assert.NotNull(captured);
+        Assert.Equal(2, captured.Count);
+
+        var nl = captured.Single(t => t.LanguageCode == "nl");
+        Assert.Equal("Renamed NL", nl.Name);        // override applied
+        Assert.Equal("Topic NL", nl.Topic);         // source topic preserved
+
+        var en = captured.Single(t => t.LanguageCode == "en");
+        Assert.Equal("Source EN", en.Name);         // cloned from source
+        Assert.Equal("Topic EN", en.Topic);
     }
 
     [Fact]

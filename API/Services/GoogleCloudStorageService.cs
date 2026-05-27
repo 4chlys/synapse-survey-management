@@ -51,6 +51,11 @@ public class GoogleCloudStorageService(ILogger<GoogleCloudStorageService> logger
 
     public async Task DeleteAsync(string url)
     {
+        // Never delete app-bundled seed files: they are shared static content needed to re-seed
+        // the database on restart. Removing the entity's link is fine; the file must stay.
+        if (SeedAsset.IsSeedUrl(url))
+            return;
+
         try
         {
             // GCS URL shape: https://storage.googleapis.com/{bucket}/{objectName}
