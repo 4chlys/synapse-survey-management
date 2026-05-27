@@ -36,5 +36,6 @@
   <data name="CustomizedBadge" xml:space="preserve"><value>aangepast</value></data>
   <data name="ResetButton" xml:space="preserve"><value>Herstel standaard</value></data>
   <data name="MaxIdeasLabel" xml:space="preserve"><value>Max. ideeën per samenvatting</value></data>
+  <data name="MaxIdeasDescription" xml:space="preserve"><value>Maximaal aantal ideeën dat de AI tegelijk leest bij het genereren van een categoriesamenvatting. Lagere waarden leveren compactere samenvattingen; hogere waarden geven een bredere dekking maar kosten meer tokens.</value></data>
   <data name="SaveButton" xml:space="preserve"><value>Opslaan</value></data>
 </root>

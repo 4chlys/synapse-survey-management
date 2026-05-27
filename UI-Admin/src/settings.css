@@ -145,6 +145,52 @@
     box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-secondary) 8%, transparent);
 }
 
+/* ── System prompts collapsible ── */
+.settings-prompts-header {
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+    margin-top: -0.375rem;
+    margin-left: -0.375rem;
+    margin-right: -0.375rem;
+    padding: 0.375rem;
+    border-radius: 0.5rem;
+    transition: background 0.15s;
+}
+
+.settings-prompts-header:hover {
+    background: color-mix(in oklch, var(--color-base-content) 4%, transparent);
+}
+
+.settings-prompts-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding-top 0.2s ease;
+    padding-top: 0;
+}
+
+.settings-prompts-body.is-open {
+    max-height: 3000px;
+    padding-top: 1.25rem;
+    transition: max-height 0.5s ease-in, padding-top 0.2s ease;
+}
+
+.settings-prompts-chevron {
+    color: var(--color-base-content);
+    opacity: 0.35;
+    transition: transform 0.25s ease, opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.settings-prompts-header:hover .settings-prompts-chevron {
+    opacity: 0.6;
+}
+
+.settings-prompts-chevron.is-open {
+    transform: rotate(180deg);
+    opacity: 0.6;
+}
+
 /* ── System prompts grid (2-col when wide) ── */
 .settings-prompts-grid {
     display: grid;

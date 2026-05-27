@@ -91,6 +91,7 @@
   <data name="Settings_InvalidModel" xml:space="preserve"><value>Invalid model selected.</value></data>
   <data name="Settings_AiModelSaved" xml:space="preserve"><value>AI model saved.</value></data>
   <data name="Settings_InvalidPromptType" xml:space="preserve"><value>Invalid prompt type.</value></data>
+  <data name="Settings_PromptEmpty" xml:space="preserve"><value>System prompt cannot be empty.</value></data>
   <data name="Settings_PromptTooLong" xml:space="preserve"><value>System prompt may contain at most {0} characters.</value></data>
   <data name="Settings_PromptSaved" xml:space="preserve"><value>System prompt saved.</value></data>
   <data name="Settings_PromptReset" xml:space="preserve"><value>System prompt reset to default.</value></data>
