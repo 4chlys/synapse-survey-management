@@ -30,13 +30,16 @@ public class AdminEmailController(
     [HttpPost("queue")]
     public async Task<ActionResult> Enqueue(EnqueueEmailDto dto, CancellationToken ct)
     {
+        if (!Enum.TryParse<EmailJobCategory>(dto.Category, ignoreCase: true, out var category))
+            return BadRequest(new { error = $"Unknown email category '{dto.Category}'." });
+
         var job = await jobManager.EnqueueAsync(
             to:                 dto.To,
             bcc:                dto.Bcc ?? Array.Empty<string>(),
             replyTo:            dto.ReplyTo,
             subject:            dto.Subject,
             body:               dto.Body,
-            category:           dto.Category,
+            category:           category,
             languageCode:       dto.LanguageCode,
             projectPlatformId:  dto.ProjectPlatformId,
             projectId:          dto.ProjectId,
@@ -83,8 +86,8 @@ public class AdminEmailController(
         j.EmailJobId,
         j.ToAddress,
         j.Subject,
-        j.Category,
-        j.Status,
+        j.Category.ToString(),
+        j.Status.ToString(),
         j.LanguageCode,
         j.AttemptCount,
         j.MaxAttempts,

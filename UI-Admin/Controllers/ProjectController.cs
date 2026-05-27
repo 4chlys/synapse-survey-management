@@ -572,7 +572,9 @@ public class ProjectController(
             TotalPending   = pending,
             TotalFlagged   = flagged,
             TotalDeclined  = Math.Max(0, total - approved - pending - flagged),
-            Categories     = categories
+            Categories     = categories,
+            DefaultLanguageCode    = project.DefaultLanguageCode,
+            SupportedLanguageCodes = project.SupportedLanguageCodes
         };
 
         return View(vm);
@@ -661,6 +663,15 @@ public class ProjectController(
 
         var (bytes, contentType, fileName) = await participantService.ExportEmailsAsync(projectId, normalized);
         return File(bytes, contentType, fileName);
+    }
+
+    // Returns the project's participant emails as JSON, for the broadcast
+    // "open in my mail program" branch to build a mailto bcc list client-side.
+    [HttpGet]
+    public async Task<IActionResult> ParticipantEmailsJson(int projectId)
+    {
+        if (await projectService.GetProjectByIdAsync(projectId) is null) return NotFound();
+        return Json(await participantService.GetParticipantEmailsAsync(projectId));
     }
 
     // Compose-modal submit: enqueues one EmailJob with the participant in BCC.

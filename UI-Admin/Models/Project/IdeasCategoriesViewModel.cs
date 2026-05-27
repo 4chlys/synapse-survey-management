@@ -12,4 +12,8 @@ public record IdeasCategoriesViewModel
     public int TotalFlagged { get; init; }
     public int TotalDeclined { get; init; }
     public ICollection<CategoryViewModel> Categories { get; init; } = new List<CategoryViewModel>();
+
+    // For the "Send to all participants" broadcast modal rendered on this page.
+    public string DefaultLanguageCode { get; init; }
+    public ICollection<string> SupportedLanguageCodes { get; init; } = new List<string>();
 }

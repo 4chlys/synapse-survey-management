@@ -124,4 +124,5 @@
 
 @await Html.PartialAsync("_IdeaSummaryPanel", Model)
 @await Html.PartialAsync("_EmailComposeModal", Model)
-@await Html.PartialAsync("_EmailBroadcastModal", Model)
+@await Html.PartialAsync("_EmailBroadcastModal", new SynapseEnqueteManagement.UI.Admin.Models.Project.EmailBroadcastModalModel(
+    Model.ProjectId, Model.SupportedLanguageCodes.ToList(), Model.DefaultLanguageCode))
