@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.API.Controllers;
 using SynapseEnqueteManagement.API.DTOs.Survey;
+using SynapseEnqueteManagement.API.Options;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Interfaces;
 
@@ -27,6 +29,7 @@ public class QuestionnairesControllerTests
             _participantManager.Object,
             _projectManager.Object,
             _mediaCleanup.Object,
+            Microsoft.Extensions.Options.Options.Create(new StorageOptions { BucketName = "synapse-assets-prod" }),
             _env.Object);
     }
 

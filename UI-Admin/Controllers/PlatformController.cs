@@ -207,14 +207,14 @@ public class PlatformController(
 
     public async Task<IActionResult> Settings(int id)
     {
-        var platform = await platformService.GetPlatformByIdAsync(id);
-        if (platform is null) return NotFound();
+        var basicInfo = await platformService.GetPlatformFormAsync(id);
+        if (basicInfo is null) return NotFound();
 
         ViewData["PlatformId"] = id;
-        ViewData["PlatformName"] = platform.Name;
+        ViewData["PlatformName"] = basicInfo.Name;
         ViewData["ActiveSection"] = "Settings";
 
-        return View(await BuildSettingsViewModel(id, platform));
+        return View(await BuildSettingsViewModel(id, basicInfo));
     }
 
     [HttpPost]
@@ -222,11 +222,11 @@ public class PlatformController(
     {
         if (!ModelState.IsValid)
         {
-            var platform = await platformService.GetPlatformByIdAsync(id);
+            var basicInfo = await platformService.GetPlatformFormAsync(id);
             ViewData["PlatformId"] = id;
-            ViewData["PlatformName"] = platform?.Name;
+            ViewData["PlatformName"] = basicInfo?.Name;
             ViewData["ActiveSection"] = "Settings";
-            return View("Settings", await BuildSettingsViewModel(id, platform!));
+            return View("Settings", await BuildSettingsViewModel(id, basicInfo!));
         }
 
         await platformService.UpdatePlatformAsync(
@@ -248,17 +248,9 @@ public class PlatformController(
         return RedirectToAction(nameof(Settings), new { id });
     }
 
-    private async Task<PlatformSettingsViewModel> BuildSettingsViewModel(
-        int id, SynapseEnqueteManagement.BL.Domain.Platform.Entities.ProjectPlatform platform)
+    private async Task<PlatformSettingsViewModel> BuildSettingsViewModel(int id, PlatformFormViewModel basicInfo)
     {
         var settings = await platformService.GetPlatformSettingsAsync(id);
-        var basicInfo = new PlatformFormViewModel
-        {
-            ProjectPlatformId = platform.ProjectPlatformId,
-            Name = platform.Name,
-            LogoUrl = platform.LogoUrl,
-            WebsiteUrl = platform.WebsiteUrl
-        };
         var config = settings is not null
             ? new PlatformConfigurationViewModel
             {
@@ -279,6 +271,6 @@ public class PlatformController(
                 AiAssistanceEnabled = true,
                 IdeationEnabled = true
             };
-        return new PlatformSettingsViewModel(id, platform.Name, basicInfo, config);
+        return new PlatformSettingsViewModel(id, basicInfo.Name, basicInfo, config);
     }
 }

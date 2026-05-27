@@ -1,3 +1,4 @@
+using SynapseEnqueteManagement.BL.Domain.Platform.Entities;
 using SynapseEnqueteManagement.BL.Stats;
 using SynapseEnqueteManagement.DAL;
 
@@ -112,5 +113,69 @@ public class SystemStatsAggregatorTests
         Assert.Equal(0, platform.ParticipantCount);
         Assert.Equal(0d, platform.AvgCompletionSeconds);
         Assert.Equal(0d, platform.MedianCompletionSeconds);
+    }
+
+    [Fact]
+    public void Aggregate_PlatformRollup_CountsProjectStatesPerPlatform()
+    {
+        var projects = new[]
+        {
+            Proj(1, platformId: 1, state: ProjectState.Active),
+            Proj(2, platformId: 1, state: ProjectState.Draft),
+            Proj(3, platformId: 1, state: ProjectState.Archived),
+            Proj(4, platformId: 1, state: ProjectState.Active),
+        };
+
+        var result = _aggregator.Aggregate(projects, []);
+
+        var platform = result.PlatformRows.Single();
+        Assert.Equal(2, platform.ActiveCount);
+        Assert.Equal(1, platform.DraftCount);
+        Assert.Equal(1, platform.ArchivedCount);
+    }
+
+    [Fact]
+    public void Aggregate_ProjectName_PicksDefaultLanguageTranslationFirst()
+    {
+        var nl = new Language { Code = "nl" };
+        var en = new Language { Code = "en" };
+        var project = Proj(1, platformId: 1);
+        project.DefaultLanguage = nl;
+        project.Translations =
+        [
+            new ProjectTranslation { Language = en, Name = "English" },
+            new ProjectTranslation { Language = nl, Name = "Nederlands" },
+        ];
+
+        var result = _aggregator.Aggregate([project], []);
+
+        Assert.Equal("Nederlands", result.ProjectRows[0].ProjectName);
+    }
+
+    [Fact]
+    public void Aggregate_ProjectName_FallsBackToFirstTranslationWhenDefaultLanguageMissing()
+    {
+        var en = new Language { Code = "en" };
+        var project = Proj(1, platformId: 1);
+        // DefaultLanguage is null — only an English translation exists. Picker must still find it.
+        project.Translations =
+        [
+            new ProjectTranslation { Language = en, Name = "Only English" },
+        ];
+
+        var result = _aggregator.Aggregate([project], []);
+
+        Assert.Equal("Only English", result.ProjectRows[0].ProjectName);
+    }
+
+    [Fact]
+    public void Aggregate_ProjectName_EmptyWhenNoTranslationsAtAll()
+    {
+        var project = Proj(1, platformId: 1); // Translations not assigned
+        project.Translations = [];
+
+        var result = _aggregator.Aggregate([project], []);
+
+        Assert.Equal(string.Empty, result.ProjectRows[0].ProjectName);
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SynapseEnqueteManagement.UI.Admin.Data;
+using SynapseEnqueteManagement.UI.Admin.Models.Dashboard;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Dashboard;
 
@@ -68,6 +69,26 @@ public class WidgetPreferenceService(AdminDbContext db)
         }
 
         await db.SaveChangesAsync();
+    }
+
+    // Build a clean 9-slot array from form input: positions beyond the input fall back to the
+    // default layout, unknown widget types are replaced with the slot's default, and QuestionId
+    // is only kept for the three question-bound widget types. Pure mapping — kept here next to
+    // AllWidgetTypes/DefaultLayout so the rules live in one place.
+    public static WidgetSlot[] SanitizeSlots(WidgetSlotInput[] source)
+    {
+        source ??= [];
+        return Enumerable.Range(0, 9)
+            .Select(i =>
+            {
+                var input = i < source.Length ? source[i] : null;
+                var type = input is not null && AllWidgetTypes.Contains(input.WidgetType)
+                    ? input.WidgetType
+                    : DefaultLayout[i];
+                var isQuestionBound = type is "QuestionSinglePie" or "QuestionMultiBar" or "QuestionLikertBar";
+                return new WidgetSlot(type, isQuestionBound ? input?.QuestionId : null);
+            })
+            .ToArray();
     }
 
     public async Task<WidgetSlot[]> GetSlotsAsync(string userId, int projectId)
