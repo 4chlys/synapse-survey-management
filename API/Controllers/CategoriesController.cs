@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.DTOs.Ideation;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -71,9 +72,7 @@ public class CategoriesController(
 
     private static CategoryDto MapToDto(Category category, int ideaCount, string languageCode)
     {
-        var t = category.Translations.FirstOrDefault(t => t.Language?.Code == languageCode)
-                ?? category.Translations.FirstOrDefault(t => t.Language?.Code == category.Project?.DefaultLanguage?.Code)
-                ?? category.Translations.FirstOrDefault();
+        var t = TranslationPicker.Pick(category.Translations, languageCode, category.Project?.DefaultLanguage?.Code);
         return new CategoryDto
         {
             CategoryId = category.CategoryId,

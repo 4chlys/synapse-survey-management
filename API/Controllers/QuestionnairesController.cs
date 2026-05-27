@@ -23,13 +23,20 @@ public class QuestionnairesController(
         Environment.GetEnvironmentVariable("GCS_BUCKET") ?? "synapse-assets-prod";
 
     [HttpGet]
-    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId)
+    public async Task<ActionResult<QuestionnaireDto>> GetQuestionnaire(int projectId,
+        [FromQuery] string languageCode = null)
     {
         var questionnaire = await questionnaireManager.GetQuestionnaireByProjectIdWithQuestionsReadOnlyAsync(projectId);
         if (questionnaire is null)
             return NotFound();
 
-        var dto = MapToQuestionnaireDto(questionnaire);
+        if (languageCode is null)
+        {
+            var project = await GetProjectByIdReadOnlyAsync(projectId);
+            languageCode = project?.DefaultLanguage?.Code ?? "nl";
+        }
+
+        var dto = MapToQuestionnaireDto(questionnaire, languageCode);
         return Ok(dto);
     }
 
@@ -218,13 +225,13 @@ public class QuestionnairesController(
         return Ok(new { questionIds = path });
     }
 
-    private static QuestionnaireDto MapToQuestionnaireDto(Questionnaire questionnaire)
+    private static QuestionnaireDto MapToQuestionnaireDto(Questionnaire questionnaire, string languageCode)
         => new()
         {
             QuestionnaireId = questionnaire.QuestionnaireId,
             Questions = questionnaire.Questions
                 .OrderBy(q => q.Position)
-                .Select(q => MapToDto(q, null))
+                .Select(q => MapToDto(q, languageCode))
                 .ToList()
         };
 

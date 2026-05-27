@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SynapseEnqueteManagement.API.Services;
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Helpers;
 using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Controllers;
@@ -45,7 +46,11 @@ public class AdminRawDataController(
         var responses = (await responseManager.GetCommittedResponsesForProjectReadOnlyAsync(projectId)).ToList();
         var categories = (await categoryManager.GetCategoriesWithIdeasForProjectReadOnlyAsync(projectId)).ToList();
 
-        var projectName = project.Translations.FirstOrDefault()?.Name ?? project.ShortForm ?? $"project-{projectId}";
+        // Export labels land on the project's default language so a download is reproducible
+        // — without this, FirstOrDefault() returned whichever translation EF stored first.
+        var exportLanguage = project.DefaultLanguage?.Code;
+        var projectName = TranslationPicker.Pick(project.Translations, exportLanguage)?.Name
+                          ?? project.ShortForm ?? $"project-{projectId}";
         var safeName = SanitizeFileName(projectName);
         var sections = new List<(string Key, string Title, string[] Headers, IEnumerable<string[]> Rows)>();
 
@@ -55,8 +60,8 @@ public class AdminRawDataController(
                 ["VraagId", "Tekst", "Type", "Verplicht", "Sectie", "Antwoordkeuzes"],
                 questions.Select(q =>
                 {
-                    var qt = q.Translations?.FirstOrDefault();
-                    var st = q.Section?.Translations?.FirstOrDefault();
+                    var qt = TranslationPicker.Pick(q.Translations, exportLanguage);
+                    var st = TranslationPicker.Pick(q.Section?.Translations, exportLanguage);
                     return new[]
                     {
                         q.QuestionId.ToString(),
@@ -89,7 +94,7 @@ public class AdminRawDataController(
                 ["CategorieId", "Naam", "Beschrijving", "AantalIdeeën"],
                 categories.Select(c =>
                 {
-                    var ct = c.Translations?.FirstOrDefault();
+                    var ct = TranslationPicker.Pick(c.Translations, exportLanguage);
                     return new[]
                     {
                         c.CategoryId.ToString(),
@@ -106,7 +111,7 @@ public class AdminRawDataController(
                 ["IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
                 categories.SelectMany(c => c.Ideas.Select(i =>
                 {
-                    var catName = c.Translations?.FirstOrDefault()?.Name ?? "";
+                    var catName = TranslationPicker.Pick(c.Translations, exportLanguage)?.Name ?? "";
                     var emojiReactions = i.Comments.OfType<IconComment>()
                         .Where(ic => ic.TextComment == null)
                         .ToList();
