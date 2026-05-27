@@ -54,6 +54,7 @@ export function initSurvey(): void {
     prefillAnswers(slides, existingResponses);
 
     slides[0].classList.add('is-active');
+    slides.forEach((slide, idx) => { if (idx !== 0) slide.setAttribute('inert', ''); });
     updateQuestionCounters(slides, state.visibleIndices);
     state.maxProgressPct = updateProgressBar(progressBar, 0, state.visibleIndices.length, 0);
     syncButtons(state);
@@ -83,13 +84,13 @@ export function initSurvey(): void {
                 }
 
                 if (resumeIndex > 0) {
-                    // Put already-visited slides "above" so a back-swipe animates down from the top,
-                    // not up from below.
                     slides[0].classList.remove('is-active');
+                    slides[0].setAttribute('inert', '');
                     for (const idx of state.visibleIndices) {
                         if (idx < resumeIndex) slides[idx].classList.add('is-above');
                     }
                     slides[resumeIndex].classList.add('is-active');
+                    slides[resumeIndex].removeAttribute('inert');
                     state.currentIndex = resumeIndex;
                 }
 
@@ -122,7 +123,10 @@ export function initSurvey(): void {
         try {
             await submitSurvey(projectId);
             const popup = document.getElementById('thank-you-popup');
-            if (popup) popup.classList.remove('hidden');
+            if (popup) {
+                popup.classList.remove('hidden');
+                popup.classList.add('flex');
+            }
         } catch {
             if (submitBtn) {
                 submitBtn.disabled = false;

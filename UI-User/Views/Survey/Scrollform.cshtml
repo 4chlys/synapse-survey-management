@@ -24,9 +24,13 @@
      data-has-session="@Model.HasSession.ToString().ToLower()">
 
     @* Progress bar *@
-    <div class="absolute top-0 left-0 right-0 h-1 bg-base-300 z-10">
+    <div class="absolute top-0 left-0 right-0 h-1 bg-base-300 z-10"
+         role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+         aria-label="@L["SurveyProgressLabel"]">
         <div id="survey-progress-bar" class="h-full bg-primary w-0 transition-[width] duration-500 ease-out"></div>
     </div>
+
+    <div id="survey-announce" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
     @* form for the survey — submit is hijacked by JS in survey/init.ts, which calls the SurveyApi controller *@
     <form id="survey-form" method="post" style="height: var(--slide-h)">
@@ -105,11 +109,16 @@
                             </span>
                             @if (question.IsMandatory)
                             {
-                                <span class="w-1.5 h-1.5 rounded-full bg-accent inline-block" title="@L["Mandatory"]"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-accent inline-block" title="@L["Mandatory"]" aria-hidden="true"></span>
+                                <span class="sr-only">, @L["Mandatory"]</span>
                             }
                         </div>
 
                         @* Question text + answer area (mc, sc, open and likert) *@
+                        @{
+                            var isGroupFormat = question.Format == QuestionFormat.MultipleChoice
+                                             || question.Format == QuestionFormat.SingleChoice;
+                        }
                         <div class="flex-1 flex flex-col gap-5 overflow-y-auto min-h-0">
 
                             @if (question.MediaType.HasValue)
@@ -156,11 +165,14 @@
                                 </div>
                             }
 
-                            <h2 class="font-heading text-[22px] font-semibold text-base-content leading-snug shrink-0">
+                            <h2 id="q-heading-@question.QuestionId"
+                                class="font-heading text-[22px] font-semibold text-base-content leading-snug shrink-0">
                                 @question.Text
                             </h2>
 
-                            <div class="slide-answer-area flex flex-col gap-2">
+                            <div class="slide-answer-area flex flex-col gap-2"
+                                 role="@(isGroupFormat ? "group" : null)"
+                                 aria-labelledby="@(isGroupFormat ? $"q-heading-{question.QuestionId}" : null)">
 
                                 @* Multiple choice *@
                                 @if (question.Format == QuestionFormat.MultipleChoice)
@@ -225,6 +237,7 @@
                                             <span>@L["LikertAgree"]</span>
                                         </div>
                                         <input type="range" name="q_@question.QuestionId" min="1" max="10" value="5"
+                                               aria-labelledby="q-heading-@question.QuestionId"
                                                class="w-full cursor-pointer h-2" style="accent-color: var(--color-primary);" />
                                         <div class="flex justify-between text-xs text-base-content/50 mt-3">
                                             @for (int i = 1; i <= 10; i++)
@@ -240,6 +253,7 @@
                                 {
                                     <div>
                                         <textarea id="q_@question.QuestionId" name="q_@question.QuestionId" rows="5" maxlength="500"
+                                                  aria-labelledby="q-heading-@question.QuestionId"
                                                   placeholder="@L["AnswerPlaceholder"]" class="w-full border border-base-300 rounded-field px-5 py-4 text-[15px] text-base-content bg-base-100
                                         placeholder:text-base-content/35 focus:outline-none focus:border-primary
                                         resize-none transition-colors leading-relaxed"></textarea>
@@ -330,13 +344,5 @@
     <script type="application/json" id="existing-responses">@Html.Raw(JsonSerializer.Serialize(Model.ExistingResponses))</script>
 }
 
-@{
-    var thankYouModel = new ThankYouViewModel
-    {
-        ProjectId = project?.ProjectId ?? 0,
-        OrganisationName = project?.OrganisationName ?? string.Empty,
-        OrganisationLogoUrl = project?.OrganisationLogoUrl ?? string.Empty,
-        OrganisationWebsiteUrl = project?.OrganisationWebsiteUrl ?? string.Empty,
-    };
-}
-<partial name="_ThankYouPopup" model="thankYouModel" />
+@{ ViewData["ThankYouRedirectUrl"] = Url.Action("CategoryList", "Category", new { projectId = Context.GetRouteValue("projectId") }); }
+@await Html.PartialAsync("_FinalThankYouPopup")
