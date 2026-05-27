@@ -47,4 +47,22 @@ public class EmojisController(IProjectManager projectManager, IEmojiManager emoj
         if (!success) return NotFound();
         return NoContent();
     }
+
+    [HttpPost("api/projects/{projectId}/emojis/batch")]
+    public async Task<ActionResult> EnableEmojis(int projectId, List<int> emojiIds, CancellationToken ct)
+    {
+        emojiIds ??= new();
+        var success = await projectManager.EnableEmojisForProjectAsync(projectId, emojiIds, ct);
+        if (!success) return NotFound();
+        return NoContent();
+    }
+
+    [HttpDelete("api/projects/{projectId}/emojis/batch")]
+    public async Task<ActionResult> DisableEmojis(int projectId, List<int> emojiIds, CancellationToken ct)
+    {
+        emojiIds ??= new();
+        var success = await projectManager.DisableEmojisForProjectAsync(projectId, emojiIds, ct);
+        if (!success) return NotFound();
+        return NoContent();
+    }
 }

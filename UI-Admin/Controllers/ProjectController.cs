@@ -31,6 +31,7 @@ public class ProjectController(
     ProjectAdminService projectService,
     QuestionAdminService questionService,
     CategoryAdminService categoryService,
+    EmojiAdminService emojiService,
     SectionAdminService sectionService,
     DashboardAdminService dashboardService,
     UploadAdminService uploadService,
@@ -391,6 +392,7 @@ public class ProjectController(
     {
         var project = await projectService.GetProjectByIdAsync(projectId);
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var emojis = await emojiService.GetEmojisForProjectAsync(projectId);
 
         if (isNew && project?.ProjectState == "Draft")
             await projectService.UpdateWizardStepAsync(projectId, 3);
@@ -401,6 +403,7 @@ public class ProjectController(
         ViewData["ProjectState"]  = project?.ProjectState ?? "";
         ViewData["ActiveSection"] = "Categories";
         ViewData["Project"]       = project;
+        ViewData["Emojis"]        = emojis;
         ViewData["IsNew"]         = isNew;
         ViewData["HideSidebar"]   = isNew;
         ViewData["AvailableLanguageCodes"] = project?.SupportedLanguageCodes?.ToArray() ?? AvailableLanguageCodes;
@@ -662,10 +665,41 @@ public class ProjectController(
         return View(dashboard);
     }
 
+    public async Task<IActionResult> IdeasCategories(int projectId)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName;
+        ViewData["ProjectState"]  = project.ProjectState;
+        ViewData["ActiveSection"] = "Ideas";
+
+        var categories = await categoryService.GetCategoriesAsync(projectId);
+
+        var (_, total, approved, pending, flagged) =
+            await ideaService.GetIdeasAsync(projectId, null, null, null, 1, 1);
+
+        var vm = new IdeasCategoriesViewModel
+        {
+            ProjectId      = projectId,
+            ProjectName    = project.Name,
+            TotalIdeaCount = total,
+            TotalApproved  = approved,
+            TotalPending   = pending,
+            TotalFlagged   = flagged,
+            TotalDeclined  = Math.Max(0, total - approved - pending - flagged),
+            Categories     = categories
+        };
+
+        return View(vm);
+    }
+
     public async Task<IActionResult> Ideas(
         int projectId,
+        int categoryId,
         string search = null,
-        int? categoryId = null,
         string status = null,
         int page = 1)
     {
@@ -677,37 +711,68 @@ public class ProjectController(
         ViewData["PlatformName"]  = project.OrganisationName;
         ViewData["ProjectState"]  = project.ProjectState;
         ViewData["ActiveSection"] = "Ideas";
-        // ViewData["Title"] is set by the view via the localized PageTitle resource.
 
         var (items, total, approved, pending, flagged) =
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
+        var currentCategory = categories.FirstOrDefault(c => c.CategoryId == categoryId);
         var platformSettings = await platformService.GetPlatformSettingsAsync(project.PlatformId);
 
         var vm = new IdeasViewModel
         {
-            ProjectId             = projectId,
-            ProjectName           = project.Name,
-            Search                = search,
-            CategoryId            = categoryId,
-            Status                = status,
-            Page                  = page,
-            TotalCount            = total,
-            ApprovedCount         = approved,
-            PendingCount          = pending,
-            FlaggedCount          = flagged,
+            ProjectId     = projectId,
+            ProjectName   = project.Name,
+            Search        = search,
+            CategoryId    = categoryId,
+            CategoryName  = currentCategory?.Name ?? string.Empty,
+            Status        = status,
+            Page          = page,
+            TotalCount    = total,
+            ApprovedCount = approved,
+            PendingCount  = pending,
+            FlaggedCount  = flagged,
+            DeclinedCount = Math.Max(0, total - approved - pending - flagged),
+            Ideas         = items,
             PlatformId            = project.PlatformId,
             IdeaSummaryMaxIdeas   = platformSettings?.IdeaSummaryMaxIdeas ?? 200,
-            Ideas                 = items,
-            Categories            = categories.Select(c => new CategoryOptionViewModel
+            Categories    = categories.Select(c => new CategoryOptionViewModel
+                
             {
                 CategoryId = c.CategoryId,
                 Name       = c.Name
             }).ToList()
         };
 
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return PartialView("_IdeasTable", vm);
+
         return View(vm);
+    }
+
+    public async Task<IActionResult> IdeaDetail(
+        int projectId, int ideaId,
+        int categoryId = 0, string categoryName = null,
+        string returnUrl = null)
+    {
+        var project = await projectService.GetProjectByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        ViewData["ProjectId"]     = projectId;
+        ViewData["ProjectName"]   = project.Name;
+        ViewData["PlatformName"]  = project.OrganisationName;
+        ViewData["ProjectState"]  = project.ProjectState;
+        ViewData["ActiveSection"] = "Ideas";
+
+        var vm = await ideaService.GetIdeaDetailAsync(projectId, ideaId);
+        if (vm is null) return NotFound();
+
+        return View(vm with
+        {
+            CategoryId   = categoryId,
+            CategoryName = categoryName ?? string.Empty,
+            BackUrl      = returnUrl ?? Url.Action(nameof(IdeasCategories), new { projectId })!
+        });
     }
 
     public async Task<IActionResult> ExportParticipantEmails(int projectId, string format = "csv")
@@ -741,28 +806,49 @@ public class ProjectController(
     public async Task<IActionResult> ApproveIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Approved");
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     [HttpPost]
     public async Task<IActionResult> DeclineIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Declined");
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     [HttpPost]
     public async Task<IActionResult> FlagIdea(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.SetStatusAsync(projectId, ideaId, "Flagged");
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
     }
 
     [HttpPost]
     public async Task<IActionResult> RemoveIdeaImage(int projectId, int ideaId, string returnUrl)
     {
         await ideaService.RemoveIdeaImageAsync(projectId, ideaId);
-        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Ideas), new { projectId })!);
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeasCategories), new { projectId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ApproveComment(int projectId, int ideaId, int commentId, string returnUrl)
+    {
+        await ideaService.SetCommentStatusAsync(projectId, ideaId, commentId, "Approved");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeaDetail), new { projectId, ideaId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeclineComment(int projectId, int ideaId, int commentId, string returnUrl)
+    {
+        await ideaService.SetCommentStatusAsync(projectId, ideaId, commentId, "Declined");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeaDetail), new { projectId, ideaId })!);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> FlagComment(int projectId, int ideaId, int commentId, string returnUrl)
+    {
+        await ideaService.SetCommentStatusAsync(projectId, ideaId, commentId, "Flagged");
+        return Redirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(IdeaDetail), new { projectId, ideaId })!);
     }
 
     public async Task<IActionResult> ConfigureDashboard(int projectId)

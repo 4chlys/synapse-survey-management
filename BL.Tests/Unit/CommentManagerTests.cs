@@ -306,6 +306,42 @@ public class CommentManagerTests
 
     #endregion
 
+    #region SetCommentModerationStatusAsync
+
+    [Fact]
+    public async Task SetCommentModerationStatusAsync_CommentExistsInProject_UpdatesStatusAndSaves()
+    {
+        var comment = new TextComment { CommentId = CommentId, ModerationStatus = ModerationStatus.Unflagged };
+        _commentRepository.Setup(r => r.ReadTextCommentByIdForUpdateAsync(CommentId, ProjectId))
+            .ReturnsAsync(comment)
+            .Verifiable(Times.Once());
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Verifiable(Times.Once());
+
+        await _manager.SetCommentModerationStatusAsync(CommentId, ModerationStatus.Approved, ProjectId);
+
+        Assert.Equal(ModerationStatus.Approved, comment.ModerationStatus);
+        _commentRepository.VerifyAll();
+        _uow.VerifyAll();
+    }
+
+    [Fact]
+    public async Task SetCommentModerationStatusAsync_CommentNotFound_ThrowsWithoutSaving()
+    {
+        _commentRepository.Setup(r => r.ReadTextCommentByIdForUpdateAsync(99, ProjectId))
+            .ReturnsAsync((TextComment)null)
+            .Verifiable(Times.Once());
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _manager.SetCommentModerationStatusAsync(99, ModerationStatus.Approved, ProjectId));
+
+        _commentRepository.VerifyAll();
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    #endregion
+
     #region Language stamping
 
     [Fact]

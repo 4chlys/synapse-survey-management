@@ -122,6 +122,27 @@ input[type=number].no-spinner {
 
 @import "./quill-dark.css";
 @import "./activate.css";
+
+/* Ideas status filter badges */
+.ideas-filter-badge {
+    transition: opacity 0.15s, outline-offset 0.15s;
+    outline: 2px solid transparent;
+    outline-offset: 1px;
+}
+
+.ideas-filter-badge[data-active="true"] {
+    outline-color: currentColor;
+    outline-offset: 2px;
+    opacity: 1;
+}
+
+.ideas-filter-badge[data-active="false"] {
+    opacity: 0.45;
+}
+
+[data-status-badges]:not(:has([data-active="true"])) .ideas-filter-badge {
+    opacity: 1;
+}
 input[type=number].no-spinner::-webkit-inner-spin-button,
 input[type=number].no-spinner::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -133,6 +154,54 @@ input[type=number].no-spinner::-webkit-outer-spin-button {
    #theme-preview-host. Outside-the-shadow styling only — the
    actual theme tokens are injected into the shadow root by
    project-style.ts. */
+
+/* ─── Emoji pill (ideation page) ────────────────────────────────
+   State is driven by data-enabled="true|false" so TypeScript only
+   needs to flip that one attribute — no style classes in JS. */
+.emoji-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+    cursor: pointer;
+}
+
+.emoji-pill[data-enabled="true"] {
+    background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
+    border-color:     color-mix(in oklch, var(--color-primary) 30%, transparent);
+    color:            var(--color-primary);
+}
+.emoji-pill[data-enabled="true"]:hover {
+    background-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+}
+
+.emoji-pill[data-enabled="false"] {
+    background-color: var(--color-base-200);
+    border-color:     var(--color-base-300);
+    color:            color-mix(in oklch, var(--color-base-content) 50%, transparent);
+}
+.emoji-pill[data-enabled="false"]:hover {
+    background-color: var(--color-base-300);
+}
+
+.emoji-pill:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.emoji-pill .emoji-check {
+    display: none;
+    width:  0.875rem;
+    height: 0.875rem;
+}
+.emoji-pill[data-enabled="true"] .emoji-check {
+    display: block;
+}
 
 #theme-preview-host {
     display: block;

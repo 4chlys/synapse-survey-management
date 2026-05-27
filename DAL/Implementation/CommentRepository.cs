@@ -66,6 +66,11 @@ public class CommentRepository(DbContext context) : Repository<Comment>(context)
             .Include(c => c.Idea).ThenInclude(i => i.Category).ThenInclude(ca => ca.Project).ThenInclude(p => p.Emojis)
             .FirstOrDefaultAsync(c => c.CommentId == commentId);
 
+    public Task<TextComment> ReadTextCommentByIdForUpdateAsync(int commentId, int projectId)
+        => Context.Set<Comment>().OfType<TextComment>()
+            .Where(c => c.CommentId == commentId && c.Idea.Category.Project.ProjectId == projectId)
+            .FirstOrDefaultAsync();
+
     public async Task<IconComment> CreateIconCommentOnIdeaIfNotDuplicateAsync(IconComment iconComment)
     {
         var exists = await Context.Set<Comment>().OfType<IconComment>()

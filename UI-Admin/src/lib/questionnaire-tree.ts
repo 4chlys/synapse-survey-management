@@ -72,6 +72,7 @@ export interface QuestionsI18n {
     mediaAudio: string;
     mediaGeneric: string;
     statsTitle: string;
+    statsButtonLabel: string;
     savedToast: string;
     saveFailedToast: string;
 }
@@ -272,8 +273,19 @@ function renderCard(q: Question, depth: number, buckets: Map<ScopeKey, Question[
             </button>
         </form>`;
 
-    const statsBtn = `
-        <button type="button"
+    const statsBtn = ctx.locked
+        ? `<button type="button"
+                class="question-stats-btn btn btn-outline btn-primary btn-xs gap-1 flex-shrink-0"
+                data-question-id="${q.questionId}"
+                data-format="${escapeHtml(q.questionFormat)}"
+                data-text="${escapeHtml(q.text)}"
+                title="${escapeHtml(i18n.statsTitle)}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/>
+            </svg>
+            ${escapeHtml(i18n.statsButtonLabel)}
+        </button>`
+        : `<button type="button"
                 class="question-stats-btn btn btn-ghost btn-xs btn-circle text-base-content/70 hover:text-primary flex-shrink-0"
                 data-question-id="${q.questionId}"
                 data-format="${escapeHtml(q.questionFormat)}"

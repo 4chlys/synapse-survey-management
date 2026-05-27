@@ -84,6 +84,7 @@
          data-i18n-media-audio="@L["MediaShort_Audio"]"
          data-i18n-media-generic="@L["MediaShort_Generic"]"
          data-i18n-stats-title="@L["StatsTitle"]"
+         data-i18n-stats-button-label="@L["StatsButtonLabel"]"
          data-i18n-saved-toast="@L["SavedToast"]"
          data-i18n-save-failed-toast="@L["SaveFailedToast"]">
         <p class="text-base-content/40 italic text-sm py-2">@L["LoadingQuestions"]</p>
@@ -117,8 +118,8 @@
 
 </div>
 
-@* Floating AI chat bubble + popup — hidden entirely when mode is Never *@
-<div id="qs-chat-panel" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 @(aiAssistance == "Never" ? "hidden" : "")">
+@* Floating AI chat bubble + popup — hidden when mode is Never or project is locked *@
+<div id="qs-chat-panel" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 @(aiAssistance == "Never" || isLocked ? "hidden" : "")">
     <div id="qs-chat-popup" class="hidden w-[440px] max-h-[min(600px,75vh)] rounded-2xl bg-base-100 shadow-2xl border border-base-300 flex flex-col overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-3 border-b border-base-300">
             <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
@@ -433,6 +434,9 @@
     </form>
 </dialog>
 
-@section Scripts {
-    <script type="module" vite-src="~/questionnaire/questionsupportchat.ts"></script>
+@if (!isLocked)
+{
+    @section Scripts {
+        <script type="module" vite-src="~/questionnaire/questionsupportchat.ts"></script>
+    }
 }

@@ -1,4 +1,5 @@
 using SynapseEnqueteManagement.BL.Domain.Project.Entities;
+using SynapseEnqueteManagement.BL.Domain.Project.Enums;
 using SynapseEnqueteManagement.BL.Domain.Project.Stats;
 
 namespace SynapseEnqueteManagement.DAL.Interfaces;
@@ -17,4 +18,6 @@ public interface ICategoryRepository : IRepository<Category>
     Task<Category> ReadByIdWithProjectForUpdateAsync(int categoryId);
 
     Task<List<CategoryMetric>> ReadTopCategoriesAsync(int projectId, int count, string languageCode, string defaultLanguageCode);
+
+    Task<Dictionary<ModerationStatus, int>> ReadModerationQueueAsync(int projectId, int? categoryId = null);
 }

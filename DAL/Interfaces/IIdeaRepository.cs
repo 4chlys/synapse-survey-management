@@ -52,4 +52,7 @@ public interface IIdeaRepository : IRepository<Idea>
         int page, int pageSize);
 
     Task<Idea> ReadByIdInProjectForUpdateAsync(int ideaId, int? projectId = null);
+    Task<(List<Idea> Items, int Total)> ReadIdeasPagedAsync(
+        int projectId, string search, int? categoryId, ModerationStatus? status,
+        int page, int pageSize);
 }
