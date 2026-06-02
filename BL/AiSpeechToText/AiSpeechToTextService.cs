@@ -46,8 +46,16 @@ public sealed class AiSpeechToTextService(
                 new ReadOnlyMemory<byte>(request.AudioData),
                 request.MimeType);
 
+            var langName = GetLanguageName(request.Language);
             var prompt = config.TranscriptionPrompt
-                .Replace("{language}", GetLanguageName(request.Language), StringComparison.OrdinalIgnoreCase);
+                .Replace("{language}", langName, StringComparison.OrdinalIgnoreCase);
+
+            // Explicit language instruction using the full name so it is unambiguous
+            // regardless of what language the transcription prompt itself is written in.
+            var languageDirective = new ChatMessage(ChatRole.System,
+                $"You are a transcription engine. Output the transcription in {langName} only. " +
+                $"If the speech is in another language, translate the words into {langName}. " +
+                "Return only the transcription text, with no explanation.");
 
             var message = new ChatMessage(ChatRole.User,
             [
@@ -56,7 +64,7 @@ public sealed class AiSpeechToTextService(
             ]);
 
             var response = await platformConfig.ChatClient.GetResponseAsync(
-                [message], cancellationToken: ct);
+                [languageDirective, message], cancellationToken: ct);
 
             try { await usageManager.LogChatAsync(projectId, AiServiceKind.SpeechToText, platformConfig.SelectedModelId, response.Usage, ct); }
             catch (Exception ex) { logger.LogWarning(ex, "[SpeechToText] Failed to record AI usage."); }
