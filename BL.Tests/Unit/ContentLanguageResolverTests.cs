@@ -99,6 +99,30 @@ public class ContentLanguageResolverTests
     }
 
     [Fact]
+    public void Resolve_EmptySupportedSet_NotClamped_ReturnsParticipantLanguage()
+    {
+        // Empty (but non-null) supported set must not clamp — same as the project-null path.
+        var participant = new Participant { Language = En, Project = null };
+        var project = new Project { SupportedLanguages = new List<Language>(), DefaultLanguage = Nl };
+
+        var result = ContentLanguageResolver.Resolve(participant, project, null);
+
+        Assert.Same(En, result);
+    }
+
+    [Fact]
+    public void Resolve_ParticipantLanguageCaseInsensitiveMatch_IsKept()
+    {
+        var upperEn = new Language { Code = "EN", DisplayName = "English", IsActive = true };
+        var participant = new Participant { Language = upperEn };
+        var project = new Project { SupportedLanguages = new List<Language> { Nl, En }, DefaultLanguage = Nl };
+
+        var result = ContentLanguageResolver.Resolve(participant, project, null);
+
+        Assert.Same(upperEn, result);
+    }
+
+    [Fact]
     public void Resolve_NothingResolvable_ReturnsNull()
     {
         var participant = new Participant { Language = null, Project = null };
