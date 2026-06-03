@@ -27,10 +27,10 @@ public class ModerationService(HttpClient httpClient, ISessionService sessionSer
                ?? new ModerationResponse();
     }
 
-    public async Task<SuggestResponse> SuggestAsync(int projectId, string text)
+    public async Task<SuggestResponse> SuggestAsync(int projectId, string text, string language = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"api/projects/{projectId}/moderation/suggest");
-        request.Content = JsonContent.Create(new { text });
+        request.Content = JsonContent.Create(new { text, language });
         AddTokenHeader(request, projectId);
         var response = await HttpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();

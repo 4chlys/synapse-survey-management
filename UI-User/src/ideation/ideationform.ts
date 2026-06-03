@@ -69,7 +69,11 @@ export function wireIdeationForm(
                 return;
             }
 
-            const suggestResult = await callSuggest(text, projectId);
+            const suggestResult = await callSuggest(
+                text,
+                projectId,
+                form.querySelector<HTMLSelectElement>('select[name="languageCode"]')?.value,
+            );
 
             const outcome = await showRewritePopup(
                 text,
@@ -120,7 +124,11 @@ export async function submitIdeaDirectly(
             return;
         }
 
-        const suggestResult = await callSuggest(draftText, projectId);
+        const suggestResult = await callSuggest(
+            draftText,
+            projectId,
+            form.querySelector<HTMLSelectElement>('select[name="languageCode"]')?.value,
+        );
         const outcome = await showRewritePopup(
             draftText,
             suggestResult.suggestion,

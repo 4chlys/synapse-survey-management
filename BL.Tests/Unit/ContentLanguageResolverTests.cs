@@ -78,6 +78,27 @@ public class ContentLanguageResolverTests
     }
 
     [Fact]
+    public void Resolve_ParticipantLanguageNotInSupportedSet_FallsBackToProjectDefault()
+    {
+        var participant = new Participant { Language = En, Project = null };
+        var project = new Project { SupportedLanguages = new List<Language> { Nl }, DefaultLanguage = Nl };
+
+        var result = ContentLanguageResolver.Resolve(participant, project, null);
+
+        Assert.Same(Nl, result);
+    }
+
+    [Fact]
+    public void Resolve_NullProject_NotClamped_ReturnsParticipantLanguage()
+    {
+        var participant = new Participant { Language = En, Project = null };
+
+        var result = ContentLanguageResolver.Resolve(participant, project: null, submissionLanguageCode: null);
+
+        Assert.Same(En, result);
+    }
+
+    [Fact]
     public void Resolve_NothingResolvable_ReturnsNull()
     {
         var participant = new Participant { Language = null, Project = null };
