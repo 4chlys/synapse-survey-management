@@ -14,6 +14,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 [Route("api/projects")]
 public class ProjectsController(
     IProjectManager projectManager,
+    IShortFormService shortFormService,
     IAiImageGenerationService imageGenerationService,
     IStorageService storageService) : ControllerBase
 {
@@ -69,6 +70,23 @@ public class ProjectsController(
             ProjectId = project.ProjectId,
             ShortForm = project.ShortForm,
             ProjectState = project.ProjectState.ToString()
+        });
+    }
+
+    // Resolves a unique shortform from a desired value, applying the same -2/-3 suffixing as save.
+    [HttpGet("shortform-suggestion")]
+    public async Task<ActionResult<ProjectShortFormSuggestionDto>> SuggestShortForm(
+        [FromQuery] string shortForm, [FromQuery] int? excludeProjectId = null)
+    {
+        var normalized = shortFormService.Normalize(shortForm);
+        if (!shortFormService.IsValid(normalized) || shortFormService.IsReserved(normalized))
+            return Ok(new ProjectShortFormSuggestionDto { Suggestion = normalized, Available = false });
+
+        var unique = await shortFormService.EnsureUniqueAsync(normalized, excludeProjectId);
+        return Ok(new ProjectShortFormSuggestionDto
+        {
+            Suggestion = unique,
+            Available = string.Equals(unique, normalized, StringComparison.Ordinal)
         });
     }
 
