@@ -18,9 +18,10 @@ stepping on each other.
 
 ## 2. Layer diagram
 
-The solution `SynapseEnqueteManagement.sln` contains nine projects: six implementation
-projects grouped into **four architectural layers**, plus three test projects
-(`DAL.Tests`, `BL.Tests`, `API.Tests`). The dependency direction is strictly downward.
+The solution `SynapseEnqueteManagement.sln` contains eleven projects: six implementation
+projects grouped into **four architectural layers**, plus five test projects
+(`DAL.Tests`, `BL.Tests`, `API.Tests`, and the MVC front-end suites `UI-User.Tests` and
+`UI-Admin.Tests`). The dependency direction is strictly downward.
 The domain model is **part of the Business Logic layer**, not a layer of its own: it lives
 in a dedicated `Domain` project — whose root namespace is `SynapseEnqueteManagement.BL.Domain`
 — purely so the `DAL` can reference the entity types it persists. It carries no logic.

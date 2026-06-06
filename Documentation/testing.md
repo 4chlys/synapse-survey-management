@@ -2,55 +2,88 @@
 
 ## 1. Overview
 
-The .NET solution ships three dedicated test projects, one per backend layer:
-`API.Tests`, `BL.Tests`, and `DAL.Tests`. They are referenced from the solution
+The .NET solution ships five dedicated test projects: three for the backend layers
+(`API.Tests`, `BL.Tests`, `DAL.Tests`) and two for the MVC front-ends
+(`UI-User.Tests`, `UI-Admin.Tests`). They are referenced from the solution
 file (`SynapseEnqueteManagement.sln`) alongside the production projects, so a
 single `dotnet test SynapseEnqueteManagement.sln` builds and runs them all.
+
+```mermaid
+flowchart LR
+    subgraph App["Implementation layers"]
+        direction TB
+        UI["UI-User / UI-Admin<br/>MVC + TypeScript"]
+        API["API controllers"]
+        BL["BL managers + services"]
+        DAL["DAL repositories + UnitOfWork"]
+    end
+
+    BL -. "strict Moq, ~220 facts" .-> TBL[(BL.Tests)]
+    API -. "Moq on managers, ~114 facts" .-> TAPI[(API.Tests)]
+    DAL -. "in-memory SQLite integration, ~26 facts" .-> TDAL[(DAL.Tests)]
+    UI -. "WebApplicationFactory + filters/binding, ~44 facts" .-> TUI[(UI-User.Tests<br/>UI-Admin.Tests)]
+    UI -. "TypeScript bundle" .-> GAP[/no test runner — gap/]
+```
 
 The strategy is deliberately layered to match the N-layer architecture
 (`Domain → DAL → BL → API/UI`):
 
 - **BL is the most heavily tested layer**, because that is where the
-  business rules live. Around 90 facts in `BL.Tests` exercise the manager
+  business rules live. Around 220 facts in `BL.Tests` exercise the manager
   classes (`IdeaManager`, `ProjectManager`, `CommentManager`, …) with their
   repository and unit-of-work dependencies mocked.
 - **API controllers are tested with unit tests** that mock the manager
   interfaces. The focus is on the controller's translation layer: input
   binding, return shape, and forwarding of arguments — not the business logic
   it delegates to.
-- **DAL is the only layer covered by integration tests.** Testing the
+- **DAL is covered by integration tests.** Testing the
   generic `Repository<T>` and `UnitOfWork` against an in-memory database is
   the only way to verify that change-tracking, transactions and
   `ExecuteDeleteAsync` actually behave as documented; unit-testing EF Core
   with mocks would prove nothing about the real provider semantics.
+- **The MVC front-ends now have their own suites.** `UI-User.Tests` and
+  `UI-Admin.Tests` spin up the real ASP.NET Core pipeline through
+  `Microsoft.AspNetCore.Mvc.Testing`'s `WebApplicationFactory` (integration
+  tests), plus targeted unit tests for action filters and record/form model
+  binding. They cover the C# MVC layer; the TypeScript bundle in
+  `UI-User/Assets/` is still untested.
 
 What was prioritised: business logic in BL, transactional correctness in DAL,
-controller wiring in API. What was de-prioritised: the TypeScript frontend
-and end-to-end browser tests.
+controller wiring in API, and — more recently — front-end filters, model
+binding, and a thin slice of HTTP-pipeline integration in the two UI suites.
+What is still de-prioritised: the TypeScript frontend and end-to-end browser
+tests.
 
 | Layer            | Test project | Approach                              | Key gaps                                                                 |
 |------------------|--------------|---------------------------------------|--------------------------------------------------------------------------|
-| API controllers  | API.Tests    | Unit tests, Moq on manager interfaces | ~16 of 26 controllers have no test class; no full HTTP-pipeline tests    |
-| BL managers      | BL.Tests     | Unit tests, Moq on repositories/UoW   | Coordinator managers (`SubmissionManager`, `SurveyFlowManager`) untested |
+| API controllers  | API.Tests    | Unit tests, Moq on manager interfaces | ~19 of 30 controllers have no test class; controllers tested in isolation, not through the real HTTP pipeline |
+| BL managers      | BL.Tests     | Unit tests, Moq on repositories/UoW   | The survey `SubmissionManager` coordinator and a few helpers remain untested |
 | DAL repositories | DAL.Tests    | Integration tests, in-memory SQLite   | Per-entity repositories (`IdeaRepository`, …) covered only via BL mocks  |
-| Frontend TS      | —            | None                                  | No unit, integration, or browser tests for `UI-User/Assets/`             |
+| MVC front-ends   | UI-User.Tests, UI-Admin.Tests | `WebApplicationFactory` integration + filter/model-binding unit tests | Coverage is targeted (filters, theming, auth fallback, binding), not broad |
+| Frontend TS      | —            | None                                  | No unit, integration, or browser tests for the `UI-User/Assets/` TypeScript bundle |
 
 ## 2. API layer — unit tests (`API.Tests`)
 
 Controllers with their own test class:
 
+- `AdminAiControllerTests`
 - `AdminAiUsageControllerTests`
+- `AdminEmailControllerTests`
 - `AdminPlatformStatsControllerTests`
 - `CommentsControllerTests`
 - `EmojisControllerTests`
 - `IdeasControllerTests`
 - `ProjectsControllerTests`
 - `QuestionnairesControllerTests`
+- `QuestionStatsControllerTests`
 - `ResponsesControllerTests`
 
-In addition, `ChatClientRegistryTests` exercises the DI helper that resolves
-the right `IChatClient` per platform — it is wired in through the API project
-but is not itself a controller.
+In addition, `API.Tests` carries unit tests for non-controller helpers wired
+in through the API project: `ChatClientRegistryTests` (resolves the right
+`IChatClient` per platform), `EmailJobManagerTests` (queue/backoff logic),
+`ModelAvailabilityServiceTests`, `ProjectActivationValidatorTests`,
+`ProjectDtoMapperTests`, `QuestionMediaCleanupServiceTests`,
+`LocalStorageServiceTests`, and `SeedAssetTests`.
 
 **Mocking strategy.** The project references `Moq 4.20.72` (see
 `API.Tests.csproj`) and uses it throughout. Every manager dependency
@@ -106,9 +139,23 @@ Manager test classes:
 - `CategoryManagerTests`
 - `ParticipantManagerTests`
 - `QuestionnaireManagerTests`
+- `SectionManagerTests`
 - `ResponseManagerTests`
+- `ModerationManagerTests`
+- `DashboardManagerTests`
+- `EmojiManagerTests`
+- `QuestionStatsManagerTests`
+- `SurveyFlowManagerTests`
+- `IdeaSubmissionManagerTests`
 - `AiUsageManagerTests`
-- `AiPricingTests` (pricing helper, not a manager but lives in BL)
+
+Plus a growing set of helper/service tests that live in BL but are not
+managers: `AiPricingTests` (pricing table), the idea-summary pair
+(`AiIdeaSummaryServiceTests`, `IdeaSummarySamplingServiceTests`),
+`ProjectDuplicationServiceTests`, `ProjectTranslationValidatorTests`,
+`ShortFormServiceTests`, `LanguageResolverTests`, `ContentLanguageResolverTests`,
+`CategoryNameResolverTests`, `TranslationPickerTests`,
+`MultipleChoiceValueSerializerTests`, and `SystemStatsAggregatorTests`.
 
 **Mocking strategy.** All repositories and the `IUnitOfWork` are created as
 `Mock<T>` with `MockBehavior.Strict` — every call has to be explicitly set
@@ -158,7 +205,7 @@ actual files:
 services. Where a manager depends on an AI interface
 (`IEmbeddingService`, `ISortStrategyFactory<Idea>`, …), the test constructs
 a Moq-based double via `new Mock<IEmbeddingService>()` and stubs only the
-calls that the scenario requires. The runtime `Mock*` services (section 5)
+calls that the scenario requires. The runtime `Mock*` services (section 6)
 are a separate concept used in development hosting, not in tests.
 
 ## 4. DAL layer — integration tests (`DAL.Tests`)
@@ -217,7 +264,38 @@ indirectly exercised through BL tests that mock their interfaces.
 These tests are what gives the UoW abstraction (documented separately in
 `Documentation/UnitOfWork.md`) its safety guarantees.
 
-## 5. Mock services for AI
+## 5. MVC front-end tests (`UI-User.Tests`, `UI-Admin.Tests`)
+
+Both MVC front-ends now ship a test project. Unlike the API tests, these
+exercise the **real ASP.NET Core pipeline**: each references
+`Microsoft.AspNetCore.Mvc.Testing` and boots the app through a custom
+`ExtendedWebApplicationFactory`, so routing, filters, middleware and view
+rendering all run for real against an in-memory host.
+
+**`UI-User.Tests`** focuses on participant-facing cross-cutting concerns:
+
+- `Filters/RequireParticipantSessionAttributeTests` — the session-gating
+  filter that guards participant pages.
+- `Integration/LayoutDataThemeAttributeTests` — verifies the per-project
+  `data-project-theme` attribute is emitted onto the rendered layout.
+
+**`UI-Admin.Tests`** covers the admin panel's wiring:
+
+- `Integration/AuthFallbackPolicyTests` — confirms the global
+  `RequireAuthenticatedUser` fallback policy actually protects controllers
+  that carry no explicit `[Authorize]`.
+- `Integration/ThemePrePaintScriptTests` — the no-flash theme pre-paint script.
+- `ModelBinding/RecordViewModelBindingTests` (with `FormBinderTestHarness`) —
+  proves C# `record` view models bind correctly from form posts.
+- `Unit/ProjectTranslationFormTests`,
+  `Unit/RequireProjectPlatformOwnershipFilterTests`.
+
+These suites are the project's only tests that touch real HTTP routing, model
+binding, filters and Razor rendering — the API controller tests deliberately
+do not (see §2). The TypeScript bundle under `UI-User/Assets/` is still not
+covered by either suite.
+
+## 6. Mock services for AI
 
 For every AI-backed capability, BL ships two implementations of the
 interface: a real provider and a `Mock*` fallback. The full list of mock
@@ -278,7 +356,7 @@ they use Moq doubles instead. The `Mock*` services are a *runtime*
 substitution for dev hosting; the test projects build their own
 test-time substitutes via Moq.
 
-## 6. Test tooling
+## 7. Test tooling
 
 | Concern             | Choice                                           |
 |---------------------|--------------------------------------------------|
@@ -305,14 +383,16 @@ dotnet test --filter "FullyQualifiedName~IdeaManagerTests"              # one cl
 dotnet test --filter "FullyQualifiedName~AddIdeaAsync_HappyPath"        # one test
 ```
 
-**CI integration.** `.gitlab-ci.yml` defines five stages —
-`build → scan → push → sign → deploy`. There is currently **no test stage**:
-the pipeline builds Docker images, scans them with Trivy, pushes to GCR,
-signs with cosign, and rolling-deploys to a managed instance group. Tests
-are expected to be run locally by the developer before pushing. This is a
-real gap and is listed again in section 7.
+**CI integration.** `.gitlab-ci.yml` defines six stages —
+`test → build → scan → push → sign → deploy`. The **`test-dotnet`** job runs
+**first**: it `pnpm build`s both front-ends, then runs
+`dotnet test SynapseEnqueteManagement.sln` with a JUnit logger
+(`--logger:"junit;LogFilePath=TestResults/results.xml"`) and publishes the
+results as a GitLab JUnit test report. Because it gates the first stage, a
+failing test blocks the build, scan, push, sign and deploy stages that follow.
+The job runs on the `development` and `main` branches and on merge requests.
 
-## 7. What is not tested — honest gap list
+## 8. What is not tested — honest gap list
 
 - **No automated tests for the TypeScript frontend.** `UI-User/Assets/` ships
   vanilla TypeScript modules with no Jest/Vitest setup, no test files, and
@@ -321,27 +401,29 @@ real gap and is listed again in section 7.
 - **No end-to-end / browser tests.** There is no Playwright, Cypress, or
   Selenium dependency anywhere in the solution. The full HTTP path — UI-User
   → API → DAL → DB — is never exercised in CI.
-- **No tests for the full ASP.NET Core pipeline.** Controller tests
-  instantiate the class directly; there is no `WebApplicationFactory<T>`
-  hitting real routes, model binding, filters, or middleware.
-- **Controllers without a test class.** Of the 26 controllers under
-  `API/Controllers/`, only 8 are directly tested. Untested controllers
-  include `AdminAiController`, `AdminIdeasController`,
-  `AdminParticipantsController`, `AdminPlatformStatsExportController`,
-  `AdminRawDataController`, `CategoriesController`,
-  `CommentSupportController`, `DashboardController`,
+- **The API controllers are not tested through the real pipeline.** `API.Tests`
+  instantiates each controller directly; routing, model binding, filters and
+  middleware are not exercised there. (The `UI-User.Tests` / `UI-Admin.Tests`
+  suites *do* use `WebApplicationFactory`, but for the MVC front-ends, not the
+  API host — see §5.)
+- **Controllers without a test class.** Of the 30 controllers under
+  `API/Controllers/`, roughly 11 are directly tested. Untested controllers
+  include `AdminIdeasController`, `AdminIdeaSummaryController`,
+  `AdminParticipantsController`, `AdminPlatformsController`,
+  `AdminPlatformStatsExportController`, `AdminRawDataController`,
+  `CategoriesController`, `CommentSupportController`, `DashboardController`,
   `IdeaSupportController`, `ModerationController`,
   `ProjectStatsController`, `ProjectStatsExportController`,
   `ProjectViewsController`, `QuestionSupportController`,
   `SectionsController`, `SocialMediaController`,
   `SpeechToTextController`, and `UploadsController`.
-- **Coordinator managers untested.** `SubmissionManager` and
-  `SurveyFlowManager` — the two managers that orchestrate other managers
-  and own the survey-flow state machine — have no test class.
+- **The survey `SubmissionManager` coordinator is untested.** Its sibling
+  `SurveyFlowManager` now has `SurveyFlowManagerTests`, but the manager that
+  orchestrates final submission has no test class of its own.
 - **`LanguageManager`, `ModerationResolver`, `ModerationTokenService`,
-  `ShortFormService`, `ParticipantLanguageCoordinator`,
-  `TranslationUpserter`** have no dedicated test files. Some are covered
-  indirectly when another manager calls them, but not directly.
+  `ParticipantLanguageCoordinator`, `TranslationUpserter`** have no dedicated
+  test files. Some are covered indirectly when another manager calls them, but
+  not directly. (`ShortFormService` now has `ShortFormServiceTests`.)
 - **Per-entity repositories untested.** Tests cover the generic
   `Repository<T>` only; the bespoke read-with-include methods on
   `IdeaRepository`, `ProjectRepository`, `CategoryRepository`, etc., are
@@ -358,19 +440,17 @@ real gap and is listed again in section 7.
 - **No security tests beyond container scanning.** Trivy runs on the
   built images (HIGH/CRITICAL gate), but there is no SAST, dependency audit
   for .NET packages, or runtime auth/authorisation test.
-- **CI does not run the test suite.** The pipeline has no `test` stage; a
-  broken test will not block a build or a deploy.
 
-## 8. Testing recommendations
+## 9. Testing recommendations
 
 Three concrete next steps, ordered by impact:
 
-1. **Add a `test` stage to `.gitlab-ci.yml`.** A single job running
-   `dotnet test SynapseEnqueteManagement.sln --logger trx --collect:"XPlat Code Coverage"`
-   in a `mcr.microsoft.com/dotnet/sdk:9.0` image, gated before `build`,
-   would turn the existing ~150 facts into a deployment gate. The tests
-   already exist; they just are not being run by CI. This is the
-   highest-leverage change because it is the lowest-effort.
+1. **Add code-coverage reporting to the existing `test` stage.** The
+   `test-dotnet` job already gates the pipeline and emits a JUnit report;
+   adding `--collect:"XPlat Code Coverage"` and surfacing a Cobertura
+   coverage report would make coverage trends visible on every merge request
+   and let the team set a ratchet threshold. The deployment gate itself is
+   already in place — this is the cheap next increment on top of it.
 
 2. **Fill the controller coverage gap for `Admin*` endpoints.** The admin
    controllers are where unauthorised actions cause the most damage

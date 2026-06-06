@@ -107,6 +107,15 @@ public sealed record PlatformDashboardViewModel(int ProjectPlatformId, string Na
 
 > Reach for **Style A** by default. Drop to **Style B** only when the type would be a single short line with no attributes, no defaults, and no doc comments. When in doubt, Style A — it is what almost every file in `API/DTOs/` uses.
 
+```mermaid
+flowchart TD
+    A[New type to declare] --> B{Has identity, DB-tracked,<br/>mutated by code?}
+    B -->|yes| C["class<br/>Domain/ entity"]
+    B -->|"no — a bag of values<br/>moving between layers"| D{Needs attributes, defaults,<br/>doc comments, or<br/>computed properties?}
+    D -->|yes| E["record — Style A<br/>property syntax, get; init;"]
+    D -->|"no — short, self-evident tuple"| F["record — Style B<br/>positional one-liner"]
+```
+
 ## Where we use records in this codebase
 
 ### API DTOs — `API/DTOs/`

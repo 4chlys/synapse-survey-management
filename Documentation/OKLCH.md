@@ -165,30 +165,17 @@ The `oklch(from var(--color-primary) calc(l - 0.06) c h)` syntax only works on C
 
 Going from a stored hex (`#RRGGBB`) to an adjusted hex follows a fixed five-step round-trip. Every node below maps to one block of code in `ColorHelpers.cs` and `project-style.ts`:
 
-```
-        #RRGGBB                            #RRGGBB
-           │                                   ▲
-           ▼                                   │
-     sRGB ∈ [0, 1]                       sRGB ∈ [0, 1]
-           │                                   ▲
-           │  gamma decode                     │  gamma encode
-           ▼                                   │
-     linear sRGB                          linear sRGB
-           │                                   ▲
-           │  × M₁                             │  × M₁⁻¹
-           ▼                                   │
-        LMS cones                          LMS cones
-           │                                   ▲
-           │  ∛  (perceptual compression)      │  ( · )³
-           ▼                                   │
-     cube-rooted LMS                    cube-rooted LMS
-           │                                   ▲
-           │  × M₂                             │  × M₂⁻¹
-           ▼                                   │
-       OKLab (L, a, b) ─── adjust ─── OKLab (L, a, b)
-                              │
-                              ├─ ShiftLightness(Δ):    L ← clamp(L + Δ, 0, 1)
-                              └─ ComplementaryHue:     (a, b) ← (−a, −b)
+```mermaid
+flowchart TB
+    HEX1["#RRGGBB"] -->|"gamma decode"| LIN1["linear sRGB"]
+    LIN1 -->|"× M₁"| LMS1["LMS cones"]
+    LMS1 -->|"cube root — perceptual compression"| CR1["cube-rooted LMS"]
+    CR1 -->|"× M₂"| OKL["OKLab L, a, b"]
+    OKL --> ADJ["adjust in OKLab<br/>ShiftLightness Δ → L = clamp(L+Δ, 0, 1)<br/>ComplementaryHue → a,b = −a, −b"]
+    ADJ -->|"× M₂⁻¹"| CR2["cube-rooted LMS"]
+    CR2 -->|"cube — undo compression"| LMS2["LMS cones"]
+    LMS2 -->|"× M₁⁻¹"| LIN2["linear sRGB"]
+    LIN2 -->|"gamma encode"| HEX2["#RRGGBB"]
 ```
 
 The adjustments happen in OKLab because lightness and hue are linearly separable there — exactly the property that hex, HSL, and linear sRGB do not have.

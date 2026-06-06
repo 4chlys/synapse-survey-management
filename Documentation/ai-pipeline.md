@@ -18,7 +18,7 @@ rewrites rough input without changing the participant's intent. Third,
 struggle to type, image description generates alt-text, and post generation helps
 organisers communicate results.
 
-The platform contains seven AI subsystems, each documented in its own section below:
+The platform contains eight AI subsystems, each documented in its own section below:
 
 1. **Content moderation** — two-stage regex + LLM screening of text and images.
 2. **Idea support** — chat-style AI writing assistance for idea submissions.
@@ -29,11 +29,13 @@ The platform contains seven AI subsystems, each documented in its own section be
    shareable posts.
 7. **Semantic embeddings** — vector representations of ideas for similarity-based
    sorting.
+8. **Idea summary** — admin tool that condenses many submitted ideas into one
+   analysis, generated asynchronously by a background worker.
 
 Two further AI services exist in the codebase and follow the exact same architecture
-as the seven above (question support for questionnaire answers, and AI image
+as the eight above (question support for questionnaire answers, and AI image
 generation); they are not detailed separately here because they reuse the patterns
-described in sections 2 and 10.
+described in sections 2 and 11.
 
 ## 2. AI Configuration System
 
@@ -126,7 +128,7 @@ Every AI service is defined as an interface (`IAiModerationService`,
 `IAiIdeaSupportService`, `IEmbeddingService`, …) with **two** implementations: a real
 one that calls a cloud LLM, and a mock one that returns scripted, deterministic
 output. The DI container in `Program.cs` wires up exactly one of the two based on the
-`moderation.use_ai` flag in `ai-config.json`. This is covered in detail in section 10.
+`moderation.use_ai` flag in `ai-config.json`. This is covered in detail in section 11.
 
 ## 3. Content Moderation Pipeline
 
@@ -487,7 +489,99 @@ same vector, and texts sharing words produce vectors with higher cosine similari
 the embedding-based sort strategies still function — but the result is a bag-of-words
 stand-in, not a true semantic embedding. Empty input yields a zero vector.
 
-## 9. AI Usage Tracking and Cost Monitoring
+## 9. Idea Summary
+
+### What it does
+
+Once a project has collected ideas, an organiser can ask the platform to
+distil them into a single readable analysis — recurring themes, the most
+discussed ideas, points of disagreement, and an overall summary. Unlike every
+other AI feature in this document, idea summary is **asynchronous**: the
+request enqueues a job and returns immediately, and a background worker
+produces the summary out-of-band. This is because a large project may have
+hundreds of ideas, and summarising them can take far longer than an HTTP
+request should block for.
+
+### The job queue and background worker
+
+The feature is built around a persisted job rather than a synchronous call:
+
+1. **Enqueue.** `AdminIdeaSummaryController` (`POST
+   /api/admin/projects/{projectId}/ideas/summary`) records an `IdeaSummaryJob`
+   (`Domain/Project/Entities/IdeaSummaryJob.cs`) with the chosen filter,
+   sampling strategy, output language and export format serialised into the
+   row, and returns a job id.
+2. **Process.** `IdeaSummaryWorker`
+   (`API/BackgroundServices/IdeaSummaryWorker.cs`) is a hosted
+   `BackgroundService` that polls the queue every five seconds with a
+   `PeriodicTimer`. Each tick opens its own DI scope, claims the next pending
+   job (`IIdeaSummaryJobManager.ClaimNextPendingAsync`), and processes exactly
+   one — so the scoped `DbContext` is never shared across ticks.
+3. **Poll / download.** The client polls `GET …/summary/{jobId}/status` and,
+   once the job is complete, fetches the rendered file via `GET
+   …/summary/{jobId}/download`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Admin
+    participant Ctrl as AdminIdeaSummaryController
+    participant Q as IdeaSummaryJob queue
+    participant W as IdeaSummaryWorker
+    participant AI as AiIdeaSummaryService
+    participant LLM as LLM provider
+
+    Admin->>Ctrl: POST .../ideas/summary (filter, strategy)
+    Ctrl->>Q: enqueue job
+    Ctrl-->>Admin: 202 Accepted + jobId
+    Note over W,Q: worker polls every 5s
+    W->>Q: claim next pending
+    W->>AI: sample ideas, then summarise
+    AI->>LLM: single-shot, or batched map-reduce
+    LLM-->>AI: summary text
+    W->>Q: mark completed (file written to disk)
+    Admin->>Ctrl: GET .../{jobId}/status, then /download
+```
+
+The worker writes the finished summary to a file (path resolved by
+`SummaryPathResolver`, configured through `SummaryStorageOptions`) and flips
+the job to completed; any exception marks it failed with the error message, so
+a failed job surfaces to the operator instead of being lost.
+
+### Sampling — choosing which ideas to summarise
+
+`IdeaSummarySamplingService` (`BL/AiIdeaSummary/IdeaSummarySamplingService.cs`)
+selects and orders the ideas before they reach the model, applying one of three
+strategies and an optional cap (`AiIdeaSummaryConfig.MaxIdeas`):
+
+- **`Newest`** (default) — most recent ideas first.
+- **`MostCommented`** — ideas with the most comments first, so the summary
+  leans toward what participants actually engaged with.
+- **`Diverse`** — reuses the embedding-based `DiverseSortStrategy` (the same
+  MMR centroid logic that powers the "diverse" idea sort in section 8) to pick
+  a spread of distinct ideas rather than near-duplicates. If no embeddings are
+  present it falls back to newest-first.
+
+### Single-shot vs batched (map-reduce) summarisation
+
+`AiIdeaSummaryService` (`BL/AiIdeaSummary/AiIdeaSummaryService.cs`) has two
+paths. When the idea set fits within `MaxIdeas`, `GenerateSummaryAsync` sends
+them in one prompt. When the organiser asks to summarise **all** ideas and
+there are more than `MaxIdeas`, `GenerateBatchSummaryAsync` runs a map-reduce:
+it splits the ideas into chunks of `BatchSize`, summarises each chunk, then
+asks the model to merge the partial summaries into one coherent final summary.
+Either path appends an explicit output-language instruction, records the call
+through `AiUsageManager.LogChatAsync` as `AiServiceKind.IdeaSummary` (so the
+cost lands in the usage dashboard like every other AI feature), and truncates
+the result to `MaxSummaryChars` with a "download the TXT for the full text"
+note.
+
+> **Note on the email queue.** A second background worker,
+> `EmailJobWorker`, follows the exact same poll-claim-process shape for
+> outbound email. The async job-queue pattern is shared; the email subsystem is
+> documented separately in [`email.md`](./email.md).
+
+## 10. AI Usage Tracking and Cost Monitoring
 
 Every billable AI call is recorded so that cost is visible and attributable.
 
@@ -496,7 +590,8 @@ Every billable AI call is recorded so that cost is visible and attributable.
 `AiUsageManager` (`BL/AiUsage/AiUsageManager.cs`) writes an `AiUsageEvent`
 (`Domain/Ai/Entities/AiUsageEvent.cs`) row for each call. An event records the project
 it belongs to, the service kind (`AiServiceKind` — moderation, idea support, comment
-support, speech-to-text, image description, embedding, social post, …), the model id,
+support, question support, speech-to-text, image description, embedding, social post,
+idea summary), the model id,
 the input and output token counts, a request count, the computed cost in euros, and a
 timestamp. Cost is computed by `AiPricing` from a per-model price table
 (`AiPricingConfig`, bound from configuration) — input, output, and a separate
@@ -522,7 +617,7 @@ the right tenant. Per-project and per-platform usage tracking makes AI spend
 transparent, supports billing or quota decisions, and lets operators spot a feature or
 a platform whose AI usage is unexpectedly high.
 
-## 10. Mock vs Real Services
+## 11. Mock vs Real Services
 
 ### How the toggle works
 
@@ -574,7 +669,7 @@ The codebase contains a mock for every AI service:
 Each implements the same interface as its real counterpart, so no code outside the DI
 registration in `Program.cs` is aware of which implementation is active.
 
-## 11. Secrets and Credentials
+## 12. Secrets and Credentials
 
 The AI pipeline depends on several secrets — most importantly the HMAC signing key
 used by the moderation token service and the optional API keys for third-party LLM
