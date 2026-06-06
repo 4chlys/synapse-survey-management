@@ -7,7 +7,7 @@
 
 @{
     ViewData["Title"] = L["Title"];
-    ViewData["SurveyTitle"] = (ViewData["ProjectName"] as string) ?? Model.Title;
+    ViewData["HeaderTitle"] = (ViewData["ProjectName"] as string) ?? Model.Title;
     ViewData["BgLogoCentered"] = true;
     var project = ViewData["Project"] as ProjectViewModel;
     var hasIntro = project is not null

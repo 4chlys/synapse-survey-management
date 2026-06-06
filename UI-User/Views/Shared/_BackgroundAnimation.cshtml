@@ -1,5 +1,5 @@
 @{
-    var orgName = (ViewData["SurveyTitle"] ?? ViewData["OrganisationName"] ?? "").ToString();
+    var orgName = (ViewData["HeaderTitle"] ?? ViewData["OrganisationName"] ?? "").ToString();
     var orgLogoUrl = ViewData["OrganisationLogoUrl"] as string;
 
     var cards = new[]

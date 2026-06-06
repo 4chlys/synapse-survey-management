@@ -12,6 +12,7 @@ public static class ControllerLayoutExtensions
         controller.ViewData["ProjectId"] = projectId;
         controller.ViewData["ProjectName"] = project?.Name;
         controller.ViewData["OrganisationName"] = project?.OrganisationName;
+        controller.ViewData["HeaderTitle"] = project?.OrganisationName;
         controller.ViewData["OrganisationLogoUrl"] = project?.OrganisationLogoUrl;
         controller.ViewData["OrganisationWebsiteUrl"] = project?.OrganisationWebsiteUrl;
         controller.ViewData["ProjectTheme"] = project?.Theme?.ToLowerInvariant() ?? "minimal";

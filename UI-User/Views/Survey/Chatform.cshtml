@@ -9,7 +9,7 @@
     ViewData["Title"] = "Enquête — Chat";
     var projectName = (ViewData["ProjectName"] as string) ?? Model.Title;
     var orgName = ViewData["OrganisationName"] as string;
-    ViewData["SurveyTitle"] = projectName;
+    ViewData["HeaderTitle"] = projectName;
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     var chatProject = ViewData["Project"] as ProjectViewModel;
     var introText = chatProject?.Introduction ?? string.Empty;
