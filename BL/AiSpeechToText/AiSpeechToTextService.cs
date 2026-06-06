@@ -46,17 +46,15 @@ public sealed class AiSpeechToTextService(
                 new ReadOnlyMemory<byte>(request.AudioData),
                 request.MimeType);
 
+            var langName = GetLanguageName(request.Language);
             var prompt = config.TranscriptionPrompt
-                .Replace("{language}", GetLanguageName(request.Language), StringComparison.OrdinalIgnoreCase);
+                .Replace("{language}", langName, StringComparison.OrdinalIgnoreCase);
 
-            var message = new ChatMessage(ChatRole.User,
-            [
-                audioContent,
-                new TextContent(prompt),
-            ]);
+            var systemPrompt = new ChatMessage(ChatRole.System, prompt);
+            var message = new ChatMessage(ChatRole.User, [audioContent]);
 
             var response = await platformConfig.ChatClient.GetResponseAsync(
-                [message], cancellationToken: ct);
+                [systemPrompt, message], cancellationToken: ct);
 
             try { await usageManager.LogChatAsync(projectId, AiServiceKind.SpeechToText, platformConfig.SelectedModelId, response.Usage, ct); }
             catch (Exception ex) { logger.LogWarning(ex, "[SpeechToText] Failed to record AI usage."); }
