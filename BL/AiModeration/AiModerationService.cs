@@ -123,12 +123,18 @@ public sealed class AiModerationService(
 
         try
         {
+            var language = respondInLanguage ?? platformConfig.Moderation.DefaultLanguage;
             var rewritePrompt = platformConfig.Moderation.RewritePrompt
-                .Replace("{response_language}", respondInLanguage ?? platformConfig.Moderation.DefaultLanguage, StringComparison.OrdinalIgnoreCase);
+                .Replace("{response_language}", language, StringComparison.OrdinalIgnoreCase)
+                .Replace("{language}",          language, StringComparison.OrdinalIgnoreCase);
 
             var messages = new List<ChatMessage>
             {
                 new(ChatRole.System, rewritePrompt),
+                // Explicit language instruction using the full name so it is unambiguous
+                // regardless of the language the rewrite prompt itself is written in.
+                new(ChatRole.System,
+                    $"You MUST respond in {GetLanguageName(language)}. Do not use any other language."),
                 new(ChatRole.User,   text),
             };
 
@@ -210,6 +216,12 @@ public sealed class AiModerationService(
                 string.IsNullOrWhiteSpace(verdict.Reason)
                     ? "This content is not allowed on this platform."
                     : verdict.Reason);
+    }
+
+    private static string GetLanguageName(string langCode)
+    {
+        try { return System.Globalization.CultureInfo.GetCultureInfo(langCode).EnglishName; }
+        catch { return langCode; }
     }
 
     private sealed class ModerationVerdict

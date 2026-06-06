@@ -72,4 +72,7 @@ public abstract class ParticipantControllerBase(
 
     protected Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
         => projectManager.GetProjectByIdReadOnlyAsync(projectId);
+
+    protected string ResolveContentLanguageCode(Participant participant, Project project, string submissionLanguageCode)
+        => projectManager.ResolveContentLanguageCode(participant, project, submissionLanguageCode);
 }

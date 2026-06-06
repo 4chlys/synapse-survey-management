@@ -62,15 +62,16 @@ public class ModerationController(
         ModerationRequestDto dto,
         CancellationToken ct)
     {
-        if (!TryGetParticipantToken(out _))
-            return Unauthorized("Participant token required.");
+        var (participant, error) = await GetParticipantAsync(projectId);
+        if (error is not null) return error;
 
         if (string.IsNullOrWhiteSpace(dto?.Text))
             return Ok(new SuggestResponseDto { Suggestion = null });
 
         var project = await GetProjectByIdReadOnlyAsync(projectId);
         var config = await platformAiConfig.ResolveAsync(project?.ProjectPlatformId ?? 0, ct);
-        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, config, projectId, ct, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        var language = ResolveContentLanguageCode(participant, project, dto.Language);
+        var suggestion = await aiModeration.SuggestRewriteAsync(dto.Text, config, projectId, ct, language);
 
         string suggestionToken = null;
         if (suggestion != null)
