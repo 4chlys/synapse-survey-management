@@ -38,11 +38,12 @@ export interface SystemStats {
     aiUsageBySystem: ServiceCostRow[];
 }
 
-export function fetchSystemStats(platformId: number | null): Promise<SystemStats> {
-    const url = platformId === null
-        ? '/api/system-stats'
-        : `/api/system-stats?platformId=${platformId}`;
-    return fetchJson<SystemStats>(url);
+export function fetchSystemStats(platformId: number | null, aiFrom?: string): Promise<SystemStats> {
+    const params = new URLSearchParams();
+    if (platformId !== null) params.set('platformId', String(platformId));
+    if (aiFrom) params.set('aiFrom', aiFrom);
+    const qs = params.toString();
+    return fetchJson<SystemStats>(qs ? `/api/system-stats?${qs}` : '/api/system-stats');
 }
 
 export function attachDownloadButton(container: HTMLElement, canvas: HTMLCanvasElement, fileName: string): void {

@@ -15,7 +15,7 @@ import { initQuestionLikertBarWidget } from '../widgets/widget-question-likert-b
 import { initSocialMediaWidget } from '../lib/widget-social-media';
 import type { WidgetInit } from '../lib/admin-types';
 
-export const POLL_INTERVAL_MS = 30_000;
+export const POLL_INTERVAL_MS = 15_000;
 
 const widgetRegistry: Record<string, WidgetInit> = {
     ViewCount: initStatWidget,

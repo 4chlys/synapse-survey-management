@@ -14,4 +14,14 @@ public sealed record PlatformDashboardViewModel(
 )
 {
     public ICollection<ProjectRowViewModel> Projects { get; init; } = [];
+    public ICollection<ProjectAiUsageRowViewModel> AiUsageByProject { get; init; } = [];
+}
+
+public sealed class ProjectAiUsageRowViewModel
+{
+    public int ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public long InputTokens { get; init; }
+    public long OutputTokens { get; init; }
+    public decimal CostEur { get; init; }
 }

@@ -175,6 +175,8 @@ public class PlatformController(
         ViewData["PlatformName"] = platform.Name;
         ViewData["ActiveSection"] = "Dashboard";
 
+        var projectNames = systemStats.Projects.ToDictionary(p => p.ProjectId, p => p.ProjectName);
+
         return View(new PlatformDashboardViewModel(
             platform.ProjectPlatformId,
             platform.Name,
@@ -197,7 +199,20 @@ public class PlatformController(
                 ParticipantCount = p.ParticipantCount,
                 AvgCompletionSeconds = p.AvgCompletionSeconds,
                 MedianCompletionSeconds = p.MedianCompletionSeconds
-            }).ToList()
+            }).ToList(),
+            // Per-project AI token/cost totals, aggregated across services for this platform
+            AiUsageByProject = systemStats.AiUsageByProject
+                .GroupBy(a => new { a.ProjectId, a.ShortForm })
+                .Select(g => new ProjectAiUsageRowViewModel
+                {
+                    ProjectId = g.Key.ProjectId,
+                    ProjectName = projectNames.GetValueOrDefault(g.Key.ProjectId) ?? g.Key.ShortForm,
+                    InputTokens = g.Sum(x => x.InputTokens),
+                    OutputTokens = g.Sum(x => x.OutputTokens),
+                    CostEur = g.Sum(x => x.CostEur)
+                })
+                .OrderByDescending(r => r.CostEur)
+                .ToList()
         });
     }
 
