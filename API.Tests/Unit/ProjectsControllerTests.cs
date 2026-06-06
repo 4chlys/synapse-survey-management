@@ -8,12 +8,14 @@ using SynapseEnqueteManagement.BL;
 using SynapseEnqueteManagement.BL.AiImageGeneration;
 using SynapseEnqueteManagement.BL.Domain.I18n.Entities;
 using SynapseEnqueteManagement.BL.Exceptions;
+using SynapseEnqueteManagement.BL.Interfaces;
 
 namespace SynapseEnqueteManagement.API.Tests;
 
 public class ProjectsControllerTests
 {
     private readonly Mock<IProjectManager> _projectManager = new();
+    private readonly Mock<IShortFormService> _shortFormService = new();
     private readonly Mock<IAiImageGenerationService> _imageGenerationService = new();
     private readonly Mock<IStorageService> _storageService = new();
     private readonly ProjectsController _controller;
@@ -32,6 +34,7 @@ public class ProjectsControllerTests
 
         _controller = new ProjectsController(
             _projectManager.Object,
+            _shortFormService.Object,
             _imageGenerationService.Object,
             _storageService.Object);
     }
