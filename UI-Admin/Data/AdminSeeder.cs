@@ -58,20 +58,37 @@ public class AdminSeeder(
         await userManager.AddToRoleAsync(user, "SystemAdmin");
     }
 
-    // Reads platforms over HTTP from the API. If the API is unreachable at startup
-    // (cold-start race), the call returns an empty list and we skip — the next restart
-    // (or admin invitation flow) will seed the per-platform admins.
+    // Cold-start retry: the admin MIG and the API MIG boot independently, so on a fresh
+    // stack the API (reached over the public LB) is often not yet serving when we get here.
+    // Retry a few times with backoff before giving up; the next restart is the final backstop.
+    private const int PlatformFetchMaxAttempts = 5;
+    private static readonly TimeSpan PlatformFetchRetryDelay = TimeSpan.FromSeconds(10);
+
+    // Reads platforms over HTTP from the API. If the API stays unreachable across all
+    // retries (cold-start race), we skip — the next restart will seed the per-platform admins.
     private async Task EnsurePlatformAdminsAsync()
     {
         List<Models.Platform.PlatformDto> platforms;
-        try
+        for (var attempt = 1; ; attempt++)
         {
-            platforms = await platformApi.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Skipping platform-admin seeding: API not reachable at startup");
-            return;
+            try
+            {
+                platforms = await platformApi.GetAllAsync();
+                break;
+            }
+            catch (Exception ex) when (attempt < PlatformFetchMaxAttempts)
+            {
+                logger.LogWarning(ex,
+                    "API not reachable for platform-admin seeding (attempt {Attempt}/{Max}); retrying in {Delay}s",
+                    attempt, PlatformFetchMaxAttempts, PlatformFetchRetryDelay.TotalSeconds);
+                await Task.Delay(PlatformFetchRetryDelay);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Skipping platform-admin seeding: API still not reachable after {Max} attempts", PlatformFetchMaxAttempts);
+                return;
+            }
         }
 
         logger.LogInformation("Seeding platform admins for {Count} platforms", platforms.Count);
