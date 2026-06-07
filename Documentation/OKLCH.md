@@ -67,7 +67,7 @@ This is the property that makes one-color-picker theming work.
 }
 ```
 
-The mirror constant `PROJECT_THEME_CSS` in `UI-Admin/src/project/project-style.ts` uses the same OKLCH values so the admin preview matches participant rendering exactly.
+The mirror constant `PROJECT_THEME_CSS` in `UI-Admin/src/lib/project-style.ts` uses the same OKLCH values so the admin preview matches participant rendering exactly.
 
 ### Per-project derivations from a single picker
 
@@ -159,7 +159,7 @@ The `oklch(from var(--color-primary) calc(l - 0.06) c h)` syntax only works on C
 | `UI-User/Helpers/ColorHelpers.cs` | Duplicate of the same helpers. Exists because `UI-User` does NOT reference `BL` directly — it talks to the platform over HTTP. The duplication is intentional and must stay in sync. |
 | `UI-User/Extensions/ControllerLayoutExtensions.cs` | Calls `ShiftLightness(-0.06)`, `ShiftLightness(-0.12)`, and `ComplementaryHue` on the picked `PrimaryColor`. Exposes the three hex fallbacks via `ViewData["ProjectPrimaryHover" / "ProjectPrimaryFocus" / "ProjectAccent"]`. |
 | `UI-User/Views/Shared/_Layout.cshtml` | Emits the `<style>` block containing the relative-color OKLCH rules plus the `@supports not` block with the precomputed hex fallbacks. |
-| `UI-Admin/src/project/project-style.ts` | TypeScript mirror used in the admin preview shadow root. Must produce byte-identical hex to the C# helpers so WYSIWYG holds. |
+| `UI-Admin/src/lib/project-style.ts` | TypeScript mirror used in the admin preview shadow root. Must produce byte-identical hex to the C# helpers so WYSIWYG holds. |
 
 ### The pipeline at a glance
 
@@ -309,7 +309,7 @@ The admin **preview** in `UI-Admin` is a different story: it lives behind JS alr
 
 ### Keeping the three implementations in sync
 
-There is no compile-time link between `BL/Helpers/ColorHelpers.cs`, `UI-User/Helpers/ColorHelpers.cs`, and `UI-Admin/src/project/project-style.ts` — treat divergence as a bug. The cheap regression test is to pick a saturated brand color in the admin preview, compare hover/focus/accent rendering side-by-side with the participant page, and check they match exactly. If any of the eighteen matrix coefficients above is mistyped in one file, this test will surface it on the first try.
+There is no compile-time link between `BL/Helpers/ColorHelpers.cs`, `UI-User/Helpers/ColorHelpers.cs`, and `UI-Admin/src/lib/project-style.ts` — treat divergence as a bug. The cheap regression test is to pick a saturated brand color in the admin preview, compare hover/focus/accent rendering side-by-side with the participant page, and check they match exactly. If any of the eighteen matrix coefficients above is mistyped in one file, this test will surface it on the first try.
 
 ## How to read an OKLCH value
 

@@ -98,7 +98,7 @@ Before touching anything, understand what you are setting up:
 - **Cloud SQL** is the PostgreSQL database, accessed via private IP
 - **Secret Manager** stores all sensitive config; VMs read secrets at startup
 
-For a detailed explanation of every component, see `Documentation/deployment-technical.md`.
+For a detailed explanation of every component, see `Documentation/Deployment/deployment-technical.md`.
 
 ---
 

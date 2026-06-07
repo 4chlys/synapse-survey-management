@@ -99,7 +99,7 @@ A project admin can pick a custom primary brand colour. Three layers keep that l
 
 1. **Save-time rejection** — `BL/Implementation/ProjectManager.cs` rejects any pick whose WCAG contrast ratio falls below 3:1 against *either* the light surface (`#FFFFFF`) or the dark surface (`#1A1430`). Throws `Validation.PrimaryColor.LowContrast`, localised NL + EN.
 2. **Auto-computed foreground** — `--color-primary-content` (text on primary buttons) is derived from the picked colour's perceived luminance: dark brand → white text, light brand → black text. The admin never sets it.
-3. **Live advisory chip** — in the admin project form, a warning chip under the colour picker (`#primary-color-contrast-warning`, wired in `UI-Admin/src/project/project-style.ts`) flags a failing pick in real time, before submit. Advisory only — the BL stays authoritative.
+3. **Live advisory chip** — in the admin project form, a warning chip under the colour picker (`#primary-color-contrast-warning`, wired in `UI-Admin/src/lib/project-style.ts`) flags a failing pick in real time, before submit. Advisory only — the BL stays authoritative.
 
 Supporting hotfix: `ProjectAdminService` now surfaces the API's localised rejection message inline + as a toast (`ApiValidationException`), instead of the previous unhandled 500. The curated topic colour swatches (Sports / Nature / Culture / Health) all sit inside the contrast-safe luminance band, so they never trip the guard.
 
