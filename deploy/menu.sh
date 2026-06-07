@@ -102,6 +102,7 @@ while true; do
   echo "  8) Logs bekijken (UI)"
   echo "  9) Load Balancer IP tonen"
   echo " 10) SSL certificaat status"
+  echo " 11) Cloud Armor prioriteiten corrigeren (WAF voor geo)"
   echo "  q) Afsluiten"
   echo ""
   echo -n "Keuze: "
@@ -189,6 +190,10 @@ while true; do
         --format="table(name,managed.state,managed.domains)" 2>/dev/null || \
       gcloud compute ssl-certificates list --project="${PROJECT_ID}" \
         --format="table(name,managed.status,managed.domainStatus)" 2>/dev/null
+      ;;
+    11)
+      source "${SCRIPT_DIR}/../infra/lib/09_armor.sh"
+      fix_armor_priorities
       ;;
     q|Q|quit|exit)
       echo "Tot ziens."
