@@ -9,10 +9,12 @@ create_cloud_armor() {
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   # WAF and rate-limiting run before geo rules so EU traffic is not exempt from them.
+  # Rules 942420 and 942432 are excluded: they detect SQL character anomalies in cookies,
+  # which triggers false positives on ASP.NET session cookies containing encoded tokens.
   echo "  >>> Gecombineerde WAF-regel toevoegen (SQLi + XSS + LFI + RCE)..."
   gcloud compute security-policies rules create 1000 \
     --security-policy="${ARMOR_POLICY}" \
-    --expression="evaluatePreconfiguredExpr('sqli-v33-stable') || evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable') || evaluatePreconfiguredExpr('rce-v33-stable')" \
+    --expression="evaluatePreconfiguredExpr('sqli-v33-stable', ['owasp-crs-v030301-id942420-sqli', 'owasp-crs-v030301-id942432-sqli']) || evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable') || evaluatePreconfiguredExpr('rce-v33-stable')" \
     --action=deny-403 \
     --description="OWASP Top 10 WAF combinatie (1 regel = lagere kost)" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
