@@ -9,14 +9,17 @@ create_cloud_armor() {
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   # WAF and rate-limiting run before geo rules so EU traffic is not exempt from them.
-  # Rules 942420 and 942432 are excluded: they detect SQL character anomalies in cookies,
-  # which triggers false positives on ASP.NET session cookies containing encoded tokens.
-  echo "  >>> Gecombineerde WAF-regel toevoegen (SQLi + XSS + LFI + RCE)..."
+  # SQLi exclusions (942200/942260/942340/942420/942421/942431/942432): SQL character anomaly
+  # rules trigger false positives on ASP.NET antiforgery tokens and session cookies.
+  # LFI exclusion (930130): restricted file access triggers on ASP.NET API routes with dots.
+  # RCE exclusions (932190/932200): Unix shell expression rules trigger on URL-encoded
+  # returnUrl parameters containing slashes and equals signs (%2F, %3D).
+  echo "  >>> WAF-regel toevoegen (SQLi + XSS + LFI + RCE)..."
   gcloud compute security-policies rules create 1000 \
     --security-policy="${ARMOR_POLICY}" \
-    --expression="evaluatePreconfiguredExpr('sqli-v33-stable', ['owasp-crs-v030301-id942420-sqli', 'owasp-crs-v030301-id942432-sqli']) || evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable') || evaluatePreconfiguredExpr('rce-v33-stable')" \
+    --expression="evaluatePreconfiguredExpr('sqli-v33-stable', ['owasp-crs-v030301-id942200-sqli', 'owasp-crs-v030301-id942260-sqli', 'owasp-crs-v030301-id942340-sqli', 'owasp-crs-v030301-id942420-sqli', 'owasp-crs-v030301-id942421-sqli', 'owasp-crs-v030301-id942431-sqli', 'owasp-crs-v030301-id942432-sqli']) || evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable', ['owasp-crs-v030301-id930130-lfi']) || evaluatePreconfiguredExpr('rce-v33-stable', ['owasp-crs-v030301-id932190-rce', 'owasp-crs-v030301-id932200-rce'])" \
     --action=deny-403 \
-    --description="OWASP Top 10 WAF combinatie (1 regel = lagere kost)" \
+    --description="OWASP WAF: SQLi + XSS + LFI + RCE (ASP.NET false positives excluded)" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   echo "  >>> Rate limiting regel toevoegen (max 100 req/min per IP)..."
