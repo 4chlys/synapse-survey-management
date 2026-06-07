@@ -39,7 +39,7 @@ using Resend;
 using SynapseEnqueteManagement.BL.AiSocialMedia;
 using SynapseEnqueteManagement.API.Extensions;
 
-bool deleteIfExists = true; //Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+bool deleteIfExists = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
 // Load AI config early so we can read use_ai before building the container
 var tempLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<Program>();
