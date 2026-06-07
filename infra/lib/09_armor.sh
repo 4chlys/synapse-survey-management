@@ -8,6 +8,7 @@ create_cloud_armor() {
     --description="Synapse WAF - DDoS, OWASP, rate limiting" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
+  # WAF and rate-limiting run before geo rules so EU traffic is not exempt from them.
   echo "  >>> Gecombineerde WAF-regel toevoegen (SQLi + XSS + LFI + RCE)..."
   gcloud compute security-policies rules create 1000 \
     --security-policy="${ARMOR_POLICY}" \
@@ -30,14 +31,15 @@ create_cloud_armor() {
     --description="Rate limiting: max 100 req/min per IP, ban 5 min" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
+  # Geo rules at 3000+ so WAF (1000) and rate-limiting (2000) evaluate first for all traffic.
   echo "  >>> Geo-blocking: EU allow-regels toevoegen..."
-  gcloud compute security-policies rules create 100 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'BE' || origin.region_code == 'NL' || origin.region_code == 'LU' || origin.region_code == 'DE' || origin.region_code == 'FR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  gcloud compute security-policies rules create 110 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'IT' || origin.region_code == 'ES' || origin.region_code == 'PT' || origin.region_code == 'AT' || origin.region_code == 'SE'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  gcloud compute security-policies rules create 120 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'FI' || origin.region_code == 'DK' || origin.region_code == 'IE' || origin.region_code == 'PL' || origin.region_code == 'CZ'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  gcloud compute security-policies rules create 130 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SK' || origin.region_code == 'HU' || origin.region_code == 'RO' || origin.region_code == 'BG' || origin.region_code == 'HR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  gcloud compute security-policies rules create 140 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SI' || origin.region_code == 'EE' || origin.region_code == 'LV' || origin.region_code == 'LT' || origin.region_code == 'GR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  gcloud compute security-policies rules create 150 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'CY' || origin.region_code == 'MT'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  gcloud compute security-policies rules create 200 --security-policy="${ARMOR_POLICY}" --expression="true" --action=deny-403 --description="Geo-blocking: alleen EU toegelaten" --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3000 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'BE' || origin.region_code == 'NL' || origin.region_code == 'LU' || origin.region_code == 'DE' || origin.region_code == 'FR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3010 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'IT' || origin.region_code == 'ES' || origin.region_code == 'PT' || origin.region_code == 'AT' || origin.region_code == 'SE'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3020 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'FI' || origin.region_code == 'DK' || origin.region_code == 'IE' || origin.region_code == 'PL' || origin.region_code == 'CZ'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3030 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SK' || origin.region_code == 'HU' || origin.region_code == 'RO' || origin.region_code == 'BG' || origin.region_code == 'HR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3040 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SI' || origin.region_code == 'EE' || origin.region_code == 'LV' || origin.region_code == 'LT' || origin.region_code == 'GR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3050 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'CY' || origin.region_code == 'MT'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 3100 --security-policy="${ARMOR_POLICY}" --expression="true" --action=deny-403 --description="Geo-blocking: alleen EU toegelaten" --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   echo "  >>> Policy koppelen aan backend services..."
   for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
@@ -88,6 +90,29 @@ add_mig_ips_to_armor() {
     --action=allow \
     --description="Allow UI en Admin MIG server-side API calls" \
     --project="${PROJECT_ID}"
+}
+
+fix_armor_priorities() {
+  # Migrates existing deployments from the old priority layout (geo 100-200, WAF 1000)
+  # to the correct layout (WAF 1000, rate-limit 2000, geo 3000-3100).
+  echo ">>> Cloud Armor prioriteiten corrigeren voor omgeving ${ENV}..."
+
+  local old_geo_priorities=(100 110 120 130 140 150 200)
+  for p in "${old_geo_priorities[@]}"; do
+    gcloud compute security-policies rules delete "${p}" \
+      --security-policy="${ARMOR_POLICY}" \
+      --project="${PROJECT_ID}" --quiet 2>/dev/null || echo "  (prio ${p} niet aanwezig, overgeslagen)"
+  done
+
+  gcloud compute security-policies rules create 3000 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'BE' || origin.region_code == 'NL' || origin.region_code == 'LU' || origin.region_code == 'DE' || origin.region_code == 'FR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3000 al aanwezig)"
+  gcloud compute security-policies rules create 3010 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'IT' || origin.region_code == 'ES' || origin.region_code == 'PT' || origin.region_code == 'AT' || origin.region_code == 'SE'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3010 al aanwezig)"
+  gcloud compute security-policies rules create 3020 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'FI' || origin.region_code == 'DK' || origin.region_code == 'IE' || origin.region_code == 'PL' || origin.region_code == 'CZ'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3020 al aanwezig)"
+  gcloud compute security-policies rules create 3030 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SK' || origin.region_code == 'HU' || origin.region_code == 'RO' || origin.region_code == 'BG' || origin.region_code == 'HR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3030 al aanwezig)"
+  gcloud compute security-policies rules create 3040 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'SI' || origin.region_code == 'EE' || origin.region_code == 'LV' || origin.region_code == 'LT' || origin.region_code == 'GR'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3040 al aanwezig)"
+  gcloud compute security-policies rules create 3050 --security-policy="${ARMOR_POLICY}" --expression="origin.region_code == 'CY' || origin.region_code == 'MT'" --action=allow --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3050 al aanwezig)"
+  gcloud compute security-policies rules create 3100 --security-policy="${ARMOR_POLICY}" --expression="true" --action=deny-403 --description="Geo-blocking: alleen EU toegelaten" --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3100 al aanwezig)"
+
+  echo "  Prioriteiten gecorrigeerd. Nieuwe volgorde: WAF (1000) → rate-limit (2000) → geo-allow (3000-3100)."
 }
 
 destroy_cloud_armor() {
