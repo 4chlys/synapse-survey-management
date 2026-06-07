@@ -69,11 +69,32 @@ public class AdminEmailControllerTests
     }
 
     [Fact]
+    public async Task List_RedactsRecipientAddressFromLastError()
+    {
+        var job = new EmailJob
+        {
+            EmailJobId = 1, ToAddress = "admin@x.com", Subject = "Hi",
+            Category = EmailJobCategory.AdminReply, Status = EmailJobStatus.Failed,
+            LastError = "550 rejected recipient <participant@example.com>"
+        };
+        _jobManager
+            .Setup(m => m.ListGivenUpAsync(It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EmailJob> { job });
+
+        var result = await _controller.List(EmailJobStatus.Failed, projectPlatformId: null, take: 100, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var row = Assert.Single(Assert.IsAssignableFrom<IEnumerable<EmailJobRowDto>>(ok.Value));
+        Assert.DoesNotContain("participant@example.com", row.LastError);
+        Assert.Contains("[redacted]", row.LastError);
+    }
+
+    [Fact]
     public async Task Retry_ReturnsNotFound_WhenManagerReturnsNull()
     {
-        _jobManager.Setup(m => m.RetryAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync((EmailJob)null);
+        _jobManager.Setup(m => m.RetryAsync(5, It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync((EmailJob)null);
 
-        var result = await _controller.Retry(5, CancellationToken.None);
+        var result = await _controller.Retry(5, projectPlatformId: null, CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result.Result);
     }

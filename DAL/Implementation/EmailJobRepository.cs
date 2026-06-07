@@ -65,6 +65,7 @@ public class EmailJobRepository(SynapseEnqueteContext context) : IEmailJobReposi
     public Task<List<EmailJob>> ListByStatusReadOnlyAsync(
         EmailJobStatus status, int? projectPlatformId, int take, CancellationToken ct = default)
         => context.EmailJobs.AsNoTracking()
+            .Include(j => j.Project)
             .Where(j => j.Status == status
                      && (projectPlatformId == null
                          || EF.Property<int?>(j, "ProjectPlatformId") == projectPlatformId))
@@ -75,6 +76,7 @@ public class EmailJobRepository(SynapseEnqueteContext context) : IEmailJobReposi
     public Task<List<EmailJob>> ListRecentSentReadOnlyAsync(
         int? projectPlatformId, int take, CancellationToken ct = default)
         => context.EmailJobs.AsNoTracking()
+            .Include(j => j.Project)
             .Where(j => j.Status == EmailJobStatus.Sent
                      && (projectPlatformId == null
                          || EF.Property<int?>(j, "ProjectPlatformId") == projectPlatformId))

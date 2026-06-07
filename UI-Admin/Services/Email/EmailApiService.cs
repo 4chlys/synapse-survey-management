@@ -31,9 +31,11 @@ public class EmailApiService(HttpClient http)
         return rows ?? new List<EmailJobRow>();
     }
 
-    public async Task<EmailJobRow> RetryAsync(int emailJobId, CancellationToken ct = default)
+    public async Task<EmailJobRow> RetryAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default)
     {
-        var response = await http.PostAsync($"api/admin/emails/queue/{emailJobId}/retry", content: null, ct);
+        var url = $"api/admin/emails/queue/{emailJobId}/retry";
+        if (projectPlatformId.HasValue) url += $"?projectPlatformId={projectPlatformId.Value}";
+        var response = await http.PostAsync(url, content: null, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<EmailJobRow>(cancellationToken: ct);
     }

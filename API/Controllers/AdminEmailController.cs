@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.API.DTOs.Email;
@@ -93,6 +94,7 @@ public class AdminEmailController(
         j.ToAddress,
         j.Subject,
         j.Category.ToString(),
+        j.Project?.ShortForm,
         j.Status.ToString(),
         j.LanguageCode,
         j.AttemptCount,
@@ -100,5 +102,12 @@ public class AdminEmailController(
         j.CreatedAt,
         j.ScheduledAt,
         j.SentAt,
-        j.LastError);
+        RedactEmails(j.LastError));
+
+    // Providers echo the recipient address into bounce text — strip it from the queue page.
+    private static readonly Regex EmailRegex = new(
+        @"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", RegexOptions.Compiled);
+
+    private static string RedactEmails(string error)
+        => error is null ? null : EmailRegex.Replace(error, "[redacted]");
 }
