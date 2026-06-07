@@ -9,16 +9,15 @@ create_cloud_armor() {
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   # WAF and rate-limiting run before geo rules so EU traffic is not exempt from them.
-  # SQLi rules 942420/942421/942432 excluded: SQL character anomaly detection in cookies
-  # and args triggers false positives on ASP.NET antiforgery tokens and session cookies.
-  # LFI rule 930130 excluded: restricted file access detection triggers false positives
-  # on ASP.NET API routes containing dots or file-like path segments.
-  echo "  >>> Gecombineerde WAF-regel toevoegen (SQLi + XSS + LFI + RCE)..."
+  # SQLi ruleset omitted: all 942xxx rules trigger false positives on ASP.NET antiforgery
+  # tokens and session cookies (base64-encoded values match SQL character anomaly patterns).
+  # LFI rule 930130 excluded: triggers false positives on ASP.NET API routes with dots.
+  echo "  >>> WAF-regel toevoegen (XSS + LFI + RCE)..."
   gcloud compute security-policies rules create 1000 \
     --security-policy="${ARMOR_POLICY}" \
-    --expression="evaluatePreconfiguredExpr('sqli-v33-stable', ['owasp-crs-v030301-id942420-sqli', 'owasp-crs-v030301-id942421-sqli', 'owasp-crs-v030301-id942432-sqli']) || evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable', ['owasp-crs-v030301-id930130-lfi']) || evaluatePreconfiguredExpr('rce-v33-stable')" \
+    --expression="evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable', ['owasp-crs-v030301-id930130-lfi']) || evaluatePreconfiguredExpr('rce-v33-stable')" \
     --action=deny-403 \
-    --description="OWASP Top 10 WAF combinatie (1 regel = lagere kost)" \
+    --description="OWASP WAF: XSS + LFI + RCE (SQLi omitted, false positives on ASP.NET tokens)" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   echo "  >>> Rate limiting regel toevoegen (max 100 req/min per IP)..."
