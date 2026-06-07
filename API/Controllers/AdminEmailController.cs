@@ -77,10 +77,13 @@ public class AdminEmailController(
         return Ok(rows.Select(Map));
     }
 
+    // projectPlatformId scopes the retry: callers pass a platform to limit the
+    // action to that platform's jobs (PPA), or omit it to retry any (operator).
+    // A scoped miss falls through to 404 — it never reveals the job exists.
     [HttpPost("queue/{id:int}/retry")]
-    public async Task<ActionResult<EmailJobRowDto>> Retry(int id, CancellationToken ct)
+    public async Task<ActionResult<EmailJobRowDto>> Retry(int id, [FromQuery] int? projectPlatformId, CancellationToken ct)
     {
-        var job = await jobManager.RetryAsync(id, ct);
+        var job = await jobManager.RetryAsync(id, projectPlatformId, ct);
         if (job is null) return NotFound();
         return Ok(Map(job));
     }

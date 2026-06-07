@@ -24,8 +24,11 @@ public class EmailJobRepository(SynapseEnqueteContext context) : IEmailJobReposi
         return job;
     }
 
-    public Task<EmailJob> GetByIdAsync(int emailJobId, CancellationToken ct = default)
-        => context.EmailJobs.FirstOrDefaultAsync(j => j.EmailJobId == emailJobId, ct);
+    public Task<EmailJob> ReadByIdForUpdateAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default)
+        => context.EmailJobs.FirstOrDefaultAsync(
+            j => j.EmailJobId == emailJobId
+              && (projectPlatformId == null
+                  || EF.Property<int?>(j, "ProjectPlatformId") == projectPlatformId), ct);
 
     public async Task<EmailJob> ClaimNextDueAsync(CancellationToken ct = default)
     {
