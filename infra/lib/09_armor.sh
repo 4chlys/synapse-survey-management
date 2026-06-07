@@ -9,15 +9,17 @@ create_cloud_armor() {
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
   # WAF and rate-limiting run before geo rules so EU traffic is not exempt from them.
-  # SQLi exclusions (942200/942260/942340/942420/942421/942431/942432): SQL character anomaly
-  # rules trigger false positives on ASP.NET antiforgery tokens and session cookies.
+  # SQLi exclusions: character anomaly rules (942xxx) trigger on ASP.NET antiforgery tokens,
+  # session cookies, passwords with special chars, and admin form data. 942130 (tautology),
+  # 942300/942370 (comments/anomaly), 942460/942490 (meta-char/classic) added after preview-mode audit.
+  # XSS exclusion (941320): filter-evasion rule fires on HTML entities in admin content fields.
   # LFI exclusion (930130): restricted file access triggers on ASP.NET API routes with dots.
   # RCE exclusions (932190/932200): Unix shell expression rules trigger on URL-encoded
   # returnUrl parameters containing slashes and equals signs (%2F, %3D).
   echo "  >>> WAF-regel toevoegen (SQLi + XSS + LFI + RCE)..."
   gcloud compute security-policies rules create 1000 \
     --security-policy="${ARMOR_POLICY}" \
-    --expression="evaluatePreconfiguredExpr('sqli-v33-stable', ['owasp-crs-v030301-id942200-sqli', 'owasp-crs-v030301-id942260-sqli', 'owasp-crs-v030301-id942340-sqli', 'owasp-crs-v030301-id942420-sqli', 'owasp-crs-v030301-id942421-sqli', 'owasp-crs-v030301-id942431-sqli', 'owasp-crs-v030301-id942432-sqli']) || evaluatePreconfiguredExpr('xss-v33-stable') || evaluatePreconfiguredExpr('lfi-v33-stable', ['owasp-crs-v030301-id930130-lfi']) || evaluatePreconfiguredExpr('rce-v33-stable', ['owasp-crs-v030301-id932190-rce', 'owasp-crs-v030301-id932200-rce'])" \
+    --expression="evaluatePreconfiguredExpr('sqli-v33-stable', ['owasp-crs-v030301-id942130-sqli', 'owasp-crs-v030301-id942200-sqli', 'owasp-crs-v030301-id942260-sqli', 'owasp-crs-v030301-id942300-sqli', 'owasp-crs-v030301-id942340-sqli', 'owasp-crs-v030301-id942370-sqli', 'owasp-crs-v030301-id942420-sqli', 'owasp-crs-v030301-id942421-sqli', 'owasp-crs-v030301-id942430-sqli', 'owasp-crs-v030301-id942431-sqli', 'owasp-crs-v030301-id942432-sqli', 'owasp-crs-v030301-id942440-sqli', 'owasp-crs-v030301-id942460-sqli', 'owasp-crs-v030301-id942490-sqli']) || evaluatePreconfiguredExpr('xss-v33-stable', ['owasp-crs-v030301-id941320-xss']) || evaluatePreconfiguredExpr('lfi-v33-stable', ['owasp-crs-v030301-id930130-lfi']) || evaluatePreconfiguredExpr('rce-v33-stable', ['owasp-crs-v030301-id932190-rce', 'owasp-crs-v030301-id932200-rce'])" \
     --action=deny-403 \
     --description="OWASP WAF: SQLi + XSS + LFI + RCE (ASP.NET false positives excluded)" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
