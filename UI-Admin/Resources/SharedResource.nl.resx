@@ -157,4 +157,12 @@ Stel je wachtwoord in via de onderstaande link (geldig 24 uur):
 
   <data name="Email_ParticipantEmailRequired" xml:space="preserve"><value>E-mailadres van deelnemer is verplicht.</value></data>
   <data name="Email_SubjectBodyRequired" xml:space="preserve"><value>Onderwerp en bericht zijn verplicht.</value></data>
+
+  <data name="AiCol_Service" xml:space="preserve"><value>Service</value></data>
+  <data name="AiCol_Model" xml:space="preserve"><value>Model</value></data>
+  <data name="AiCol_InputTokens" xml:space="preserve"><value>Input-tokens</value></data>
+  <data name="AiCol_OutputTokens" xml:space="preserve"><value>Output-tokens</value></data>
+  <data name="AiCol_Requests" xml:space="preserve"><value>Verzoeken</value></data>
+  <data name="AiCol_Cost" xml:space="preserve"><value>Kosten (EUR)</value></data>
+  <data name="Chart_AiCostTitle" xml:space="preserve"><value>AI-kosten per service (laatste 24u)</value></data>
 </root>

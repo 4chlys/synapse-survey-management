@@ -24,6 +24,9 @@ public class ProjectManager(
     public Task<Project> GetProjectByIdReadOnlyAsync(int projectId)
         => projectRepository.ReadByIdReadOnlyAsync(projectId);
 
+    public string ResolveContentLanguageCode(Participant participant, Project project, string submissionLanguageCode)
+        => ContentLanguageResolver.Resolve(participant, project, submissionLanguageCode)?.Code;
+
     public Task<Project> GetProjectByIdForUpdateAsync(int projectId)
         => projectRepository.ReadByIdForUpdateAsync(projectId);
 

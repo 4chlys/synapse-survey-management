@@ -51,8 +51,8 @@ public record QuestionTranslationFormViewModel
     public string AnswerChoicesRaw { get; init; }
 
     public List<string> GetAnswerChoices() =>
-        (AnswerChoicesRaw ?? string.Empty).Split('\n', StringSplitOptions.None)
-            .Select(s => s.Trim())
+        (AnswerChoicesRaw ?? string.Empty)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
 }
 

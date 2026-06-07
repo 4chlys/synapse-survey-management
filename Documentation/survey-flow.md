@@ -543,7 +543,7 @@ The gate is implemented in three places, all keyed on the same
 
 | File | What it does |
 |------|--------------|
-| `UI-User/Controllers/LandingPageController.cs` | A returning participant whose cookie resolves to `HasSubmitted == true` is redirected from `/<projectId>/` to `Category/CategoryList`. Their first click on the project URL therefore jumps straight to the ideation hub. |
+| `UI-User/Controllers/ProjectLandingPageController.cs` | A returning participant whose cookie resolves to `HasSubmitted == true` is redirected from `/<projectId>/` to `Category/CategoryList`. Their first click on the project URL therefore jumps straight to the ideation hub. |
 | `UI-User/Controllers/SurveyController.cs` | Same check at the top of `Index`: a submitted participant trying to deep-link to the survey URL is also redirected to `Category/CategoryList`. The survey cannot be retaken. |
 | `UI-User/Filters/RequiresSurveyCompletionFilter.cs` | Applied as `[ServiceFilter(typeof(RequiresSurveyCompletionFilter))]` on **`CategoryController`** and **`IdeationController`**. A visitor who has *not* yet submitted is bounced back to `Landing/Index`. The filter reads `projectId` straight from the action arguments and short-circuits the request via `context.Result`. |
 

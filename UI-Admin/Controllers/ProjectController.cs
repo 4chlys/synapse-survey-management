@@ -195,10 +195,7 @@ public class ProjectController(
         }
         catch (ApiValidationException ex)
         {
-            // API rejected the payload (e.g. low-contrast primary color, disallowed
-            // CustomCss). Message is already localised by the API middleware —
-            // show it as an inline error on the likely culprit field AND as a toast.
-            ModelState.AddModelError(nameof(model.PrimaryColor), ex.Message);
+            // API rejected the payload (e.g. low-contrast primary color); message is already localised.
             TempData["Error"] = ex.Message;
             if (model.ProjectId.HasValue)
             {
@@ -411,10 +408,10 @@ public class ProjectController(
     public async Task<IActionResult> CheckShortForm(string shortForm, int? projectId)
     {
         if (string.IsNullOrWhiteSpace(shortForm))
-            return Json(new { available = true });
+            return Json(new { available = true, suggestion = "" });
 
-        var available = await projectService.IsShortFormAvailableAsync(shortForm, projectId);
-        return Json(new { available });
+        var result = await projectService.GetShortFormSuggestionAsync(shortForm, projectId);
+        return Json(new { available = result.Available, suggestion = result.Suggestion });
     }
 
     [HttpPost]

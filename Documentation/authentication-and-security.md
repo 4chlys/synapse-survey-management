@@ -468,7 +468,7 @@ levels.
 Request DTOs carry data annotations — `[Required]`, `[MaxLength]`, `[Range]`, `[EmailAddress]`
 — and controllers reject malformed requests before any business logic runs. Both MVC
 front-ends also register `AutoValidateAntiforgeryTokenAttribute` as a global filter, so every
-state-changing form post must carry a valid anti-forgery token (see section 9).
+state-changing form post must carry a valid anti-forgery token (see section 10).
 
 ### Business-layer validation (managers)
 
@@ -560,7 +560,95 @@ In production, the `sign` stage uses **cosign** to cryptographically sign the AP
 admin images after they are pushed. A signed image lets the deployment target verify that an
 image really came from this pipeline and was not tampered with in the registry.
 
-## 9. Known limitations and honest gaps
+## 9. Alternatives considered
+
+Every authentication decision above had plausible alternatives. This section records what
+they were and why they were not chosen, so the design reads as a set of deliberate trade-offs
+rather than defaults.
+
+### 9.1 Participant identification — why an opaque cookie
+
+The participant model (section 2) stores a random GUID in an HttpOnly cookie and keeps all
+real data server-side. The alternatives:
+
+- **Full accounts (username + password).** The conventional answer, and the one used for
+  admins. Rejected for participants because the platform collects input from minors: a login
+  wall both depresses participation and creates a personal-data liability under the GDPR that
+  the platform deliberately avoids. Anonymity is a feature here, not a shortcut.
+- **`localStorage` / `sessionStorage` instead of a cookie.** Both are readable by JavaScript,
+  so an XSS bug could exfiltrate the token — exactly what the **HttpOnly** cookie prevents.
+  They are also not sent automatically with requests, so the front-end would have to attach the
+  token by hand on every call. Strictly worse for no benefit.
+- **Browser / device fingerprinting** (hashing User-Agent, screen, timezone, `prefers-color-scheme`,
+  canvas/WebGL, fonts, … into one ID, as libraries like FingerprintJS do). Tempting because it
+  needs no stored token at all, but rejected on two grounds. *Privacy:* the GDPR treats
+  fingerprinting like a cookie, but it is **less** transparent — the user cannot see or erase
+  it. For a minors' platform that is the wrong direction; a cookie's erasability is a feature,
+  not a weakness. *Reliability:* identical school-issued devices produce the **same**
+  fingerprint (one batch of laptops would collapse into one "participant", polluting the data),
+  while a browser update or a monitor change alters the fingerprint and loses the person. It is
+  a tracking heuristic, not an identifier.
+- **Server-side session middleware** (ASP.NET Core `Session`, or a Redis-backed distributed
+  cache). This does **not** remove the browser-state requirement — it still issues a cookie
+  holding an opaque session id pointing at server-side state. That is already what the current
+  design does. Adopting the middleware would only add a distributed-cache dependency for the
+  same outcome, since participant data already lives in the database, not the cookie.
+- **A self-contained JWT in the cookie.** A JWT would carry signed claims client-side. The
+  platform has nothing to put in those claims — there are no roles, and the one authorization
+  bit (`HasSubmitted`) is read fresh from the database on every gated request precisely so it
+  *cannot* be spoofed from a client token. An opaque GUID plus a DB lookup is simpler and gives
+  a stronger guarantee than a cacheable signed claim.
+
+The short version for a viva: *"You always have to keep some reference in the browser to
+recognise a returning visitor — even ASP.NET's own session and Identity systems do exactly
+that. We keep that reference minimal (a random GUID), invisible to JavaScript (HttpOnly),
+erasable by the user (a feature, not a bug), and we keep all real data on the server."*
+
+### 9.2 Admin authentication — why ASP.NET Identity
+
+- **Hand-rolled auth** (custom password hashing and session handling). Rejected on the
+  "don't roll your own auth" principle: ASP.NET Identity provides salted hashing, configurable
+  password policy, and account lockout for free, all of which a custom implementation would have
+  to re-create and is likely to get subtly wrong.
+- **External IdP / OAuth / SSO** (Google, Microsoft Entra). Technically viable, but it adds an
+  external dependency and per-environment client registration for a small, fixed set of internal
+  administrators. A self-contained Identity store keeps the admin panel deployable on its own.
+- **JWT bearer tokens for the admin UI.** Bearer tokens suit SPAs and APIs; `UI-Admin` is a
+  server-rendered MVC application, for which the encrypted, HttpOnly Identity **cookie** is the
+  natural and safer fit.
+
+### 9.3 API caller authentication — why a shared `X-Api-Key`
+
+The front-ends authenticate to the API with one shared secret (section 5).
+
+- **Mutual TLS (mTLS)** between the front-ends and the API would be the strongest option, but
+  it brings certificate issuance, distribution, and rotation overhead that is hard to justify
+  for two first-party callers inside one deployment.
+- **OAuth2 client-credentials** would require standing up (or depending on) an authorization
+  server to issue tokens — heavy machinery for two internal services.
+- **Per-client API keys** (one key per front-end) would directly address the single-shared-key
+  limitation noted in section 10 and are the most realistic next step; they were not implemented
+  only because the current two-caller topology made one key acceptable.
+
+The shared key is the pragmatic middle: it authenticates the *caller process* with a
+constant-time-compared secret and no extra infrastructure, accepting the rotation limitation
+called out honestly in section 10.
+
+### 9.4 Moderation-result integrity — why a stateless HMAC token
+
+The moderation token (section 4) binds a result to its text with an HMAC instead of storing
+the verdict server-side.
+
+- **A server-side result store** keyed by session would give a true cross-instance single-use
+  guarantee, but only by adding a shared store (e.g. Redis) and the operational cost that comes
+  with it. The stateless HMAC avoids shared infrastructure entirely; any instance can verify any
+  other instance's token. The price is that single-use is best-effort per instance (section 10) —
+  every other property (signature, project binding, text binding, expiry) still holds.
+- **A signed JWT** instead of the custom pipe-separated payload would be functionally
+  equivalent. The bespoke format is smaller and carries exactly the four facts it needs, with no
+  general-purpose JWT parsing surface.
+
+## 10. Known limitations and honest gaps
 
 In the interest of an honest assessment, this section lists what is partial or absent.
 

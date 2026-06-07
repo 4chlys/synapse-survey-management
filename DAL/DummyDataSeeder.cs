@@ -207,9 +207,9 @@ public class DummyDataSeeder
 
         var platformSynapse = new ProjectPlatform
         {
-            Name = "Synapse",
-            LogoUrl = SeedUrl("logos/logo_synapse.jpg"),
-            WebsiteUrl = "https://synapse-ip.xyz",
+            Name = "KdG",
+            LogoUrl = SeedUrl("logos/kdg_logo.jpg"),
+            WebsiteUrl = "https://kdg.be",
             CreatedAt = Now
         };
         var platformFitLife = new ProjectPlatform
@@ -259,7 +259,7 @@ public class DummyDataSeeder
             QuestionFormat = QuestionFormat.Likert, Questionnaire = questionnaire1,
             AnswerChoiceCount = 0, IsMandatory = true, Position = 3,
             // Supporting media: YouTube embed (showcases the embed video path).
-            MediaUrl = "https://www.youtube.com/embed/aqz-KE-bpKQ",
+            MediaUrl = "https://www.youtube.com/embed/Vp8v-YoWZz4",
             MediaType = QuestionMediaType.Video, MediaIsEmbed = true,
             Translations = new List<QuestionTranslation>
             {
@@ -272,7 +272,7 @@ public class DummyDataSeeder
             QuestionFormat = QuestionFormat.Open, Questionnaire = questionnaire1,
             AnswerChoiceCount = 0, IsMandatory = true, Position = 4,
             // Supporting media: locally-hosted audio (showcases the audio-on-question feature).
-            MediaUrl = SeedUrl("questions/audios/counselor-message.mp3"),
+            MediaUrl = SeedUrl("questions/audios/kdg_audio_fragment.mp3"),
             MediaType = QuestionMediaType.Audio, MediaIsEmbed = false,
             Translations = new List<QuestionTranslation>
             {
@@ -376,7 +376,7 @@ public class DummyDataSeeder
                     new()
                     {
                         Language = languageNl,
-                        Text = "Welkom bij de Synapse enquête over mentaal welzijn op school. " +
+                        Text = "Welkom bij de KdG enquête over mentaal welzijn op school. " +
                                "Deze enquête peilt naar jouw ervaringen en ideeën rond stress, welzijn en wat de school beter kan doen. " +
                                "Jouw antwoorden zijn anoniem en helpen ons om een betere schoolomgeving te creëren. " +
                                "Het invullen duurt ongeveer 5 minuten."
@@ -384,7 +384,7 @@ public class DummyDataSeeder
                     new()
                     {
                         Language = languageEn,
-                        Text = "Welcome to the Synapse survey on mental wellbeing at school. " +
+                        Text = "Welcome to the KdG survey on mental wellbeing at school. " +
                                "This survey explores your experiences and ideas around stress, wellbeing, and what the school can do better. " +
                                "Your answers are anonymous and help us create a better school environment. " +
                                "It takes about 5 minutes to complete."

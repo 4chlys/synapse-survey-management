@@ -173,13 +173,13 @@
         <div class="h-full max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
 
             @{
-                var surveyTitle = (ViewData["SurveyTitle"] ?? "SynapseIP").ToString();
+                var headerTitle = (ViewData["HeaderTitle"] ?? string.Empty).ToString();
             }
 
             @* Left: title — same alignment on all sizes *@
             <div class="flex items-center min-w-0 flex-1">
                 <span class="font-heading font-semibold text-base-content/80 text-base tracking-wide truncate">
-                    @surveyTitle
+                    @headerTitle
                 </span>
             </div>
 

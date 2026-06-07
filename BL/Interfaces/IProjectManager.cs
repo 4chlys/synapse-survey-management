@@ -10,6 +10,7 @@ public interface IProjectManager
 {
     Task<Project> GetProjectByIdWithIntroductionReadOnlyAsync(int projectId);
     Task<Project> GetProjectByIdReadOnlyAsync(int projectId);
+    string ResolveContentLanguageCode(Participant participant, Project project, string submissionLanguageCode);
     Task<Project> GetProjectByIdForUpdateAsync(int projectId);
     Task<Project> GetProjectByIdWithQuestionnaireForUpdateAsync(int projectId);
     Task<Project> GetProjectByIdWithTranslationsReadOnlyAsync(int projectId);

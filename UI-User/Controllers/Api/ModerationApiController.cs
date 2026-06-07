@@ -39,7 +39,7 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     [EnableRateLimiting("ai-moderation")]
     public async Task<ActionResult<SuggestResponse>> Suggest(int projectId, ModerationRequest request)
     {
-        var result = await moderationService.SuggestAsync(projectId, request.Text);
+        var result = await moderationService.SuggestAsync(projectId, request.Text, request.Language);
         return Ok(new
         {
             result.Suggestion,
@@ -48,4 +48,4 @@ public class ModerationApiController(ModerationService moderationService) : Cont
     }
 }
 
-public record ModerationRequest(string Text, string ContentType = "idea");
+public record ModerationRequest(string Text, string ContentType = "idea", string Language = null);

@@ -22,6 +22,7 @@
   <data name="Col_Participants" xml:space="preserve"><value>Participants</value></data>
   <data name="Col_AvgTime" xml:space="preserve"><value>Avg. time</value></data>
   <data name="Col_MedianTime" xml:space="preserve"><value>Median time</value></data>
+  <data name="AiUsageTableHeading" xml:space="preserve"><value>AI token usage</value></data>
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="ExportModalTitle" xml:space="preserve"><value>Export statistics</value></data>
   <data name="ExportGroupHeading_Stats" xml:space="preserve"><value>Statistics</value></data>

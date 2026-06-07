@@ -17,6 +17,25 @@ Status legend used throughout: ✅ implemented · ⚠️ partial / depends on ad
 4. **Visual content is content.** Colour carries no information that is not also conveyed by shape, text, or icon. Contrast and font sizing are tested against WCAG AA at minimum.
 5. **Be honest about gaps.** A known, documented gap is safer than an assumed-solved one. The backlog below is deliberately exhaustive.
 
+Principle 1 in practice — the browser/OS signals the app treats as authoritative, and what each one drives:
+
+```mermaid
+flowchart LR
+    subgraph Env["Authoritative environment signals"]
+        direction TB
+        RM["prefers-reduced-motion"]
+        CS["prefers-color-scheme"]
+        AL["Accept-Language / culture"]
+        PC["pointer: coarse"]
+        FC["forced-colors / prefers-contrast"]
+    end
+    RM --> A1["Animations + transitions neutralised"]
+    CS --> A2["Light / dark theme on first paint"]
+    AL --> A3["UI strings, project content + AI language"]
+    PC --> A4["44px tap-target floor"]
+    FC -.->|"not handled yet"| A5["Windows High Contrast gap (backlog #12)"]
+```
+
 ## How to use this document for an audit
 
 - Sections marked ✅ are *claims to verify*, not proof — confirm each against the live app and a screen reader.
@@ -43,7 +62,7 @@ Status legend used throughout: ✅ implemented · ⚠️ partial / depends on ad
 }
 ```
 
-Lives in `UI-User/src/main.css`. The `!important` is the documented project exception — accessibility resets must beat any per-element animation declaration. The app does **not** expose an in-app toggle: the OS signal is authoritative. See `Documentation/prefers-reduced-motion.md` for the full rationale, OS paths, and who relies on it.
+Lives in `UI-User/src/main.css`. The `!important` is the documented project exception — accessibility resets must beat any per-element animation declaration. The app does **not** expose an in-app toggle: the OS signal is authoritative.
 
 Neutralises: `survey-slide`, `survey-card`, `page-enter`, `chat-bubble-*`, `typing-dot`, `landing-float-up`, `orbit-spin`, `slide-up`, `fade-up`, `shake`. Content still changes — only motion is stripped.
 
@@ -80,7 +99,7 @@ A project admin can pick a custom primary brand colour. Three layers keep that l
 
 1. **Save-time rejection** — `BL/Implementation/ProjectManager.cs` rejects any pick whose WCAG contrast ratio falls below 3:1 against *either* the light surface (`#FFFFFF`) or the dark surface (`#1A1430`). Throws `Validation.PrimaryColor.LowContrast`, localised NL + EN.
 2. **Auto-computed foreground** — `--color-primary-content` (text on primary buttons) is derived from the picked colour's perceived luminance: dark brand → white text, light brand → black text. The admin never sets it.
-3. **Live advisory chip** — in the admin project form, a warning chip under the colour picker (`#primary-color-contrast-warning`, wired in `UI-Admin/src/project/project-style.ts`) flags a failing pick in real time, before submit. Advisory only — the BL stays authoritative.
+3. **Live advisory chip** — in the admin project form, a warning chip under the colour picker (`#primary-color-contrast-warning`, wired in `UI-Admin/src/lib/project-style.ts`) flags a failing pick in real time, before submit. Advisory only — the BL stays authoritative.
 
 Supporting hotfix: `ProjectAdminService` now surfaces the API's localised rejection message inline + as a toast (`ApiValidationException`), instead of the previous unhandled 500. The curated topic colour swatches (Sports / Nature / Culture / Health) all sit inside the contrast-safe luminance band, so they never trip the guard.
 
@@ -277,4 +296,4 @@ Honest, deliberately exhaustive. Each item: WCAG success criterion + rough sever
 - [MDN — forced-colors](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors)
 - [MDN — ARIA](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA)
 - [Inclusive Components — Heydon Pickering](https://inclusive-components.design/)
-- Project docs: `Documentation/prefers-reduced-motion.md`, `Documentation/OKLCH.md`, `Documentation/ThemingStrategy.md`
+- Project docs: `Documentation/theming.md`, `Documentation/OKLCH.md`

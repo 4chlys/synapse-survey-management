@@ -67,12 +67,13 @@ export async function callModerationAi(
 export async function callSuggest(
     text: string,
     projectId: number,
+    language?: string,
 ): Promise<{ suggestion: string | null; moderationToken: string | null }> {
     try {
         const res = await fetch(`/${projectId}/api/ModerationApi/suggest`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken()},
-            body: JSON.stringify({text}),
+            body: JSON.stringify({text, language}),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: SuggestResponse = await res.json();
@@ -307,7 +308,11 @@ export function wireModerationForm(
             const result = await callModeration('ai', textarea.value, projectId);
             if (result.isAcceptable) continue;
 
-            const suggestResult = await callSuggest(textarea.value, projectId);
+            const suggestResult = await callSuggest(
+                textarea.value,
+                projectId,
+                form.querySelector<HTMLSelectElement>('select[name="languageCode"]')?.value,
+            );
             const outcome = await showRewritePopup(
                 textarea.value,
                 suggestResult.suggestion,

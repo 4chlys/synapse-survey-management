@@ -18,7 +18,7 @@ let _projectId: string | null = null;
 let _msgEl: HTMLElement | null = null;
 let _dirty = false;
 
-async function checkUniqueness(shortForm: string, projectId: string | null, msgEl: HTMLElement): Promise<void> {
+async function checkUniqueness(shortForm: string, projectId: string | null, msgEl: HTMLElement, applySuggestion: boolean): Promise<void> {
     if (!shortForm) {
         msgEl.textContent = '';
         shortFormValid = true;
@@ -30,8 +30,14 @@ async function checkUniqueness(shortForm: string, projectId: string | null, msgE
 
     try {
         const res = await fetch(`/Project/CheckShortForm?${params.toString()}`);
-        const data = await res.json() as { available: boolean };
+        const data = await res.json() as { available: boolean; suggestion: string };
         if (data.available) {
+            msgEl.textContent = '';
+            shortFormValid = true;
+        } else if (applySuggestion && !_dirty && data.suggestion && _shortFormInput) {
+            // Autofill path: silently adopt the server's unique suggestion (e.g. "-2").
+            _shortFormInput.value = data.suggestion;
+            lastChecked = data.suggestion;
             msgEl.textContent = '';
             shortFormValid = true;
         } else {
@@ -51,11 +57,11 @@ function getDefaultNameInput(): HTMLInputElement | null {
     return _nameInputs[0] ?? null;
 }
 
-function scheduleCheck(value: string): void {
+function scheduleCheck(value: string, applySuggestion = false): void {
     if (checkTimeout !== null) clearTimeout(checkTimeout);
     if (value === lastChecked || !_msgEl) return;
     lastChecked = value;
-    checkTimeout = setTimeout(() => { void checkUniqueness(value, _projectId, _msgEl!); }, 400);
+    checkTimeout = setTimeout(() => { void checkUniqueness(value, _projectId, _msgEl!, applySuggestion); }, 400);
 }
 
 function regenerateFromDefault(): void {
@@ -64,7 +70,7 @@ function regenerateFromDefault(): void {
     if (!inp || !_shortFormInput) return;
     const normalized = normalizeToShortForm(inp.value);
     _shortFormInput.value = normalized;
-    scheduleCheck(normalized);
+    scheduleCheck(normalized, true);
 }
 
 export function initShortformAutofill(): void {
@@ -91,7 +97,7 @@ export function initShortformAutofill(): void {
         const val = _shortFormInput!.value;
         if (_msgEl && val !== lastChecked) {
             lastChecked = val;
-            void checkUniqueness(val, _projectId, _msgEl);
+            void checkUniqueness(val, _projectId, _msgEl, false);
         }
     });
 

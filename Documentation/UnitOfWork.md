@@ -41,6 +41,13 @@ It exposes **two modes**, and the distinction is the whole point of the pattern:
 | **Implicit transaction** | `SaveChangesAsync` | The work is change-tracked (inserts / updates via `CreateAsync`, `Update`). EF Core wraps a single `SaveChanges` in its own transaction, so one call commits everything staged. |
 | **Explicit transaction** | `ExecuteInTransactionAsync` | The work issues SQL that **bypasses** the change tracker (`ExecuteDeleteAsync` / `ExecuteUpdateAsync`). These run immediately and need an explicit `BEGIN … COMMIT` to remain rollback-able. |
 
+```mermaid
+flowchart TD
+    A[Manager needs to persist work] --> B{"Change-tracked writes only?<br/>CreateAsync / Update"}
+    B -->|yes| C["SaveChangesAsync<br/>one implicit EF transaction"]
+    B -->|"no — ExecuteDelete / ExecuteUpdate<br/>bypasses the change tracker"| D["ExecuteInTransactionAsync<br/>explicit BEGIN … COMMIT / ROLLBACK"]
+```
+
 ## Why not the obvious alternatives
 
 ### Calling `SaveChanges()` inside each repository method — uncomposable
@@ -87,6 +94,25 @@ Scoped means **one instance per HTTP request**. Within a single request the Unit
 repository, and every manager all receive the *same* `DbContext`. That is what makes a single
 `SaveChangesAsync` flush work staged by *different* repositories — they were all writing into one
 shared change tracker the whole time.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as Manager
+    participant R1 as IdeaRepository
+    participant R2 as CategoryRepository
+    participant UoW as IUnitOfWork
+    participant DB as Shared scoped DbContext
+
+    Note over M,DB: one DbContext per request, shared by all
+    M->>R1: CreateAsync(idea)
+    R1->>DB: stage insert (not saved)
+    M->>R2: Update(category)
+    R2->>DB: stage update (not saved)
+    M->>UoW: SaveChangesAsync(ct)
+    UoW->>DB: SaveChanges — single implicit transaction
+    DB-->>M: all staged work commits atomically (or nothing does)
+```
 
 > ⚠️ The shared scoped `DbContext` is **not thread-safe**. Never `Task.WhenAll` across repositories
 > or managers inside one request — concurrent access to the same change tracker corrupts it. Await
