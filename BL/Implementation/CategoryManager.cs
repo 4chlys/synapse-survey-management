@@ -14,8 +14,8 @@ public class CategoryManager(
     public Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId)
         => categoryRepository.ReadByProjectIdReadOnlyAsync(projectId);
 
-    public Task<IEnumerable<Category>> GetCategoriesWithIdeasForProjectReadOnlyAsync(int projectId)
-        => categoryRepository.ReadAllWithIdeasByProjectReadOnlyAsync(projectId);
+    public Task<IEnumerable<Category>> GetCategoriesWithIdeasAndParticipantsForProjectReadOnlyAsync(int projectId)
+        => categoryRepository.ReadAllWithIdeasAndParticipantsByProjectReadOnlyAsync(projectId);
 
     public Task<Category> GetCategoryByIdReadOnlyAsync(int id)
         => categoryRepository.ReadByIdReadOnlyAsync(id);

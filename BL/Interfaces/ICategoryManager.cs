@@ -8,7 +8,7 @@ public record CategoryTranslationInput(string LanguageCode, string Name, string 
 public interface ICategoryManager
 {
     Task<IEnumerable<Category>> GetCategoriesForProjectReadOnlyAsync(int projectId);
-    Task<IEnumerable<Category>> GetCategoriesWithIdeasForProjectReadOnlyAsync(int projectId);
+    Task<IEnumerable<Category>> GetCategoriesWithIdeasAndParticipantsForProjectReadOnlyAsync(int projectId);
     Task<Category> GetCategoryByIdReadOnlyAsync(int id);
     Task<Category> GetCategoryByIdWithProjectReadOnlyAsync(int categoryId);
 

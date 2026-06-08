@@ -18,8 +18,8 @@ public static class RawDataExportSheetBuilder
         var sheets = new List<ExportSheet>();
 
         if (tables.Contains("vragen"))
-            sheets.Add(new ExportSheet("vragen", "Vragen",
-                ["VraagId", "Tekst", "Type", "Verplicht", "Sectie", "Antwoordkeuzes"],
+            sheets.Add(new ExportSheet("vragen", "Questions",
+                ["QuestionId", "Text", "Type", "Mandatory", "Section", "AnswerChoices"],
                 questions.Select(q =>
                 {
                     var qt = TranslationPicker.Pick(q.Translations, defaultLanguageCode);
@@ -29,15 +29,15 @@ public static class RawDataExportSheetBuilder
                         q.QuestionId.ToString(),
                         qt?.Text ?? "",
                         q.QuestionFormat.ToString(),
-                        q.IsMandatory ? "Ja" : "Nee",
+                        q.IsMandatory ? "Yes" : "No",
                         st?.Name ?? "",
                         qt?.AnswerChoices?.Count > 0 ? string.Join(" | ", qt.AnswerChoices) : ""
                     };
                 })));
 
         if (tables.Contains("antwoorden"))
-            sheets.Add(new ExportSheet("antwoorden", "Antwoorden",
-                ["AntwoordId", "VraagId", "GebruikerId", "Antwoord", "Tijdstip"],
+            sheets.Add(new ExportSheet("antwoorden", "Answers",
+                ["AnswerId", "QuestionId", "UserId", "Answer", "Timestamp"],
                 responses.Select(r => new[]
                 {
                     r.ResponseId.ToString(),
@@ -48,8 +48,8 @@ public static class RawDataExportSheetBuilder
                 })));
 
         if (tables.Contains("categorieen"))
-            sheets.Add(new ExportSheet("categorieen", "Categorieën",
-                ["CategorieId", "Naam", "Beschrijving", "AantalIdeeën"],
+            sheets.Add(new ExportSheet("categorieen", "Categories",
+                ["CategoryId", "Name", "Description", "IdeaCount"],
                 categories.Select(c =>
                 {
                     var ct = TranslationPicker.Pick(c.Translations, defaultLanguageCode);
@@ -63,8 +63,8 @@ public static class RawDataExportSheetBuilder
                 })));
 
         if (tables.Contains("ideeen"))
-            sheets.Add(new ExportSheet("ideeen", "Ideeën",
-                ["IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
+            sheets.Add(new ExportSheet("ideeen", "Ideas",
+                ["IdeaId", "Description", "Category", "Status", "Email", "CommentCount", "EmojiCount", "EmojiDetails", "Timestamp"],
                 categories.SelectMany(c => c.Ideas.Select(i =>
                 {
                     var catName = TranslationPicker.Pick(c.Translations, defaultLanguageCode)?.Name ?? "";
@@ -80,6 +80,7 @@ public static class RawDataExportSheetBuilder
                         i.Description,
                         catName,
                         i.Status.ToString(),
+                        i.Participant?.Email ?? "",
                         i.Comments.OfType<TextComment>().Count().ToString(),
                         emojiReactions.Count.ToString(),
                         emojiDetails,
@@ -89,7 +90,7 @@ public static class RawDataExportSheetBuilder
 
         if (tables.Contains("comments"))
             sheets.Add(new ExportSheet("comments", "Comments",
-                ["CommentId", "IdeeId", "GebruikerId", "Tekst", "Status", "EmojiReacties", "Tijdstip"],
+                ["CommentId", "IdeaId", "UserId", "Text", "Status", "EmojiReactions", "Timestamp"],
                 categories.SelectMany(c => c.Ideas.SelectMany(i =>
                     i.Comments.OfType<TextComment>().Select(tc =>
                     {
@@ -109,8 +110,8 @@ public static class RawDataExportSheetBuilder
                     })))));
 
         if (tables.Contains("emojireacties"))
-            sheets.Add(new ExportSheet("emojireacties", "EmojiReacties",
-                ["ReactieId", "IdeeId", "CommentId", "GebruikerId", "Emoji", "EmojiNaam", "Tijdstip"],
+            sheets.Add(new ExportSheet("emojireacties", "EmojiReactions",
+                ["ReactionId", "IdeaId", "CommentId", "UserId", "Emoji", "EmojiName", "Timestamp"],
                 categories.SelectMany(c => c.Ideas.SelectMany(i =>
                     i.Comments.OfType<IconComment>().Select(ic => new[]
                     {
