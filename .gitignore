@@ -503,6 +503,7 @@ stop.bat
 CasperContext/
 seeded-credentials.txt
 mattcopock.txt
+QA.md
 
 # manually by Romeo
 start.sh
