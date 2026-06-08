@@ -1,3 +1,6 @@
+import { getAntiForgeryToken } from './utils';
+import type { MediaI18n } from './questions-i18n';
+
 const MAX_BYTES: Record<number, number> = {
     1: 5 * 1024 * 1024,   // Image
     2: 25 * 1024 * 1024,  // Video
@@ -8,56 +11,57 @@ const YOUTUBE_VIMEO_PATTERN = /^https?:\/\/(www\.youtube\.com|youtu\.be|vimeo\.c
 const VIDEO_DIRECT_PATTERN  = /\.(mp4|webm)$/i;
 const AUDIO_PATTERN         = /\.(mp3|m4a|wav|ogg)$/i;
 
-const EMBED_PLACEHOLDERS: Record<number, string> = {
-    1: 'https://example.com/afbeelding.jpg',
-    2: 'https://www.youtube.com/watch?v=... of https://example.com/video.mp4',
-    3: 'https://example.com/audio.mp3',
-};
+function embedPlaceholder(type: number, i18n: MediaI18n): string {
+    if (type === 1) return i18n.placeholderImage;
+    if (type === 2) return i18n.placeholderVideo;
+    if (type === 3) return i18n.placeholderAudio;
+    return 'https://...';
+}
 
-const EMBED_LABELS: Record<number, string> = {
-    1: 'Afbeelding URL',
-    2: 'Video URL (YouTube, Vimeo of directe .mp4/.webm link)',
-    3: 'Audio URL (.mp3, .m4a, .wav of .ogg)',
-};
+function embedLabelText(type: number, i18n: MediaI18n): string {
+    if (type === 1) return i18n.labelImage;
+    if (type === 2) return i18n.labelVideo;
+    if (type === 3) return i18n.labelAudio;
+    return 'URL';
+}
 
 // Turns a failed upload response into a readable message. Only the API's own
 // plain-text BadRequest bodies are trusted; HTML/empty bodies come from upstream
 // proxies (e.g. a 403 from the load balancer) and must not be shown verbatim.
-async function uploadErrorMessage(res: Response): Promise<string> {
+async function uploadErrorMessage(res: Response, i18n: MediaI18n): Promise<string> {
     if (res.status === 401 || res.status === 403)
-        return 'Geen toegang. Je sessie is mogelijk verlopen — log opnieuw in en probeer het opnieuw.';
+        return i18n.errNoAccess;
     if (res.status === 413)
-        return 'Bestand is te groot.';
+        return i18n.errTooLarge;
     if (res.status === 429)
-        return 'Te veel uploads in korte tijd. Wacht even en probeer het opnieuw.';
+        return i18n.errTooManyUploads;
 
     const body = (await res.text().catch(() => '')).trim();
     const contentType = res.headers.get('content-type') ?? '';
     if (body && contentType.includes('text/plain'))
         return body;
-    return 'Upload mislukt. Probeer het opnieuw.';
+    return i18n.errUploadFailedRetry;
 }
 
-function validateEmbedUrl(url: string, type: number): string | null {
+function validateEmbedUrl(url: string, type: number, i18n: MediaI18n): string | null {
     if (!url.startsWith('https://') && !url.startsWith('http://'))
-        return 'URL moet beginnen met https://';
+        return i18n.errUrlScheme;
     if (type === 1) return null; // any URL accepted for images
     if (type === 2) {
         if (YOUTUBE_VIMEO_PATTERN.test(url) || VIDEO_DIRECT_PATTERN.test(url)) return null;
-        return 'Voer een YouTube/Vimeo URL in of een directe .mp4/.webm link.';
+        return i18n.errVideoUrl;
     }
     if (type === 3) {
         if (AUDIO_PATTERN.test(url)) return null;
-        return 'URL moet eindigen op .mp3, .m4a, .wav of .ogg.';
+        return i18n.errAudioUrl;
     }
     return null;
 }
 
-import { getAntiForgeryToken } from './utils';
-
 export function wireQuestionMediaPanel(
     prefix: string,
     projectId: number,
+    i18n: MediaI18n,
     onUpload?: (url: string) => void
 ): void {
     const typeSelect    = document.getElementById(`${prefix}MediaType`) as HTMLSelectElement | null;
@@ -97,8 +101,8 @@ export function wireQuestionMediaPanel(
         embedToggle.classList.remove('hidden');
 
         // Update placeholder and label per type
-        if (embedUrlInput) embedUrlInput.placeholder = EMBED_PLACEHOLDERS[type] ?? 'https://...';
-        if (embedLabel) embedLabel.textContent = EMBED_LABELS[type] ?? 'URL';
+        if (embedUrlInput) embedUrlInput.placeholder = embedPlaceholder(type, i18n);
+        if (embedLabel) embedLabel.textContent = embedLabelText(type, i18n);
 
         if (isEmbed) {
             uploadBlock.classList.add('hidden');
@@ -136,7 +140,7 @@ export function wireQuestionMediaPanel(
         const max  = MAX_BYTES[type] ?? 0;
         if (file.size > max) {
             if (uploadError) {
-                uploadError.textContent = `Bestand is te groot (max ${max / (1024 * 1024)} MB).`;
+                uploadError.textContent = i18n.errTooLargeMax.replace('{0}', String(max / (1024 * 1024)));
                 uploadError.classList.remove('hidden');
             }
             fileInput.value = '';
@@ -157,19 +161,19 @@ export function wireQuestionMediaPanel(
                 }
             );
             if (!res.ok) {
-                if (uploadError) { uploadError.textContent = await uploadErrorMessage(res); uploadError.classList.remove('hidden'); }
+                if (uploadError) { uploadError.textContent = await uploadErrorMessage(res, i18n); uploadError.classList.remove('hidden'); }
                 return;
             }
             const data = await res.json() as { url: string };
             if (urlHidden) urlHidden.value = data.url;
-            if (preview) renderPreview(type, data.url, preview, () => {
+            if (preview) renderPreview(type, data.url, preview, i18n, () => {
                 if (urlHidden) urlHidden.value = '';
                 if (fileInput) fileInput.value = '';
                 preview!.innerHTML = '';
             });
             onUpload?.(data.url);
         } catch {
-            if (uploadError) { uploadError.textContent = 'Upload mislukt.'; uploadError.classList.remove('hidden'); }
+            if (uploadError) { uploadError.textContent = i18n.errUploadFailed; uploadError.classList.remove('hidden'); }
         }
     });
 
@@ -183,7 +187,7 @@ export function wireQuestionMediaPanel(
             return;
         }
 
-        const error = validateEmbedUrl(url, type);
+        const error = validateEmbedUrl(url, type, i18n);
         if (error) {
             if (embedError) { embedError.textContent = error; embedError.classList.remove('hidden'); }
             if (urlHidden) urlHidden.value = '';
@@ -191,7 +195,7 @@ export function wireQuestionMediaPanel(
         } else {
             if (embedError) embedError.classList.add('hidden');
             if (urlHidden) urlHidden.value = url;
-            if (preview) renderPreview(type, url, preview, () => {
+            if (preview) renderPreview(type, url, preview, i18n, () => {
                 if (urlHidden) urlHidden.value = '';
                 if (embedUrlInput) embedUrlInput.value = '';
                 preview!.innerHTML = '';
@@ -206,7 +210,7 @@ export function wireQuestionMediaPanel(
     updateVisibility();
 }
 
-export function hydrateMediaPanel(prefix: string, mediaUrl: string, mediaType: number, mediaIsEmbed: boolean, mediaText: string): void {
+export function hydrateMediaPanel(prefix: string, mediaUrl: string, mediaType: number, mediaIsEmbed: boolean, mediaText: string, i18n: MediaI18n): void {
     const typeSelect  = document.getElementById(`${prefix}MediaType`) as HTMLSelectElement | null;
     const embedCb     = document.getElementById(`${prefix}MediaIsEmbed`) as HTMLInputElement | null;
     const urlHidden   = document.getElementById(`${prefix}MediaUrl`) as HTMLInputElement | null;
@@ -237,8 +241,8 @@ export function hydrateMediaPanel(prefix: string, mediaUrl: string, mediaType: n
             embedBlock.classList.add('hidden');
         } else {
             embedToggle.classList.remove('hidden');
-            if (embedInput) embedInput.placeholder = EMBED_PLACEHOLDERS[mediaType] ?? 'https://...';
-            if (embedLabel) embedLabel.textContent = EMBED_LABELS[mediaType] ?? 'URL';
+            if (embedInput) embedInput.placeholder = embedPlaceholder(mediaType, i18n);
+            if (embedLabel) embedLabel.textContent = embedLabelText(mediaType, i18n);
             if (mediaIsEmbed) {
                 uploadBlock.classList.add('hidden');
                 uploadBlock.style.display = '';
@@ -252,7 +256,7 @@ export function hydrateMediaPanel(prefix: string, mediaUrl: string, mediaType: n
     }
 
     // Render preview (works for both uploaded and URL media)
-    if (mediaUrl && preview) renderPreview(mediaType, mediaUrl, preview, () => {
+    if (mediaUrl && preview) renderPreview(mediaType, mediaUrl, preview, i18n, () => {
         if (urlHidden)  urlHidden.value  = '';
         if (fileInput)  fileInput.value  = '';
         if (embedInput) embedInput.value = '';
@@ -260,7 +264,7 @@ export function hydrateMediaPanel(prefix: string, mediaUrl: string, mediaType: n
     });
 }
 
-function renderPreview(type: number, url: string, container: HTMLElement, onClear?: () => void): void {
+function renderPreview(type: number, url: string, container: HTMLElement, i18n: MediaI18n, onClear?: () => void): void {
     container.innerHTML = '';
 
     const wrapper = document.createElement('div');
@@ -275,7 +279,7 @@ function renderPreview(type: number, url: string, container: HTMLElement, onClea
         if (YOUTUBE_VIMEO_PATTERN.test(url)) {
             const p = document.createElement('p');
             p.className = 'text-xs text-base-content/60 italic pr-8';
-            p.textContent = '▶ Video URL: ' + url;
+            p.textContent = `▶ ${i18n.videoUrlLabel}: ${url}`;
             wrapper.appendChild(p);
         } else {
             const video = document.createElement('video');
@@ -297,7 +301,7 @@ function renderPreview(type: number, url: string, container: HTMLElement, onClea
     if (onClear) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.title = 'Verwijder media';
+        btn.title = i18n.removeTitle;
         btn.className = 'absolute top-1 right-1 btn btn-xs btn-circle btn-neutral opacity-70 hover:opacity-100 z-10';
         btn.textContent = '✕';
         btn.addEventListener('click', onClear);

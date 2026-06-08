@@ -1,6 +1,7 @@
 import { toast } from './notify';
 import { wireQuestionMediaPanel, hydrateMediaPanel } from './question-media';
-import { readQuestionsI18n, readFormI18n } from './questions-i18n';
+import { readQuestionsI18n, readFormI18n, readMediaI18n } from './questions-i18n';
+import type { MediaI18n } from './questions-i18n';
 import type { QuestionTranslationData, EndingAnswerSlotData } from './project-types';
 
 // Module-level state set by initProjectQuestions()
@@ -15,6 +16,7 @@ let _supportedLanguages: string[] = [];
 let _defaultLanguage = 'nl';
 let _createUrl = '';
 let _i18n: ReturnType<typeof readQuestionsI18n> & ReturnType<typeof readFormI18n> = {} as never;
+let _mediaI18n: MediaI18n = {} as never;
 let _pendingSectionId = '';
 let _pendingParentId = '';
 let _pendingChoiceIndex = '';
@@ -178,7 +180,7 @@ function resetModal(): void {
     const mandatoryCb = document.getElementById('IsMandatory-cb') as HTMLInputElement | null;
     if (mandatoryCb) mandatoryCb.checked = true;
     // Clear the language-agnostic media panel; hydrate resets type/url/embed + visibility.
-    hydrateMediaPanel('', '', 0, false, '');
+    hydrateMediaPanel('', '', 0, false, '', _mediaI18n);
     const mediaFile = document.getElementById('MediaFile') as HTMLInputElement | null;
     if (mediaFile) mediaFile.value = '';
     const mediaPreview = document.getElementById('media-preview');
@@ -268,7 +270,7 @@ function openEditModal(
     if (title) title.textContent = _i18n.modalTitleEdit;
 
     // Media URL/type/embed are language-agnostic; MediaText is set per-pane above.
-    hydrateMediaPanel('', mediaUrl, mediaType, mediaIsEmbed, '');
+    hydrateMediaPanel('', mediaUrl, mediaType, mediaIsEmbed, '', _mediaI18n);
 
     updateAllStatusDots();
     _modal?.classList.add('modal-open');
@@ -298,6 +300,7 @@ export function initProjectQuestions(): void {
     if (!_questionForm) return;
 
     _i18n = { ...readQuestionsI18n(_questionsList), ...readFormI18n(_questionForm) };
+    _mediaI18n = readMediaI18n(_questionForm);
 
     _supportedLanguages = (_questionsList?.dataset['supportedLanguages'] ?? 'nl')
         .split(',').map(s => s.trim()).filter(Boolean);
@@ -315,7 +318,7 @@ export function initProjectQuestions(): void {
     const projectId = parseInt(_questionForm?.dataset.projectId ?? _questionsList?.dataset.projectId ?? '0', 10);
 
     if (projectId) {
-        wireQuestionMediaPanel('', projectId);
+        wireQuestionMediaPanel('', projectId, _mediaI18n);
     }
 
     _createUrl = _questionForm?.action ?? '';
