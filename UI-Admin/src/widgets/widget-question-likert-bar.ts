@@ -143,8 +143,9 @@ export function initQuestionLikertBarWidget(el: HTMLElement): void {
             return;
         }
 
-        renderInto(freshCanvas(body), stats);
+        const canvas = freshCanvas(body);
+        renderInto(canvas, stats);
     };
 
-    initQuestionWidget(el, { format: 'Likert', render });
+    initQuestionWidget(el, { format: 'Likert', fileName: 'question-likert.png', render });
 }

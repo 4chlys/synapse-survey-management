@@ -63,9 +63,10 @@ async function render(
         return;
     }
 
-    renderInto(freshCanvas(body), stats);
+    const canvas = freshCanvas(body);
+    renderInto(canvas, stats);
 }
 
 export function initQuestionSinglePieWidget(el: HTMLElement): void {
-    initQuestionWidget(el, { format: 'SingleChoice', render });
+    initQuestionWidget(el, { format: 'SingleChoice', fileName: 'question-single-choice.png', render });
 }

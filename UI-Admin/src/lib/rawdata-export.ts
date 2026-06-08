@@ -1,3 +1,5 @@
+import { downloadFile } from './utils';
+
 export function initRawdataExport(): void {
     const modal = document.getElementById('rawdata-modal') as HTMLDialogElement | null;
     const dlBtn = document.getElementById('rawdata-download') as HTMLButtonElement | null;
@@ -19,7 +21,7 @@ export function initRawdataExport(): void {
         const format = (document.getElementById('rawdata-format') as HTMLSelectElement).value;
         const tables = checked.join(',');
         const separator = baseUrl.includes('?') ? '&' : '?';
-        window.location.href = `${baseUrl}${separator}format=${format}&tables=${encodeURIComponent(tables)}`;
+        downloadFile(`${baseUrl}${separator}format=${format}&tables=${encodeURIComponent(tables)}`);
         modal.close();
     });
 }

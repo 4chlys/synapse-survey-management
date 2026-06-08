@@ -1,3 +1,5 @@
+import { downloadFile } from './utils';
+
 export function initSystemStatsExport(): void {
     const modal = document.getElementById('system-export-modal') as HTMLDialogElement | null;
     const dlBtn = document.getElementById('system-export-download') as HTMLButtonElement | null;
@@ -32,7 +34,7 @@ export function initSystemStatsExport(): void {
         const graphicsEnabled = graphicsCheckbox !== null && graphicsCheckbox.checked && !graphicsCheckbox.disabled;
         const sections = checked.join(',');
         const separator = baseUrl.includes('?') ? '&' : '?';
-        window.location.href = `${baseUrl}${separator}format=${encodeURIComponent(format)}&sections=${encodeURIComponent(sections)}&includeGraphics=${graphicsEnabled}`;
+        downloadFile(`${baseUrl}${separator}format=${encodeURIComponent(format)}&sections=${encodeURIComponent(sections)}&includeGraphics=${graphicsEnabled}`);
         modal.close();
     });
 }

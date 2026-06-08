@@ -74,8 +74,9 @@ export function initQuestionMultiBarWidget(el: HTMLElement): void {
             return;
         }
 
-        renderInto(freshCanvas(body), stats, xAxisLabel);
+        const canvas = freshCanvas(body);
+        renderInto(canvas, stats, xAxisLabel);
     };
 
-    initQuestionWidget(el, { format: 'MultipleChoice', render });
+    initQuestionWidget(el, { format: 'MultipleChoice', fileName: 'question-multiple-choice.png', render });
 }
