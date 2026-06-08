@@ -150,7 +150,7 @@ async function submitFormViaFetch(form: HTMLFormElement): Promise<void> {
         redirect: 'follow',
     });
 
-    if (response.ok) {
+    if (response.ok && response.redirected) {
         window.location.href = response.url;
     }
 }
