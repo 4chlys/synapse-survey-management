@@ -497,6 +497,7 @@ $RECYCLE.BIN/
 
 # manually by Casper
 CLAUDE.md
+prd/
 start-up.bat
 stop.bat
 CasperContext/
