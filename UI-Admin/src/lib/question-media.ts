@@ -20,6 +20,24 @@ const EMBED_LABELS: Record<number, string> = {
     3: 'Audio URL (.mp3, .m4a, .wav of .ogg)',
 };
 
+// Turns a failed upload response into a readable message. Only the API's own
+// plain-text BadRequest bodies are trusted; HTML/empty bodies come from upstream
+// proxies (e.g. a 403 from the load balancer) and must not be shown verbatim.
+async function uploadErrorMessage(res: Response): Promise<string> {
+    if (res.status === 401 || res.status === 403)
+        return 'Geen toegang. Je sessie is mogelijk verlopen — log opnieuw in en probeer het opnieuw.';
+    if (res.status === 413)
+        return 'Bestand is te groot.';
+    if (res.status === 429)
+        return 'Te veel uploads in korte tijd. Wacht even en probeer het opnieuw.';
+
+    const body = (await res.text().catch(() => '')).trim();
+    const contentType = res.headers.get('content-type') ?? '';
+    if (body && contentType.includes('text/plain'))
+        return body;
+    return 'Upload mislukt. Probeer het opnieuw.';
+}
+
 function validateEmbedUrl(url: string, type: number): string | null {
     if (!url.startsWith('https://') && !url.startsWith('http://'))
         return 'URL moet beginnen met https://';
@@ -139,8 +157,7 @@ export function wireQuestionMediaPanel(
                 }
             );
             if (!res.ok) {
-                const msg = await res.text();
-                if (uploadError) { uploadError.textContent = msg || 'Upload mislukt.'; uploadError.classList.remove('hidden'); }
+                if (uploadError) { uploadError.textContent = await uploadErrorMessage(res); uploadError.classList.remove('hidden'); }
                 return;
             }
             const data = await res.json() as { url: string };
