@@ -15,7 +15,7 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Include(c => c.Translations).ThenInclude(t => t.Language)
             .ToListAsync();
 
-    public async Task<IEnumerable<Category>> ReadAllWithIdeasByProjectReadOnlyAsync(int projectId)
+    public async Task<IEnumerable<Category>> ReadAllWithIdeasAndParticipantsByProjectReadOnlyAsync(int projectId)
         => await Context.Set<Category>()
             .AsNoTracking()
             .Where(c => c.Project.ProjectId == projectId)
@@ -33,6 +33,8 @@ public class CategoryRepository(DbContext context) : Repository<Category>(contex
             .Include(c => c.Ideas)
                 .ThenInclude(i => i.Comments)
                     .ThenInclude(c => c.Participant)
+            .Include(c => c.Ideas)
+                .ThenInclude(i => i.Participant)
             .ToListAsync();
 
     public Task<Category> ReadByIdReadOnlyAsync(int categoryId)

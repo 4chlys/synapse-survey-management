@@ -64,7 +64,7 @@ public static class RawDataExportSheetBuilder
 
         if (tables.Contains("ideeen"))
             sheets.Add(new ExportSheet("ideeen", "Ideeën",
-                ["IdeeId", "Beschrijving", "Categorie", "Status", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
+                ["IdeeId", "Beschrijving", "Categorie", "Status", "Email", "AantalReacties", "AantalEmojis", "EmojiDetails", "Tijdstip"],
                 categories.SelectMany(c => c.Ideas.Select(i =>
                 {
                     var catName = TranslationPicker.Pick(c.Translations, defaultLanguageCode)?.Name ?? "";
@@ -80,6 +80,7 @@ public static class RawDataExportSheetBuilder
                         i.Description,
                         catName,
                         i.Status.ToString(),
+                        i.Participant?.Email ?? "",
                         i.Comments.OfType<TextComment>().Count().ToString(),
                         emojiReactions.Count.ToString(),
                         emojiDetails,

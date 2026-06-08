@@ -7,7 +7,7 @@ namespace SynapseEnqueteManagement.DAL.Interfaces;
 public interface ICategoryRepository : IRepository<Category>
 {
     Task<IEnumerable<Category>> ReadByProjectIdReadOnlyAsync(int projectId);
-    Task<IEnumerable<Category>> ReadAllWithIdeasByProjectReadOnlyAsync(int projectId);
+    Task<IEnumerable<Category>> ReadAllWithIdeasAndParticipantsByProjectReadOnlyAsync(int projectId);
 
     Task<Category> ReadByIdReadOnlyAsync(int categoryId);
     Task<Category> ReadByIdWithTranslationsReadOnlyAsync(int categoryId);
