@@ -104,7 +104,7 @@
   <data name="MediaErrTooManyUploads" xml:space="preserve"><value>Too many uploads in a short time. Wait a moment and try again.</value></data>
   <data name="MediaErrUploadFailedRetry" xml:space="preserve"><value>Upload failed. Please try again.</value></data>
   <data name="MediaErrUploadFailed" xml:space="preserve"><value>Upload failed.</value></data>
-  <data name="MediaErrTooLargeMax" xml:space="preserve"><value>File is too large (max {0} MB).</value></data>
+  <data name="MediaErrTooLargeMax" xml:space="preserve"><value>File is too large (max {{0}} MB).</value></data>
   <data name="MediaErrUrlScheme" xml:space="preserve"><value>URL must start with https://</value></data>
   <data name="MediaErrVideoUrl" xml:space="preserve"><value>Enter a YouTube/Vimeo URL or a direct .mp4/.webm link.</value></data>
   <data name="MediaErrAudioUrl" xml:space="preserve"><value>URL must end with .mp3, .m4a, .wav or .ogg.</value></data>

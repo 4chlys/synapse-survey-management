@@ -104,7 +104,7 @@
   <data name="MediaErrTooManyUploads" xml:space="preserve"><value>Te veel uploads in korte tijd. Wacht even en probeer het opnieuw.</value></data>
   <data name="MediaErrUploadFailedRetry" xml:space="preserve"><value>Upload mislukt. Probeer het opnieuw.</value></data>
   <data name="MediaErrUploadFailed" xml:space="preserve"><value>Upload mislukt.</value></data>
-  <data name="MediaErrTooLargeMax" xml:space="preserve"><value>Bestand is te groot (max {0} MB).</value></data>
+  <data name="MediaErrTooLargeMax" xml:space="preserve"><value>Bestand is te groot (max {{0}} MB).</value></data>
   <data name="MediaErrUrlScheme" xml:space="preserve"><value>URL moet beginnen met https://</value></data>
   <data name="MediaErrVideoUrl" xml:space="preserve"><value>Voer een YouTube/Vimeo URL in of een directe .mp4/.webm link.</value></data>
   <data name="MediaErrAudioUrl" xml:space="preserve"><value>URL moet eindigen op .mp3, .m4a, .wav of .ogg.</value></data>
