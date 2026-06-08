@@ -177,6 +177,14 @@ function resetModal(): void {
     if (choiceInput) choiceInput.value = '';
     const mandatoryCb = document.getElementById('IsMandatory-cb') as HTMLInputElement | null;
     if (mandatoryCb) mandatoryCb.checked = true;
+    // Clear the language-agnostic media panel; hydrate resets type/url/embed + visibility.
+    hydrateMediaPanel('', '', 0, false, '');
+    const mediaFile = document.getElementById('MediaFile') as HTMLInputElement | null;
+    if (mediaFile) mediaFile.value = '';
+    const mediaPreview = document.getElementById('media-preview');
+    if (mediaPreview) mediaPreview.innerHTML = '';
+    document.getElementById('media-upload-error')?.classList.add('hidden');
+    document.getElementById('media-embed-error')?.classList.add('hidden');
     if (_questionForm) _questionForm.action = _createUrl;
     const title = document.getElementById('modal-title');
     if (title) title.textContent = _i18n.modalTitleCreate;
