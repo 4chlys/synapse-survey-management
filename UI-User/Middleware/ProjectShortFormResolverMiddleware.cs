@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
 using SynapseEnqueteManagement.UI.User.Services.Project;
 
@@ -11,6 +12,8 @@ public class ProjectShortFormResolverMiddleware(
     private static readonly string[] HardReserved = ["admin", "api", "www"];
 
     private const string NotFoundSentinel = "__notfound__";
+
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new();
 
     private HashSet<string> GetReservedSet()
     {
@@ -42,22 +45,52 @@ public class ProjectShortFormResolverMiddleware(
         }
 
         var cacheKey = $"sf:{subdomain}";
+        var staleKey = $"sf-last:{subdomain}";
 
         if (!cache.TryGetValue(cacheKey, out string cachedValue))
         {
-            var projectService = context.RequestServices.GetRequiredService<IProjectApiService>();
-            var lookup = await projectService.GetByShortFormAsync(subdomain);
-
-            if (lookup == null)
+            // Single-flight: under a burst on a cold cache only one request calls the API,
+            // the rest wait and read the cached value — otherwise N requests fan out and trip its rate limit.
+            var gate = Locks.GetOrAdd(subdomain, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync();
+            try
             {
-                cache.Set(cacheKey, NotFoundSentinel, TimeSpan.FromSeconds(10));
-                context.Request.Path = "/Home/ShortFormNotFound";
-                await next(context);
-                return;
-            }
+                if (!cache.TryGetValue(cacheKey, out cachedValue))
+                {
+                    var projectService = context.RequestServices.GetRequiredService<IProjectApiService>();
+                    try
+                    {
+                        var lookup = await projectService.GetByShortFormAsync(subdomain);
 
-            cachedValue = $"{lookup.ProjectId}|{lookup.ProjectState}";
-            cache.Set(cacheKey, cachedValue, TimeSpan.FromSeconds(60));
+                        if (lookup == null)
+                        {
+                            cachedValue = NotFoundSentinel;
+                            cache.Set(cacheKey, cachedValue, TimeSpan.FromSeconds(10));
+                        }
+                        else
+                        {
+                            cachedValue = $"{lookup.ProjectId}|{lookup.ProjectState}";
+                            cache.Set(cacheKey, cachedValue, TimeSpan.FromSeconds(60));
+                            cache.Set(staleKey, cachedValue, TimeSpan.FromHours(1));
+                        }
+                    }
+                    catch (HttpRequestException)
+                    {
+                        // API down or rate-limiting us: serve the last-known-good mapping if we have one,
+                        // otherwise fail soft with 503 instead of bubbling an unhandled 500.
+                        if (!cache.TryGetValue(staleKey, out cachedValue))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                            context.Response.Headers.RetryAfter = "5";
+                            return;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                gate.Release();
+            }
         }
 
         if (cachedValue == NotFoundSentinel)
