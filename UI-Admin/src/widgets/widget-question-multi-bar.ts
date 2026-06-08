@@ -1,7 +1,6 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
 import { initQuestionWidget, freshCanvas, showMessage } from '../lib/question-widget-shell';
 import type { WidgetStrings } from '../lib/question-widget-shell';
-import { attachDownloadButton } from '../lib/system-stats';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 
@@ -77,8 +76,7 @@ export function initQuestionMultiBarWidget(el: HTMLElement): void {
 
         const canvas = freshCanvas(body);
         renderInto(canvas, stats, xAxisLabel);
-        attachDownloadButton(body, canvas, 'question-multiple-choice.png');
     };
 
-    initQuestionWidget(el, { format: 'MultipleChoice', render });
+    initQuestionWidget(el, { format: 'MultipleChoice', fileName: 'question-multiple-choice.png', render });
 }

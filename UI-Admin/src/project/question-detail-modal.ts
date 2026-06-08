@@ -6,7 +6,7 @@ import type { MultipleChoiceStats } from '../widgets/widget-question-multi-bar';
 import { renderInto as renderLikert } from '../widgets/widget-question-likert-bar';
 import type { LikertStats } from '../widgets/widget-question-likert-bar';
 import type { ModalStrings, OpenAnswerPage } from '../lib/project-types';
-import { downloadCanvasPng } from '../lib/system-stats';
+import { downloadCanvasPng } from '../lib/utils';
 
 let activeChart: Chart | null = null;
 

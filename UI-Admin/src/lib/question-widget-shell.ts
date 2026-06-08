@@ -1,4 +1,5 @@
 import { Chart } from 'chart.js';
+import { createDownloadButton, downloadCanvasPng } from './utils';
 
 export interface QuestionLookupItem {
     questionId: number;
@@ -23,6 +24,7 @@ export type RenderFn = (
 
 export interface QuestionWidgetOptions {
     format: QuestionFormat;
+    fileName: string;
     render: RenderFn;
 }
 
@@ -55,11 +57,19 @@ async function persistSelection(projectId: number, position: number, questionId:
     }
 }
 
-export function showMessage(body: HTMLElement, text: string, kind: 'error' | 'info' | 'muted'): void {
+// Clears the body's render output (chart or message) while preserving the persistent
+// download button so it survives question-select changes.
+function clearBody(body: HTMLElement): void {
     const existing = body.querySelector<HTMLCanvasElement>('canvas');
     if (existing) Chart.getChart(existing)?.destroy();
+    for (const child of Array.from(body.children)) {
+        if (!child.hasAttribute('data-download-btn')) child.remove();
+    }
+}
 
-    body.innerHTML = '';
+export function showMessage(body: HTMLElement, text: string, kind: 'error' | 'info' | 'muted'): void {
+    clearBody(body);
+    body.querySelector('[data-download-btn]')?.classList.add('hidden');
     const p = document.createElement('p');
     p.className = kind === 'error'
         ? 'text-error text-xs'
@@ -71,12 +81,10 @@ export function showMessage(body: HTMLElement, text: string, kind: 'error' | 'in
 }
 
 export function freshCanvas(body: HTMLElement): HTMLCanvasElement {
-    const existing = body.querySelector<HTMLCanvasElement>('canvas');
-    if (existing) Chart.getChart(existing)?.destroy();
-
-    body.innerHTML = '';
+    clearBody(body);
     const canvas = document.createElement('canvas');
     body.appendChild(canvas);
+    body.querySelector('[data-download-btn]')?.classList.remove('hidden');
     return canvas;
 }
 
@@ -94,6 +102,15 @@ export function initQuestionWidget(el: HTMLElement, options: QuestionWidgetOptio
     const select = el.querySelector<HTMLSelectElement>('[data-question-select]');
     const body = el.querySelector<HTMLElement>('[data-widget-body]');
     if (!select || !body) return;
+
+    // Attach the download button once; freshCanvas/showMessage toggle its visibility per render.
+    const downloadBtn = createDownloadButton(() => {
+        const canvas = body.querySelector<HTMLCanvasElement>('canvas');
+        if (canvas) downloadCanvasPng(canvas, options.fileName);
+    });
+    downloadBtn.setAttribute('data-download-btn', '');
+    downloadBtn.classList.add('hidden');
+    body.appendChild(downloadBtn);
 
     void (async () => {
         let questions: QuestionLookupItem[];
