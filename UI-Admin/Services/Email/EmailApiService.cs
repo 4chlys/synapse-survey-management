@@ -1,4 +1,6 @@
+using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace SynapseEnqueteManagement.UI.Admin.Services.Email;
 
@@ -25,15 +27,23 @@ public class EmailApiService(HttpClient http)
     public async Task<IReadOnlyList<EmailJobRow>> ListQueueAsync(
         string status, int? projectPlatformId, int take, CancellationToken ct = default)
     {
-        var url = $"api/admin/emails/queue?status={Uri.EscapeDataString(status)}&take={take}";
-        if (projectPlatformId.HasValue) url += $"&projectPlatformId={projectPlatformId.Value}";
+        var query = new Dictionary<string, string?> { ["status"] = status, ["take"] = take.ToString() };
+        if (projectPlatformId.HasValue) query["projectPlatformId"] = projectPlatformId.Value.ToString();
+        var url = QueryHelpers.AddQueryString("api/admin/emails/queue", query);
         var rows = await http.GetFromJsonAsync<List<EmailJobRow>>(url, ct);
         return rows ?? new List<EmailJobRow>();
     }
 
-    public async Task<EmailJobRow> RetryAsync(int emailJobId, CancellationToken ct = default)
+    // Null when the API reports the job isn't retryable under the caller's scope
+    // (404 — another platform's job, or already gone), so the page can redirect
+    // instead of surfacing an error.
+    public async Task<EmailJobRow?> RetryAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default)
     {
-        var response = await http.PostAsync($"api/admin/emails/queue/{emailJobId}/retry", content: null, ct);
+        var url = $"api/admin/emails/queue/{emailJobId}/retry";
+        if (projectPlatformId.HasValue)
+            url = QueryHelpers.AddQueryString(url, "projectPlatformId", projectPlatformId.Value.ToString());
+        var response = await http.PostAsync(url, content: null, ct);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<EmailJobRow>(cancellationToken: ct);
     }
