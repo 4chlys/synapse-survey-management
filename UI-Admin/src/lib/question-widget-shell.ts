@@ -1,4 +1,5 @@
 import { Chart } from 'chart.js';
+import { POLL_INTERVAL_MS } from '../admin/dashboard';
 import { createDownloadButton, downloadCanvasPng } from './utils';
 
 export interface QuestionLookupItem {
@@ -20,6 +21,7 @@ export type RenderFn = (
     questionId: number,
     apiBaseUrl: string,
     strings: WidgetStrings,
+    animate: boolean,
 ) => Promise<void>;
 
 export interface QuestionWidgetOptions {
@@ -88,7 +90,7 @@ export function freshCanvas(body: HTMLElement): HTMLCanvasElement {
     return canvas;
 }
 
-export function initQuestionWidget(el: HTMLElement, options: QuestionWidgetOptions): void {
+export function initQuestionWidget(el: HTMLElement, options: QuestionWidgetOptions): () => void {
     const position = Number(el.dataset.position ?? '-1');
     const projectId = Number(el.dataset.projectId ?? '0');
     const apiBaseUrl = el.dataset.apiBase ?? '';
@@ -101,7 +103,9 @@ export function initQuestionWidget(el: HTMLElement, options: QuestionWidgetOptio
 
     const select = el.querySelector<HTMLSelectElement>('[data-question-select]');
     const body = el.querySelector<HTMLElement>('[data-widget-body]');
-    if (!select || !body) return;
+    if (!select || !body) return () => { /* nothing to clean up */ };
+
+    let pollTimer: ReturnType<typeof setInterval> | undefined;
 
     // Attach the download button once; freshCanvas/showMessage toggle its visibility per render.
     const downloadBtn = createDownloadButton(() => {
@@ -143,12 +147,23 @@ export function initQuestionWidget(el: HTMLElement, options: QuestionWidgetOptio
             : questions[0].questionId;
         select.value = String(selectedId);
 
-        await options.render(body, projectId, selectedId, apiBaseUrl, strings);
+        // First paint and question switches animate; the background poll refreshes silently.
+        await options.render(body, projectId, selectedId, apiBaseUrl, strings, true);
 
         select.addEventListener('change', () => {
             selectedId = Number(select.value);
             void persistSelection(projectId, position, selectedId);
-            void options.render(body, projectId, selectedId, apiBaseUrl, strings);
+            void options.render(body, projectId, selectedId, apiBaseUrl, strings, true);
         });
+
+        pollTimer = setInterval(() => {
+            void options.render(body, projectId, selectedId, apiBaseUrl, strings, false);
+        }, POLL_INTERVAL_MS);
     })();
+
+    return () => {
+        if (pollTimer) clearInterval(pollTimer);
+        const canvas = body.querySelector<HTMLCanvasElement>('canvas');
+        if (canvas) Chart.getChart(canvas)?.destroy();
+    };
 }
