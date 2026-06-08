@@ -27,7 +27,7 @@ public class EmailApiService(HttpClient http)
     public async Task<IReadOnlyList<EmailJobRow>> ListQueueAsync(
         string status, int? projectPlatformId, int take, CancellationToken ct = default)
     {
-        var query = new Dictionary<string, string?> { ["status"] = status, ["take"] = take.ToString() };
+        var query = new Dictionary<string, string> { ["status"] = status, ["take"] = take.ToString() };
         if (projectPlatformId.HasValue) query["projectPlatformId"] = projectPlatformId.Value.ToString();
         var url = QueryHelpers.AddQueryString("api/admin/emails/queue", query);
         var rows = await http.GetFromJsonAsync<List<EmailJobRow>>(url, ct);
@@ -37,7 +37,7 @@ public class EmailApiService(HttpClient http)
     // Null when the API reports the job isn't retryable under the caller's scope
     // (404 — another platform's job, or already gone), so the page can redirect
     // instead of surfacing an error.
-    public async Task<EmailJobRow?> RetryAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default)
+    public async Task<EmailJobRow> RetryAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default)
     {
         var url = $"api/admin/emails/queue/{emailJobId}/retry";
         if (projectPlatformId.HasValue)

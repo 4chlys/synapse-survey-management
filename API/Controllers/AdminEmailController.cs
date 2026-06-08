@@ -75,7 +75,10 @@ public partial class AdminEmailController(
         if (status == EmailJobStatus.Failed)
             rows = await jobManager.ListGivenUpAsync(projectPlatformId, capped, ct);
 
-        return Ok(rows.Select(Map));
+        // Unscoped (projectPlatformId == null) means the cross-tenant SystemAdmin;
+        // mask admin-authored free-text subjects so platform-private content stays
+        // within the owning platform.
+        return Ok(rows.Select(j => Map(j, maskFreeTextSubject: projectPlatformId is null)));
     }
 
     // The API has no per-user identity (it sits behind a single shared key), so
@@ -87,13 +90,18 @@ public partial class AdminEmailController(
     {
         var job = await jobManager.RetryAsync(id, projectPlatformId, ct);
         if (job is null) return NotFound();
-        return Ok(Map(job));
+        return Ok(Map(job, maskFreeTextSubject: projectPlatformId is null));
     }
 
-    private static EmailJobRowDto Map(EmailJob j) => new(
+    // AdminReply/AdminBroadcast subjects are admin-authored free text; the rest are server templates.
+    private static readonly string MaskedSubject = "[hidden]";
+
+    private static EmailJobRowDto Map(EmailJob j, bool maskFreeTextSubject) => new(
         j.EmailJobId,
         j.ToAddress,
-        j.Subject,
+        maskFreeTextSubject && j.Category is EmailJobCategory.AdminReply or EmailJobCategory.AdminBroadcast
+            ? MaskedSubject
+            : j.Subject,
         j.Category.ToString(),
         j.Project?.ShortForm,
         j.Status.ToString(),

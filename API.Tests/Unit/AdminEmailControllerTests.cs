@@ -89,6 +89,65 @@ public class AdminEmailControllerTests
         Assert.Contains("[redacted]", row.LastError);
     }
 
+    [Theory]
+    [InlineData(EmailJobCategory.AdminReply)]
+    [InlineData(EmailJobCategory.AdminBroadcast)]
+    public async Task List_MasksFreeTextSubject_ForUnscopedSystemAdmin(EmailJobCategory category)
+    {
+        var job = new EmailJob
+        {
+            EmailJobId = 1, ToAddress = "admin@x.com", Subject = "Re: your idea about the playground",
+            Category = category, Status = EmailJobStatus.Failed
+        };
+        _jobManager
+            .Setup(m => m.ListGivenUpAsync(It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EmailJob> { job });
+
+        var result = await _controller.List(EmailJobStatus.Failed, projectPlatformId: null, take: 100, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var row = Assert.Single(Assert.IsAssignableFrom<IEnumerable<EmailJobRowDto>>(ok.Value));
+        Assert.DoesNotContain("playground", row.Subject);
+    }
+
+    [Fact]
+    public async Task List_KeepsFreeTextSubject_WhenScopedToOwningPlatform()
+    {
+        var job = new EmailJob
+        {
+            EmailJobId = 1, ToAddress = "admin@x.com", Subject = "Re: your idea about the playground",
+            Category = EmailJobCategory.AdminReply, Status = EmailJobStatus.Failed
+        };
+        _jobManager
+            .Setup(m => m.ListGivenUpAsync(It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EmailJob> { job });
+
+        var result = await _controller.List(EmailJobStatus.Failed, projectPlatformId: 7, take: 100, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var row = Assert.Single(Assert.IsAssignableFrom<IEnumerable<EmailJobRowDto>>(ok.Value));
+        Assert.Equal("Re: your idea about the playground", row.Subject);
+    }
+
+    [Fact]
+    public async Task List_KeepsTemplatedSubject_EvenForUnscopedSystemAdmin()
+    {
+        var job = new EmailJob
+        {
+            EmailJobId = 1, ToAddress = "admin@x.com", Subject = "Welcome to MyPlatform",
+            Category = EmailJobCategory.AdminInvite, Status = EmailJobStatus.Pending
+        };
+        _jobManager
+            .Setup(m => m.ListPendingAsync(It.IsAny<int?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EmailJob> { job });
+
+        var result = await _controller.List(EmailJobStatus.Pending, projectPlatformId: null, take: 100, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var row = Assert.Single(Assert.IsAssignableFrom<IEnumerable<EmailJobRowDto>>(ok.Value));
+        Assert.Equal("Welcome to MyPlatform", row.Subject);
+    }
+
     [Fact]
     public async Task Retry_ReturnsNotFound_WhenManagerReturnsNull()
     {
