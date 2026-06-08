@@ -2,8 +2,6 @@
 
 ARMOR_POLICY="synapse-${ENV}-armor"
 
-EU_COUNTRIES="['BE', 'NL', 'LU', 'DE', 'FR', 'IT', 'ES', 'PT', 'AT', 'SE', 'FI', 'DK', 'IE', 'PL', 'CZ', 'SK', 'HU', 'RO', 'BG', 'HR', 'SI', 'EE', 'LV', 'LT', 'GR', 'CY', 'MT']"
-
 create_cloud_armor() {
   echo ">>> Cloud Armor policy aanmaken: ${ARMOR_POLICY} (omgeving: ${ENV})..."
   gcloud compute security-policies create "${ARMOR_POLICY}" \
@@ -26,10 +24,62 @@ create_cloud_armor() {
     --description="OWASP WAF: SQLi + XSS + LFI + RCE (ASP.NET false positives excluded)" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
+  # Geo-allow rules at 1500-1550 (max 5 expressions per rule due to Cloud Armor CEVAL limit).
+  # Geo-deny at 1600 blocks all non-EU traffic before rate-limiting at 2000.
+  echo "  >>> Geo-blocking: EU allow-regels toevoegen (prio 1500-1550)..."
+  gcloud compute security-policies rules create 1500 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'BE' || origin.region_code == 'NL' || origin.region_code == 'LU' || origin.region_code == 'DE' || origin.region_code == 'FR'" \
+    --action=allow \
+    --description="Geo allow: BE NL LU DE FR" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
+  gcloud compute security-policies rules create 1510 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'IT' || origin.region_code == 'ES' || origin.region_code == 'PT' || origin.region_code == 'AT' || origin.region_code == 'SE'" \
+    --action=allow \
+    --description="Geo allow: IT ES PT AT SE" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
+  gcloud compute security-policies rules create 1520 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'FI' || origin.region_code == 'DK' || origin.region_code == 'IE' || origin.region_code == 'PL' || origin.region_code == 'CZ'" \
+    --action=allow \
+    --description="Geo allow: FI DK IE PL CZ" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
+  gcloud compute security-policies rules create 1530 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'SK' || origin.region_code == 'HU' || origin.region_code == 'RO' || origin.region_code == 'BG' || origin.region_code == 'HR'" \
+    --action=allow \
+    --description="Geo allow: SK HU RO BG HR" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
+  gcloud compute security-policies rules create 1540 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'SI' || origin.region_code == 'EE' || origin.region_code == 'LV' || origin.region_code == 'LT' || origin.region_code == 'GR'" \
+    --action=allow \
+    --description="Geo allow: SI EE LV LT GR" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
+  gcloud compute security-policies rules create 1550 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'CY' || origin.region_code == 'MT'" \
+    --action=allow \
+    --description="Geo allow: CY MT" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
+  gcloud compute security-policies rules create 1600 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="true" \
+    --action=deny-403 \
+    --description="Geo-blocking: alleen EU toegelaten" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
+
   echo "  >>> Rate limiting regel toevoegen (max 100 req/min per IP)..."
   gcloud compute security-policies rules create 2000 \
     --security-policy="${ARMOR_POLICY}" \
-    --expression="origin.region_code in ${EU_COUNTRIES}" \
+    --expression="true" \
     --action=rate-based-ban \
     --rate-limit-threshold-count=100 \
     --rate-limit-threshold-interval-sec=60 \
@@ -40,22 +90,6 @@ create_cloud_armor() {
     --description="Rate limiting: max 100 req/min per IP, ban 5 min" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
-  # Geo rules at 3000+ so WAF (1000) and rate-limiting (2000) evaluate first for all traffic.
-  echo "  >>> Geo-blocking: EU allow-regel toevoegen..."
-  gcloud compute security-policies rules create 3000 \
-    --security-policy="${ARMOR_POLICY}" \
-    --expression="origin.region_code in ${EU_COUNTRIES}" \
-    --action=allow \
-    --description="Geo allow: EU countries only" \
-    --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  
-  gcloud compute security-policies rules create 3100 \
-        --security-policy="${ARMOR_POLICY}" \
-        --expression="true" \
-        --action=deny-403 \
-        --description="Geo-blocking: alleen EU toegelaten" \
-        --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
-  
   echo "  >>> Policy koppelen aan backend services..."
   for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
     gcloud compute backend-services update "${backend}" \
@@ -108,40 +142,68 @@ add_mig_ips_to_armor() {
 }
 
 fix_armor_priorities() {
-  # Migrates existing deployments from the old priority layout (geo 100-200, WAF 1000)
-  # to the correct layout (WAF 1000, rate-limit 2000, geo 3000-3100).
+  # Verwijdert alle oude geo-regels en maakt de correcte layout aan:
+  # WAF (1000) → geo-allow (1500-1550) → geo-deny (1600) → rate-limit (2000)
   echo ">>> Cloud Armor prioriteiten corrigeren voor omgeving ${ENV}..."
 
-  local old_geo_priorities=(100 110 120 130 140 150 200 3010 3020 3030 3040 3050)
+  local old_geo_priorities=(100 110 120 130 140 150 200 3000 3010 3020 3030 3040 3050 3100)
   for p in "${old_geo_priorities[@]}"; do
     gcloud compute security-policies rules delete "${p}" \
       --security-policy="${ARMOR_POLICY}" \
       --project="${PROJECT_ID}" --quiet 2>/dev/null || echo "  (prio ${p} niet aanwezig, overgeslagen)"
   done
 
+  echo "  >>> Geo-allow regels aanmaken op prioriteit 1500-1550..."
+  gcloud compute security-policies rules create 1500 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'BE' || origin.region_code == 'NL' || origin.region_code == 'LU' || origin.region_code == 'DE' || origin.region_code == 'FR'" \
+    --action=allow --description="Geo allow: BE NL LU DE FR" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1500 al aanwezig)"
 
-    echo "  >>> Rate-limit expressie corrigeren (EU-only)..."
-    gcloud compute security-policies rules update 2000 \
-      --security-policy="${ARMOR_POLICY}" \
-      --expression="origin.region_code in ${EU_COUNTRIES}" \
-      --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 2000 niet aanwezig, overgeslagen)"
+  gcloud compute security-policies rules create 1510 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'IT' || origin.region_code == 'ES' || origin.region_code == 'PT' || origin.region_code == 'AT' || origin.region_code == 'SE'" \
+    --action=allow --description="Geo allow: IT ES PT AT SE" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1510 al aanwezig)"
 
-    echo "  >>> Geo-allow regel aanmaken op prioriteit 3000..."
-    gcloud compute security-policies rules create 3000 \
-      --security-policy="${ARMOR_POLICY}" \
-      --expression="origin.region_code in ${EU_COUNTRIES}" \
-      --action=allow \
-      --description="Geo allow: EU countries only" \
-      --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3000 al aanwezig)"
+  gcloud compute security-policies rules create 1520 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'FI' || origin.region_code == 'DK' || origin.region_code == 'IE' || origin.region_code == 'PL' || origin.region_code == 'CZ'" \
+    --action=allow --description="Geo allow: FI DK IE PL CZ" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1520 al aanwezig)"
 
-    gcloud compute security-policies rules create 3100 \
-      --security-policy="${ARMOR_POLICY}" \
-      --expression="true" \
-      --action=deny-403 \
-      --description="Geo-blocking: alleen EU toegelaten" \
-      --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 3100 al aanwezig)"
-  
-  echo "  Prioriteiten gecorrigeerd. Nieuwe volgorde: WAF (1000) → rate-limit (2000) → geo-allow (3000-3100)."
+  gcloud compute security-policies rules create 1530 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'SK' || origin.region_code == 'HU' || origin.region_code == 'RO' || origin.region_code == 'BG' || origin.region_code == 'HR'" \
+    --action=allow --description="Geo allow: SK HU RO BG HR" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1530 al aanwezig)"
+
+  gcloud compute security-policies rules create 1540 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'SI' || origin.region_code == 'EE' || origin.region_code == 'LV' || origin.region_code == 'LT' || origin.region_code == 'GR'" \
+    --action=allow --description="Geo allow: SI EE LV LT GR" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1540 al aanwezig)"
+
+  gcloud compute security-policies rules create 1550 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="origin.region_code == 'CY' || origin.region_code == 'MT'" \
+    --action=allow --description="Geo allow: CY MT" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1550 al aanwezig)"
+
+  gcloud compute security-policies rules create 1600 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="true" \
+    --action=deny-403 \
+    --description="Geo-blocking: alleen EU toegelaten" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 1600 al aanwezig)"
+
+  echo "  >>> Rate-limit expressie corrigeren naar true..."
+  gcloud compute security-policies rules update 2000 \
+    --security-policy="${ARMOR_POLICY}" \
+    --expression="true" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (prio 2000 niet aanwezig, overgeslagen)"
+
+  echo "  Prioriteiten gecorrigeerd. Nieuwe volgorde: WAF (1000) → geo-allow (1500-1550) → geo-deny (1600) → rate-limit (2000)."
 }
 
 destroy_cloud_armor() {
