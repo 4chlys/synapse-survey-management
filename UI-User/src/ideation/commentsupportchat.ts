@@ -14,6 +14,7 @@ import { CommentSupportSession } from './commentsupport';
 import { t } from '../lib/i18n';
 import { renderMarkdown, setupAutoGrow } from './ai-support-base';
 import { escapeHtml } from '../lib/utils';
+import { confirmDiscard } from '../lib/discard-confirm';
 
 // DOM references
 
@@ -30,6 +31,8 @@ let loadingBubbleEl:   HTMLElement        | null = null;
 let activeSession:       CommentSupportSession | null = null;
 let userDraftComment:    string | null = null;
 let isSending                          = false;
+// Guards against re-opening the discard dialog while it is already awaiting.
+let confirmPending                     = false;
 let onSubmitCallback:    ((text: string) => void) | null = null;
 let onSkipCallback:      (() => void)             | null = null;
 let isInitialised                      = false;
@@ -48,7 +51,7 @@ function ensureRefs(): boolean {
 
     if (!overlay || !messagesContainer || !inputEl || !sendBtn || !closeBtn) return false;
 
-    closeBtn.addEventListener('click', closeOverlay);
+    closeBtn.addEventListener('click', () => { void attemptClose(); });
     skipBtn?.addEventListener('click', handleSkip);
     sendBtn.addEventListener('click', () => { void handleSend(); });
 
@@ -61,8 +64,16 @@ function ensureRefs(): boolean {
         }
     });
 
+    // Backdrop click and Escape attempt to close (guarded by a discard confirm).
     overlay.addEventListener('click', (e: MouseEvent) => {
-        if (e.target === overlay) closeOverlay();
+        if (e.target === overlay) void attemptClose();
+    });
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key !== 'Escape') return;
+        if (!overlay || overlay.classList.contains('hidden')) return;
+        if (confirmPending) return; // the discard dialog owns Escape while open
+        void attemptClose();
     });
 
     isInitialised = true;
@@ -94,6 +105,7 @@ export function openCommentSupportChat(
     onSubmitCallback  = onSubmit;
     onSkipCallback    = onSkip ?? null;
     isSending         = false;
+    confirmPending    = false;
 
     clearMessages();
     resetInput();
@@ -102,8 +114,9 @@ export function openCommentSupportChat(
     overlay!.classList.remove('hidden');
     overlay!.classList.add('flex');
 
-    requestAnimationFrame(() => inputEl?.focus());
-
+    // Focus is dropped into the field once the opening turn re-enables it
+    // (see setSendingState) — the field is disabled while the greeting loads,
+    // so focusing here would silently no-op.
     void fireOpeningTurn();
 }
 
@@ -233,6 +246,31 @@ function handleSkip(): void {
 
 // Close
 
+/**
+ * Routes every "leave" affordance (backdrop, X, Escape) through a discard
+ * confirmation once the user has drafted a comment. With nothing to lose it
+ * closes instantly. "Skip" bypasses this — it intentionally hands off to the
+ * manual form.
+ */
+async function attemptClose(): Promise<void> {
+    if (confirmPending) return;
+
+    if (userDraftComment === null) {
+        closeOverlay();
+        return;
+    }
+
+    confirmPending = true;
+    const discard = await confirmDiscard();
+    confirmPending = false;
+
+    if (discard) {
+        closeOverlay();
+    } else {
+        inputEl?.focus();
+    }
+}
+
 function closeOverlay(): void {
     if (!overlay) return;
     overlay.classList.add('hidden');
@@ -242,6 +280,7 @@ function closeOverlay(): void {
     onSubmitCallback   = null;
     onSkipCallback     = null;
     userDraftComment   = null;
+    confirmPending     = false;
     hideLoading();
 }
 
@@ -315,6 +354,12 @@ function setSendingState(sending: boolean): void {
     isSending = sending;
     if (sendBtn) sendBtn.disabled = sending;
     if (inputEl) inputEl.disabled = sending;
+
+    // When the field becomes usable again (opening greeting done, or an AI reply
+    // arrived) drop focus back into it so the user can keep typing.
+    if (!sending && overlay && !overlay.classList.contains('hidden')) {
+        requestAnimationFrame(() => inputEl?.focus());
+    }
 }
 
 function showInput(visible: boolean): void {

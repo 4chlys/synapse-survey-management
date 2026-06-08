@@ -129,6 +129,18 @@
   <data name="AiChat_Error" xml:space="preserve">
     <value>Er is iets misgegaan. Probeer het opnieuw.</value>
   </data>
+  <data name="AiChat_DiscardTitle" xml:space="preserve">
+    <value>Gesprek verwijderen?</value>
+  </data>
+  <data name="AiChat_DiscardMessage" xml:space="preserve">
+    <value>Je voortgang met de AI-assistent gaat verloren.</value>
+  </data>
+  <data name="AiChat_DiscardConfirm" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="AiChat_DiscardCancel" xml:space="preserve">
+    <value>Verder bewerken</value>
+  </data>
   <data name="Idea_SubmitFailed" xml:space="preserve">
     <value>Je idee kon niet worden geplaatst. Probeer het opnieuw.</value>
   </data>

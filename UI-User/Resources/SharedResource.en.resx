@@ -129,6 +129,18 @@
   <data name="AiChat_Error" xml:space="preserve">
     <value>Something went wrong. Please try again.</value>
   </data>
+  <data name="AiChat_DiscardTitle" xml:space="preserve">
+    <value>Discard your conversation?</value>
+  </data>
+  <data name="AiChat_DiscardMessage" xml:space="preserve">
+    <value>Your progress with the AI assistant will be lost.</value>
+  </data>
+  <data name="AiChat_DiscardConfirm" xml:space="preserve">
+    <value>Discard</value>
+  </data>
+  <data name="AiChat_DiscardCancel" xml:space="preserve">
+    <value>Keep editing</value>
+  </data>
   <data name="Idea_SubmitFailed" xml:space="preserve">
     <value>Your idea could not be posted. Please try again.</value>
   </data>

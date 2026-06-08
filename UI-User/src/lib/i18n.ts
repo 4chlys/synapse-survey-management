@@ -36,6 +36,10 @@ export type Strings = {
     surveySubmitAnswers: string;
     aiChatAssistantUnavailableIdea: string;
     aiChatError: string;
+    aiChatDiscardTitle: string;
+    aiChatDiscardMessage: string;
+    aiChatDiscardConfirm: string;
+    aiChatDiscardCancel: string;
     aiChatDraftLabel: string;
     aiChatDraftYes: string;
     aiChatDraftNo: string;
