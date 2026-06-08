@@ -129,6 +129,9 @@
   <data name="AiChat_Error" xml:space="preserve">
     <value>Er is iets misgegaan. Probeer het opnieuw.</value>
   </data>
+  <data name="Idea_SubmitFailed" xml:space="preserve">
+    <value>Je idee kon niet worden geplaatst. Probeer het opnieuw.</value>
+  </data>
   <data name="AiChat_DraftLabel" xml:space="preserve">
     <value>Jouw idee — wil je dit indienen?</value>
   </data>

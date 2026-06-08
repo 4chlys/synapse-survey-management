@@ -129,6 +129,9 @@
   <data name="AiChat_Error" xml:space="preserve">
     <value>Something went wrong. Please try again.</value>
   </data>
+  <data name="Idea_SubmitFailed" xml:space="preserve">
+    <value>Your idea could not be posted. Please try again.</value>
+  </data>
   <data name="AiChat_DraftLabel" xml:space="preserve">
     <value>Your idea — would you like to submit this?</value>
   </data>

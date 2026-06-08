@@ -8,6 +8,7 @@ export type Strings = {
     contentNotAllowed: string;
     maxLengthExceeded: string;
     submitFallback: string;
+    ideaSubmitFailed: string;
     ideaCardStatusFlagged: string;
     ideaCardStatusOwnIdea: string;
     ideaCardUseAsStartingPoint: string;

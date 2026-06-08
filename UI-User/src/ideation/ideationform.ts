@@ -22,6 +22,8 @@ export function wireIdeationForm(
             return;
         }
 
+        clearSubmitError(form);
+
         const text = textarea.value.trim();
 
         if (text.length > MAX_LENGTH[contentType]) {
@@ -114,13 +116,15 @@ export async function submitIdeaDirectly(
 ): Promise<void> {
     descriptionEl.value = draftText;
     if (moderationEl) moderationEl.value = '';
+    clearSubmitError(form);
 
     try {
         const result = await callModerationAi(draftText, projectId, 'idea');
 
         if (result.isAcceptable) {
             if (moderationEl) moderationEl.value = result.moderationToken ?? '';
-            await submitFormViaFetch(form);
+            // Reveal the form before submitting so a failure's inline error is visible.
+            if (!await submitFormViaFetch(form)) onModerationBlocked();
             return;
         }
 
@@ -138,10 +142,10 @@ export async function submitIdeaDirectly(
         if (outcome.action === 'accepted') {
             descriptionEl.value = outcome.text;
             if (moderationEl) moderationEl.value = suggestResult.moderationToken ?? '';
-            await submitFormViaFetch(form);
+            if (!await submitFormViaFetch(form)) onModerationBlocked();
         } else if (outcome.action === 'submitFlagged') {
             if (moderationEl) moderationEl.value = result.moderationToken ?? '';
-            await submitFormViaFetch(form);
+            if (!await submitFormViaFetch(form)) onModerationBlocked();
         } else {
             onModerationBlocked();
         }
@@ -150,15 +154,58 @@ export async function submitIdeaDirectly(
     }
 }
 
-async function submitFormViaFetch(form: HTMLFormElement): Promise<void> {
+async function submitFormViaFetch(form: HTMLFormElement): Promise<boolean> {
     const data = new FormData(form);
-    const response = await fetch(form.action, {
-        method: 'POST',
-        body: data,
-        redirect: 'follow',
-    });
 
-    if (response.ok) {
+    let response: Response;
+    try {
+        response = await fetch(form.action, {
+            method: 'POST',
+            body: data,
+            redirect: 'follow',
+        });
+    } catch {
+        showSubmitError(form);
+        return false;
+    }
+
+    // A successful post is answered with a server-side redirect to the idea hub,
+    // so `response.redirected` is the reliable success signal. A non-redirected
+    // 200 means the server returned the moderation popup partial (idea NOT saved),
+    // and any 4xx/5xx is an outright failure (e.g. an expired image moderation
+    // token). In all of those cases navigating to `response.url` would land on the
+    // POST-only endpoint and silently dead-end — so surface the error instead.
+    if (response.redirected && response.ok) {
         window.location.href = response.url;
+        return true;
+    }
+
+    showSubmitError(form);
+    return false;
+}
+
+/**
+ * Renders a visible "could not post" error inside the form and clears any
+ * committed image URL/token so that a retry re-uploads the image with a fresh
+ * (unexpired) moderation token instead of replaying the stale one.
+ */
+function showSubmitError(form: HTMLFormElement): void {
+    const errorEl = form.querySelector<HTMLElement>('[data-submit-error]');
+    if (errorEl) {
+        errorEl.textContent = t('ideaSubmitFailed');
+        errorEl.classList.remove('hidden');
+    }
+
+    const urlInput = form.querySelector<HTMLInputElement>('input[name="imageUrl"]');
+    const imageTokenInput = form.querySelector<HTMLInputElement>('input[name="imageModerationToken"]');
+    if (urlInput) urlInput.value = '';
+    if (imageTokenInput) imageTokenInput.value = '';
+}
+
+function clearSubmitError(form: HTMLFormElement): void {
+    const errorEl = form.querySelector<HTMLElement>('[data-submit-error]');
+    if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
     }
 }
