@@ -9,9 +9,11 @@ namespace SynapseEnqueteManagement.UI.Admin.Controllers;
 
 // EmailJob queue view. SystemAdmin sees every platform's jobs; a
 // ProjectPlatformAdmin sees only their own platform's jobs and can retry only
-// rows belonging to it — both the listing and the retry are scoped server-side
-// (the API filters on the job's platform). Participant recipients live in BCC
-// and are never surfaced; the visible "To" is the sending/invited admin.
+// rows belonging to it. This controller is the authorization tier: it resolves
+// the caller's platform from their identity and passes it as the scope to the
+// API, which authenticates by a shared key and has no per-user context.
+// Participant recipients live in BCC and are never surfaced; the visible "To"
+// is the sending/invited admin.
 [Authorize(Roles = "SystemAdmin,ProjectPlatformAdmin")]
 public class AdminEmailQueueController(
     EmailApiService emailApi,

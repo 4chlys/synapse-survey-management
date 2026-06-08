@@ -11,7 +11,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/emails")]
-public class AdminEmailController(
+public partial class AdminEmailController(
     IEmailService emailService,
     IEmailJobManager jobManager) : ControllerBase
 {
@@ -78,9 +78,10 @@ public class AdminEmailController(
         return Ok(rows.Select(Map));
     }
 
-    // projectPlatformId scopes the retry: callers pass a platform to limit the
-    // action to that platform's jobs (PPA), or omit it to retry any (operator).
-    // A scoped miss falls through to 404 — it never reveals the job exists.
+    // The API has no per-user identity (it sits behind a single shared key), so
+    // platform authorization is enforced by the caller (UI-Admin); projectPlatformId
+    // is the scope it restricts itself to — a PPA passes their platform, the
+    // operator omits it. A scoped miss 404s, never revealing the job exists.
     [HttpPost("queue/{id:int}/retry")]
     public async Task<ActionResult<EmailJobRowDto>> Retry(int id, [FromQuery] int? projectPlatformId, CancellationToken ct)
     {
@@ -105,9 +106,9 @@ public class AdminEmailController(
         RedactEmails(j.LastError));
 
     // Providers echo the recipient address into bounce text — strip it from the queue page.
-    private static readonly Regex EmailRegex = new(
-        @"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", RegexOptions.Compiled);
-
     private static string RedactEmails(string error)
-        => error is null ? null : EmailRegex.Replace(error, "[redacted]");
+        => error is null ? null : EmailRegex().Replace(error, "[redacted]");
+
+    [GeneratedRegex(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")]
+    private static partial Regex EmailRegex();
 }
