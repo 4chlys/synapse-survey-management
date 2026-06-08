@@ -16,6 +16,26 @@ export interface QuestionsFormI18n {
     allAnswersFilled: string;
 }
 
+export interface MediaI18n {
+    placeholderImage: string;
+    placeholderVideo: string;
+    placeholderAudio: string;
+    labelImage: string;
+    labelVideo: string;
+    labelAudio: string;
+    errNoAccess: string;
+    errTooLarge: string;
+    errTooManyUploads: string;
+    errUploadFailedRetry: string;
+    errUploadFailed: string;
+    errTooLargeMax: string; // contains a {0} placeholder for the MB limit
+    errUrlScheme: string;
+    errVideoUrl: string;
+    errAudioUrl: string;
+    videoUrlLabel: string;
+    removeTitle: string;
+}
+
 export function readQuestionsI18n(el: HTMLElement | null): QuestionsI18n {
     const ds = el?.dataset;
     return {
@@ -58,5 +78,28 @@ export function readFormI18n(el: HTMLElement | null): QuestionsFormI18n {
         maxQuestionText:   ds?.i18nMaxQuestionText   ?? '',
         minTwoAnswers:     ds?.i18nMinTwoAnswers     ?? '',
         allAnswersFilled:  ds?.i18nAllAnswersFilled  ?? '',
+    };
+}
+
+export function readMediaI18n(el: HTMLElement | null): MediaI18n {
+    const ds = el?.dataset;
+    return {
+        placeholderImage:     ds?.i18nMediaPlaceholderImage    ?? '',
+        placeholderVideo:     ds?.i18nMediaPlaceholderVideo    ?? '',
+        placeholderAudio:     ds?.i18nMediaPlaceholderAudio    ?? '',
+        labelImage:           ds?.i18nMediaLabelImage          ?? '',
+        labelVideo:           ds?.i18nMediaLabelVideo          ?? '',
+        labelAudio:           ds?.i18nMediaLabelAudio          ?? '',
+        errNoAccess:          ds?.i18nMediaErrNoAccess         ?? '',
+        errTooLarge:          ds?.i18nMediaErrTooLarge         ?? '',
+        errTooManyUploads:    ds?.i18nMediaErrTooManyUploads   ?? '',
+        errUploadFailedRetry: ds?.i18nMediaErrUploadFailedRetry ?? '',
+        errUploadFailed:      ds?.i18nMediaErrUploadFailed     ?? '',
+        errTooLargeMax:       ds?.i18nMediaErrTooLargeMax      ?? '',
+        errUrlScheme:         ds?.i18nMediaErrUrlScheme        ?? '',
+        errVideoUrl:          ds?.i18nMediaErrVideoUrl         ?? '',
+        errAudioUrl:          ds?.i18nMediaErrAudioUrl         ?? '',
+        videoUrlLabel:        ds?.i18nMediaVideoUrlLabel       ?? '',
+        removeTitle:          ds?.i18nMediaRemoveTitle         ?? '',
     };
 }
