@@ -2,6 +2,7 @@ import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip }
 import type { Plugin } from 'chart.js';
 import { initQuestionWidget, freshCanvas, showMessage } from '../lib/question-widget-shell';
 import type { WidgetStrings } from '../lib/question-widget-shell';
+import { attachDownloadButton } from '../lib/system-stats';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
 
@@ -143,7 +144,9 @@ export function initQuestionLikertBarWidget(el: HTMLElement): void {
             return;
         }
 
-        renderInto(freshCanvas(body), stats);
+        const canvas = freshCanvas(body);
+        renderInto(canvas, stats);
+        attachDownloadButton(body, canvas, 'question-likert.png');
     };
 
     initQuestionWidget(el, { format: 'Likert', render });

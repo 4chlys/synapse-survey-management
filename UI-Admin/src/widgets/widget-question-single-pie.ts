@@ -1,6 +1,7 @@
 import { Chart, ArcElement, Tooltip, Legend, PieController } from 'chart.js';
 import { initQuestionWidget, freshCanvas, showMessage } from '../lib/question-widget-shell';
 import type { WidgetStrings } from '../lib/question-widget-shell';
+import { attachDownloadButton } from '../lib/system-stats';
 
 Chart.register(ArcElement, Tooltip, Legend, PieController);
 
@@ -63,7 +64,9 @@ async function render(
         return;
     }
 
-    renderInto(freshCanvas(body), stats);
+    const canvas = freshCanvas(body);
+    renderInto(canvas, stats);
+    attachDownloadButton(body, canvas, 'question-single-choice.png');
 }
 
 export function initQuestionSinglePieWidget(el: HTMLElement): void {
