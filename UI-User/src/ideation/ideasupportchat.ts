@@ -499,8 +499,9 @@ function setSendingState(sending: boolean): void {
     if (inputEl) inputEl.disabled  = sending;
 
     // When the field becomes usable again (opening greeting done, or an AI reply
-    // arrived) drop focus back into it so the user can keep typing.
-    if (!sending && overlay && !overlay.classList.contains('hidden')) {
+    // arrived) drop focus back into it so the user can keep typing — unless the
+    // discard dialog is open, which owns focus until the user answers it.
+    if (!sending && !confirmPending && overlay && !overlay.classList.contains('hidden')) {
         requestAnimationFrame(() => inputEl?.focus());
     }
 }

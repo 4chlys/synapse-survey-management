@@ -35,7 +35,7 @@ export function wireIdeationForm(
 
         if (text.length < MIN_LENGTH) {
             tokenInput.value = '';
-            await submitFormViaFetch(form);
+            await submitFormViaFetch(form, contentType);
             return;
         }
 
@@ -67,7 +67,7 @@ export function wireIdeationForm(
 
             if (result.isAcceptable) {
                 tokenInput.value = result.moderationToken ?? '';
-                await submitFormViaFetch(form);
+                await submitFormViaFetch(form, contentType);
                 return;
             }
 
@@ -86,10 +86,10 @@ export function wireIdeationForm(
             if (outcome.action === 'accepted') {
                 textarea.value = outcome.text;
                 tokenInput.value = suggestResult.moderationToken ?? '';
-                await submitFormViaFetch(form);
+                await submitFormViaFetch(form, contentType);
             } else if (outcome.action === 'submitFlagged') {
                 tokenInput.value = result.moderationToken ?? '';
-                await submitFormViaFetch(form);
+                await submitFormViaFetch(form, contentType);
             } else {
                 form.dispatchEvent(new CustomEvent('idea:needs-edit', { bubbles: true }));
                 return;
@@ -112,7 +112,7 @@ export async function submitIdeaDirectly(
     moderationEl: HTMLInputElement | null,
     draftText: string,
     projectId: number,
-    onModerationBlocked: () => void,
+    revealForm: () => void,
 ): Promise<void> {
     descriptionEl.value = draftText;
     if (moderationEl) moderationEl.value = '';
@@ -123,8 +123,8 @@ export async function submitIdeaDirectly(
 
         if (result.isAcceptable) {
             if (moderationEl) moderationEl.value = result.moderationToken ?? '';
-            // Reveal the form before submitting so a failure's inline error is visible.
-            if (!await submitFormViaFetch(form)) onModerationBlocked();
+            // Reveal the form on failure so its inline error is visible.
+            if (!await submitFormViaFetch(form)) revealForm();
             return;
         }
 
@@ -142,19 +142,22 @@ export async function submitIdeaDirectly(
         if (outcome.action === 'accepted') {
             descriptionEl.value = outcome.text;
             if (moderationEl) moderationEl.value = suggestResult.moderationToken ?? '';
-            if (!await submitFormViaFetch(form)) onModerationBlocked();
+            if (!await submitFormViaFetch(form)) revealForm();
         } else if (outcome.action === 'submitFlagged') {
             if (moderationEl) moderationEl.value = result.moderationToken ?? '';
-            if (!await submitFormViaFetch(form)) onModerationBlocked();
+            if (!await submitFormViaFetch(form)) revealForm();
         } else {
-            onModerationBlocked();
+            revealForm();
         }
     } catch {
-        onModerationBlocked();
+        revealForm();
     }
 }
 
-async function submitFormViaFetch(form: HTMLFormElement): Promise<boolean> {
+async function submitFormViaFetch(
+    form: HTMLFormElement,
+    contentType: 'idea' | 'comment' = 'idea',
+): Promise<boolean> {
     const data = new FormData(form);
 
     let response: Response;
@@ -165,7 +168,9 @@ async function submitFormViaFetch(form: HTMLFormElement): Promise<boolean> {
             redirect: 'follow',
         });
     } catch {
-        showSubmitError(form);
+        // Transient network failure — the committed image token is still valid,
+        // so keep it to spare the user a re-upload on retry.
+        showSubmitError(form, contentType, { clearImage: false });
         return false;
     }
 
@@ -180,21 +185,32 @@ async function submitFormViaFetch(form: HTMLFormElement): Promise<boolean> {
         return true;
     }
 
-    showSubmitError(form);
+    // The server responded but didn't redirect — the idea was not saved and any
+    // committed image moderation token may be expired, so clear it to force a
+    // fresh re-upload on retry.
+    showSubmitError(form, contentType, { clearImage: true });
     return false;
 }
 
 /**
- * Renders a visible "could not post" error inside the form and clears any
- * committed image URL/token so that a retry re-uploads the image with a fresh
- * (unexpired) moderation token instead of replaying the stale one.
+ * Renders a visible "could not post" error inside the form. When `clearImage` is
+ * set, also clears the committed image URL/token so that a retry re-uploads the
+ * image with a fresh (unexpired) moderation token instead of replaying a stale
+ * one. Callers leave it unset for transient network failures, where the token is
+ * still valid and discarding the upload would only cost the user a re-attach.
  */
-function showSubmitError(form: HTMLFormElement): void {
+function showSubmitError(
+    form: HTMLFormElement,
+    contentType: 'idea' | 'comment' = 'idea',
+    { clearImage = false }: { clearImage?: boolean } = {},
+): void {
     const errorEl = form.querySelector<HTMLElement>('[data-submit-error]');
     if (errorEl) {
-        errorEl.textContent = t('ideaSubmitFailed');
+        errorEl.textContent = t(contentType === 'comment' ? 'commentSubmitFailed' : 'ideaSubmitFailed');
         errorEl.classList.remove('hidden');
     }
+
+    if (!clearImage) return;
 
     const urlInput = form.querySelector<HTMLInputElement>('input[name="imageUrl"]');
     const imageTokenInput = form.querySelector<HTMLInputElement>('input[name="imageModerationToken"]');

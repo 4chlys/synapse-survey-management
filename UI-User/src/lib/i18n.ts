@@ -9,6 +9,7 @@ export type Strings = {
     maxLengthExceeded: string;
     submitFallback: string;
     ideaSubmitFailed: string;
+    commentSubmitFailed: string;
     ideaCardStatusFlagged: string;
     ideaCardStatusOwnIdea: string;
     ideaCardUseAsStartingPoint: string;
