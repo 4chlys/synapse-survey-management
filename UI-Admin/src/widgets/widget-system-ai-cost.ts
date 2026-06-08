@@ -1,7 +1,11 @@
 import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
-import { attachDownloadButton, fetchSystemStats } from '../lib/system-stats';
+import { POLL_INTERVAL_MS } from '../admin/dashboard';
+import { fetchSystemStats } from '../lib/system-stats';
+import { attachDownloadButton } from '../lib/utils';
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip);
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function initSystemAiCostWidget(el: HTMLElement): () => void {
     const platformIdAttr = el.dataset.platformId;
@@ -30,18 +34,28 @@ export function initSystemAiCostWidget(el: HTMLElement): () => void {
         },
     });
 
-    fetchSystemStats(platformId).then(stats => {
-        const byService = new Map<string, number>();
-        for (const row of stats.aiUsageBySystem) {
-            byService.set(row.service, (byService.get(row.service) ?? 0) + row.costEur);
+    // Graphic shows a sliding last-24h window; the tables elsewhere show all-time totals.
+    async function load(): Promise<void> {
+        try {
+            const aiFrom = new Date(Date.now() - DAY_MS).toISOString();
+            const stats = await fetchSystemStats(platformId, aiFrom);
+            const byService = new Map<string, number>();
+            for (const row of stats.aiUsageBySystem) {
+                byService.set(row.service, (byService.get(row.service) ?? 0) + row.costEur);
+            }
+            const entries = [...byService.entries()].sort((a, b) => b[1] - a[1]);
+            (chart.data.labels as string[]) = entries.map(([service]) => service);
+            (chart.data.datasets[0].data as number[]) = entries.map(([, cost]) => cost);
+            chart.update('none');
+        } catch {
+            // ignore network errors during polling
         }
-        const entries = [...byService.entries()].sort((a, b) => b[1] - a[1]);
-        (chart.data.labels as string[]) = entries.map(([service]) => service);
-        (chart.data.datasets[0].data as number[]) = entries.map(([, cost]) => cost);
-        chart.update('none');
-    }).catch(() => { /* ignore */ });
+    }
+
+    void load();
+    const interval = setInterval(() => void load(), POLL_INTERVAL_MS);
 
     attachDownloadButton(el, canvas, 'ai-cost-per-service.png');
 
-    return () => chart.destroy();
+    return () => { clearInterval(interval); chart.destroy(); };
 }

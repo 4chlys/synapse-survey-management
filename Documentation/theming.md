@@ -192,7 +192,7 @@ accessibility rationale lives in [`accessibility-and-inclusion.md`](./accessibil
 The admin project form renders a live preview of the chosen preset. Because that
 preview runs inside a Shadow DOM and cannot see `main.css`, the preset blocks are
 duplicated as the `PROJECT_THEME_CSS` constant in
-`UI-Admin/src/project/project-style.ts`. **These two definitions must stay in
+`UI-Admin/src/lib/project-style.ts`. **These two definitions must stay in
 sync** — a comment in each file flags this. Changing a preset means editing both.
 
 ## 4. Layer 2 — Colour picker with contrast guard
@@ -448,7 +448,7 @@ CSS blocks, with no database migration.
    `--radius-box`, and optionally `--tap-target`. Wrap every colour in
    `light-dark()` so both brightness modes are covered.
 3. **Mirror it in the admin preview.** Copy the same block into the
-   `PROJECT_THEME_CSS` constant in `UI-Admin/src/project/project-style.ts`, or the
+   `PROJECT_THEME_CSS` constant in `UI-Admin/src/lib/project-style.ts`, or the
    admin live preview will not match the participant page.
 4. **Register a new heading font, if any.** If the preset uses a font not already
    self-hosted, add the WOFF2 file under `UI-User/src/public/fonts/`, declare an

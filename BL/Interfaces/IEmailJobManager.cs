@@ -32,6 +32,9 @@ public interface IEmailJobManager
     Task<List<EmailJob>> ListRecentSentAsync(int? projectPlatformId, int take, CancellationToken ct = default);
 
     // Operator action: bump Failed (max-attempts-exhausted) rows back to
-    // Pending with AttemptCount reset, due immediately.
-    Task<EmailJob> RetryAsync(int emailJobId, CancellationToken ct = default);
+    // Pending with AttemptCount reset, due immediately. projectPlatformId
+    // scopes the action — a PPA passes their platform so they can only retry
+    // their own jobs; SystemAdmin passes null to retry any. Returns null when
+    // no matching job exists (the API then answers 404).
+    Task<EmailJob> RetryAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default);
 }

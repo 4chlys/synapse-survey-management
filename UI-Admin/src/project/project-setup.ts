@@ -158,6 +158,16 @@ function syncDefaultBadges(): void {
     });
 }
 
+// Hide section name columns for unsupported languages; label only when multi-lang.
+function syncSectionLanguages(): void {
+    const multiLang = _langCheckboxes.filter(c => c.checked).length > 1;
+    document.querySelectorAll<HTMLElement>('.section-lang-field').forEach(field => {
+        field.hidden = !isSupported(field.dataset.lang ?? '');
+        const label = field.querySelector<HTMLElement>('.section-lang-label');
+        if (label) label.hidden = !multiLang;
+    });
+}
+
 function validateAgeBlur(): void {
     const invalid = checkAgeRange();
     _ageError?.classList.toggle('hidden', !invalid);
@@ -306,6 +316,7 @@ export function initProjectSetup(): void {
             syncRadiosToCheckboxes();
             syncDefaultBadges();
             syncCrossLanguageRow();
+            syncSectionLanguages();
             ensureVisibleActiveTab();
         });
     });
@@ -315,6 +326,7 @@ export function initProjectSetup(): void {
     syncRadiosToCheckboxes();
     syncDefaultBadges();
     syncCrossLanguageRow();
+    syncSectionLanguages();
     ensureVisibleActiveTab();
 
     // Generate image with AI
@@ -406,21 +418,21 @@ export function initProjectSetup(): void {
     if (sectionsContainer && addSectionBtn) {
         let idx = parseInt(sectionsContainer.dataset.sectionCount ?? '0', 10);
         const availableLangs = (sectionsContainer.dataset.availableLanguages ?? 'nl').split(',');
-        const multiLang = availableLangs.length > 1;
         const sectionNamePlaceholders: Record<string, string> =
             JSON.parse(sectionsContainer.dataset.sectionNamePlaceholders ?? '{}');
 
+        function visibleInputs(row: HTMLElement): HTMLInputElement[] {
+            return [...row.querySelectorAll<HTMLInputElement>('.section-lang-field:not([hidden]) input.section-name-input')];
+        }
+
         addSectionBtn.addEventListener('click', () => {
-            const hasEmptyRow = [...sectionsContainer.querySelectorAll<HTMLElement>('.section-row')]
-                .some(row => {
-                    const inputs = [...row.querySelectorAll<HTMLInputElement>('input.section-name-input')];
+            const emptyRow = [...sectionsContainer.querySelectorAll<HTMLElement>('.section-row')]
+                .find(row => {
+                    const inputs = visibleInputs(row);
                     return inputs.length > 0 && inputs.every(i => !i.value.trim());
                 });
-            if (hasEmptyRow) {
-                const firstEmptyInput = sectionsContainer.querySelector<HTMLInputElement>(
-                    '.section-row input.section-name-input:not([value])'
-                ) ?? [...sectionsContainer.querySelectorAll<HTMLInputElement>('.section-row input.section-name-input')]
-                    .find(i => !i.value.trim());
+            if (emptyRow) {
+                const firstEmptyInput = visibleInputs(emptyRow).find(i => !i.value.trim());
                 if (firstEmptyInput) {
                     firstEmptyInput.focus();
                     firstEmptyInput.classList.add('input-error');
@@ -432,8 +444,8 @@ export function initProjectSetup(): void {
             row.className = 'flex gap-2 items-end section-row';
             let inner = '';
             availableLangs.forEach((langCode, j) => {
-                inner += `<div class="flex flex-col gap-1 flex-1">`;
-                if (multiLang) inner += `<span class="text-xs text-base-content/50">${sectionLangDisplayName(langCode)}</span>`;
+                inner += `<div class="section-lang-field flex flex-col gap-1 flex-1" data-lang="${langCode}">`;
+                inner += `<span class="section-lang-label text-xs text-base-content/50">${sectionLangDisplayName(langCode)}</span>`;
                 inner += `<input type="hidden" name="Sections[${idx}].Translations[${j}].LanguageCode" value="${langCode}" />`;
                 inner += `<input type="text" name="Sections[${idx}].Translations[${j}].Name" maxlength="20" class="input input-bordered input-sm w-full section-name-input" placeholder="${sectionNamePlaceholders[langCode] ?? ''}" data-lang="${langCode}" />`;
                 inner += `</div>`;
@@ -441,9 +453,11 @@ export function initProjectSetup(): void {
             inner += `<button type="button" class="btn btn-ghost btn-sm text-error remove-section">×</button>`;
             row.innerHTML = inner;
             sectionsContainer.appendChild(row);
-            row.querySelector<HTMLInputElement>('input.section-name-input')?.focus();
+            syncSectionLanguages();
+            visibleInputs(row)[0]?.focus();
             idx++;
         });
+
         sectionsContainer.addEventListener('click', (e) => {
             if ((e.target as HTMLElement).classList.contains('remove-section'))
                 (e.target as HTMLElement).closest('.section-row')?.remove();

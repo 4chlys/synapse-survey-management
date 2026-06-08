@@ -236,6 +236,23 @@
               data-i18n-max-question-text="@L["MaxQuestionTextError"]"
               data-i18n-min-two-answers="@L["MinTwoAnswersError"]"
               data-i18n-all-answers-filled="@L["AllAnswersRequired"]"
+              data-i18n-media-placeholder-image="@L["MediaPlaceholderImage"]"
+              data-i18n-media-placeholder-video="@L["MediaPlaceholderVideo"]"
+              data-i18n-media-placeholder-audio="@L["MediaPlaceholderAudio"]"
+              data-i18n-media-label-image="@L["MediaLabelImage"]"
+              data-i18n-media-label-video="@L["MediaLabelVideo"]"
+              data-i18n-media-label-audio="@L["MediaLabelAudio"]"
+              data-i18n-media-err-no-access="@L["MediaErrNoAccess"]"
+              data-i18n-media-err-too-large="@L["MediaErrTooLarge"]"
+              data-i18n-media-err-too-many-uploads="@L["MediaErrTooManyUploads"]"
+              data-i18n-media-err-upload-failed-retry="@L["MediaErrUploadFailedRetry"]"
+              data-i18n-media-err-upload-failed="@L["MediaErrUploadFailed"]"
+              data-i18n-media-err-too-large-max="@L["MediaErrTooLargeMax"]"
+              data-i18n-media-err-url-scheme="@L["MediaErrUrlScheme"]"
+              data-i18n-media-err-video-url="@L["MediaErrVideoUrl"]"
+              data-i18n-media-err-audio-url="@L["MediaErrAudioUrl"]"
+              data-i18n-media-video-url-label="@L["MediaVideoUrlLabel"]"
+              data-i18n-media-remove-title="@L["MediaRemoveTitle"]"
               method="post">
             <input type="hidden" name="projectId" value="@projectId" />
             <input type="hidden" name="isNew" value="@isNew.ToString().ToLower()" />
@@ -416,9 +433,14 @@
     <div class="modal-box w-2/3 max-w-2xl">
         <div class="flex justify-between items-center mb-3">
             <h3 id="question-detail-title" class="font-bold text-base truncate pr-4"></h3>
-            <form method="dialog">
-                <button class="btn-icon-close">×</button>
-            </form>
+            <div class="flex items-center gap-1 flex-shrink-0">
+                <button type="button" id="question-detail-download" class="btn btn-ghost btn-xs hidden" title="Download PNG">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+                </button>
+                <form method="dialog">
+                    <button class="btn-icon-close">×</button>
+                </form>
+            </div>
         </div>
         <div id="question-detail-stats" class="flex gap-4 text-sm text-base-content/60 mb-3"></div>
         <div class="relative h-52">

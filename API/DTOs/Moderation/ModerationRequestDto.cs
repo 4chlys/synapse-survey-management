@@ -9,4 +9,7 @@ public sealed record ModerationRequestDto
 
     [MaxLength(20)]
     public string ContentType { get; init; } = "idea";
+
+    [MaxLength(10)]
+    public string Language { get; init; }
 }

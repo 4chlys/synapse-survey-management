@@ -87,7 +87,7 @@ function summaryPlugin(total: number, medianValue: number): Plugin {
     };
 }
 
-export function renderInto(canvasEl: HTMLCanvasElement, stats: LikertStats): Chart {
+export function renderInto(canvasEl: HTMLCanvasElement, stats: LikertStats, animate = true): Chart {
     const points = Array.from({ length: MAX_POINT - MIN_POINT + 1 }, (_, i) => MIN_POINT + i);
     const counts = points.map(p => countFor(stats.distribution, p));
     const medianValue = median(stats.distribution, stats.totalResponses);
@@ -101,6 +101,7 @@ export function renderInto(canvasEl: HTMLCanvasElement, stats: LikertStats): Cha
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: animate ? undefined : false,
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -119,13 +120,14 @@ export function renderInto(canvasEl: HTMLCanvasElement, stats: LikertStats): Cha
     });
 }
 
-export function initQuestionLikertBarWidget(el: HTMLElement): void {
+export function initQuestionLikertBarWidget(el: HTMLElement): () => void {
     const render = async (
         body: HTMLElement,
         projectId: number,
         questionId: number,
         apiBaseUrl: string,
         strings: WidgetStrings,
+        animate: boolean,
     ): Promise<void> => {
         let stats: LikertStats;
         try {
@@ -143,8 +145,9 @@ export function initQuestionLikertBarWidget(el: HTMLElement): void {
             return;
         }
 
-        renderInto(freshCanvas(body), stats);
+        const canvas = freshCanvas(body);
+        renderInto(canvas, stats, animate);
     };
 
-    initQuestionWidget(el, { format: 'Likert', render });
+    return initQuestionWidget(el, { format: 'Likert', fileName: 'question-likert.png', render });
 }

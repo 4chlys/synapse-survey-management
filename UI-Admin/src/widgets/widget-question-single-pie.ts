@@ -20,7 +20,7 @@ const PALETTE = [
     '#8b5cf6', '#f97316', '#14b8a6', '#ec4899', '#84cc16',
 ];
 
-export function renderInto(canvasEl: HTMLCanvasElement, stats: SingleChoiceStats): Chart {
+export function renderInto(canvasEl: HTMLCanvasElement, stats: SingleChoiceStats, animate = true): Chart {
     return new Chart(canvasEl, {
         type: 'pie',
         data: {
@@ -33,6 +33,7 @@ export function renderInto(canvasEl: HTMLCanvasElement, stats: SingleChoiceStats
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: animate ? undefined : false,
             plugins: {
                 legend: { position: 'right' },
             },
@@ -46,6 +47,7 @@ async function render(
     questionId: number,
     apiBaseUrl: string,
     strings: WidgetStrings,
+    animate: boolean,
 ): Promise<void> {
     let stats: SingleChoiceStats;
     try {
@@ -63,9 +65,10 @@ async function render(
         return;
     }
 
-    renderInto(freshCanvas(body), stats);
+    const canvas = freshCanvas(body);
+    renderInto(canvas, stats, animate);
 }
 
-export function initQuestionSinglePieWidget(el: HTMLElement): void {
-    initQuestionWidget(el, { format: 'SingleChoice', render });
+export function initQuestionSinglePieWidget(el: HTMLElement): () => void {
+    return initQuestionWidget(el, { format: 'SingleChoice', fileName: 'question-single-choice.png', render });
 }

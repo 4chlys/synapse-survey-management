@@ -59,6 +59,8 @@
           contentNotAllowed = Shared["ContentNotAllowed"].Value,
           maxLengthExceeded = Shared["MaxLengthExceeded"].Value,
           submitFallback = Shared["SubmitFallback"].Value,
+          ideaSubmitFailed = Shared["Idea_SubmitFailed"].Value,
+          commentSubmitFailed = Shared["Comment_SubmitFailed"].Value,
           ideaCardStatusFlagged = Shared["IdeaCard_StatusFlagged"].Value,
           ideaCardStatusOwnIdea = Shared["IdeaCard_StatusOwnIdea"].Value,
           ideaCardUseAsStartingPoint = Shared["IdeaCard_UseAsStartingPoint"].Value,
@@ -86,6 +88,10 @@
           surveySubmitAnswers = Shared["Survey_SubmitAnswers"].Value,
           aiChatAssistantUnavailableIdea = Shared["AiChat_AssistantUnavailable_Idea"].Value,
           aiChatError = Shared["AiChat_Error"].Value,
+          aiChatDiscardTitle = Shared["AiChat_DiscardTitle"].Value,
+          aiChatDiscardMessage = Shared["AiChat_DiscardMessage"].Value,
+          aiChatDiscardConfirm = Shared["AiChat_DiscardConfirm"].Value,
+          aiChatDiscardCancel = Shared["AiChat_DiscardCancel"].Value,
           aiChatDraftLabel = Shared["AiChat_DraftLabel"].Value,
           aiChatDraftYes = Shared["AiChat_DraftYes"].Value,
           aiChatDraftNo = Shared["AiChat_DraftNo"].Value,
@@ -167,9 +173,12 @@
         @await Html.PartialAsync("_ModerationPopup")
     }
 
+    @* Shared "discard your AI conversation?" confirmation — used by the idea and comment AI chats *@
+    @await Html.PartialAsync("_DiscardConfirmPopup")
+
     @if (ViewData["HideNavbar"] is not true)
     {
-    <header class="fixed left-0 right-0 z-40 bg-transparent" style="height: var(--header-h)">
+    <header class="site-header fixed left-0 right-0 z-40 bg-transparent" style="height: var(--header-h)">
         <div class="h-full max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3">
 
             @{
@@ -179,7 +188,7 @@
             @* Left: title — same alignment on all sizes *@
             <div class="flex items-center min-w-0 flex-1">
                 <span class="font-heading font-semibold text-base-content/80 text-base tracking-wide truncate">
-                    @headerTitle
+                    <a href="@ViewData["OrganisationWebsiteUrl"]">@headerTitle</a>
                 </span>
             </div>
 

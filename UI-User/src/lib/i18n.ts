@@ -8,6 +8,8 @@ export type Strings = {
     contentNotAllowed: string;
     maxLengthExceeded: string;
     submitFallback: string;
+    ideaSubmitFailed: string;
+    commentSubmitFailed: string;
     ideaCardStatusFlagged: string;
     ideaCardStatusOwnIdea: string;
     ideaCardUseAsStartingPoint: string;
@@ -35,6 +37,10 @@ export type Strings = {
     surveySubmitAnswers: string;
     aiChatAssistantUnavailableIdea: string;
     aiChatError: string;
+    aiChatDiscardTitle: string;
+    aiChatDiscardMessage: string;
+    aiChatDiscardConfirm: string;
+    aiChatDiscardCancel: string;
     aiChatDraftLabel: string;
     aiChatDraftYes: string;
     aiChatDraftNo: string;

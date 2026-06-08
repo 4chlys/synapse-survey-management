@@ -46,6 +46,7 @@ create_cloud_armor() {
   # Na deployment: update IPs via add_mig_ips_to_armor als VMs worden vervangen.
   echo "  (IP whitelist wordt ingesteld via add_mig_ips_to_armor na deployment)"
 
+
   echo "  >>> Policy koppelen aan backend services..."
   for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
     gcloud compute backend-services update "${backend}" \

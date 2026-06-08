@@ -27,7 +27,7 @@
         </div>
         <div>
             <h2 class="font-heading font-semibold text-base text-base-content">@L["ConfigHeading"]</h2>
-            <p class="text-xs text-base-content/40 mt-0.5">@L["FeatureFlagsDivider"], @L["QuotasDivider"].Value.ToLower() & @L["ContactBillingDivider"].Value.ToLower()</p>
+            <p class="text-xs text-base-content/40 mt-0.5">@L["ContactBillingDivider"]</p>
         </div>
     </div>
 
@@ -35,63 +35,12 @@
           method="post" class="flex flex-col gap-5">
         <input type="hidden" name="ProjectPlatformId" value="@Model.Configuration.ProjectPlatformId" />
 
-        @* Feature flags *@
-        <div class="flex items-center gap-2 mb-1">
-            <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-                 style="background: color-mix(in oklch, var(--color-info) 10%, transparent); color: var(--color-info);">
-                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                </svg>
-            </div>
-            <span class="text-xs font-bold text-base-content/40 uppercase tracking-widest">@L["FeatureFlagsDivider"]</span>
-        </div>
-
-        <label class="settings-mode-option @(Model.Configuration.AiAssistanceEnabled ? "settings-mode-option--active" : "")">
-            <input type="hidden" name="AiAssistanceEnabled" value="false" />
-            <input type="checkbox" name="AiAssistanceEnabled" value="true"
-                   class="toggle toggle-primary toggle-sm"
-                   @(Model.Configuration.AiAssistanceEnabled ? "checked" : "") />
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-base-content">@L["AiAssistanceToggle"]</p>
-            </div>
-        </label>
-
-        <label class="settings-mode-option @(Model.Configuration.IdeationEnabled ? "settings-mode-option--active" : "")">
-            <input type="hidden" name="IdeationEnabled" value="false" />
-            <input type="checkbox" name="IdeationEnabled" value="true"
-                   class="toggle toggle-primary toggle-sm"
-                   @(Model.Configuration.IdeationEnabled ? "checked" : "") />
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-base-content">@L["IdeationToggle"]</p>
-            </div>
-        </label>
-
-        @* Quotas *@
-        <div class="flex items-center gap-2 mt-3 mb-1">
-            <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-                 style="background: color-mix(in oklch, var(--color-secondary) 10%, transparent); color: var(--color-secondary);">
-                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/>
-                </svg>
-            </div>
-            <span class="text-xs font-bold text-base-content/40 uppercase tracking-widest">@L["QuotasDivider"]</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <label class="form-control">
-                <div class="label"><span class="label-text font-medium">@L["MaxProjectsLabel"]</span></div>
-                <input name="MaxProjects" type="number" min="0"
-                       value="@Model.Configuration.MaxProjects"
-                       class="input input-bordered w-full no-spinner" placeholder="@L["UnlimitedPlaceholder"]" />
-            </label>
-            <label class="form-control">
-                <div class="label"><span class="label-text font-medium">@L["MaxAdminsLabel"]</span></div>
-                <input name="MaxAdmins" type="number" min="0"
-                       value="@Model.Configuration.MaxAdmins"
-                       class="input input-bordered w-full no-spinner" placeholder="@L["UnlimitedPlaceholder"]" />
-            </label>
-        </div>
+        @* Feature flags & quotas are hidden from the UI for now but still persisted; round-trip
+           the stored values so saving contact/billing doesn't reset them. *@
+        <input type="hidden" name="AiAssistanceEnabled" value="@Model.Configuration.AiAssistanceEnabled" />
+        <input type="hidden" name="IdeationEnabled" value="@Model.Configuration.IdeationEnabled" />
+        <input type="hidden" name="MaxProjects" value="@Model.Configuration.MaxProjects" />
+        <input type="hidden" name="MaxAdmins" value="@Model.Configuration.MaxAdmins" />
 
         @* Contact & billing *@
         <div class="flex items-center gap-2 mt-3 mb-1">

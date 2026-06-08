@@ -103,9 +103,9 @@ public sealed class EmailJobManager(
     public Task<List<EmailJob>> ListRecentSentAsync(int? projectPlatformId, int take, CancellationToken ct = default)
         => repo.ListRecentSentReadOnlyAsync(projectPlatformId, take, ct);
 
-    public async Task<EmailJob> RetryAsync(int emailJobId, CancellationToken ct = default)
+    public async Task<EmailJob> RetryAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default)
     {
-        var job = await repo.GetByIdAsync(emailJobId, ct);
+        var job = await repo.ReadByIdForUpdateAsync(emailJobId, projectPlatformId, ct);
         if (job is null) return null;
         if (job.Status != EmailJobStatus.Failed) return job; // nothing to retry
 

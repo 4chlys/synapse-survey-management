@@ -102,7 +102,7 @@ public static class AiConfigLoader
             DefaultLanguage         = p.Language,
             ModerationPrompt        = SubWithAge(m.ModerationPrompt),
             CommentModerationPrompt = SubWithAge(m.CommentModerationPrompt),
-            RewritePrompt           = Sub(m.RewritePrompt),
+            RewritePrompt           = SubNoLang(m.RewritePrompt),   // {language}/{response_language} substituted per-request
             ImageModerationPrompt   = SubWithAge(m.ImageModerationPrompt),
             BannedWords             = m.BannedWords,
             RegexPatterns           = m.RegexPatterns,

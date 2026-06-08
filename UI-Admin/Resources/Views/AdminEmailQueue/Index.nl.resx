@@ -19,6 +19,7 @@
   <data name="ColTo" xml:space="preserve"><value>Aan</value></data>
   <data name="ColSubject" xml:space="preserve"><value>Onderwerp</value></data>
   <data name="ColCategory" xml:space="preserve"><value>Categorie</value></data>
+  <data name="ColProject" xml:space="preserve"><value>Project</value></data>
   <data name="ColAttempts" xml:space="preserve"><value>Pogingen</value></data>
   <data name="ColLastError" xml:space="preserve"><value>Laatste fout</value></data>
   <data name="ColScheduledAt" xml:space="preserve"><value>Volgende poging</value></data>

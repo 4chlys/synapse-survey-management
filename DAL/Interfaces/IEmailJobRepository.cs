@@ -15,7 +15,10 @@ public interface IEmailJobRepository
         int? ideaId,
         CancellationToken ct = default);
 
-    Task<EmailJob> GetByIdAsync(int emailJobId, CancellationToken ct = default);
+    // projectPlatformId scopes the lookup: when non-null only a job belonging
+    // to that platform is returned (otherwise null), so a PPA-scoped retry can
+    // never touch another platform's job.
+    Task<EmailJob> ReadByIdForUpdateAsync(int emailJobId, int? projectPlatformId = null, CancellationToken ct = default);
 
     // Returns the next due Pending row (ScheduledAt<=now), already flipped to
     // Processing and saved. Returns null if no row is due or if another

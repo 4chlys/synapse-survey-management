@@ -75,6 +75,31 @@ public class ProjectManagerTests
     private static IEnumerable<IntroductionTranslationInput> NoIntroductions() =>
         Array.Empty<IntroductionTranslationInput>();
 
+    #region ResolveContentLanguageCode
+
+    [Fact]
+    public void ResolveContentLanguageCode_UnsupportedParticipantLanguage_ReturnsProjectDefaultCode()
+    {
+        var participant = new Participant { Language = LanguageEn, Project = null };
+        var project = new Project { SupportedLanguages = new List<Language> { LanguageNl }, DefaultLanguage = LanguageNl };
+
+        var code = _manager.ResolveContentLanguageCode(participant, project, null);
+
+        Assert.Equal("nl", code);
+    }
+
+    [Fact]
+    public void ResolveContentLanguageCode_NothingResolvable_ReturnsNull()
+    {
+        var participant = new Participant { Language = null, Project = null };
+
+        var code = _manager.ResolveContentLanguageCode(participant, project: null, submissionLanguageCode: null);
+
+        Assert.Null(code);
+    }
+
+    #endregion
+
     #region CreateProjectAsync
 
     [Fact]

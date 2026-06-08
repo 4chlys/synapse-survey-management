@@ -27,12 +27,6 @@
   <data name="Col_AvgTime" xml:space="preserve"><value>Avg. time</value></data>
   <data name="Col_MedianTime" xml:space="preserve"><value>Median time</value></data>
   <data name="AiBreakdownHeading" xml:space="preserve"><value>AI usage by service</value></data>
-  <data name="AiCol_Service" xml:space="preserve"><value>Service</value></data>
-  <data name="AiCol_Model" xml:space="preserve"><value>Model</value></data>
-  <data name="AiCol_InputTokens" xml:space="preserve"><value>Input tokens</value></data>
-  <data name="AiCol_OutputTokens" xml:space="preserve"><value>Output tokens</value></data>
-  <data name="AiCol_Requests" xml:space="preserve"><value>Requests</value></data>
-  <data name="AiCol_Cost" xml:space="preserve"><value>Cost (EUR)</value></data>
   <data name="ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="ExportModalTitle" xml:space="preserve"><value>Export statistics</value></data>
   <data name="ExportGroupHeading_Stats" xml:space="preserve"><value>Statistics</value></data>
@@ -50,9 +44,7 @@
   <data name="ChartsHeading" xml:space="preserve"><value>Charts</value></data>
   <data name="Chart_ParticipantsTitle" xml:space="preserve"><value>Participants per project</value></data>
   <data name="Chart_ProjectStatesTitle" xml:space="preserve"><value>Project states</value></data>
-  <data name="Chart_AiCostTitle" xml:space="preserve"><value>AI cost per service</value></data>
   <data name="Chart_CompletionTimeTitle" xml:space="preserve"><value>Completion time per project</value></data>
   <data name="Series_Participants" xml:space="preserve"><value>Participants</value></data>
   <data name="Series_CompletionTime" xml:space="preserve"><value>Completion time (s)</value></data>
-  <data name="Series_AiCost" xml:space="preserve"><value>Cost (EUR)</value></data>
 </root>

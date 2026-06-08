@@ -148,19 +148,16 @@ public class ProjectAdminService(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<bool> IsShortFormAvailableAsync(string shortForm, int? excludeProjectId)
+    public async Task<ShortFormSuggestion> GetShortFormSuggestionAsync(string shortForm, int? excludeProjectId)
     {
-        var response = await httpClient.GetAsync($"api/projects/by-shortform/{Uri.EscapeDataString(shortForm)}");
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            return true;
+        var query = $"api/projects/shortform-suggestion?shortForm={Uri.EscapeDataString(shortForm)}";
+        if (excludeProjectId is int id) query += $"&excludeProjectId={id}";
+        var response = await httpClient.GetAsync(query);
         if (!response.IsSuccessStatusCode)
-            return true;
-        var dto = await response.Content.ReadFromJsonAsync<ShortFormLookup>();
-        return dto?.ProjectId == excludeProjectId;
+            return new ShortFormSuggestion(true, shortForm);
+        var dto = await response.Content.ReadFromJsonAsync<ShortFormSuggestion>();
+        return dto ?? new ShortFormSuggestion(true, shortForm);
     }
 
-    private sealed record ShortFormLookup
-    {
-        public int ProjectId { get; init; }
-    }
+    public sealed record ShortFormSuggestion(bool Available, string Suggestion);
 }

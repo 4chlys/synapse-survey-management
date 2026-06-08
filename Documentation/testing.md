@@ -46,7 +46,7 @@ The strategy is deliberately layered to match the N-layer architecture
   `Microsoft.AspNetCore.Mvc.Testing`'s `WebApplicationFactory` (integration
   tests), plus targeted unit tests for action filters and record/form model
   binding. They cover the C# MVC layer; the TypeScript bundle in
-  `UI-User/Assets/` is still untested.
+  `UI-User/src/` is still untested.
 
 What was prioritised: business logic in BL, transactional correctness in DAL,
 controller wiring in API, and — more recently — front-end filters, model
@@ -60,7 +60,7 @@ tests.
 | BL managers      | BL.Tests     | Unit tests, Moq on repositories/UoW   | The survey `SubmissionManager` coordinator and a few helpers remain untested |
 | DAL repositories | DAL.Tests    | Integration tests, in-memory SQLite   | Per-entity repositories (`IdeaRepository`, …) covered only via BL mocks  |
 | MVC front-ends   | UI-User.Tests, UI-Admin.Tests | `WebApplicationFactory` integration + filter/model-binding unit tests | Coverage is targeted (filters, theming, auth fallback, binding), not broad |
-| Frontend TS      | —            | None                                  | No unit, integration, or browser tests for the `UI-User/Assets/` TypeScript bundle |
+| Frontend TS      | —            | None                                  | No unit, integration, or browser tests for the `UI-User/src/` TypeScript bundle |
 
 ## 2. API layer — unit tests (`API.Tests`)
 
@@ -292,7 +292,7 @@ rendering all run for real against an in-memory host.
 
 These suites are the project's only tests that touch real HTTP routing, model
 binding, filters and Razor rendering — the API controller tests deliberately
-do not (see §2). The TypeScript bundle under `UI-User/Assets/` is still not
+do not (see §2). The TypeScript bundle under `UI-User/src/` is still not
 covered by either suite.
 
 ## 6. Mock services for AI
@@ -394,7 +394,7 @@ The job runs on the `development` and `main` branches and on merge requests.
 
 ## 8. What is not tested — honest gap list
 
-- **No automated tests for the TypeScript frontend.** `UI-User/Assets/` ships
+- **No automated tests for the TypeScript frontend.** `UI-User/src/` ships
   vanilla TypeScript modules with no Jest/Vitest setup, no test files, and
   no entry in `package.json` for a test runner. Behaviour is checked only
   manually in the browser.

@@ -1,6 +1,7 @@
 @using SynapseEnqueteManagement.UI.Admin.Models.Platform
 @model SystemDashboardViewModel
 @inject IViewLocalizer L
+@inject IHtmlLocalizer<SharedResource> Shared
 @{
     ViewData["Title"] = L["PageTitle"].Value;
     ViewData["ActiveSection"] = "SystemDashboard";
@@ -224,10 +225,10 @@
                             <table class="table table-xs">
                                 <thead>
                                     <tr>
-                                        <th>@L["AiCol_Service"]</th>
-                                        <th>@L["AiCol_Model"]</th>
-                                        <th class="text-right">@L["AiCol_Requests"]</th>
-                                        <th class="text-right">@L["AiCol_Cost"]</th>
+                                        <th>@Shared["AiCol_Service"]</th>
+                                        <th>@Shared["AiCol_Model"]</th>
+                                        <th class="text-right">@Shared["AiCol_Requests"]</th>
+                                        <th class="text-right">@Shared["AiCol_Cost"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -298,9 +299,9 @@
         </div>
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
-                <p class="text-sm font-medium text-base-content/60 mb-2">@L["Chart_AiCostTitle"]</p>
+                <p class="text-sm font-medium text-base-content/60 mb-2">@Shared["Chart_AiCostTitle"]</p>
                 <div data-widget="SystemAiCost"
-                     data-i18n-series-cost="@L["Series_AiCost"]"
+                     data-i18n-series-cost="@Shared["AiCol_Cost"]"
                      class="relative" style="height:300px;"></div>
             </div>
         </div>
@@ -382,12 +383,12 @@
             <table class="table table-zebra table-sm">
                 <thead>
                     <tr>
-                        <th>@L["AiCol_Service"]</th>
-                        <th>@L["AiCol_Model"]</th>
-                        <th class="text-right">@L["AiCol_InputTokens"]</th>
-                        <th class="text-right">@L["AiCol_OutputTokens"]</th>
-                        <th class="text-right">@L["AiCol_Requests"]</th>
-                        <th class="text-right">@L["AiCol_Cost"]</th>
+                        <th>@Shared["AiCol_Service"]</th>
+                        <th>@Shared["AiCol_Model"]</th>
+                        <th class="text-right">@Shared["AiCol_InputTokens"]</th>
+                        <th class="text-right">@Shared["AiCol_OutputTokens"]</th>
+                        <th class="text-right">@Shared["AiCol_Requests"]</th>
+                        <th class="text-right">@Shared["AiCol_Cost"]</th>
                     </tr>
                 </thead>
                 <tbody>

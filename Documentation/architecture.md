@@ -393,7 +393,7 @@ stateless across instances, which matters for horizontally-scaled deployment.
 **Vite-built TypeScript** bundle for client-side interactivity.
 
 **Single entry point.** All client-side TypeScript flows through one entry file,
-`Assets/main.ts`, whose only responsibility is to import and initialise the other modules.
+`src/main.ts`, whose only responsibility is to import and initialise the other modules.
 
 **No JavaScript framework.** There is no React, Vue, or jQuery. The frontend is **vanilla
 TypeScript**, organised into modules, compiled in strict mode. There is no inline
