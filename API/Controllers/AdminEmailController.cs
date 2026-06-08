@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SynapseEnqueteManagement.API.DTOs.Email;
@@ -10,7 +11,7 @@ namespace SynapseEnqueteManagement.API.Controllers;
 
 [ApiController]
 [Route("api/admin/emails")]
-public class AdminEmailController(
+public partial class AdminEmailController(
     IEmailService emailService,
     IEmailJobManager jobManager) : ControllerBase
 {
@@ -74,22 +75,35 @@ public class AdminEmailController(
         if (status == EmailJobStatus.Failed)
             rows = await jobManager.ListGivenUpAsync(projectPlatformId, capped, ct);
 
-        return Ok(rows.Select(Map));
+        // Unscoped (projectPlatformId == null) means the cross-tenant SystemAdmin;
+        // mask admin-authored free-text subjects so platform-private content stays
+        // within the owning platform.
+        return Ok(rows.Select(j => Map(j, maskFreeTextSubject: projectPlatformId is null)));
     }
 
+    // The API has no per-user identity (it sits behind a single shared key), so
+    // platform authorization is enforced by the caller (UI-Admin); projectPlatformId
+    // is the scope it restricts itself to — a PPA passes their platform, the
+    // operator omits it. A scoped miss 404s, never revealing the job exists.
     [HttpPost("queue/{id:int}/retry")]
-    public async Task<ActionResult<EmailJobRowDto>> Retry(int id, CancellationToken ct)
+    public async Task<ActionResult<EmailJobRowDto>> Retry(int id, [FromQuery] int? projectPlatformId, CancellationToken ct)
     {
-        var job = await jobManager.RetryAsync(id, ct);
+        var job = await jobManager.RetryAsync(id, projectPlatformId, ct);
         if (job is null) return NotFound();
-        return Ok(Map(job));
+        return Ok(Map(job, maskFreeTextSubject: projectPlatformId is null));
     }
 
-    private static EmailJobRowDto Map(EmailJob j) => new(
+    // AdminReply/AdminBroadcast subjects are admin-authored free text; the rest are server templates.
+    private static readonly string MaskedSubject = "[hidden]";
+
+    private static EmailJobRowDto Map(EmailJob j, bool maskFreeTextSubject) => new(
         j.EmailJobId,
         j.ToAddress,
-        j.Subject,
+        maskFreeTextSubject && j.Category is EmailJobCategory.AdminReply or EmailJobCategory.AdminBroadcast
+            ? MaskedSubject
+            : j.Subject,
         j.Category.ToString(),
+        j.Project?.ShortForm,
         j.Status.ToString(),
         j.LanguageCode,
         j.AttemptCount,
@@ -97,5 +111,12 @@ public class AdminEmailController(
         j.CreatedAt,
         j.ScheduledAt,
         j.SentAt,
-        j.LastError);
+        RedactEmails(j.LastError));
+
+    // Providers echo the recipient address into bounce text — strip it from the queue page.
+    private static string RedactEmails(string error)
+        => error is null ? null : EmailRegex().Replace(error, "[redacted]");
+
+    [GeneratedRegex(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")]
+    private static partial Regex EmailRegex();
 }

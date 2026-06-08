@@ -9,6 +9,7 @@ public record EmailJobRowDto(
     string To,
     string Subject,
     string Category,
+    string ProjectShortForm,
     string Status,
     string LanguageCode,
     int AttemptCount,

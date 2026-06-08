@@ -41,7 +41,7 @@ public class AdminRawDataController(
 
         var questions = (await questionnaireManager.GetQuestionsForProjectAsync(projectId)).ToList();
         var responses = (await responseManager.GetCommittedResponsesForProjectReadOnlyAsync(projectId)).ToList();
-        var categories = (await categoryManager.GetCategoriesWithIdeasForProjectReadOnlyAsync(projectId)).ToList();
+        var categories = (await categoryManager.GetCategoriesWithIdeasAndParticipantsForProjectReadOnlyAsync(projectId)).ToList();
 
         // Export labels land on the project's default language so a download is reproducible —
         // otherwise FirstOrDefault() picked whichever translation EF happened to load first.

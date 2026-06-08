@@ -20,7 +20,7 @@ const PALETTE = [
     '#8b5cf6', '#f97316', '#14b8a6', '#ec4899', '#84cc16',
 ];
 
-export function renderInto(canvasEl: HTMLCanvasElement, stats: MultipleChoiceStats, xAxisLabel: string): Chart {
+export function renderInto(canvasEl: HTMLCanvasElement, stats: MultipleChoiceStats, xAxisLabel: string, animate = true): Chart {
     return new Chart(canvasEl, {
         type: 'bar',
         data: {
@@ -34,6 +34,7 @@ export function renderInto(canvasEl: HTMLCanvasElement, stats: MultipleChoiceSta
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            animation: animate ? undefined : false,
             plugins: {
                 legend: { display: false },
             },
@@ -48,7 +49,7 @@ export function renderInto(canvasEl: HTMLCanvasElement, stats: MultipleChoiceSta
     });
 }
 
-export function initQuestionMultiBarWidget(el: HTMLElement): void {
+export function initQuestionMultiBarWidget(el: HTMLElement): () => void {
     const xAxisLabel = el.dataset.xAxisLabel ?? '';
 
     const render = async (
@@ -57,6 +58,7 @@ export function initQuestionMultiBarWidget(el: HTMLElement): void {
         questionId: number,
         apiBaseUrl: string,
         strings: WidgetStrings,
+        animate: boolean,
     ): Promise<void> => {
         let stats: MultipleChoiceStats;
         try {
@@ -74,8 +76,9 @@ export function initQuestionMultiBarWidget(el: HTMLElement): void {
             return;
         }
 
-        renderInto(freshCanvas(body), stats, xAxisLabel);
+        const canvas = freshCanvas(body);
+        renderInto(canvas, stats, xAxisLabel, animate);
     };
 
-    initQuestionWidget(el, { format: 'MultipleChoice', render });
+    return initQuestionWidget(el, { format: 'MultipleChoice', fileName: 'question-multiple-choice.png', render });
 }

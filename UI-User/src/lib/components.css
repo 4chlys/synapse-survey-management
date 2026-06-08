@@ -184,6 +184,15 @@
   }
   .select-field:focus { border-color: var(--color-primary); outline: none; }
 
+  .site-header {
+    transition: background-color 0.15s, backdrop-filter 0.15s;
+  }
+  .site-header.scrolled {
+    background-color: color-mix(in oklch, var(--color-base-200) 80%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
   .idea-count-badge {
     position: absolute;
     top: -0.75rem;

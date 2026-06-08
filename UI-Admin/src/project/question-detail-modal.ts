@@ -6,6 +6,7 @@ import type { MultipleChoiceStats } from '../widgets/widget-question-multi-bar';
 import { renderInto as renderLikert } from '../widgets/widget-question-likert-bar';
 import type { LikertStats } from '../widgets/widget-question-likert-bar';
 import type { ModalStrings, OpenAnswerPage } from '../lib/project-types';
+import { downloadCanvasPng } from '../lib/utils';
 
 let activeChart: Chart | null = null;
 
@@ -17,6 +18,12 @@ export function init(): void {
     if (!dialog) return;
 
     const projectId = Number(questionsList.dataset.projectId ?? '0');
+
+    const downloadBtn = document.getElementById('question-detail-download') as HTMLButtonElement | null;
+    downloadBtn?.addEventListener('click', () => {
+        const canvas = document.getElementById('question-detail-chart') as HTMLCanvasElement | null;
+        if (canvas && activeChart) downloadCanvasPng(canvas, 'question-stats.png');
+    });
 
     questionsList.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLElement>('.question-stats-btn');
@@ -30,6 +37,9 @@ export function init(): void {
         const canvas = document.getElementById('question-detail-chart') as HTMLCanvasElement | null;
         const answersDiv = document.getElementById('question-detail-answers');
         const statsDiv = document.getElementById('question-detail-stats');
+
+        // Hidden until a chart is actually rendered (kept hidden for Open / no responses).
+        downloadBtn?.classList.add('hidden');
 
         if (titleEl) titleEl.textContent = text;
         if (statsDiv) statsDiv.innerHTML = '';
@@ -66,7 +76,7 @@ export function init(): void {
             return;
         }
 
-        void fetchAndRender(projectId, questionId, format, canvas, statsDiv, strings);
+        void fetchAndRender(projectId, questionId, format, canvas, statsDiv, strings, downloadBtn);
     });
 }
 
@@ -77,6 +87,7 @@ async function fetchAndRender(
     canvas: HTMLCanvasElement | null,
     statsDiv: HTMLElement | null,
     strings: ModalStrings,
+    downloadBtn: HTMLButtonElement | null,
 ): Promise<void> {
     const suffix = format === 'SingleChoice' ? 'single-stats'
         : format === 'MultipleChoice' ? 'multi-stats'
@@ -105,7 +116,10 @@ async function fetchAndRender(
             if (canvas) canvas.classList.add('hidden');
             return;
         }
-        if (canvas) activeChart = renderPie(canvas, stats);
+        if (canvas) {
+            activeChart = renderPie(canvas, stats);
+            downloadBtn?.classList.remove('hidden');
+        }
     } else if (format === 'MultipleChoice') {
         const stats = await res.json() as MultipleChoiceStats;
         if (statsDiv) statsDiv.innerHTML = `<span>${stats.totalResponses} ${strings.responsesUnit}</span>`;
@@ -113,7 +127,10 @@ async function fetchAndRender(
             if (canvas) canvas.classList.add('hidden');
             return;
         }
-        if (canvas) activeChart = renderBar(canvas, stats, strings.xAxisLabel);
+        if (canvas) {
+            activeChart = renderBar(canvas, stats, strings.xAxisLabel);
+            downloadBtn?.classList.remove('hidden');
+        }
     } else {
         const stats = await res.json() as LikertStats;
         if (statsDiv) statsDiv.innerHTML = `<span>${stats.totalResponses} ${strings.responsesUnit}</span>`;
@@ -121,7 +138,10 @@ async function fetchAndRender(
             if (canvas) canvas.classList.add('hidden');
             return;
         }
-        if (canvas) activeChart = renderLikert(canvas, stats);
+        if (canvas) {
+            activeChart = renderLikert(canvas, stats);
+            downloadBtn?.classList.remove('hidden');
+        }
     }
 }
 

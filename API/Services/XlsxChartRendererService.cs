@@ -181,14 +181,30 @@ public class XlsxChartRendererService(IChartImageService chartImages) : IChartRe
         return (WorksheetPart)doc.WorkbookPart.GetPartById(sheet.Id.Value);
     }
 
+    // Inserts the worksheet <drawing> reference at its schema-correct position.
+    // Append would place it after trailing elements ClosedXML emits (extLst, tableParts, ...),
+    // which the CT_Worksheet schema rejects ("unexpected child element drawing") and Excel
+    // then reports as a damaged workbook.
+    private static void EnsureWorksheetDrawing(WorksheetPart wsPart, DrawingsPart drawingsPart)
+    {
+        if (wsPart.Worksheet.Elements<Drawing>().Any()) return;
+
+        var drawing = new Drawing { Id = wsPart.GetIdOfPart(drawingsPart) };
+        var successor = wsPart.Worksheet.ChildElements.FirstOrDefault(e =>
+            e is DrawingHeaderFooter
+              or DocumentFormat.OpenXml.Spreadsheet.Picture
+              or OleObjects or Controls or WebPublishItems or TableParts or WorksheetExtensionList);
+
+        if (successor is not null)
+            wsPart.Worksheet.InsertBefore(drawing, successor);
+        else
+            wsPart.Worksheet.Append(drawing);
+    }
+
     private static (ChartPart Part, string RelationshipId) AddChartPart(WorksheetPart wsPart)
     {
         var drawingsPart = wsPart.DrawingsPart ?? wsPart.AddNewPart<DrawingsPart>();
-        if (wsPart.Worksheet.Elements<Drawing>().FirstOrDefault() is null)
-        {
-            var relId = wsPart.GetIdOfPart(drawingsPart);
-            wsPart.Worksheet.Append(new Drawing { Id = relId });
-        }
+        EnsureWorksheetDrawing(wsPart, drawingsPart);
 
         if (drawingsPart.WorksheetDrawing is null)
             drawingsPart.WorksheetDrawing = new Xdr.WorksheetDrawing();
@@ -284,11 +300,7 @@ public class XlsxChartRendererService(IChartImageService chartImages) : IChartRe
         if (wsPart is null) return;
 
         var drawingsPart = wsPart.DrawingsPart ?? wsPart.AddNewPart<DrawingsPart>();
-        if (wsPart.Worksheet.Elements<Drawing>().FirstOrDefault() is null)
-        {
-            var rid = wsPart.GetIdOfPart(drawingsPart);
-            wsPart.Worksheet.Append(new Drawing { Id = rid });
-        }
+        EnsureWorksheetDrawing(wsPart, drawingsPart);
         if (drawingsPart.WorksheetDrawing is null)
             drawingsPart.WorksheetDrawing = new Xdr.WorksheetDrawing();
 

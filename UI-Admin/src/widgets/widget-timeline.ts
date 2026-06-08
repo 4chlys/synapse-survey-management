@@ -1,6 +1,6 @@
 import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js';
 import { POLL_INTERVAL_MS } from '../admin/dashboard';
-import { attachDownloadButton } from '../lib/system-stats';
+import { attachDownloadButton } from '../lib/utils';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 

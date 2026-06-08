@@ -15,6 +15,7 @@ import { IdeaSupportSession, IdeaSupportChatResponse } from './ideasupport';
 import { t } from '../lib/i18n';
 import { renderMarkdown, setupAutoGrow } from './ai-support-base';
 import { escapeHtml } from '../lib/utils';
+import { confirmDiscard } from '../lib/discard-confirm';
 
 //  DOM references (resolved once on first open)
 
@@ -35,6 +36,11 @@ let loadingBubbleEl: HTMLElement | null = null;
 let activeSession: IdeaSupportSession | null = null;
 let currentDraft: string | null = null;
 let isSending = false;
+// Tracks whether the user has invested anything worth guarding against an
+// accidental close (sent a message, or the AI has proposed a draft).
+let userHasSentMessage = false;
+// Guards against re-opening the discard dialog while it is already awaiting.
+let confirmPending = false;
 let onSubmitCallback: ((text: string) => void) | null = null;
 let onSwitchToManualCallback: ((draft: string | null) => void) | null = null;
 let isInitialised = false;
@@ -57,7 +63,7 @@ function ensureRefs(): boolean {
 
     if (!overlay || !messagesContainer || !inputEl || !sendBtn || !closeBtn) return false;
 
-    closeBtn.addEventListener('click', closeOverlay);
+    closeBtn.addEventListener('click', () => { void attemptClose(); });
     switchBtn?.addEventListener('click', handleSwitchToManual);
     sendBtn.addEventListener('click', () => { void handleSend(); });
     useDraftBtn?.addEventListener('click', handleUseDraft);
@@ -74,9 +80,16 @@ function ensureRefs(): boolean {
         }
     });
 
-    // Dismiss on backdrop click
+    // Backdrop click and Escape attempt to close (guarded by a discard confirm).
     overlay.addEventListener('click', (e: MouseEvent) => {
-        if (e.target === overlay) closeOverlay();
+        if (e.target === overlay) void attemptClose();
+    });
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key !== 'Escape') return;
+        if (!overlay || overlay.classList.contains('hidden')) return;
+        if (confirmPending) return; // the discard dialog owns Escape while open
+        void attemptClose();
     });
 
     isInitialised = true;
@@ -109,6 +122,8 @@ export function openIdeaSupportChat(
     onSubmitCallback          = onSubmit;
     onSwitchToManualCallback  = onSwitchToManual ?? null;
     isSending                 = false;
+    userHasSentMessage        = false;
+    confirmPending            = false;
 
     clearMessages();
     hideDraftBanner();
@@ -118,8 +133,9 @@ export function openIdeaSupportChat(
     overlay!.classList.remove('hidden');
     overlay!.classList.add('flex');
 
-    requestAnimationFrame(() => inputEl?.focus());
-
+    // Focus is dropped into the field once the opening turn re-enables it
+    // (see setSendingState) — the field is disabled while the greeting loads,
+    // so focusing here would silently no-op.
     void fireOpeningTurn();
 }
 
@@ -201,6 +217,7 @@ async function handleSend(): Promise<void> {
     const text = inputEl!.value.trim();
     if (!text) return;
 
+    userHasSentMessage = true;
     appendUserBubble(text);
     resetInput();
     showLoading();
@@ -357,6 +374,35 @@ async function handleRefineDraft(): Promise<void> {
 
 //  Close
 
+/** True once there is conversation progress worth guarding. */
+function hasProgress(): boolean {
+    return userHasSentMessage || currentDraft !== null;
+}
+
+/**
+ * Routes every "leave" affordance (backdrop, X, Escape) through a discard
+ * confirmation when the user has made progress. With nothing to lose, it
+ * closes instantly. "Switch to form" bypasses this — it carries the draft over.
+ */
+async function attemptClose(): Promise<void> {
+    if (confirmPending) return;
+
+    if (!hasProgress()) {
+        closeOverlay();
+        return;
+    }
+
+    confirmPending = true;
+    const discard = await confirmDiscard();
+    confirmPending = false;
+
+    if (discard) {
+        closeOverlay();
+    } else {
+        inputEl?.focus();
+    }
+}
+
 function closeOverlay(): void {
     if (!overlay) return;
     overlay.classList.add('hidden');
@@ -366,6 +412,8 @@ function closeOverlay(): void {
     onSubmitCallback         = null;
     onSwitchToManualCallback = null;
     currentDraft             = null;
+    userHasSentMessage       = false;
+    confirmPending           = false;
     hideLoading();
 }
 
@@ -449,6 +497,13 @@ function setSendingState(sending: boolean): void {
     isSending = sending;
     if (sendBtn) sendBtn.disabled  = sending;
     if (inputEl) inputEl.disabled  = sending;
+
+    // When the field becomes usable again (opening greeting done, or an AI reply
+    // arrived) drop focus back into it so the user can keep typing — unless the
+    // discard dialog is open, which owns focus until the user answers it.
+    if (!sending && !confirmPending && overlay && !overlay.classList.contains('hidden')) {
+        requestAnimationFrame(() => inputEl?.focus());
+    }
 }
 
 function clearMessages(): void {

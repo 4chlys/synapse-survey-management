@@ -146,7 +146,7 @@ public class EmailJobManagerTests
             EmailJobId = 7, Status = EmailJobStatus.Failed,
             AttemptCount = 5, LastError = "gave up"
         };
-        _repo.Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(job);
+        _repo.Setup(r => r.ReadByIdForUpdateAsync(7, It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync(job);
 
         var result = await BuildManager().RetryAsync(7);
 
@@ -160,7 +160,7 @@ public class EmailJobManagerTests
     public async Task RetryAsync_DoesNothing_WhenJobNotFailed()
     {
         var job = new EmailJob { EmailJobId = 8, Status = EmailJobStatus.Pending, AttemptCount = 1 };
-        _repo.Setup(r => r.GetByIdAsync(8, It.IsAny<CancellationToken>())).ReturnsAsync(job);
+        _repo.Setup(r => r.ReadByIdForUpdateAsync(8, It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync(job);
 
         var result = await BuildManager().RetryAsync(8);
 
@@ -172,10 +172,23 @@ public class EmailJobManagerTests
     [Fact]
     public async Task RetryAsync_ReturnsNull_WhenJobMissing()
     {
-        _repo.Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((EmailJob)null);
+        _repo.Setup(r => r.ReadByIdForUpdateAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<CancellationToken>())).ReturnsAsync((EmailJob)null);
 
         var result = await BuildManager().RetryAsync(99);
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RetryAsync_ForwardsPlatformScopeToRepo()
+    {
+        // A PPA-scoped retry must reach the repo with the platform so the
+        // ownership filter applies; a non-owned job comes back null → no retry.
+        _repo.Setup(r => r.ReadByIdForUpdateAsync(7, 3, It.IsAny<CancellationToken>())).ReturnsAsync((EmailJob)null);
+
+        var result = await BuildManager().RetryAsync(7, projectPlatformId: 3);
+
+        Assert.Null(result);
+        _repo.Verify(r => r.ReadByIdForUpdateAsync(7, 3, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

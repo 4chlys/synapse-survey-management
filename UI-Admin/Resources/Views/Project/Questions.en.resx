@@ -93,4 +93,21 @@
   <data name="StatsTitle" xml:space="preserve"><value>Statistics</value></data>
   <data name="DefaultLabel" xml:space="preserve"><value>default</value></data>
   <data name="StatsButtonLabel" xml:space="preserve"><value>Answers</value></data>
+  <data name="MediaPlaceholderImage" xml:space="preserve"><value>https://example.com/image.jpg</value></data>
+  <data name="MediaPlaceholderVideo" xml:space="preserve"><value>https://www.youtube.com/watch?v=... or https://example.com/video.mp4</value></data>
+  <data name="MediaPlaceholderAudio" xml:space="preserve"><value>https://example.com/audio.mp3</value></data>
+  <data name="MediaLabelImage" xml:space="preserve"><value>Image URL</value></data>
+  <data name="MediaLabelVideo" xml:space="preserve"><value>Video URL (YouTube, Vimeo or direct .mp4/.webm link)</value></data>
+  <data name="MediaLabelAudio" xml:space="preserve"><value>Audio URL (.mp3, .m4a, .wav or .ogg)</value></data>
+  <data name="MediaErrNoAccess" xml:space="preserve"><value>No access. Your session may have expired — log in again and try again.</value></data>
+  <data name="MediaErrTooLarge" xml:space="preserve"><value>File is too large.</value></data>
+  <data name="MediaErrTooManyUploads" xml:space="preserve"><value>Too many uploads in a short time. Wait a moment and try again.</value></data>
+  <data name="MediaErrUploadFailedRetry" xml:space="preserve"><value>Upload failed. Please try again.</value></data>
+  <data name="MediaErrUploadFailed" xml:space="preserve"><value>Upload failed.</value></data>
+  <data name="MediaErrTooLargeMax" xml:space="preserve"><value>File is too large (max {0} MB).</value></data>
+  <data name="MediaErrUrlScheme" xml:space="preserve"><value>URL must start with https://</value></data>
+  <data name="MediaErrVideoUrl" xml:space="preserve"><value>Enter a YouTube/Vimeo URL or a direct .mp4/.webm link.</value></data>
+  <data name="MediaErrAudioUrl" xml:space="preserve"><value>URL must end with .mp3, .m4a, .wav or .ogg.</value></data>
+  <data name="MediaVideoUrlLabel" xml:space="preserve"><value>Video URL</value></data>
+  <data name="MediaRemoveTitle" xml:space="preserve"><value>Remove media</value></data>
 </root>

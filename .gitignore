@@ -497,11 +497,13 @@ $RECYCLE.BIN/
 
 # manually by Casper
 CLAUDE.md
+prd/
 start-up.bat
 stop.bat
 CasperContext/
 seeded-credentials.txt
 mattcopock.txt
+QA.md
 
 # manually by Romeo
 start.sh
