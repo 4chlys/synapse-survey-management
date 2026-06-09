@@ -37,7 +37,7 @@ public class AdminIdeasController(
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        var (items, total, approved, pending, flagged) =
+        var (items, total, approved, pending, flagged, declined) =
             await moderationManager.GetIdeasPagedAsync(projectId, search, categoryId, statusEnum, page, lang, pageSize);
 
         return Ok(new IdeaPageDto
@@ -48,6 +48,7 @@ public class AdminIdeasController(
             ApprovedCount = approved,
             PendingCount  = pending,
             FlaggedCount  = flagged,
+            DeclinedCount = declined,
             Items = items.Select(i => new AdminIdeaDto
             {
                 IdeaId        = i.IdeaId,

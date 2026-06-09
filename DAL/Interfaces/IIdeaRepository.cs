@@ -45,7 +45,8 @@ public interface IIdeaRepository : IRepository<Idea>
 
     Task<List<IdeaMetric>> ReadTopByProjectReadOnlyAsync(int projectId, int count);
     Task<List<Idea>> ReadLatestByProjectWithCommentsReadOnlyAsync(int projectId, int count);
-    Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(int projectId);
+    Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(
+        int projectId, string search = null, int? categoryId = null);
 
     Task<(List<Idea> Items, int Total)> ReadPagedByProjectWithCommentsReadOnlyAsync(
         int projectId, string search, int? categoryId, ModerationStatus? status,

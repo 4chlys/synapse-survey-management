@@ -104,7 +104,7 @@ public class DashboardManagerTests
             // Unflagged intentionally omitted to exercise the default-zero fallback
         };
 
-        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId))
+        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId, null, null))
             .ReturnsAsync(counts).Verifiable(Times.Once());
 
         var result = await _manager.GetModerationQueueAsync(ProjectId);
@@ -120,7 +120,7 @@ public class DashboardManagerTests
     [Fact]
     public async Task GetModerationQueueAsync_EmptyCounts_ReturnsAllZeros()
     {
-        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId))
+        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId, null, null))
             .ReturnsAsync(new Dictionary<ModerationStatus, int>());
 
         var result = await _manager.GetModerationQueueAsync(ProjectId);

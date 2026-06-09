@@ -21,7 +21,7 @@ public interface IIdeaManager
 
     Task<List<IdeaMetric>> GetTopIdeasAsync(int projectId, int count);
     Task<List<Idea>> GetLatestApprovedWithCommentsAsync(int projectId, int count);
-    Task<Dictionary<ModerationStatus, int>> CountByStatusAsync(int projectId);
+    Task<Dictionary<ModerationStatus, int>> CountByStatusAsync(int projectId, string search = null, int? categoryId = null);
 
     Task<(List<Idea> Items, int Total)> GetIdeasPageAsync(
         int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize);
