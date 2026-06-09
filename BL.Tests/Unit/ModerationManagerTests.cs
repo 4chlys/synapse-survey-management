@@ -45,21 +45,23 @@ public class ModerationManagerTests
         _ideaManager.Setup(m => m.GetIdeasPageAsync(ProjectId, "q", 9, ModerationStatus.Unflagged, 2, 25))
             .ReturnsAsync((new List<Idea> { idea }, 1))
             .Verifiable(Times.Once());
-        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId))
+        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId, "q", 9))
             .ReturnsAsync(new Dictionary<ModerationStatus, int>
             {
                 [ModerationStatus.Approved]  = 10,
                 [ModerationStatus.Unflagged] = 4,
                 [ModerationStatus.Flagged]   = 2,
+                [ModerationStatus.Declined]  = 3,
             }).Verifiable(Times.Once());
 
-        var (items, total, approved, pending, flagged) =
+        var (items, total, approved, pending, flagged, declined) =
             await _manager.GetIdeasPagedAsync(ProjectId, "q", 9, ModerationStatus.Unflagged, page: 2, "nl", pageSize: 25);
 
         Assert.Equal(1, total);
         Assert.Equal(10, approved);
         Assert.Equal(4, pending);   // ModerationStatus.Unflagged maps to pending
         Assert.Equal(2, flagged);
+        Assert.Equal(3, declined);
 
         var item = Assert.Single(items);
         Assert.Equal(77, item.IdeaId);
@@ -78,15 +80,16 @@ public class ModerationManagerTests
     {
         _ideaManager.Setup(m => m.GetIdeasPageAsync(ProjectId, null, null, null, 1, 20))
             .ReturnsAsync((new List<Idea>(), 0));
-        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId))
+        _ideaManager.Setup(m => m.CountByStatusAsync(ProjectId, null, null))
             .ReturnsAsync(new Dictionary<ModerationStatus, int>());
 
-        var (_, _, approved, pending, flagged) =
+        var (_, _, approved, pending, flagged, declined) =
             await _manager.GetIdeasPagedAsync(ProjectId, null, null, null, page: 1, "nl");
 
         Assert.Equal(0, approved);
         Assert.Equal(0, pending);
         Assert.Equal(0, flagged);
+        Assert.Equal(0, declined);
     }
 
     [Fact]
