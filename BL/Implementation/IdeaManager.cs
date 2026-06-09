@@ -175,8 +175,8 @@ public class IdeaManager(
     public Task<List<Idea>> GetLatestApprovedWithCommentsAsync(int projectId, int count)
         => ideaRepository.ReadLatestByProjectWithCommentsReadOnlyAsync(projectId, count);
 
-    public Task<Dictionary<ModerationStatus, int>> CountByStatusAsync(int projectId)
-        => ideaRepository.CountByStatusForProjectAsync(projectId);
+    public Task<Dictionary<ModerationStatus, int>> CountByStatusAsync(int projectId, string search = null, int? categoryId = null)
+        => ideaRepository.CountByStatusForProjectAsync(projectId, search, categoryId);
 
     public Task<(List<Idea> Items, int Total)> GetIdeasPageAsync(
         int projectId, string search, int? categoryId, ModerationStatus? status, int page, int pageSize)

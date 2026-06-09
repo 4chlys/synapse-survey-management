@@ -195,12 +195,22 @@ public class IdeaRepository(DbContext context) : Repository<Idea>(context), IIde
             .Take(count)
             .ToListAsync();
 
-    public async Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(int projectId)
-        => await Context.Set<Idea>()
+    public async Task<Dictionary<ModerationStatus, int>> CountByStatusForProjectAsync(
+        int projectId, string search = null, int? categoryId = null)
+    {
+        var query = Context.Set<Idea>()
             .AsNoTracking()
-            .Where(i => i.Category.Project.ProjectId == projectId)
+            .Where(i => i.Category.Project.ProjectId == projectId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(i => i.Description.Contains(search));
+        if (categoryId.HasValue)
+            query = query.Where(i => i.Category.CategoryId == categoryId.Value);
+
+        return await query
             .GroupBy(i => i.Status)
             .ToDictionaryAsync(g => g.Key, g => g.Count());
+    }
 
     public async Task<(List<Idea> Items, int Total)> ReadPagedByProjectWithCommentsReadOnlyAsync(
         int projectId, string search, int? categoryId, ModerationStatus? status,

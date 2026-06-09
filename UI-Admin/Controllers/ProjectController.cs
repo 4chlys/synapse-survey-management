@@ -557,7 +557,7 @@ public class ProjectController(
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
 
-        var (_, total, approved, pending, flagged) =
+        var (_, total, approved, pending, flagged, declined) =
             await ideaService.GetIdeasAsync(projectId, null, null, null, 1, 1);
 
         var vm = new IdeasCategoriesViewModel
@@ -568,7 +568,7 @@ public class ProjectController(
             TotalApproved  = approved,
             TotalPending   = pending,
             TotalFlagged   = flagged,
-            TotalDeclined  = Math.Max(0, total - approved - pending - flagged),
+            TotalDeclined  = declined,
             Categories     = categories,
             DefaultLanguageCode    = project.DefaultLanguageCode,
             SupportedLanguageCodes = project.SupportedLanguageCodes
@@ -589,7 +589,7 @@ public class ProjectController(
 
         SetProjectChrome(projectId, project, "Ideas");
 
-        var (items, total, approved, pending, flagged) =
+        var (items, total, approved, pending, flagged, declined) =
             await ideaService.GetIdeasAsync(projectId, search, categoryId, status, page);
 
         var categories = await categoryService.GetCategoriesAsync(projectId);
@@ -609,7 +609,7 @@ public class ProjectController(
             ApprovedCount = approved,
             PendingCount  = pending,
             FlaggedCount  = flagged,
-            DeclinedCount = Math.Max(0, total - approved - pending - flagged),
+            DeclinedCount = declined,
             Ideas         = items,
             PlatformId            = project.PlatformId,
             IdeaSummaryMaxIdeas   = platformSettings?.IdeaSummaryMaxIdeas ?? 200,
