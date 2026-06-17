@@ -164,6 +164,71 @@ EOF
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-http-rule al aanwezig)"
 }
 
+create_internal_api_lb() {
+  echo ">>> Internal API load balancer aanmaken (omgeving: ${ENV})..."
+
+  # Internal LB requires a regional health check — global health checks are not supported.
+  gcloud compute health-checks create http "synapse-${ENV}-api-internal-health" \
+    --region="${REGION}" \
+    --port=8080 --request-path=/health \
+    --check-interval=10 --timeout=5 \
+    --healthy-threshold=2 --unhealthy-threshold=3 \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-api-internal-health al aanwezig)"
+
+  gcloud compute backend-services create "synapse-${ENV}-api-internal-backend" \
+    --region="${REGION}" \
+    --load-balancing-scheme=INTERNAL \
+    --protocol=TCP \
+    --health-checks="synapse-${ENV}-api-internal-health" \
+    --health-checks-region="${REGION}" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-api-internal-backend al aanwezig)"
+
+  gcloud compute backend-services add-backend "synapse-${ENV}-api-internal-backend" \
+    --region="${REGION}" \
+    --instance-group="synapse-${ENV}-api-mig" \
+    --instance-group-zone="${ZONE}" \
+    --project="${PROJECT_ID}" 2>/dev/null || true
+
+  # Static internal IP so the VIP survives LB recreation without requiring a secret update.
+  gcloud compute addresses create "synapse-${ENV}-api-internal-ip" \
+    --region="${REGION}" \
+    --subnet=default \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-api-internal-ip al aanwezig)"
+
+  gcloud compute forwarding-rules create "synapse-${ENV}-api-internal-rule" \
+    --region="${REGION}" \
+    --load-balancing-scheme=INTERNAL \
+    --address="synapse-${ENV}-api-internal-ip" \
+    --ports=8080 \
+    --backend-service="synapse-${ENV}-api-internal-backend" \
+    --backend-service-region="${REGION}" \
+    --network=default \
+    --subnet=default \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (synapse-${ENV}-api-internal-rule al aanwezig)"
+
+  local VIP
+  VIP=$(gcloud compute addresses describe "synapse-${ENV}-api-internal-ip" \
+    --region="${REGION}" \
+    --project="${PROJECT_ID}" \
+    --format="value(address)")
+
+  echo "  Internal API VIP: ${VIP}"
+  update_secret "api-base-url" "http://${VIP}:8080"
+  echo "  Secret ${ENV}-api-base-url bijgewerkt naar http://${VIP}:8080"
+}
+
+destroy_internal_api_lb() {
+  echo ">>> Internal API load balancer afbreken (omgeving: ${ENV})..."
+  gcloud compute forwarding-rules delete "synapse-${ENV}-api-internal-rule" \
+    --region="${REGION}" --quiet --project="${PROJECT_ID}" 2>/dev/null || true
+  gcloud compute backend-services delete "synapse-${ENV}-api-internal-backend" \
+    --region="${REGION}" --quiet --project="${PROJECT_ID}" 2>/dev/null || true
+  gcloud compute health-checks delete "synapse-${ENV}-api-internal-health" \
+    --region="${REGION}" --quiet --project="${PROJECT_ID}" 2>/dev/null || true
+  gcloud compute addresses delete "synapse-${ENV}-api-internal-ip" \
+    --region="${REGION}" --quiet --project="${PROJECT_ID}" 2>/dev/null || true
+}
+
 destroy_loadbalancer() {
   echo ">>> Load Balancer afbreken (omgeving: ${ENV})..."
 

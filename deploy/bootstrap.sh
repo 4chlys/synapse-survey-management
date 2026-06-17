@@ -207,6 +207,7 @@ fi
 
 create_migs
 configure_autohealing
+create_internal_api_lb
 
 create_backend_services
 create_url_map
@@ -214,7 +215,6 @@ create_ssl_and_proxy
 reserve_static_ip
 create_forwarding_rules
 create_cloud_armor
-add_mig_ips_to_armor
 
 setup_logging_iam
 create_uptime_checks
