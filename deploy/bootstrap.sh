@@ -205,9 +205,12 @@ fi
 
 # pgvector is installed by the API on startup via ExecuteSqlRaw; no cloud-sql-proxy needed here.
 
-create_migs
-configure_autohealing
+# API MIG first so create_internal_api_lb can attach it as backend and update
+# the api-base-url secret before UI/Admin VMs boot and read that secret.
+create_api_mig
 create_internal_api_lb
+create_ui_admin_migs
+configure_autohealing
 
 create_backend_services
 create_url_map
