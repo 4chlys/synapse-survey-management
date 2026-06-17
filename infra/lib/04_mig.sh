@@ -96,16 +96,23 @@ _wait_api_schema_ready() {
   echo "  ⚠️  Timeout na 8 minuten — Admin toch starten"
 }
 
-create_migs() {
-  echo ">>> Managed Instance Groups aanmaken (omgeving: ${ENV})..."
-
+create_api_mig() {
+  echo ">>> API MIG aanmaken (omgeving: ${ENV})..."
   # API runs EnsureCreated first; Admin's MigrateAsync must see the schema already present
   # or it will attempt to re-create it and fail.
   _create_mig "synapse-${ENV}-api-mig" "synapse-${ENV}-api-template" 1 5
   _wait_api_schema_ready
+}
 
+create_ui_admin_migs() {
+  echo ">>> UI en Admin MIGs aanmaken (omgeving: ${ENV})..."
   _create_mig "synapse-${ENV}-ui-mig"    "synapse-${ENV}-ui-template"    1 5
   _create_mig "synapse-${ENV}-admin-mig" "synapse-${ENV}-admin-template" 1 1
+}
+
+create_migs() {
+  create_api_mig
+  create_ui_admin_migs
 }
 
 configure_autohealing() {

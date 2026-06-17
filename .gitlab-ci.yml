@@ -273,26 +273,6 @@ deploy-test:
       gcloud compute instance-groups managed wait-until synapse-test-api-mig   --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-test-ui-mig    --stable --zone="${ZONE}"
       gcloud compute instance-groups managed wait-until synapse-test-admin-mig --stable --zone="${ZONE}"
-      UI_INSTANCE=$(gcloud compute instance-groups managed list-instances synapse-test-ui-mig \
-        --zone="${ZONE}" --format="value(NAME)" | head -1)
-      ADMIN_INSTANCE=$(gcloud compute instance-groups managed list-instances synapse-test-admin-mig \
-        --zone="${ZONE}" --format="value(NAME)" | head -1)
-      UI_IP=$(gcloud compute instances describe "${UI_INSTANCE}" --zone="${ZONE}" \
-        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
-      ADMIN_IP=$(gcloud compute instances describe "${ADMIN_INSTANCE}" --zone="${ZONE}" \
-        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
-      sleep 15
-      for attempt in 1 2 3; do
-        gcloud compute security-policies rules update 50 \
-          --security-policy="synapse-test-armor" \
-          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
-          --action=allow --project="${PROJECT_ID}" && break || \
-        gcloud compute security-policies rules create 50 \
-          --security-policy="synapse-test-armor" \
-          --expression="origin.ip == '${UI_IP}' || origin.ip == '${ADMIN_IP}'" \
-          --action=allow --project="${PROJECT_ID}" && break || \
-        sleep 15
-      done
   only:
     - development
     - design/ui-2

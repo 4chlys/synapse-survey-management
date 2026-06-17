@@ -47,6 +47,7 @@ source "${SCRIPT_DIR}/lib/07_cloudsql.sh"
 source "${SCRIPT_DIR}/lib/08_logging.sh"
 source "${SCRIPT_DIR}/lib/09_armor.sh"
 source "${SCRIPT_DIR}/lib/10_backup.sh"
+# update_secret is used by create_internal_api_lb but not needed during destroy; keep sourced for completeness.
 
 echo "======================================================"
 echo " WAARSCHUWING: Dit verwijdert ALLE Synapse '${ENV}' resources!"
@@ -62,6 +63,7 @@ echo ""
 destroy_cloud_armor
 destroy_alert_policy
 destroy_uptime_checks
+destroy_internal_api_lb
 destroy_loadbalancer
 
 ( destroy_migs && destroy_instance_templates ) &

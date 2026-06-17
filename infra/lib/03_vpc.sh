@@ -34,6 +34,22 @@ create_firewall_rules() {
     --source-ranges=35.235.240.0/20 \
     --description="SSH via Cloud IAP" \
     --project="${PROJECT_ID}" 2>/dev/null || echo "  (allow-iap-ssh al aanwezig)"
+
+  # Allow UI and Admin VMs to reach the API MIG via the internal NLB on port 8080.
+  # Source range is the default subnet CIDR for this region; fallback covers europe-west1.
+  local SUBNET_CIDR
+  SUBNET_CIDR=$(gcloud compute networks subnets describe default \
+    --region="${REGION}" \
+    --project="${PROJECT_ID}" \
+    --format="value(ipCidrRange)" 2>/dev/null || echo "10.132.0.0/20")
+
+  gcloud compute firewall-rules create allow-internal-api \
+    --network=default \
+    --allow=tcp:8080 \
+    --source-ranges="${SUBNET_CIDR}" \
+    --target-tags=allow-health-check \
+    --description="Allow VPC-internal traffic to API VMs on port 8080 (internal NLB clients)" \
+    --project="${PROJECT_ID}" 2>/dev/null || echo "  (allow-internal-api al aanwezig)"
 }
 
 destroy_vpc_peering() {
@@ -50,6 +66,6 @@ destroy_vpc_peering() {
 
 destroy_firewall_rules() {
   echo ">>> Firewall rules verwijderen..."
-  gcloud compute firewall-rules delete allow-lb-to-mig allow-iap-ssh \
+  gcloud compute firewall-rules delete allow-lb-to-mig allow-iap-ssh allow-internal-api \
     --quiet --project="${PROJECT_ID}" 2>/dev/null || true
 }
