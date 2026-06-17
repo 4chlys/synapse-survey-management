@@ -190,7 +190,6 @@
   .site-header.scrolled {
     background-color: color-mix(in oklch, var(--color-base-200) 80%, transparent);
     backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
   }
 
   .idea-count-badge {
