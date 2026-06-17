@@ -1,6 +1,6 @@
 namespace SynapseEnqueteManagement.API.Services;
 
-public class LocalStorageService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ILogger<LocalStorageService> logger) : IStorageService
+public class LocalStorageService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, IConfiguration configuration, ILogger<LocalStorageService> logger) : IStorageService
 {
     public async Task<string> UploadBytesAsync(byte[] data, string folder, string fileName, string contentType)
     {
@@ -74,5 +74,13 @@ public class LocalStorageService(IWebHostEnvironment env, IHttpContextAccessor h
             logger.LogWarning(ex, "[Storage] Failed to delete local file for URL {Url}", url);
         }
         return Task.CompletedTask;
+    }
+
+    public Task<string> PublishSeedMediaAsync(string seedSourceDirectory)
+    {
+        // Local seed media is served straight from wwwroot/seed by app.UseStaticFiles(); no upload
+        // needed. The API serves it on its own host, so build the base URL from ApiBaseUrl.
+        var apiBaseUrl = configuration["ApiBaseUrl"]?.TrimEnd('/');
+        return Task.FromResult(apiBaseUrl is not null ? $"{apiBaseUrl}/seed" : null);
     }
 }

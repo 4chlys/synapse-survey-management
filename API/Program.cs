@@ -321,8 +321,17 @@ var app = builder.Build();
             if (context.Database.IsNpgsql())
                 context.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS vector;");
             context.CreateDatabase(deleteIfExists);
-            var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
-            DummyDataSeeder.Seed(context, apiBaseUrl);
+
+            // Publish seed media and resolve its public base URL only when the database still needs
+            // seeding, so prod doesn't re-upload the bundled assets to GCS on every boot.
+            string seedMediaBaseUrl = null;
+            if (!context.Projects.Any())
+            {
+                var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
+                seedMediaBaseUrl = await storageService.PublishSeedMediaAsync(
+                    Path.Combine(app.Environment.WebRootPath, "seed"));
+            }
+            DummyDataSeeder.Seed(context, seedMediaBaseUrl);
 
             try
             {
