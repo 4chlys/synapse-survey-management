@@ -1,5 +1,6 @@
 using Google;
 using Google.Cloud.Storage.V1;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SynapseEnqueteManagement.API.Options;
@@ -14,23 +15,21 @@ public class GoogleCloudStorageService(
 
     public async Task<string> UploadAsync(IFormFile file, string folder)
     {
-        var storage = await StorageClient.CreateAsync();
-        var objectName = $"{folder}/{Guid.NewGuid()}/{file.FileName}";
-
         using var stream = file.OpenReadStream();
-        await storage.UploadObjectAsync(_bucketName, objectName, file.ContentType, stream);
-
-        return $"https://storage.googleapis.com/{_bucketName}/{objectName}";
+        return await UploadStreamAsync($"{folder}/{Guid.NewGuid()}/{file.FileName}", file.ContentType, stream);
     }
 
     public async Task<string> UploadBytesAsync(byte[] data, string folder, string fileName, string contentType)
     {
-        var storage = await StorageClient.CreateAsync();
-        var objectName = $"{folder}/{Guid.NewGuid()}/{fileName}";
-
         using var stream = new MemoryStream(data);
-        await storage.UploadObjectAsync(_bucketName, objectName, contentType, stream);
+        return await UploadStreamAsync($"{folder}/{Guid.NewGuid()}/{fileName}", contentType, stream);
+    }
 
+    // Shared upload primitive: stores the stream at objectName and returns its public URL.
+    private async Task<string> UploadStreamAsync(string objectName, string contentType, Stream stream)
+    {
+        var storage = await StorageClient.CreateAsync();
+        await storage.UploadObjectAsync(_bucketName, objectName, contentType, stream);
         return $"https://storage.googleapis.com/{_bucketName}/{objectName}";
     }
 
@@ -81,5 +80,30 @@ public class GoogleCloudStorageService(
         {
             logger.LogWarning(ex, "[Storage] Failed to delete GCS object for URL {Url}", url);
         }
+    }
+
+    public async Task<string> PublishSeedMediaAsync(string seedSourceDirectory)
+    {
+        // Seed media lives in GCS alongside user uploads so browsers never hit the API host
+        // (which is internal-only). Deterministic "seed/{relativePath}" objects so the stored URLs stay stable.
+        var baseUrl = $"https://storage.googleapis.com/{_bucketName}/seed";
+        if (!Directory.Exists(seedSourceDirectory))
+        {
+            logger.LogWarning("[Storage] Seed source directory {Dir} not found; skipping seed media upload", seedSourceDirectory);
+            return baseUrl;
+        }
+
+        var contentTypes = new FileExtensionContentTypeProvider();
+        foreach (var path in Directory.EnumerateFiles(seedSourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(seedSourceDirectory, path).Replace('\\', '/');
+            if (!contentTypes.TryGetContentType(path, out var contentType))
+                contentType = "application/octet-stream";
+
+            await using var stream = File.OpenRead(path);
+            await UploadStreamAsync($"seed/{relativePath}", contentType, stream);
+        }
+
+        return baseUrl;
     }
 }

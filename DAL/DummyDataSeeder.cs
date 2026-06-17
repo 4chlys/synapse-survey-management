@@ -141,7 +141,7 @@ public class DummyDataSeeder
     private static string Choices(Question question, Language language, params int[] indices) =>
         string.Join(", ", indices.Select(i => Choice(question, language, i)));
 
-    public static void Seed(SynapseEnqueteContext context, string apiBaseUrl)
+    public static void Seed(SynapseEnqueteContext context, string seedMediaBaseUrl)
     {
         Language languageNl, languageEn;
         if (!context.Languages.Any())
@@ -192,12 +192,11 @@ public class DummyDataSeeder
         // only the fallback for the untagged Dutch ones — it is NOT the author's language.
         _defaultLanguage = languageNl;
 
-        // Seed media is app-bundled static content under wwwroot/seed, served by
-        // app.UseStaticFiles() in every environment. Building the URL from the
-        // per-environment ApiBaseUrl keeps it correct in dev, test and prod alike
-        // (unlike runtime user uploads, which go through IStorageService / GCS).
+        // Seed media is published via IStorageService (GCS in prod, wwwroot in dev) so it shares the
+        // upload path and is never served from the internal-only API host. seedMediaBaseUrl already
+        // ends in "/seed"; just append the relative path.
         string SeedUrl(string relativePath) =>
-            apiBaseUrl is not null ? $"{apiBaseUrl}/seed/{relativePath}" : null;
+            seedMediaBaseUrl is not null ? $"{seedMediaBaseUrl}/{relativePath}" : null;
 
         // All emojis were just saved above — load the 4 that are used in seed reactions below.
         _heart    = context.Emojis.First(e => e.Name == "heart");
