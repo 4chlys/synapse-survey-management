@@ -12,7 +12,8 @@ create_cloud_armor() {
   # All WAF rules are skipped for admin controller paths (/Project/, /Question/, /Category/,
   # /Platform/, /Settings/, /Auth/, /AdminMembership/, /AdminEmailQueue/, /api/admin/) because
   # admin form data (HTML content, AI prompts, config values) triggers XSS/SQLi/RCE/LFI false
-  # positives. Admins are authenticated; admin VM server-side calls already bypass WAF via rule 50.
+  # positives. Admins are authenticated; server-side API calls from UI/Admin VMs travel via the
+  # internal NLB and never reach Cloud Armor, so no VM IP whitelist is needed.
   # Image upload and AI chat paths are also excluded for the same reason (binary data, HMAC tokens,
   # AI-generated free text trigger multiple rules unpredictably).
   # SQLi exclusions on remaining participant paths: character anomaly rules (942xxx) fire on
@@ -41,12 +42,6 @@ create_cloud_armor() {
   echo "  >>> Geo-blocking: catch-all deny voor niet-EU verkeer..."
   gcloud compute security-policies rules create 1200 --security-policy="${ARMOR_POLICY}" --expression="true" --action=deny-403 --description="Geo-blocking: alleen EU toegelaten" --project="${PROJECT_ID}" 2>/dev/null || echo "  (al aanwezig, overgeslagen)"
 
-  echo "  >>> Priority-50 whitelist voor VM server-side API calls..."
-  # Gebruik --src-ip-ranges (geen CEVAL quota) zodat UI en Admin VM calls de WAF bypassen.
-  # Na deployment: update IPs via add_mig_ips_to_armor als VMs worden vervangen.
-  echo "  (IP whitelist wordt ingesteld via add_mig_ips_to_armor na deployment)"
-
-
   echo "  >>> Policy koppelen aan backend services..."
   for backend in "synapse-${ENV}-api-backend" "synapse-${ENV}-ui-backend" "synapse-${ENV}-admin-backend"; do
     gcloud compute backend-services update "${backend}" \
@@ -56,47 +51,6 @@ create_cloud_armor() {
   done
 
   echo "  Cloud Armor actief. Kost: ~\$10/maand (policy + regels) + requests."
-}
-
-add_mig_ips_to_armor() {
-  echo ">>> UI en Admin VM IPs toevoegen aan Cloud Armor (omgeving: ${ENV})..."
-
-  gcloud compute instance-groups managed wait-until "synapse-${ENV}-ui-mig" \
-    --stable --zone="${ZONE}" --project="${PROJECT_ID}" 2>/dev/null || true
-  gcloud compute instance-groups managed wait-until "synapse-${ENV}-admin-mig" \
-    --stable --zone="${ZONE}" --project="${PROJECT_ID}" 2>/dev/null || true
-
-  UI_INSTANCE=$(gcloud compute instance-groups managed list-instances "synapse-${ENV}-ui-mig" \
-    --zone="${ZONE}" --project="${PROJECT_ID}" --format="value(instance)" | head -1 | sed 's|.*/||')
-  ADMIN_INSTANCE=$(gcloud compute instance-groups managed list-instances "synapse-${ENV}-admin-mig" \
-    --zone="${ZONE}" --project="${PROJECT_ID}" --format="value(instance)" | head -1 | sed 's|.*/||')
-
-  UI_IP=$(gcloud compute instances describe "${UI_INSTANCE}" \
-    --zone="${ZONE}" --project="${PROJECT_ID}" \
-    --format="value(networkInterfaces[0].accessConfigs[0].natIP)" 2>/dev/null || true)
-  ADMIN_IP=$(gcloud compute instances describe "${ADMIN_INSTANCE}" \
-    --zone="${ZONE}" --project="${PROJECT_ID}" \
-    --format="value(networkInterfaces[0].accessConfigs[0].natIP)" 2>/dev/null || true)
-
-  if [[ -z "${UI_IP}" || -z "${ADMIN_IP}" ]]; then
-    echo "  ⚠️  Kon externe IPs niet ophalen — voeg handmatig toe."
-    return
-  fi
-
-  echo "  UI IP: ${UI_IP} | Admin IP: ${ADMIN_IP}"
-  # Gebruik --src-ip-ranges (geen CEVAL quota) in plaats van --expression
-  gcloud compute security-policies rules create 50 \
-    --security-policy="${ARMOR_POLICY}" \
-    --src-ip-ranges="${UI_IP},${ADMIN_IP}" \
-    --action=allow \
-    --description="Allow UI en Admin VM server-side API calls (bypasses WAF)" \
-    --project="${PROJECT_ID}" 2>/dev/null || \
-  gcloud compute security-policies rules update 50 \
-    --security-policy="${ARMOR_POLICY}" \
-    --src-ip-ranges="${UI_IP},${ADMIN_IP}" \
-    --action=allow \
-    --description="Allow UI en Admin VM server-side API calls (bypasses WAF)" \
-    --project="${PROJECT_ID}"
 }
 
 fix_armor_priorities() {
