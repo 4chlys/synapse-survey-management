@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseEnqueteManagement.API.Services;
 
@@ -17,8 +18,9 @@ public class LocalStorageServiceTests : IDisposable
         var env = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
         env.SetupGet(e => e.WebRootPath).Returns(_webRoot);
 
-        // DeleteAsync never touches the HttpContext, so an unconfigured accessor is fine here.
-        _service = new LocalStorageService(env.Object, new Mock<IHttpContextAccessor>().Object, NullLogger<LocalStorageService>.Instance);
+        // DeleteAsync never touches the HttpContext or configuration, so unconfigured mocks are fine here.
+        _service = new LocalStorageService(env.Object, new Mock<IHttpContextAccessor>().Object,
+            new Mock<IConfiguration>().Object, NullLogger<LocalStorageService>.Instance);
     }
 
     public void Dispose()
